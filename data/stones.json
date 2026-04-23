@@ -1,0 +1,95 @@
+{
+  "version": 1,
+  "description": "ナンバー別候補。差し替えはこのJSONのみで可。",
+  "byNumber": {
+    "1": [
+      { "id": "garnet", "nameJa": "ガーネット", "tags": ["initiative", "red"] },
+      { "id": "ruby", "nameJa": "ルビー", "tags": ["leadership", "red"] },
+      { "id": "sunstone", "nameJa": "サンストーン", "tags": ["vitality"] }
+    ],
+    "2": [
+      { "id": "moonstone", "nameJa": "ムーンストーン", "tags": ["harmony", "intuition"] },
+      { "id": "pearl", "nameJa": "パール", "tags": ["cooperation"] },
+      { "id": "selenite", "nameJa": "セレナイト", "tags": ["peace"] }
+    ],
+    "3": [
+      { "id": "citrine", "nameJa": "シトリン", "tags": ["expression", "joy"] },
+      { "id": "aventurine", "nameJa": "アベンチュリン", "tags": ["creativity"] },
+      { "id": "tigers-eye", "nameJa": "タイガーアイ", "tags": ["confidence"] }
+    ],
+    "4": [
+      { "id": "jade", "nameJa": "翡翠（ジェイド）", "tags": ["stability", "work"] },
+      { "id": "smoky-quartz", "nameJa": "スモーキークォーツ", "tags": ["grounding"] },
+      { "id": "obsidian", "nameJa": "オブシディアン", "tags": ["protection"] }
+    ],
+    "5": [
+      { "id": "aquamarine", "nameJa": "アクアマリン", "tags": ["freedom", "travel"] },
+      { "id": "agate", "nameJa": "メノウ", "tags": ["change"] },
+      { "id": "chrysocolla", "nameJa": "クリソコラ", "tags": ["communication"] }
+    ],
+    "6": [
+      { "id": "rose-quartz", "nameJa": "ローズクォーツ", "tags": ["love", "family"] },
+      { "id": "emerald", "nameJa": "エメラルド", "tags": ["heart"] },
+      { "id": "rhodonite", "nameJa": "ロードナイト", "tags": ["care"] }
+    ],
+    "7": [
+      { "id": "amethyst", "nameJa": "アメジスト", "tags": ["spirit", "insight"] },
+      { "id": "lapis", "nameJa": "ラピスラズリ", "tags": ["truth"] },
+      { "id": "sodalite", "nameJa": "ソーダライト", "tags": ["analysis"] }
+    ],
+    "8": [
+      { "id": "onyx", "nameJa": "オニキス", "tags": ["power", "business"] },
+      { "id": "tourmaline", "nameJa": "トルマリン", "tags": ["manifestation"] },
+      { "id": "pyrite", "nameJa": "パイライト", "tags": ["abundance"] }
+    ],
+    "9": [
+      { "id": "opal", "nameJa": "オパール", "tags": ["compassion", "completion"] },
+      { "id": "charoite", "nameJa": "チャロアイト", "tags": ["service"] },
+      { "id": "fluorite", "nameJa": "フローライト", "tags": ["wisdom"] }
+    ],
+    "11": [
+      { "id": "clear-quartz", "nameJa": "クリスタル（水晶）", "tags": ["master", "channel"] },
+      { "id": "angelite", "nameJa": "エンジェライト", "tags": ["intuition"] }
+    ],
+    "22": [
+      { "id": "malachite", "nameJa": "マラカイト", "tags": ["master", "builder"] },
+      { "id": "azurite", "nameJa": "アズライト", "tags": ["vision"] }
+    ],
+    "33": [
+      { "id": "pink-opal", "nameJa": "ピンクオパール", "tags": ["master", "healing"] },
+      { "id": "morganite", "nameJa": "モルガナイト", "tags": ["love"] }
+    ]
+  },
+  "charmByNumber": {
+    "1": [
+      { "id": "charm-red-jasper", "nameJa": "レッドジャスパー（お守り）", "tags": ["ground"] }
+    ],
+    "2": [
+      { "id": "charm-howlite", "nameJa": "ハウライト（お守り）", "tags": ["calm"] }
+    ],
+    "3": [
+      { "id": "charm-carnelian", "nameJa": "カーネリアン（お守り）", "tags": ["drive"] }
+    ],
+    "4": [
+      { "id": "charm-hematite", "nameJa": "ヘマタイト（お守り）", "tags": ["anchor"] }
+    ],
+    "5": [
+      { "id": "charm-turquoise", "nameJa": "ターコイズ（お守り）", "tags": ["safety"] }
+    ],
+    "6": [
+      { "id": "charm-kunzite", "nameJa": "クンツァイト（お守り）", "tags": ["tenderness"] }
+    ],
+    "7": [
+      { "id": "charm-labradorite", "nameJa": "ラブラドライト（お守り）", "tags": ["mystery"] }
+    ],
+    "8": [
+      { "id": "charm-tigers-eye-s", "nameJa": "タイガーアイS（お守り）", "tags": ["focus"] }
+    ],
+    "9": [
+      { "id": "charm-amazonite", "nameJa": "アマゾナイト（お守り）", "tags": ["hope"] }
+    ],
+    "11": [{ "id": "charm-moonstone-s", "nameJa": "ムーンストーンS（お守り）", "tags": ["light"] }],
+    "22": [{ "id": "charm-jade-s", "nameJa": "ジェイドS（お守り）", "tags": ["build"] }],
+    "33": [{ "id": "charm-rose-s", "nameJa": "ローズクォーツS（お守り）", "tags": ["care"] }]
+  }
+}

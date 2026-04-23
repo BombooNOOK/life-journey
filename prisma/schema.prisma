@@ -1,0 +1,47 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+/// 注文（鑑定1件）。後から製本直送APIへ渡す想定で住所・連絡先を保持
+model Order {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  lastName       String
+  firstName      String
+  lastNameKana   String
+  firstNameKana  String
+  lastNameRoman  String
+  firstNameRoman String
+  fullNameDisplay     String
+  fullNameKanaDisplay String
+  fullNameRomanDisplay String
+
+  birthDate  String /// YYYY-MM-DD
+  birthYear  Int
+  birthMonth Int
+  birthDay   Int
+
+  postalCode String
+  address    String
+  phone      String
+  email      String
+
+  numerologyJson String
+  stonesJson     String
+  /// フォーム「今いちばん関心のあること」（石候補の同順位内の優先のみ）
+  stoneFocusTheme String @default("特に決まっていない")
+
+  reportPdfPath  String?
+
+  /// 旧Excel等との突合用。任意JSON（コア5項目の期待値など）
+  expectedNumerologyJson String?
+
+  status String @default("draft")
+}

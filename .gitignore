@@ -1,0 +1,50 @@
+# dependencies
+/node_modules
+/.pnp
+.pnp.*
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/versions
+
+# testing
+/coverage
+
+# next.js
+/.next/
+/out/
+
+# production
+/build
+
+# misc
+.DS_Store
+*.pem
+
+# debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# env files
+.env
+.env*.local
+
+# prisma
+/prisma/*.db
+/prisma/*.db-journal
+
+# generated review dump (scripts/dump-numerology-body-text.ts)
+/numerology-body-dump.txt
+/bridge-score-comments-dump.txt
+
+# typescript
+next-env.d.ts
+
+# ローカル生成のサンプルPDF（大容量・再生成可）
+/sample-booklet.pdf
+/sample-booklet-*-preview.pdf
+
+# ローカル Python venv
+/.venv/

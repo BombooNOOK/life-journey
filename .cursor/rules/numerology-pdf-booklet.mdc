@@ -1,0 +1,29 @@
+---
+description: 鑑定書PDF（react-pdf）のレイアウト共通ルールとラスタアセットの解像度基準
+globs: src/components/pdf/**/*
+alwaysApply: false
+---
+
+# 鑑定書 PDF（react-pdf）
+
+## レイアウトの共通方針（ライフパス・ディスティニー・ソウル等）
+
+- 本文は `PdfPageFrame`（`pageType="body"`）。ページ先頭ヘッダーは左寄せタイトル＋右へ伸びる横線。
+- 長文は `PdfLongFormBody` と `pdfLongFormSpacing.ts` の props。同一ブロックの続きページは `pdfLongFormProsePropsWithTallContinuation`；`break` 直後の別セクションでは `continuationPageTopGap={0}` など誤った続き余白を付けない。
+- 「◯◯ナンバーとは」は LP/ディスティニー/ソウル/パーソナリティ/バースデー/マチュリティ同様、全面1ページの画像コンポーネント（`LifePathGuidePage` 等）を使う。
+- **はじめに**（2P）は同じ全面画像だが **ページ番号を付けたい**ため、`PdfPageFrame` の **`fullBleedImageSrc`**（`introduction-page-1.png` / `introduction-page-2.png`）を使う。ヘッダーなし・フッターあり。
+- **表紙直後の中表紙（扉絵）**は `InsideCoverPage`・`inside-cover-page.png`・同じく `fullBleedImageSrc`。
+- コア本文1枚目のみ装飾背景：`fixed` + `render` で `subPageNumber === 1` のときだけ `Image`。パスは `pdfAssetPaths.ts`。2枚目以降は白地。
+- レンダー調整は `bodyStyle` / `bodyExpandWidth`（`PdfRenderConfig`）を `ReportDocument` から渡す。
+
+## ラスタ画像の解像度（滲み・モアレを避ける）
+
+- 最終出力は PDF だが、`<Image>` に埋め込むのは **PNG または JPEG**（ベクターPDFをそのまま Image に渡す前提にしない）。
+- **A5 全面（トリム想定）を紙に近い品質で出す場合**の目安：長辺 **約 1748px 以上**（300dpi 相当）。画面閲覧だけなら低くてもよいが、**大型ディスプレイ・製本**を想定するならこのクラスを推奨。
+- **現状リポジトリ内の PNG（目安）**
+  - **1753×2480 前後**（表紙・各ガイド・LP/ディスティニー/ソウル/パーソナリティ/バースデー/マチュリティ1枚目など、元PDFから `qlmanage -s 2480` 等で再ラスタ化したもの）：A5 長辺で **おおよそ印刷想定の解像度帯**。
+  - **596×842**（未使用の `spread-left.png` / `spread-right.png`、参照されていない `haikei-left.png` 等）：**控えめ**。`showBindingBackground` を有効にする場合や未使用ファイルを印刷に使う場合は差し替え検討。
+  - **721×1024**（`back-cover.png`）：裏表紙用。**現状 `showBindingBackground` 既定 false のため鑑定書には未使用**。有効化するなら高解像度版を。
+- **新規アセットや差し替えを追加したとき**：可能なら `sips -g pixelWidth -g pixelHeight` 等で画素数を確認し、上記より明らかに小さい場合は **ユーザーに滲みリスクを明示**する。
+- Quick Look 等の自動サムネだけで量産した PNG は、**デザイン側からの正式書き出し**に置き換えるとより安全。
+- **ローカル PNG を差し替えたのに PDF が更新されない**ときは、`@react-pdf/image` が同一パスをキャッシュしていることがある。`CoverPage` 等の `<Image cache={false} />` で対処済み。

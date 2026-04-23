@@ -1,0 +1,47 @@
+{
+  "name": "numerology-mvp",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev --hostname 127.0.0.1 --port 3000",
+    "dev:fresh": "node scripts/kill-port.mjs 3000 && rm -rf .next node_modules/.cache && next dev --hostname 127.0.0.1 --port 3000",
+    "build": "next build",
+    "start": "next start --hostname 127.0.0.1 --port 3000",
+    "lint": "next lint",
+    "db:generate": "prisma generate",
+    "db:push": "prisma db push",
+    "db:sync": "prisma db push && prisma generate",
+    "postinstall": "prisma generate && patch-package",
+    "test": "vitest run",
+    "verify:print": "npx tsx scripts/print-numerology.ts",
+    "dump:bodies": "npx tsx scripts/dump-numerology-body-text.ts",
+    "dump:bridge-comments": "npx tsx scripts/dump-bridge-score-comments.ts",
+    "build:stone-pdf-data": "node scripts/extractStonePdfText.mjs && node scripts/parseStonePdfV4.mjs"
+  },
+  "dependencies": {
+    "@fontsource/noto-sans-jp": "^5.2.5",
+    "@prisma/client": "^6.6.0",
+    "@react-pdf/renderer": "^4.3.0",
+    "next": "^15.2.0",
+    "pdf-lib": "^1.17.1",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "devDependencies": {
+    "@eslint/eslintrc": "^3.0.0",
+    "@tailwindcss/postcss": "^4.0.0",
+    "@types/node": "^22.0.0",
+    "@types/pdf-parse": "^1.1.5",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "eslint": "^9.0.0",
+    "eslint-config-next": "^15.2.0",
+    "patch-package": "^8.0.1",
+    "pdf-parse": "^1.1.1",
+    "prisma": "^6.6.0",
+    "tailwindcss": "^4.0.0",
+    "tsx": "^4.19.3",
+    "typescript": "^5.0.0",
+    "vitest": "^3.2.4"
+  }
+}

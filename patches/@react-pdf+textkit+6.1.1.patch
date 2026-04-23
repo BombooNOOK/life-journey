@@ -1,0 +1,14 @@
+diff --git a/node_modules/@react-pdf/textkit/lib/textkit.js b/node_modules/@react-pdf/textkit/lib/textkit.js
+index 675be20..1f2cc4d 100644
+--- a/node_modules/@react-pdf/textkit/lib/textkit.js
++++ b/node_modules/@react-pdf/textkit/lib/textkit.js
+@@ -2433,7 +2433,8 @@ const breakLines = (attributedString, nodes, breaks) => {
+             // @ts-expect-error penalty node will always preceed box or glue node
+             end = prevNode.end;
+             line = slice(start, end, attributedString);
+-            line = insertGlyph(line.string.length, HYPHEN, line);
++            // Japanese PDFs: disable auto-inserted trailing hyphen on penalty breaks.
++            // The hyphenation callback already decides split points; this avoids visible "-" artifacts.
+         }
+         else {
+             end = node.end;
