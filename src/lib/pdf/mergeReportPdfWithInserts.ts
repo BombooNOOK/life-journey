@@ -16,7 +16,15 @@ async function appendInsertPdfScaledOntoWhitePage(
   merged: PDFDocument,
   pdfPath: string,
 ): Promise<void> {
-  const bytes = new Uint8Array(await readFile(pdfPath));
+  let bytes: Uint8Array;
+  try {
+    bytes = new Uint8Array(await readFile(pdfPath));
+  } catch (err) {
+    // 例: Vercel の実行環境に挿入PDFが同梱されていない場合
+    const message = err instanceof Error ? err.message : String(err);
+    if (message.includes("ENOENT")) return;
+    throw err;
+  }
   if (bytes.length === 0) return;
 
   const embeddedPages = await merged.embedPdf(bytes);

@@ -29,7 +29,15 @@ async function renderFullReportWithChapterPdfInserts(
     return doc.getPageCount();
   };
   const countPdfPagesFromPath = async (pdfPath: string): Promise<number> => {
-    const bytes = await readFile(pdfPath);
+    let bytes: Buffer;
+    try {
+      const b = await readFile(pdfPath);
+      bytes = b;
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      if (message.includes("ENOENT")) return 0;
+      throw err;
+    }
     const doc = await PDFDocument.load(bytes);
     return doc.getPageCount();
   };
