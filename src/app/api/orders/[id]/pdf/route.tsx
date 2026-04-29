@@ -13,6 +13,7 @@ import {
 import type { BodyTuneStep, FocusPage, PdfRenderConfig } from "@/components/pdf/pdfRenderConfig";
 import { setPdfPageNumberOffset } from "@/components/pdf/pdfPageNumberOffset";
 import { ensureJapaneseFont } from "@/components/pdf/registerFonts";
+import { getViewerEmailFromCookie, normalizeEmail } from "@/lib/auth/viewer";
 import { mergeReportPdfWithChapterInserts } from "@/lib/pdf/mergeReportPdfWithInserts";
 import { prisma } from "@/lib/db";
 import type { OrderPayload } from "@/lib/order/types";
@@ -91,9 +92,16 @@ function parseBodyTune(v: string | null): BodyTuneStep {
 
 export async function GET(req: Request, { params }: RouteParams) {
   const { id } = await params;
+  const viewerEmail = await getViewerEmailFromCookie();
+  if (!viewerEmail) {
+    return NextResponse.json({ error: "ログインが必要です" }, { status: 401 });
+  }
   const row = await prisma.order.findUnique({ where: { id } });
   if (!row) {
     return NextResponse.json({ error: "注文が見つかりません" }, { status: 404 });
+  }
+  if (normalizeEmail(row.email) !== viewerEmail) {
+    return NextResponse.json({ error: "この注文にはアクセスできません" }, { status: 403 });
   }
 
   const url = new URL(req.url);
@@ -125,7 +133,7 @@ export async function GET(req: Request, { params }: RouteParams) {
   const u8: Uint8Array = Buffer.isBuffer(buffer) ? Uint8Array.from(buffer) : buffer;
   const copy = new Uint8Array(u8.byteLength);
   copy.set(u8);
-  const body = new Blob([copy.buffer], { type: "application/pdf" });
+  const body = new Blob([copy], { type: "application/pdf" });
 
   const filename =
     bodyTune === "normal" && focusPage === "all"

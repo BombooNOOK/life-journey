@@ -1,4 +1,3 @@
-import { Fragment } from "react";
 import { View } from "@react-pdf/renderer";
 
 import { PdfLongFormBody } from "../PdfLongFormBody";
@@ -46,45 +45,51 @@ export function LifePathPage({ lifePath, bodyStyle, bodyExpandWidth }: Props) {
     );
   }
 
-  return (
-    <PdfPageFrame
-      title={headerTitle}
-      pageType="body"
-      firstPageBodyBackgroundSrc={PDF_LIFE_PATH_FIRST_PAGE_PATH}
-      continuationBodyBackgroundSrc={PDF_CORE_RESULT_CONTINUATION_BACKGROUND_PATH}
-    >
-      <View style={pdfStyles.lifePathFirstPageContent}>
-        <Text style={pdfStyles.resultTitle}>{breakTitleAtCommaForPdf(article.title)}</Text>
-        <Text style={pdfStyles.lifePathSectionSubtitle}>基本</Text>
-      </View>
-      <PdfLongFormBody
-        text={article.sections.basic}
-        readableSentenceWrap
-        {...pdfLongFormProsePropsWithTallContinuation}
-        bodyStyle={bodyStyle}
-        expandWidth={bodyExpandWidth}
-      />
+  const sectionBlocks = lifePathSectionOrder.map((sectionKey) => {
+    const isBasic = sectionKey === "basic";
+    const removeContinuationBackground =
+      sectionKey === "basic" || sectionKey === "work" || sectionKey === "relationship";
+    const titleNode = isBasic ? null : (
+      <Text style={pdfStyles.lifePathSectionTitle}>{SECTION_LABELS[sectionKey]}</Text>
+    );
 
-      {lifePathSectionOrder
-        .filter((sectionKey) => sectionKey !== "basic")
-        .map((sectionKey) => (
-          <Fragment key={sectionKey}>
-            <Text break style={{ fontSize: 0, lineHeight: 1 }}>
-              {" "}
-            </Text>
-            <View style={pdfStyles.lifePathSectionBlock}>
-              <Text style={pdfStyles.lifePathSectionTitle}>{SECTION_LABELS[sectionKey]}</Text>
-              <PdfLongFormBody
-                text={article.sections[sectionKey]}
-                readableSentenceWrap
-                {...pdfLongFormProseProps}
-                continuationPageTopGap={0}
-                bodyStyle={bodyStyle}
-                expandWidth={bodyExpandWidth}
-              />
-            </View>
-          </Fragment>
-        ))}
-    </PdfPageFrame>
+    return (
+      <PdfPageFrame
+        key={sectionKey}
+        title={headerTitle}
+        pageType="body"
+        continuationBodyBackgroundSrc={
+          removeContinuationBackground ? undefined : PDF_CORE_RESULT_CONTINUATION_BACKGROUND_PATH
+        }
+      >
+        <View style={pdfStyles.lifePathSectionBlock}>
+          {titleNode}
+          <PdfLongFormBody
+            text={article.sections[sectionKey]}
+            preserveManuscriptLineBreaks
+            {...(isBasic ? pdfLongFormProsePropsWithTallContinuation : pdfLongFormProseProps)}
+            {...(isBasic ? {} : { continuationPageTopGap: 0 })}
+            bodyStyle={bodyStyle}
+            expandWidth={bodyExpandWidth}
+          />
+        </View>
+      </PdfPageFrame>
+    );
+  });
+
+  return (
+    <>
+      <PdfPageFrame
+        title={headerTitle}
+        pageType="body"
+        firstPageBodyBackgroundSrc={PDF_LIFE_PATH_FIRST_PAGE_PATH}
+      >
+        {/* 1 枚目: 全面背景＋メイン見出しのみ。本文は次ページ以降に分割表示。 */}
+        <View style={pdfStyles.lifePathNumberFirstPageHero}>
+          <Text style={pdfStyles.resultTitle}>{breakTitleAtCommaForPdf(article.title)}</Text>
+        </View>
+      </PdfPageFrame>
+      {sectionBlocks}
+    </>
   );
 }

@@ -1,0 +1,61 @@
+import { type FirebaseApp, getApps, initializeApp } from "firebase/app";
+import { browserLocalPersistence, getAuth, setPersistence, type Auth } from "firebase/auth";
+
+function readConfig() {
+  const apiKey = process.env.NEXT_PUBLIC_FIREBASE_API_KEY;
+  const authDomain = process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN;
+  const projectId = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
+  const storageBucket = process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET;
+  const messagingSenderId = process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID;
+  const appId = process.env.NEXT_PUBLIC_FIREBASE_APP_ID;
+
+  if (
+    !apiKey ||
+    !authDomain ||
+    !projectId ||
+    !storageBucket ||
+    !messagingSenderId ||
+    !appId
+  ) {
+    throw new Error(
+      "Firebase の環境変数が不足しています。.env.local に NEXT_PUBLIC_FIREBASE_* を設定してください。",
+    );
+  }
+
+  return {
+    apiKey,
+    authDomain,
+    projectId,
+    storageBucket,
+    messagingSenderId,
+    appId,
+    measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID,
+  };
+}
+
+let app: FirebaseApp | null = null;
+let persistenceInitialized = false;
+
+/** ブラウザ専用。Server Component からは呼ばないでください。 */
+export function getFirebaseApp(): FirebaseApp {
+  if (typeof window === "undefined") {
+    throw new Error("getFirebaseApp はクライアント（ブラウザ）でのみ使えます。");
+  }
+  if (!app) {
+    const existing = getApps()[0];
+    app = existing ?? initializeApp(readConfig());
+  }
+  return app;
+}
+
+export function getFirebaseAuth(): Auth {
+  const auth = getAuth(getFirebaseApp());
+  auth.languageCode = "ja";
+  if (!persistenceInitialized) {
+    persistenceInitialized = true;
+    void setPersistence(auth, browserLocalPersistence).catch(() => {
+      // 失敗しても既定の永続化設定で継続する
+    });
+  }
+  return auth;
+}

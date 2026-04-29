@@ -1,6 +1,11 @@
 import Link from "next/link";
 
 const links: { href: string; label: string; note?: string }[] = [
+  {
+    href: "/preview/sample-booklet",
+    label: "サンプル冊子 PDF（ブラウザ・ワンクリック）",
+    note: "npm run dev 中のみ。初回は 1〜2 分かかることがあります",
+  },
   { href: "/verify", label: "数値の突合（コア5・ローマ字）", note: "旧鑑定書・Excel との照合用" },
   { href: "/preview/all-bodies", label: "鑑定本文まとめ（全データ・1ページ）", note: "LP〜ブリッジ・PY/PM/PD まで一括" },
   {
@@ -9,6 +14,18 @@ const links: { href: string; label: string; note?: string }[] = [
     note: "章ごとの参照表＋ pairKey ごとの scoreLabel（短文のみ）",
   },
   { href: "/preview/life-path-rewrite", label: "ライフパス（章ごとテキスト）" },
+  { href: "/preview/destiny-pdf?destiny=1", label: "ディスティニー PDF 単体（D1〜D33）" },
+  { href: "/preview/soul-pdf?soul=1", label: "ソウル PDF 単体（S1〜S33）", note: "npm run dev 中のみ" },
+  {
+    href: "/preview/personality-pdf?personality=1",
+    label: "パーソナリティ PDF 単体（P1〜P33）",
+    note: "npm run dev 中のみ",
+  },
+  {
+    href: "/preview/birthday-pdf?birthday=1",
+    label: "バースデー PDF 単体（B1〜B22）",
+    note: "npm run dev 中のみ",
+  },
   { href: "/preview/destiny-rewrite", label: "ディスティニー" },
   { href: "/preview/soul-rewrite", label: "ソウル" },
   { href: "/preview/personality-rewrite", label: "パーソナリティ" },

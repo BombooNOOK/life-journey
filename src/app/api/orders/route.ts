@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 
+import { getViewerEmailFromCookie } from "@/lib/auth/viewer";
 import { prisma } from "@/lib/db";
 import { buildOrderPayload } from "@/lib/order/buildSnapshot";
 import { toIsoDateString } from "@/lib/order/birthDate";
@@ -31,6 +32,17 @@ export async function GET() {
 }
 
 export async function POST(req: Request) {
+  const viewerEmail = await getViewerEmailFromCookie();
+  if (!viewerEmail) {
+    return NextResponse.json(
+      {
+        error: "ログイン情報を確認できませんでした。いったんログアウトして再ログインしてください。",
+        code: "AUTH_REQUIRED",
+      },
+      { status: 401 },
+    );
+  }
+
   let json: unknown;
   try {
     json = await req.json();
@@ -102,7 +114,7 @@ export async function POST(req: Request) {
     postalCode: "",
     address: "",
     phone: "",
-    email: "",
+    email: viewerEmail,
     stoneFocusTheme: "特に決まっていない",
   };
 

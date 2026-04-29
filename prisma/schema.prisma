@@ -3,7 +3,7 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
@@ -44,4 +44,37 @@ model Order {
   expectedNumerologyJson String?
 
   status String @default("draft")
+}
+
+model JournalEntry {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  email         String
+  content       String
+  mood          String @default("calm")
+  activity      String @default("record_anyway")
+  companionType String @default("owl")
+  designTheme   String @default("cute")
+  photoDataUrl  String?
+  generatedComment String?
+  includeInBook Boolean @default(true)
+}
+
+/// 本棚の「年別日記」ごとの表示名・表紙・製本期間（その西暦年内の月レンジ）
+model DiaryBookshelfBook {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  email String
+  year  Int
+
+  displayTitle     String?
+  coverTheme       String @default("simple")
+  periodStartMonth Int    @default(1)
+  periodEndMonth   Int    @default(12)
+
+  @@unique([email, year])
 }

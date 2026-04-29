@@ -6,10 +6,7 @@ import { PdfPageFrame } from "../PdfPageFrame";
 
 import { getDestinyArticle } from "@/lib/numerology/destinyData";
 import { breakTitleAtCommaForPdf } from "@/lib/pdf/breakTitleAtComma";
-import {
-  PDF_DESTINY_FIRST_PAGE_PATH,
-  PDF_CORE_RESULT_CONTINUATION_BACKGROUND_PATH,
-} from "../pdfAssetPaths";
+import { PDF_DESTINY_FIRST_PAGE_PATH } from "../pdfAssetPaths";
 
 import { pdfLongFormProsePropsWithTallContinuation } from "../pdfLongFormSpacing";
 import type { BodyRenderOverrides } from "../pdfRenderConfig";
@@ -28,7 +25,6 @@ export function DestinyPage({ destiny, bodyStyle, bodyExpandWidth }: Props) {
       title={headerTitle}
       pageType="body"
       firstPageBodyBackgroundSrc={PDF_DESTINY_FIRST_PAGE_PATH}
-      continuationBodyBackgroundSrc={PDF_CORE_RESULT_CONTINUATION_BACKGROUND_PATH}
     >
         <Text style={pdfStyles.muted}>ディスティニー本文データが未登録のため、このページは簡易表示です。</Text>
       </PdfPageFrame>
@@ -36,22 +32,27 @@ export function DestinyPage({ destiny, bodyStyle, bodyExpandWidth }: Props) {
   }
 
   return (
-    <PdfPageFrame
-      title={headerTitle}
-      pageType="body"
-      firstPageBodyBackgroundSrc={PDF_DESTINY_FIRST_PAGE_PATH}
-      continuationBodyBackgroundSrc={PDF_CORE_RESULT_CONTINUATION_BACKGROUND_PATH}
-    >
-      <View style={pdfStyles.lifePathFirstPageContent}>
-        <Text style={pdfStyles.resultTitle}>{breakTitleAtCommaForPdf(article.title)}</Text>
-      </View>
-      <PdfLongFormBody
-        text={article.article}
-        readableSentenceWrap
-        {...pdfLongFormProsePropsWithTallContinuation}
-        bodyStyle={bodyStyle}
-        expandWidth={bodyExpandWidth}
-      />
-    </PdfPageFrame>
+    <>
+      <PdfPageFrame
+        title={headerTitle}
+        pageType="body"
+        firstPageBodyBackgroundSrc={PDF_DESTINY_FIRST_PAGE_PATH}
+      >
+        <View style={pdfStyles.destinyNumberFirstPageHero}>
+          <Text style={pdfStyles.resultTitle}>{breakTitleAtCommaForPdf(article.title)}</Text>
+        </View>
+      </PdfPageFrame>
+      <PdfPageFrame title={headerTitle} pageType="body">
+        <View style={pdfStyles.lifePathSectionBlock}>
+          <PdfLongFormBody
+            text={article.article}
+            readableSentenceWrap
+            {...pdfLongFormProsePropsWithTallContinuation}
+            bodyStyle={bodyStyle}
+            expandWidth={bodyExpandWidth}
+          />
+        </View>
+      </PdfPageFrame>
+    </>
   );
 }

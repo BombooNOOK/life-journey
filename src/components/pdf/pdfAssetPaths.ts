@@ -10,11 +10,11 @@
  * - ディスティニー本文1枚目: `destiny-first-page.png`（`DestinyPage`・ライフパスと同様に1枚目のみ全面）
  * - ソウル本文1枚目: `soul-first-page.png`（`SoulPage`・1枚目のみ全面）
  * - 「パーソナリティナンバーとは」: `personality-guide.png`（`PersonalityGuidePage`・全面）
- * - パーソナリティ本文1枚目: `personality-first-page.png`（`PersonalityPage`・1枚目のみ全面）
+ * - パーソナリティ本文1枚目: `personality-first-page.png`（`PersonalityPage`・1P 全面＋2P 以降に本文）
  * - 「バースデーナンバーとは」: `birthday-guide.png`（`BirthdayGuidePage`・全面）
  * - バースデー本文1枚目: `birthday-first-page.png`（`BirthdayPage`・1枚目のみ全面）
  * - 「マチュリティナンバーとは」: `maturity-guide.png`（`MaturityGuidePage`・全面）
- * - マチュリティ本文1枚目: `maturity-first-page.png`（`MaturityPage`・1枚目のみ全面）
+ * - マチュリティ本文1枚目: `maturity-first-page.png`（`MaturityPage`・1枚目のみ全面・元 `haikei_m2.pdf`）
  * - パーソナルイヤー導入2P: `personal-year-message.png` / `personal-year-guide.png`
  *   （`PersonalYearIntroPages`）
  * - 見開き本文: 左ページ用 / 右ページ用（3P以降の奇偶。2Pは本文1P＝右用）
@@ -48,37 +48,56 @@ export const PDF_SPREAD_RIGHT_PATH = `${process.cwd()}/src/components/pdf/assets
 /** 最終ページ・裏表紙 */
 export const PDF_BACK_COVER_PATH = `${process.cwd()}/src/components/pdf/assets/back-cover.png`;
 
-/** ライフパス1枚目のみ（タイトル帯・装飾入り。2枚目以降は白地） */
+/**
+ * ライフパス1枚目のみ（全面ラスタ）。デザイン元は `haikei-lp2.pdf`。
+ * PNG を差し替えたあと、帯ヘッダーが隠れる場合は `npm run fix:lp-bg-header`（上端の明地を透明化）。
+ * 見出し縦位置は `pdfStyles.lifePathNumberFirstPageHero`。
+ */
 export const PDF_LIFE_PATH_FIRST_PAGE_PATH = `${process.cwd()}/src/components/pdf/assets/haikei-lp.png`;
 
 /** 「ディスティニーナンバーとは」ガイド1ページ（全面画像） */
 export const PDF_DESTINY_GUIDE_PAGE_PATH = `${process.cwd()}/src/components/pdf/assets/destiny-guide.png`;
 
-/** ディスティニー本文1枚目のみ（装飾入り背景。2枚目以降は白地） */
+/**
+ * ディスティニー本文1枚目のみ（装飾入り背景。2枚目以降は白地）。デザイン元は `haikei_d2.pdf`。
+ * PNG 差し替え後に帯ヘッダーが隠れる場合は `npm run fix:destiny-bg-header`。見出し位置は `destinyNumberFirstPageHero`。
+ */
 export const PDF_DESTINY_FIRST_PAGE_PATH = `${process.cwd()}/src/components/pdf/assets/destiny-first-page.png`;
 
 /** 「ソウルナンバーとは」ガイド1ページ（全面画像） */
 export const PDF_SOUL_GUIDE_PAGE_PATH = `${process.cwd()}/src/components/pdf/assets/soul-guide.png`;
 
-/** ソウル本文1枚目のみ（装飾入り背景。2枚目以降は白地） */
+/**
+ * ソウル本文1枚目のみ（装飾入り背景。2枚目以降は白地）。`SoulPage` はディスティニー同様、1P ヒーロー＋2P 以降に本文。
+ * デザイン元は `haikei_s2.pdf`。PNG 差し替え後は `npm run fix:soul-bg-header`。見出し位置は `soulNumberFirstPageHero`。
+ */
 export const PDF_SOUL_FIRST_PAGE_PATH = `${process.cwd()}/src/components/pdf/assets/soul-first-page.png`;
 
 /** 「パーソナリティナンバーとは」ガイド1ページ（全面画像） */
 export const PDF_PERSONALITY_GUIDE_PAGE_PATH = `${process.cwd()}/src/components/pdf/assets/personality-guide.png`;
 
-/** パーソナリティ本文1枚目のみ（装飾入り背景。2枚目以降は白地） */
+/**
+ * パーソナリティ本文1枚目のみ（装飾入り背景。2枚目以降は白地）。`PersonalityPage` はディスティニー同様、1P ヒーロー＋2P 以降に本文。
+ * デザイン元は `haikei_p2.pdf`。PNG 差し替え後は `npm run fix:personality-bg-header`。見出し位置は `personalityNumberFirstPageHero`。
+ */
 export const PDF_PERSONALITY_FIRST_PAGE_PATH = `${process.cwd()}/src/components/pdf/assets/personality-first-page.png`;
 
 /** 「バースデーナンバーとは」ガイド1ページ（全面画像） */
 export const PDF_BIRTHDAY_GUIDE_PAGE_PATH = `${process.cwd()}/src/components/pdf/assets/birthday-guide.png`;
 
-/** バースデー本文1枚目のみ（装飾入り背景。2枚目以降は白地） */
+/**
+ * バースデー本文1枚目のみ（装飾入り背景。2枚目以降は白地）。デザイン元は `haikei_b2.pdf`。
+ * `BirthdayPage` は 1P で中見出し＋「テーマ」本文、2P 以降に結果本文を配置。PNG 差し替え後は `npm run fix:birthday-bg-header`。
+ */
 export const PDF_BIRTHDAY_FIRST_PAGE_PATH = `${process.cwd()}/src/components/pdf/assets/birthday-first-page.png`;
 
 /** 「マチュリティナンバーとは」ガイド1ページ（全面画像） */
 export const PDF_MATURITY_GUIDE_PAGE_PATH = `${process.cwd()}/src/components/pdf/assets/maturity-guide.png`;
 
-/** マチュリティ本文1枚目のみ（装飾入り背景。2枚目以降は白地） */
+/**
+ * マチュリティ本文1枚目のみ（装飾入り背景。2枚目以降は白地）。デザイン元は `haikei_m2.pdf`。
+ * PNG 差し替え後は `npm run fix:maturity-bg-header`。見出し位置は `maturityNumberFirstPageHero`。
+ */
 export const PDF_MATURITY_FIRST_PAGE_PATH = `${process.cwd()}/src/components/pdf/assets/maturity-first-page.png`;
 
 export const PDF_CORE_RESULT_CONTINUATION_BACKGROUND_PATH = `${process.cwd()}/src/components/pdf/assets/haikei-kekka2.png`;
@@ -141,6 +160,5 @@ export const PDF_CHAPTER_INSERT_BEFORE_3_PATH = `${process.cwd()}/src/components
  */
 export const PDF_CHAPTER_INSERT_BEFORE_4_PATH = `${process.cwd()}/src/components/pdf/assets/chapter-insert-before-4.pdf`;
 
-/** 冊子の最後に挿入する裏表紙PDF（結合専用）。 */
-export const PDF_FINAL_BACK_COVER_INSERT_PATH =
-  "/Users/kimurarisa/Library/Application Support/Cursor/User/workspaceStorage/303db09655e0a5105bf9ecbcdc76b567/pdfs/aba62335-f90e-4624-b619-12ca79a5d7cc/ura.pdf";
+/** 冊子の最後に挿入する裏表紙PDF（結合専用・元 `ura.pdf`）。リポジトリ内パスで参照する。 */
+export const PDF_FINAL_BACK_COVER_INSERT_PATH = `${process.cwd()}/src/components/pdf/assets/final-back-cover-insert.pdf`;

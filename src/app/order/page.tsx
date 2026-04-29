@@ -210,6 +210,9 @@ export default function OrderPage() {
         <p className="mt-1 text-sm text-stone-600">
           お名前・ふりがな・生年月日を入力すると、無料の鑑定結果へ進みます。
         </p>
+        <p className="mt-1 text-xs text-stone-500">
+          保存時の連絡先メールは、いまログインしているアカウントのメールが自動で使われます。
+        </p>
       </div>
 
       {step === 1 ? (

@@ -62,7 +62,14 @@ export async function mergeReportPdfWithChapterInserts(
   await appendInsertPdfScaledOntoWhitePage(merged, insertBeforeChapter4PdfPath);
   await appendPdfBytes(partFromChapter4Onward);
   if (finalBackCoverInsertPdfPath) {
-    await appendInsertPdfScaledOntoWhitePage(merged, finalBackCoverInsertPdfPath);
+    try {
+      await appendInsertPdfScaledOntoWhitePage(merged, finalBackCoverInsertPdfPath);
+    } catch (err) {
+      console.error(
+        "[mergeReportPdfWithChapterInserts] 裏表紙の挿入をスキップしました（ファイルが無いか破損しています）:",
+        err,
+      );
+    }
   }
 
   return merged.save();

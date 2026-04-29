@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import { getViewerEmailFromCookie, normalizeEmail } from "@/lib/auth/viewer";
 import { prisma } from "@/lib/db";
 import { getPersonalDayOneLineMessageByBirthDate } from "@/lib/numerology/personalDayMessage";
 import { personalYearNumber, personalMonthNumber, personalDayNumber } from "@/lib/numerology/personalYearMonth";
@@ -26,8 +27,11 @@ const ACTION_HINTS = [
 
 export default async function TodayHintPage({ params }: Props) {
   const { id } = await params;
+  const viewerEmail = await getViewerEmailFromCookie();
+  if (!viewerEmail) notFound();
   const order = await prisma.order.findUnique({ where: { id } });
   if (!order) notFound();
+  if (normalizeEmail(order.email) !== viewerEmail) notFound();
 
   const today = new Date();
   const py = personalYearNumber(order.birthMonth, order.birthDay, today.getFullYear());

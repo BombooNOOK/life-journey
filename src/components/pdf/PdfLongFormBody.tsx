@@ -41,6 +41,17 @@ export function splitBodyIntoMajorBlocksAndSentenceLines(raw: string): string[][
   });
 }
 
+export type ManuscriptLineNode = { kind: "text"; content: string } | { kind: "blank" };
+
+/**
+ * 原稿の改行・空行をそのまま保持する（単独改行を空白に潰さない）。
+ * `split('\n')` で得た空要素＝空行。
+ */
+export function splitBodyIntoManuscriptLineNodes(raw: string): ManuscriptLineNode[] {
+  const t = raw.replace(/\r\n/g, "\n");
+  return t.split("\n").map((segment) => (segment === "" ? { kind: "blank" as const } : { kind: "text" as const, content: segment }));
+}
+
 function splitSentenceWithReadableWrap(sentence: string, maxLineLen: number, minHeadLen: number): string[] {
   const pickNaturalBreakIndex = (text: string, min: number, max: number): number => {
     const markers = [
@@ -141,9 +152,13 @@ type Props = {
   expandWidth?: number;
   /** 「。」で必ず区切り、長文のみ自然な位置（主に「、」）で追加改行 */
   readableSentenceWrap?: boolean;
+  /** true のときは readableSentenceWrap を無視し、原稿の改行・空行をそのまま描画する */
+  preserveManuscriptLineBreaks?: boolean;
 };
 
 const DEFAULT_SENTENCE_LINE_GAP = 3;
+/** preserve 時の空行相当の高さ（sectionBody 10pt × lineHeight 1.9 に近い） */
+const MANUSCRIPT_BLANK_LINE_HEIGHT = 19;
 
 export function PdfLongFormBody({
   text,
@@ -156,7 +171,59 @@ export function PdfLongFormBody({
   bodyStyle,
   expandWidth = 2,
   readableSentenceWrap = false,
+  preserveManuscriptLineBreaks = false,
 }: Props) {
+  if (preserveManuscriptLineBreaks) {
+    const nodes = splitBodyIntoManuscriptLineNodes(text);
+    const hasRenderable = nodes.some((n) => n.kind === "text");
+    if (!hasRenderable) return null;
+
+    const continuationSpacer =
+      continuationPageTopGap > 0 ? (
+        <View
+          render={(props: { subPageNumber?: number }) => {
+            const sn = props.subPageNumber ?? 1;
+            return <View style={{ height: sn > 1 ? continuationPageTopGap : 0 }} />;
+          }}
+        />
+      ) : null;
+
+    let prev: "start" | "text" | "blank" = "start";
+
+    return (
+      <View style={{ marginTop, marginHorizontal: expandWidth > 0 ? -expandWidth : 0 }}>
+        {continuationSpacer}
+        {nodes.map((node, i) => {
+          if (node.kind === "blank") {
+            prev = "blank";
+            return <View key={i} style={{ height: MANUSCRIPT_BLANK_LINE_HEIGHT }} />;
+          }
+          const marginTopForLine =
+            prev === "start"
+              ? firstParagraphMarginTop
+              : prev === "blank"
+                ? paragraphGap
+                : sentenceLineGap;
+          prev = "text";
+          return (
+            <Text
+              key={i}
+              style={[
+                pdfStyles.sectionBody,
+                defaultJapaneseBodyFont,
+                leftAlignedBody,
+                ...(bodyStyle == null ? [] : Array.isArray(bodyStyle) ? bodyStyle : [bodyStyle]),
+                { marginTop: marginTopForLine },
+              ]}
+            >
+              {node.content}
+            </Text>
+          );
+        })}
+      </View>
+    );
+  }
+
   const majorBlocks = readableSentenceWrap
     ? splitBodyIntoReadableSentenceLines(text)
     : splitBodyIntoMajorBlocksAndSentenceLines(text);

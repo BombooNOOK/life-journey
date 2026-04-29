@@ -13,11 +13,11 @@ describe("getMaturityArticle", () => {
   it("11 と 22 も参照できる", () => {
     expect(getMaturityArticle(11)?.title).toContain("時を越え");
     expect(getMaturityArticle(22)?.title).toContain("理想");
+    expect(getMaturityArticle(33)?.title).toContain("無条件のやさしさ");
   });
 
   it("未登録・null は null", () => {
     expect(getMaturityArticle(10)).toBeNull();
-    expect(getMaturityArticle(33)).toBeNull();
     expect(getMaturityArticle(null)).toBeNull();
     expect(getMaturityArticle(undefined)).toBeNull();
   });

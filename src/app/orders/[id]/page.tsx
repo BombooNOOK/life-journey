@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import { getViewerEmailFromCookie, normalizeEmail } from "@/lib/auth/viewer";
 import { prisma } from "@/lib/db";
 import { numerologyWithRefreshedLifePath } from "@/lib/order/numerologyDisplay";
 import { personalYearCycleEntry } from "@/lib/numerology/data/personalYearCycleData";
@@ -42,6 +43,8 @@ const CORE_NUMBER_COPY: Record<string, { mini: string; catch: string }> = {
 
 export default async function OrderDetailPage({ params }: Props) {
   const { id } = await params;
+  const viewerEmail = await getViewerEmailFromCookie();
+  if (!viewerEmail) notFound();
 
   let order: Awaited<ReturnType<typeof prisma.order.findUnique>>;
   try {
@@ -60,6 +63,7 @@ export default async function OrderDetailPage({ params }: Props) {
   }
 
   if (!order) notFound();
+  if (normalizeEmail(order.email) !== viewerEmail) notFound();
 
   const numerology = numerologyWithRefreshedLifePath(order.numerologyJson, order.birthDate, {
     birthYear: order.birthYear,

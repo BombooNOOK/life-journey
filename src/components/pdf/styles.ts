@@ -1,5 +1,12 @@
 import { StyleSheet } from "@react-pdf/renderer";
 
+/** コア本文1枚目ヒーロー resultTitle の上余白（上端から約 2/3）。LP・ディスティニー等で共通。 */
+export const CORE_NUMBER_FIRST_PAGE_HERO_MARGIN_TOP = 350;
+
+/** バースデー1枚目のみ。全体を約2行分だけ上げる（他コアの `CORE_NUMBER_FIRST_PAGE_HERO_MARGIN_TOP` より小さい）。 */
+export const BIRTHDAY_NUMBER_FIRST_PAGE_HERO_MARGIN_TOP =
+  CORE_NUMBER_FIRST_PAGE_HERO_MARGIN_TOP - 44;
+
 export const pdfStyles = StyleSheet.create({
   page: {
     fontFamily: "NotoSansJP",
@@ -188,13 +195,52 @@ export const pdfStyles = StyleSheet.create({
   },
   /** ライフパス2枚目以降：枠線なし、余白でセクションを区切る */
   lifePathSectionBlock: {
-    marginTop: 14,
+    marginTop: -4,
     paddingTop: 6,
     paddingBottom: 4,
   },
-  /** ライフパス1枚目：LP番号・タイトル開始位置（下げると基本以降も連動して下がる） */
+  /**
+   * コア本文1枚目のヒーロー開始位置（ディスティニー・ソウル等と共通）。
+   * ライフパスだけ別調整する場合は `lifePathNumberFirstPageHero` を使う。
+   */
   lifePathFirstPageContent: {
     marginTop: 220,
+  },
+  /**
+   * ライフパス・ナンバー本文1枚目のみ。全面背景は `assets/haikei-lp.png`。
+   * 上端から約 2/3に中見出し。`CORE_NUMBER_FIRST_PAGE_HERO_MARGIN_TOP` で他コアと揃える。
+   */
+  lifePathNumberFirstPageHero: {
+    marginTop: CORE_NUMBER_FIRST_PAGE_HERO_MARGIN_TOP,
+  },
+  /** ディスティニー本文1枚目ヒーロー。全面背景は `assets/destiny-first-page.png`。 */
+  destinyNumberFirstPageHero: {
+    marginTop: CORE_NUMBER_FIRST_PAGE_HERO_MARGIN_TOP,
+  },
+  /** ソウル本文1枚目ヒーロー。全面背景は `assets/soul-first-page.png`。 */
+  soulNumberFirstPageHero: {
+    marginTop: CORE_NUMBER_FIRST_PAGE_HERO_MARGIN_TOP,
+  },
+  /** パーソナリティ本文1枚目ヒーロー。全面背景は `assets/personality-first-page.png`。 */
+  personalityNumberFirstPageHero: {
+    marginTop: CORE_NUMBER_FIRST_PAGE_HERO_MARGIN_TOP,
+  },
+  /** マチュリティ本文1枚目ヒーロー。全面背景は `assets/maturity-first-page.png`。 */
+  maturityNumberFirstPageHero: {
+    marginTop: CORE_NUMBER_FIRST_PAGE_HERO_MARGIN_TOP,
+  },
+  /**
+   * バースデー本文1枚目ヒーロー（中見出し＋テーマ本文をまとめる）。
+   * 上余白は `BIRTHDAY_NUMBER_FIRST_PAGE_HERO_MARGIN_TOP`（他コアよりやや上）。
+   */
+  birthdayNumberFirstPageHero: {
+    marginTop: BIRTHDAY_NUMBER_FIRST_PAGE_HERO_MARGIN_TOP,
+  },
+  /** 「テーマ」ラベル削除後も resultTitle とテーマ本文の間隔を eyebrow 相当で維持するスペーサー */
+  birthdayThemeEyebrowSpacer: {
+    marginTop: 10,
+    marginBottom: 4,
+    height: 12,
   },
   sectionTitle: {
     fontSize: 12,
