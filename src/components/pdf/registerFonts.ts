@@ -1,5 +1,6 @@
 import path from "node:path";
 import fs from "node:fs";
+import { createRequire } from "node:module";
 
 import { Font } from "@react-pdf/renderer";
 
@@ -15,9 +16,16 @@ function pickExistingPath(candidates: string[]): string {
   throw new Error(`Font file not found. checked: ${candidates.join(", ")}`);
 }
 
-const notoJpDir = path.join(process.cwd(), "node_modules/@fontsource/noto-sans-jp/files");
+function resolveNotoJpFilesDir(): string {
+  // Vercel の実行環境では `process.cwd()` が想定とズレることがあるため、
+  // package.json の場所から確実にディレクトリを割り出します。
+  const require = createRequire(import.meta.url);
+  const pkgJsonPath = require.resolve("@fontsource/noto-sans-jp/package.json");
+  return path.join(path.dirname(pkgJsonPath), "files");
+}
 
 function pickByFilenameRegex(filenameRegex: RegExp, preferExt: Array<"woff2" | "woff">): string {
+  const notoJpDir = resolveNotoJpFilesDir();
   if (!fs.existsSync(notoJpDir)) {
     throw new Error(`Font directory not found: ${notoJpDir}`);
   }

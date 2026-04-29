@@ -122,13 +122,22 @@ export async function GET(req: Request, { params }: RouteParams) {
           bodyExpandWidth: bodyTune === "step3" ? 4 : undefined,
         };
 
-  ensureJapaneseFont();
-  const payload = orderPayloadFromOrderRow(row);
+  let buffer: Buffer | Uint8Array;
+  try {
+    ensureJapaneseFont();
+    const payload = orderPayloadFromOrderRow(row);
 
-  const buffer: Buffer | Uint8Array =
-    focusPage === "all"
-      ? await renderFullReportWithChapterPdfInserts(payload, renderConfig)
-      : await renderToBuffer(<ReportDocument order={payload} renderConfig={renderConfig} />);
+    buffer =
+      focusPage === "all"
+        ? await renderFullReportWithChapterPdfInserts(payload, renderConfig)
+        : await renderToBuffer(<ReportDocument order={payload} renderConfig={renderConfig} />);
+  } catch (e) {
+    const message = e instanceof Error ? e.message : "PDF生成に失敗しました。";
+    return NextResponse.json(
+      { error: message },
+      { status: 500, headers: { "Content-Type": "application/json" } },
+    );
+  }
 
   const u8: Uint8Array = Buffer.isBuffer(buffer) ? Uint8Array.from(buffer) : buffer;
   const copy = new Uint8Array(u8.byteLength);
