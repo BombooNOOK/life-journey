@@ -22,8 +22,15 @@ export function ensureJapaneseFont(): void {
   const w400 = pickExistingPath([
     path.join(notoJpDir, "noto-sans-jp-japanese-400-normal.woff"),
     path.join(process.cwd(), "node_modules/@fontsource/noto-sans-jp/files/noto-sans-jp-0-400-normal.woff"),
+    path.join(notoJpDir, "noto-sans-jp-japanese-400-normal.woff2"),
+    path.join(process.cwd(), "node_modules/@fontsource/noto-sans-jp/files/noto-sans-jp-0-400-normal.woff2"),
   ]);
-  const w700 = pickExistingPath([path.join(notoJpDir, "noto-sans-jp-japanese-700-normal.woff")]);
+  const w700 = pickExistingPath([
+    path.join(notoJpDir, "noto-sans-jp-japanese-700-normal.woff"),
+    path.join(process.cwd(), "node_modules/@fontsource/noto-sans-jp/files/noto-sans-jp-0-700-normal.woff"),
+    path.join(notoJpDir, "noto-sans-jp-japanese-700-normal.woff2"),
+    path.join(process.cwd(), "node_modules/@fontsource/noto-sans-jp/files/noto-sans-jp-0-700-normal.woff2"),
+  ]);
   Font.register({
     family: "NotoSansJP",
     fonts: [
