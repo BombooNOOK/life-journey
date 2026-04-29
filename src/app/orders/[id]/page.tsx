@@ -82,6 +82,9 @@ export default async function OrderDetailPage({ params }: Props) {
   const currentYear = new Date().getFullYear();
   const yearCycle = personalYearNumber(order.birthMonth, order.birthDay, currentYear);
   const yearTheme = personalYearCycleEntry(yearCycle);
+  const pdfDownloadLimit = order.pdfDownloadLimit ?? 3;
+  const pdfDownloadCount = order.pdfDownloadCount ?? 0;
+  const pdfRemaining = Math.max(0, pdfDownloadLimit - pdfDownloadCount);
 
   return (
     <div className="space-y-6">
@@ -124,12 +127,12 @@ export default async function OrderDetailPage({ params }: Props) {
         </h2>
         <div className="mt-4 flex flex-wrap gap-3">
           <a
-            href={`/api/orders/${order.id}/pdf?download=0`}
+            href={`/api/orders/${order.id}/pdf?download=1`}
             target="_blank"
             rel="noreferrer"
             className="rounded-lg bg-stone-800 px-5 py-2.5 text-sm font-medium text-white hover:bg-stone-700"
           >
-            詳しい鑑定書を見る（無料PDF）
+            鑑定書PDFをダウンロード（無料）
           </a>
           <Link
             href={`/orders/${order.id}/today`}
@@ -144,7 +147,9 @@ export default async function OrderDetailPage({ params }: Props) {
             Life Journey Diary へ
           </Link>
         </div>
-        <p className="mt-2 text-xs text-stone-500">PDF生成に1分ほどかかる場合があります。</p>
+        <p className="mt-2 text-xs text-stone-500">
+          PDF生成に1分ほどかかる場合があります。無料ダウンロード残り {pdfRemaining} / {pdfDownloadLimit} 回。
+        </p>
       </section>
 
       <details className="rounded-xl border border-stone-200 bg-stone-50 p-4 text-xs text-stone-600">

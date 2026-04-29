@@ -39,6 +39,8 @@ model Order {
   stoneFocusTheme String @default("特に決まっていない")
 
   reportPdfPath  String?
+  pdfDownloadCount Int @default(0)
+  pdfDownloadLimit Int @default(3)
 
   /// 旧Excel等との突合用。任意JSON（コア5項目の期待値など）
   expectedNumerologyJson String?

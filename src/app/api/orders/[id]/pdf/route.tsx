@@ -88,6 +88,32 @@ interface RouteParams {
   params: Promise<{ id: string }>;
 }
 
+function htmlWhenDownloadLimitExceeded(reissueUrl: string): string {
+  return `<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>PDFダウンロード上限</title>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, "Hiragino Kaku Gothic ProN", "Yu Gothic", sans-serif; padding: 24px; color:#1f2937; line-height:1.7; }
+    .box { max-width: 680px; margin: 0 auto; border: 1px solid #e5e7eb; border-radius: 12px; padding: 20px; }
+    .btn { display:inline-block; margin-top: 12px; background:#92400e; color:#fff; padding:10px 14px; border-radius:8px; text-decoration:none; font-weight:600; }
+    .muted { color:#6b7280; font-size: 13px; }
+  </style>
+</head>
+<body>
+  <div class="box">
+    <h1 style="margin-top:0;">鑑定書PDFのダウンロード上限に達しました</h1>
+    <p>この鑑定書は無料ダウンロード回数（3回）を使い切りました。</p>
+    <p>追加の再発行をご希望の場合は、下のリンクからお手続きください。</p>
+    <a class="btn" href="${reissueUrl}" target="_blank" rel="noreferrer">再発行（有料）ページへ</a>
+    <p class="muted">画面表示のみの閲覧ではなく、ダウンロード操作時に回数を消費します。</p>
+  </div>
+</body>
+</html>`;
+}
+
 function parseFocusPage(v: string | null): FocusPage {
   if (v === "lifePath" || v === "bridge" || v === "personalYear") return v;
   return "all";
@@ -117,6 +143,19 @@ export async function GET(req: Request, { params }: RouteParams) {
   const bodyTune = parseBodyTune(url.searchParams.get("bodyTune"));
   const downloadParam = url.searchParams.get("download");
   const shouldDownload = downloadParam !== "0";
+  const downloadLimit = row.pdfDownloadLimit ?? 3;
+  const downloadCount = row.pdfDownloadCount ?? 0;
+  const reissueUrl =
+    process.env.NEXT_PUBLIC_BASE_PDF_REISSUE_URL ??
+    process.env.NEXT_PUBLIC_BASE_BOOK_TRIAL_URL ??
+    "https://thebase.com";
+
+  if (shouldDownload && downloadCount >= downloadLimit) {
+    return new NextResponse(htmlWhenDownloadLimitExceeded(reissueUrl), {
+      status: 429,
+      headers: { "Content-Type": "text/html; charset=utf-8" },
+    });
+  }
 
   const renderConfig =
     bodyTune === "normal" && focusPage === "all"
@@ -156,11 +195,18 @@ export async function GET(req: Request, { params }: RouteParams) {
     bodyTune === "normal" && focusPage === "all"
       ? `kantei-${id.slice(0, 8)}.pdf`
       : `kantei-${id.slice(0, 8)}-${focusPage}-${bodyTune}.pdf`;
-  return new NextResponse(body, {
+  const response = new NextResponse(body, {
     status: 200,
     headers: {
       "Content-Type": "application/pdf",
       "Content-Disposition": `${shouldDownload ? "attachment" : "inline"}; filename="${filename}"`,
     },
   });
+  if (shouldDownload) {
+    await prisma.order.update({
+      where: { id: row.id },
+      data: { pdfDownloadCount: { increment: 1 } },
+    });
+  }
+  return response;
 }

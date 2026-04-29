@@ -15,6 +15,8 @@ type ShelfBook = {
   href: string;
   /** チャプター挿入込みの製本PDF（`/api/orders/.../pdf`）。鑑定書のみ。 */
   boundPdfHref?: string;
+  pdfRemainingDownloads?: number;
+  pdfDownloadLimit?: number;
   /** 日記カードのみ：その西暦年の製本カウント用 */
   diaryYear?: number;
   /** 製本ページ数の目安（記録件数）。日記カードのみ */
@@ -51,7 +53,13 @@ export default async function BookshelfPage() {
       where: { email: viewerEmail },
       orderBy: { createdAt: "desc" },
       take: 20,
-      select: { id: true, fullNameDisplay: true, createdAt: true },
+      select: {
+        id: true,
+        fullNameDisplay: true,
+        createdAt: true,
+        pdfDownloadCount: true,
+        pdfDownloadLimit: true,
+      },
     }),
     prisma.journalEntry.findMany({
       where: { email: viewerEmail },
@@ -128,7 +136,9 @@ export default async function BookshelfPage() {
     title: "鑑定書",
     subtitle: `${order.fullNameDisplay} · ${order.createdAt.toLocaleDateString("ja-JP")}`,
     href: `/orders/${order.id}`,
-    boundPdfHref: `/api/orders/${order.id}/pdf?download=0`,
+    boundPdfHref: `/api/orders/${order.id}/pdf?download=1`,
+    pdfRemainingDownloads: Math.max(0, (order.pdfDownloadLimit ?? 3) - (order.pdfDownloadCount ?? 0)),
+    pdfDownloadLimit: order.pdfDownloadLimit ?? 3,
     tone: "amber",
   }));
 
@@ -185,8 +195,13 @@ export default async function BookshelfPage() {
                           rel="noreferrer"
                           className="inline-flex rounded-lg bg-amber-800 px-3 py-2 text-xs font-medium text-white hover:bg-amber-900"
                         >
-                          製本PDFを開く
+                          鑑定書PDFをダウンロード
                         </a>
+                        {book.pdfRemainingDownloads != null && book.pdfDownloadLimit != null ? (
+                          <p className="text-[11px] leading-snug text-stone-500">
+                            無料ダウンロード残り {book.pdfRemainingDownloads} / {book.pdfDownloadLimit} 回
+                          </p>
+                        ) : null}
                         <div>
                           <Link
                             href={book.href}
