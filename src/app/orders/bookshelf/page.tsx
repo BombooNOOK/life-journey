@@ -198,9 +198,19 @@ export default async function BookshelfPage() {
                           鑑定書PDFをダウンロード
                         </a>
                         {book.pdfRemainingDownloads != null && book.pdfDownloadLimit != null ? (
-                          <p className="text-[11px] leading-snug text-stone-500">
-                            無料ダウンロード残り {book.pdfRemainingDownloads} / {book.pdfDownloadLimit} 回
-                          </p>
+                          <div className="space-y-1">
+                            <p className="text-[11px] leading-snug text-stone-500">
+                              無料ダウンロード残り {book.pdfRemainingDownloads} / {book.pdfDownloadLimit} 回
+                            </p>
+                            <p>
+                              <Link
+                                href="/help/pdf-download"
+                                className="text-[11px] font-medium text-amber-900 underline-offset-2 hover:underline"
+                              >
+                                ダウンロード方法を見る（PC / スマホ）
+                              </Link>
+                            </p>
+                          </div>
                         ) : null}
                         <div>
                           <Link

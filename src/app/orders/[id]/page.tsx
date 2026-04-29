@@ -150,6 +150,14 @@ export default async function OrderDetailPage({ params }: Props) {
         <p className="mt-2 text-xs text-stone-500">
           PDF生成に1分ほどかかる場合があります。無料ダウンロード残り {pdfRemaining} / {pdfDownloadLimit} 回。
         </p>
+        <p className="mt-1">
+          <Link
+            href="/help/pdf-download"
+            className="text-xs font-medium text-amber-900 underline-offset-2 hover:underline"
+          >
+            ダウンロード方法を見る（PC / スマホ）
+          </Link>
+        </p>
       </section>
 
       <details className="rounded-xl border border-stone-200 bg-stone-50 p-4 text-xs text-stone-600">
