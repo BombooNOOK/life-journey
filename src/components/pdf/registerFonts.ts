@@ -17,8 +17,8 @@ export function ensureJapaneseFont(): void {
   Font.register({
     family: "NotoSansJP",
     fonts: [
-      { src: getRepoFontPath("noto-sans-jp-400-normal.woff2"), fontWeight: 400 },
-      { src: getRepoFontPath("noto-sans-jp-700-normal.woff2"), fontWeight: 700 },
+      { src: getRepoFontPath("NotoSansCJKjp-Regular.otf"), fontWeight: 400 },
+      { src: getRepoFontPath("NotoSansCJKjp-Bold.otf"), fontWeight: 700 },
     ],
   });
   registered = true;
