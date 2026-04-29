@@ -15,10 +15,11 @@
 
 ### まず見る
 
-- Project Dashboard: `<YOUR_VERCEL_PROJECT_URL>`
-- Deployments: `<YOUR_VERCEL_PROJECT_URL>/deployments`
-- Logs: `<YOUR_VERCEL_PROJECT_URL>/logs`
-- Usage: `<YOUR_VERCEL_PROJECT_URL>/usage`
+- Project Dashboard: `https://vercel.com/dashboard`
+- Deployments: `https://vercel.com/dashboard` → 対象プロジェクト `life-journey` → `Deployments`
+- Logs: `https://vercel.com/dashboard` → 対象プロジェクト `life-journey` → `Logs`
+- Usage: `https://vercel.com/dashboard` → 対象プロジェクト `life-journey` → `Usage`
+- 公開URL（疎通確認用）: `https://life-journey-zeta.vercel.app/`
 
 ### 見るポイント
 
@@ -37,9 +38,9 @@
 
 ### まず見る
 
-- Project Dashboard: `<YOUR_NEON_PROJECT_URL>`
-- Usage/Billing: `<YOUR_NEON_USAGE_URL>`
-- Branch/Compute: `<YOUR_NEON_BRANCH_URL>`
+- Project Dashboard: `https://console.neon.tech/app/projects` → 対象プロジェクトを開く
+- Usage/Billing: `https://console.neon.tech/app/billing`
+- Branch/Compute: `https://console.neon.tech/app/projects` → 対象プロジェクト → `Branches`
 
 ### 見るポイント
 
@@ -57,9 +58,10 @@
 
 ### まず見る
 
-- Authentication Users: `<YOUR_FIREBASE_AUTH_USERS_URL>`
-- Authentication Settings: `<YOUR_FIREBASE_AUTH_SETTINGS_URL>`
-- Usage/Billing: `<YOUR_FIREBASE_USAGE_URL>`
+- Authentication Users: `https://console.firebase.google.com/project/bamboonook-life-journey/authentication/users`
+- Authentication Settings: `https://console.firebase.google.com/project/bamboonook-life-journey/authentication/settings`
+- Usage/Billing: `https://console.firebase.google.com/project/bamboonook-life-journey/usage`
+- Firebase Project Home: `https://console.firebase.google.com/project/bamboonook-life-journey/overview`
 
 ### 見るポイント
 
