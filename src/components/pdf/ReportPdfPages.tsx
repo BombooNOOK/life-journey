@@ -68,8 +68,6 @@ export function ReportPdfPages({ order, renderConfig, segment }: Props) {
   const showAll = focus === "all";
   const bodyStyle = renderConfig ? bodyStyleFromConfig(renderConfig) : undefined;
   const bodyExpandWidth = renderConfig?.bodyExpandWidth;
-  const quality = renderConfig?.quality ?? "high";
-  const includeDecorativePages = quality === "high";
   const bridgeChunkSize = 2;
   const bridgeChunks = [];
   for (let i = 0; i < bridgeBlocks.length; i += bridgeChunkSize) {
@@ -78,14 +76,14 @@ export function ReportPdfPages({ order, renderConfig, segment }: Props) {
 
   const beforeChapter3Insert = (
     <>
-      {showAll && includeDecorativePages ? <CoverPage /> : null}
-      {showAll && includeDecorativePages ? <InsideCoverPage /> : null}
+      {showAll ? <CoverPage /> : null}
+      {showAll ? <InsideCoverPage /> : null}
       {showAll ? <CustomerPage customer={order} /> : null}
       {showAll ? <NumerologyPage numerology={order.numerology} /> : null}
-      {showAll && includeDecorativePages ? <IntroductionPages /> : null}
-      {showAll && includeDecorativePages ? <NumberKeywordsPage /> : null}
-      {showAll && includeDecorativePages ? <Chapter1DividerPage /> : null}
-      {showAll || (focus === "lifePath" && includeDecorativePages) ? <LifePathGuidePage /> : null}
+      {showAll ? <IntroductionPages /> : null}
+      {showAll ? <NumberKeywordsPage /> : null}
+      {showAll ? <Chapter1DividerPage /> : null}
+      {showAll || focus === "lifePath" ? <LifePathGuidePage /> : null}
       {showAll || focus === "lifePath" ? (
         <LifePathPage
           lifePath={order.numerology.lifePathNumber}
@@ -93,7 +91,7 @@ export function ReportPdfPages({ order, renderConfig, segment }: Props) {
           bodyExpandWidth={bodyExpandWidth}
         />
       ) : null}
-      {showAll && includeDecorativePages ? <DestinyGuidePage /> : null}
+      {showAll ? <DestinyGuidePage /> : null}
       {showAll ? (
         <DestinyPage
           destiny={order.numerology.destinyNumber}
@@ -101,11 +99,11 @@ export function ReportPdfPages({ order, renderConfig, segment }: Props) {
           bodyExpandWidth={bodyExpandWidth}
         />
       ) : null}
-      {showAll && includeDecorativePages ? <SoulGuidePage /> : null}
+      {showAll ? <SoulGuidePage /> : null}
       {showAll ? (
         <SoulPage soul={order.numerology.soulNumber} bodyStyle={bodyStyle} bodyExpandWidth={bodyExpandWidth} />
       ) : null}
-      {showAll && includeDecorativePages ? <PersonalityGuidePage /> : null}
+      {showAll ? <PersonalityGuidePage /> : null}
       {showAll ? (
         <PersonalityPage
           personality={order.numerology.personalityNumber}
@@ -113,7 +111,7 @@ export function ReportPdfPages({ order, renderConfig, segment }: Props) {
           bodyExpandWidth={bodyExpandWidth}
         />
       ) : null}
-      {showAll && includeDecorativePages ? <BirthdayGuidePage /> : null}
+      {showAll ? <BirthdayGuidePage /> : null}
       {showAll ? (
         <BirthdayPage
           birthday={order.numerology.birthdayNumber}
@@ -121,18 +119,18 @@ export function ReportPdfPages({ order, renderConfig, segment }: Props) {
           bodyExpandWidth={bodyExpandWidth}
         />
       ) : null}
-      {showAll && includeDecorativePages ? <MaturityGuidePage /> : null}
+      {showAll ? <MaturityGuidePage /> : null}
       {showAll ? (
         <MaturityPage maturity={maturity} bodyStyle={bodyStyle} bodyExpandWidth={bodyExpandWidth} />
       ) : null}
-      {showAll && includeDecorativePages ? <PersonalYearMessagePage /> : null}
+      {showAll ? <PersonalYearMessagePage /> : null}
     </>
   );
 
   const chapter3ThroughJournalInviteLead = (
     <>
-      {showAll && includeDecorativePages ? <Chapter2DividerPage /> : null}
-      {showAll && includeDecorativePages ? <PersonalYearGuidePage /> : null}
+      {showAll ? <Chapter2DividerPage /> : null}
+      {showAll ? <PersonalYearGuidePage /> : null}
       {showAll || focus === "personalYear" ? (
         <PersonalYearOverviewPage
           birthMonth={order.birthMonth}
@@ -151,14 +149,14 @@ export function ReportPdfPages({ order, renderConfig, segment }: Props) {
           bodyExpandWidth={bodyExpandWidth}
         />
       ) : null}
-      {showAll && includeDecorativePages ? <BridgeSectionCoverPage /> : null}
+      {showAll ? <BridgeSectionCoverPage /> : null}
     </>
   );
 
   const fromChapter4DividerOnward = (
     <>
-      {showAll && includeDecorativePages ? <Chapter3DividerPage /> : null}
-      {showAll && includeDecorativePages ? <BridgeIntroPages /> : null}
+      {showAll ? <Chapter3DividerPage /> : null}
+      {showAll ? <BridgeIntroPages /> : null}
       {showAll || focus === "bridge"
         ? bridgeChunks.map((blocks, idx) => (
             <BridgesPdfPage
@@ -170,9 +168,9 @@ export function ReportPdfPages({ order, renderConfig, segment }: Props) {
           ))
         : null}
       {INCLUDE_BRIDGE_REFERENCE_IN_REPORT_PDF && showAll ? <BridgeReferencePage /> : null}
-      {showAll && includeDecorativePages ? <JournalInviteLeadPage /> : null}
-      {showAll && includeDecorativePages ? <JournalInvitePagesFromChapter4Divider /> : null}
-      {showAll && includeDecorativePages ? <PersonalMonthIntroExtraPage /> : null}
+      {showAll ? <JournalInviteLeadPage /> : null}
+      {showAll ? <JournalInvitePagesFromChapter4Divider /> : null}
+      {showAll ? <PersonalMonthIntroExtraPage /> : null}
       {showAll ? (
         <PersonalMonthBonusPage
           birthMonth={order.birthMonth}
@@ -180,7 +178,7 @@ export function ReportPdfPages({ order, renderConfig, segment }: Props) {
           purchaseDate={purchaseDate}
         />
       ) : null}
-      {showAll && includeDecorativePages ? <AfterwordPages /> : null}
+      {showAll ? <AfterwordPages /> : null}
     </>
   );
 
@@ -199,6 +197,6 @@ export function ReportPdfPages({ order, renderConfig, segment }: Props) {
               </>
             );
 
-  setPdfRenderQuality(quality);
+  setPdfRenderQuality(renderConfig?.quality ?? "high");
   return content;
 }

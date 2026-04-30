@@ -93,7 +93,7 @@ export function PdfPageFrame({
     />
   ) : null;
 
-  if (fullBleedImageSrc && !lowQuality) {
+  if (fullBleedImageSrc) {
     return (
       <Page size={size} orientation={orientation} style={[pdfStyles.page, { padding: 0 }]}>
         <View style={{ width: "100%", height: "100%", zIndex: 0 }}>
