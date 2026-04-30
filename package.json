@@ -13,7 +13,7 @@
     "db:sync": "prisma db push && prisma generate",
     "db:migrate:dev": "prisma migrate dev",
     "db:migrate:deploy": "prisma migrate deploy",
-    "build:vercel": "prisma generate && prisma migrate deploy && next build",
+    "build:vercel": "prisma generate && next build",
     "postinstall": "prisma generate && patch-package",
     "test": "vitest run",
     "verify:print": "npx tsx scripts/print-numerology.ts",

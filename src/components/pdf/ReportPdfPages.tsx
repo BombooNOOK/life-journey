@@ -37,8 +37,8 @@ import { SoulGuidePage } from "./pages/SoulGuidePage";
 import { SoulPage } from "./pages/SoulPage";
 import { BridgeIntroPages } from "./pages/BridgeIntroPages";
 import { BridgeSectionCoverPage } from "./pages/BridgeSectionCoverPage";
-import { PdfQualityProvider } from "./pdfQualityContext";
 import { bodyStyleFromConfig, type PdfRenderConfig } from "./pdfRenderConfig";
+import { setPdfRenderQuality } from "./pdfRenderQualityState";
 
 /** ブリッジ参考（全タイプ一覧）は内容が長く複数ページになるため、現行の鑑定 PDF では出さない */
 const INCLUDE_BRIDGE_REFERENCE_IN_REPORT_PDF = false;
@@ -199,5 +199,6 @@ export function ReportPdfPages({ order, renderConfig, segment }: Props) {
               </>
             );
 
-  return <PdfQualityProvider quality={quality}>{content}</PdfQualityProvider>;
+  setPdfRenderQuality(quality);
+  return content;
 }

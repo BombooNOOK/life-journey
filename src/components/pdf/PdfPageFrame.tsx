@@ -4,7 +4,7 @@ import type { Orientation, PageSize } from "@react-pdf/types";
 
 import { bindingBackgroundImageSrc } from "./pdfBindingBackground";
 import { getPdfPageNumberOffset } from "./pdfPageNumberOffset";
-import { usePdfRenderQuality } from "./pdfQualityContext";
+import { getPdfRenderQuality } from "./pdfRenderQualityState";
 import { pdfStyles } from "./styles";
 
 type PdfPageType = "door" | "guide" | "body" | "writing";
@@ -64,7 +64,7 @@ export function PdfPageFrame({
   pageType = "body",
   children,
 }: Props) {
-  const quality = usePdfRenderQuality();
+  const quality = getPdfRenderQuality();
   const lowQuality = quality === "low";
   const pageNumberOffset = getPdfPageNumberOffset();
   const backgroundOpacityByType: Record<PdfPageType, number> = {
