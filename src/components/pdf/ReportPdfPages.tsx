@@ -66,6 +66,8 @@ export function ReportPdfPages({ order, renderConfig, segment }: Props) {
   const purchaseDate = order.purchaseDateIso ? new Date(order.purchaseDateIso) : new Date();
   const focus = renderConfig?.focusPage ?? "all";
   const showAll = focus === "all";
+  const quality = renderConfig?.quality ?? "high";
+  const includeRichVisualPages = quality === "high";
   const bodyStyle = renderConfig ? bodyStyleFromConfig(renderConfig) : undefined;
   const bodyExpandWidth = renderConfig?.bodyExpandWidth;
   const bridgeChunkSize = 2;
@@ -82,8 +84,8 @@ export function ReportPdfPages({ order, renderConfig, segment }: Props) {
       {showAll ? <NumerologyPage numerology={order.numerology} /> : null}
       {showAll ? <IntroductionPages /> : null}
       {showAll ? <NumberKeywordsPage /> : null}
-      {showAll ? <Chapter1DividerPage /> : null}
-      {showAll || focus === "lifePath" ? <LifePathGuidePage /> : null}
+      {showAll && includeRichVisualPages ? <Chapter1DividerPage /> : null}
+      {showAll && includeRichVisualPages ? <LifePathGuidePage /> : null}
       {showAll || focus === "lifePath" ? (
         <LifePathPage
           lifePath={order.numerology.lifePathNumber}
@@ -91,7 +93,7 @@ export function ReportPdfPages({ order, renderConfig, segment }: Props) {
           bodyExpandWidth={bodyExpandWidth}
         />
       ) : null}
-      {showAll ? <DestinyGuidePage /> : null}
+      {showAll && includeRichVisualPages ? <DestinyGuidePage /> : null}
       {showAll ? (
         <DestinyPage
           destiny={order.numerology.destinyNumber}
@@ -99,11 +101,11 @@ export function ReportPdfPages({ order, renderConfig, segment }: Props) {
           bodyExpandWidth={bodyExpandWidth}
         />
       ) : null}
-      {showAll ? <SoulGuidePage /> : null}
+      {showAll && includeRichVisualPages ? <SoulGuidePage /> : null}
       {showAll ? (
         <SoulPage soul={order.numerology.soulNumber} bodyStyle={bodyStyle} bodyExpandWidth={bodyExpandWidth} />
       ) : null}
-      {showAll ? <PersonalityGuidePage /> : null}
+      {showAll && includeRichVisualPages ? <PersonalityGuidePage /> : null}
       {showAll ? (
         <PersonalityPage
           personality={order.numerology.personalityNumber}
@@ -111,7 +113,7 @@ export function ReportPdfPages({ order, renderConfig, segment }: Props) {
           bodyExpandWidth={bodyExpandWidth}
         />
       ) : null}
-      {showAll ? <BirthdayGuidePage /> : null}
+      {showAll && includeRichVisualPages ? <BirthdayGuidePage /> : null}
       {showAll ? (
         <BirthdayPage
           birthday={order.numerology.birthdayNumber}
@@ -119,7 +121,7 @@ export function ReportPdfPages({ order, renderConfig, segment }: Props) {
           bodyExpandWidth={bodyExpandWidth}
         />
       ) : null}
-      {showAll ? <MaturityGuidePage /> : null}
+      {showAll && includeRichVisualPages ? <MaturityGuidePage /> : null}
       {showAll ? (
         <MaturityPage maturity={maturity} bodyStyle={bodyStyle} bodyExpandWidth={bodyExpandWidth} />
       ) : null}
@@ -129,8 +131,8 @@ export function ReportPdfPages({ order, renderConfig, segment }: Props) {
 
   const chapter3ThroughJournalInviteLead = (
     <>
-      {showAll ? <Chapter2DividerPage /> : null}
-      {showAll ? <PersonalYearGuidePage /> : null}
+      {showAll && includeRichVisualPages ? <Chapter2DividerPage /> : null}
+      {showAll && includeRichVisualPages ? <PersonalYearGuidePage /> : null}
       {showAll || focus === "personalYear" ? (
         <PersonalYearOverviewPage
           birthMonth={order.birthMonth}
@@ -149,14 +151,14 @@ export function ReportPdfPages({ order, renderConfig, segment }: Props) {
           bodyExpandWidth={bodyExpandWidth}
         />
       ) : null}
-      {showAll ? <BridgeSectionCoverPage /> : null}
+      {showAll && includeRichVisualPages ? <BridgeSectionCoverPage /> : null}
     </>
   );
 
   const fromChapter4DividerOnward = (
     <>
-      {showAll ? <Chapter3DividerPage /> : null}
-      {showAll ? <BridgeIntroPages /> : null}
+      {showAll && includeRichVisualPages ? <Chapter3DividerPage /> : null}
+      {showAll && includeRichVisualPages ? <BridgeIntroPages /> : null}
       {showAll || focus === "bridge"
         ? bridgeChunks.map((blocks, idx) => (
             <BridgesPdfPage
@@ -168,9 +170,9 @@ export function ReportPdfPages({ order, renderConfig, segment }: Props) {
           ))
         : null}
       {INCLUDE_BRIDGE_REFERENCE_IN_REPORT_PDF && showAll ? <BridgeReferencePage /> : null}
-      {showAll ? <JournalInviteLeadPage /> : null}
-      {showAll ? <JournalInvitePagesFromChapter4Divider /> : null}
-      {showAll ? <PersonalMonthIntroExtraPage /> : null}
+      {showAll && includeRichVisualPages ? <JournalInviteLeadPage /> : null}
+      {showAll && includeRichVisualPages ? <JournalInvitePagesFromChapter4Divider /> : null}
+      {showAll && includeRichVisualPages ? <PersonalMonthIntroExtraPage /> : null}
       {showAll ? (
         <PersonalMonthBonusPage
           birthMonth={order.birthMonth}
@@ -178,7 +180,7 @@ export function ReportPdfPages({ order, renderConfig, segment }: Props) {
           purchaseDate={purchaseDate}
         />
       ) : null}
-      {showAll ? <AfterwordPages /> : null}
+      {showAll && includeRichVisualPages ? <AfterwordPages /> : null}
     </>
   );
 
