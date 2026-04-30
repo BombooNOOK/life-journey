@@ -40,7 +40,7 @@ model Order {
 
   reportPdfPath  String?
   pdfDownloadCount Int @default(0)
-  pdfDownloadLimit Int @default(3)
+  pdfDownloadLimit Int @default(2)
 
   /// 旧Excel等との突合用。任意JSON（コア5項目の期待値など）
   expectedNumerologyJson String?

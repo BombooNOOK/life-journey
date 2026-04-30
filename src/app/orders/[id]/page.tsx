@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import { PdfDownloadButton } from "@/components/orders/PdfDownloadButton";
 import { getViewerEmailFromCookie, normalizeEmail } from "@/lib/auth/viewer";
 import { prisma } from "@/lib/db";
 import { numerologyWithRefreshedLifePath } from "@/lib/order/numerologyDisplay";
@@ -82,7 +83,7 @@ export default async function OrderDetailPage({ params }: Props) {
   const currentYear = new Date().getFullYear();
   const yearCycle = personalYearNumber(order.birthMonth, order.birthDay, currentYear);
   const yearTheme = personalYearCycleEntry(yearCycle);
-  const pdfDownloadLimit = order.pdfDownloadLimit ?? 3;
+  const pdfDownloadLimit = order.pdfDownloadLimit ?? 2;
   const pdfDownloadCount = order.pdfDownloadCount ?? 0;
   const pdfRemaining = Math.max(0, pdfDownloadLimit - pdfDownloadCount);
 
@@ -126,14 +127,11 @@ export default async function OrderDetailPage({ params }: Props) {
           <span aria-hidden>🦉</span>
         </h2>
         <div className="mt-4 flex flex-wrap gap-3">
-          <a
-            href={`/api/orders/${order.id}/pdf?download=1`}
-            target="_blank"
-            rel="noreferrer"
+          <PdfDownloadButton
+            href={`/api/orders/${order.id}/pdf?download=1&quality=low`}
+            label="鑑定書PDFをダウンロード（無料）"
             className="rounded-lg bg-stone-800 px-5 py-2.5 text-sm font-medium text-white hover:bg-stone-700"
-          >
-            鑑定書PDFをダウンロード（無料）
-          </a>
+          />
           <Link
             href={`/orders/${order.id}/today`}
             className="rounded-lg border border-stone-300 bg-white px-5 py-2.5 text-sm font-medium text-stone-800 hover:bg-stone-50"
@@ -148,8 +146,9 @@ export default async function OrderDetailPage({ params }: Props) {
           </Link>
         </div>
         <p className="mt-2 text-xs text-stone-500">
-          PDF生成に1分ほどかかる場合があります。無料ダウンロード残り {pdfRemaining} / {pdfDownloadLimit} 回。
+          PDF生成に1分ほどかかる場合があります。無料閲覧残り {pdfRemaining} / {pdfDownloadLimit} 回（閲覧・ダウンロード共通）。
         </p>
+        <p className="mt-1 text-xs text-stone-500">本棚から開くPDFは、スマホ向けの軽量版（低画質）です。</p>
         <p className="mt-1">
           <Link
             href="/help/pdf-download"

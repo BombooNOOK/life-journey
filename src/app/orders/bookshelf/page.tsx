@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import { BookshelfDiaryBindingOrder } from "@/components/orders/BookshelfDiaryBindingOrder";
+import { PdfDownloadButton } from "@/components/orders/PdfDownloadButton";
 import { getViewerEmailFromCookie } from "@/lib/auth/viewer";
 import { journalEntryInBookshelfPeriod } from "@/lib/journal/bookshelfPeriod";
 import { prisma } from "@/lib/db";
@@ -136,9 +137,9 @@ export default async function BookshelfPage() {
     title: "鑑定書",
     subtitle: `${order.fullNameDisplay} · ${order.createdAt.toLocaleDateString("ja-JP")}`,
     href: `/orders/${order.id}`,
-    boundPdfHref: `/api/orders/${order.id}/pdf?download=1`,
-    pdfRemainingDownloads: Math.max(0, (order.pdfDownloadLimit ?? 3) - (order.pdfDownloadCount ?? 0)),
-    pdfDownloadLimit: order.pdfDownloadLimit ?? 3,
+    boundPdfHref: `/api/orders/${order.id}/pdf?download=1&quality=low`,
+    pdfRemainingDownloads: Math.max(0, (order.pdfDownloadLimit ?? 2) - (order.pdfDownloadCount ?? 0)),
+    pdfDownloadLimit: order.pdfDownloadLimit ?? 2,
     tone: "amber",
   }));
 
@@ -189,18 +190,16 @@ export default async function BookshelfPage() {
                     <p className="mt-1 truncate text-xs text-stone-500">{book.subtitle}</p>
                     {book.boundPdfHref ? (
                       <div className="mt-3 space-y-2">
-                        <a
+                        <PdfDownloadButton
                           href={book.boundPdfHref}
-                          target="_blank"
-                          rel="noreferrer"
+                          label="鑑定書PDFをダウンロード"
                           className="inline-flex rounded-lg bg-amber-800 px-3 py-2 text-xs font-medium text-white hover:bg-amber-900"
-                        >
-                          鑑定書PDFをダウンロード
-                        </a>
+                          loadingLabel="軽量PDFを準備中です…（30〜60秒）"
+                        />
                         {book.pdfRemainingDownloads != null && book.pdfDownloadLimit != null ? (
                           <div className="space-y-1">
                             <p className="text-[11px] leading-snug text-stone-500">
-                              無料ダウンロード残り {book.pdfRemainingDownloads} / {book.pdfDownloadLimit} 回
+                              無料閲覧残り {book.pdfRemainingDownloads} / {book.pdfDownloadLimit} 回（閲覧・ダウンロード共通）
                             </p>
                             <p>
                               <Link

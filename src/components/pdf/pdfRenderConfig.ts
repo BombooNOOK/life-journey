@@ -3,6 +3,7 @@ import type { Style } from "@react-pdf/types";
 export type BodyFontFamily = "NotoSansJP";
 export type FocusPage = "all" | "lifePath" | "bridge" | "personalYear";
 export type BodyTuneStep = "normal" | "step1" | "step2" | "step3";
+export type PdfRenderQuality = "high" | "low";
 
 export interface PdfRenderConfig {
   bodyFontFamily?: BodyFontFamily;
@@ -11,6 +12,7 @@ export interface PdfRenderConfig {
   /** 本文ブロックだけ左右マージンを減らして横幅を広げる */
   bodyExpandWidth?: number;
   focusPage?: FocusPage;
+  quality?: PdfRenderQuality;
 }
 
 export interface BodyRenderOverrides {

@@ -10,7 +10,12 @@ import {
   PDF_CHAPTER_INSERT_BEFORE_4_PATH,
   PDF_FINAL_BACK_COVER_INSERT_PATH,
 } from "@/components/pdf/pdfAssetPaths";
-import type { BodyTuneStep, FocusPage, PdfRenderConfig } from "@/components/pdf/pdfRenderConfig";
+import type {
+  BodyTuneStep,
+  FocusPage,
+  PdfRenderConfig,
+  PdfRenderQuality,
+} from "@/components/pdf/pdfRenderConfig";
 import { setPdfPageNumberOffset } from "@/components/pdf/pdfPageNumberOffset";
 import { ensureJapaneseFont } from "@/components/pdf/registerFonts";
 import { getViewerEmailFromCookie, normalizeEmail } from "@/lib/auth/viewer";
@@ -105,10 +110,10 @@ function htmlWhenDownloadLimitExceeded(reissueUrl: string): string {
 <body>
   <div class="box">
     <h1 style="margin-top:0;">鑑定書PDFのダウンロード上限に達しました</h1>
-    <p>この鑑定書は無料ダウンロード回数（3回）を使い切りました。</p>
+    <p>この鑑定書は無料閲覧回数（2回）を使い切りました。</p>
     <p>追加の再発行をご希望の場合は、下のリンクからお手続きください。</p>
     <a class="btn" href="${reissueUrl}" target="_blank" rel="noreferrer">再発行（有料）ページへ</a>
-    <p class="muted">画面表示のみの閲覧ではなく、ダウンロード操作時に回数を消費します。</p>
+    <p class="muted">閲覧・ダウンロードのどちらでも、1回アクセスするごとに回数を1つ消費します。</p>
   </div>
 </body>
 </html>`;
@@ -122,6 +127,10 @@ function parseFocusPage(v: string | null): FocusPage {
 function parseBodyTune(v: string | null): BodyTuneStep {
   if (v === "step1" || v === "step2" || v === "step3") return v;
   return "normal";
+}
+
+function parsePdfQuality(v: string | null): PdfRenderQuality {
+  return v === "high" ? "high" : "low";
 }
 
 export async function GET(req: Request, { params }: RouteParams) {
@@ -141,9 +150,10 @@ export async function GET(req: Request, { params }: RouteParams) {
   const url = new URL(req.url);
   const focusPage = parseFocusPage(url.searchParams.get("focus"));
   const bodyTune = parseBodyTune(url.searchParams.get("bodyTune"));
+  const quality = parsePdfQuality(url.searchParams.get("quality"));
   const downloadParam = url.searchParams.get("download");
   const shouldDownload = downloadParam !== "0";
-  const downloadLimit = row.pdfDownloadLimit ?? 3;
+  const downloadLimit = row.pdfDownloadLimit ?? 2;
   const downloadCount = row.pdfDownloadCount ?? 0;
   const reissueUrl =
     process.env.NEXT_PUBLIC_BASE_PDF_REISSUE_URL ??
@@ -157,17 +167,16 @@ export async function GET(req: Request, { params }: RouteParams) {
     });
   }
 
-  const renderConfig =
-    bodyTune === "normal" && focusPage === "all"
-      ? undefined
-      : {
-          focusPage,
-          bodyFontFamily: "NotoSansJP" as const,
-          // 依頼順: fontSize -> lineHeight -> width
-          bodyFontSize: bodyTune === "step1" || bodyTune === "step2" || bodyTune === "step3" ? 9.2 : undefined,
-          bodyLineHeight: bodyTune === "step2" || bodyTune === "step3" ? 1.55 : undefined,
-          bodyExpandWidth: bodyTune === "step3" ? 4 : undefined,
-        };
+  const renderConfig: PdfRenderConfig = { quality };
+  if (!(bodyTune === "normal" && focusPage === "all")) {
+    renderConfig.focusPage = focusPage;
+    renderConfig.bodyFontFamily = "NotoSansJP";
+    // 依頼順: fontSize -> lineHeight -> width
+    renderConfig.bodyFontSize =
+      bodyTune === "step1" || bodyTune === "step2" || bodyTune === "step3" ? 9.2 : undefined;
+    renderConfig.bodyLineHeight = bodyTune === "step2" || bodyTune === "step3" ? 1.55 : undefined;
+    renderConfig.bodyExpandWidth = bodyTune === "step3" ? 4 : undefined;
+  }
 
   let buffer: Buffer | Uint8Array;
   try {
@@ -175,7 +184,7 @@ export async function GET(req: Request, { params }: RouteParams) {
     const payload = orderPayloadFromOrderRow(row);
 
     buffer =
-      focusPage === "all"
+      focusPage === "all" && quality === "high"
         ? await renderFullReportWithChapterPdfInserts(payload, renderConfig)
         : await renderToBuffer(<ReportDocument order={payload} renderConfig={renderConfig} />);
   } catch (e) {
@@ -193,8 +202,8 @@ export async function GET(req: Request, { params }: RouteParams) {
 
   const filename =
     bodyTune === "normal" && focusPage === "all"
-      ? `kantei-${id.slice(0, 8)}.pdf`
-      : `kantei-${id.slice(0, 8)}-${focusPage}-${bodyTune}.pdf`;
+      ? `kantei-${id.slice(0, 8)}-${quality}.pdf`
+      : `kantei-${id.slice(0, 8)}-${focusPage}-${bodyTune}-${quality}.pdf`;
   const response = new NextResponse(body, {
     status: 200,
     headers: {

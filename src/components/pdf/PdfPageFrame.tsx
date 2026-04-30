@@ -4,7 +4,7 @@ import type { Orientation, PageSize } from "@react-pdf/types";
 
 import { bindingBackgroundImageSrc } from "./pdfBindingBackground";
 import { getPdfPageNumberOffset } from "./pdfPageNumberOffset";
-import { PdfText as Text } from "./PdfText";
+import { usePdfRenderQuality } from "./pdfQualityContext";
 import { pdfStyles } from "./styles";
 
 type PdfPageType = "door" | "guide" | "body" | "writing";
@@ -64,6 +64,8 @@ export function PdfPageFrame({
   pageType = "body",
   children,
 }: Props) {
+  const quality = usePdfRenderQuality();
+  const lowQuality = quality === "low";
   const pageNumberOffset = getPdfPageNumberOffset();
   const backgroundOpacityByType: Record<PdfPageType, number> = {
     door: 1,
@@ -91,7 +93,7 @@ export function PdfPageFrame({
     />
   ) : null;
 
-  if (fullBleedImageSrc) {
+  if (fullBleedImageSrc && !lowQuality) {
     return (
       <Page size={size} orientation={orientation} style={[pdfStyles.page, { padding: 0 }]}>
         <View style={{ width: "100%", height: "100%", zIndex: 0 }}>
@@ -108,7 +110,7 @@ export function PdfPageFrame({
 
   return (
     <Page size={size} orientation={orientation} style={pdfStyles.page}>
-      {firstPageBodyBackgroundSrc ? (
+      {firstPageBodyBackgroundSrc && !lowQuality ? (
         <View
           style={[pdfStyles.pageBackgroundLeaveFooter, { top: 18 }]}
           fixed
@@ -119,7 +121,7 @@ export function PdfPageFrame({
           }}
         />
       ) : null}
-      {continuationBodyBackgroundSrc ? (
+      {continuationBodyBackgroundSrc && !lowQuality ? (
         <View
           style={[pdfStyles.pageBackground, { top: 18 }]}
           fixed
@@ -136,7 +138,7 @@ export function PdfPageFrame({
           }}
         />
       ) : null}
-      {showBindingBackground ? (
+      {showBindingBackground && !lowQuality ? (
         <View
           style={pdfStyles.pageBackground}
           fixed
