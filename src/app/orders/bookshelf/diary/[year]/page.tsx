@@ -9,6 +9,7 @@ import {
 } from "@/components/journal/DiaryBookshelfSettingsForm";
 import { getViewerEmailFromCookie } from "@/lib/auth/viewer";
 import { prisma } from "@/lib/db";
+import { resolveActiveProfileId } from "@/lib/profile/activeProfile";
 
 type Props = { params: Promise<{ year: string }> };
 
@@ -19,6 +20,7 @@ export default async function BookshelfDiaryYearPage({ params }: Props) {
   if (!viewerEmail) {
     redirect("/login?returnTo=/orders/bookshelf");
   }
+  const activeProfileId = await resolveActiveProfileId(viewerEmail);
 
   const { year: y } = await params;
   const year = Number(y);
@@ -29,7 +31,7 @@ export default async function BookshelfDiaryYearPage({ params }: Props) {
   const shelfBookDelegate = (prisma as unknown as {
     diaryBookshelfBook?: {
       findUnique: (args: {
-        where: { email_year: { email: string; year: number } };
+        where: { email_profileId_year: { email: string; profileId: string; year: number } };
       }) => Promise<{
         displayTitle: string | null;
         coverTheme: string;
@@ -41,7 +43,7 @@ export default async function BookshelfDiaryYearPage({ params }: Props) {
 
   const shelfRow = shelfBookDelegate
     ? await shelfBookDelegate.findUnique({
-        where: { email_year: { email: viewerEmail, year } },
+        where: { email_profileId_year: { email: viewerEmail, profileId: activeProfileId, year } },
       })
     : null;
 

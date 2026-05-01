@@ -5,6 +5,7 @@ import { BookshelfDiaryBindingOrder } from "@/components/orders/BookshelfDiaryBi
 import { PdfDownloadButton } from "@/components/orders/PdfDownloadButton";
 import { getViewerEmailFromCookie } from "@/lib/auth/viewer";
 import { journalEntryInBookshelfPeriod } from "@/lib/journal/bookshelfPeriod";
+import { resolveActiveProfileId } from "@/lib/profile/activeProfile";
 import { prisma } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
@@ -28,10 +29,11 @@ type ShelfBook = {
 export default async function BookshelfPage() {
   const viewerEmail = await getViewerEmailFromCookie();
   if (!viewerEmail) redirect("/login?returnTo=/orders/bookshelf");
+  const activeProfileId = await resolveActiveProfileId(viewerEmail);
   const shelfBookDelegate = (prisma as unknown as {
     diaryBookshelfBook?: {
       findMany: (args: {
-        where: { email: string };
+        where: { email: string; profileId: string };
         select: {
           year: boolean;
           displayTitle: boolean;
@@ -51,7 +53,7 @@ export default async function BookshelfPage() {
 
   const [orders, journalEntries, shelfBooks] = await Promise.all([
     prisma.order.findMany({
-      where: { email: viewerEmail },
+      where: { email: viewerEmail, profileId: activeProfileId },
       orderBy: { createdAt: "desc" },
       take: 20,
       select: {
@@ -63,14 +65,14 @@ export default async function BookshelfPage() {
       },
     }),
     prisma.journalEntry.findMany({
-      where: { email: viewerEmail },
+      where: { email: viewerEmail, profileId: activeProfileId },
       orderBy: { createdAt: "desc" },
       take: 400,
       select: { id: true, createdAt: true, includeInBook: true },
     }),
     shelfBookDelegate
       ? shelfBookDelegate.findMany({
-          where: { email: viewerEmail },
+          where: { email: viewerEmail, profileId: activeProfileId },
           select: {
             year: true,
             displayTitle: true,

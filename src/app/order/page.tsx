@@ -1,7 +1,7 @@
 "use client";
 
-import { useRouter } from "next/navigation";
-import { useCallback, useMemo, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Suspense, useCallback, useMemo, useState } from "react";
 
 import {
   formatEraDateFromIso,
@@ -43,8 +43,10 @@ const empty: FormState = {
   birthDay: 1,
 };
 
-export default function OrderPage() {
+function OrderPageContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const profileId = searchParams.get("profile")?.trim() ?? "";
   const [form, setForm] = useState<FormState>(empty);
   const [step, setStep] = useState<1 | 2>(1);
   const [loading, setLoading] = useState(false);
@@ -162,6 +164,7 @@ export default function OrderPage() {
           birthYear: form.birthYear,
           birthMonth: form.birthMonth,
           birthDay: form.birthDay,
+          profileId,
         }),
       });
 
@@ -399,6 +402,14 @@ export default function OrderPage() {
         </form>
       )}
     </div>
+  );
+}
+
+export default function OrderPage() {
+  return (
+    <Suspense fallback={<p className="text-sm text-stone-500">読み込み中…</p>}>
+      <OrderPageContent />
+    </Suspense>
   );
 }
 

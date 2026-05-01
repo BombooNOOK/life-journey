@@ -32,6 +32,7 @@ model Order {
   address    String
   phone      String
   email      String
+  profileId  String @default("")
 
   numerologyJson String
   stonesJson     String
@@ -46,6 +47,8 @@ model Order {
   expectedNumerologyJson String?
 
   status String @default("draft")
+
+  @@index([email, profileId])
 }
 
 model JournalEntry {
@@ -54,6 +57,7 @@ model JournalEntry {
   updatedAt DateTime @updatedAt
 
   email         String
+  profileId     String @default("")
   content       String
   mood          String @default("calm")
   activity      String @default("record_anyway")
@@ -62,6 +66,8 @@ model JournalEntry {
   photoDataUrl  String?
   generatedComment String?
   includeInBook Boolean @default(true)
+
+  @@index([email, profileId])
 }
 
 /// 本棚の「年別日記」ごとの表示名・表紙・製本期間（その西暦年内の月レンジ）
@@ -71,6 +77,7 @@ model DiaryBookshelfBook {
   updatedAt DateTime @updatedAt
 
   email String
+  profileId String @default("")
   year  Int
 
   displayTitle     String?
@@ -78,7 +85,8 @@ model DiaryBookshelfBook {
   periodStartMonth Int    @default(1)
   periodEndMonth   Int    @default(12)
 
-  @@unique([email, year])
+  @@unique([email, profileId, year])
+  @@index([email, profileId])
 }
 
 /// ユーザー単位の運用設定（管理者判定・プロフィール上限など）
@@ -90,4 +98,17 @@ model AccountSettings {
   email        String @unique
   isAdmin      Boolean @default(false)
   profileLimit Int     @default(1)
+}
+
+/// 1アカウント配下のプロフィール（ニックネーム表示用）
+model Profile {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  email      String
+  nickname   String
+  isArchived Boolean @default(false)
+
+  @@index([email, isArchived])
 }

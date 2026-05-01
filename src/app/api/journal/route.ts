@@ -11,6 +11,7 @@ const JSON_NO_STORE = {
 } as const;
 import { prisma } from "@/lib/db";
 import { buildDiaryNumbers } from "@/lib/journal/numbers";
+import { profileByIdForViewer, resolveActiveProfileId } from "@/lib/profile/activeProfile";
 import { collectTemplateIdsFromReadingText } from "@/lib/diary-reading/generateDiaryReading";
 import { buildDiaryReadingFromJournalInput } from "@/lib/diary-reading/fromJournal";
 import { normalizeJournalCommentText } from "@/lib/journal/comment";
@@ -77,6 +78,15 @@ export async function GET(req: Request) {
 
   try {
     const url = new URL(req.url);
+    const rawProfileId = (url.searchParams.get("profileId") ?? "").trim();
+    const activeProfileId = await resolveActiveProfileId(viewerEmail);
+    const profileId = rawProfileId || activeProfileId;
+    if (profileId) {
+      const p = await profileByIdForViewer(profileId, viewerEmail);
+      if (!p) {
+        return NextResponse.json({ error: "指定プロフィールは利用できません。", code: "FORBIDDEN_PROFILE" }, { status: 403 });
+      }
+    }
     const yearFilter = parseYear(url.searchParams.get("year"));
     const monthFilter = yearFilter ? null : parseMonth(url.searchParams.get("month"));
     const rangeFilter = yearFilter ?? monthFilter;
@@ -99,6 +109,7 @@ export async function GET(req: Request) {
       rows = await prisma.journalEntry.findMany({
         where: {
           email: viewerEmail,
+          profileId,
           ...(rangeFilter
             ? { createdAt: { gte: rangeFilter.from, lt: rangeFilter.to } }
             : {}),
@@ -123,6 +134,7 @@ export async function GET(req: Request) {
       rows = await prisma.journalEntry.findMany({
         where: {
           email: viewerEmail,
+          profileId,
           ...(rangeFilter
             ? { createdAt: { gte: rangeFilter.from, lt: rangeFilter.to } }
             : {}),
@@ -147,7 +159,7 @@ export async function GET(req: Request) {
     let birthDay: number | null = null;
     if (yearFilter && rows.length > 0) {
       const latestOrder = await prisma.order.findFirst({
-        where: { email: viewerEmail },
+        where: { email: viewerEmail, profileId },
         orderBy: { createdAt: "desc" },
         select: {
           birthMonth: true,
@@ -249,6 +261,18 @@ export async function POST(req: Request) {
     typeof json === "object" && json !== null && "includeInBook" in json
       ? (json as { includeInBook: unknown }).includeInBook
       : true;
+  const rawProfileId =
+    typeof json === "object" && json !== null && "profileId" in json
+      ? String((json as { profileId: unknown }).profileId)
+      : "";
+  const activeProfileId = await resolveActiveProfileId(viewerEmail);
+  const profileId = rawProfileId.trim() || activeProfileId;
+  if (profileId) {
+    const p = await profileByIdForViewer(profileId, viewerEmail);
+    if (!p) {
+      return NextResponse.json({ error: "指定プロフィールは利用できません。", code: "FORBIDDEN_PROFILE" }, { status: 403 });
+    }
+  }
   const content = rawContent.trim();
   const mood = rawMood.trim();
   const activity = rawActivity.trim();
@@ -312,7 +336,7 @@ export async function POST(req: Request) {
 
   try {
     const latestOrder = await prisma.order.findFirst({
-      where: { email: viewerEmail },
+      where: { email: viewerEmail, profileId },
       orderBy: { createdAt: "desc" },
       select: {
         birthMonth: true,
@@ -321,7 +345,7 @@ export async function POST(req: Request) {
       },
     });
     const recentRows = await prisma.journalEntry.findMany({
-      where: { email: viewerEmail },
+      where: { email: viewerEmail, profileId },
       orderBy: { createdAt: "desc" },
       take: 5,
       select: { generatedComment: true },
@@ -359,6 +383,7 @@ export async function POST(req: Request) {
       entry = await prisma.journalEntry.create({
         data: {
           email: viewerEmail,
+          profileId,
           content,
           createdAt: parsedEntryDate,
           mood,
@@ -387,6 +412,7 @@ export async function POST(req: Request) {
       entry = await prisma.journalEntry.create({
         data: {
           email: viewerEmail,
+          profileId,
           content,
           createdAt: parsedEntryDate,
           mood,

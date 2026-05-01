@@ -1,8 +1,10 @@
 import Link from "next/link";
 
 import { LifeJourneyDiaryCard } from "@/components/journal/LifeJourneyDiaryCard";
+import { ProfileSwitcher } from "@/components/profile/ProfileSwitcher";
 import { getViewerEmailFromCookie } from "@/lib/auth/viewer";
 import { prisma } from "@/lib/db";
+import { listViewerProfiles, resolveActiveProfileId } from "@/lib/profile/activeProfile";
 
 export const dynamic = "force-dynamic";
 
@@ -20,11 +22,15 @@ export default async function OrdersListPage() {
     );
   }
 
+  const [profiles, activeProfileId] = await Promise.all([
+    listViewerProfiles(viewerEmail),
+    resolveActiveProfileId(viewerEmail),
+  ]);
   let orders: Awaited<ReturnType<typeof prisma.order.findMany>> = [];
   let fetchError: string | null = null;
   try {
     orders = await prisma.order.findMany({
-      where: { email: viewerEmail },
+      where: { email: viewerEmail, profileId: activeProfileId },
       orderBy: { createdAt: "desc" },
       take: 100,
     });
@@ -55,6 +61,8 @@ export default async function OrdersListPage() {
           保存した鑑定結果と、最近の記録をここから確認できます。
         </p>
       </div>
+
+      <ProfileSwitcher profiles={profiles} activeProfileId={activeProfileId} />
 
       <LifeJourneyDiaryCard />
 

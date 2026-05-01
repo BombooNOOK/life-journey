@@ -5,6 +5,7 @@ import { getViewerEmailFromCookie } from "@/lib/auth/viewer";
 import { prisma } from "@/lib/db";
 import { clampMonthOrder } from "@/lib/journal/bookshelfPeriod";
 import { isDiaryDesignId } from "@/lib/journal/meta";
+import { resolveActiveProfileId } from "@/lib/profile/activeProfile";
 
 type RouteParams = { params: Promise<{ year: string }> };
 
@@ -17,16 +18,17 @@ function parseYearParam(raw: string): number | null {
 function getDiaryBookshelfBookDelegate() {
   return (prisma as unknown as {
     diaryBookshelfBook?: {
-      findFirst: (args: { where: { email: string; year: number } }) => Promise<{
+      findFirst: (args: { where: { email: string; profileId: string; year: number } }) => Promise<{
         displayTitle: string | null;
         coverTheme: string;
         periodStartMonth: number;
         periodEndMonth: number;
       } | null>;
       upsert: (args: {
-        where: { email_year: { email: string; year: number } };
+        where: { email_profileId_year: { email: string; profileId: string; year: number } };
         create: {
           email: string;
+          profileId: string;
           year: number;
           displayTitle: string | null;
           coverTheme: string;
@@ -54,6 +56,7 @@ export async function GET(_: Request, { params }: RouteParams) {
   if (!viewerEmail) {
     return NextResponse.json({ error: "ログイン情報を確認できませんでした。", code: "AUTH_REQUIRED" }, { status: 401 });
   }
+  const activeProfileId = await resolveActiveProfileId(viewerEmail);
 
   const { year: ys } = await params;
   const year = parseYearParam(ys);
@@ -69,7 +72,7 @@ export async function GET(_: Request, { params }: RouteParams) {
     });
   }
 
-  const row = await delegate.findFirst({ where: { email: viewerEmail, year } });
+  const row = await delegate.findFirst({ where: { email: viewerEmail, profileId: activeProfileId, year } });
 
   return NextResponse.json({
     settings: row
@@ -89,6 +92,7 @@ export async function PATCH(req: Request, { params }: RouteParams) {
   if (!viewerEmail) {
     return NextResponse.json({ error: "ログイン情報を確認できませんでした。", code: "AUTH_REQUIRED" }, { status: 401 });
   }
+  const activeProfileId = await resolveActiveProfileId(viewerEmail);
 
   const { year: ys } = await params;
   const year = parseYearParam(ys);
@@ -140,13 +144,15 @@ export async function PATCH(req: Request, { params }: RouteParams) {
   try {
     saved = await delegate.upsert({
       where: {
-        email_year: {
+        email_profileId_year: {
           email: viewerEmail,
+          profileId: activeProfileId,
           year,
         },
       },
       create: {
         email: viewerEmail,
+        profileId: activeProfileId,
         year,
         displayTitle,
         coverTheme,

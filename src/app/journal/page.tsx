@@ -86,6 +86,7 @@ function JournalPageContent() {
   const searchParams = useSearchParams();
   const { user, loading: authLoading } = useFirebaseAuth();
   const editingId = searchParams.get("edit");
+  const profileId = (searchParams.get("profile") ?? "").trim();
   const dateFromQuery = searchParams.get("date");
   const safeReturnToBookshelf = useMemo(
     () => parseSafeBookshelfDiaryReturnTo(searchParams.get("returnTo")),
@@ -116,7 +117,10 @@ function JournalPageContent() {
     }
     setError(null);
     try {
-      const res = await fetch(`/api/journal?_=${Date.now()}`, {
+      const qs = new URLSearchParams();
+      qs.set("_", String(Date.now()));
+      if (profileId) qs.set("profileId", profileId);
+      const res = await fetch(`/api/journal?${qs.toString()}`, {
         cache: "no-store",
         credentials: "same-origin",
       });
@@ -136,7 +140,7 @@ function JournalPageContent() {
         setLoading(false);
       }
     }
-  }, []);
+  }, [profileId]);
 
   useEffect(() => {
     if (authLoading) return;
@@ -296,6 +300,7 @@ function JournalPageContent() {
           photoDataUrl,
           entryDate,
           includeInBook,
+          profileId,
         }),
       });
       const data = (await res.json()) as { error?: string; entry?: { id?: string } };
@@ -325,7 +330,7 @@ function JournalPageContent() {
         return;
       }
       if (editingId) {
-        router.replace("/journal");
+        router.replace(profileId ? `/journal?profile=${encodeURIComponent(profileId)}` : "/journal");
       }
     } catch {
       setError("通信に失敗しました。");

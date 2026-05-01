@@ -5,6 +5,7 @@ import { prisma } from "@/lib/db";
 import { buildOrderPayload } from "@/lib/order/buildSnapshot";
 import { toIsoDateString } from "@/lib/order/birthDate";
 import type { CustomerFormValues } from "@/lib/order/types";
+import { profileByIdForViewer, resolveActiveProfileId } from "@/lib/profile/activeProfile";
 import { isHiraganaOnly } from "@/lib/validation/hiragana";
 
 import { describeSaveError, tryNormalizeCreateBody } from "./postHelpers";
@@ -63,6 +64,21 @@ export async function POST(req: Request) {
   }
 
   const j = normalized.body;
+  const requestedProfileId =
+    typeof json === "object" && json !== null && "profileId" in json
+      ? String((json as { profileId: unknown }).profileId).trim()
+      : "";
+  const activeProfileId = await resolveActiveProfileId(viewerEmail);
+  const profileId = requestedProfileId || activeProfileId;
+  if (profileId) {
+    const profile = await profileByIdForViewer(profileId, viewerEmail);
+    if (!profile) {
+      return NextResponse.json(
+        { error: "指定プロフィールには保存できません。", code: "FORBIDDEN_PROFILE" },
+        { status: 403 },
+      );
+    }
+  }
   const yNow = new Date().getFullYear();
   if (j.birthYear < 1870 || j.birthYear > yNow) {
     return NextResponse.json({ error: "生年が許容範囲外です", code: "YEAR_RANGE" }, { status: 400 });
@@ -150,6 +166,7 @@ export async function POST(req: Request) {
         address: payload.address,
         phone: payload.phone,
         email: payload.email,
+        profileId,
         numerologyJson: JSON.stringify(payload.numerology),
         stonesJson: JSON.stringify(payload.stones),
         stoneFocusTheme: payload.stoneFocusTheme,
