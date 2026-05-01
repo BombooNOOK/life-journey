@@ -72,6 +72,7 @@ export function LoginClient() {
   const [notice, setNotice] = useState<string | null>(null);
   const [busyGoogle, setBusyGoogle] = useState(false);
   const [busyEmail, setBusyEmail] = useState(false);
+  const [busyReset, setBusyReset] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
   const returnTo = resolveSafeReturnTo(searchParams.get("returnTo"));
@@ -189,12 +190,31 @@ export function LoginClient() {
     }
     const a = auth();
     if (!a) return;
+    setBusyReset(true);
     try {
       await sendPasswordResetEmail(a, email);
       setNotice("パスワード再設定メールを送信しました。受信ボックスをご確認ください。");
     } catch (e) {
       console.error("[login:password-reset]", e);
-      setError(pickErrorMessage(e, "パスワード再設定メールの送信に失敗しました。"));
+      const raw =
+        e instanceof Error
+          ? e.message
+          : typeof e === "object" && e !== null && "message" in e
+            ? String((e as { message: unknown }).message)
+            : "";
+      if (
+        raw.includes("auth/user-not-found") ||
+        raw.includes("auth/invalid-email") ||
+        raw.includes("auth/invalid-login-credentials")
+      ) {
+        setNotice(
+          "再設定メールを送信しました。登録済みのメールアドレスであれば、数分以内に届きます。",
+        );
+      } else {
+        setError(pickErrorMessage(e, "パスワード再設定メールの送信に失敗しました。"));
+      }
+    } finally {
+      setBusyReset(false);
     }
   };
 
@@ -306,14 +326,15 @@ export function LoginClient() {
         </p>
         <button
           type="button"
-          className="text-xs text-stone-600 underline underline-offset-2 hover:text-stone-900"
+          disabled={busyReset}
+          className="text-xs text-stone-600 underline underline-offset-2 hover:text-stone-900 disabled:opacity-50"
           onClick={(e) => {
             const form = e.currentTarget.form;
             if (!form) return;
             void handlePasswordReset(new FormData(form));
           }}
         >
-          パスワードを忘れた場合（再設定メールを送る）
+          {busyReset ? "再設定メールを送信中…" : "パスワードを忘れた場合（再設定メールを送る）"}
         </button>
       </form>
 
