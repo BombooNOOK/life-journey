@@ -42,13 +42,29 @@ async function loadRows(keyword: string): Promise<UserRow[]> {
     }),
     prisma.accountSettings.findMany({
       where,
-      select: { email: true, isAdmin: true, profileLimit: true },
+      select: { id: true, email: true, isAdmin: true, profileLimit: true, updatedAt: true },
       take: 200,
     }),
   ]);
   const orderCountByEmail = new Map<string, number>();
   const journalCountByEmail = new Map<string, number>();
-  const settingsByEmail = new Map(settings.map((s) => [normalizeEmail(s.email), s]));
+  const settingsByEmail = new Map<
+    string,
+    {
+      id: string;
+      email: string;
+      isAdmin: boolean;
+      profileLimit: number;
+      updatedAt: Date;
+    }
+  >();
+  for (const s of settings) {
+    const key = normalizeEmail(s.email);
+    const prev = settingsByEmail.get(key);
+    if (!prev || prev.updatedAt < s.updatedAt) {
+      settingsByEmail.set(key, s);
+    }
+  }
 
   for (const row of orderUsers) {
     const key = normalizeEmail(row.email);
@@ -95,11 +111,26 @@ export default async function AdminPage({ searchParams }: Props) {
     const profileLimitRaw = formData.get("profileLimit")?.toString();
     const profileLimit = profileLimitRaw === "3" ? 3 : 1;
 
-    await prisma.accountSettings.upsert({
+    const merged = await prisma.accountSettings.upsert({
       where: { email },
       create: { email, profileLimit, isAdmin: false },
       update: { profileLimit },
     });
+    // Case-insensitive duplicates can exist in older rows.
+    // Keep all variants in sync so the admin list doesn't bounce back.
+    const duplicates = await prisma.accountSettings.findMany({
+      select: { id: true, email: true },
+      where: { NOT: { id: merged.id } },
+    });
+    const targetIds = duplicates
+      .filter((d) => normalizeEmail(d.email) === email)
+      .map((d) => d.id);
+    if (targetIds.length > 0) {
+      await prisma.accountSettings.updateMany({
+        where: { id: { in: targetIds } },
+        data: { profileLimit },
+      });
+    }
     revalidatePath("/admin");
   }
 
@@ -111,11 +142,24 @@ export default async function AdminPage({ searchParams }: Props) {
     if (!(await isAdminEmail(viewer))) notFound();
     const isAdminRaw = formData.get("isAdmin")?.toString();
     const isAdmin = isAdminRaw === "1";
-    await prisma.accountSettings.upsert({
+    const merged = await prisma.accountSettings.upsert({
       where: { email },
       create: { email, profileLimit: 1, isAdmin },
       update: { isAdmin },
     });
+    const duplicates = await prisma.accountSettings.findMany({
+      select: { id: true, email: true },
+      where: { NOT: { id: merged.id } },
+    });
+    const targetIds = duplicates
+      .filter((d) => normalizeEmail(d.email) === email)
+      .map((d) => d.id);
+    if (targetIds.length > 0) {
+      await prisma.accountSettings.updateMany({
+        where: { id: { in: targetIds } },
+        data: { isAdmin },
+      });
+    }
     revalidatePath("/admin");
   }
 
