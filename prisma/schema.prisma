@@ -80,3 +80,14 @@ model DiaryBookshelfBook {
 
   @@unique([email, year])
 }
+
+/// ユーザー単位の運用設定（管理者判定・プロフィール上限など）
+model AccountSettings {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  email        String @unique
+  isAdmin      Boolean @default(false)
+  profileLimit Int     @default(1)
+}
