@@ -86,28 +86,35 @@ export default async function AdminPage({ searchParams }: Props) {
   const q = (params.q ?? "").trim().toLowerCase();
   const rows = await loadRows(q);
 
-  async function updateAccountSettings(formData: FormData) {
+  async function updateProfileLimit(formData: FormData) {
     "use server";
     const email = normalizeEmail(formData.get("email")?.toString());
     if (!email) return;
     const viewer = await getViewerEmailFromCookie();
     if (!(await isAdminEmail(viewer))) notFound();
     const profileLimitRaw = formData.get("profileLimit")?.toString();
-    const isAdminRaw = formData.get("isAdmin")?.toString();
-    const profileLimit = profileLimitRaw === "3" ? 3 : profileLimitRaw === "1" ? 1 : null;
-    const isAdmin = isAdminRaw === "1" ? true : isAdminRaw === "0" ? false : null;
-
-    const existing = await prisma.accountSettings.findUnique({
-      where: { email },
-      select: { profileLimit: true, isAdmin: true },
-    });
-    const nextProfileLimit = profileLimit ?? existing?.profileLimit ?? 1;
-    const nextIsAdmin = isAdmin ?? existing?.isAdmin ?? false;
+    const profileLimit = profileLimitRaw === "3" ? 3 : 1;
 
     await prisma.accountSettings.upsert({
       where: { email },
-      create: { email, profileLimit: nextProfileLimit, isAdmin: nextIsAdmin },
-      update: { profileLimit: nextProfileLimit, isAdmin: nextIsAdmin },
+      create: { email, profileLimit, isAdmin: false },
+      update: { profileLimit },
+    });
+    revalidatePath("/admin");
+  }
+
+  async function toggleAdminRole(formData: FormData) {
+    "use server";
+    const email = normalizeEmail(formData.get("email")?.toString());
+    if (!email) return;
+    const viewer = await getViewerEmailFromCookie();
+    if (!(await isAdminEmail(viewer))) notFound();
+    const isAdminRaw = formData.get("isAdmin")?.toString();
+    const isAdmin = isAdminRaw === "1";
+    await prisma.accountSettings.upsert({
+      where: { email },
+      create: { email, profileLimit: 1, isAdmin },
+      update: { isAdmin },
     });
     revalidatePath("/admin");
   }
@@ -159,7 +166,7 @@ export default async function AdminPage({ searchParams }: Props) {
                 <td className="px-4 py-3 text-stone-600">{row.sourceOrderCount}</td>
                 <td className="px-4 py-3 text-stone-600">{row.sourceJournalCount}</td>
                 <td className="px-4 py-3">
-                  <form action={updateAccountSettings} className="flex items-center gap-2">
+                  <form action={updateProfileLimit} className="flex items-center gap-2">
                     <input type="hidden" name="email" value={row.email} />
                     <select
                       name="profileLimit"
@@ -178,7 +185,7 @@ export default async function AdminPage({ searchParams }: Props) {
                   </form>
                 </td>
                 <td className="px-4 py-3">
-                  <form action={updateAccountSettings} className="flex items-center gap-2">
+                  <form action={toggleAdminRole} className="flex items-center gap-2">
                     <input type="hidden" name="email" value={row.email} />
                     <input type="hidden" name="isAdmin" value={row.isAdmin ? "0" : "1"} />
                     <span className={row.isAdmin ? "text-emerald-700" : "text-stone-500"}>
