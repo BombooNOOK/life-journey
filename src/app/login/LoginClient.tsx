@@ -1,27 +1,19 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   GoogleAuthProvider,
   createUserWithEmailAndPassword,
-  getRedirectResult,
   sendPasswordResetEmail,
   signInWithEmailAndPassword,
   signInWithPopup,
   signInWithRedirect,
 } from "firebase/auth";
 
+import { stashOAuthReturnTo, syncLjAuthClientCookies } from "@/lib/auth/clientCookies";
 import { getFirebaseAuth } from "@/lib/firebase/client";
-
-function setAuthCookies(email: string | null) {
-  if (typeof document === "undefined") return;
-  document.cookie = "lj_logged_in=1; Path=/; Max-Age=2592000; SameSite=Lax";
-  if (email) {
-    document.cookie = `lj_user_email=${encodeURIComponent(email)}; Path=/; Max-Age=2592000; SameSite=Lax`;
-  }
-}
 
 function resolveSafeReturnTo(raw: string | null): string {
   if (!raw) return "/orders";
@@ -91,32 +83,6 @@ export function LoginClient() {
     router.refresh();
   };
 
-  const applyCookieFallbackIfNeeded = (email: string | null) => {
-    if (typeof document === "undefined") return;
-    const hasLoginCookie = document.cookie.includes("lj_logged_in=1");
-    if (!hasLoginCookie) {
-      setAuthCookies(email);
-    }
-  };
-
-  useEffect(() => {
-    const a = auth();
-    if (!a) return;
-    void getRedirectResult(a)
-      .then((cred) => {
-        const user = cred?.user ?? a.currentUser;
-        if (!user) return;
-        applyCookieFallbackIfNeeded(user.email ?? null);
-        navigateAfterLogin(returnTo);
-      })
-      .catch((e) => {
-        console.error("[login:getRedirectResult]", e);
-        setError(pickErrorMessage(e, "Google ログインに失敗しました。"));
-      });
-    // 初回マウント時のみ
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
   const handleGoogle = async () => {
     setError(null);
     setNotice(null);
@@ -127,11 +93,18 @@ export function LoginClient() {
       const provider = new GoogleAuthProvider();
       const isMobile = /iPhone|iPad|Android/i.test(navigator.userAgent);
       if (isMobile) {
+        stashOAuthReturnTo(returnTo);
         await signInWithRedirect(a, provider);
         return;
       }
       const cred = await signInWithPopup(a, provider);
-      applyCookieFallbackIfNeeded(cred.user.email ?? null);
+      syncLjAuthClientCookies({ email: cred.user.email ?? null });
+      await fetch("/api/auth/session", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: cred.user.email ?? "" }),
+        credentials: "same-origin",
+      }).catch(() => {});
       navigateAfterLogin(returnTo);
     } catch (e) {
       console.error("[login:google]", e);
@@ -170,7 +143,13 @@ export function LoginClient() {
       } else {
         cred = await signInWithEmailAndPassword(a, email, password);
       }
-      applyCookieFallbackIfNeeded(cred.user.email ?? null);
+      syncLjAuthClientCookies({ email: cred.user.email ?? null });
+      await fetch("/api/auth/session", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: cred.user.email ?? "" }),
+        credentials: "same-origin",
+      }).catch(() => {});
       navigateAfterLogin(returnTo);
     } catch (e) {
       console.error("[login:email]", e);

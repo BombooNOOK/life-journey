@@ -9,8 +9,9 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { onAuthStateChanged, signOut, type User } from "firebase/auth";
+import { getRedirectResult, onAuthStateChanged, signOut, type User } from "firebase/auth";
 
+import { syncLjAuthClientCookies, takeOAuthReturnTo } from "@/lib/auth/clientCookies";
 import { getFirebaseAuth } from "@/lib/firebase/client";
 
 type FirebaseAuthContextValue = {
@@ -23,28 +24,8 @@ const FirebaseAuthContext = createContext<FirebaseAuthContextValue | null>(
   null,
 );
 
-function setLoginFlagCookie(isLoggedIn: boolean) {
-  if (typeof document === "undefined") return;
-  if (isLoggedIn) {
-    document.cookie = "lj_logged_in=1; Path=/; Max-Age=2592000; SameSite=Lax";
-    return;
-  }
-  document.cookie = "lj_logged_in=; Path=/; Max-Age=0; SameSite=Lax";
-}
-
-function setViewerEmailCookie(email: string | null) {
-  if (typeof document === "undefined") return;
-  if (email) {
-    const value = encodeURIComponent(email);
-    document.cookie = `lj_user_email=${value}; Path=/; Max-Age=2592000; SameSite=Lax`;
-    return;
-  }
-  document.cookie = "lj_user_email=; Path=/; Max-Age=0; SameSite=Lax";
-}
-
 function syncAuthCookies(user: User | null) {
-  setLoginFlagCookie(Boolean(user));
-  setViewerEmailCookie(user?.email ?? null);
+  syncLjAuthClientCookies(user ? { email: user.email } : null);
 }
 
 async function syncAuthCookiesOnServer(user: User | null) {
@@ -57,6 +38,7 @@ async function syncAuthCookiesOnServer(user: User | null) {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email: user.email }),
+      credentials: "same-origin",
     });
   } catch {
     // サーバー同期に失敗してもクライアント側Cookieは残す
@@ -71,23 +53,48 @@ export function FirebaseAuthProvider({ children }: { children: ReactNode }) {
     let cancelled = false;
     let unsubscribe: (() => void) | undefined;
 
-    try {
-      const auth = getFirebaseAuth();
-      unsubscribe = onAuthStateChanged(auth, (next) => {
-        if (!cancelled) {
+    const run = async () => {
+      try {
+        const auth = getFirebaseAuth();
+        /** アプリ全体で先に処理しないと、onAuthStateChanged より後に getRedirectResult が走り結果が消える／クッキー競合が起きる */
+        const redirectCred = await getRedirectResult(auth);
+        if (cancelled) return;
+        if (redirectCred?.user) {
+          syncAuthCookies(redirectCred.user);
+          await syncAuthCookiesOnServer(redirectCred.user);
+          setUser(redirectCred.user);
+          setLoading(false);
+          const target = takeOAuthReturnTo() ?? "/orders";
+          if (target.startsWith("/") && !target.startsWith("//")) {
+            window.location.assign(target);
+            return;
+          }
+        }
+      } catch (e) {
+        console.error("[auth:getRedirectResult]", e);
+      }
+
+      if (cancelled) return;
+
+      try {
+        const auth = getFirebaseAuth();
+        unsubscribe = onAuthStateChanged(auth, (next) => {
+          if (cancelled) return;
           setUser(next);
           syncAuthCookies(next);
           void syncAuthCookiesOnServer(next);
           setLoading(false);
+        });
+      } catch {
+        if (!cancelled) {
+          setUser(null);
+          syncAuthCookies(null);
+          setLoading(false);
         }
-      });
-    } catch {
-      if (!cancelled) {
-        setUser(null);
-        syncAuthCookies(null);
-        setLoading(false);
       }
-    }
+    };
+
+    void run();
 
     return () => {
       cancelled = true;
