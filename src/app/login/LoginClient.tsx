@@ -187,36 +187,18 @@ export function LoginClient() {
       };
       try {
       const provider = new GoogleAuthProvider();
-      /** Mac と同様に「どのアカウントか」を選ばせる（iPhone だけ省略されやすい） */
-      provider.setCustomParameters({ prompt: "select_account" });
-      /** iPhone/iPad はリダイレクト方式だと戻り後に認証状態が復元できないことが多いので、まずポップアップを試す */
-
-      if (isIOS) {
-        try {
-          const cred = await signInWithPopup(a, provider);
-          await completeGoogleSignIn(cred);
-          return;
-        } catch (e) {
-          const raw = e instanceof Error ? e.message : String(e);
-          const useRedirect =
-            raw.trim().length === 0 ||
-            /popup|blocked|cancelled-popup|Popup|COOP|web-storage|storage/i.test(raw) ||
-            raw.includes("auth/cancelled-popup-request") ||
-            raw.includes("auth/popup-blocked");
-          if (useRedirect) {
-            stashOAuthReturnTo(returnTo);
-            markGoogleOAuthRedirectFlow();
-            await signInWithRedirect(a, provider);
-            return;
-          }
-          throw e;
-        }
+      /** デスクトップのポップアップで「どのアカウントか」を選ばせる。モバイルはリダイレクト1回のみ（ポップアップ失敗後の再リダイレクトだとアカウント選択が二度出る） */
+      if (!isIOS && !isAndroid) {
+        provider.setCustomParameters({ prompt: "select_account" });
       }
 
-      if (isAndroid) {
+      /** iOS/Android はリダイレクトのみ。ポップアップ→リダイレクトの二段だと Google のアカウント選択が2回続く */
+      if (isIOS || isAndroid) {
         stashOAuthReturnTo(returnTo);
         markGoogleOAuthRedirectFlow();
-        await signInWithRedirect(a, provider);
+        const mobileProvider = new GoogleAuthProvider();
+        mobileProvider.setCustomParameters({ prompt: "select_account" });
+        await signInWithRedirect(a, mobileProvider);
         return;
       }
 
