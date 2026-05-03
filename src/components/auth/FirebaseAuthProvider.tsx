@@ -13,6 +13,7 @@ import { getRedirectResult, onAuthStateChanged, signOut, type User } from "fireb
 
 import {
   OAUTH_RETURN_SESSION_KEY,
+  clearOAuthReturnPending,
   readReturnToFromCurrentUrl,
   syncLjAuthClientCookies,
   takeOAuthReturnTo,
@@ -83,6 +84,7 @@ export function FirebaseAuthProvider({ children }: { children: ReactNode }) {
             takeOAuthReturnTo() ?? readReturnToFromCurrentUrl() ?? "/orders",
           );
           if (target.startsWith("/") && !target.startsWith("//")) {
+            clearOAuthReturnPending();
             window.location.assign(target);
             return;
           }
@@ -109,6 +111,7 @@ export function FirebaseAuthProvider({ children }: { children: ReactNode }) {
           }
           const target = safePostLoginTarget(readReturnToFromCurrentUrl() ?? "/orders");
           if (target.startsWith("/") && !target.startsWith("//")) {
+            clearOAuthReturnPending();
             window.location.assign(target);
             return;
           }

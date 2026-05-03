@@ -1,10 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   GoogleAuthProvider,
+  type UserCredential,
   createUserWithEmailAndPassword,
   sendPasswordResetEmail,
   signInWithEmailAndPassword,
@@ -12,7 +13,14 @@ import {
   signInWithRedirect,
 } from "firebase/auth";
 
-import { stashOAuthReturnTo, syncLjAuthClientCookies } from "@/lib/auth/clientCookies";
+import { useFirebaseAuth } from "@/components/auth/FirebaseAuthProvider";
+import {
+  clearOAuthReturnPending,
+  markOAuthReturnPending,
+  readOAuthReturnPendingAgeMs,
+  stashOAuthReturnTo,
+  syncLjAuthClientCookies,
+} from "@/lib/auth/clientCookies";
 import { getFirebaseAuth } from "@/lib/firebase/client";
 
 function resolveSafeReturnTo(raw: string | null): string {
@@ -46,6 +54,13 @@ function pickErrorMessage(e: unknown, fallback: string): string {
     return "Googleの選択画面を閉じたため、ログインは完了していません。もう一度お試しください。";
   }
   if (
+    raw.includes("auth/popup-blocked") ||
+    raw.includes("popup-blocked") ||
+    raw.includes("auth/cancelled-popup-request")
+  ) {
+    return "ポップアップがブロックされています。Safari のアドレスバー左の「aA」→「ポップアップを許可」、または画面下の「ブロックされたポップアップ」から許可して、もう一度「Google で続ける」を押してください。";
+  }
+  if (
     raw.includes("auth/invalid-login-credentials") ||
     raw.includes("auth/invalid-credential") ||
     raw.includes("auth/wrong-password") ||
@@ -60,6 +75,7 @@ function pickErrorMessage(e: unknown, fallback: string): string {
 export function LoginClient() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { user, loading: authLoading } = useFirebaseAuth();
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [busyGoogle, setBusyGoogle] = useState(false);
@@ -68,6 +84,41 @@ export function LoginClient() {
   const [showPassword, setShowPassword] = useState(false);
 
   const returnTo = resolveSafeReturnTo(searchParams.get("returnTo"));
+
+  useEffect(() => {
+    if (authLoading) return;
+    if (user) {
+      clearOAuthReturnPending();
+      return;
+    }
+    const pendingAge = readOAuthReturnPendingAgeMs();
+    if (pendingAge == null) return;
+
+    const id = window.setTimeout(() => {
+      try {
+        const auth = getFirebaseAuth();
+        if (auth.currentUser) {
+          clearOAuthReturnPending();
+          return;
+        }
+        if (readOAuthReturnPendingAgeMs() == null) return;
+        clearOAuthReturnPending();
+        setError(
+          [
+            "Googleから戻りましたが、この端末ではログイン状態を取り込めませんでした（エラーは出ないことがあります）。",
+            "",
+            "試すこと：",
+            "1）設定 → Safari → 詳細 → 「サイト越えトラッキング防止」をオフにして、もう一度「Googleで続ける」",
+            "2）プライベートブラウズをやめて通常のタブで開く",
+            "3）メールアドレスとパスワードでログイン（登録済みの場合）",
+          ].join("\n"),
+        );
+      } catch {
+        /* noop */
+      }
+    }, 1600);
+    return () => window.clearTimeout(id);
+  }, [authLoading, user]);
 
   const auth = () => {
     try {
@@ -89,15 +140,8 @@ export function LoginClient() {
     const a = auth();
     if (!a) return;
     setBusyGoogle(true);
-    try {
-      const provider = new GoogleAuthProvider();
-      const isMobile = /iPhone|iPad|Android/i.test(navigator.userAgent);
-      if (isMobile) {
-        stashOAuthReturnTo(returnTo);
-        await signInWithRedirect(a, provider);
-        return;
-      }
-      const cred = await signInWithPopup(a, provider);
+    const completeGoogleSignIn = async (cred: UserCredential) => {
+      clearOAuthReturnPending();
       syncLjAuthClientCookies({ email: cred.user.email ?? null });
       await fetch("/api/auth/session", {
         method: "POST",
@@ -106,6 +150,49 @@ export function LoginClient() {
         credentials: "same-origin",
       }).catch(() => {});
       navigateAfterLogin(returnTo);
+    };
+    try {
+      const provider = new GoogleAuthProvider();
+      /** iPhone/iPad はリダイレクト方式だと戻り後に認証状態が復元できないことが多いので、まずポップアップを試す */
+      const isIOS =
+        /iPad|iPhone|iPod/i.test(navigator.userAgent) ||
+        (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+      const isAndroid = /Android/i.test(navigator.userAgent);
+
+      if (isIOS) {
+        setNotice("Googleの画面または小さなウィンドウが開きます。数秒待っても何も出ないときは、画面下の「ポップアップを許可」を探してください。");
+        try {
+          const cred = await signInWithPopup(a, provider);
+          setNotice(null);
+          await completeGoogleSignIn(cred);
+          return;
+        } catch (e) {
+          setNotice(null);
+          const raw = e instanceof Error ? e.message : String(e);
+          const useRedirect =
+            raw.trim().length === 0 ||
+            /popup|blocked|cancelled-popup|Popup|COOP|web-storage|storage/i.test(raw) ||
+            raw.includes("auth/cancelled-popup-request") ||
+            raw.includes("auth/popup-blocked");
+          if (useRedirect) {
+            stashOAuthReturnTo(returnTo);
+            markOAuthReturnPending();
+            await signInWithRedirect(a, provider);
+            return;
+          }
+          throw e;
+        }
+      }
+
+      if (isAndroid) {
+        stashOAuthReturnTo(returnTo);
+        markOAuthReturnPending();
+        await signInWithRedirect(a, provider);
+        return;
+      }
+
+      const cred = await signInWithPopup(a, provider);
+      await completeGoogleSignIn(cred);
     } catch (e) {
       console.error("[login:google]", e);
       setError(pickErrorMessage(e, "Google ログインに失敗しました。"));
@@ -208,7 +295,8 @@ export function LoginClient() {
           ログイン後は、アクセスしようとしていたページ（またはマイページ）へ移動します。
         </p>
         <p className="mt-1 text-xs text-stone-500">
-          スマホで安定して使うには、URLをSafariで直接開いてください（アプリ内ブラウザは不安定な場合があります）。
+          スマホで安定して使うには、URLをSafariで直接開いてください（アプリ内ブラウザは不安定な場合があります）。iPhone
+          で Google を選ぶとポップアップが開くことがあります。ブロックと出たら許可してからもう一度押してください。
         </p>
       </div>
 

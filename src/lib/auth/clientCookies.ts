@@ -44,6 +44,43 @@ export function takeOAuthReturnTo(): string | null {
 }
 
 /** OAuth 後に `sessionStorage` が消えても、URL の `returnTo` で戻れるようにする */
+/** `signInWithRedirect` 開始時にセットし、戻ってきて未ログインなら案内する（Safari 向け） */
+export const OAUTH_RETURN_PENDING_LS_KEY = "lj_oauth_return_pending_ts";
+const OAUTH_PENDING_MAX_MS = 5 * 60 * 1000;
+
+export function markOAuthReturnPending(): void {
+  try {
+    localStorage.setItem(OAUTH_RETURN_PENDING_LS_KEY, String(Date.now()));
+  } catch {
+    /* noop */
+  }
+}
+
+export function clearOAuthReturnPending(): void {
+  try {
+    localStorage.removeItem(OAUTH_RETURN_PENDING_LS_KEY);
+  } catch {
+    /* noop */
+  }
+}
+
+export function readOAuthReturnPendingAgeMs(): number | null {
+  try {
+    const raw = localStorage.getItem(OAUTH_RETURN_PENDING_LS_KEY);
+    if (!raw) return null;
+    const ts = Number(raw);
+    if (!Number.isFinite(ts)) return null;
+    const age = Date.now() - ts;
+    if (age > OAUTH_PENDING_MAX_MS) {
+      localStorage.removeItem(OAUTH_RETURN_PENDING_LS_KEY);
+      return null;
+    }
+    return age;
+  } catch {
+    return null;
+  }
+}
+
 export function readReturnToFromCurrentUrl(): string | null {
   if (typeof window === "undefined") return null;
   try {
