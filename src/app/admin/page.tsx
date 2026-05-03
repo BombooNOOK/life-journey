@@ -50,6 +50,33 @@ function likePatternFromKeyword(keyword: string): string {
   return `%${safe}%`;
 }
 
+/** メールごとの鑑定 PDF 上限の実効値（AccountSettings が読めないときも Order から表示できる） */
+async function loadOrderPdfMaxByNormalizedEmailPostgres(keyword: string): Promise<Map<string, number>> {
+  const kw = keyword.trim();
+  const rows =
+    kw.length > 0
+      ? await prisma.$queryRaw<Array<{ e: string; m: number | bigint | null }>>`
+          SELECT LOWER(TRIM("email")) AS e, MAX("pdfDownloadLimit")::int AS m
+          FROM "Order"
+          WHERE LOWER(TRIM("email")) LIKE LOWER(${likePatternFromKeyword(kw)})
+          GROUP BY LOWER(TRIM("email"))
+        `
+      : await prisma.$queryRaw<Array<{ e: string; m: number | bigint | null }>>`
+          SELECT LOWER(TRIM("email")) AS e, MAX("pdfDownloadLimit")::int AS m
+          FROM "Order"
+          GROUP BY LOWER(TRIM("email"))
+        `;
+  const map = new Map<string, number>();
+  for (const r of rows) {
+    const key = normalizeEmail(r.e);
+    const raw = r.m;
+    const n = raw == null ? 2 : typeof raw === "bigint" ? Number(raw) : Number(raw);
+    if (!Number.isFinite(n)) continue;
+    map.set(key, Math.max(0, Math.min(999, Math.trunc(n))));
+  }
+  return map;
+}
+
 type RawEmailCount = { e: string; c: bigint | number };
 
 /** PostgreSQL: Prisma の groupBy / insensitive より確実にメール別件数を取る */
@@ -57,7 +84,7 @@ async function loadRowsPostgres(keyword: string): Promise<UserRow[]> {
   const kw = keyword.trim();
   const pattern = kw ? likePatternFromKeyword(kw) : "";
 
-  const [orderRows, journalRows, settingsList] = await Promise.all([
+  const [orderRows, journalRows, settingsList, orderPdfMaxByEmail] = await Promise.all([
     kw
       ? prisma.$queryRaw<RawEmailCount[]>`
           SELECT LOWER(TRIM("email")) AS e, COUNT(*)::bigint AS c
@@ -83,6 +110,7 @@ async function loadRowsPostgres(keyword: string): Promise<UserRow[]> {
           GROUP BY LOWER(TRIM("email"))
         `,
     fetchAccountSettingsForAdminList(kw),
+    loadOrderPdfMaxByNormalizedEmailPostgres(kw),
   ]);
 
   const orderCountByEmail = new Map<string, number>();
@@ -106,13 +134,15 @@ async function loadRowsPostgres(keyword: string): Promise<UserRow[]> {
   return Array.from(emails)
     .map((email) => {
       const setting = settingsByEmail.get(email);
+      const fromAccount = setting?.pdfDownloadLimitPerOrder ?? 2;
+      const fromOrders = orderPdfMaxByEmail.get(email) ?? 2;
       return {
         email,
         sourceOrderCount: orderCountByEmail.get(email) ?? 0,
         sourceJournalCount: journalCountByEmail.get(email) ?? 0,
         isAdmin: setting?.isAdmin ?? false,
         profileLimit: setting?.profileLimit ?? 1,
-        pdfDownloadLimitPerOrder: setting?.pdfDownloadLimitPerOrder ?? 2,
+        pdfDownloadLimitPerOrder: Math.max(fromAccount, fromOrders),
         subscriberPdfAccess: setting?.subscriberPdfAccess ?? false,
       };
     })
@@ -286,7 +316,7 @@ function emailContainsWhere(keyword: string, preferInsensitive: boolean) {
 async function loadRowsWithEmailMode(keyword: string, insensitive: boolean): Promise<UserRow[]> {
   const where = keyword ? emailContainsWhere(keyword, insensitive) : {};
 
-  const [orderGroups, journalGroups, settings] = await Promise.all([
+  const [orderGroups, journalGroups, settings, orderPdfMaxByEmail] = await Promise.all([
     prisma.order.groupBy({
       by: ["email"],
       where,
@@ -300,6 +330,9 @@ async function loadRowsWithEmailMode(keyword: string, insensitive: boolean): Pro
       orderBy: { email: "asc" },
     }),
     fetchAccountSettingsForAdminList(keyword),
+    isPostgresDb()
+      ? loadOrderPdfMaxByNormalizedEmailPostgres(keyword)
+      : Promise.resolve(new Map<string, number>()),
   ]);
 
   const orderCountByEmail = new Map<string, number>();
@@ -323,13 +356,15 @@ async function loadRowsWithEmailMode(keyword: string, insensitive: boolean): Pro
   return Array.from(emails)
     .map((email) => {
       const setting = settingsByEmail.get(email);
+      const fromAccount = setting?.pdfDownloadLimitPerOrder ?? 2;
+      const fromOrders = orderPdfMaxByEmail.get(email) ?? 2;
       return {
         email,
         sourceOrderCount: orderCountByEmail.get(email) ?? 0,
         sourceJournalCount: journalCountByEmail.get(email) ?? 0,
         isAdmin: setting?.isAdmin ?? false,
         profileLimit: setting?.profileLimit ?? 1,
-        pdfDownloadLimitPerOrder: setting?.pdfDownloadLimitPerOrder ?? 2,
+        pdfDownloadLimitPerOrder: Math.max(fromAccount, fromOrders),
         subscriberPdfAccess: setting?.subscriberPdfAccess ?? false,
       };
     })

@@ -137,15 +137,16 @@ async function upsertAccountSettingsAdminRolePostgresRaw(
   return { id };
 }
 
-/** 6列 upsert のあと pdf 列だけ更新（列が無い DB では無視） */
+/** 6列 upsert のあと pdf 列を「正規化メールが同じ行すべて」に反映（列が無い DB では無視） */
 async function upsertAccountSettingsPdfLimitPostgresRaw(
   email: string,
   pdfDownloadLimitPerOrder: number,
 ): Promise<{ id: string }> {
+  const canonicalEmail = normalizeEmail(email);
   const newId = randomUUID();
   const rows = await prisma.$queryRaw<Array<{ id: string }>>`
     INSERT INTO "AccountSettings" ("id", "createdAt", "updatedAt", "email", "isAdmin", "profileLimit")
-    VALUES (${newId}, NOW(), NOW(), ${email}, false, 1)
+    VALUES (${newId}, NOW(), NOW(), ${canonicalEmail}, false, 1)
     ON CONFLICT ("email")
     DO UPDATE SET "updatedAt" = NOW()
     RETURNING "id"
@@ -156,7 +157,7 @@ async function upsertAccountSettingsPdfLimitPostgresRaw(
     await prisma.$executeRaw`
       UPDATE "AccountSettings"
       SET "pdfDownloadLimitPerOrder" = ${pdfDownloadLimitPerOrder}
-      WHERE "id" = ${id}
+      WHERE LOWER(TRIM("email")) = LOWER(TRIM(${canonicalEmail}))
     `;
   } catch {
     /* 列未適用 */
