@@ -25,6 +25,17 @@ async function requireAdminOrRedirect(): Promise<void> {
   }
 }
 
+function isPostgresDb(): boolean {
+  const u = process.env.DATABASE_URL ?? "";
+  if (u.startsWith("file:") || u.includes("sqlite")) return false;
+  return (
+    u.startsWith("postgresql") ||
+    u.startsWith("postgres") ||
+    u.startsWith("prisma+postgres") ||
+    u.startsWith("prisma+postgresql")
+  );
+}
+
 function safeRevalidateAdminRelated(): void {
   try {
     revalidatePath("/admin");
@@ -87,8 +98,7 @@ async function syncOrdersPdfDownloadLimitForNormalizedEmail(
 
 /**
  * 同一ユーザーとみなすメール表記ゆれの行を同期する。
- * 旧実装は「自分以外の AccountSettings を全件読む」ため本番でタイムアウトし得るので、
- * メール条件で絞った updateMany のみ行う。
+ * Prisma の `mode: insensitive` + AND は環境によって Invalid になるため、PostgreSQL では Raw UPDATE。
  */
 async function syncDuplicateAccountRowsForNormalizedEmail(
   mergedId: string,
@@ -96,13 +106,44 @@ async function syncDuplicateAccountRowsForNormalizedEmail(
   data: Prisma.AccountSettingsUpdateManyMutationInput,
 ): Promise<void> {
   try {
+    if (isPostgresDb()) {
+      if (data.profileLimit !== undefined) {
+        await prisma.$executeRaw`
+          UPDATE "AccountSettings"
+          SET "profileLimit" = ${data.profileLimit}
+          WHERE "id" <> ${mergedId}
+            AND LOWER(TRIM("email")) = LOWER(TRIM(${normalizedEmail}))
+        `;
+      }
+      if (data.isAdmin !== undefined) {
+        await prisma.$executeRaw`
+          UPDATE "AccountSettings"
+          SET "isAdmin" = ${data.isAdmin}
+          WHERE "id" <> ${mergedId}
+            AND LOWER(TRIM("email")) = LOWER(TRIM(${normalizedEmail}))
+        `;
+      }
+      if (data.pdfDownloadLimitPerOrder !== undefined) {
+        await prisma.$executeRaw`
+          UPDATE "AccountSettings"
+          SET "pdfDownloadLimitPerOrder" = ${data.pdfDownloadLimitPerOrder}
+          WHERE "id" <> ${mergedId}
+            AND LOWER(TRIM("email")) = LOWER(TRIM(${normalizedEmail}))
+        `;
+      }
+      if (data.subscriberPdfAccess !== undefined) {
+        await prisma.$executeRaw`
+          UPDATE "AccountSettings"
+          SET "subscriberPdfAccess" = ${data.subscriberPdfAccess}
+          WHERE "id" <> ${mergedId}
+            AND LOWER(TRIM("email")) = LOWER(TRIM(${normalizedEmail}))
+        `;
+      }
+      return;
+    }
+
     await prisma.accountSettings.updateMany({
-      where: {
-        AND: [
-          { NOT: { id: mergedId } },
-          { email: { equals: normalizedEmail, mode: "insensitive" } },
-        ],
-      },
+      where: { email: normalizedEmail },
       data,
     });
   } catch (e) {
@@ -200,18 +241,38 @@ async function saveAccountPdfLimitWithFallback(
     } catch (e2) {
       console.warn("[admin] findUnique fallback:", e2);
     }
-    try {
-      const hit = await prisma.accountSettings.findFirst({
-        where: { email: { equals: email, mode: "insensitive" } },
-      });
-      if (hit) {
-        return prisma.accountSettings.update({
-          where: { id: hit.id },
-          data: { pdfDownloadLimitPerOrder },
-        });
+    if (isPostgresDb()) {
+      try {
+        const rows = await prisma.$queryRaw<Array<{ id: string }>>`
+          SELECT "id"
+          FROM "AccountSettings"
+          WHERE LOWER(TRIM("email")) = LOWER(TRIM(${email}))
+          LIMIT 1
+        `;
+        const id = rows[0]?.id;
+        if (id) {
+          return prisma.accountSettings.update({
+            where: { id },
+            data: { pdfDownloadLimitPerOrder },
+          });
+        }
+      } catch (e3) {
+        console.warn("[admin] raw select AccountSettings by email fallback:", e3);
       }
-    } catch (e3) {
-      console.warn("[admin] findFirst insensitive fallback:", e3);
+    } else {
+      try {
+        const hit = await prisma.accountSettings.findFirst({
+          where: { email: { equals: email, mode: "insensitive" } },
+        });
+        if (hit) {
+          return prisma.accountSettings.update({
+            where: { id: hit.id },
+            data: { pdfDownloadLimitPerOrder },
+          });
+        }
+      } catch (e3) {
+        console.warn("[admin] findFirst insensitive fallback:", e3);
+      }
     }
     return prisma.accountSettings.create({
       data: {

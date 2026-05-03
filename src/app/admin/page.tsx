@@ -149,26 +149,67 @@ async function loadRowsPostgres(keyword: string): Promise<UserRow[]> {
     .slice(0, 200);
 }
 
-/** マイグレーション未適用などで列が無い場合も一覧だけは出す */
-async function fetchAccountSettingsForAdminList(keyword: string): Promise<
-  Array<{
-    id: string;
-    email: string;
-    isAdmin: boolean;
-    profileLimit: number;
-    updatedAt: Date;
-    pdfDownloadLimitPerOrder?: number;
-    subscriberPdfAccess?: boolean;
-  }>
-> {
-  const whereInsensitive = keyword
-    ? { email: { contains: keyword, mode: "insensitive" as const } }
-    : {};
-  const whereSensitive = keyword ? { email: { contains: keyword } } : {};
+type AccountSettingsAdminRow = {
+  id: string;
+  email: string;
+  isAdmin: boolean;
+  profileLimit: number;
+  updatedAt: Date;
+  pdfDownloadLimitPerOrder?: number | null;
+  subscriberPdfAccess?: boolean | null;
+};
+
+/**
+ * Prisma の `mode: "insensitive"` 付き findMany が環境によって
+ * `Invalid prisma.accountSettings.findMany()` になるため、PostgreSQL では Raw SQL を使う。
+ */
+async function fetchAccountSettingsForAdminList(keyword: string): Promise<AccountSettingsAdminRow[]> {
+  const kw = keyword.trim();
+
+  if (isPostgresDb()) {
+    try {
+      if (!kw) {
+        return await prisma.$queryRaw<AccountSettingsAdminRow[]>`
+          SELECT "id", "email", "isAdmin", "profileLimit",
+                 "pdfDownloadLimitPerOrder", "subscriberPdfAccess", "updatedAt"
+          FROM "AccountSettings"
+          ORDER BY "updatedAt" DESC
+        `;
+      }
+      const pattern = likePatternFromKeyword(kw);
+      return await prisma.$queryRaw<AccountSettingsAdminRow[]>`
+        SELECT "id", "email", "isAdmin", "profileLimit",
+               "pdfDownloadLimitPerOrder", "subscriberPdfAccess", "updatedAt"
+        FROM "AccountSettings"
+        WHERE LOWER(TRIM("email")) LIKE LOWER(${pattern})
+        ORDER BY "updatedAt" DESC
+      `;
+    } catch (e) {
+      console.warn("[admin] fetchAccountSettings full columns (raw) failed:", e);
+      try {
+        if (!kw) {
+          return await prisma.$queryRaw<AccountSettingsAdminRow[]>`
+            SELECT "id", "email", "isAdmin", "profileLimit", "updatedAt"
+            FROM "AccountSettings"
+            ORDER BY "updatedAt" DESC
+          `;
+        }
+        const pattern = likePatternFromKeyword(kw);
+        return await prisma.$queryRaw<AccountSettingsAdminRow[]>`
+          SELECT "id", "email", "isAdmin", "profileLimit", "updatedAt"
+          FROM "AccountSettings"
+          WHERE LOWER(TRIM("email")) LIKE LOWER(${pattern})
+          ORDER BY "updatedAt" DESC
+        `;
+      } catch (e2) {
+        console.warn("[admin] fetchAccountSettings minimal columns (raw) failed:", e2);
+      }
+    }
+  }
 
   try {
     return await prisma.accountSettings.findMany({
-      where: whereInsensitive,
+      where: kw ? { email: { contains: kw } } : {},
       orderBy: { updatedAt: "desc" },
       select: {
         id: true,
@@ -180,47 +221,19 @@ async function fetchAccountSettingsForAdminList(keyword: string): Promise<
         updatedAt: true,
       },
     });
-  } catch {
-    try {
-      return await prisma.accountSettings.findMany({
-        where: whereSensitive,
-        orderBy: { updatedAt: "desc" },
-        select: {
-          id: true,
-          email: true,
-          isAdmin: true,
-          profileLimit: true,
-          pdfDownloadLimitPerOrder: true,
-          subscriberPdfAccess: true,
-          updatedAt: true,
-        },
-      });
-    } catch {
-      try {
-        return await prisma.accountSettings.findMany({
-          where: whereInsensitive,
-          orderBy: { updatedAt: "desc" },
-          select: {
-            id: true,
-            email: true,
-            isAdmin: true,
-            profileLimit: true,
-            updatedAt: true,
-          },
-        });
-      } catch {
-        return await prisma.accountSettings.findMany({
-          orderBy: { updatedAt: "desc" },
-          select: {
-            id: true,
-            email: true,
-            isAdmin: true,
-            profileLimit: true,
-            updatedAt: true,
-          },
-        });
-      }
-    }
+  } catch (e) {
+    console.warn("[admin] fetchAccountSettings findMany fallback:", e);
+    return prisma.accountSettings.findMany({
+      where: kw ? { email: { contains: kw } } : {},
+      orderBy: { updatedAt: "desc" },
+      select: {
+        id: true,
+        email: true,
+        isAdmin: true,
+        profileLimit: true,
+        updatedAt: true,
+      },
+    });
   }
 }
 
