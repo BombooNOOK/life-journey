@@ -9,6 +9,7 @@ import { getViewerEmailFromCookie } from "@/lib/auth/viewer";
 import { journalEntryInBookshelfPeriod } from "@/lib/journal/bookshelfPeriod";
 import { listViewerProfiles, resolveActiveProfileId } from "@/lib/profile/activeProfile";
 import { prisma } from "@/lib/db";
+import { combinePdfDownloadLimit, fetchAccountPdfDownloadLimitOrNull } from "@/lib/order/effectivePdfDownloadLimit";
 
 export const dynamic = "force-dynamic";
 
@@ -44,6 +45,7 @@ export default async function BookshelfPage() {
     isAdminEmail(viewerEmail),
   ]);
   const showPrintQualityPdf = subscriberPdf || viewerIsAdmin;
+  const accountPdfCap = await fetchAccountPdfDownloadLimitOrNull(viewerEmail);
   const shelfBookDelegate = (prisma as unknown as {
     diaryBookshelfBook?: {
       findMany: (args: {
@@ -148,17 +150,20 @@ export default async function BookshelfPage() {
       };
     });
 
-  const reportBooks: ShelfBook[] = orders.map((order) => ({
-    id: `report-${order.id}`,
-    title: "鑑定書",
-    subtitle: `${order.fullNameDisplay} · ${order.createdAt.toLocaleDateString("ja-JP")}`,
-    href: `/orders/${order.id}`,
-    reportOrderId: order.id,
-    boundPdfHref: `/api/orders/${order.id}/pdf?download=1&quality=low`,
-    pdfRemainingDownloads: Math.max(0, (order.pdfDownloadLimit ?? 2) - (order.pdfDownloadCount ?? 0)),
-    pdfDownloadLimit: order.pdfDownloadLimit ?? 2,
-    tone: "amber",
-  }));
+  const reportBooks: ShelfBook[] = orders.map((order) => {
+    const effectiveLimit = combinePdfDownloadLimit(order.pdfDownloadLimit, accountPdfCap);
+    return {
+      id: `report-${order.id}`,
+      title: "鑑定書",
+      subtitle: `${order.fullNameDisplay} · ${order.createdAt.toLocaleDateString("ja-JP")}`,
+      href: `/orders/${order.id}`,
+      reportOrderId: order.id,
+      boundPdfHref: `/api/orders/${order.id}/pdf?download=1&quality=low`,
+      pdfRemainingDownloads: Math.max(0, effectiveLimit - (order.pdfDownloadCount ?? 0)),
+      pdfDownloadLimit: effectiveLimit,
+      tone: "amber" as const,
+    };
+  });
 
   const books = [...diaryBooks, ...reportBooks];
 

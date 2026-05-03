@@ -23,6 +23,7 @@ import { isAdminEmail } from "@/lib/admin/access";
 import { getViewerEmailFromCookie, normalizeEmail } from "@/lib/auth/viewer";
 import { mergeReportPdfWithChapterInserts } from "@/lib/pdf/mergeReportPdfWithInserts";
 import { prisma } from "@/lib/db";
+import { combinePdfDownloadLimit, fetchAccountPdfDownloadLimitOrNull } from "@/lib/order/effectivePdfDownloadLimit";
 import type { OrderPayload } from "@/lib/order/types";
 import { orderPayloadFromOrderRow } from "@/lib/order/serialize";
 
@@ -95,7 +96,7 @@ interface RouteParams {
   params: Promise<{ id: string }>;
 }
 
-function htmlWhenDownloadLimitExceeded(reissueUrl: string): string {
+function htmlWhenDownloadLimitExceeded(reissueUrl: string, limit: number): string {
   return `<!doctype html>
 <html lang="ja">
 <head>
@@ -112,7 +113,7 @@ function htmlWhenDownloadLimitExceeded(reissueUrl: string): string {
 <body>
   <div class="box">
     <h1 style="margin-top:0;">鑑定書PDFのダウンロード上限に達しました</h1>
-    <p>この鑑定書は無料閲覧回数（2回）を使い切りました。</p>
+    <p>この鑑定書は無料閲覧回数（${limit}回）を使い切りました。</p>
     <p>追加の再発行をご希望の場合は、下のリンクからお手続きください。</p>
     <a class="btn" href="${reissueUrl}" target="_blank" rel="noreferrer">再発行（有料）ページへ</a>
     <p class="muted">閲覧・ダウンロードのどちらでも、1回アクセスするごとに回数を1つ消費します。</p>
@@ -171,7 +172,8 @@ export async function GET(req: Request, { params }: RouteParams) {
     }
   }
 
-  const downloadLimit = row.pdfDownloadLimit ?? 2;
+  const accountCap = await fetchAccountPdfDownloadLimitOrNull(row.email);
+  const downloadLimit = combinePdfDownloadLimit(row.pdfDownloadLimit, accountCap);
   const downloadCount = row.pdfDownloadCount ?? 0;
   const reissueUrl =
     process.env.NEXT_PUBLIC_BASE_PDF_REISSUE_URL ??
@@ -179,7 +181,7 @@ export async function GET(req: Request, { params }: RouteParams) {
     "https://thebase.com";
 
   if (shouldDownload && downloadCount >= downloadLimit) {
-    return new NextResponse(htmlWhenDownloadLimitExceeded(reissueUrl), {
+    return new NextResponse(htmlWhenDownloadLimitExceeded(reissueUrl, downloadLimit), {
       status: 429,
       headers: { "Content-Type": "text/html; charset=utf-8" },
     });

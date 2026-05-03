@@ -7,6 +7,7 @@ import { OrderIdentityCorrectionCard } from "@/components/orders/OrderIdentityCo
 import { PdfDownloadButton } from "@/components/orders/PdfDownloadButton";
 import { getViewerEmailFromCookie, normalizeEmail } from "@/lib/auth/viewer";
 import { prisma } from "@/lib/db";
+import { combinePdfDownloadLimit, fetchAccountPdfDownloadLimitOrNull } from "@/lib/order/effectivePdfDownloadLimit";
 import { numerologyWithRefreshedLifePath } from "@/lib/order/numerologyDisplay";
 import { personalYearCycleEntry } from "@/lib/numerology/data/personalYearCycleData";
 import { personalYearNumber } from "@/lib/numerology/personalYearMonth";
@@ -86,7 +87,8 @@ export default async function OrderDetailPage({ params }: Props) {
   const currentYear = new Date().getFullYear();
   const yearCycle = personalYearNumber(order.birthMonth, order.birthDay, currentYear);
   const yearTheme = personalYearCycleEntry(yearCycle);
-  const pdfDownloadLimit = order.pdfDownloadLimit ?? 2;
+  const accountPdfCap = await fetchAccountPdfDownloadLimitOrNull(viewerEmail);
+  const pdfDownloadLimit = combinePdfDownloadLimit(order.pdfDownloadLimit, accountPdfCap);
   const pdfDownloadCount = order.pdfDownloadCount ?? 0;
   const pdfRemaining = Math.max(0, pdfDownloadLimit - pdfDownloadCount);
   const canCorrectIdentity = (order.identityCorrectionCount ?? 0) === 0;
