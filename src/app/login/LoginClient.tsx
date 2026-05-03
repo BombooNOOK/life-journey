@@ -177,6 +177,8 @@ export function LoginClient() {
       };
       try {
       const provider = new GoogleAuthProvider();
+      /** Mac と同様に「どのアカウントか」を選ばせる（iPhone だけ省略されやすい） */
+      provider.setCustomParameters({ prompt: "select_account" });
       /** iPhone/iPad はリダイレクト方式だと戻り後に認証状態が復元できないことが多いので、まずポップアップを試す */
       const isIOS =
         /iPad|iPhone|iPod/i.test(navigator.userAgent) ||
