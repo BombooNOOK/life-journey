@@ -17,6 +17,28 @@ export async function fetchAccountPdfDownloadLimitOrNull(
   const email = normalizeEmail(orderEmail);
   if (!email) return null;
 
+  const url = process.env.DATABASE_URL ?? "";
+  const isPostgres =
+    url.startsWith("postgresql") ||
+    url.startsWith("postgres") ||
+    url.startsWith("prisma+postgres") ||
+    url.startsWith("prisma+postgresql");
+
+  /** 大文字小文字違いの重複行があっても、鑑定PDF上限は最大の行を採用 */
+  if (isPostgres) {
+    try {
+      const rows = await prisma.$queryRaw<Array<{ m: number | null }>>`
+        SELECT MAX("pdfDownloadLimitPerOrder") AS m
+        FROM "AccountSettings"
+        WHERE LOWER(TRIM("email")) = LOWER(TRIM(${email}))
+      `;
+      const v = rows[0]?.m;
+      if (v !== undefined && v !== null) return clampLimit(v);
+    } catch {
+      /* 列未適用など */
+    }
+  }
+
   try {
     const exact = await prisma.accountSettings.findUnique({
       where: { email },
@@ -25,24 +47,6 @@ export async function fetchAccountPdfDownloadLimitOrNull(
     if (exact) return clampLimit(exact.pdfDownloadLimitPerOrder);
   } catch {
     /* noop */
-  }
-
-  const url = process.env.DATABASE_URL ?? "";
-  const isPostgres = url.startsWith("postgresql") || url.startsWith("postgres");
-
-  if (isPostgres) {
-    try {
-      const rows = await prisma.$queryRaw<Array<{ pdfDownloadLimitPerOrder: number }>>`
-        SELECT "pdfDownloadLimitPerOrder"
-        FROM "AccountSettings"
-        WHERE LOWER(TRIM("email")) = LOWER(TRIM(${email}))
-        LIMIT 1
-      `;
-      const v = rows[0]?.pdfDownloadLimitPerOrder;
-      if (v !== undefined && v !== null) return clampLimit(v);
-    } catch {
-      /* noop */
-    }
   }
 
   // メール表記ゆれ（大文字小文字）で findUnique が外れたとき（PostgreSQL で mode: insensitive が使える想定）

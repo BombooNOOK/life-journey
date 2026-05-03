@@ -1,9 +1,10 @@
 import { NextResponse } from "next/server";
 
-import { getViewerEmailFromCookie, normalizeEmail } from "@/lib/auth/viewer";
+import { getViewerEmailFromCookie } from "@/lib/auth/viewer";
 import { prisma } from "@/lib/db";
 import { buildOrderPayload } from "@/lib/order/buildSnapshot";
 import { toIsoDateString } from "@/lib/order/birthDate";
+import { fetchAccountPdfDownloadLimitOrNull } from "@/lib/order/effectivePdfDownloadLimit";
 import type { CustomerFormValues } from "@/lib/order/types";
 import { profileByIdForViewer, resolveActiveProfileId } from "@/lib/profile/activeProfile";
 import { isHiraganaOnly } from "@/lib/validation/hiragana";
@@ -146,12 +147,8 @@ export async function POST(req: Request) {
     );
   }
 
-  const accountEmail = normalizeEmail(viewerEmail);
-  const accountSettings = await prisma.accountSettings.findUnique({
-    where: { email: accountEmail },
-    select: { pdfDownloadLimitPerOrder: true },
-  });
-  const pdfDownloadLimitForOrder = accountSettings?.pdfDownloadLimitPerOrder ?? 2;
+  const accountCap = await fetchAccountPdfDownloadLimitOrNull(viewerEmail);
+  const pdfDownloadLimitForOrder = accountCap ?? 2;
 
   try {
     const order = await prisma.order.create({

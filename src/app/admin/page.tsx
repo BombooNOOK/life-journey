@@ -96,37 +96,7 @@ async function loadRowsPostgres(keyword: string): Promise<UserRow[]> {
     journalCountByEmail.set(key, (journalCountByEmail.get(key) ?? 0) + countCell(r.c));
   }
 
-  const settingsByEmail = new Map<
-    string,
-    {
-      id: string;
-      email: string;
-      isAdmin: boolean;
-      profileLimit: number;
-      pdfDownloadLimitPerOrder: number;
-      subscriberPdfAccess: boolean;
-      updatedAt: Date;
-    }
-  >();
-
-  for (const s of settingsList) {
-    const key = normalizeEmail(s.email);
-    const prev = settingsByEmail.get(key);
-    const pdfLimit = s.pdfDownloadLimitPerOrder ?? 2;
-    const subPdf = s.subscriberPdfAccess ?? false;
-    const merged = {
-      id: s.id,
-      email: s.email,
-      isAdmin: s.isAdmin,
-      profileLimit: s.profileLimit,
-      pdfDownloadLimitPerOrder: pdfLimit,
-      subscriberPdfAccess: subPdf,
-      updatedAt: s.updatedAt,
-    };
-    if (!prev || prev.updatedAt < merged.updatedAt) {
-      settingsByEmail.set(key, merged);
-    }
-  }
+  const settingsByEmail = collapseAccountSettingsByNormalizedEmail(settingsList);
 
   const emails = new Set<string>([
     ...orderCountByEmail.keys(),
@@ -159,6 +129,57 @@ type AccountSettingsAdminRow = {
   pdfDownloadLimitPerOrder?: number | null;
   subscriberPdfAccess?: boolean | null;
 };
+
+type CollapsedAccountSettings = {
+  id: string;
+  email: string;
+  isAdmin: boolean;
+  profileLimit: number;
+  pdfDownloadLimitPerOrder: number;
+  subscriberPdfAccess: boolean;
+  updatedAt: Date;
+};
+
+/**
+ * email の大小区別で AccountSettings が複数行あっても、PDF 上限などは「実効値」が一覧に出るようマージする。
+ * （updatedAt だけ新しい行を採用すると、別行にだけ保存した上限 6 が 2 表示になる）
+ */
+function collapseAccountSettingsByNormalizedEmail(
+  settingsList: AccountSettingsAdminRow[],
+): Map<string, CollapsedAccountSettings> {
+  const groups = new Map<string, AccountSettingsAdminRow[]>();
+  for (const s of settingsList) {
+    const key = normalizeEmail(s.email);
+    const arr = groups.get(key) ?? [];
+    arr.push(s);
+    groups.set(key, arr);
+  }
+
+  const out = new Map<string, CollapsedAccountSettings>();
+  for (const [key, arr] of groups) {
+    let latest = arr[0]!;
+    for (const s of arr) {
+      if (s.updatedAt > latest.updatedAt) latest = s;
+    }
+    const pdfDownloadLimitPerOrder = Math.max(
+      ...arr.map((s) => (s.pdfDownloadLimitPerOrder != null ? s.pdfDownloadLimitPerOrder : 2)),
+    );
+    const subscriberPdfAccess = arr.some((s) => s.subscriberPdfAccess === true);
+    const isAdmin = arr.some((s) => s.isAdmin === true);
+    const profileLimit = Math.max(...arr.map((s) => s.profileLimit));
+
+    out.set(key, {
+      id: latest.id,
+      email: latest.email,
+      isAdmin,
+      profileLimit,
+      pdfDownloadLimitPerOrder,
+      subscriberPdfAccess,
+      updatedAt: latest.updatedAt,
+    });
+  }
+  return out;
+}
 
 /**
  * PostgreSQL: 初回 AccountSettings マイグレーションに必ずある列だけで Raw SELECT（本番が追いついていないときも落ちない）。
@@ -292,34 +313,7 @@ async function loadRowsWithEmailMode(keyword: string, insensitive: boolean): Pro
     journalCountByEmail.set(key, (journalCountByEmail.get(key) ?? 0) + g._count._all);
   }
 
-  const settingsByEmail = new Map<
-    string,
-    {
-      id: string;
-      email: string;
-      isAdmin: boolean;
-      profileLimit: number;
-      pdfDownloadLimitPerOrder: number;
-      subscriberPdfAccess: boolean;
-      updatedAt: Date;
-    }
-  >();
-  for (const s of settings) {
-    const key = normalizeEmail(s.email);
-    const prev = settingsByEmail.get(key);
-    const merged = {
-      id: s.id,
-      email: s.email,
-      isAdmin: s.isAdmin,
-      profileLimit: s.profileLimit,
-      pdfDownloadLimitPerOrder: s.pdfDownloadLimitPerOrder ?? 2,
-      subscriberPdfAccess: s.subscriberPdfAccess ?? false,
-      updatedAt: s.updatedAt,
-    };
-    if (!prev || prev.updatedAt < merged.updatedAt) {
-      settingsByEmail.set(key, merged);
-    }
-  }
+  const settingsByEmail = collapseAccountSettingsByNormalizedEmail(settings);
 
   const emails = new Set<string>([
     ...orderCountByEmail.keys(),
