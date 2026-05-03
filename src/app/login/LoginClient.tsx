@@ -189,17 +189,19 @@ export function LoginClient() {
       };
       try {
       const provider = new GoogleAuthProvider();
-      /** デスクトップのポップアップで「どのアカウントか」を選ばせる。モバイルはリダイレクト1回のみ（ポップアップ失敗後の再リダイレクトだとアカウント選択が二度出る） */
+      /** 複数 Google アカウントがあるときに選べるようにする（デスクトップのポップアップ） */
       if (!isIOS && !isAndroid) {
         provider.setCustomParameters({ prompt: "select_account" });
       }
 
       /**
        * iOS はまずポップアップ（リダイレクトだけだと Safari で状態が取り込めないことがある）。
-       * ポップアップ用は `select_account` なし。フォールバックのリダイレクトだけ `select_account` にして二重アカウント選択を避ける。
+       * ポップアップでも `select_account` を付け、普段どおりアカウントを選べるようにする。
+       * ポップアップ失敗後にリダイレクトに落ちると、環境によっては Google のアカウント選択が続けて出ることがある。
        */
       if (isIOS) {
         const popupProvider = new GoogleAuthProvider();
+        popupProvider.setCustomParameters({ prompt: "select_account" });
         try {
           const cred = await signInWithPopup(a, popupProvider);
           await completeGoogleSignIn(cred);
