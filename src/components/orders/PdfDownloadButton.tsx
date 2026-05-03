@@ -56,6 +56,12 @@ export function PdfDownloadButton({
                 window.location.href = fetchUrl;
                 return;
               }
+              if (res.status === 502 || res.status === 503 || res.status === 504) {
+                setError(
+                  "PDFの準備に時間がかかりすぎて接続が切れました（サーバー側の時間制限）。しばらくしてからもう一度お試しください。",
+                );
+                return;
+              }
               throw new Error(`HTTP ${res.status}`);
             }
             if (!contentType.includes("application/pdf")) {
@@ -74,9 +80,9 @@ export function PdfDownloadButton({
             document.body.removeChild(a);
             URL.revokeObjectURL(downloadUrl);
           } catch {
-            setError("通信状況により生成に失敗しました。もう一度お試しください。");
-            // Fallback to server route in case the browser blocked blob download.
-            window.location.href = fetchUrl;
+            setError(
+              "通信状況により生成に失敗しました。もう一度お試しください（Wi‑Fi の場合は電波の良い場所で）。",
+            );
           } finally {
             setLoading(false);
           }

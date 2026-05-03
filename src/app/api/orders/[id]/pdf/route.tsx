@@ -143,6 +143,11 @@ const PDF_API_CACHE_HEADERS = {
   Vary: "Cookie",
 } as const;
 
+/** 鑑定書全体の生成は @react-pdf + pdf-lib で 1〜3 分かかることがある。既定のサーバー時間（短いと 10〜60 秒）で切られるとクライアントが通信エラーになる。Vercel Pro は最大 300 秒まで延長可能。 */
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+export const maxDuration = 300;
+
 export async function GET(req: Request, { params }: RouteParams) {
   const { id } = await params;
   const viewerEmail = await getViewerEmailFromCookie();

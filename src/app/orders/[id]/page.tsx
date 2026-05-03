@@ -159,7 +159,7 @@ export default async function OrderDetailPage({ params }: Props) {
             href={`/api/orders/${order.id}/pdf?download=1&quality=low`}
             label="プレビュー版（軽量）をダウンロード"
             className="rounded-lg bg-stone-800 px-5 py-2.5 text-sm font-medium text-white hover:bg-stone-700"
-            loadingLabel="プレビュー版PDFを準備中です…（30〜90秒）"
+            loadingLabel="プレビュー版PDFを準備中です…（30秒〜数分かかることがあります）"
           />
           {showPrintQualityPdf ? (
             <PdfDownloadButton
