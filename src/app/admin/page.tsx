@@ -28,6 +28,66 @@ function clampPdfDownloadLimitPerOrder(raw: string | undefined): number {
   return Math.min(999, Math.max(0, Math.trunc(n)));
 }
 
+function safeRevalidateAdminRelated(): void {
+  try {
+    revalidatePath("/admin");
+  } catch (e) {
+    console.warn("[admin] revalidatePath /admin", e);
+  }
+  try {
+    revalidatePath("/orders/bookshelf");
+  } catch (e) {
+    console.warn("[admin] revalidatePath /orders/bookshelf", e);
+  }
+  try {
+    revalidatePath("/orders", "layout");
+  } catch (e) {
+    console.warn("[admin] revalidatePath /orders layout", e);
+  }
+}
+
+/**
+ * 鑑定レコードの pdfDownloadLimit をメールで同期。
+ * Raw UPDATE が接続先（PgBouncer / Accelerate 等）で失敗する場合があるためフォールバックする。
+ */
+async function syncOrdersPdfDownloadLimitForNormalizedEmail(
+  normalizedEmail: string,
+  limit: number,
+): Promise<void> {
+  try {
+    await prisma.$executeRaw`
+      UPDATE "Order"
+      SET "pdfDownloadLimit" = ${limit}
+      WHERE LOWER(TRIM("email")) = LOWER(TRIM(${normalizedEmail}))
+    `;
+    return;
+  } catch (e) {
+    console.warn("[admin] syncOrdersPdfDownloadLimit executeRaw failed:", e);
+  }
+
+  const exact = await prisma.order.updateMany({
+    where: { email: normalizedEmail },
+    data: { pdfDownloadLimit: limit },
+  });
+  if (exact.count > 0) return;
+
+  try {
+    const hits = await prisma.order.findMany({
+      where: {
+        email: { equals: normalizedEmail, mode: "insensitive" },
+      },
+      select: { id: true },
+    });
+    if (hits.length === 0) return;
+    await prisma.order.updateMany({
+      where: { id: { in: hits.map((h) => h.id) } },
+      data: { pdfDownloadLimit: limit },
+    });
+  } catch (e) {
+    console.warn("[admin] syncOrdersPdfDownloadLimit insensitive fallback failed:", e);
+  }
+}
+
 function isPostgresDb(): boolean {
   const u = process.env.DATABASE_URL ?? "";
   if (u.startsWith("file:") || u.includes("sqlite")) return false;
@@ -457,15 +517,8 @@ export default async function AdminPage({ searchParams }: Props) {
         data: { pdfDownloadLimitPerOrder },
       });
     }
-    // メールは保存時の表記ゆれ（大文字小文字・前後空白）があり得るため、正規化一致で一括更新する
-    await prisma.$executeRaw`
-      UPDATE "Order"
-      SET "pdfDownloadLimit" = ${pdfDownloadLimitPerOrder}
-      WHERE LOWER(TRIM("email")) = LOWER(TRIM(${email}))
-    `;
-    revalidatePath("/admin");
-    revalidatePath("/orders/bookshelf");
-    revalidatePath("/orders", "layout");
+    await syncOrdersPdfDownloadLimitForNormalizedEmail(email, pdfDownloadLimitPerOrder);
+    safeRevalidateAdminRelated();
   }
 
   async function toggleSubscriberPdfAccess(formData: FormData) {
