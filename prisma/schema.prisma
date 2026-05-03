@@ -40,6 +40,13 @@ model Order {
   stoneFocusTheme String @default("特に決まっていない")
 
   reportPdfPath  String?
+  /// 鑑定フルPDF（プレビュー画質）を Vercel Blob に保存したときの URL。`focus=all`・`bodyTune=normal` のみ。
+  pdfPreviewBlobUrl   String?
+  /// `pdfPreviewBlobUrl` がどの注文内容に対応するか（SHA256）。内容変更時は再生成して上書き。
+  pdfPreviewCacheKey  String?
+  /// 鑑定フルPDF（製本・高画質）の Blob URL。条件は pdfPreview と同じ。
+  pdfPrintBlobUrl     String?
+  pdfPrintCacheKey    String?
   pdfDownloadCount Int @default(0)
   pdfDownloadLimit Int @default(2)
 

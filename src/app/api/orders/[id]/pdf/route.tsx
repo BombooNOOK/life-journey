@@ -21,6 +21,13 @@ import { resolveSubscriberPdfAccess } from "@/lib/account/pdfAccess";
 import { isAdminEmail } from "@/lib/admin/access";
 import { getViewerEmailFromCookie, normalizeEmail } from "@/lib/auth/viewer";
 import { mergeReportPdfWithChapterInserts } from "@/lib/pdf/mergeReportPdfWithInserts";
+import {
+  buildOrderPdfCacheFingerprint,
+  fetchCachedOrderPdfFromBlobUrl,
+  orderFullPdfRequestCacheable,
+  orderPdfBlobWriteEnabled,
+  putOrderFullPdfToBlob,
+} from "@/lib/pdf/orderPdfBlobCache";
 import { getPdfPageCountFromStaticFile } from "@/lib/pdf/staticPdfFilePageCount";
 import { prisma } from "@/lib/db";
 import { combinePdfDownloadLimit, fetchAccountPdfDownloadLimitOrNull } from "@/lib/order/effectivePdfDownloadLimit";
@@ -134,11 +141,12 @@ const PDF_API_CACHE_HEADERS = {
 
 /**
  * 鑑定書全体の生成は @react-pdf + pdf-lib で数分かかることがある。
- * Vercel: Hobby は最大 300s、Pro/Enterprise は最大 800s（vercel.json と合わせる）。
+ * Hobby 等では maxDuration がプラン上限を超えるとデプロイ自体が失敗する（invalid maxDuration for plan）。
+ * 無料枠は最大 300 秒まで。Pro でより長くしたい場合は 800 まで引き上げ可能。
  */
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
-export const maxDuration = 800;
+export const maxDuration = 300;
 
 export async function GET(req: Request, { params }: RouteParams) {
   let pathForLog = "";
@@ -187,6 +195,7 @@ export async function GET(req: Request, { params }: RouteParams) {
     const subscriberPdf = await resolveSubscriberPdfAccess(viewerEmail);
     const admin = await isAdminEmail(viewerEmail);
     if (!subscriberPdf && !admin) {
+      console.log("[pdf-api] 早期終了 403 高画質権限なし", { orderId: id });
       return NextResponse.json(
         {
           error:
@@ -249,38 +258,112 @@ export async function GET(req: Request, { params }: RouteParams) {
     shouldDownload,
   };
 
-  let buffer: Buffer | Uint8Array;
-  try {
-    console.info("[pdf-api] PDF生成開始", pdfLogBase);
-    ensureJapaneseFont();
-    const payload = orderPayloadFromOrderRow(row);
+  const cacheableFullPdf = orderFullPdfRequestCacheable(focusPage, bodyTune);
+  const blobWrites = orderPdfBlobWriteEnabled();
+  const cacheFingerprintPayload = cacheableFullPdf
+    ? {
+        numerologyJson: row.numerologyJson,
+        stonesJson: row.stonesJson,
+        stoneFocusTheme: row.stoneFocusTheme,
+        birthDate: row.birthDate,
+        birthYear: row.birthYear,
+        birthMonth: row.birthMonth,
+        birthDay: row.birthDay,
+        lastName: row.lastName,
+        firstName: row.firstName,
+        lastNameKana: row.lastNameKana,
+        firstNameKana: row.firstNameKana,
+        lastNameRoman: row.lastNameRoman,
+        firstNameRoman: row.firstNameRoman,
+        fullNameDisplay: row.fullNameDisplay,
+        fullNameKanaDisplay: row.fullNameKanaDisplay,
+        fullNameRomanDisplay: row.fullNameRomanDisplay,
+        postalCode: row.postalCode,
+        address: row.address,
+        phone: row.phone,
+        email: row.email,
+        profileId: row.profileId,
+      }
+    : null;
+  const pdfCacheKey = cacheFingerprintPayload
+    ? buildOrderPdfCacheFingerprint(cacheFingerprintPayload)
+    : null;
 
-    buffer =
-      focusPage === "all"
-        ? await renderFullReportWithChapterPdfInserts(payload, renderConfig)
-        : await renderToBuffer(<ReportDocument order={payload} renderConfig={renderConfig} />);
-    console.info("[pdf-api] PDF生成完了", pdfLogBase);
-  } catch (e) {
-    const caught =
-      e instanceof Error
-        ? { name: e.name, message: e.message, stack: e.stack }
-        : { raw: String(e) };
-    console.error("[pdf-api] catch されたエラー全文", JSON.stringify({ ...pdfLogBase, error: caught }));
-    const message = e instanceof Error ? e.message : "PDF生成に失敗しました。";
-    return NextResponse.json(
-      { error: message },
-      {
-        status: 500,
-        headers: { "Content-Type": "application/json", ...PDF_API_CACHE_HEADERS },
-      },
-    );
+  let buffer!: Buffer | Uint8Array;
+  let servedFromBlob = false;
+
+  if (cacheableFullPdf && blobWrites && pdfCacheKey) {
+    const blobUrl = quality === "high" ? row.pdfPrintBlobUrl : row.pdfPreviewBlobUrl;
+    const storedKey = quality === "high" ? row.pdfPrintCacheKey : row.pdfPreviewCacheKey;
+    if (blobUrl && storedKey === pdfCacheKey) {
+      const cached = await fetchCachedOrderPdfFromBlobUrl(blobUrl);
+      if (cached && cached.byteLength > 0) {
+        buffer = cached;
+        servedFromBlob = true;
+        console.log("[pdf-api] Blobキャッシュヒット", {
+          ...pdfLogBase,
+          bytes: cached.byteLength,
+        });
+      }
+    }
+  }
+
+  if (!servedFromBlob) {
+    try {
+      console.log("[pdf-api] PDF生成開始", { ...pdfLogBase, blobCache: cacheableFullPdf && blobWrites });
+      ensureJapaneseFont();
+      const payload = orderPayloadFromOrderRow(row);
+
+      buffer =
+        focusPage === "all"
+          ? await renderFullReportWithChapterPdfInserts(payload, renderConfig)
+          : await renderToBuffer(<ReportDocument order={payload} renderConfig={renderConfig} />);
+      console.log("[pdf-api] PDF生成完了", pdfLogBase);
+    } catch (e) {
+      const caught =
+        e instanceof Error
+          ? { name: e.name, message: e.message, stack: e.stack }
+          : { raw: String(e) };
+      console.error("[pdf-api] catch されたエラー全文", JSON.stringify({ ...pdfLogBase, error: caught }));
+      const message = e instanceof Error ? e.message : "PDF生成に失敗しました。";
+      return NextResponse.json(
+        { error: message },
+        {
+          status: 500,
+          headers: { "Content-Type": "application/json", ...PDF_API_CACHE_HEADERS },
+        },
+      );
+    }
   }
 
   const u8: Uint8Array = Buffer.isBuffer(buffer) ? Uint8Array.from(buffer) : buffer;
-  console.info("[pdf-api] PDFバッファサイズ(bytes)", {
+  console.log("[pdf-api] PDFバッファサイズ(bytes)", {
     ...pdfLogBase,
     bytes: u8.byteLength,
+    servedFromBlob,
   });
+
+  if (
+    !servedFromBlob &&
+    cacheableFullPdf &&
+    blobWrites &&
+    pdfCacheKey &&
+    u8.byteLength > 0
+  ) {
+    try {
+      const blobUrl = await putOrderFullPdfToBlob(id, quality, u8);
+      await prisma.order.update({
+        where: { id: row.id },
+        data:
+          quality === "high"
+            ? { pdfPrintBlobUrl: blobUrl, pdfPrintCacheKey: pdfCacheKey }
+            : { pdfPreviewBlobUrl: blobUrl, pdfPreviewCacheKey: pdfCacheKey },
+      });
+      console.log("[pdf-api] Blob保存完了", { ...pdfLogBase, pathname: `order-full-pdf/${id}/` });
+    } catch (e) {
+      console.warn("[pdf-api] Blob保存失敗（生成済みPDFは返却します）", e);
+    }
+  }
   const copy = new Uint8Array(u8.byteLength);
   copy.set(u8);
   const body = new Blob([copy], { type: "application/pdf" });

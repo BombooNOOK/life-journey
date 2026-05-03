@@ -158,6 +158,10 @@ export async function PATCH(req: Request, { params }: RouteParams) {
         stonesJson: JSON.stringify(payload.stones),
         identityCorrectionCount: 1,
         reportPdfPath: null,
+        pdfPreviewBlobUrl: null,
+        pdfPreviewCacheKey: null,
+        pdfPrintBlobUrl: null,
+        pdfPrintCacheKey: null,
       },
     });
     return NextResponse.json({ ok: true, code: "OK" });
