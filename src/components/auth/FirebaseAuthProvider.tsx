@@ -12,9 +12,10 @@ import {
 import { getRedirectResult, onAuthStateChanged, signOut, type User } from "firebase/auth";
 
 import {
-  OAUTH_RETURN_SESSION_KEY,
   clearGoogleOAuthRedirectFlow,
   readReturnToFromCurrentUrl,
+  readOAuthReturnPendingAgeMs,
+  isGoogleOAuthFlowCookieActive,
   syncLjAuthClientCookies,
   takeOAuthReturnTo,
 } from "@/lib/auth/clientCookies";
@@ -38,6 +39,9 @@ function safePostLoginTarget(t: string): string {
   if (t === "/login" || t.startsWith("/login?")) return "/orders";
   return t;
 }
+
+/** サーバー Cookie 反映と描画の安定用。短すぎると「Googleで続ける」が一瞬戻って見えることがある */
+const OAUTH_SETTLE_BEFORE_NAV_MS = 600;
 
 async function syncAuthCookiesOnServer(user: User | null) {
   try {
@@ -80,15 +84,17 @@ export function FirebaseAuthProvider({ children }: { children: ReactNode }) {
           syncAuthCookies(signed);
           await syncAuthCookiesOnServer(signed);
           setUser(signed);
-          setLoading(false);
           const target = safePostLoginTarget(
             takeOAuthReturnTo() ?? readReturnToFromCurrentUrl() ?? "/orders",
           );
           if (target.startsWith("/") && !target.startsWith("//")) {
             clearGoogleOAuthRedirectFlow();
+            await new Promise((r) => setTimeout(r, OAUTH_SETTLE_BEFORE_NAV_MS));
             window.location.assign(target);
             return;
           }
+          setLoading(false);
+          return;
         }
 
         /**
@@ -104,17 +110,48 @@ export function FirebaseAuthProvider({ children }: { children: ReactNode }) {
           syncAuthCookies(signed);
           await syncAuthCookiesOnServer(signed);
           setUser(signed);
-          setLoading(false);
-          try {
-            sessionStorage.removeItem(OAUTH_RETURN_SESSION_KEY);
-          } catch {
-            /* noop */
-          }
-          const target = safePostLoginTarget(readReturnToFromCurrentUrl() ?? "/orders");
+          const target = safePostLoginTarget(
+            takeOAuthReturnTo() ?? readReturnToFromCurrentUrl() ?? "/orders",
+          );
           if (target.startsWith("/") && !target.startsWith("//")) {
             clearGoogleOAuthRedirectFlow();
+            await new Promise((r) => setTimeout(r, OAUTH_SETTLE_BEFORE_NAV_MS));
             window.location.assign(target);
             return;
+          }
+          setLoading(false);
+          return;
+        }
+
+        /** OAuth 戻り直後は currentUser の反映が数フレーム遅れることがある。loading を維持して待つ */
+        if (
+          typeof window !== "undefined" &&
+          window.location.pathname === "/login" &&
+          !redirectCred?.user &&
+          !auth.currentUser &&
+          (isGoogleOAuthFlowCookieActive() || readOAuthReturnPendingAgeMs() != null)
+        ) {
+          const deadline = Date.now() + 2800;
+          while (Date.now() < deadline && !cancelled) {
+            await auth.authStateReady();
+            if (auth.currentUser) {
+              const signed = auth.currentUser;
+              syncAuthCookies(signed);
+              await syncAuthCookiesOnServer(signed);
+              setUser(signed);
+              const target = safePostLoginTarget(
+                takeOAuthReturnTo() ?? readReturnToFromCurrentUrl() ?? "/orders",
+              );
+              if (target.startsWith("/") && !target.startsWith("//")) {
+                clearGoogleOAuthRedirectFlow();
+                await new Promise((r) => setTimeout(r, OAUTH_SETTLE_BEFORE_NAV_MS));
+                window.location.assign(target);
+                return;
+              }
+              setLoading(false);
+              break;
+            }
+            await new Promise((r) => setTimeout(r, 120));
           }
         }
       } catch (e) {

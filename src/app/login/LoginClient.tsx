@@ -298,6 +298,20 @@ export function LoginClient() {
     }
   };
 
+  if (authLoading) {
+    return (
+      <div className="mx-auto max-w-md space-y-4 rounded-xl border border-stone-200 bg-white p-8 text-center shadow-sm">
+        <p className="text-base font-medium text-stone-900">Googleの認証を確認しています…</p>
+        <p className="text-sm text-stone-600">
+          アカウントを選んだあと、まずこの画面のまま少しお待ちください。すぐにマイページへ進みます。
+        </p>
+        <p className="text-xs text-stone-500" aria-hidden>
+          読み込み中
+        </p>
+      </div>
+    );
+  }
+
   return (
     <div className="mx-auto max-w-md space-y-6 rounded-xl border border-stone-200 bg-white p-6 shadow-sm">
       <div>
@@ -309,8 +323,8 @@ export function LoginClient() {
           ログイン後は、アクセスしようとしていたページ（またはマイページ）へ移動します。
         </p>
         <p className="mt-1 text-xs text-stone-500">
-          スマホで安定して使うには、URLをSafariで直接開いてください（アプリ内ブラウザは不安定な場合があります）。iPhone
-          で Google を選ぶとポップアップが開くことがあります。ブロックと出たら許可してからもう一度押してください。
+          スマホで安定して使うには、URLをSafariで直接開いてください（アプリ内ブラウザは不安定な場合があります）。スマホで
+          Google を選ぶと Google の画面へ移動してから戻ってきます。
         </p>
       </div>
 
