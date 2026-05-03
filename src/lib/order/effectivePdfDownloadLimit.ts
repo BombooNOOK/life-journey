@@ -45,15 +45,15 @@ export async function fetchAccountPdfDownloadLimitOrNull(
     }
   }
 
+  // メール表記ゆれ（大文字小文字）で findUnique が外れたとき（PostgreSQL で mode: insensitive が使える想定）
   try {
-    const rows = await prisma.accountSettings.findMany({
-      select: { email: true, pdfDownloadLimitPerOrder: true },
-      take: 2000,
+    const hit = await prisma.accountSettings.findFirst({
+      where: { email: { equals: email, mode: "insensitive" } },
+      select: { pdfDownloadLimitPerOrder: true },
     });
-    const hit = rows.find((r) => normalizeEmail(r.email) === email);
     if (hit) return clampLimit(hit.pdfDownloadLimitPerOrder);
   } catch {
-    /* noop */
+    /* SQLite 等で未サポートのとき */
   }
 
   return null;
@@ -66,12 +66,12 @@ export async function fetchAccountPdfDownloadLimitOrNull(
  */
 export function combinePdfDownloadLimit(
   orderPdfDownloadLimit: number | null | undefined,
-  accountPdfDownloadLimitPerOrder: number | null,
+  accountPdfDownloadLimitPerOrder: number | null | undefined,
 ): number {
   const orderVal = clampLimit(orderPdfDownloadLimit ?? 2);
-  if (typeof accountPdfDownloadLimitPerOrder === "number" && Number.isFinite(accountPdfDownloadLimitPerOrder)) {
-    const acc = clampLimit(accountPdfDownloadLimitPerOrder);
-    return Math.max(orderVal, acc);
+  if (accountPdfDownloadLimitPerOrder === undefined || accountPdfDownloadLimitPerOrder === null) {
+    return orderVal;
   }
-  return orderVal;
+  const acc = clampLimit(accountPdfDownloadLimitPerOrder);
+  return Math.max(orderVal, acc);
 }

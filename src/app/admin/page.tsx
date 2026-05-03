@@ -225,11 +225,15 @@ export default async function AdminPage({ searchParams }: Props) {
         data: { pdfDownloadLimitPerOrder },
       });
     }
-    await prisma.order.updateMany({
-      where: { email },
-      data: { pdfDownloadLimit: pdfDownloadLimitPerOrder },
-    });
+    // メールは保存時の表記ゆれ（大文字小文字・前後空白）があり得るため、正規化一致で一括更新する
+    await prisma.$executeRaw`
+      UPDATE "Order"
+      SET "pdfDownloadLimit" = ${pdfDownloadLimitPerOrder}
+      WHERE LOWER(TRIM("email")) = LOWER(TRIM(${email}))
+    `;
     revalidatePath("/admin");
+    revalidatePath("/orders/bookshelf");
+    revalidatePath("/orders", "layout");
   }
 
   async function toggleSubscriberPdfAccess(formData: FormData) {
