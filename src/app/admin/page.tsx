@@ -1,3 +1,4 @@
+import { Prisma } from "@prisma/client";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
@@ -160,50 +161,61 @@ type AccountSettingsAdminRow = {
 };
 
 /**
- * Prisma の `mode: "insensitive"` 付き findMany が環境によって
- * `Invalid prisma.accountSettings.findMany()` になるため、PostgreSQL では Raw SQL を使う。
+ * PostgreSQL: 初回 AccountSettings マイグレーションに必ずある列だけで Raw SELECT（本番が追いついていないときも落ちない）。
+ * pdf / subscriber 列はマイグレーション済みなら別クエリでマージ（列が無ければ黙ってデフォルト表示）。
  */
 async function fetchAccountSettingsForAdminList(keyword: string): Promise<AccountSettingsAdminRow[]> {
   const kw = keyword.trim();
 
   if (isPostgresDb()) {
+    let base: AccountSettingsAdminRow[];
     try {
       if (!kw) {
-        return await prisma.$queryRaw<AccountSettingsAdminRow[]>`
-          SELECT "id", "email", "isAdmin", "profileLimit",
-                 "pdfDownloadLimitPerOrder", "subscriberPdfAccess", "updatedAt"
+        base = await prisma.$queryRaw<AccountSettingsAdminRow[]>`
+          SELECT "id", "email", "isAdmin", "profileLimit", "updatedAt"
           FROM "AccountSettings"
           ORDER BY "updatedAt" DESC
         `;
-      }
-      const pattern = likePatternFromKeyword(kw);
-      return await prisma.$queryRaw<AccountSettingsAdminRow[]>`
-        SELECT "id", "email", "isAdmin", "profileLimit",
-               "pdfDownloadLimitPerOrder", "subscriberPdfAccess", "updatedAt"
-        FROM "AccountSettings"
-        WHERE LOWER(TRIM("email")) LIKE LOWER(${pattern})
-        ORDER BY "updatedAt" DESC
-      `;
-    } catch (e) {
-      console.warn("[admin] fetchAccountSettings full columns (raw) failed:", e);
-      try {
-        if (!kw) {
-          return await prisma.$queryRaw<AccountSettingsAdminRow[]>`
-            SELECT "id", "email", "isAdmin", "profileLimit", "updatedAt"
-            FROM "AccountSettings"
-            ORDER BY "updatedAt" DESC
-          `;
-        }
+      } else {
         const pattern = likePatternFromKeyword(kw);
-        return await prisma.$queryRaw<AccountSettingsAdminRow[]>`
+        base = await prisma.$queryRaw<AccountSettingsAdminRow[]>`
           SELECT "id", "email", "isAdmin", "profileLimit", "updatedAt"
           FROM "AccountSettings"
           WHERE LOWER(TRIM("email")) LIKE LOWER(${pattern})
           ORDER BY "updatedAt" DESC
         `;
-      } catch (e2) {
-        console.warn("[admin] fetchAccountSettings minimal columns (raw) failed:", e2);
       }
+    } catch (e) {
+      console.error("[admin] fetchAccountSettings base (raw) failed:", e);
+      return [];
+    }
+
+    const ids = base.map((r) => r.id);
+    if (ids.length === 0) return base;
+
+    try {
+      const extras = await prisma.$queryRaw<
+        Array<{ id: string; pdfDownloadLimitPerOrder: number | null; subscriberPdfAccess: boolean | null }>
+      >`
+        SELECT "id", "pdfDownloadLimitPerOrder", "subscriberPdfAccess"
+        FROM "AccountSettings"
+        WHERE "id" IN (${Prisma.join(ids)})
+      `;
+      const byId = new Map(extras.map((x) => [x.id, x]));
+      return base.map((row) => {
+        const x = byId.get(row.id);
+        return {
+          ...row,
+          pdfDownloadLimitPerOrder: x?.pdfDownloadLimitPerOrder ?? null,
+          subscriberPdfAccess: x?.subscriberPdfAccess ?? null,
+        };
+      });
+    } catch {
+      return base.map((row) => ({
+        ...row,
+        pdfDownloadLimitPerOrder: null,
+        subscriberPdfAccess: null,
+      }));
     }
   }
 

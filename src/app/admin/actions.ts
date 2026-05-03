@@ -1,6 +1,8 @@
 "use server";
 
-import type { Prisma } from "@prisma/client";
+import { randomUUID } from "node:crypto";
+
+import { Prisma } from "@prisma/client";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
@@ -96,48 +98,157 @@ async function syncOrdersPdfDownloadLimitForNormalizedEmail(
   }
 }
 
+/** 初回マイグレーションの6列のみ。列追加前の本番DBでも upsert 可能。 */
+async function upsertAccountSettingsProfilePostgresRaw(
+  email: string,
+  profileLimit: number,
+): Promise<{ id: string }> {
+  const newId = randomUUID();
+  const rows = await prisma.$queryRaw<Array<{ id: string }>>`
+    INSERT INTO "AccountSettings" ("id", "createdAt", "updatedAt", "email", "isAdmin", "profileLimit")
+    VALUES (${newId}, NOW(), NOW(), ${email}, false, ${profileLimit})
+    ON CONFLICT ("email")
+    DO UPDATE SET
+      "profileLimit" = EXCLUDED."profileLimit",
+      "updatedAt" = NOW()
+    RETURNING "id"
+  `;
+  const id = rows[0]?.id;
+  if (!id) throw new Error("upsertAccountSettingsProfilePostgresRaw: no id returned");
+  return { id };
+}
+
+async function upsertAccountSettingsAdminRolePostgresRaw(
+  email: string,
+  isAdmin: boolean,
+): Promise<{ id: string }> {
+  const newId = randomUUID();
+  const rows = await prisma.$queryRaw<Array<{ id: string }>>`
+    INSERT INTO "AccountSettings" ("id", "createdAt", "updatedAt", "email", "isAdmin", "profileLimit")
+    VALUES (${newId}, NOW(), NOW(), ${email}, ${isAdmin}, 1)
+    ON CONFLICT ("email")
+    DO UPDATE SET
+      "isAdmin" = EXCLUDED."isAdmin",
+      "updatedAt" = NOW()
+    RETURNING "id"
+  `;
+  const id = rows[0]?.id;
+  if (!id) throw new Error("upsertAccountSettingsAdminRolePostgresRaw: no id returned");
+  return { id };
+}
+
+/** 6列 upsert のあと pdf 列だけ更新（列が無い DB では無視） */
+async function upsertAccountSettingsPdfLimitPostgresRaw(
+  email: string,
+  pdfDownloadLimitPerOrder: number,
+): Promise<{ id: string }> {
+  const newId = randomUUID();
+  const rows = await prisma.$queryRaw<Array<{ id: string }>>`
+    INSERT INTO "AccountSettings" ("id", "createdAt", "updatedAt", "email", "isAdmin", "profileLimit")
+    VALUES (${newId}, NOW(), NOW(), ${email}, false, 1)
+    ON CONFLICT ("email")
+    DO UPDATE SET "updatedAt" = NOW()
+    RETURNING "id"
+  `;
+  const id = rows[0]?.id;
+  if (!id) throw new Error("upsertAccountSettingsPdfLimitPostgresRaw: no id returned");
+  try {
+    await prisma.$executeRaw`
+      UPDATE "AccountSettings"
+      SET "pdfDownloadLimitPerOrder" = ${pdfDownloadLimitPerOrder}
+      WHERE "id" = ${id}
+    `;
+  } catch {
+    /* 列未適用 */
+  }
+  return { id };
+}
+
+async function upsertSubscriberAccessPostgresRaw(
+  email: string,
+  subscriberPdfAccess: boolean,
+): Promise<{ id: string }> {
+  const newId = randomUUID();
+  const rows = await prisma.$queryRaw<Array<{ id: string }>>`
+    INSERT INTO "AccountSettings" ("id", "createdAt", "updatedAt", "email", "isAdmin", "profileLimit")
+    VALUES (${newId}, NOW(), NOW(), ${email}, false, 1)
+    ON CONFLICT ("email")
+    DO UPDATE SET "updatedAt" = NOW()
+    RETURNING "id"
+  `;
+  const id = rows[0]?.id;
+  if (!id) throw new Error("upsertSubscriberAccessPostgresRaw: no id returned");
+  try {
+    await prisma.$executeRaw`
+      UPDATE "AccountSettings"
+      SET "subscriberPdfAccess" = ${subscriberPdfAccess}
+      WHERE "id" = ${id}
+    `;
+  } catch {
+    /* 列未適用 */
+  }
+  return { id };
+}
+
 /**
  * 同一ユーザーとみなすメール表記ゆれの行を同期する。
  * Prisma の `mode: insensitive` + AND は環境によって Invalid になるため、PostgreSQL では Raw UPDATE。
+ * pdf / subscriber 列が未マイグレーションの DB では該当 UPDATE をスキップ。
  */
 async function syncDuplicateAccountRowsForNormalizedEmail(
   mergedId: string,
   normalizedEmail: string,
   data: Prisma.AccountSettingsUpdateManyMutationInput,
 ): Promise<void> {
+  const run = async (fn: () => Promise<unknown>) => {
+    try {
+      await fn();
+    } catch {
+      /* 列未適用など */
+    }
+  };
+
   try {
     if (isPostgresDb()) {
       if (data.profileLimit !== undefined) {
-        await prisma.$executeRaw`
-          UPDATE "AccountSettings"
-          SET "profileLimit" = ${data.profileLimit}
-          WHERE "id" <> ${mergedId}
-            AND LOWER(TRIM("email")) = LOWER(TRIM(${normalizedEmail}))
-        `;
+        await run(async () => {
+          await prisma.$executeRaw`
+            UPDATE "AccountSettings"
+            SET "profileLimit" = ${data.profileLimit}
+            WHERE "id" <> ${mergedId}
+              AND LOWER(TRIM("email")) = LOWER(TRIM(${normalizedEmail}))
+          `;
+        });
       }
       if (data.isAdmin !== undefined) {
-        await prisma.$executeRaw`
-          UPDATE "AccountSettings"
-          SET "isAdmin" = ${data.isAdmin}
-          WHERE "id" <> ${mergedId}
-            AND LOWER(TRIM("email")) = LOWER(TRIM(${normalizedEmail}))
-        `;
+        await run(async () => {
+          await prisma.$executeRaw`
+            UPDATE "AccountSettings"
+            SET "isAdmin" = ${data.isAdmin}
+            WHERE "id" <> ${mergedId}
+              AND LOWER(TRIM("email")) = LOWER(TRIM(${normalizedEmail}))
+          `;
+        });
       }
       if (data.pdfDownloadLimitPerOrder !== undefined) {
-        await prisma.$executeRaw`
-          UPDATE "AccountSettings"
-          SET "pdfDownloadLimitPerOrder" = ${data.pdfDownloadLimitPerOrder}
-          WHERE "id" <> ${mergedId}
-            AND LOWER(TRIM("email")) = LOWER(TRIM(${normalizedEmail}))
-        `;
+        await run(async () => {
+          await prisma.$executeRaw`
+            UPDATE "AccountSettings"
+            SET "pdfDownloadLimitPerOrder" = ${data.pdfDownloadLimitPerOrder}
+            WHERE "id" <> ${mergedId}
+              AND LOWER(TRIM("email")) = LOWER(TRIM(${normalizedEmail}))
+          `;
+        });
       }
       if (data.subscriberPdfAccess !== undefined) {
-        await prisma.$executeRaw`
-          UPDATE "AccountSettings"
-          SET "subscriberPdfAccess" = ${data.subscriberPdfAccess}
-          WHERE "id" <> ${mergedId}
-            AND LOWER(TRIM("email")) = LOWER(TRIM(${normalizedEmail}))
-        `;
+        await run(async () => {
+          await prisma.$executeRaw`
+            UPDATE "AccountSettings"
+            SET "subscriberPdfAccess" = ${data.subscriberPdfAccess}
+            WHERE "id" <> ${mergedId}
+              AND LOWER(TRIM("email")) = LOWER(TRIM(${normalizedEmail}))
+          `;
+        });
       }
       return;
     }
@@ -159,8 +270,9 @@ export async function updateProfileLimit(formData: FormData) {
   const profileLimitRaw = formData.get("profileLimit")?.toString();
   const profileLimit = profileLimitRaw === "3" ? 3 : 1;
 
+  let merged: { id: string };
   try {
-    const merged = await prisma.accountSettings.upsert({
+    merged = await prisma.accountSettings.upsert({
       where: { email },
       create: {
         email,
@@ -171,10 +283,24 @@ export async function updateProfileLimit(formData: FormData) {
       },
       update: { profileLimit },
     });
+  } catch (e) {
+    if (!isPostgresDb()) {
+      console.error("[admin] updateProfileLimit", e);
+      redirect("/admin?err=profile");
+    }
+    try {
+      merged = await upsertAccountSettingsProfilePostgresRaw(email, profileLimit);
+    } catch (e2) {
+      console.error("[admin] updateProfileLimit", e, e2);
+      redirect("/admin?err=profile");
+    }
+  }
+
+  try {
     await syncDuplicateAccountRowsForNormalizedEmail(merged.id, email, { profileLimit });
     revalidatePath("/admin");
   } catch (e) {
-    console.error("[admin] updateProfileLimit", e);
+    console.error("[admin] updateProfileLimit sync", e);
     redirect("/admin?err=profile");
   }
   redirect("/admin?saved=profile");
@@ -188,8 +314,9 @@ export async function toggleAdminRole(formData: FormData) {
   const isAdminRaw = formData.get("isAdmin")?.toString();
   const isAdmin = isAdminRaw === "1";
 
+  let merged: { id: string };
   try {
-    const merged = await prisma.accountSettings.upsert({
+    merged = await prisma.accountSettings.upsert({
       where: { email },
       create: {
         email,
@@ -200,10 +327,24 @@ export async function toggleAdminRole(formData: FormData) {
       },
       update: { isAdmin },
     });
+  } catch (e) {
+    if (!isPostgresDb()) {
+      console.error("[admin] toggleAdminRole", e);
+      redirect("/admin?err=admin");
+    }
+    try {
+      merged = await upsertAccountSettingsAdminRolePostgresRaw(email, isAdmin);
+    } catch (e2) {
+      console.error("[admin] toggleAdminRole", e, e2);
+      redirect("/admin?err=admin");
+    }
+  }
+
+  try {
     await syncDuplicateAccountRowsForNormalizedEmail(merged.id, email, { isAdmin });
     revalidatePath("/admin");
   } catch (e) {
-    console.error("[admin] toggleAdminRole", e);
+    console.error("[admin] toggleAdminRole sync", e);
     redirect("/admin?err=admin");
   }
   redirect("/admin?saved=admin");
@@ -274,6 +415,13 @@ async function saveAccountPdfLimitWithFallback(
         console.warn("[admin] findFirst insensitive fallback:", e3);
       }
     }
+    if (isPostgresDb()) {
+      try {
+        return await upsertAccountSettingsPdfLimitPostgresRaw(email, pdfDownloadLimitPerOrder);
+      } catch (e4) {
+        console.warn("[admin] upsertAccountSettingsPdfLimitPostgresRaw:", e4);
+      }
+    }
     return prisma.accountSettings.create({
       data: {
         email,
@@ -314,8 +462,9 @@ export async function toggleSubscriberPdfAccess(formData: FormData) {
 
   const subscriberPdfAccess = formData.get("subscriberPdfAccess")?.toString() === "1";
 
+  let merged: { id: string };
   try {
-    const merged = await prisma.accountSettings.upsert({
+    merged = await prisma.accountSettings.upsert({
       where: { email },
       create: {
         email,
@@ -326,10 +475,24 @@ export async function toggleSubscriberPdfAccess(formData: FormData) {
       },
       update: { subscriberPdfAccess },
     });
+  } catch (e) {
+    if (!isPostgresDb()) {
+      console.error("[admin] toggleSubscriberPdfAccess", e);
+      redirect("/admin?err=sub");
+    }
+    try {
+      merged = await upsertSubscriberAccessPostgresRaw(email, subscriberPdfAccess);
+    } catch (e2) {
+      console.error("[admin] toggleSubscriberPdfAccess", e, e2);
+      redirect("/admin?err=sub");
+    }
+  }
+
+  try {
     await syncDuplicateAccountRowsForNormalizedEmail(merged.id, email, { subscriberPdfAccess });
     revalidatePath("/admin");
   } catch (e) {
-    console.error("[admin] toggleSubscriberPdfAccess", e);
+    console.error("[admin] toggleSubscriberPdfAccess sync", e);
     redirect("/admin?err=sub");
   }
   redirect("/admin?saved=sub");
