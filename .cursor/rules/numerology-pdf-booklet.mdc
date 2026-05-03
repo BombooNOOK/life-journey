@@ -27,3 +27,4 @@ alwaysApply: false
 - **新規アセットや差し替えを追加したとき**：可能なら `sips -g pixelWidth -g pixelHeight` 等で画素数を確認し、上記より明らかに小さい場合は **ユーザーに滲みリスクを明示**する。
 - Quick Look 等の自動サムネだけで量産した PNG は、**デザイン側からの正式書き出し**に置き換えるとより安全。
 - **ローカル PNG を差し替えたのに PDF が更新されない**ときは、`@react-pdf/image` が同一パスをキャッシュしていることがある。`CoverPage` 等の `<Image cache={false} />` で対処済み。
+- **ヘッダーが消えた／背景に埋もれる**ときは、まず **`PdfPageFrame` の子要素順**（`fixed` ヘッダーは `pageBody` より**前**）と、背景 PNG **上端帯の透明化**を確認。手順・検証コマンドは **`docs/pdf-booklet-layout-playbook-ja.md`**。

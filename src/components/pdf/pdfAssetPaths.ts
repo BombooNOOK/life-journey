@@ -109,6 +109,11 @@ export const PDF_MATURITY_GUIDE_PAGE_PATH = `${process.cwd()}/src/components/pdf
  */
 export const PDF_MATURITY_FIRST_PAGE_PATH = `${process.cwd()}/src/components/pdf/assets/maturity-first-page.png`;
 
+/**
+ * 目次（`CustomerPage`）およびコア本文2枚目以降の地。上端は帯ヘッダーと重なるため **透明化必須**。
+ * 差し替え後にヘッダー／ページ番号が隠れる → `npm run fix:toc-continuation-bg-header`（`transparentizeCoreFirstPageHeaderBand.py`）。
+ * 検証手順は `docs/pdf-booklet-layout-playbook-ja.md`。
+ */
 export const PDF_CORE_RESULT_CONTINUATION_BACKGROUND_PATH = `${process.cwd()}/src/components/pdf/assets/haikei-kekka2.png`;
 
 /** パーソナルイヤー前・フクロウ先生からのメッセージ（全面画像） */

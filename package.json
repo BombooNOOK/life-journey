@@ -28,6 +28,7 @@
     "fix:personality-bg-header": "python3 scripts/transparentizeCoreFirstPageHeaderBand.py src/components/pdf/assets/personality-first-page.png",
     "fix:birthday-bg-header": "python3 scripts/transparentizeCoreFirstPageHeaderBand.py src/components/pdf/assets/birthday-first-page.png",
     "fix:maturity-bg-header": "python3 scripts/transparentizeCoreFirstPageHeaderBand.py src/components/pdf/assets/maturity-first-page.png",
+    "fix:toc-continuation-bg-header": "python3 scripts/transparentizeCoreFirstPageHeaderBand.py src/components/pdf/assets/haikei-kekka2.png",
     "pdf:preview-assets": "node scripts/build-pdf-preview-assets.mjs"
   },
   "dependencies": {
