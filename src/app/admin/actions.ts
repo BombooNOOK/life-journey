@@ -271,27 +271,26 @@ export async function updateProfileLimit(formData: FormData) {
   const profileLimit = profileLimitRaw === "3" ? 3 : 1;
 
   let merged: { id: string };
-  try {
-    merged = await prisma.accountSettings.upsert({
-      where: { email },
-      create: {
-        email,
-        profileLimit,
-        isAdmin: false,
-        pdfDownloadLimitPerOrder: 2,
-        subscriberPdfAccess: false,
-      },
-      update: { profileLimit },
-    });
-  } catch (e) {
-    if (!isPostgresDb()) {
+  if (isPostgresDb()) {
+    try {
+      merged = await upsertAccountSettingsProfilePostgresRaw(email, profileLimit);
+    } catch (e) {
       console.error("[admin] updateProfileLimit", e);
       redirect("/admin?err=profile");
     }
+  } else {
     try {
-      merged = await upsertAccountSettingsProfilePostgresRaw(email, profileLimit);
-    } catch (e2) {
-      console.error("[admin] updateProfileLimit", e, e2);
+      merged = await prisma.accountSettings.upsert({
+        where: { email },
+        create: {
+          email,
+          profileLimit,
+          isAdmin: false,
+        },
+        update: { profileLimit },
+      });
+    } catch (e) {
+      console.error("[admin] updateProfileLimit", e);
       redirect("/admin?err=profile");
     }
   }
@@ -315,27 +314,26 @@ export async function toggleAdminRole(formData: FormData) {
   const isAdmin = isAdminRaw === "1";
 
   let merged: { id: string };
-  try {
-    merged = await prisma.accountSettings.upsert({
-      where: { email },
-      create: {
-        email,
-        profileLimit: 1,
-        isAdmin,
-        pdfDownloadLimitPerOrder: 2,
-        subscriberPdfAccess: false,
-      },
-      update: { isAdmin },
-    });
-  } catch (e) {
-    if (!isPostgresDb()) {
+  if (isPostgresDb()) {
+    try {
+      merged = await upsertAccountSettingsAdminRolePostgresRaw(email, isAdmin);
+    } catch (e) {
       console.error("[admin] toggleAdminRole", e);
       redirect("/admin?err=admin");
     }
+  } else {
     try {
-      merged = await upsertAccountSettingsAdminRolePostgresRaw(email, isAdmin);
-    } catch (e2) {
-      console.error("[admin] toggleAdminRole", e, e2);
+      merged = await prisma.accountSettings.upsert({
+        where: { email },
+        create: {
+          email,
+          profileLimit: 1,
+          isAdmin,
+        },
+        update: { isAdmin },
+      });
+    } catch (e) {
+      console.error("[admin] toggleAdminRole", e);
       redirect("/admin?err=admin");
     }
   }
@@ -350,13 +348,15 @@ export async function toggleAdminRole(formData: FormData) {
   redirect("/admin?saved=admin");
 }
 
-/**
- * upsert が環境・データで失敗したとき、大小無視の find + update / create に落とす
- */
+/** SQLite 等。PostgreSQL は常に Raw のみ（Prisma upsert が未マイグレーション列を参照するため）。 */
 async function saveAccountPdfLimitWithFallback(
   email: string,
   pdfDownloadLimitPerOrder: number,
 ): Promise<{ id: string }> {
+  if (isPostgresDb()) {
+    return upsertAccountSettingsPdfLimitPostgresRaw(email, pdfDownloadLimitPerOrder);
+  }
+
   try {
     return await prisma.accountSettings.upsert({
       where: { email },
@@ -382,45 +382,18 @@ async function saveAccountPdfLimitWithFallback(
     } catch (e2) {
       console.warn("[admin] findUnique fallback:", e2);
     }
-    if (isPostgresDb()) {
-      try {
-        const rows = await prisma.$queryRaw<Array<{ id: string }>>`
-          SELECT "id"
-          FROM "AccountSettings"
-          WHERE LOWER(TRIM("email")) = LOWER(TRIM(${email}))
-          LIMIT 1
-        `;
-        const id = rows[0]?.id;
-        if (id) {
-          return prisma.accountSettings.update({
-            where: { id },
-            data: { pdfDownloadLimitPerOrder },
-          });
-        }
-      } catch (e3) {
-        console.warn("[admin] raw select AccountSettings by email fallback:", e3);
-      }
-    } else {
-      try {
-        const hit = await prisma.accountSettings.findFirst({
-          where: { email: { equals: email, mode: "insensitive" } },
+    try {
+      const hit = await prisma.accountSettings.findFirst({
+        where: { email: { equals: email, mode: "insensitive" } },
+      });
+      if (hit) {
+        return prisma.accountSettings.update({
+          where: { id: hit.id },
+          data: { pdfDownloadLimitPerOrder },
         });
-        if (hit) {
-          return prisma.accountSettings.update({
-            where: { id: hit.id },
-            data: { pdfDownloadLimitPerOrder },
-          });
-        }
-      } catch (e3) {
-        console.warn("[admin] findFirst insensitive fallback:", e3);
       }
-    }
-    if (isPostgresDb()) {
-      try {
-        return await upsertAccountSettingsPdfLimitPostgresRaw(email, pdfDownloadLimitPerOrder);
-      } catch (e4) {
-        console.warn("[admin] upsertAccountSettingsPdfLimitPostgresRaw:", e4);
-      }
+    } catch (e3) {
+      console.warn("[admin] findFirst insensitive fallback:", e3);
     }
     return prisma.accountSettings.create({
       data: {
@@ -463,27 +436,27 @@ export async function toggleSubscriberPdfAccess(formData: FormData) {
   const subscriberPdfAccess = formData.get("subscriberPdfAccess")?.toString() === "1";
 
   let merged: { id: string };
-  try {
-    merged = await prisma.accountSettings.upsert({
-      where: { email },
-      create: {
-        email,
-        profileLimit: 1,
-        isAdmin: false,
-        pdfDownloadLimitPerOrder: 2,
-        subscriberPdfAccess,
-      },
-      update: { subscriberPdfAccess },
-    });
-  } catch (e) {
-    if (!isPostgresDb()) {
+  if (isPostgresDb()) {
+    try {
+      merged = await upsertSubscriberAccessPostgresRaw(email, subscriberPdfAccess);
+    } catch (e) {
       console.error("[admin] toggleSubscriberPdfAccess", e);
       redirect("/admin?err=sub");
     }
+  } else {
     try {
-      merged = await upsertSubscriberAccessPostgresRaw(email, subscriberPdfAccess);
-    } catch (e2) {
-      console.error("[admin] toggleSubscriberPdfAccess", e, e2);
+      merged = await prisma.accountSettings.upsert({
+        where: { email },
+        create: {
+          email,
+          profileLimit: 1,
+          isAdmin: false,
+          subscriberPdfAccess,
+        },
+        update: { subscriberPdfAccess },
+      });
+    } catch (e) {
+      console.error("[admin] toggleSubscriberPdfAccess", e);
       redirect("/admin?err=sub");
     }
   }
