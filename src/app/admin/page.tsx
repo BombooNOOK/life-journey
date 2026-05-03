@@ -28,35 +28,38 @@ function clampPdfDownloadLimitPerOrder(raw: string | undefined): number {
   return Math.min(999, Math.max(0, Math.trunc(n)));
 }
 
-async function loadRows(keyword: string): Promise<UserRow[]> {
-  const where = keyword
-    ? {
-        email: {
-          contains: keyword,
-          mode: "insensitive" as const,
-        },
-      }
-    : {};
-  /** Prisma（PostgreSQL）では distinct とセットで orderBy が必須になることがある */
-  const emailAsc = { email: "asc" as const };
-  const [orderUsers, journalUsers, settings] = await Promise.all([
-    prisma.order.findMany({
+/** メール部分一致（PostgreSQL では大小無視）。失敗時は大小区別ありに落とす */
+function emailContainsWhere(keyword: string, preferInsensitive: boolean) {
+  if (!preferInsensitive) {
+    return { email: { contains: keyword } };
+  }
+  return {
+    email: {
+      contains: keyword,
+      mode: "insensitive" as const,
+    },
+  };
+}
+
+async function loadRowsWithEmailMode(keyword: string, insensitive: boolean): Promise<UserRow[]> {
+  const where = keyword ? emailContainsWhere(keyword, insensitive) : {};
+
+  const [orderGroups, journalGroups, settings] = await Promise.all([
+    prisma.order.groupBy({
+      by: ["email"],
       where,
-      distinct: ["email"],
-      orderBy: emailAsc,
-      select: { email: true },
-      take: 200,
+      _count: { _all: true },
+      orderBy: { email: "asc" },
     }),
-    prisma.journalEntry.findMany({
+    prisma.journalEntry.groupBy({
+      by: ["email"],
       where,
-      distinct: ["email"],
-      orderBy: emailAsc,
-      select: { email: true },
-      take: 200,
+      _count: { _all: true },
+      orderBy: { email: "asc" },
     }),
     prisma.accountSettings.findMany({
       where,
-      orderBy: emailAsc,
+      orderBy: [{ updatedAt: "desc" }, { email: "asc" }],
       select: {
         id: true,
         email: true,
@@ -66,11 +69,20 @@ async function loadRows(keyword: string): Promise<UserRow[]> {
         subscriberPdfAccess: true,
         updatedAt: true,
       },
-      take: 200,
     }),
   ]);
+
   const orderCountByEmail = new Map<string, number>();
+  for (const g of orderGroups) {
+    const key = normalizeEmail(g.email);
+    orderCountByEmail.set(key, (orderCountByEmail.get(key) ?? 0) + g._count._all);
+  }
   const journalCountByEmail = new Map<string, number>();
+  for (const g of journalGroups) {
+    const key = normalizeEmail(g.email);
+    journalCountByEmail.set(key, (journalCountByEmail.get(key) ?? 0) + g._count._all);
+  }
+
   const settingsByEmail = new Map<
     string,
     {
@@ -91,14 +103,6 @@ async function loadRows(keyword: string): Promise<UserRow[]> {
     }
   }
 
-  for (const row of orderUsers) {
-    const key = normalizeEmail(row.email);
-    orderCountByEmail.set(key, (orderCountByEmail.get(key) ?? 0) + 1);
-  }
-  for (const row of journalUsers) {
-    const key = normalizeEmail(row.email);
-    journalCountByEmail.set(key, (journalCountByEmail.get(key) ?? 0) + 1);
-  }
   const emails = new Set<string>([
     ...orderCountByEmail.keys(),
     ...journalCountByEmail.keys(),
@@ -119,6 +123,15 @@ async function loadRows(keyword: string): Promise<UserRow[]> {
     })
     .sort((a, b) => a.email.localeCompare(b.email))
     .slice(0, 200);
+}
+
+async function loadRows(keyword: string): Promise<UserRow[]> {
+  try {
+    return await loadRowsWithEmailMode(keyword, true);
+  } catch (e) {
+    console.warn("[admin] loadRows insensitive failed, retrying:", e);
+    return loadRowsWithEmailMode(keyword, false);
+  }
 }
 
 export default async function AdminPage({ searchParams }: Props) {
