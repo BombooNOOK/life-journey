@@ -103,6 +103,8 @@ model AccountSettings {
   profileLimit Int     @default(1)
   /// 鑑定書PDFの無料ダウンロード上限（鑑定1件あたり）。新規鑑定作成時と管理者変更時に Order に反映する。
   pdfDownloadLimitPerOrder Int @default(2)
+  /// 製本用（高画質）鑑定書PDFのダウンロード可否（プレビュー版は全員）
+  subscriberPdfAccess Boolean @default(false)
 }
 
 /// 1アカウント配下のプロフィール（ニックネーム表示用）

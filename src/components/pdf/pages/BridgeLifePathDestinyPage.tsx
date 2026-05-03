@@ -16,6 +16,7 @@ import {
   PDF_BRIDGE_STAR_3_PATH,
   PDF_BRIDGE_STAR_4_PATH,
   PDF_BRIDGE_STAR_5_PATH,
+  resolvePdfAssetPath,
 } from "../pdfAssetPaths";
 import { pdfStyles } from "../styles";
 
@@ -33,7 +34,7 @@ function bridgeStarImagePath(filledOf5: number): string {
     4: PDF_BRIDGE_STAR_4_PATH,
     5: PDF_BRIDGE_STAR_5_PATH,
   };
-  return byCount[n];
+  return resolvePdfAssetPath(byCount[n]);
 }
 
 function BridgePdfBlockSection({

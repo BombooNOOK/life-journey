@@ -27,7 +27,8 @@
     "fix:soul-bg-header": "python3 scripts/transparentizeCoreFirstPageHeaderBand.py src/components/pdf/assets/soul-first-page.png",
     "fix:personality-bg-header": "python3 scripts/transparentizeCoreFirstPageHeaderBand.py src/components/pdf/assets/personality-first-page.png",
     "fix:birthday-bg-header": "python3 scripts/transparentizeCoreFirstPageHeaderBand.py src/components/pdf/assets/birthday-first-page.png",
-    "fix:maturity-bg-header": "python3 scripts/transparentizeCoreFirstPageHeaderBand.py src/components/pdf/assets/maturity-first-page.png"
+    "fix:maturity-bg-header": "python3 scripts/transparentizeCoreFirstPageHeaderBand.py src/components/pdf/assets/maturity-first-page.png",
+    "pdf:preview-assets": "node scripts/build-pdf-preview-assets.mjs"
   },
   "dependencies": {
     "@fontsource/noto-sans-jp": "^5.2.5",
@@ -51,6 +52,7 @@
     "patch-package": "^8.0.1",
     "pdf-parse": "^1.1.1",
     "prisma": "^6.6.0",
+    "sharp": "^0.33.5",
     "tailwindcss": "^4.0.0",
     "tsx": "^4.19.3",
     "typescript": "^5.0.0",

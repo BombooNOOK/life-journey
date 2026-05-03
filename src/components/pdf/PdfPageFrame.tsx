@@ -2,9 +2,9 @@ import type { PropsWithChildren } from "react";
 import { Image, Page, Text as RawText, View } from "@react-pdf/renderer";
 import type { Orientation, PageSize } from "@react-pdf/types";
 
+import { resolvePdfAssetPath } from "./pdfAssetPaths";
 import { bindingBackgroundImageSrc } from "./pdfBindingBackground";
 import { getPdfPageNumberOffset } from "./pdfPageNumberOffset";
-import { getPdfRenderQuality } from "./pdfRenderQualityState";
 import { pdfStyles } from "./styles";
 
 type PdfPageType = "door" | "guide" | "body" | "writing";
@@ -64,9 +64,6 @@ export function PdfPageFrame({
   pageType = "body",
   children,
 }: Props) {
-  const quality = getPdfRenderQuality();
-  /** 見開き綴じの装飾背景のみ軽量版で省略。コア本文のヒーロー背景は low でも描画する（見た目の欠落防止）。 */
-  const lowQuality = quality === "low";
   const pageNumberOffset = getPdfPageNumberOffset();
   const backgroundOpacityByType: Record<PdfPageType, number> = {
     door: 1,
@@ -95,12 +92,13 @@ export function PdfPageFrame({
   ) : null;
 
   if (fullBleedImageSrc) {
+    const bleedSrc = resolvePdfAssetPath(fullBleedImageSrc);
     return (
       <Page size={size} orientation={orientation} style={[pdfStyles.page, { padding: 0 }]}>
         <View style={{ width: "100%", height: "100%", zIndex: 0 }}>
           <Image
             cache={false}
-            src={fullBleedImageSrc}
+            src={bleedSrc}
             style={{ width: "100%", height: "100%", objectFit: "cover" }}
           />
         </View>
@@ -118,7 +116,13 @@ export function PdfPageFrame({
           render={(props) => {
             const p = props as ViewRenderPageProps;
             if (p.subPageNumber !== 1) return null;
-            return <Image cache={false} src={firstPageBodyBackgroundSrc} style={pdfStyles.pageBindingBackgroundImage} />;
+            return (
+              <Image
+                cache={false}
+                src={resolvePdfAssetPath(firstPageBodyBackgroundSrc)}
+                style={pdfStyles.pageBindingBackgroundImage}
+              />
+            );
           }}
         />
       ) : null}
@@ -132,14 +136,14 @@ export function PdfPageFrame({
             return (
               <Image
                 cache={false}
-                src={continuationBodyBackgroundSrc}
+                src={resolvePdfAssetPath(continuationBodyBackgroundSrc)}
                 style={pdfStyles.pageBindingBackgroundImage}
               />
             );
           }}
         />
       ) : null}
-      {showBindingBackground && !lowQuality ? (
+      {showBindingBackground ? (
         <View
           style={pdfStyles.pageBackground}
           fixed
@@ -152,7 +156,7 @@ export function PdfPageFrame({
             if (!src) return null;
             return (
               <Image
-                src={src}
+                src={resolvePdfAssetPath(src)}
                 style={[
                   pdfStyles.pageBindingBackgroundImage,
                   { opacity: backgroundOpacityByType[pageType] },

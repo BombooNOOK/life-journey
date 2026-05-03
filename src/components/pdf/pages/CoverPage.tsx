@@ -1,6 +1,6 @@
 import { Image, Page, StyleSheet, View } from "@react-pdf/renderer";
 
-import { PDF_COVER_IMAGE_PATH } from "../pdfAssetPaths";
+import { PDF_COVER_IMAGE_PATH, resolvePdfAssetPath } from "../pdfAssetPaths";
 
 const styles = StyleSheet.create({
   page: {
@@ -23,7 +23,7 @@ export function CoverPage() {
   return (
     <Page size="A5" style={styles.page}>
       <View style={styles.coverWrap}>
-        <Image cache={false} src={PDF_COVER_IMAGE_PATH} style={styles.coverImage} />
+        <Image cache={false} src={resolvePdfAssetPath(PDF_COVER_IMAGE_PATH)} style={styles.coverImage} />
       </View>
     </Page>
   );

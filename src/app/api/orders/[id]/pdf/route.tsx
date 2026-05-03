@@ -18,6 +18,8 @@ import type {
 } from "@/components/pdf/pdfRenderConfig";
 import { setPdfPageNumberOffset } from "@/components/pdf/pdfPageNumberOffset";
 import { ensureJapaneseFont } from "@/components/pdf/registerFonts";
+import { resolveSubscriberPdfAccess } from "@/lib/account/pdfAccess";
+import { isAdminEmail } from "@/lib/admin/access";
 import { getViewerEmailFromCookie, normalizeEmail } from "@/lib/auth/viewer";
 import { mergeReportPdfWithChapterInserts } from "@/lib/pdf/mergeReportPdfWithInserts";
 import { prisma } from "@/lib/db";
@@ -153,6 +155,22 @@ export async function GET(req: Request, { params }: RouteParams) {
   const quality = parsePdfQuality(url.searchParams.get("quality"));
   const downloadParam = url.searchParams.get("download");
   const shouldDownload = downloadParam !== "0";
+
+  if (quality === "high") {
+    const subscriberPdf = await resolveSubscriberPdfAccess(viewerEmail);
+    const admin = await isAdminEmail(viewerEmail);
+    if (!subscriberPdf && !admin) {
+      return NextResponse.json(
+        {
+          error:
+            "製本用（高画質）PDFはサブスク加入者向けです。プレビュー版（軽量）をご利用ください。",
+          code: "SUBSCRIBER_PDF_REQUIRED",
+        },
+        { status: 403 },
+      );
+    }
+  }
+
   const downloadLimit = row.pdfDownloadLimit ?? 2;
   const downloadCount = row.pdfDownloadCount ?? 0;
   const reissueUrl =
@@ -168,12 +186,6 @@ export async function GET(req: Request, { params }: RouteParams) {
   }
 
   const renderConfig: PdfRenderConfig = { quality };
-  /** 軽量版: 本文をわずかに詰めてページ数・転送量を抑える（画像は別レイヤー） */
-  if (quality === "low" && bodyTune === "normal" && focusPage === "all") {
-    renderConfig.bodyFontFamily = "NotoSansJP";
-    renderConfig.bodyFontSize = 9;
-    renderConfig.bodyLineHeight = 1.48;
-  }
   if (!(bodyTune === "normal" && focusPage === "all")) {
     renderConfig.focusPage = focusPage;
     renderConfig.bodyFontFamily = "NotoSansJP";
@@ -190,7 +202,7 @@ export async function GET(req: Request, { params }: RouteParams) {
     const payload = orderPayloadFromOrderRow(row);
 
     buffer =
-      focusPage === "all" && quality === "high"
+      focusPage === "all"
         ? await renderFullReportWithChapterPdfInserts(payload, renderConfig)
         : await renderToBuffer(<ReportDocument order={payload} renderConfig={renderConfig} />);
   } catch (e) {
@@ -206,10 +218,11 @@ export async function GET(req: Request, { params }: RouteParams) {
   copy.set(u8);
   const body = new Blob([copy], { type: "application/pdf" });
 
+  const variantSlug = quality === "high" ? "print" : "preview";
   const filename =
     bodyTune === "normal" && focusPage === "all"
-      ? `kantei-${id.slice(0, 8)}-${quality}.pdf`
-      : `kantei-${id.slice(0, 8)}-${focusPage}-${bodyTune}-${quality}.pdf`;
+      ? `kantei-${id.slice(0, 8)}-${variantSlug}.pdf`
+      : `kantei-${id.slice(0, 8)}-${focusPage}-${bodyTune}-${variantSlug}.pdf`;
   const response = new NextResponse(body, {
     status: 200,
     headers: {

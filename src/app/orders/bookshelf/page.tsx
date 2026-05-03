@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
+import { resolveSubscriberPdfAccess } from "@/lib/account/pdfAccess";
+import { isAdminEmail } from "@/lib/admin/access";
 import { BookshelfDiaryBindingOrder } from "@/components/orders/BookshelfDiaryBindingOrder";
 import { PdfDownloadButton } from "@/components/orders/PdfDownloadButton";
 import { getViewerEmailFromCookie } from "@/lib/auth/viewer";
@@ -17,6 +19,8 @@ type ShelfBook = {
   href: string;
   /** チャプター挿入込みの製本PDF（`/api/orders/.../pdf`）。鑑定書のみ。 */
   boundPdfHref?: string;
+  /** 鑑定書カードのみ。製本用（高画質）DLのための注文ID */
+  reportOrderId?: string;
   pdfRemainingDownloads?: number;
   pdfDownloadLimit?: number;
   /** 日記カードのみ：その西暦年の製本カウント用 */
@@ -35,6 +39,11 @@ export default async function BookshelfPage() {
   ]);
   const activeProfileLabel =
     profiles.find((p) => p.id === activeProfileId)?.nickname ?? "メイン";
+  const [subscriberPdf, viewerIsAdmin] = await Promise.all([
+    resolveSubscriberPdfAccess(viewerEmail),
+    isAdminEmail(viewerEmail),
+  ]);
+  const showPrintQualityPdf = subscriberPdf || viewerIsAdmin;
   const shelfBookDelegate = (prisma as unknown as {
     diaryBookshelfBook?: {
       findMany: (args: {
@@ -144,6 +153,7 @@ export default async function BookshelfPage() {
     title: "鑑定書",
     subtitle: `${order.fullNameDisplay} · ${order.createdAt.toLocaleDateString("ja-JP")}`,
     href: `/orders/${order.id}`,
+    reportOrderId: order.id,
     boundPdfHref: `/api/orders/${order.id}/pdf?download=1&quality=low`,
     pdfRemainingDownloads: Math.max(0, (order.pdfDownloadLimit ?? 2) - (order.pdfDownloadCount ?? 0)),
     pdfDownloadLimit: order.pdfDownloadLimit ?? 2,
@@ -202,10 +212,18 @@ export default async function BookshelfPage() {
                       <div className="mt-3 space-y-2">
                         <PdfDownloadButton
                           href={book.boundPdfHref}
-                          label="鑑定書PDFをダウンロード"
+                          label="プレビュー版（軽量）"
                           className="inline-flex rounded-lg bg-amber-800 px-3 py-2 text-xs font-medium text-white hover:bg-amber-900"
-                          loadingLabel="軽量PDFを準備中です…（30〜60秒）"
+                          loadingLabel="プレビュー版を準備中です…（30〜90秒）"
                         />
+                        {showPrintQualityPdf && book.reportOrderId ? (
+                          <PdfDownloadButton
+                            href={`/api/orders/${book.reportOrderId}/pdf?download=1&quality=high`}
+                            label="製本用（高画質）"
+                            className="inline-flex rounded-lg border border-amber-400 bg-amber-50 px-3 py-2 text-xs font-medium text-amber-950 hover:bg-amber-100"
+                            loadingLabel="製本用PDFを準備中です…（1〜3分）"
+                          />
+                        ) : null}
                         {book.pdfRemainingDownloads != null && book.pdfDownloadLimit != null ? (
                           <div className="space-y-1">
                             <p className="text-[11px] leading-snug text-stone-500">

@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import { resolveSubscriberPdfAccess } from "@/lib/account/pdfAccess";
+import { isAdminEmail } from "@/lib/admin/access";
 import { OrderIdentityCorrectionCard } from "@/components/orders/OrderIdentityCorrectionCard";
 import { PdfDownloadButton } from "@/components/orders/PdfDownloadButton";
 import { getViewerEmailFromCookie, normalizeEmail } from "@/lib/auth/viewer";
@@ -88,6 +90,11 @@ export default async function OrderDetailPage({ params }: Props) {
   const pdfDownloadCount = order.pdfDownloadCount ?? 0;
   const pdfRemaining = Math.max(0, pdfDownloadLimit - pdfDownloadCount);
   const canCorrectIdentity = (order.identityCorrectionCount ?? 0) === 0;
+  const [subscriberPdf, viewerIsAdmin] = await Promise.all([
+    resolveSubscriberPdfAccess(viewerEmail),
+    isAdminEmail(viewerEmail),
+  ]);
+  const showPrintQualityPdf = subscriberPdf || viewerIsAdmin;
 
   return (
     <div className="space-y-6">
@@ -145,12 +152,25 @@ export default async function OrderDetailPage({ params }: Props) {
           次に進む
           <span aria-hidden>🦉</span>
         </h2>
-        <div className="mt-4 flex flex-wrap gap-3">
+        <div className="mt-4 flex flex-wrap items-start gap-3">
           <PdfDownloadButton
             href={`/api/orders/${order.id}/pdf?download=1&quality=low`}
-            label="鑑定書PDFをダウンロード（無料）"
+            label="プレビュー版（軽量）をダウンロード"
             className="rounded-lg bg-stone-800 px-5 py-2.5 text-sm font-medium text-white hover:bg-stone-700"
+            loadingLabel="プレビュー版PDFを準備中です…（30〜90秒）"
           />
+          {showPrintQualityPdf ? (
+            <PdfDownloadButton
+              href={`/api/orders/${order.id}/pdf?download=1&quality=high`}
+              label="製本用（高画質）をダウンロード"
+              className="rounded-lg border border-amber-300 bg-amber-50 px-5 py-2.5 text-sm font-medium text-amber-950 hover:bg-amber-100"
+              loadingLabel="製本用PDFを準備中です…（1〜3分のことがあります）"
+            />
+          ) : (
+            <p className="max-w-xs rounded-lg border border-stone-200 bg-stone-50 px-3 py-2 text-xs leading-relaxed text-stone-600">
+              製本用（高画質）はサブスク加入者向けです。お申し込み後、管理者がアカウントに反映するとこのボタンが表示されます。
+            </p>
+          )}
           <Link
             href={`/orders/${order.id}/today`}
             className="rounded-lg border border-stone-300 bg-white px-5 py-2.5 text-sm font-medium text-stone-800 hover:bg-stone-50"
@@ -165,9 +185,12 @@ export default async function OrderDetailPage({ params }: Props) {
           </Link>
         </div>
         <p className="mt-2 text-xs text-stone-500">
-          PDF生成に1分ほどかかる場合があります。無料閲覧残り {pdfRemaining} / {pdfDownloadLimit} 回（閲覧・ダウンロード共通）。
+          PDF生成に1〜3分かかることがあります。無料閲覧残り {pdfRemaining} / {pdfDownloadLimit}{" "}
+          回（プレビュー・製本どちらのDLでも1回としてカウント）。
         </p>
-        <p className="mt-1 text-xs text-stone-500">本棚から開くPDFは、スマホ向けの軽量版（低画質）です。</p>
+        <p className="mt-1 text-xs text-stone-500">
+          プレビュー版はファイルが軽くスマホ向けです。製本用は章扉・見開き・裏表紙まで含む最高画質です。
+        </p>
         <p className="mt-1">
           <Link
             href="/help/pdf-download"

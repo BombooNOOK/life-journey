@@ -25,7 +25,11 @@
  * 解像度：大型表示・製本を想定する全面背景は A5 長辺でおおよそ 1700px 級（300dpi 帯）が目安。
  * 低解像度のままの画像は差し替え時に高解像度版を推奨（詳細は `.cursor/rules/numerology-pdf-booklet.mdc`）。
  */
+import fs from "node:fs";
+import path from "node:path";
 import { fileURLToPath } from "node:url";
+
+import { getPdfRenderQuality } from "./pdfRenderQualityState";
 
 function pdfAssetPath(fileName: string): string {
   // `process.cwd()` に依存しないよう、ファイル自身の場所から相対パスで解決する
@@ -170,3 +174,25 @@ export const PDF_CHAPTER_INSERT_BEFORE_4_PATH = pdfAssetPath("chapter-insert-bef
 
 /** 冊子の最後に挿入する裏表紙PDF（結合専用・元 `ura.pdf`）。リポジトリ内パスで参照する。 */
 export const PDF_FINAL_BACK_COVER_INSERT_PATH = pdfAssetPath("final-back-cover-insert.pdf");
+
+const PREVIEW_ASSETS_DIR = path.join(process.cwd(), "src/components/pdf/assets-preview");
+
+/**
+ * プレビュー（quality=low）時、`assets-preview/` に同名の PNG/JPEG があれば低解像度版を使う。
+ * 本文のフォントサイズは変えず、見え方のレイアウトは製本用と同一にする想定。
+ */
+export function resolvePdfAssetPath(fullResolutionPath: string): string {
+  if (getPdfRenderQuality() !== "low") return fullResolutionPath;
+  const lower = fullResolutionPath.toLowerCase();
+  if (!lower.endsWith(".png") && !lower.endsWith(".jpg") && !lower.endsWith(".jpeg")) {
+    return fullResolutionPath;
+  }
+  const base = path.basename(fullResolutionPath);
+  const candidate = path.join(PREVIEW_ASSETS_DIR, base);
+  try {
+    if (fs.existsSync(candidate)) return candidate;
+  } catch {
+    /* noop */
+  }
+  return fullResolutionPath;
+}

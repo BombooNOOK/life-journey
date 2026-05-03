@@ -66,8 +66,8 @@ export function ReportPdfPages({ order, renderConfig, segment }: Props) {
   const purchaseDate = order.purchaseDateIso ? new Date(order.purchaseDateIso) : new Date();
   const focus = renderConfig?.focusPage ?? "all";
   const showAll = focus === "all";
-  const quality = renderConfig?.quality ?? "high";
-  const includeRichVisualPages = quality === "high";
+  /** 全文モードでは章扉・フクロウ先生・ジャーナル誘導なども含める（軽量版でも構成はフル。画質・本文サイズは renderConfig で調整） */
+  const includeRichVisualPages = showAll;
   const bodyStyle = renderConfig ? bodyStyleFromConfig(renderConfig) : undefined;
   const bodyExpandWidth = renderConfig?.bodyExpandWidth;
   const bridgeChunkSize = 2;
