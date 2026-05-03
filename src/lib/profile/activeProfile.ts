@@ -26,6 +26,30 @@ export async function listViewerProfiles(viewerEmail: string): Promise<ViewerPro
   return rows;
 }
 
+/** `listViewerProfiles` と `resolveActiveProfileId` を同時に呼ぶと Prisma が二重に走るため、マイページ等ではこちらを使う */
+export async function listProfilesAndActiveProfileId(
+  viewerEmail: string,
+): Promise<{ profiles: ViewerProfile[]; activeProfileId: string }> {
+  const email = normalizeEmail(viewerEmail);
+  if (!email) return { profiles: [], activeProfileId: LEGACY_PROFILE_ID };
+  await ensureDefaultProfile(email);
+  const profiles = await prisma.profile.findMany({
+    where: { email, isArchived: false },
+    orderBy: { createdAt: "asc" },
+    select: { id: true, nickname: true },
+  });
+  if (profiles.length === 0) {
+    return { profiles: [], activeProfileId: LEGACY_PROFILE_ID };
+  }
+  const store = await cookies();
+  const cookieProfileId = store.get(PROFILE_COOKIE_KEY)?.value ?? "";
+  const activeProfileId =
+    cookieProfileId && profiles.some((p) => p.id === cookieProfileId)
+      ? cookieProfileId
+      : profiles[0].id;
+  return { profiles, activeProfileId };
+}
+
 export async function resolveActiveProfileId(viewerEmail: string): Promise<string> {
   const email = normalizeEmail(viewerEmail);
   if (!email) return LEGACY_PROFILE_ID;

@@ -4,7 +4,8 @@ import { LifeJourneyDiaryCard } from "@/components/journal/LifeJourneyDiaryCard"
 import { ProfileSwitcher } from "@/components/profile/ProfileSwitcher";
 import { getViewerEmailFromCookie } from "@/lib/auth/viewer";
 import { prisma } from "@/lib/db";
-import { listViewerProfiles, resolveActiveProfileId } from "@/lib/profile/activeProfile";
+import { withPrismaConnectionRetry } from "@/lib/db/prismaRetry";
+import { listProfilesAndActiveProfileId } from "@/lib/profile/activeProfile";
 
 export const dynamic = "force-dynamic";
 
@@ -22,32 +23,43 @@ export default async function OrdersListPage() {
     );
   }
 
-  const [profiles, activeProfileId] = await Promise.all([
-    listViewerProfiles(viewerEmail),
-    resolveActiveProfileId(viewerEmail),
-  ]);
+  let profiles: Awaited<ReturnType<typeof listProfilesAndActiveProfileId>>["profiles"] = [];
+  let activeProfileId = "";
   let orders: Awaited<ReturnType<typeof prisma.order.findMany>> = [];
   let fetchError: string | null = null;
   try {
-    orders = await prisma.order.findMany({
-      where: { email: viewerEmail, profileId: activeProfileId },
-      orderBy: { createdAt: "desc" },
-      take: 100,
-    });
+    const loaded = await withPrismaConnectionRetry(() =>
+      listProfilesAndActiveProfileId(viewerEmail),
+    );
+    profiles = loaded.profiles;
+    activeProfileId = loaded.activeProfileId;
+    orders = await withPrismaConnectionRetry(() =>
+      prisma.order.findMany({
+        where: { email: viewerEmail, profileId: activeProfileId },
+        orderBy: { createdAt: "desc" },
+        take: 100,
+      }),
+    );
   } catch (e) {
     fetchError = e instanceof Error ? e.message : "一覧を取得できませんでした。";
   }
 
   if (fetchError) {
+    const showDevHint = process.env.NODE_ENV === "development";
     return (
       <div className="space-y-4">
         <h1 className="text-2xl font-bold text-stone-900">マイページ</h1>
         <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-900">
-          <p className="font-semibold">データベースに接続できませんでした</p>
-          <p className="mt-2 whitespace-pre-wrap">{fetchError}</p>
-          <p className="mt-2 text-xs text-red-800">
-            `DATABASE_URL` を確認し、`npx prisma db push` を実行してください。
+          <p className="font-semibold">マイページを読み込めませんでした</p>
+          <p className="mt-2 text-stone-800">
+            一時的な混み合いや通信の途切れでもこの表示になることがあります。数分あけてからページを再読み込みしてください。
           </p>
+          <p className="mt-2 whitespace-pre-wrap text-red-950/90">{fetchError}</p>
+          {showDevHint ? (
+            <p className="mt-2 text-xs text-red-800">
+              開発時のみ: `DATABASE_URL` と `npx prisma db push` / `migrate` を確認してください。
+            </p>
+          ) : null}
         </div>
       </div>
     );

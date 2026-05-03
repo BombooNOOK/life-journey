@@ -2,15 +2,14 @@ import { NextResponse } from "next/server";
 
 import { getViewerEmailFromCookie, normalizeEmail } from "@/lib/auth/viewer";
 import { prisma } from "@/lib/db";
-import { listViewerProfiles, resolveActiveProfileId } from "@/lib/profile/activeProfile";
+import { listProfilesAndActiveProfileId } from "@/lib/profile/activeProfile";
 
 export async function GET() {
   const viewerEmail = await getViewerEmailFromCookie();
   if (!viewerEmail) {
     return NextResponse.json({ error: "ログインが必要です", code: "AUTH_REQUIRED" }, { status: 401 });
   }
-  const profiles = await listViewerProfiles(viewerEmail);
-  const activeProfileId = await resolveActiveProfileId(viewerEmail);
+  const { profiles, activeProfileId } = await listProfilesAndActiveProfileId(viewerEmail);
   return NextResponse.json({ profiles, activeProfileId, code: "OK" });
 }
 

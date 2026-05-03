@@ -7,8 +7,9 @@ import { BookshelfDiaryBindingOrder } from "@/components/orders/BookshelfDiaryBi
 import { PdfDownloadButton } from "@/components/orders/PdfDownloadButton";
 import { getViewerEmailFromCookie } from "@/lib/auth/viewer";
 import { journalEntryInBookshelfPeriod } from "@/lib/journal/bookshelfPeriod";
-import { listViewerProfiles, resolveActiveProfileId } from "@/lib/profile/activeProfile";
 import { prisma } from "@/lib/db";
+import { withPrismaConnectionRetry } from "@/lib/db/prismaRetry";
+import { listProfilesAndActiveProfileId } from "@/lib/profile/activeProfile";
 import { combinePdfDownloadLimit, fetchAccountPdfDownloadLimitOrNull } from "@/lib/order/effectivePdfDownloadLimit";
 
 export const dynamic = "force-dynamic";
@@ -36,10 +37,9 @@ export default async function BookshelfPage() {
   if (!viewerEmail) redirect("/login?returnTo=/orders/bookshelf");
 
   try {
-  const [activeProfileId, profiles] = await Promise.all([
-    resolveActiveProfileId(viewerEmail),
-    listViewerProfiles(viewerEmail),
-  ]);
+  const { activeProfileId, profiles } = await withPrismaConnectionRetry(() =>
+    listProfilesAndActiveProfileId(viewerEmail),
+  );
   const activeProfileLabel =
     profiles.find((p) => p.id === activeProfileId)?.nickname ?? "メイン";
   const [subscriberPdf, viewerIsAdmin] = await Promise.all([
