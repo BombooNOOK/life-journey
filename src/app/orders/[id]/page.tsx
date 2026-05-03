@@ -158,15 +158,17 @@ export default async function OrderDetailPage({ params }: Props) {
           <PdfDownloadButton
             href={`/api/orders/${order.id}/pdf?download=1&quality=low`}
             label="プレビュー版（軽量）をダウンロード"
-            className="rounded-lg bg-stone-800 px-5 py-2.5 text-sm font-medium text-white hover:bg-stone-700"
-            loadingLabel="プレビュー版PDFを準備中です…（30秒〜数分かかることがあります）"
+            className="inline-block rounded-lg bg-stone-800 px-5 py-2.5 text-sm font-medium text-white hover:bg-stone-700"
+            loadingLabel="タップ後、ブラウザがそのままPDFを受け取ります。初回は30秒〜数分かかることがあります。"
+            suggestedFileName={`kantei-${order.id.slice(0, 8)}-preview.pdf`}
           />
           {showPrintQualityPdf ? (
             <PdfDownloadButton
               href={`/api/orders/${order.id}/pdf?download=1&quality=high`}
               label="製本用（高画質）をダウンロード"
-              className="rounded-lg border border-amber-300 bg-amber-50 px-5 py-2.5 text-sm font-medium text-amber-950 hover:bg-amber-100"
-              loadingLabel="製本用PDFを準備中です…（1〜3分のことがあります）"
+              className="inline-block rounded-lg border border-amber-300 bg-amber-50 px-5 py-2.5 text-sm font-medium text-amber-950 hover:bg-amber-100"
+              loadingLabel="高画質は容量が大きいため、1〜3分かかることがあります。画面を閉じずにお待ちください。"
+              suggestedFileName={`kantei-${order.id.slice(0, 8)}-print.pdf`}
             />
           ) : (
             <p className="max-w-xs rounded-lg border border-stone-200 bg-stone-50 px-3 py-2 text-xs leading-relaxed text-stone-600">

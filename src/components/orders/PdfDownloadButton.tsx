@@ -1,12 +1,15 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 type Props = {
   href: string;
   label: string;
   className: string;
+  /** ボタン下の補足（初回は時間がかかる旨など） */
   loadingLabel?: string;
+  /** 保存時のファイル名の目安（同一オリジンなら `download` に反映されます） */
+  suggestedFileName?: string;
 };
 
 export function PdfDownloadButton({
@@ -14,90 +17,29 @@ export function PdfDownloadButton({
   label,
   className,
   loadingLabel = "鑑定書を準備中です…（30〜60秒）",
+  suggestedFileName,
 }: Props) {
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [hrefWithCacheBust, setHrefWithCacheBust] = useState(href);
 
-  /** ブラウザ／CDN の古いレスポンスを避ける（毎回別 URL + fetch はキャッシュしない） */
-  const pdfUrlWithCacheBust = (baseHref: string): string => {
-    const u = new URL(baseHref, window.location.origin);
+  useEffect(() => {
+    const u = new URL(href, window.location.origin);
     u.searchParams.set("_cb", String(Date.now()));
-    return u.toString();
-  };
-
-  const parseFilename = (contentDisposition: string | null): string => {
-    if (!contentDisposition) return "kantei.pdf";
-    const utf8Match = contentDisposition.match(/filename\*=UTF-8''([^;]+)/i);
-    if (utf8Match?.[1]) return decodeURIComponent(utf8Match[1]);
-    const basicMatch = contentDisposition.match(/filename="?([^"]+)"?/i);
-    if (basicMatch?.[1]) return basicMatch[1];
-    return "kantei.pdf";
-  };
+    setHrefWithCacheBust(`${u.pathname}${u.search}`);
+  }, [href]);
 
   return (
     <div className="space-y-2">
-      <button
-        type="button"
+      <a
+        href={hrefWithCacheBust}
         className={className}
-        disabled={loading}
-        onClick={async () => {
-          setLoading(true);
-          setError(null);
-          const fetchUrl = pdfUrlWithCacheBust(href);
-          try {
-            const res = await fetch(fetchUrl, {
-              method: "GET",
-              credentials: "same-origin",
-              cache: "no-store",
-            });
-            const contentType = res.headers.get("content-type") ?? "";
-            if (!res.ok) {
-              if (contentType.includes("text/html")) {
-                window.location.href = fetchUrl;
-                return;
-              }
-              if (res.status === 502 || res.status === 503 || res.status === 504) {
-                setError(
-                  "PDFの準備に時間がかかりすぎて接続が切れました（サーバー側の時間制限）。しばらくしてからもう一度お試しください。",
-                );
-                return;
-              }
-              throw new Error(`HTTP ${res.status}`);
-            }
-            if (!contentType.includes("application/pdf")) {
-              window.location.href = fetchUrl;
-              return;
-            }
-            const blob = await res.blob();
-            const downloadUrl = URL.createObjectURL(blob);
-            const filename = parseFilename(res.headers.get("content-disposition"));
-            const a = document.createElement("a");
-            a.href = downloadUrl;
-            a.download = filename;
-            a.rel = "noreferrer";
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(downloadUrl);
-          } catch (err) {
-            console.error("[pdf-download-client] fetch/blob 失敗（ブラウザ側）", err);
-            setError(
-              "通信状況により生成に失敗しました。もう一度お試しください（Wi‑Fi の場合は電波の良い場所で）。",
-            );
-          } finally {
-            setLoading(false);
-          }
-        }}
+        download={suggestedFileName}
+        rel="noopener noreferrer"
       >
-        {loading ? "フクロウ先生が準備中…" : label}
-      </button>
-      {loading ? (
-        <p className="flex items-center gap-2 text-xs text-stone-500">
-          <span className="inline-block animate-spin">🦉</span>
-          {loadingLabel}
-        </p>
+        {label}
+      </a>
+      {loadingLabel ? (
+        <p className="text-xs leading-relaxed text-stone-500">{loadingLabel}</p>
       ) : null}
-      {error ? <p className="text-xs text-red-700">{error}</p> : null}
     </div>
   );
 }

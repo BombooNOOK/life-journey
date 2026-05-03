@@ -221,14 +221,20 @@ export default async function BookshelfPage() {
                           href={book.boundPdfHref}
                           label="プレビュー版（軽量）"
                           className="inline-flex rounded-lg bg-amber-800 px-3 py-2 text-xs font-medium text-white hover:bg-amber-900"
-                          loadingLabel="プレビュー版を準備中です…（30〜90秒）"
+                          loadingLabel="タップ後にブラウザが受け取ります。初回は30秒〜数分かかることがあります。"
+                          suggestedFileName={
+                            book.reportOrderId
+                              ? `kantei-${book.reportOrderId.slice(0, 8)}-preview.pdf`
+                              : undefined
+                          }
                         />
                         {showPrintQualityPdf && book.reportOrderId ? (
                           <PdfDownloadButton
                             href={`/api/orders/${book.reportOrderId}/pdf?download=1&quality=high`}
                             label="製本用（高画質）"
                             className="inline-flex rounded-lg border border-amber-400 bg-amber-50 px-3 py-2 text-xs font-medium text-amber-950 hover:bg-amber-100"
-                            loadingLabel="製本用PDFを準備中です…（1〜3分）"
+                            loadingLabel="高画質は1〜3分かかることがあります。画面を閉じずにお待ちください。"
+                            suggestedFileName={`kantei-${book.reportOrderId.slice(0, 8)}-print.pdf`}
                           />
                         ) : null}
                         {book.pdfRemainingDownloads != null && book.pdfDownloadLimit != null ? (
