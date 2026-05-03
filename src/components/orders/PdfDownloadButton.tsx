@@ -38,7 +38,12 @@ export function PdfDownloadButton({
         {label}
       </a>
       {loadingLabel ? (
-        <p className="text-xs leading-relaxed text-stone-500">{loadingLabel}</p>
+        <p className="flex items-start gap-2 text-xs leading-relaxed text-stone-500">
+          <span className="inline-block shrink-0 animate-spin" aria-hidden>
+            🦉
+          </span>
+          <span>{loadingLabel}</span>
+        </p>
       ) : null}
     </div>
   );
