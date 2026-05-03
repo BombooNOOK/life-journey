@@ -122,18 +122,20 @@ export function LoginClient() {
         clearGoogleOAuthRedirectFlow();
         setError(
           [
-            "Googleから戻りましたが、この端末ではログイン状態を取り込めませんでした（エラーは出ないことがあります）。",
+            "Googleから戻りましたが、この端末でログイン状態を取り込めませんでした（Firebase がエラーを出さないことがあります）。",
             "",
             "試すこと：",
-            "1）設定 → Safari → 詳細 → 「サイト越えトラッキング防止」をオフにして、もう一度「Googleで続ける」",
-            "2）プライベートブラウズをやめて通常のタブで開く",
-            "3）メールアドレスとパスワードでログイン（登録済みの場合）",
+            "1）LINE・Instagram などの「アプリ内ブラウザ」ではなく、Safari または Chrome で URL を直接開き直す",
+            "2）プライベート／シークレットをやめ、通常タブで開く",
+            "3）ホーム画面に追加したショートカットから開いている場合は、一度 Safari で同じ URL を開き直す",
+            "4）設定 → Safari → 詳細 → 「サイト越えトラッキング防止」をオフ（効果がない場合もあります）",
+            "5）メールとパスワードでログイン（登録済みの場合）",
           ].join("\n"),
         );
       } catch {
         /* noop */
       }
-    }, 1600);
+    }, 9000);
     return () => window.clearTimeout(id);
   }, [authLoading, user, oauthReturnSurface]);
 
@@ -192,8 +194,36 @@ export function LoginClient() {
         provider.setCustomParameters({ prompt: "select_account" });
       }
 
-      /** iOS/Android はリダイレクトのみ。ポップアップ→リダイレクトの二段だと Google のアカウント選択が2回続く */
-      if (isIOS || isAndroid) {
+      /**
+       * iOS はまずポップアップ（リダイレクトだけだと Safari で状態が取り込めないことがある）。
+       * ポップアップ用は `select_account` なし。フォールバックのリダイレクトだけ `select_account` にして二重アカウント選択を避ける。
+       */
+      if (isIOS) {
+        const popupProvider = new GoogleAuthProvider();
+        try {
+          const cred = await signInWithPopup(a, popupProvider);
+          await completeGoogleSignIn(cred);
+          return;
+        } catch (e) {
+          const raw = e instanceof Error ? e.message : String(e);
+          const useRedirect =
+            raw.trim().length === 0 ||
+            /popup|blocked|cancelled-popup|Popup|COOP|web-storage|storage/i.test(raw) ||
+            raw.includes("auth/cancelled-popup-request") ||
+            raw.includes("auth/popup-blocked");
+          if (useRedirect) {
+            stashOAuthReturnTo(returnTo);
+            markGoogleOAuthRedirectFlow();
+            const redirectProvider = new GoogleAuthProvider();
+            redirectProvider.setCustomParameters({ prompt: "select_account" });
+            await signInWithRedirect(a, redirectProvider);
+            return;
+          }
+          throw e;
+        }
+      }
+
+      if (isAndroid) {
         stashOAuthReturnTo(returnTo);
         markGoogleOAuthRedirectFlow();
         const mobileProvider = new GoogleAuthProvider();
@@ -323,8 +353,8 @@ export function LoginClient() {
           ログイン後は、アクセスしようとしていたページ（またはマイページ）へ移動します。
         </p>
         <p className="mt-1 text-xs text-stone-500">
-          スマホで安定して使うには、URLをSafariで直接開いてください（アプリ内ブラウザは不安定な場合があります）。スマホで
-          Google を選ぶと Google の画面へ移動してから戻ってきます。
+          スマホで安定して使うには、Safari または Chrome で URL を直接開いてください（LINE 等のアプリ内ブラウザは不安定なことがあります）。iPhone
+          ではまずポップアップで Google が開き、うまくいかないときだけ Google へ移動する方式になります。
         </p>
       </div>
 
@@ -337,15 +367,27 @@ export function LoginClient() {
         >
           <p className="font-semibold">Google の認証から戻ってきました</p>
           <p className="mt-2">
-            このあと自動で進まないときは、約2秒待つと赤い案内が出ることがあります。出ない場合は、設定 → Safari
-            → 詳細 → 「サイト越えトラッキング防止」をオフにしてから、もう一度「Google で続ける」を試してください。
+            このあと自動で進まない場合、しばらくすると下に案内が出ることがあります。LINE
+            などのアプリ内ブラウザのときは、Safari で同じ URL を開き直してからもう一度お試しください。
           </p>
         </div>
       ) : null}
 
       {error ? (
-        <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-900">
-          {error}
+        <div className="space-y-2">
+          <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-900 whitespace-pre-wrap">
+            {error}
+          </div>
+          <button
+            type="button"
+            className="text-sm font-medium text-stone-700 underline underline-offset-2 hover:text-stone-900"
+            onClick={() => {
+              setError(null);
+              clearGoogleOAuthRedirectFlow();
+            }}
+          >
+            メッセージを閉じる
+          </button>
         </div>
       ) : null}
       {notice ? (

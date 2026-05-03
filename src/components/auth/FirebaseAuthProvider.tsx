@@ -70,14 +70,20 @@ export function FirebaseAuthProvider({ children }: { children: ReactNode }) {
 
     const run = async () => {
       try {
-        const auth = getFirebaseAuth();
-        await waitForFirebaseAuthPersistence(auth);
+        const auth = getFirebaseAuth({ deferPersistence: true });
+        let redirectCred: Awaited<ReturnType<typeof getRedirectResult>> = null;
+        try {
+          if (typeof auth.authStateReady === "function") {
+            await auth.authStateReady();
+          }
+          redirectCred = await getRedirectResult(auth);
+        } finally {
+          await waitForFirebaseAuthPersistence(auth);
+        }
+        if (cancelled) return;
         if (typeof auth.authStateReady === "function") {
           await auth.authStateReady();
         }
-
-        const redirectCred = await getRedirectResult(auth);
-        if (cancelled) return;
 
         if (redirectCred?.user) {
           const signed = redirectCred.user;
@@ -131,7 +137,7 @@ export function FirebaseAuthProvider({ children }: { children: ReactNode }) {
           !auth.currentUser &&
           (isGoogleOAuthFlowCookieActive() || readOAuthReturnPendingAgeMs() != null)
         ) {
-          const deadline = Date.now() + 2800;
+          const deadline = Date.now() + 5200;
           while (Date.now() < deadline && !cancelled) {
             await auth.authStateReady();
             if (auth.currentUser) {

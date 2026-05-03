@@ -63,9 +63,19 @@ export function getFirebaseApp(): FirebaseApp {
   return app;
 }
 
-export function getFirebaseAuth(): Auth {
+export type GetFirebaseAuthOptions = {
+  /**
+   * true のときは永続化を遅延する。Safari 等で `setPersistence` が先に走ると
+   * `getRedirectResult` が取り込めなくなる事例があるため、リダイレクト戻りの初回処理で使う。
+   */
+  deferPersistence?: boolean;
+};
+
+export function getFirebaseAuth(options?: GetFirebaseAuthOptions): Auth {
   const auth = getAuth(getFirebaseApp());
   auth.languageCode = "ja";
-  scheduleBrowserLocalPersistence(auth);
+  if (!options?.deferPersistence) {
+    scheduleBrowserLocalPersistence(auth);
+  }
   return auth;
 }
