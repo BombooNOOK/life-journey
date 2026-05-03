@@ -60,6 +60,9 @@ interface Props {
 }
 
 export function ReportPdfPages({ order, renderConfig, segment }: Props) {
+  /** `resolvePdfAssetPath` が参照する。子より先に確定させる（末尾だと初回フレームで quality がずれるリスク） */
+  setPdfRenderQuality(renderConfig?.quality ?? "high");
+
   const maturity = maturityNumberFromNumerology(order.numerology);
   const bridgeBlocks = buildPdfBridgeBlocks(order.numerology);
   const personalYearReferenceDate = new Date();
@@ -199,6 +202,5 @@ export function ReportPdfPages({ order, renderConfig, segment }: Props) {
               </>
             );
 
-  setPdfRenderQuality(renderConfig?.quality ?? "high");
   return content;
 }

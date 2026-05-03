@@ -90,3 +90,29 @@ PY
 1. ヘッダーが消えた → **`PdfPageFrame` で `showHeader` が `pageBody` より前か**確認。
 2. ヘッダーはあるが薄い／隠れる → **該当背景 PNG の上端アルファ**を確認 → `npm run fix:…-bg-header`。
 3. それでもダメ → `getRedirectResult` や Cookie ではなく **PDF 専用**のこのファイルと `numerology-pdf-booklet.mdc` を見直す。
+
+---
+
+## 6. プレビュー（`quality=low`）と製本（`high`）で挙動が違うとき
+
+### コード上の違い（高画質のロジックは変えない前提で読む）
+
+- **`resolvePdfAssetPath`**（`pdfAssetPaths.ts`）: `quality=low` のときだけ `src/components/pdf/assets-preview/` に **同名**の PNG/JPEG があればそちらを使う。無ければ **`assets/` の本番解像度**にフォールバック。
+- **`ReportPdfPages`**: 冒頭で `setPdfRenderQuality(renderConfig?.quality ?? "high")` を呼ぶ。遅いと `resolvePdfAssetPath` が **直前リクエストの quality** を見てしまうため、**関数先頭で必ずセット**する。
+- **本文のフォント等**: `bodyTune` や `focusPage` が変わったときだけ `renderConfig` に追加プロパティが付く。`quality` だけでは `bodyStyleFromConfig` は変わらない（＝レイアウト差の主因ではないことが多い）。
+
+### Blob キャッシュで「直したのにプレビューが変わらない」
+
+- フル冊子（`focusPage=all` & `bodyTune=normal`）は Vercel Blob に **プレビュー用／製本用で別 URL** だが、**指紋 `buildOrderPdfCacheFingerprint` に `quality` は含まれない**（コメントどおり URL で分離）。
+- **同じ注文データ**で一度キャッシュされた **プレビュー PDF** は、PDF 生成ロジックを直しても **DB の `pdfPreviewBlobUrl` が残っている限り再生成されない**ことがある（見た目が古いまま）。
+- 対処の例: 該当注文のプレビュー Blob を消す／`ORDER_FULL_PDF_BLOB_CACHE_REVISION` を上げて指紋を無効化する（**製本側のキャッシュも同じリビジョンに依存する**点に注意）。
+
+### 将来 `assets-preview` を全面差し替えするとき
+
+- **解像度・縦横比**を `assets/` と揃えるか、react-pdf 側の `top`/`padding` を合わせ直す。
+- **アルファ**（帯ヘッダー帯の透明化）を `assets/` と同じ手順で再確認（§2 のスクリプト）。
+- 差し替え後は **必ずプレビュー Blob を再生成**して目視（キャッシュに古いプレビューが残りやすい）。
+
+### 並行リクエスト（将来負荷が増えたとき）
+
+- `getPdfRenderQuality` は **プロセス全体で 1 つのモジュール変数**。同時に複数の PDF 生成が走ると理論上は取り違え得る。**根本対策**は「quality を引数で `resolvePdfAssetPath` に渡す」などグローバル廃止（未着手なら playbook にだけ記録）。

@@ -19,7 +19,10 @@ export function orderPdfBlobWriteEnabled(): boolean {
  */
 const ORDER_FULL_PDF_BLOB_CACHE_REVISION = "2";
 
-/** 鑑定 PDF の入力が同じなら同じ指紋（画質は URL を分けるため指紋に含めない） */
+/**
+ * 鑑定 PDF の入力が同じなら同じ指紋（画質は `pdfPreview*` / `pdfPrint*` の URL で分けるため指紋に含めない）。
+ * プレビュー PDF だけ古いまま残りやすい → レイアウト修正後はプレビュー Blob の再生成か `ORDER_FULL_PDF_BLOB_CACHE_REVISION` 更新を検討。
+ */
 export function buildOrderPdfCacheFingerprint(row: {
   numerologyJson: string;
   stonesJson: string;
