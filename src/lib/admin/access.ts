@@ -11,12 +11,19 @@ function envAdminEmails(): Set<string> {
 }
 
 export async function isAdminEmail(email: string | null | undefined): Promise<boolean> {
-  const normalized = normalizeEmail(email);
-  if (!normalized) return false;
-  if (envAdminEmails().has(normalized)) return true;
-  const row = await prisma.accountSettings.findUnique({
-    where: { email: normalized },
-    select: { isAdmin: true },
-  });
-  return row?.isAdmin === true;
+  try {
+    const normalized = normalizeEmail(email);
+    if (!normalized) return false;
+    if (envAdminEmails().has(normalized)) return true;
+    const row = await prisma.accountSettings.findUnique({
+      where: { email: normalized },
+      select: { isAdmin: true },
+    });
+    return row?.isAdmin === true;
+  } catch (e) {
+    if (process.env.NODE_ENV === "development") {
+      console.warn("[isAdminEmail] fallback false:", e);
+    }
+    return false;
+  }
 }

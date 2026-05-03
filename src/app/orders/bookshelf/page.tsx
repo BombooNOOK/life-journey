@@ -34,6 +34,8 @@ type ShelfBook = {
 export default async function BookshelfPage() {
   const viewerEmail = await getViewerEmailFromCookie();
   if (!viewerEmail) redirect("/login?returnTo=/orders/bookshelf");
+
+  try {
   const [activeProfileId, profiles] = await Promise.all([
     resolveActiveProfileId(viewerEmail),
     listViewerProfiles(viewerEmail),
@@ -283,4 +285,20 @@ export default async function BookshelfPage() {
       )}
     </div>
   );
+  } catch (e) {
+    console.error("[orders/bookshelf]", e);
+    return (
+      <div className="space-y-4 p-4">
+        <Link href="/orders" className="text-sm text-stone-600 hover:text-stone-900">
+          ← マイページへ
+        </Link>
+        <div className="rounded-xl border border-red-200 bg-red-50 p-5 text-sm text-red-900">
+          <p className="font-semibold">本棚を表示できませんでした</p>
+          <p className="mt-2 text-stone-700">
+            時間をおいて再度お試しください。続く場合は、データベースのマイグレーション（`npx prisma migrate deploy`）が未適用の可能性があります。
+          </p>
+        </div>
+      </div>
+    );
+  }
 }

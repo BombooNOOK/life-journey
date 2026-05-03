@@ -1,6 +1,8 @@
 import { cookies } from "next/headers";
 import { createHash } from "node:crypto";
 
+import { Prisma } from "@prisma/client";
+
 import { normalizeEmail } from "@/lib/auth/viewer";
 import { prisma } from "@/lib/db";
 
@@ -55,11 +57,19 @@ async function ensureDefaultProfile(email: string): Promise<void> {
     where: { email, isArchived: false },
   });
   if (count > 0) return;
-  await prisma.profile.create({
-    data: {
-      id: defaultProfileIdForEmail(email),
-      email,
-      nickname: "メイン",
-    },
-  });
+  try {
+    await prisma.profile.create({
+      data: {
+        id: defaultProfileIdForEmail(email),
+        email,
+        nickname: "メイン",
+      },
+    });
+  } catch (e) {
+    // 並列リクエストで同じ既定プロフィール ID を二重作成しようとした場合（本棚の Promise.all など）
+    if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === "P2002") {
+      return;
+    }
+    throw e;
+  }
 }

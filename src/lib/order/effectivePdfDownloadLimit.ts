@@ -1,13 +1,15 @@
 import { normalizeEmail } from "@/lib/auth/viewer";
 import { prisma } from "@/lib/db";
 
-function clampLimit(n: number): number {
-  return Math.max(0, Math.min(999, Math.trunc(n)));
+function clampLimit(n: unknown): number {
+  const x = typeof n === "bigint" ? Number(n) : Number(n);
+  if (!Number.isFinite(x)) return 2;
+  return Math.max(0, Math.min(999, Math.trunc(x)));
 }
 
 /**
  * メールに紐づく AccountSettings の鑑定PDF上限（行が無ければ null）。
- * findUnique の完全一致だけだと DB のメール表記ゆらぎで取り逃すため、複数手段で探す。
+ * env に応じて Raw SQL にフォールバックし、findFirst(insensitive) は使わない（実行環境で例外になり得るため）。
  */
 export async function fetchAccountPdfDownloadLimitOrNull(
   orderEmail: string,
@@ -16,18 +18,37 @@ export async function fetchAccountPdfDownloadLimitOrNull(
   if (!email) return null;
 
   try {
-    const s = await prisma.accountSettings.findFirst({
-      where: { email: { equals: email, mode: "insensitive" } },
+    const exact = await prisma.accountSettings.findUnique({
+      where: { email },
       select: { pdfDownloadLimitPerOrder: true },
     });
-    if (s) return clampLimit(s.pdfDownloadLimitPerOrder);
+    if (exact) return clampLimit(exact.pdfDownloadLimitPerOrder);
   } catch {
-    /* 続行 */
+    /* noop */
+  }
+
+  const url = process.env.DATABASE_URL ?? "";
+  const isPostgres = url.startsWith("postgresql") || url.startsWith("postgres");
+
+  if (isPostgres) {
+    try {
+      const rows = await prisma.$queryRaw<Array<{ pdfDownloadLimitPerOrder: number }>>`
+        SELECT "pdfDownloadLimitPerOrder"
+        FROM "AccountSettings"
+        WHERE LOWER(TRIM("email")) = LOWER(TRIM(${email}))
+        LIMIT 1
+      `;
+      const v = rows[0]?.pdfDownloadLimitPerOrder;
+      if (v !== undefined && v !== null) return clampLimit(v);
+    } catch {
+      /* noop */
+    }
   }
 
   try {
     const rows = await prisma.accountSettings.findMany({
       select: { email: true, pdfDownloadLimitPerOrder: true },
+      take: 2000,
     });
     const hit = rows.find((r) => normalizeEmail(r.email) === email);
     if (hit) return clampLimit(hit.pdfDownloadLimitPerOrder);
@@ -40,14 +61,14 @@ export async function fetchAccountPdfDownloadLimitOrNull(
 
 /**
  * 鑑定1件の表示・API用の上限。
- * - アカウント設定が取れた場合は **注文行とアカウントの大きい方**（管理者が上限を上げたとき Order 未同期でも効く）
+ * - アカウント設定が取れた場合は **注文行とアカウントの大きい方**
  * - 取れないときは注文行のみ
  */
 export function combinePdfDownloadLimit(
   orderPdfDownloadLimit: number | null | undefined,
   accountPdfDownloadLimitPerOrder: number | null,
 ): number {
-  const orderVal = Math.max(0, orderPdfDownloadLimit ?? 2);
+  const orderVal = clampLimit(orderPdfDownloadLimit ?? 2);
   if (typeof accountPdfDownloadLimitPerOrder === "number" && Number.isFinite(accountPdfDownloadLimitPerOrder)) {
     const acc = clampLimit(accountPdfDownloadLimitPerOrder);
     return Math.max(orderVal, acc);
