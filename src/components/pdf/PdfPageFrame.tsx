@@ -50,7 +50,7 @@ function displayPageAndTotal(pageNumber: number, totalPages: number | undefined)
   };
 }
 
-/** 右上・ヘッダー右の共通表記（目次の「…… n」と同じく表紙を 1 ページとして数えない） */
+/** 右上・ヘッダー右の共通表記（目次の「…… n」と同じく表紙を読者向け総ページに含めない） */
 function formatReaderPageLabel(
   pageNumber: number,
   totalPages: number | undefined,
@@ -59,8 +59,8 @@ function formatReaderPageLabel(
   const adjustedPage = pageNumber + pageNumberOffset;
   const adjustedTotal =
     typeof totalPages === "number" && totalPages > 0 ? totalPages + pageNumberOffset : totalPages;
-  const { displayPage, displayTotal } = displayPageAndTotal(adjustedPage, adjustedTotal);
-  return `${displayPage} / ${displayTotal}`;
+  const { displayPage } = displayPageAndTotal(adjustedPage, adjustedTotal);
+  return String(displayPage);
 }
 
 export function PdfPageFrame({
@@ -89,7 +89,7 @@ export function PdfPageFrame({
     ? pdfStyles.pageNumberOverlayFullBleed
     : pdfStyles.pageNumberOverlay;
 
-  /** 全面画像などヘッダーが無いときだけ absolute。ヘッダーありのときは行内右端に置き横線と重ねない */
+  /** 全面画像・ヘッダーなしのときのみページ全体座標の absolute */
   const floatingPageNumberBlock =
     showFooter && (!showHeader || fullBleedImageSrc) ? (
       <RawText
@@ -103,12 +103,14 @@ export function PdfPageFrame({
 
   const headerInlinePageNumber =
     showHeader && showFooter && !fullBleedImageSrc ? (
-      <RawText
-        style={pdfStyles.pageHeaderPageNumber}
-        render={({ pageNumber, totalPages }) =>
-          formatReaderPageLabel(pageNumber, totalPages, pageNumberOffset)
-        }
-      />
+      <View style={pdfStyles.pageHeaderPageNumberWrap}>
+        <RawText
+          style={pdfStyles.pageHeaderPageNumber}
+          render={({ pageNumber, totalPages }) =>
+            formatReaderPageLabel(pageNumber, totalPages, pageNumberOffset)
+          }
+        />
+      </View>
     ) : null;
 
   if (fullBleedImageSrc) {

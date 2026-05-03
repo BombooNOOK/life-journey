@@ -24,12 +24,15 @@ export const pdfStyles = StyleSheet.create({
     zIndex: 10,
   },
   pageHeaderTitleRow: {
+    position: "relative",
     flexDirection: "row",
     alignItems: "center",
     width: "100%",
+    /** ページ番号（絶対配置）と横線が重ならないよう右に空け */
+    paddingRight: 56,
   },
   /**
-   * ページ番号「現在 / 総数」（表紙を読者向け総ページに含めない運用。`PdfPageFrame` と目次の手入力番号と揃える）。
+   * ページ番号（表紙を読者向け総ページに含めない運用。`PdfPageFrame` と目次の手入力番号と揃える）。
    * 全面画像でヘッダーが無いときのみ absolute。ヘッダーありのときは `pageHeaderPageNumber` をタイトル行右に置く。
    */
   pageNumberOverlay: {
@@ -71,19 +74,27 @@ export const pdfStyles = StyleSheet.create({
     height: 1,
     backgroundColor: "#e6e6e6",
     marginLeft: 8,
-    marginRight: 4,
     marginTop: 1,
   },
-  /** ヘッダー右端（横線と重ならないようタイトル行の子として配置） */
+  /** タイトル行右端。`RawText` に `fixed` を付けるとページ座標に固定されてしまうためラップする */
+  pageHeaderPageNumberWrap: {
+    position: "absolute",
+    right: 0,
+    top: 0,
+    bottom: 0,
+    width: 52,
+    display: "flex",
+    flexDirection: "column",
+    justifyContent: "center",
+    alignItems: "flex-end",
+  },
   pageHeaderPageNumber: {
     fontSize: 9,
     lineHeight: 1.35,
     color: "#333",
     fontFamily: "NotoSansJP",
     textAlign: "right",
-    minWidth: 52,
-    flexShrink: 0,
-    marginLeft: 2,
+    width: "100%",
   },
   pageHeaderSubtitle: {
     marginTop: 4,

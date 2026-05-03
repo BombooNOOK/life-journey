@@ -120,7 +120,8 @@ export function DiaryDesignPreview({
   const weekdayLabel = ["日", "月", "火", "水", "木", "金", "土"][previewDate.getDay()];
   const displayedNumbers = diaryNumbers ?? { today: "-", month: "-", year: "-", calmness: "-" };
   const safeContentFontScale = Math.max(0.7, Math.min(1.2, contentFontScale));
-  const contentFontSize = `clamp(${(10 * safeContentFontScale).toFixed(2)}px, ${(1.35 * safeContentFontScale).toFixed(3)}vw, ${(13 * safeContentFontScale).toFixed(2)}px)`;
+  /** `vw` だとプレビュー枠よりビューポ基準で伸び、スマホで文字だけ大きく見える。`cqw` で枠幅に追従 */
+  const contentFontSize = `clamp(${(7.5 * safeContentFontScale).toFixed(2)}px, ${(2.35 * safeContentFontScale).toFixed(2)}cqw, ${(12.5 * safeContentFontScale).toFixed(2)}px)`;
   // テンプレの罫線間隔に寄せる（simple は新レイアウトに合わせてややタイトめ）
   const baseContentLineHeight = 1.95 * (1 / Math.max(safeContentFontScale, 0.85));
   const contentLineHeight =
@@ -129,9 +130,7 @@ export function DiaryDesignPreview({
       : baseContentLineHeight.toFixed(3);
   // simple: コメント欄は5行前後・Macでもはみ出しにくいようやや小さめ＋行間は枠内に収まる値
   const commentFontSize =
-    designTheme === "simple"
-      ? "clamp(8px, 1.05vw, 11px)"
-      : "clamp(10px, 1.35vw, 13px)";
+    designTheme === "simple" ? "clamp(7px, 2cqw, 11px)" : "clamp(8px, 2.2cqw, 12.5px)";
   const commentLineHeight = designTheme === "simple" ? "1.62" : "1.9";
 
   return (
@@ -142,7 +141,7 @@ export function DiaryDesignPreview({
       </p>
       <div className="mt-3">
         <div
-          className="relative mx-auto w-full max-w-[540px] overflow-hidden rounded-lg border border-stone-200 bg-stone-50"
+          className="relative mx-auto w-full max-w-[540px] overflow-hidden rounded-lg border border-stone-200 bg-stone-50 [container-type:inline-size]"
           style={{ aspectRatio: `${templateSize.width} / ${templateSize.height}` }}
         >
           <Image
@@ -154,32 +153,52 @@ export function DiaryDesignPreview({
           />
           <div className="absolute inset-0">
             <p
-              className="absolute text-[clamp(10px,1.45vw,14px)] text-stone-700"
-              style={{ left: layout.dateYearLeft, top: layout.dateTop }}
+              className="absolute text-stone-700"
+              style={{
+                left: layout.dateYearLeft,
+                top: layout.dateTop,
+                fontSize: "clamp(8px, 2.45cqw, 14px)",
+              }}
             >
               {previewDate.getFullYear()}
             </p>
             <p
-              className="absolute text-[clamp(10px,1.45vw,14px)] text-stone-700"
-              style={{ left: layout.dateMonthLeft, top: layout.dateTop }}
+              className="absolute text-stone-700"
+              style={{
+                left: layout.dateMonthLeft,
+                top: layout.dateTop,
+                fontSize: "clamp(8px, 2.45cqw, 14px)",
+              }}
             >
               {previewDate.getMonth() + 1}
             </p>
             <p
-              className="absolute text-[clamp(10px,1.45vw,14px)] text-stone-700"
-              style={{ left: layout.dateDayLeft, top: layout.dateTop }}
+              className="absolute text-stone-700"
+              style={{
+                left: layout.dateDayLeft,
+                top: layout.dateTop,
+                fontSize: "clamp(8px, 2.45cqw, 14px)",
+              }}
             >
               {previewDate.getDate()}
             </p>
             <p
-              className="absolute text-[clamp(10px,1.45vw,14px)] text-stone-700"
-              style={{ left: layout.dateWeekLeft, top: layout.dateTop }}
+              className="absolute text-stone-700"
+              style={{
+                left: layout.dateWeekLeft,
+                top: layout.dateTop,
+                fontSize: "clamp(8px, 2.45cqw, 14px)",
+              }}
             >
               {weekdayLabel}
             </p>
             <p
-              className="absolute w-[64.8%] whitespace-pre-wrap break-words text-[clamp(10px,1.45vw,14px)] leading-[1.5] text-stone-700"
-              style={{ left: layout.activityLeft, top: layout.activityTop }}
+              className="absolute w-[64.8%] whitespace-pre-wrap break-words leading-[1.5] text-stone-700"
+              style={{
+                left: layout.activityLeft,
+                top: layout.activityTop,
+                fontSize: "clamp(8px, 2.45cqw, 14px)",
+              }}
             >
               {activityLabel.length > 62 ? `${activityLabel.slice(0, 62)}…` : activityLabel}
             </p>
@@ -209,26 +228,42 @@ export function DiaryDesignPreview({
               {owlComment.length > 145 ? `${owlComment.slice(0, 145)}…` : owlComment}
             </p>
             <p
-              className="absolute -translate-x-1/2 -translate-y-1/2 text-[clamp(10px,1.5vw,16px)] font-semibold text-stone-700"
-              style={{ left: layout.numberLeft, top: layout.numberTodayTop }}
+              className="absolute -translate-x-1/2 -translate-y-1/2 font-semibold text-stone-700"
+              style={{
+                left: layout.numberLeft,
+                top: layout.numberTodayTop,
+                fontSize: "clamp(8px, 2.5cqw, 16px)",
+              }}
             >
               {displayedNumbers.today}
             </p>
             <p
-              className="absolute -translate-x-1/2 -translate-y-1/2 text-[clamp(10px,1.5vw,16px)] font-semibold text-stone-700"
-              style={{ left: layout.numberLeft, top: layout.numberMonthTop }}
+              className="absolute -translate-x-1/2 -translate-y-1/2 font-semibold text-stone-700"
+              style={{
+                left: layout.numberLeft,
+                top: layout.numberMonthTop,
+                fontSize: "clamp(8px, 2.5cqw, 16px)",
+              }}
             >
               {displayedNumbers.month}
             </p>
             <p
-              className="absolute -translate-x-1/2 -translate-y-1/2 text-[clamp(10px,1.5vw,16px)] font-semibold text-stone-700"
-              style={{ left: layout.numberLeft, top: layout.numberYearTop }}
+              className="absolute -translate-x-1/2 -translate-y-1/2 font-semibold text-stone-700"
+              style={{
+                left: layout.numberLeft,
+                top: layout.numberYearTop,
+                fontSize: "clamp(8px, 2.5cqw, 16px)",
+              }}
             >
               {displayedNumbers.year}
             </p>
             <p
-              className="absolute -translate-x-1/2 -translate-y-1/2 text-[clamp(10px,1.5vw,16px)] font-semibold text-stone-700"
-              style={{ left: layout.numberLeft, top: layout.numberCalmTop }}
+              className="absolute -translate-x-1/2 -translate-y-1/2 font-semibold text-stone-700"
+              style={{
+                left: layout.numberLeft,
+                top: layout.numberCalmTop,
+                fontSize: "clamp(8px, 2.5cqw, 16px)",
+              }}
             >
               {moodEmoji}
             </p>
