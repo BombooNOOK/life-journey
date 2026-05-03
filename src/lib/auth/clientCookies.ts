@@ -42,3 +42,16 @@ export function takeOAuthReturnTo(): string | null {
   if (!raw || !raw.startsWith("/") || raw.startsWith("//")) return null;
   return raw;
 }
+
+/** OAuth 後に `sessionStorage` が消えても、URL の `returnTo` で戻れるようにする */
+export function readReturnToFromCurrentUrl(): string | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = new URL(window.location.href).searchParams.get("returnTo");
+    if (!raw || !raw.startsWith("/") || raw.startsWith("//")) return null;
+    if (raw === "/login" || raw.startsWith("/login?")) return null;
+    return raw;
+  } catch {
+    return null;
+  }
+}

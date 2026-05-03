@@ -11,7 +11,12 @@ import {
 } from "react";
 import { getRedirectResult, onAuthStateChanged, signOut, type User } from "firebase/auth";
 
-import { syncLjAuthClientCookies, takeOAuthReturnTo } from "@/lib/auth/clientCookies";
+import {
+  OAUTH_RETURN_SESSION_KEY,
+  readReturnToFromCurrentUrl,
+  syncLjAuthClientCookies,
+  takeOAuthReturnTo,
+} from "@/lib/auth/clientCookies";
 import { getFirebaseAuth } from "@/lib/firebase/client";
 
 type FirebaseAuthContextValue = {
@@ -26,6 +31,11 @@ const FirebaseAuthContext = createContext<FirebaseAuthContextValue | null>(
 
 function syncAuthCookies(user: User | null) {
   syncLjAuthClientCookies(user ? { email: user.email } : null);
+}
+
+function safePostLoginTarget(t: string): string {
+  if (t === "/login" || t.startsWith("/login?")) return "/orders";
+  return t;
 }
 
 async function syncAuthCookiesOnServer(user: User | null) {
@@ -56,15 +66,48 @@ export function FirebaseAuthProvider({ children }: { children: ReactNode }) {
     const run = async () => {
       try {
         const auth = getFirebaseAuth();
-        /** アプリ全体で先に処理しないと、onAuthStateChanged より後に getRedirectResult が走り結果が消える／クッキー競合が起きる */
+        if (typeof auth.authStateReady === "function") {
+          await auth.authStateReady();
+        }
+
         const redirectCred = await getRedirectResult(auth);
         if (cancelled) return;
+
         if (redirectCred?.user) {
-          syncAuthCookies(redirectCred.user);
-          await syncAuthCookiesOnServer(redirectCred.user);
-          setUser(redirectCred.user);
+          const signed = redirectCred.user;
+          syncAuthCookies(signed);
+          await syncAuthCookiesOnServer(signed);
+          setUser(signed);
           setLoading(false);
-          const target = takeOAuthReturnTo() ?? "/orders";
+          const target = safePostLoginTarget(
+            takeOAuthReturnTo() ?? readReturnToFromCurrentUrl() ?? "/orders",
+          );
+          if (target.startsWith("/") && !target.startsWith("//")) {
+            window.location.assign(target);
+            return;
+          }
+        }
+
+        /**
+         * Google から戻ったのに getRedirectResult が空になる環境（iOS の WKWebView 等）や、
+         * sessionStorage が消えた場合でも currentUser が立っていればログイン済みとして進める。
+         */
+        if (
+          typeof window !== "undefined" &&
+          window.location.pathname === "/login" &&
+          auth.currentUser
+        ) {
+          const signed = auth.currentUser;
+          syncAuthCookies(signed);
+          await syncAuthCookiesOnServer(signed);
+          setUser(signed);
+          setLoading(false);
+          try {
+            sessionStorage.removeItem(OAUTH_RETURN_SESSION_KEY);
+          } catch {
+            /* noop */
+          }
+          const target = safePostLoginTarget(readReturnToFromCurrentUrl() ?? "/orders");
           if (target.startsWith("/") && !target.startsWith("//")) {
             window.location.assign(target);
             return;
@@ -78,11 +121,20 @@ export function FirebaseAuthProvider({ children }: { children: ReactNode }) {
 
       try {
         const auth = getFirebaseAuth();
+        let isFirstAuthCallback = true;
         unsubscribe = onAuthStateChanged(auth, (next) => {
           if (cancelled) return;
           setUser(next);
-          syncAuthCookies(next);
-          void syncAuthCookiesOnServer(next);
+          if (isFirstAuthCallback) {
+            isFirstAuthCallback = false;
+            if (next) {
+              syncAuthCookies(next);
+              void syncAuthCookiesOnServer(next);
+            }
+          } else {
+            syncAuthCookies(next);
+            void syncAuthCookiesOnServer(next);
+          }
           setLoading(false);
         });
       } catch {
