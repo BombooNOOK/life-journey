@@ -37,21 +37,26 @@ async function loadRows(keyword: string): Promise<UserRow[]> {
         },
       }
     : {};
+  /** Prisma（PostgreSQL）では distinct とセットで orderBy が必須になることがある */
+  const emailAsc = { email: "asc" as const };
   const [orderUsers, journalUsers, settings] = await Promise.all([
     prisma.order.findMany({
       where,
       distinct: ["email"],
+      orderBy: emailAsc,
       select: { email: true },
       take: 200,
     }),
     prisma.journalEntry.findMany({
       where,
       distinct: ["email"],
+      orderBy: emailAsc,
       select: { email: true },
       take: 200,
     }),
     prisma.accountSettings.findMany({
       where,
+      orderBy: emailAsc,
       select: {
         id: true,
         email: true,
@@ -122,7 +127,19 @@ export default async function AdminPage({ searchParams }: Props) {
 
   const params = await searchParams;
   const q = (params.q ?? "").trim().toLowerCase();
-  const rows = await loadRows(q);
+  let rows: UserRow[] = [];
+  let loadError: string | null = null;
+  try {
+    rows = await loadRows(q);
+  } catch (e) {
+    console.error("[admin] loadRows:", e);
+    loadError =
+      process.env.NODE_ENV === "development"
+        ? e instanceof Error
+          ? e.message
+          : String(e)
+        : "ユーザー一覧の取得に失敗しました";
+  }
 
   async function updateProfileLimit(formData: FormData) {
     "use server";
@@ -298,6 +315,13 @@ export default async function AdminPage({ searchParams }: Props) {
           検索
         </button>
       </form>
+
+      {loadError ? (
+        <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-900">
+          <p className="font-medium">データを読み込めませんでした</p>
+          <p className="mt-2 whitespace-pre-wrap text-red-800">{loadError}</p>
+        </div>
+      ) : null}
 
       <div className="overflow-x-auto rounded-xl border border-stone-200 bg-white">
         <table className="min-w-full text-sm">
