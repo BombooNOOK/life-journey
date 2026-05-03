@@ -12,6 +12,10 @@ interface Props {
   customer: CustomerFormValues;
 }
 
+/**
+ * 目次右列の数字は、ヘッダー右上の「現在 / 総数」と同じ基準（物理ページ番号から表紙を除いた読者向け番号）。
+ * PDF のページ順を変えたらここも更新すること。
+ */
 export function CustomerPage({ customer }: Props) {
   const birthdayLabel = toSlashDateLabel(customer.birthDate);
   const headerTitle = `${customer.fullNameRomanDisplay} ${birthdayLabel}`;

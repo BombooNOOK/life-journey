@@ -50,6 +50,19 @@ function displayPageAndTotal(pageNumber: number, totalPages: number | undefined)
   };
 }
 
+/** 右上・ヘッダー右の共通表記（目次の「…… n」と同じく表紙を 1 ページとして数えない） */
+function formatReaderPageLabel(
+  pageNumber: number,
+  totalPages: number | undefined,
+  pageNumberOffset: number,
+): string {
+  const adjustedPage = pageNumber + pageNumberOffset;
+  const adjustedTotal =
+    typeof totalPages === "number" && totalPages > 0 ? totalPages + pageNumberOffset : totalPages;
+  const { displayPage, displayTotal } = displayPageAndTotal(adjustedPage, adjustedTotal);
+  return `${displayPage} / ${displayTotal}`;
+}
+
 export function PdfPageFrame({
   title,
   subtitle,
@@ -76,20 +89,27 @@ export function PdfPageFrame({
     ? pdfStyles.pageNumberOverlayFullBleed
     : pdfStyles.pageNumberOverlay;
 
-  /** 最後に描画して装飾レイヤーより手前に出す */
-  const pageNumberBlock = showFooter ? (
-    <RawText
-      fixed
-      style={pageNumberStyle}
-      render={({ pageNumber, totalPages }) => {
-        const adjustedPage = pageNumber + pageNumberOffset;
-        const adjustedTotal =
-          typeof totalPages === "number" && totalPages > 0 ? totalPages + pageNumberOffset : totalPages;
-        const { displayPage } = displayPageAndTotal(adjustedPage, adjustedTotal);
-        return String(displayPage);
-      }}
-    />
-  ) : null;
+  /** 全面画像などヘッダーが無いときだけ absolute。ヘッダーありのときは行内右端に置き横線と重ねない */
+  const floatingPageNumberBlock =
+    showFooter && (!showHeader || fullBleedImageSrc) ? (
+      <RawText
+        fixed
+        style={pageNumberStyle}
+        render={({ pageNumber, totalPages }) =>
+          formatReaderPageLabel(pageNumber, totalPages, pageNumberOffset)
+        }
+      />
+    ) : null;
+
+  const headerInlinePageNumber =
+    showHeader && showFooter && !fullBleedImageSrc ? (
+      <RawText
+        style={pdfStyles.pageHeaderPageNumber}
+        render={({ pageNumber, totalPages }) =>
+          formatReaderPageLabel(pageNumber, totalPages, pageNumberOffset)
+        }
+      />
+    ) : null;
 
   if (fullBleedImageSrc) {
     const bleedSrc = resolvePdfAssetPath(fullBleedImageSrc);
@@ -102,7 +122,7 @@ export function PdfPageFrame({
             style={{ width: "100%", height: "100%", objectFit: "cover" }}
           />
         </View>
-        {pageNumberBlock}
+        {floatingPageNumberBlock}
       </Page>
     );
   }
@@ -171,6 +191,7 @@ export function PdfPageFrame({
           <View style={pdfStyles.pageHeaderTitleRow}>
             <RawText style={pdfStyles.pageHeaderTitle}>{title ?? "数秘術 鑑定書"}</RawText>
             <View style={pdfStyles.pageHeaderRule} />
+            {headerInlinePageNumber}
           </View>
           {subtitle ? <RawText style={pdfStyles.pageHeaderSubtitle}>{subtitle}</RawText> : null}
         </View>
@@ -186,7 +207,7 @@ export function PdfPageFrame({
         {children}
       </View>
 
-      {pageNumberBlock}
+      {floatingPageNumberBlock}
     </Page>
   );
 }

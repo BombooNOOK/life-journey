@@ -29,14 +29,14 @@ export const pdfStyles = StyleSheet.create({
     width: "100%",
   },
   /**
-   * ページ番号（表紙除く「現在 / 総数」）— 下端だとパディング・ビューアで枠外に落ちやすいため、
-   * ヘッダー付近の右上に `fixed` で載せる。幅を明示して `render` のレイアウトが潰れないようにする。
+   * ページ番号「現在 / 総数」（表紙を読者向け総ページに含めない運用。`PdfPageFrame` と目次の手入力番号と揃える）。
+   * 全面画像でヘッダーが無いときのみ absolute。ヘッダーありのときは `pageHeaderPageNumber` をタイトル行右に置く。
    */
   pageNumberOverlay: {
     position: "absolute",
     top: 30,
     right: 40,
-    width: 80,
+    width: 96,
     fontSize: 9,
     lineHeight: 1.35,
     color: "#333",
@@ -49,7 +49,7 @@ export const pdfStyles = StyleSheet.create({
     position: "absolute",
     top: 10,
     right: 14,
-    width: 80,
+    width: 96,
     fontSize: 9,
     lineHeight: 1.35,
     color: "#222",
@@ -67,10 +67,23 @@ export const pdfStyles = StyleSheet.create({
   },
   pageHeaderRule: {
     flexGrow: 1,
+    flexShrink: 1,
     height: 1,
     backgroundColor: "#e6e6e6",
     marginLeft: 8,
+    marginRight: 4,
     marginTop: 1,
+  },
+  /** ヘッダー右端（横線と重ならないようタイトル行の子として配置） */
+  pageHeaderPageNumber: {
+    fontSize: 9,
+    lineHeight: 1.35,
+    color: "#333",
+    fontFamily: "NotoSansJP",
+    textAlign: "right",
+    minWidth: 52,
+    flexShrink: 0,
+    marginLeft: 2,
   },
   pageHeaderSubtitle: {
     marginTop: 4,
