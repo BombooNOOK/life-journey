@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 
 type Props = {
   href: string;
@@ -17,7 +17,13 @@ export function PdfDownloadButton({
 }: Props) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const targetHref = useMemo(() => href, [href]);
+
+  /** ブラウザ／CDN の古いレスポンスを避ける（毎回別 URL + fetch はキャッシュしない） */
+  const pdfUrlWithCacheBust = (baseHref: string): string => {
+    const u = new URL(baseHref, window.location.origin);
+    u.searchParams.set("_cb", String(Date.now()));
+    return u.toString();
+  };
 
   const parseFilename = (contentDisposition: string | null): string => {
     if (!contentDisposition) return "kantei.pdf";
@@ -37,21 +43,23 @@ export function PdfDownloadButton({
         onClick={async () => {
           setLoading(true);
           setError(null);
+          const fetchUrl = pdfUrlWithCacheBust(href);
           try {
-            const res = await fetch(targetHref, {
+            const res = await fetch(fetchUrl, {
               method: "GET",
               credentials: "same-origin",
+              cache: "no-store",
             });
             const contentType = res.headers.get("content-type") ?? "";
             if (!res.ok) {
               if (contentType.includes("text/html")) {
-                window.location.href = targetHref;
+                window.location.href = fetchUrl;
                 return;
               }
               throw new Error(`HTTP ${res.status}`);
             }
             if (!contentType.includes("application/pdf")) {
-              window.location.href = targetHref;
+              window.location.href = fetchUrl;
               return;
             }
             const blob = await res.blob();
@@ -68,7 +76,7 @@ export function PdfDownloadButton({
           } catch {
             setError("通信状況により生成に失敗しました。もう一度お試しください。");
             // Fallback to server route in case the browser blocked blob download.
-            window.location.href = targetHref;
+            window.location.href = fetchUrl;
           } finally {
             setLoading(false);
           }

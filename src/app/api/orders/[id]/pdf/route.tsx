@@ -136,18 +136,34 @@ function parsePdfQuality(v: string | null): PdfRenderQuality {
   return v === "high" ? "high" : "low";
 }
 
+/** CDN／ブラウザが古い 429 や PDF を返さないようにする（Cookie でユーザーごとに結果が違うため Vary も付与） */
+const PDF_API_CACHE_HEADERS = {
+  "Cache-Control": "private, no-store, no-cache, must-revalidate, max-age=0",
+  Pragma: "no-cache",
+  Vary: "Cookie",
+} as const;
+
 export async function GET(req: Request, { params }: RouteParams) {
   const { id } = await params;
   const viewerEmail = await getViewerEmailFromCookie();
   if (!viewerEmail) {
-    return NextResponse.json({ error: "ログインが必要です" }, { status: 401 });
+    return NextResponse.json(
+      { error: "ログインが必要です" },
+      { status: 401, headers: { ...PDF_API_CACHE_HEADERS } },
+    );
   }
   const row = await prisma.order.findUnique({ where: { id } });
   if (!row) {
-    return NextResponse.json({ error: "注文が見つかりません" }, { status: 404 });
+    return NextResponse.json(
+      { error: "注文が見つかりません" },
+      { status: 404, headers: { ...PDF_API_CACHE_HEADERS } },
+    );
   }
   if (normalizeEmail(row.email) !== viewerEmail) {
-    return NextResponse.json({ error: "この注文にはアクセスできません" }, { status: 403 });
+    return NextResponse.json(
+      { error: "この注文にはアクセスできません" },
+      { status: 403, headers: { ...PDF_API_CACHE_HEADERS } },
+    );
   }
 
   const url = new URL(req.url);
@@ -167,7 +183,7 @@ export async function GET(req: Request, { params }: RouteParams) {
             "製本用（高画質）PDFはサブスク加入者向けです。プレビュー版（軽量）をご利用ください。",
           code: "SUBSCRIBER_PDF_REQUIRED",
         },
-        { status: 403 },
+        { status: 403, headers: { ...PDF_API_CACHE_HEADERS } },
       );
     }
   }
@@ -192,7 +208,10 @@ export async function GET(req: Request, { params }: RouteParams) {
   if (shouldDownload && downloadCount >= downloadLimit) {
     return new NextResponse(htmlWhenDownloadLimitExceeded(reissueUrl, downloadLimit), {
       status: 429,
-      headers: { "Content-Type": "text/html; charset=utf-8" },
+      headers: {
+        "Content-Type": "text/html; charset=utf-8",
+        ...PDF_API_CACHE_HEADERS,
+      },
     });
   }
 
@@ -220,7 +239,10 @@ export async function GET(req: Request, { params }: RouteParams) {
     const message = e instanceof Error ? e.message : "PDF生成に失敗しました。";
     return NextResponse.json(
       { error: message },
-      { status: 500, headers: { "Content-Type": "application/json" } },
+      {
+        status: 500,
+        headers: { "Content-Type": "application/json", ...PDF_API_CACHE_HEADERS },
+      },
     );
   }
 
@@ -239,6 +261,7 @@ export async function GET(req: Request, { params }: RouteParams) {
     headers: {
       "Content-Type": "application/pdf",
       "Content-Disposition": `${shouldDownload ? "attachment" : "inline"}; filename="${filename}"`,
+      ...PDF_API_CACHE_HEADERS,
     },
   });
   if (shouldDownload) {
