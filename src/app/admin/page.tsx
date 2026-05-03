@@ -12,7 +12,7 @@ import { isAdminEmail } from "@/lib/admin/access";
 import { prisma } from "@/lib/db";
 
 type Props = {
-  searchParams: Promise<{ q?: string }>;
+  searchParams: Promise<{ q?: string; saved?: string; err?: string }>;
 };
 
 type UserRow = {
@@ -341,6 +341,8 @@ export default async function AdminPage({ searchParams }: Props) {
 
   const params = await searchParams;
   const q = (params.q ?? "").trim().toLowerCase();
+  const flashSaved = params.saved;
+  const flashErr = params.err;
   let rows: UserRow[] = [];
   let loadError: string | null = null;
   try {
@@ -388,6 +390,21 @@ export default async function AdminPage({ searchParams }: Props) {
         <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-900">
           <p className="font-medium">データを読み込めませんでした</p>
           <p className="mt-2 whitespace-pre-wrap text-red-800">{loadError}</p>
+        </div>
+      ) : null}
+
+      {flashSaved ? (
+        <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-950">
+          保存しました（変更が一覧に反映されていればOKです）。
+        </div>
+      ) : null}
+
+      {flashErr ? (
+        <div className="rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-900">
+          <p className="font-medium">保存に失敗しました</p>
+          <p className="mt-1 text-xs text-red-800">
+            ブラウザを更新するか、時間をおいて再度お試しください。続く場合はサーバーログを確認してください。
+          </p>
         </div>
       ) : null}
 
