@@ -21,8 +21,7 @@ export const pdfStyles = StyleSheet.create({
   pageHeader: {
     marginTop: 0,
     marginBottom: 10,
-    /** 装飾背景・本文より手前（目次・コア章でページ番号が隠れないように） */
-    zIndex: 200,
+    zIndex: 10,
   },
   pageHeaderTitleRow: {
     position: "relative",
@@ -46,7 +45,7 @@ export const pdfStyles = StyleSheet.create({
     color: "#333",
     fontFamily: "NotoSansJP",
     textAlign: "right",
-    zIndex: 500,
+    zIndex: 100,
   },
   /** 全面画像（padding 0）ページ用 */
   pageNumberOverlayFullBleed: {
@@ -59,7 +58,7 @@ export const pdfStyles = StyleSheet.create({
     color: "#222",
     fontFamily: "NotoSansJP",
     textAlign: "right",
-    zIndex: 500,
+    zIndex: 100,
   },
   /** 左寄せタイトル＋右へ伸びるライン */
   pageHeaderTitle: {
@@ -88,7 +87,6 @@ export const pdfStyles = StyleSheet.create({
     flexDirection: "column",
     justifyContent: "center",
     alignItems: "flex-end",
-    zIndex: 520,
   },
   pageHeaderPageNumber: {
     fontSize: 9,
@@ -107,8 +105,6 @@ export const pdfStyles = StyleSheet.create({
   pageBody: {
     marginTop: 10,
     marginBottom: 18,
-    position: "relative",
-    zIndex: 0,
   },
   /** 本文ページ背面（全面・`PdfPageFrame` の先頭子要素） */
   pageBackground: {

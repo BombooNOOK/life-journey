@@ -124,7 +124,6 @@ export function PdfPageFrame({
             style={{ width: "100%", height: "100%", objectFit: "cover" }}
           />
         </View>
-        {/** 全面画像の上にページ番号を最前面で重ねる */}
         {floatingPageNumberBlock}
       </Page>
     );
@@ -190,17 +189,7 @@ export function PdfPageFrame({
         />
       ) : null}
 
-      <View style={[pdfStyles.pageBody, { marginTop: 16 }]}>
-        <View
-          render={(props) => {
-            const p = props as ViewRenderPageProps;
-            return <View style={{ height: p.subPageNumber > 1 ? 18 : 0 }} />;
-          }}
-        />
-        {children}
-      </View>
-
-      {/** 描画順を本文より後ろにし、z-index も上げてページ番号が最前面になるようにする */}
+      {/** `fixed` ヘッダーは本文より前に置く（後ろにすると @react-pdf で描画されないことがある） */}
       {showHeader ? (
         <View style={pdfStyles.pageHeader} fixed>
           <View style={pdfStyles.pageHeaderTitleRow}>
@@ -211,6 +200,16 @@ export function PdfPageFrame({
           {subtitle ? <RawText style={pdfStyles.pageHeaderSubtitle}>{subtitle}</RawText> : null}
         </View>
       ) : null}
+
+      <View style={[pdfStyles.pageBody, { marginTop: 16 }]}>
+        <View
+          render={(props) => {
+            const p = props as ViewRenderPageProps;
+            return <View style={{ height: p.subPageNumber > 1 ? 18 : 0 }} />;
+          }}
+        />
+        {children}
+      </View>
 
       {floatingPageNumberBlock}
     </Page>
