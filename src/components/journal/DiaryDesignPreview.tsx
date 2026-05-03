@@ -132,6 +132,8 @@ export function DiaryDesignPreview({
   const commentFontSize =
     designTheme === "simple" ? "clamp(7px, 2cqw, 11px)" : "clamp(8px, 2.2cqw, 12.5px)";
   const commentLineHeight = designTheme === "simple" ? "1.62" : "1.9";
+  /** 年・月・日・曜は近接配置のため小さめ（重なり・はみ出しを抑える） */
+  const dateRowFontSize = "clamp(6px, 1.45cqw, 9.5px)";
 
   return (
     <section className="rounded-xl border border-stone-200 bg-white p-3 shadow-sm sm:p-4">
@@ -153,51 +155,55 @@ export function DiaryDesignPreview({
           />
           <div className="absolute inset-0">
             <p
-              className="absolute text-stone-700"
+              className="absolute whitespace-nowrap text-stone-700"
               style={{
                 left: layout.dateYearLeft,
                 top: layout.dateTop,
-                fontSize: "clamp(8px, 2.45cqw, 14px)",
+                fontSize: dateRowFontSize,
+                lineHeight: 1,
               }}
             >
               {previewDate.getFullYear()}
             </p>
             <p
-              className="absolute text-stone-700"
+              className="absolute whitespace-nowrap text-stone-700"
               style={{
                 left: layout.dateMonthLeft,
                 top: layout.dateTop,
-                fontSize: "clamp(8px, 2.45cqw, 14px)",
+                fontSize: dateRowFontSize,
+                lineHeight: 1,
               }}
             >
               {previewDate.getMonth() + 1}
             </p>
             <p
-              className="absolute text-stone-700"
+              className="absolute whitespace-nowrap text-stone-700"
               style={{
                 left: layout.dateDayLeft,
                 top: layout.dateTop,
-                fontSize: "clamp(8px, 2.45cqw, 14px)",
+                fontSize: dateRowFontSize,
+                lineHeight: 1,
               }}
             >
               {previewDate.getDate()}
             </p>
             <p
-              className="absolute text-stone-700"
+              className="absolute whitespace-nowrap text-stone-700"
               style={{
                 left: layout.dateWeekLeft,
                 top: layout.dateTop,
-                fontSize: "clamp(8px, 2.45cqw, 14px)",
+                fontSize: dateRowFontSize,
+                lineHeight: 1,
               }}
             >
               {weekdayLabel}
             </p>
             <p
-              className="absolute w-[64.8%] whitespace-pre-wrap break-words leading-[1.5] text-stone-700"
+              className="absolute w-[64.8%] whitespace-pre-wrap break-words leading-[1.45] text-stone-700"
               style={{
                 left: layout.activityLeft,
                 top: layout.activityTop,
-                fontSize: "clamp(8px, 2.45cqw, 14px)",
+                fontSize: "clamp(7px, 1.95cqw, 12px)",
               }}
             >
               {activityLabel.length > 62 ? `${activityLabel.slice(0, 62)}…` : activityLabel}

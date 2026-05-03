@@ -124,6 +124,7 @@ export function PdfPageFrame({
             style={{ width: "100%", height: "100%", objectFit: "cover" }}
           />
         </View>
+        {/** 全面画像の上にページ番号を最前面で重ねる */}
         {floatingPageNumberBlock}
       </Page>
     );
@@ -188,16 +189,6 @@ export function PdfPageFrame({
           }}
         />
       ) : null}
-      {showHeader ? (
-        <View style={pdfStyles.pageHeader} fixed>
-          <View style={pdfStyles.pageHeaderTitleRow}>
-            <RawText style={pdfStyles.pageHeaderTitle}>{title ?? "数秘術 鑑定書"}</RawText>
-            <View style={pdfStyles.pageHeaderRule} />
-            {headerInlinePageNumber}
-          </View>
-          {subtitle ? <RawText style={pdfStyles.pageHeaderSubtitle}>{subtitle}</RawText> : null}
-        </View>
-      ) : null}
 
       <View style={[pdfStyles.pageBody, { marginTop: 16 }]}>
         <View
@@ -208,6 +199,18 @@ export function PdfPageFrame({
         />
         {children}
       </View>
+
+      {/** 描画順を本文より後ろにし、z-index も上げてページ番号が最前面になるようにする */}
+      {showHeader ? (
+        <View style={pdfStyles.pageHeader} fixed>
+          <View style={pdfStyles.pageHeaderTitleRow}>
+            <RawText style={pdfStyles.pageHeaderTitle}>{title ?? "数秘術 鑑定書"}</RawText>
+            <View style={pdfStyles.pageHeaderRule} />
+            {headerInlinePageNumber}
+          </View>
+          {subtitle ? <RawText style={pdfStyles.pageHeaderSubtitle}>{subtitle}</RawText> : null}
+        </View>
+      ) : null}
 
       {floatingPageNumberBlock}
     </Page>
