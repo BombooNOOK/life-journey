@@ -187,7 +187,8 @@ export default async function OrderDetailPage({ params }: Props) {
           </Link>
         </div>
         <p className="mt-2 text-xs text-stone-500">
-          PDF生成に1〜3分かかることがあります。無料閲覧残り {pdfRemaining} / {pdfDownloadLimit}{" "}
+          PDF生成は数分かかることがあり、長いときは10分近くまで続くこともあります。混雑時やスマホではさらに時間がかかり、サーバー側の上限で途中終了することがあります（時間をおいて再試行するか、Wi‑Fi・PCでの利用をおすすめします）。
+          無料閲覧残り {pdfRemaining} / {pdfDownloadLimit}{" "}
           回（プレビュー・製本どちらのDLでも1回としてカウント）。
         </p>
         <p className="mt-1 text-xs text-stone-500">

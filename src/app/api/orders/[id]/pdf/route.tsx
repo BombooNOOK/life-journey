@@ -1,6 +1,5 @@
 import { Document, renderToBuffer } from "@react-pdf/renderer";
 import { NextResponse } from "next/server";
-import { readFile } from "node:fs/promises";
 import { PDFDocument } from "pdf-lib";
 
 import { ReportDocument } from "@/components/pdf/ReportDocument";
@@ -22,6 +21,7 @@ import { resolveSubscriberPdfAccess } from "@/lib/account/pdfAccess";
 import { isAdminEmail } from "@/lib/admin/access";
 import { getViewerEmailFromCookie, normalizeEmail } from "@/lib/auth/viewer";
 import { mergeReportPdfWithChapterInserts } from "@/lib/pdf/mergeReportPdfWithInserts";
+import { getPdfPageCountFromStaticFile } from "@/lib/pdf/staticPdfFilePageCount";
 import { prisma } from "@/lib/db";
 import { combinePdfDownloadLimit, fetchAccountPdfDownloadLimitOrNull } from "@/lib/order/effectivePdfDownloadLimit";
 import type { OrderPayload } from "@/lib/order/types";
@@ -36,23 +36,12 @@ async function renderFullReportWithChapterPdfInserts(
     const doc = await PDFDocument.load(bytes);
     return doc.getPageCount();
   };
-  const countPdfPagesFromPath = async (pdfPath: string): Promise<number> => {
-    let bytes: Buffer;
-    try {
-      const b = await readFile(pdfPath);
-      bytes = b;
-    } catch (err) {
-      const message = err instanceof Error ? err.message : String(err);
-      if (message.includes("ENOENT")) return 0;
-      throw err;
-    }
-    const doc = await PDFDocument.load(bytes);
-    return doc.getPageCount();
-  };
 
   try {
-    const insertBeforeChapter3Pages = await countPdfPagesFromPath(PDF_CHAPTER_INSERT_BEFORE_3_PATH);
-    const insertBeforeChapter4Pages = await countPdfPagesFromPath(PDF_CHAPTER_INSERT_BEFORE_4_PATH);
+    const [insertBeforeChapter3Pages, insertBeforeChapter4Pages] = await Promise.all([
+      getPdfPageCountFromStaticFile(PDF_CHAPTER_INSERT_BEFORE_3_PATH),
+      getPdfPageCountFromStaticFile(PDF_CHAPTER_INSERT_BEFORE_4_PATH),
+    ]);
 
     setPdfPageNumberOffset(0);
     const partBeforeChapter3 = await renderToBuffer(
@@ -143,10 +132,13 @@ const PDF_API_CACHE_HEADERS = {
   Vary: "Cookie",
 } as const;
 
-/** 鑑定書全体の生成は @react-pdf + pdf-lib で 1〜3 分かかることがある。既定のサーバー時間（短いと 10〜60 秒）で切られるとクライアントが通信エラーになる。Vercel Pro は最大 300 秒まで延長可能。 */
+/**
+ * 鑑定書全体の生成は @react-pdf + pdf-lib で数分かかることがある。
+ * Vercel: Hobby は最大 300s、Pro/Enterprise は最大 800s（vercel.json と合わせる）。
+ */
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
-export const maxDuration = 300;
+export const maxDuration = 800;
 
 export async function GET(req: Request, { params }: RouteParams) {
   const { id } = await params;
