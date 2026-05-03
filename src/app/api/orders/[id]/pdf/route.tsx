@@ -223,8 +223,17 @@ export async function GET(req: Request, { params }: RouteParams) {
     renderConfig.bodyExpandWidth = bodyTune === "step3" ? 4 : undefined;
   }
 
+  const pdfLogBase = {
+    orderId: id,
+    focusPage,
+    bodyTune,
+    quality,
+    shouldDownload,
+  };
+
   let buffer: Buffer | Uint8Array;
   try {
+    console.info("[pdf-api] PDF生成開始", pdfLogBase);
     ensureJapaneseFont();
     const payload = orderPayloadFromOrderRow(row);
 
@@ -232,7 +241,13 @@ export async function GET(req: Request, { params }: RouteParams) {
       focusPage === "all"
         ? await renderFullReportWithChapterPdfInserts(payload, renderConfig)
         : await renderToBuffer(<ReportDocument order={payload} renderConfig={renderConfig} />);
+    console.info("[pdf-api] PDF生成完了", pdfLogBase);
   } catch (e) {
+    const caught =
+      e instanceof Error
+        ? { name: e.name, message: e.message, stack: e.stack }
+        : { raw: String(e) };
+    console.error("[pdf-api] catch されたエラー全文", { ...pdfLogBase, error: caught });
     const message = e instanceof Error ? e.message : "PDF生成に失敗しました。";
     return NextResponse.json(
       { error: message },
@@ -244,6 +259,10 @@ export async function GET(req: Request, { params }: RouteParams) {
   }
 
   const u8: Uint8Array = Buffer.isBuffer(buffer) ? Uint8Array.from(buffer) : buffer;
+  console.info("[pdf-api] PDFバッファサイズ(bytes)", {
+    ...pdfLogBase,
+    bytes: u8.byteLength,
+  });
   const copy = new Uint8Array(u8.byteLength);
   copy.set(u8);
   const body = new Blob([copy], { type: "application/pdf" });
@@ -266,6 +285,13 @@ export async function GET(req: Request, { params }: RouteParams) {
       where: { id: row.id },
       data: { pdfDownloadCount: { increment: 1 } },
     });
+    console.info("[pdf-api] pdfDownloadCount increment 実行", pdfLogBase);
   }
+  console.info("[pdf-api] Response返却直前", {
+    ...pdfLogBase,
+    bytes: u8.byteLength,
+    filename,
+    contentDisposition: shouldDownload ? "attachment" : "inline",
+  });
   return response;
 }
