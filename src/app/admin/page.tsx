@@ -28,7 +28,204 @@ function clampPdfDownloadLimitPerOrder(raw: string | undefined): number {
   return Math.min(999, Math.max(0, Math.trunc(n)));
 }
 
-/** メール部分一致（PostgreSQL では大小無視）。失敗時は大小区別ありに落とす */
+function isPostgresDb(): boolean {
+  const u = process.env.DATABASE_URL ?? "";
+  if (u.startsWith("file:") || u.includes("sqlite")) return false;
+  return (
+    u.startsWith("postgresql") ||
+    u.startsWith("postgres") ||
+    u.startsWith("prisma+postgres") ||
+    u.startsWith("prisma+postgresql")
+  );
+}
+
+function countCell(v: bigint | number): number {
+  const n = typeof v === "bigint" ? Number(v) : v;
+  return Number.isFinite(n) ? n : 0;
+}
+
+/** LIKE 用に % _ を検索語から外す（ワイルドカード注入回避の簡易版） */
+function likePatternFromKeyword(keyword: string): string {
+  const safe = keyword.replace(/[%_]/g, "");
+  return `%${safe}%`;
+}
+
+type RawEmailCount = { e: string; c: bigint | number };
+
+/** PostgreSQL: Prisma の groupBy / insensitive より確実にメール別件数を取る */
+async function loadRowsPostgres(keyword: string): Promise<UserRow[]> {
+  const kw = keyword.trim();
+  const pattern = kw ? likePatternFromKeyword(kw) : "";
+
+  const [orderRows, journalRows, settingsList] = await Promise.all([
+    kw
+      ? prisma.$queryRaw<RawEmailCount[]>`
+          SELECT LOWER(TRIM("email")) AS e, COUNT(*)::bigint AS c
+          FROM "Order"
+          WHERE LOWER(TRIM("email")) LIKE LOWER(${pattern})
+          GROUP BY LOWER(TRIM("email"))
+        `
+      : prisma.$queryRaw<RawEmailCount[]>`
+          SELECT LOWER(TRIM("email")) AS e, COUNT(*)::bigint AS c
+          FROM "Order"
+          GROUP BY LOWER(TRIM("email"))
+        `,
+    kw
+      ? prisma.$queryRaw<RawEmailCount[]>`
+          SELECT LOWER(TRIM("email")) AS e, COUNT(*)::bigint AS c
+          FROM "JournalEntry"
+          WHERE LOWER(TRIM("email")) LIKE LOWER(${pattern})
+          GROUP BY LOWER(TRIM("email"))
+        `
+      : prisma.$queryRaw<RawEmailCount[]>`
+          SELECT LOWER(TRIM("email")) AS e, COUNT(*)::bigint AS c
+          FROM "JournalEntry"
+          GROUP BY LOWER(TRIM("email"))
+        `,
+    fetchAccountSettingsForAdminList(kw),
+  ]);
+
+  const orderCountByEmail = new Map<string, number>();
+  for (const r of orderRows) {
+    const key = normalizeEmail(r.e);
+    orderCountByEmail.set(key, (orderCountByEmail.get(key) ?? 0) + countCell(r.c));
+  }
+  const journalCountByEmail = new Map<string, number>();
+  for (const r of journalRows) {
+    const key = normalizeEmail(r.e);
+    journalCountByEmail.set(key, (journalCountByEmail.get(key) ?? 0) + countCell(r.c));
+  }
+
+  const settingsByEmail = new Map<
+    string,
+    {
+      id: string;
+      email: string;
+      isAdmin: boolean;
+      profileLimit: number;
+      pdfDownloadLimitPerOrder: number;
+      subscriberPdfAccess: boolean;
+      updatedAt: Date;
+    }
+  >();
+
+  for (const s of settingsList) {
+    const key = normalizeEmail(s.email);
+    const prev = settingsByEmail.get(key);
+    const pdfLimit = s.pdfDownloadLimitPerOrder ?? 2;
+    const subPdf = s.subscriberPdfAccess ?? false;
+    const merged = {
+      id: s.id,
+      email: s.email,
+      isAdmin: s.isAdmin,
+      profileLimit: s.profileLimit,
+      pdfDownloadLimitPerOrder: pdfLimit,
+      subscriberPdfAccess: subPdf,
+      updatedAt: s.updatedAt,
+    };
+    if (!prev || prev.updatedAt < merged.updatedAt) {
+      settingsByEmail.set(key, merged);
+    }
+  }
+
+  const emails = new Set<string>([
+    ...orderCountByEmail.keys(),
+    ...journalCountByEmail.keys(),
+    ...settingsByEmail.keys(),
+  ]);
+  return Array.from(emails)
+    .map((email) => {
+      const setting = settingsByEmail.get(email);
+      return {
+        email,
+        sourceOrderCount: orderCountByEmail.get(email) ?? 0,
+        sourceJournalCount: journalCountByEmail.get(email) ?? 0,
+        isAdmin: setting?.isAdmin ?? false,
+        profileLimit: setting?.profileLimit ?? 1,
+        pdfDownloadLimitPerOrder: setting?.pdfDownloadLimitPerOrder ?? 2,
+        subscriberPdfAccess: setting?.subscriberPdfAccess ?? false,
+      };
+    })
+    .sort((a, b) => a.email.localeCompare(b.email))
+    .slice(0, 200);
+}
+
+/** マイグレーション未適用などで列が無い場合も一覧だけは出す */
+async function fetchAccountSettingsForAdminList(keyword: string): Promise<
+  Array<{
+    id: string;
+    email: string;
+    isAdmin: boolean;
+    profileLimit: number;
+    updatedAt: Date;
+    pdfDownloadLimitPerOrder?: number;
+    subscriberPdfAccess?: boolean;
+  }>
+> {
+  const whereInsensitive = keyword
+    ? { email: { contains: keyword, mode: "insensitive" as const } }
+    : {};
+  const whereSensitive = keyword ? { email: { contains: keyword } } : {};
+
+  try {
+    return await prisma.accountSettings.findMany({
+      where: whereInsensitive,
+      orderBy: { updatedAt: "desc" },
+      select: {
+        id: true,
+        email: true,
+        isAdmin: true,
+        profileLimit: true,
+        pdfDownloadLimitPerOrder: true,
+        subscriberPdfAccess: true,
+        updatedAt: true,
+      },
+    });
+  } catch {
+    try {
+      return await prisma.accountSettings.findMany({
+        where: whereSensitive,
+        orderBy: { updatedAt: "desc" },
+        select: {
+          id: true,
+          email: true,
+          isAdmin: true,
+          profileLimit: true,
+          pdfDownloadLimitPerOrder: true,
+          subscriberPdfAccess: true,
+          updatedAt: true,
+        },
+      });
+    } catch {
+      try {
+        return await prisma.accountSettings.findMany({
+          where: whereInsensitive,
+          orderBy: { updatedAt: "desc" },
+          select: {
+            id: true,
+            email: true,
+            isAdmin: true,
+            profileLimit: true,
+            updatedAt: true,
+          },
+        });
+      } catch {
+        return await prisma.accountSettings.findMany({
+          orderBy: { updatedAt: "desc" },
+          select: {
+            id: true,
+            email: true,
+            isAdmin: true,
+            profileLimit: true,
+            updatedAt: true,
+          },
+        });
+      }
+    }
+  }
+}
+
+/** メール部分一致（失敗時は大小区別あり）。SQLite 等のフォールバック */
 function emailContainsWhere(keyword: string, preferInsensitive: boolean) {
   if (!preferInsensitive) {
     return { email: { contains: keyword } };
@@ -57,19 +254,7 @@ async function loadRowsWithEmailMode(keyword: string, insensitive: boolean): Pro
       _count: { _all: true },
       orderBy: { email: "asc" },
     }),
-    prisma.accountSettings.findMany({
-      where,
-      orderBy: [{ updatedAt: "desc" }, { email: "asc" }],
-      select: {
-        id: true,
-        email: true,
-        isAdmin: true,
-        profileLimit: true,
-        pdfDownloadLimitPerOrder: true,
-        subscriberPdfAccess: true,
-        updatedAt: true,
-      },
-    }),
+    fetchAccountSettingsForAdminList(keyword),
   ]);
 
   const orderCountByEmail = new Map<string, number>();
@@ -98,8 +283,17 @@ async function loadRowsWithEmailMode(keyword: string, insensitive: boolean): Pro
   for (const s of settings) {
     const key = normalizeEmail(s.email);
     const prev = settingsByEmail.get(key);
-    if (!prev || prev.updatedAt < s.updatedAt) {
-      settingsByEmail.set(key, s);
+    const merged = {
+      id: s.id,
+      email: s.email,
+      isAdmin: s.isAdmin,
+      profileLimit: s.profileLimit,
+      pdfDownloadLimitPerOrder: s.pdfDownloadLimitPerOrder ?? 2,
+      subscriberPdfAccess: s.subscriberPdfAccess ?? false,
+      updatedAt: s.updatedAt,
+    };
+    if (!prev || prev.updatedAt < merged.updatedAt) {
+      settingsByEmail.set(key, merged);
     }
   }
 
@@ -126,11 +320,19 @@ async function loadRowsWithEmailMode(keyword: string, insensitive: boolean): Pro
 }
 
 async function loadRows(keyword: string): Promise<UserRow[]> {
+  const kw = keyword.trim().toLowerCase();
+  if (isPostgresDb()) {
+    try {
+      return await loadRowsPostgres(kw);
+    } catch (e) {
+      console.warn("[admin] loadRowsPostgres failed, falling back to Prisma:", e);
+    }
+  }
   try {
-    return await loadRowsWithEmailMode(keyword, true);
+    return await loadRowsWithEmailMode(kw, true);
   } catch (e) {
     console.warn("[admin] loadRows insensitive failed, retrying:", e);
-    return loadRowsWithEmailMode(keyword, false);
+    return loadRowsWithEmailMode(kw, false);
   }
 }
 
