@@ -172,9 +172,18 @@ export async function GET(req: Request, { params }: RouteParams) {
     }
   }
 
-  const accountCap = await fetchAccountPdfDownloadLimitOrNull(row.email);
+  const accountCap = await fetchAccountPdfDownloadLimitOrNull(viewerEmail);
   const downloadLimit = combinePdfDownloadLimit(row.pdfDownloadLimit, accountCap);
   const downloadCount = row.pdfDownloadCount ?? 0;
+
+  if (downloadLimit !== (row.pdfDownloadLimit ?? 2)) {
+    await prisma.order
+      .update({
+        where: { id: row.id },
+        data: { pdfDownloadLimit: downloadLimit },
+      })
+      .catch(() => {});
+  }
   const reissueUrl =
     process.env.NEXT_PUBLIC_BASE_PDF_REISSUE_URL ??
     process.env.NEXT_PUBLIC_BASE_BOOK_TRIAL_URL ??
