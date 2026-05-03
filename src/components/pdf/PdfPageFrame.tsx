@@ -89,29 +89,20 @@ export function PdfPageFrame({
     ? pdfStyles.pageNumberOverlayFullBleed
     : pdfStyles.pageNumberOverlay;
 
-  /** 全面画像・ヘッダーなしのときのみページ全体座標の absolute */
-  const floatingPageNumberBlock =
-    showFooter && (!showHeader || fullBleedImageSrc) ? (
-      <RawText
-        fixed
-        style={pageNumberStyle}
-        render={({ pageNumber, totalPages }) =>
-          formatReaderPageLabel(pageNumber, totalPages, pageNumberOffset)
-        }
-      />
-    ) : null;
-
-  const headerInlinePageNumber =
-    showHeader && showFooter && !fullBleedImageSrc ? (
-      <View style={pdfStyles.pageHeaderPageNumberWrap}>
-        <RawText
-          style={pdfStyles.pageHeaderPageNumber}
-          render={({ pageNumber, totalPages }) =>
-            formatReaderPageLabel(pageNumber, totalPages, pageNumberOffset)
-          }
-        />
-      </View>
-    ) : null;
+  /**
+   * ページ番号は常に `fixed` + `render` のオーバーレイに置く。
+   * ヘッダー行内の `RawText`+`render`（非 fixed）は @react-pdf で数字だけ出ないことがあるため使わない。
+   * 横線との重なりは `pageHeaderTitleRow` の `paddingRight` で避ける。
+   */
+  const floatingPageNumberBlock = showFooter ? (
+    <RawText
+      fixed
+      style={pageNumberStyle}
+      render={({ pageNumber, totalPages }) =>
+        formatReaderPageLabel(pageNumber, totalPages, pageNumberOffset)
+      }
+    />
+  ) : null;
 
   if (fullBleedImageSrc) {
     const bleedSrc = resolvePdfAssetPath(fullBleedImageSrc);
@@ -195,7 +186,6 @@ export function PdfPageFrame({
           <View style={pdfStyles.pageHeaderTitleRow}>
             <RawText style={pdfStyles.pageHeaderTitle}>{title ?? "数秘術 鑑定書"}</RawText>
             <View style={pdfStyles.pageHeaderRule} />
-            {headerInlinePageNumber}
           </View>
           {subtitle ? <RawText style={pdfStyles.pageHeaderSubtitle}>{subtitle}</RawText> : null}
         </View>

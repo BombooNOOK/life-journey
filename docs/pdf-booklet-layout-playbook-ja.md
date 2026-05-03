@@ -12,8 +12,9 @@
 
 ### ページ番号（右上）
 
-- ヘッダー**あり**の通常ページ: タイトル行右の **`pageHeaderPageNumberWrap`（absolute）** 内の `RawText` + `render`。親の `RawText` に `fixed` を付けるとページ座標に飛ぶので付けない。
-- 全面画像ページ: `RawText` + `fixed` + `pageNumberOverlayFullBleed`。
+- **必ず** `RawText` + **`fixed`** + `render` + `pageNumberOverlay`（または全面用 `FullBleed`）。**ページ末尾**に置く（ヘッダーはその前）。
+- **NG（再発注意）**: `fixed` ヘッダー行の**内側**に、非 `fixed` の `RawText`+`render` で番号だけ置く → **数字が出ない**ことが多い（タイトル・横線は出る）。
+- 横線と番号の重なりは、ヘッダー行の **`paddingRight`** で番号幅ぶん空ける（レイヤーで無理に隠さない）。
 
 ### z-index を盛りすぎない
 

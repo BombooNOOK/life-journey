@@ -32,8 +32,8 @@ export const pdfStyles = StyleSheet.create({
     paddingRight: 56,
   },
   /**
-   * ページ番号（表紙を読者向け総ページに含めない運用。`PdfPageFrame` と目次の手入力番号と揃える）。
-   * 全面画像でヘッダーが無いときのみ absolute。ヘッダーありのときは `pageHeaderPageNumber` をタイトル行右に置く。
+   * ページ番号（表紙を読者向け総ページに含めない運用）。`PdfPageFrame` では `fixed`+`render` で重ねる。
+   * タイトル行は `pageHeaderTitleRow` の `paddingRight` で番号エリアと横線が重ならないようにする。
    */
   pageNumberOverlay: {
     position: "absolute",
@@ -75,26 +75,6 @@ export const pdfStyles = StyleSheet.create({
     backgroundColor: "#e6e6e6",
     marginLeft: 8,
     marginTop: 1,
-  },
-  /** タイトル行右端。`RawText` に `fixed` を付けるとページ座標に固定されてしまうためラップする */
-  pageHeaderPageNumberWrap: {
-    position: "absolute",
-    right: 0,
-    top: 0,
-    bottom: 0,
-    width: 52,
-    display: "flex",
-    flexDirection: "column",
-    justifyContent: "center",
-    alignItems: "flex-end",
-  },
-  pageHeaderPageNumber: {
-    fontSize: 9,
-    lineHeight: 1.35,
-    color: "#333",
-    fontFamily: "NotoSansJP",
-    textAlign: "right",
-    width: "100%",
   },
   pageHeaderSubtitle: {
     marginTop: 4,
