@@ -5,7 +5,7 @@ import { BookshelfDiaryBindingOrder } from "@/components/orders/BookshelfDiaryBi
 import { PdfDownloadButton } from "@/components/orders/PdfDownloadButton";
 import { getViewerEmailFromCookie } from "@/lib/auth/viewer";
 import { journalEntryInBookshelfPeriod } from "@/lib/journal/bookshelfPeriod";
-import { resolveActiveProfileId } from "@/lib/profile/activeProfile";
+import { listViewerProfiles, resolveActiveProfileId } from "@/lib/profile/activeProfile";
 import { prisma } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
@@ -29,7 +29,12 @@ type ShelfBook = {
 export default async function BookshelfPage() {
   const viewerEmail = await getViewerEmailFromCookie();
   if (!viewerEmail) redirect("/login?returnTo=/orders/bookshelf");
-  const activeProfileId = await resolveActiveProfileId(viewerEmail);
+  const [activeProfileId, profiles] = await Promise.all([
+    resolveActiveProfileId(viewerEmail),
+    listViewerProfiles(viewerEmail),
+  ]);
+  const activeProfileLabel =
+    profiles.find((p) => p.id === activeProfileId)?.nickname ?? "メイン";
   const shelfBookDelegate = (prisma as unknown as {
     diaryBookshelfBook?: {
       findMany: (args: {
@@ -154,6 +159,9 @@ export default async function BookshelfPage() {
           ← マイページへ
         </Link>
         <h1 className="mt-2 text-2xl font-bold text-stone-900">本棚</h1>
+        <p className="mt-3 rounded-lg border border-violet-100 bg-violet-50/90 px-3 py-2 text-sm font-medium text-violet-950">
+          表示中のプロフィール: 「{activeProfileLabel}」
+        </p>
         <p className="mt-1 text-sm text-stone-600">
           あなたの「日記」と「鑑定書」を、本のように並べて管理できます。鑑定書はブラウザで読める製本レイアウトのPDFにもなります。
         </p>

@@ -65,6 +65,7 @@ export function PdfPageFrame({
   children,
 }: Props) {
   const quality = getPdfRenderQuality();
+  /** 見開き綴じの装飾背景のみ軽量版で省略。コア本文のヒーロー背景は low でも描画する（見た目の欠落防止）。 */
   const lowQuality = quality === "low";
   const pageNumberOffset = getPdfPageNumberOffset();
   const backgroundOpacityByType: Record<PdfPageType, number> = {
@@ -110,7 +111,7 @@ export function PdfPageFrame({
 
   return (
     <Page size={size} orientation={orientation} style={pdfStyles.page}>
-      {firstPageBodyBackgroundSrc && !lowQuality ? (
+      {firstPageBodyBackgroundSrc ? (
         <View
           style={[pdfStyles.pageBackgroundLeaveFooter, { top: 18 }]}
           fixed
@@ -121,7 +122,7 @@ export function PdfPageFrame({
           }}
         />
       ) : null}
-      {continuationBodyBackgroundSrc && !lowQuality ? (
+      {continuationBodyBackgroundSrc ? (
         <View
           style={[pdfStyles.pageBackground, { top: 18 }]}
           fixed

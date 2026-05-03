@@ -10,6 +10,7 @@ import {
 } from "@/lib/date/japaneseEra";
 import { daysInMonth, toIsoDateString } from "@/lib/order/birthDate";
 import { romanizeFromKanaParts } from "@/lib/numerology/kanaToRomaji";
+import { OrderFormProfileNotice } from "@/components/orders/OrderFormProfileNotice";
 import { isHiraganaOnly } from "@/lib/validation/hiragana";
 
 const MIN_YEAR = 1870;
@@ -216,6 +217,9 @@ function OrderPageContent() {
         <p className="mt-1 text-xs text-stone-500">
           保存時の連絡先メールは、いまログインしているアカウントのメールが自動で使われます。
         </p>
+        <div className="mt-4">
+          <OrderFormProfileNotice profileIdFromQuery={profileId} />
+        </div>
       </div>
 
       {step === 1 ? (

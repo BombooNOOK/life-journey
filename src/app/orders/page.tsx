@@ -68,13 +68,13 @@ export default async function OrdersListPage() {
 
       <section className="grid gap-3 sm:grid-cols-3">
         <Link
-          href="/order"
+          href={`/order?profile=${encodeURIComponent(activeProfileId)}`}
           className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-900 transition hover:bg-emerald-100"
         >
           新しく無料鑑定をする
         </Link>
         <Link
-          href="/journal"
+          href={`/journal?profile=${encodeURIComponent(activeProfileId)}`}
           className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-900 transition hover:bg-amber-100"
         >
           今日の記録を書く

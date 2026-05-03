@@ -16,7 +16,15 @@ type UserRow = {
   sourceJournalCount: number;
   isAdmin: boolean;
   profileLimit: number;
+  /** 鑑定PDFの無料ダウンロード上限（鑑定1件あたり） */
+  pdfDownloadLimitPerOrder: number;
 };
+
+function clampPdfDownloadLimitPerOrder(raw: string | undefined): number {
+  const n = Number.parseInt(String(raw ?? "").trim(), 10);
+  if (!Number.isFinite(n)) return 2;
+  return Math.min(999, Math.max(0, Math.trunc(n)));
+}
 
 async function loadRows(keyword: string): Promise<UserRow[]> {
   const where = keyword
@@ -42,7 +50,14 @@ async function loadRows(keyword: string): Promise<UserRow[]> {
     }),
     prisma.accountSettings.findMany({
       where,
-      select: { id: true, email: true, isAdmin: true, profileLimit: true, updatedAt: true },
+      select: {
+        id: true,
+        email: true,
+        isAdmin: true,
+        profileLimit: true,
+        pdfDownloadLimitPerOrder: true,
+        updatedAt: true,
+      },
       take: 200,
     }),
   ]);
@@ -55,6 +70,7 @@ async function loadRows(keyword: string): Promise<UserRow[]> {
       email: string;
       isAdmin: boolean;
       profileLimit: number;
+      pdfDownloadLimitPerOrder: number;
       updatedAt: Date;
     }
   >();
@@ -88,6 +104,7 @@ async function loadRows(keyword: string): Promise<UserRow[]> {
         sourceJournalCount: journalCountByEmail.get(email) ?? 0,
         isAdmin: setting?.isAdmin ?? false,
         profileLimit: setting?.profileLimit ?? 1,
+        pdfDownloadLimitPerOrder: setting?.pdfDownloadLimitPerOrder ?? 2,
       };
     })
     .sort((a, b) => a.email.localeCompare(b.email))
@@ -113,7 +130,7 @@ export default async function AdminPage({ searchParams }: Props) {
 
     const merged = await prisma.accountSettings.upsert({
       where: { email },
-      create: { email, profileLimit, isAdmin: false },
+      create: { email, profileLimit, isAdmin: false, pdfDownloadLimitPerOrder: 2 },
       update: { profileLimit },
     });
     // Case-insensitive duplicates can exist in older rows.
@@ -144,7 +161,7 @@ export default async function AdminPage({ searchParams }: Props) {
     const isAdmin = isAdminRaw === "1";
     const merged = await prisma.accountSettings.upsert({
       where: { email },
-      create: { email, profileLimit: 1, isAdmin },
+      create: { email, profileLimit: 1, isAdmin, pdfDownloadLimitPerOrder: 2 },
       update: { isAdmin },
     });
     const duplicates = await prisma.accountSettings.findMany({
@@ -163,6 +180,41 @@ export default async function AdminPage({ searchParams }: Props) {
     revalidatePath("/admin");
   }
 
+  async function updatePdfDownloadLimitPerOrder(formData: FormData) {
+    "use server";
+    const email = normalizeEmail(formData.get("email")?.toString());
+    if (!email) return;
+    const viewer = await getViewerEmailFromCookie();
+    if (!(await isAdminEmail(viewer))) notFound();
+    const pdfDownloadLimitPerOrder = clampPdfDownloadLimitPerOrder(
+      formData.get("pdfDownloadLimitPerOrder")?.toString(),
+    );
+
+    const merged = await prisma.accountSettings.upsert({
+      where: { email },
+      create: { email, profileLimit: 1, isAdmin: false, pdfDownloadLimitPerOrder },
+      update: { pdfDownloadLimitPerOrder },
+    });
+    const duplicates = await prisma.accountSettings.findMany({
+      select: { id: true, email: true },
+      where: { NOT: { id: merged.id } },
+    });
+    const targetIds = duplicates
+      .filter((d) => normalizeEmail(d.email) === email)
+      .map((d) => d.id);
+    if (targetIds.length > 0) {
+      await prisma.accountSettings.updateMany({
+        where: { id: { in: targetIds } },
+        data: { pdfDownloadLimitPerOrder },
+      });
+    }
+    await prisma.order.updateMany({
+      where: { email },
+      data: { pdfDownloadLimit: pdfDownloadLimitPerOrder },
+    });
+    revalidatePath("/admin");
+  }
+
   return (
     <div className="space-y-6">
       <div>
@@ -171,7 +223,7 @@ export default async function AdminPage({ searchParams }: Props) {
         </Link>
         <h1 className="mt-2 text-2xl font-bold text-stone-900">管理者ページ</h1>
         <p className="mt-1 text-sm text-stone-600">
-          ユーザー検索と、プロフィール上限（1 / 3）・管理者権限の切り替えを行います。
+          ユーザー検索と、プロフィール上限（1 / 3）、鑑定書PDFの無料ダウンロード上限、管理者権限の切り替えを行います。
         </p>
       </div>
 
@@ -199,6 +251,7 @@ export default async function AdminPage({ searchParams }: Props) {
               <th className="px-4 py-3 font-medium">鑑定</th>
               <th className="px-4 py-3 font-medium">日記</th>
               <th className="px-4 py-3 font-medium">プロフィール上限</th>
+              <th className="px-4 py-3 font-medium">PDF無料回数</th>
               <th className="px-4 py-3 font-medium">管理者</th>
               <th className="px-4 py-3 font-medium">操作</th>
             </tr>
@@ -227,6 +280,29 @@ export default async function AdminPage({ searchParams }: Props) {
                       上限更新
                     </button>
                   </form>
+                </td>
+                <td className="px-4 py-3">
+                  <form action={updatePdfDownloadLimitPerOrder} className="flex flex-wrap items-center gap-2">
+                    <input type="hidden" name="email" value={row.email} />
+                    <input
+                      type="number"
+                      name="pdfDownloadLimitPerOrder"
+                      min={0}
+                      max={999}
+                      defaultValue={String(row.pdfDownloadLimitPerOrder)}
+                      className="w-20 rounded-md border border-stone-300 px-2 py-1"
+                      title="鑑定1件あたりの無料PDFダウンロード回数（閲覧・DL共通）"
+                    />
+                    <button
+                      type="submit"
+                      className="rounded-md border border-stone-300 px-2 py-1 text-xs hover:bg-stone-50"
+                    >
+                      更新
+                    </button>
+                  </form>
+                  <p className="mt-1 text-[10px] leading-tight text-stone-400">
+                    保存するとこのメールの既存鑑定にも上限を反映します
+                  </p>
                 </td>
                 <td className="px-4 py-3">
                   <form action={toggleAdminRole} className="flex items-center gap-2">

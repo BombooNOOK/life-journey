@@ -168,6 +168,12 @@ export async function GET(req: Request, { params }: RouteParams) {
   }
 
   const renderConfig: PdfRenderConfig = { quality };
+  /** 軽量版: 本文をわずかに詰めてページ数・転送量を抑える（画像は別レイヤー） */
+  if (quality === "low" && bodyTune === "normal" && focusPage === "all") {
+    renderConfig.bodyFontFamily = "NotoSansJP";
+    renderConfig.bodyFontSize = 9;
+    renderConfig.bodyLineHeight = 1.48;
+  }
   if (!(bodyTune === "normal" && focusPage === "all")) {
     renderConfig.focusPage = focusPage;
     renderConfig.bodyFontFamily = "NotoSansJP";

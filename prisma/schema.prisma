@@ -43,6 +43,9 @@ model Order {
   pdfDownloadCount Int @default(0)
   pdfDownloadLimit Int @default(2)
 
+  /// 氏名・生年月日の救済修正を何回使ったか（0 のときのみ修正可能）
+  identityCorrectionCount Int @default(0)
+
   /// 旧Excel等との突合用。任意JSON（コア5項目の期待値など）
   expectedNumerologyJson String?
 
@@ -98,6 +101,8 @@ model AccountSettings {
   email        String @unique
   isAdmin      Boolean @default(false)
   profileLimit Int     @default(1)
+  /// 鑑定書PDFの無料ダウンロード上限（鑑定1件あたり）。新規鑑定作成時と管理者変更時に Order に反映する。
+  pdfDownloadLimitPerOrder Int @default(2)
 }
 
 /// 1アカウント配下のプロフィール（ニックネーム表示用）

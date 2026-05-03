@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import { OrderIdentityCorrectionCard } from "@/components/orders/OrderIdentityCorrectionCard";
 import { PdfDownloadButton } from "@/components/orders/PdfDownloadButton";
 import { getViewerEmailFromCookie, normalizeEmail } from "@/lib/auth/viewer";
 import { prisma } from "@/lib/db";
@@ -86,6 +87,7 @@ export default async function OrderDetailPage({ params }: Props) {
   const pdfDownloadLimit = order.pdfDownloadLimit ?? 2;
   const pdfDownloadCount = order.pdfDownloadCount ?? 0;
   const pdfRemaining = Math.max(0, pdfDownloadLimit - pdfDownloadCount);
+  const canCorrectIdentity = (order.identityCorrectionCount ?? 0) === 0;
 
   return (
     <div className="space-y-6">
@@ -97,7 +99,24 @@ export default async function OrderDetailPage({ params }: Props) {
         <p className="mt-1 text-sm text-stone-600">
           あなたのコアナンバーと、今年の流れをまとめました。
         </p>
+        {!canCorrectIdentity ? (
+          <p className="mt-2 text-xs text-stone-500">
+            氏名・生年月日の1回限りの救済修正は、すでに利用済みです。
+          </p>
+        ) : null}
       </div>
+
+      <OrderIdentityCorrectionCard
+        orderId={order.id}
+        initialLastName={order.lastName}
+        initialFirstName={order.firstName}
+        initialLastNameKana={order.lastNameKana}
+        initialFirstNameKana={order.firstNameKana}
+        initialBirthYear={order.birthYear}
+        initialBirthMonth={order.birthMonth}
+        initialBirthDay={order.birthDay}
+        canCorrect={canCorrectIdentity}
+      />
 
       <section className="rounded-2xl border border-amber-100 bg-gradient-to-br from-white to-amber-50 p-5 shadow-sm">
         <h2 className="flex items-center gap-2 text-lg font-semibold text-stone-900">
