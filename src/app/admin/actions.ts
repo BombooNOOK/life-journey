@@ -1,5 +1,6 @@
 "use server";
 
+import type { Prisma } from "@prisma/client";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
@@ -84,23 +85,28 @@ async function syncOrdersPdfDownloadLimitForNormalizedEmail(
   }
 }
 
+/**
+ * 同一ユーザーとみなすメール表記ゆれの行を同期する。
+ * 旧実装は「自分以外の AccountSettings を全件読む」ため本番でタイムアウトし得るので、
+ * メール条件で絞った updateMany のみ行う。
+ */
 async function syncDuplicateAccountRowsForNormalizedEmail(
   mergedId: string,
-  email: string,
-  data: Record<string, unknown>,
+  normalizedEmail: string,
+  data: Prisma.AccountSettingsUpdateManyMutationInput,
 ): Promise<void> {
-  const duplicates = await prisma.accountSettings.findMany({
-    select: { id: true, email: true },
-    where: { NOT: { id: mergedId } },
-  });
-  const targetIds = duplicates
-    .filter((d) => normalizeEmail(d.email) === email)
-    .map((d) => d.id);
-  if (targetIds.length > 0) {
+  try {
     await prisma.accountSettings.updateMany({
-      where: { id: { in: targetIds } },
-      data: data as { profileLimit?: number; isAdmin?: boolean; pdfDownloadLimitPerOrder?: number; subscriberPdfAccess?: boolean },
+      where: {
+        AND: [
+          { NOT: { id: mergedId } },
+          { email: { equals: normalizedEmail, mode: "insensitive" } },
+        ],
+      },
+      data,
     });
+  } catch (e) {
+    console.warn("[admin] syncDuplicateAccountRows (skipped):", e);
   }
 }
 
@@ -181,16 +187,31 @@ async function saveAccountPdfLimitWithFallback(
       },
       update: { pdfDownloadLimitPerOrder },
     });
-  } catch (e) {
-    console.warn("[admin] accountSettings upsert failed, using fallback:", e);
-    const hit = await prisma.accountSettings.findFirst({
-      where: { email: { equals: email, mode: "insensitive" } },
-    });
-    if (hit) {
-      return prisma.accountSettings.update({
-        where: { id: hit.id },
-        data: { pdfDownloadLimitPerOrder },
+  } catch (e1) {
+    console.warn("[admin] accountSettings upsert failed, using fallback:", e1);
+    try {
+      const exact = await prisma.accountSettings.findUnique({ where: { email } });
+      if (exact) {
+        return prisma.accountSettings.update({
+          where: { id: exact.id },
+          data: { pdfDownloadLimitPerOrder },
+        });
+      }
+    } catch (e2) {
+      console.warn("[admin] findUnique fallback:", e2);
+    }
+    try {
+      const hit = await prisma.accountSettings.findFirst({
+        where: { email: { equals: email, mode: "insensitive" } },
       });
+      if (hit) {
+        return prisma.accountSettings.update({
+          where: { id: hit.id },
+          data: { pdfDownloadLimitPerOrder },
+        });
+      }
+    } catch (e3) {
+      console.warn("[admin] findFirst insensitive fallback:", e3);
     }
     return prisma.accountSettings.create({
       data: {
