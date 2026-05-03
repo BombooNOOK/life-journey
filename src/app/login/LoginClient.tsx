@@ -164,6 +164,11 @@ export function LoginClient() {
       if (typeof a.authStateReady === "function") {
         await a.authStateReady();
       }
+      const isIOS =
+        /iPad|iPhone|iPod/i.test(navigator.userAgent) ||
+        (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+      const isAndroid = /Android/i.test(navigator.userAgent);
+
       const completeGoogleSignIn = async (cred: UserCredential) => {
         clearGoogleOAuthRedirectFlow();
         syncLjAuthClientCookies({ email: cred.user.email ?? null });
@@ -173,6 +178,11 @@ export function LoginClient() {
           body: JSON.stringify({ email: cred.user.email ?? "" }),
           credentials: "same-origin",
         }).catch(() => {});
+        /** スマホの Safari 等では client 遷移だとクッキーが次リクエストに乗る前に /orders へ行き、一度 /login に弾かれることがある */
+        if (isIOS || isAndroid) {
+          window.location.assign(new URL(returnTo, window.location.origin).toString());
+          return;
+        }
         navigateAfterLogin(returnTo);
       };
       try {
@@ -180,20 +190,13 @@ export function LoginClient() {
       /** Mac と同様に「どのアカウントか」を選ばせる（iPhone だけ省略されやすい） */
       provider.setCustomParameters({ prompt: "select_account" });
       /** iPhone/iPad はリダイレクト方式だと戻り後に認証状態が復元できないことが多いので、まずポップアップを試す */
-      const isIOS =
-        /iPad|iPhone|iPod/i.test(navigator.userAgent) ||
-        (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
-      const isAndroid = /Android/i.test(navigator.userAgent);
 
       if (isIOS) {
-        setNotice("Googleの画面または小さなウィンドウが開きます。数秒待っても何も出ないときは、画面下の「ポップアップを許可」を探してください。");
         try {
           const cred = await signInWithPopup(a, provider);
-          setNotice(null);
           await completeGoogleSignIn(cred);
           return;
         } catch (e) {
-          setNotice(null);
           const raw = e instanceof Error ? e.message : String(e);
           const useRedirect =
             raw.trim().length === 0 ||
