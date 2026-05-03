@@ -79,7 +79,8 @@ export function PdfDownloadButton({
             a.click();
             document.body.removeChild(a);
             URL.revokeObjectURL(downloadUrl);
-          } catch {
+          } catch (err) {
+            console.error("[pdf-download-client] fetch/blob 失敗（ブラウザ側）", err);
             setError(
               "通信状況により生成に失敗しました。もう一度お試しください（Wi‑Fi の場合は電波の良い場所で）。",
             );

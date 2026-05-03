@@ -141,9 +141,20 @@ export const dynamic = "force-dynamic";
 export const maxDuration = 800;
 
 export async function GET(req: Request, { params }: RouteParams) {
+  let pathForLog = "";
+  try {
+    pathForLog = new URL(req.url).pathname;
+  } catch {
+    pathForLog = "(invalid-url)";
+  }
+  console.log("[pdf-api] GET入口（Handler到達）", { path: pathForLog });
+
   const { id } = await params;
+  console.log("[pdf-api] GET params解決", { orderId: id });
+
   const viewerEmail = await getViewerEmailFromCookie();
   if (!viewerEmail) {
+    console.log("[pdf-api] 早期終了 401 未ログイン", { orderId: id });
     return NextResponse.json(
       { error: "ログインが必要です" },
       { status: 401, headers: { ...PDF_API_CACHE_HEADERS } },
@@ -151,12 +162,14 @@ export async function GET(req: Request, { params }: RouteParams) {
   }
   const row = await prisma.order.findUnique({ where: { id } });
   if (!row) {
+    console.log("[pdf-api] 早期終了 404 注文なし", { orderId: id });
     return NextResponse.json(
       { error: "注文が見つかりません" },
       { status: 404, headers: { ...PDF_API_CACHE_HEADERS } },
     );
   }
   if (normalizeEmail(row.email) !== viewerEmail) {
+    console.log("[pdf-api] 早期終了 403 メール不一致", { orderId: id });
     return NextResponse.json(
       { error: "この注文にはアクセスできません" },
       { status: 403, headers: { ...PDF_API_CACHE_HEADERS } },
@@ -203,6 +216,11 @@ export async function GET(req: Request, { params }: RouteParams) {
     "https://thebase.com";
 
   if (shouldDownload && downloadCount >= downloadLimit) {
+    console.log("[pdf-api] 早期終了 429 ダウンロード上限", {
+      orderId: id,
+      downloadCount,
+      downloadLimit,
+    });
     return new NextResponse(htmlWhenDownloadLimitExceeded(reissueUrl, downloadLimit), {
       status: 429,
       headers: {
@@ -247,7 +265,7 @@ export async function GET(req: Request, { params }: RouteParams) {
       e instanceof Error
         ? { name: e.name, message: e.message, stack: e.stack }
         : { raw: String(e) };
-    console.error("[pdf-api] catch されたエラー全文", { ...pdfLogBase, error: caught });
+    console.error("[pdf-api] catch されたエラー全文", JSON.stringify({ ...pdfLogBase, error: caught }));
     const message = e instanceof Error ? e.message : "PDF生成に失敗しました。";
     return NextResponse.json(
       { error: message },
@@ -285,9 +303,9 @@ export async function GET(req: Request, { params }: RouteParams) {
       where: { id: row.id },
       data: { pdfDownloadCount: { increment: 1 } },
     });
-    console.info("[pdf-api] pdfDownloadCount increment 実行", pdfLogBase);
+    console.log("[pdf-api] pdfDownloadCount increment 実行", pdfLogBase);
   }
-  console.info("[pdf-api] Response返却直前", {
+  console.log("[pdf-api] Response返却直前", {
     ...pdfLogBase,
     bytes: u8.byteLength,
     filename,
