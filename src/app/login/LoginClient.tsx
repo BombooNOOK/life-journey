@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
@@ -15,13 +15,14 @@ import {
 
 import { useFirebaseAuth } from "@/components/auth/FirebaseAuthProvider";
 import {
-  clearOAuthReturnPending,
-  markOAuthReturnPending,
+  clearGoogleOAuthRedirectFlow,
+  isGoogleOAuthFlowCookieActive,
+  markGoogleOAuthRedirectFlow,
   readOAuthReturnPendingAgeMs,
   stashOAuthReturnTo,
   syncLjAuthClientCookies,
 } from "@/lib/auth/clientCookies";
-import { getFirebaseAuth } from "@/lib/firebase/client";
+import { getFirebaseAuth, waitForFirebaseAuthPersistence } from "@/lib/firebase/client";
 
 function resolveSafeReturnTo(raw: string | null): string {
   if (!raw) return "/orders";
@@ -69,7 +70,7 @@ function pickErrorMessage(e: unknown, fallback: string): string {
     return "メールアドレスかパスワードが違います。入力内容をもう一度確認してください。";
   }
 
-  return raw;
+  return raw.trim() || fallback;
 }
 
 export function LoginClient() {
@@ -82,27 +83,43 @@ export function LoginClient() {
   const [busyEmail, setBusyEmail] = useState(false);
   const [busyReset, setBusyReset] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  /** Google から戻った直後に再描画してバナーを出す（Safari は pageshow が必要なことがある） */
+  const [oauthReturnSurface, setOauthReturnSurface] = useState(0);
+  /** 連打で途中状態が重なり「3回押すと入る」になるのを防ぐ */
+  const googleSignInLock = useRef(false);
 
   const returnTo = resolveSafeReturnTo(searchParams.get("returnTo"));
+
+  const showGoogleReturnBanner =
+    !authLoading &&
+    !user &&
+    (isGoogleOAuthFlowCookieActive() || readOAuthReturnPendingAgeMs() != null);
+
+  useLayoutEffect(() => {
+    const bump = () => setOauthReturnSurface((n) => n + 1);
+    bump();
+    window.addEventListener("pageshow", bump);
+    return () => window.removeEventListener("pageshow", bump);
+  }, []);
 
   useEffect(() => {
     if (authLoading) return;
     if (user) {
-      clearOAuthReturnPending();
+      clearGoogleOAuthRedirectFlow();
       return;
     }
     const pendingAge = readOAuthReturnPendingAgeMs();
-    if (pendingAge == null) return;
+    if (pendingAge == null && !isGoogleOAuthFlowCookieActive()) return;
 
     const id = window.setTimeout(() => {
       try {
         const auth = getFirebaseAuth();
         if (auth.currentUser) {
-          clearOAuthReturnPending();
+          clearGoogleOAuthRedirectFlow();
           return;
         }
-        if (readOAuthReturnPendingAgeMs() == null) return;
-        clearOAuthReturnPending();
+        if (readOAuthReturnPendingAgeMs() == null && !isGoogleOAuthFlowCookieActive()) return;
+        clearGoogleOAuthRedirectFlow();
         setError(
           [
             "Googleから戻りましたが、この端末ではログイン状態を取り込めませんでした（エラーは出ないことがあります）。",
@@ -118,7 +135,7 @@ export function LoginClient() {
       }
     }, 1600);
     return () => window.clearTimeout(id);
-  }, [authLoading, user]);
+  }, [authLoading, user, oauthReturnSurface]);
 
   const auth = () => {
     try {
@@ -135,23 +152,30 @@ export function LoginClient() {
   };
 
   const handleGoogle = async () => {
-    setError(null);
-    setNotice(null);
-    const a = auth();
-    if (!a) return;
+    if (googleSignInLock.current) return;
+    googleSignInLock.current = true;
     setBusyGoogle(true);
-    const completeGoogleSignIn = async (cred: UserCredential) => {
-      clearOAuthReturnPending();
-      syncLjAuthClientCookies({ email: cred.user.email ?? null });
-      await fetch("/api/auth/session", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: cred.user.email ?? "" }),
-        credentials: "same-origin",
-      }).catch(() => {});
-      navigateAfterLogin(returnTo);
-    };
     try {
+      setError(null);
+      setNotice(null);
+      const a = auth();
+      if (!a) return;
+      await waitForFirebaseAuthPersistence(a);
+      if (typeof a.authStateReady === "function") {
+        await a.authStateReady();
+      }
+      const completeGoogleSignIn = async (cred: UserCredential) => {
+        clearGoogleOAuthRedirectFlow();
+        syncLjAuthClientCookies({ email: cred.user.email ?? null });
+        await fetch("/api/auth/session", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email: cred.user.email ?? "" }),
+          credentials: "same-origin",
+        }).catch(() => {});
+        navigateAfterLogin(returnTo);
+      };
+      try {
       const provider = new GoogleAuthProvider();
       /** iPhone/iPad はリダイレクト方式だと戻り後に認証状態が復元できないことが多いので、まずポップアップを試す */
       const isIOS =
@@ -176,7 +200,7 @@ export function LoginClient() {
             raw.includes("auth/popup-blocked");
           if (useRedirect) {
             stashOAuthReturnTo(returnTo);
-            markOAuthReturnPending();
+            markGoogleOAuthRedirectFlow();
             await signInWithRedirect(a, provider);
             return;
           }
@@ -186,18 +210,21 @@ export function LoginClient() {
 
       if (isAndroid) {
         stashOAuthReturnTo(returnTo);
-        markOAuthReturnPending();
+        markGoogleOAuthRedirectFlow();
         await signInWithRedirect(a, provider);
         return;
       }
 
       const cred = await signInWithPopup(a, provider);
       await completeGoogleSignIn(cred);
-    } catch (e) {
-      console.error("[login:google]", e);
-      setError(pickErrorMessage(e, "Google ログインに失敗しました。"));
+      } catch (e) {
+        console.error("[login:google]", e);
+        clearGoogleOAuthRedirectFlow();
+        setError(pickErrorMessage(e, "Google ログインに失敗しました。"));
+      }
     } finally {
       setBusyGoogle(false);
+      googleSignInLock.current = false;
     }
   };
 
@@ -300,6 +327,21 @@ export function LoginClient() {
         </p>
       </div>
 
+      {showGoogleReturnBanner ? (
+        <div
+          key={oauthReturnSurface}
+          className="rounded-lg border border-violet-300 bg-violet-50 px-3 py-3 text-sm leading-relaxed text-violet-950"
+          role="status"
+          aria-live="polite"
+        >
+          <p className="font-semibold">Google の認証から戻ってきました</p>
+          <p className="mt-2">
+            このあと自動で進まないときは、約2秒待つと赤い案内が出ることがあります。出ない場合は、設定 → Safari
+            → 詳細 → 「サイト越えトラッキング防止」をオフにしてから、もう一度「Google で続ける」を試してください。
+          </p>
+        </div>
+      ) : null}
+
       {error ? (
         <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-900">
           {error}
@@ -319,6 +361,16 @@ export function LoginClient() {
       >
         {busyGoogle ? "処理中…" : "Google で続ける"}
       </button>
+
+      {busyGoogle ? (
+        <div
+          className="rounded-lg border border-amber-300 bg-amber-50 px-3 py-3 text-sm font-medium text-amber-950"
+          role="status"
+          aria-live="polite"
+        >
+          Google に接続しています。この表示がすぐ消える場合は、画面下の「ポップアップを許可」や、メール欄へフォーカスが移っただけのことがあります。いったん上のボタンをもう一度押してください。
+        </div>
+      ) : null}
 
       <div className="relative text-center text-xs text-stone-400">
         <span className="relative z-10 bg-white px-2">または</span>

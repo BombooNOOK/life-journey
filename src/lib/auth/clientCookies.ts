@@ -43,7 +43,6 @@ export function takeOAuthReturnTo(): string | null {
   return raw;
 }
 
-/** OAuth 後に `sessionStorage` が消えても、URL の `returnTo` で戻れるようにする */
 /** `signInWithRedirect` 開始時にセットし、戻ってきて未ログインなら案内する（Safari 向け） */
 export const OAUTH_RETURN_PENDING_LS_KEY = "lj_oauth_return_pending_ts";
 const OAUTH_PENDING_MAX_MS = 5 * 60 * 1000;
@@ -79,6 +78,38 @@ export function readOAuthReturnPendingAgeMs(): number | null {
   } catch {
     return null;
   }
+}
+
+/** Safari プライベート等で localStorage が使えないときも、同一セッションで戻りを検知しやすくする */
+const GOOGLE_OAUTH_FLOW_COOKIE = "lj_google_oauth_flow";
+
+export function setGoogleOAuthFlowCookieActive(): void {
+  if (typeof document === "undefined") return;
+  const s = secureSuffix();
+  document.cookie = `${GOOGLE_OAUTH_FLOW_COOKIE}=1; Path=/; Max-Age=900; SameSite=Lax${s}`;
+}
+
+export function clearGoogleOAuthFlowCookie(): void {
+  if (typeof document === "undefined") return;
+  const s = secureSuffix();
+  document.cookie = `${GOOGLE_OAUTH_FLOW_COOKIE}=; Path=/; Max-Age=0; SameSite=Lax${s}`;
+}
+
+export function isGoogleOAuthFlowCookieActive(): boolean {
+  if (typeof document === "undefined") return false;
+  return document.cookie.split(";").some((c) => c.trim().startsWith(`${GOOGLE_OAUTH_FLOW_COOKIE}=1`));
+}
+
+/** Google リダイレクト開始時（戻り検知用） */
+export function markGoogleOAuthRedirectFlow(): void {
+  markOAuthReturnPending();
+  setGoogleOAuthFlowCookieActive();
+}
+
+/** ログイン成功・失敗確定時 */
+export function clearGoogleOAuthRedirectFlow(): void {
+  clearOAuthReturnPending();
+  clearGoogleOAuthFlowCookie();
 }
 
 export function readReturnToFromCurrentUrl(): string | null {

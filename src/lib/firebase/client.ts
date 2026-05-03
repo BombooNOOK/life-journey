@@ -34,7 +34,22 @@ function readConfig() {
 }
 
 let app: FirebaseApp | null = null;
-let persistenceInitialized = false;
+/** `setPersistence` を複数回 await しても同じ Promise を共有する（Safari で初回タップが空振りしにくくする） */
+let persistencePromise: Promise<void> | null = null;
+
+function scheduleBrowserLocalPersistence(auth: Auth): void {
+  if (!persistencePromise) {
+    persistencePromise = setPersistence(auth, browserLocalPersistence).catch(() => {
+      /* 失敗しても既定の永続化で続行 */
+    });
+  }
+}
+
+/** `getFirebaseAuth()` のあと、Google サインイン等の前に必ず await すること */
+export async function waitForFirebaseAuthPersistence(auth: Auth): Promise<void> {
+  scheduleBrowserLocalPersistence(auth);
+  await persistencePromise;
+}
 
 /** ブラウザ専用。Server Component からは呼ばないでください。 */
 export function getFirebaseApp(): FirebaseApp {
@@ -51,11 +66,6 @@ export function getFirebaseApp(): FirebaseApp {
 export function getFirebaseAuth(): Auth {
   const auth = getAuth(getFirebaseApp());
   auth.languageCode = "ja";
-  if (!persistenceInitialized) {
-    persistenceInitialized = true;
-    void setPersistence(auth, browserLocalPersistence).catch(() => {
-      // 失敗しても既定の永続化設定で継続する
-    });
-  }
+  scheduleBrowserLocalPersistence(auth);
   return auth;
 }

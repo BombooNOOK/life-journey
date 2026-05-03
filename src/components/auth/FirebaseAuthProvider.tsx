@@ -13,12 +13,12 @@ import { getRedirectResult, onAuthStateChanged, signOut, type User } from "fireb
 
 import {
   OAUTH_RETURN_SESSION_KEY,
-  clearOAuthReturnPending,
+  clearGoogleOAuthRedirectFlow,
   readReturnToFromCurrentUrl,
   syncLjAuthClientCookies,
   takeOAuthReturnTo,
 } from "@/lib/auth/clientCookies";
-import { getFirebaseAuth } from "@/lib/firebase/client";
+import { getFirebaseAuth, waitForFirebaseAuthPersistence } from "@/lib/firebase/client";
 
 type FirebaseAuthContextValue = {
   user: User | null;
@@ -67,6 +67,7 @@ export function FirebaseAuthProvider({ children }: { children: ReactNode }) {
     const run = async () => {
       try {
         const auth = getFirebaseAuth();
+        await waitForFirebaseAuthPersistence(auth);
         if (typeof auth.authStateReady === "function") {
           await auth.authStateReady();
         }
@@ -84,7 +85,7 @@ export function FirebaseAuthProvider({ children }: { children: ReactNode }) {
             takeOAuthReturnTo() ?? readReturnToFromCurrentUrl() ?? "/orders",
           );
           if (target.startsWith("/") && !target.startsWith("//")) {
-            clearOAuthReturnPending();
+            clearGoogleOAuthRedirectFlow();
             window.location.assign(target);
             return;
           }
@@ -111,7 +112,7 @@ export function FirebaseAuthProvider({ children }: { children: ReactNode }) {
           }
           const target = safePostLoginTarget(readReturnToFromCurrentUrl() ?? "/orders");
           if (target.startsWith("/") && !target.startsWith("//")) {
-            clearOAuthReturnPending();
+            clearGoogleOAuthRedirectFlow();
             window.location.assign(target);
             return;
           }
