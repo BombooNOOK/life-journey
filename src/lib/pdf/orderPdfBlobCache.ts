@@ -13,6 +13,12 @@ export function orderPdfBlobWriteEnabled(): boolean {
   return Boolean(process.env.BLOB_READ_WRITE_TOKEN?.trim());
 }
 
+/**
+ * PDF 結合ロジックや挿入アセット解決を変えたときに上げる（Blob の古いキャッシュを捨てる）。
+ * 例: 本番で章挿入・裏表紙 PDF のパスが ENOENT になっていた修正後。
+ */
+const ORDER_FULL_PDF_BLOB_CACHE_REVISION = "2";
+
 /** 鑑定 PDF の入力が同じなら同じ指紋（画質は URL を分けるため指紋に含めない） */
 export function buildOrderPdfCacheFingerprint(row: {
   numerologyJson: string;
@@ -37,7 +43,10 @@ export function buildOrderPdfCacheFingerprint(row: {
   email: string;
   profileId: string;
 }): string {
-  return createHash("sha256").update(JSON.stringify(row)).digest("hex");
+  return createHash("sha256")
+    .update(JSON.stringify(row))
+    .update(`|blobRev=${ORDER_FULL_PDF_BLOB_CACHE_REVISION}`)
+    .digest("hex");
 }
 
 export async function fetchCachedOrderPdfFromBlobUrl(blobUrl: string): Promise<Uint8Array | null> {
