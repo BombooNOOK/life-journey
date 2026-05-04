@@ -304,8 +304,28 @@ export async function GET(req: Request, { params }: RouteParams) {
           ...pdfLogBase,
           bytes: cached.byteLength,
         });
+      } else {
+        let blobHost = "";
+        try {
+          blobHost = new URL(blobUrl).hostname;
+        } catch {
+          blobHost = "(invalid-url)";
+        }
+        console.log("[pdf-api] Blobキャッシュミス（Blob取得失敗または空）", {
+          ...pdfLogBase,
+          blobHost,
+        });
       }
+    } else {
+      console.log("[pdf-api] Blobキャッシュミス（未保存またはキー不一致）", {
+        ...pdfLogBase,
+        hasBlobUrl: Boolean(blobUrl),
+        hasStoredKey: Boolean(storedKey),
+        keysMatch: Boolean(storedKey && storedKey === pdfCacheKey),
+      });
     }
+  } else if (cacheableFullPdf && !blobWrites) {
+    console.log("[pdf-api] Blob保存・取得スキップ（BLOB_READ_WRITE_TOKEN 未設定）", pdfLogBase);
   }
 
   if (!servedFromBlob) {

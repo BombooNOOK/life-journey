@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
 
-import { put } from "@vercel/blob";
+import { get, put } from "@vercel/blob";
 
 import type { BodyTuneStep, FocusPage, PdfRenderQuality } from "@/components/pdf/pdfRenderConfig";
 
@@ -52,12 +52,36 @@ export function buildOrderPdfCacheFingerprint(row: {
     .digest("hex");
 }
 
+function contentTypeLooksLikePdf(contentType: string | null | undefined): boolean {
+  const ct = contentType ?? "";
+  return ct.includes("pdf") || ct.includes("octet-stream");
+}
+
+/**
+ * Private Blob は URL 直叩きでは読めない。SDK の `get` でトークン付き取得する。
+ * 旧データで public Blob URL が DB に残っている場合は従来どおり fetch にフォールバックする。
+ */
 export async function fetchCachedOrderPdfFromBlobUrl(blobUrl: string): Promise<Uint8Array | null> {
+  const token = process.env.BLOB_READ_WRITE_TOKEN?.trim();
+  if (token) {
+    try {
+      const result = await get(blobUrl, { access: "private", token });
+      if (result?.statusCode === 200 && result.stream) {
+        const bytes = new Uint8Array(await new Response(result.stream).arrayBuffer());
+        if (bytes.byteLength > 0 && contentTypeLooksLikePdf(result.blob.contentType)) {
+          return bytes;
+        }
+      }
+    } catch {
+      // private として読めない URL（例: 移行前の public 専用 URL）→ fetch へ
+    }
+  }
+
   try {
     const res = await fetch(blobUrl, { method: "GET", cache: "no-store" });
     if (!res.ok) return null;
     const ct = res.headers.get("content-type") ?? "";
-    if (!ct.includes("pdf") && !ct.includes("octet-stream")) return null;
+    if (!contentTypeLooksLikePdf(ct)) return null;
     return new Uint8Array(await res.arrayBuffer());
   } catch {
     return null;
@@ -75,8 +99,9 @@ export async function putOrderFullPdfToBlob(
   const pathname = `order-full-pdf/${orderId}/${variant}.pdf`;
   const body = Buffer.from(bytes);
   const result = await put(pathname, body, {
-    access: "public",
+    access: "private",
     addRandomSuffix: false,
+    allowOverwrite: true,
     contentType: "application/pdf",
     token,
   });
