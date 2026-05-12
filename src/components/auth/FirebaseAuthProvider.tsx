@@ -9,7 +9,13 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { getRedirectResult, onAuthStateChanged, signOut, type User } from "firebase/auth";
+import {
+  getRedirectResult,
+  onAuthStateChanged,
+  signOut,
+  type Auth,
+  type User,
+} from "firebase/auth";
 
 import {
   clearGoogleOAuthRedirectFlow,
@@ -69,10 +75,22 @@ export function FirebaseAuthProvider({ children }: { children: ReactNode }) {
     let unsubscribe: (() => void) | undefined;
 
     const run = async () => {
+      let auth: Auth | null = null;
       try {
-        const auth = getFirebaseAuth({ deferPersistence: true });
+        auth = getFirebaseAuth({ deferPersistence: true });
         let redirectCred: Awaited<ReturnType<typeof getRedirectResult>> = null;
         try {
+          /**
+           * Chrome 等で IndexedDB へのリダイレクト結果の反映が数ティック遅れると getRedirectResult が空になることがある。
+           * 戻り検知時のみ短く待ってから取り込む（同一 Auth インスタンスのまま）。
+           */
+          if (
+            typeof window !== "undefined" &&
+            window.location.pathname === "/login" &&
+            (isGoogleOAuthFlowCookieActive() || readOAuthReturnPendingAgeMs() != null)
+          ) {
+            await new Promise((r) => setTimeout(r, 220));
+          }
           if (typeof auth.authStateReady === "function") {
             await auth.authStateReady();
           }
@@ -167,7 +185,9 @@ export function FirebaseAuthProvider({ children }: { children: ReactNode }) {
       if (cancelled) return;
 
       try {
-        const auth = getFirebaseAuth();
+        if (!auth) {
+          auth = getFirebaseAuth();
+        }
         let isFirstAuthCallback = true;
         unsubscribe = onAuthStateChanged(auth, (next) => {
           if (cancelled) return;
