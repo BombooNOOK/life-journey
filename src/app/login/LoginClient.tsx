@@ -33,9 +33,25 @@ function resolveSafeReturnTo(raw: string | null): string {
 }
 
 /**
- * Safari 系では `fetch(/api/auth/session)` 直後の `router.push` だと、
- * Set-Cookie が次の RSC リクエストに乗る前に保護ページへ行き、ミドルウェアで `/login` に戻されることがある。
- * iOS/Android と同様にフルページ遷移で確実にクッキーを送る。
+ * Mac／Windows のデスクトップ Chrome（Chromium 系）。ポップアップ後の `router.push` で
+ * セッション Cookie が間に合わないときがあるため `browserWantsFullPagePostLoginNavigation` に使う。
+ */
+function isLikelyChromiumDesktop(): boolean {
+  if (typeof navigator === "undefined") return false;
+  const ua = navigator.userAgent;
+  if (/Android|iPhone|iPad|iPod|webOS|Mobile/i.test(ua)) return false;
+  if (!/Chrome/i.test(ua)) return false;
+  if (/(Edg|OPR|Opera|Firefox|FxiOS)/i.test(ua)) return false;
+  return true;
+}
+
+/**
+ * Safari 系・モバイル・デスクトップ Chrome: `fetch(/api/auth/session)` 直後の `router.push` だと
+ * Set-Cookie が次の RSC に乗らずミドルウェアで `/login` に戻されることがある → フルページ遷移にする。
+ *
+ * Chrome M115+ で Vercel 等にホストしている場合、`signInWithRedirect` はサードパーティストレージ制限で
+ * getRedirectResult が常に空になる（Firebase 公式の redirect best practices）。Chrome デスクトップは
+ * ポップアップ方式に戻す前提。
  */
 function browserWantsFullPagePostLoginNavigation(): boolean {
   if (typeof navigator === "undefined") return false;
@@ -44,22 +60,10 @@ function browserWantsFullPagePostLoginNavigation(): boolean {
     /iPad|iPhone|iPod/i.test(ua) ||
     (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
   if (isIosLike || /Android/i.test(ua)) return true;
+  if (isLikelyChromiumDesktop()) return true;
   // デスクトップ Safari（Chrome / Edge / Opera / Firefox は除外）
   if (!/Safari/i.test(ua)) return false;
   if (/(Chrome|Chromium|CriOS|Edg|OPR|Firefox|FxiOS)/i.test(ua)) return false;
-  return true;
-}
-
-/**
- * Mac／Windows のデスクトップ Chrome（Chromium 系）。
- * ポップアップでアカウント選択後に戻らない環境があるため、フルページの Google へ遷移する方式にする。
- */
-function isLikelyChromiumDesktop(): boolean {
-  if (typeof navigator === "undefined") return false;
-  const ua = navigator.userAgent;
-  if (/Android|iPhone|iPad|iPod|webOS|Mobile/i.test(ua)) return false;
-  if (!/Chrome/i.test(ua)) return false;
-  if (/(Edg|OPR|Opera|Firefox|FxiOS)/i.test(ua)) return false;
   return true;
 }
 
@@ -240,10 +244,6 @@ export function LoginClient() {
       setNotice(null);
       let a: ReturnType<typeof getFirebaseAuth>;
       try {
-        /**
-         * Mac Chrome の signInWithRedirect: リダイレクト前に `setPersistence(LOCAL)` を確定させると、
-         * 戻り時に getRedirectResult が空のままになる事例がある（firebase/client の deferPersistence コメントと同根）。
-         */
         a = getFirebaseAuth({ deferPersistence: true });
       } catch (e) {
         setError(pickErrorMessage(e, "初期化に失敗しました。"));
@@ -253,10 +253,7 @@ export function LoginClient() {
         /iPad|iPhone|iPod/i.test(navigator.userAgent) ||
         (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
       const isAndroid = /Android/i.test(navigator.userAgent);
-      const chromiumDesktopRedirect = isLikelyChromiumDesktop();
-      if (!chromiumDesktopRedirect) {
-        await waitForFirebaseAuthPersistence(a);
-      }
+      await waitForFirebaseAuthPersistence(a);
       if (typeof a.authStateReady === "function") {
         await a.authStateReady();
       }
@@ -326,16 +323,6 @@ export function LoginClient() {
         const mobileProvider = new GoogleAuthProvider();
         mobileProvider.setCustomParameters({ prompt: "select_account" });
         await signInWithRedirect(a, mobileProvider);
-        return;
-      }
-
-      /** Mac Chrome 等: ポップアップがアカウント選択後に固まることがある → リダイレクト方式（iPhone の「Googleへ行く」に近い） */
-      if (isLikelyChromiumDesktop()) {
-        stashOAuthReturnTo(returnTo);
-        markGoogleOAuthRedirectFlow();
-        const chromiumProvider = new GoogleAuthProvider();
-        chromiumProvider.setCustomParameters({ prompt: "select_account" });
-        await signInWithRedirect(a, chromiumProvider);
         return;
       }
 
@@ -473,7 +460,7 @@ export function LoginClient() {
         <p className="mt-1 text-xs text-stone-500">
           スマホで安定して使うには、Safari または Chrome で URL を直接開いてください（LINE 等のアプリ内ブラウザは不安定なことがあります）。iPhone
           ではまずポップアップで Google が開き、うまくいかないときだけ Google へ移動する方式になります。Mac の
-          Chrome ではポップアップではなく、Google のページへ一度移動してから戻る方式になります。
+          Chrome でも小さなウィンドウ（ポップアップ）で Google が開きます。ポップアップをブロックしている場合は許可してください。
         </p>
       </div>
 
