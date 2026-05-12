@@ -50,6 +50,19 @@ function browserWantsFullPagePostLoginNavigation(): boolean {
   return true;
 }
 
+/**
+ * Mac／Windows のデスクトップ Chrome（Chromium 系）。
+ * ポップアップでアカウント選択後に戻らない環境があるため、フルページの Google へ遷移する方式にする。
+ */
+function isLikelyChromiumDesktop(): boolean {
+  if (typeof navigator === "undefined") return false;
+  const ua = navigator.userAgent;
+  if (/Android|iPhone|iPad|iPod|webOS|Mobile/i.test(ua)) return false;
+  if (!/Chrome/i.test(ua)) return false;
+  if (/(Edg|OPR|Opera|Firefox|FxiOS)/i.test(ua)) return false;
+  return true;
+}
+
 /** Google リダイレクトで `/login` に着地した直後（クッキー／保留フラグで検知） */
 function readLoginOAuthReturnLikely(): boolean {
   if (typeof window === "undefined") return false;
@@ -303,6 +316,16 @@ export function LoginClient() {
         return;
       }
 
+      /** Mac Chrome 等: ポップアップがアカウント選択後に固まることがある → リダイレクト方式（iPhone の「Googleへ行く」に近い） */
+      if (isLikelyChromiumDesktop()) {
+        stashOAuthReturnTo(returnTo);
+        markGoogleOAuthRedirectFlow();
+        const chromiumProvider = new GoogleAuthProvider();
+        chromiumProvider.setCustomParameters({ prompt: "select_account" });
+        await signInWithRedirect(a, chromiumProvider);
+        return;
+      }
+
       const cred = await signInWithPopup(a, provider);
       await completeGoogleSignIn(cred);
       } catch (e) {
@@ -436,7 +459,8 @@ export function LoginClient() {
         </p>
         <p className="mt-1 text-xs text-stone-500">
           スマホで安定して使うには、Safari または Chrome で URL を直接開いてください（LINE 等のアプリ内ブラウザは不安定なことがあります）。iPhone
-          ではまずポップアップで Google が開き、うまくいかないときだけ Google へ移動する方式になります。
+          ではまずポップアップで Google が開き、うまくいかないときだけ Google へ移動する方式になります。Mac の
+          Chrome ではポップアップではなく、Google のページへ一度移動してから戻る方式になります。
         </p>
       </div>
 
