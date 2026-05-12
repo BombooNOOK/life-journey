@@ -68,7 +68,8 @@ const TEMPLATE_LAYOUT_MAP: Record<
     commentLeft: "12.7%",
     commentTop: "85.85%",
     commentWidth: "58.8%",
-    commentMaxHeight: "9.2%",
+    /** コメント枠（テンプレ底の吹き出し）。狭い画面では行間・自動文字拡大で溢れやすいため十分な％を確保 */
+    commentMaxHeight: "10.8%",
     numberLeft: "36.0%",
     numberTodayTop: "19.5%",
     numberMonthTop: "24.9%",
@@ -91,7 +92,7 @@ const TEMPLATE_LAYOUT_MAP: Record<
     commentLeft: "9.15%",
     commentTop: "80.45%",
     commentWidth: "62.2%",
-    commentMaxHeight: "16.4%",
+    commentMaxHeight: "18.2%",
     numberLeft: "36.1%",
     numberTodayTop: "19.65%",
     numberMonthTop: "25.05%",
@@ -128,10 +129,12 @@ export function DiaryDesignPreview({
     designTheme === "simple"
       ? (baseContentLineHeight * 0.97).toFixed(3)
       : baseContentLineHeight.toFixed(3);
-  // simple: コメント欄は5行前後・Macでもはみ出しにくいようやや小さめ＋行間は枠内に収まる値
+  // simple: コメント欄は行数が増えやすい。iOS Safari の文字自動拡大で溢れないよう clamp を抑えめに＋行間はややタイト
   const commentFontSize =
-    designTheme === "simple" ? "clamp(7px, 2cqw, 11px)" : "clamp(8px, 2.2cqw, 12.5px)";
-  const commentLineHeight = designTheme === "simple" ? "1.62" : "1.9";
+    designTheme === "simple"
+      ? "clamp(6.75px, 1.88cqw, 10.5px)"
+      : "clamp(7.5px, 2.05cqw, 11.5px)";
+  const commentLineHeight = designTheme === "simple" ? "1.5" : "1.72";
   /** 年・月・日・曜は近接配置のため小さめ（重なり・はみ出しを抑える） */
   const dateRowFontSize = "clamp(6px, 1.45cqw, 9.5px)";
 
@@ -141,9 +144,12 @@ export function DiaryDesignPreview({
       <p className="mt-1 text-xs text-stone-500">
         選んだデザインに入力内容を自動で流し込んだ表示です。
       </p>
+      <p className="mt-1 text-[11px] leading-snug text-stone-500 sm:hidden">
+        スマホでは文字サイズ設定などで見え方が変わることがあります。枠はレイアウトの目安です。
+      </p>
       <div className="mt-3">
         <div
-          className="relative mx-auto w-full max-w-[540px] overflow-hidden rounded-lg border border-stone-200 bg-stone-50 [container-type:inline-size]"
+          className="relative mx-auto w-full max-w-[540px] overflow-hidden rounded-lg border border-stone-200 bg-stone-50 [container-type:inline-size] [-webkit-text-size-adjust:100%] [text-size-adjust:100%]"
           style={{ aspectRatio: `${templateSize.width} / ${templateSize.height}` }}
         >
           <Image
