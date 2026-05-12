@@ -137,7 +137,7 @@ export function FirebaseAuthProvider({ children }: { children: ReactNode }) {
           !auth.currentUser &&
           (isGoogleOAuthFlowCookieActive() || readOAuthReturnPendingAgeMs() != null)
         ) {
-          const deadline = Date.now() + 5200;
+          const deadline = Date.now() + 12000;
           while (Date.now() < deadline && !cancelled) {
             await auth.authStateReady();
             if (auth.currentUser) {

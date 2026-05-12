@@ -207,12 +207,13 @@ export function LoginClient() {
             "3）ホーム画面に追加したショートカットから開いている場合は、一度 Safari で同じ URL を開き直す",
             "4）設定 → Safari → 詳細 → 「サイト越えトラッキング防止」をオフ（効果がない場合もあります）",
             "5）メールとパスワードでログイン（登録済みの場合）",
+            "6）Mac の Chrome では、シークレットウィンドウをやめて通常ウィンドウで試す",
           ].join("\n"),
         );
       } catch {
         /* noop */
       }
-    }, 9000);
+    }, 15000);
     return () => window.clearTimeout(id);
   }, [authLoading, user, oauthReturnSurface]);
 
@@ -237,16 +238,28 @@ export function LoginClient() {
     try {
       setError(null);
       setNotice(null);
-      const a = auth();
-      if (!a) return;
-      await waitForFirebaseAuthPersistence(a);
-      if (typeof a.authStateReady === "function") {
-        await a.authStateReady();
+      let a: ReturnType<typeof getFirebaseAuth>;
+      try {
+        /**
+         * Mac Chrome の signInWithRedirect: リダイレクト前に `setPersistence(LOCAL)` を確定させると、
+         * 戻り時に getRedirectResult が空のままになる事例がある（firebase/client の deferPersistence コメントと同根）。
+         */
+        a = getFirebaseAuth({ deferPersistence: true });
+      } catch (e) {
+        setError(pickErrorMessage(e, "初期化に失敗しました。"));
+        return;
       }
       const isIOS =
         /iPad|iPhone|iPod/i.test(navigator.userAgent) ||
         (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
       const isAndroid = /Android/i.test(navigator.userAgent);
+      const chromiumDesktopRedirect = isLikelyChromiumDesktop();
+      if (!chromiumDesktopRedirect) {
+        await waitForFirebaseAuthPersistence(a);
+      }
+      if (typeof a.authStateReady === "function") {
+        await a.authStateReady();
+      }
       const hardNavAfterSession = browserWantsFullPagePostLoginNavigation();
 
       const completeGoogleSignIn = async (cred: UserCredential) => {
