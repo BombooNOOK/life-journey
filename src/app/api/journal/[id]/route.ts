@@ -48,6 +48,7 @@ export async function GET(_: Request, { params }: Params) {
   let row:
     | {
         id: string;
+        profileId: string;
         content: string;
         mood: string;
         activity: string;
@@ -64,6 +65,7 @@ export async function GET(_: Request, { params }: Params) {
       where: { id, email: viewerEmail },
       select: {
         id: true,
+        profileId: true,
         content: true,
         mood: true,
         activity: true,
@@ -81,6 +83,7 @@ export async function GET(_: Request, { params }: Params) {
       where: { id, email: viewerEmail },
       select: {
         id: true,
+        profileId: true,
         content: true,
         mood: true,
         activity: true,
@@ -97,7 +100,7 @@ export async function GET(_: Request, { params }: Params) {
   }
 
   const latestOrder = await prisma.order.findFirst({
-    where: { email: viewerEmail },
+    where: { email: viewerEmail, profileId: row.profileId },
     orderBy: { createdAt: "desc" },
     select: {
       birthMonth: true,
@@ -149,7 +152,7 @@ export async function PATCH(req: Request, { params }: Params) {
   const { id } = await params;
   const exists = await prisma.journalEntry.findFirst({
     where: { id, email: viewerEmail },
-    select: { id: true, includeInBook: true },
+    select: { id: true, profileId: true, includeInBook: true },
   });
   if (!exists) {
     return NextResponse.json({ error: "対象の記録が見つかりません。", code: "NOT_FOUND" }, { status: 404 });
@@ -255,7 +258,7 @@ export async function PATCH(req: Request, { params }: Params) {
   }
 
   const latestOrder = await prisma.order.findFirst({
-    where: { email: viewerEmail },
+    where: { email: viewerEmail, profileId: exists.profileId },
     orderBy: { createdAt: "desc" },
     select: {
       birthMonth: true,
@@ -264,7 +267,7 @@ export async function PATCH(req: Request, { params }: Params) {
     },
   });
   const recentRows = await prisma.journalEntry.findMany({
-    where: { email: viewerEmail },
+    where: { email: viewerEmail, profileId: exists.profileId },
     orderBy: { createdAt: "desc" },
     take: 5,
     select: { generatedComment: true },

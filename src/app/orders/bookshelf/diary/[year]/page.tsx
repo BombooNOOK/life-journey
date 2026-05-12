@@ -73,7 +73,11 @@ export default async function BookshelfDiaryYearPage({ params }: Props) {
       <Suspense
         fallback={<p className="text-sm text-stone-500">{year}年の記録を読み込み中…</p>}
       >
-        <DiaryFlipReader year={year} initialSettings={initialSettings} />
+        <DiaryFlipReader
+          year={year}
+          initialSettings={initialSettings}
+          bookshelfProfileId={activeProfileId}
+        />
       </Suspense>
     </div>
   );

@@ -27,9 +27,11 @@ import { getActivityMeta, isDiaryDesignId, type DiaryDesignId } from "@/lib/jour
 type Props = {
   year: number;
   initialSettings: DiaryBookshelfBookClientSettings;
+  /** 本棚の閲覧中プロフィール。編集リンクで URL に付与する */
+  bookshelfProfileId: string;
 };
 
-export function DiaryFlipReader({ year, initialSettings }: Props) {
+export function DiaryFlipReader({ year, initialSettings, bookshelfProfileId }: Props) {
   const pathname = usePathname();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -401,7 +403,14 @@ export function DiaryFlipReader({ year, initialSettings }: Props) {
             次へ →
           </button>
           {entryTotal === 0 ? (
-            <Link href="/journal" className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-sm text-emerald-900 hover:bg-emerald-100">
+            <Link
+              href={
+                bookshelfProfileId
+                  ? `/journal?profile=${encodeURIComponent(bookshelfProfileId)}`
+                  : "/journal"
+              }
+              className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-sm text-emerald-900 hover:bg-emerald-100"
+            >
               記録する
             </Link>
           ) : null}
@@ -463,7 +472,11 @@ export function DiaryFlipReader({ year, initialSettings }: Props) {
               />
               <p className="mt-2 text-center">
                 <Link
-                  href={`/journal?edit=${encodeURIComponent(current.entry.id)}&returnTo=${editReturnToParam}`}
+                  href={
+                    bookshelfProfileId
+                      ? `/journal?profile=${encodeURIComponent(bookshelfProfileId)}&edit=${encodeURIComponent(current.entry.id)}&returnTo=${editReturnToParam}`
+                      : `/journal?edit=${encodeURIComponent(current.entry.id)}&returnTo=${editReturnToParam}`
+                  }
                   className="text-[11px] font-medium text-emerald-800 underline-offset-2 hover:underline"
                 >
                   この記事を編集する

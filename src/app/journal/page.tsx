@@ -29,6 +29,8 @@ type Entry = {
   photoDataUrl: string | null;
   generatedComment: string | null;
   includeInBook: boolean;
+  /** 単件 GET などで付与。編集時に URL の profile と揃えるために使う */
+  profileId?: string;
 };
 
 function toDateInputValue(date: Date): string {
@@ -108,6 +110,10 @@ function JournalPageContent() {
   const [processingPhoto, setProcessingPhoto] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [serverViewerEmail, setServerViewerEmail] = useState<string | null>(null);
+  const [profilesSnapshot, setProfilesSnapshot] = useState<{
+    profiles: Array<{ id: string; nickname: string }>;
+    activeProfileId: string;
+  } | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const loadEntries = useCallback(async (opts?: { silent?: boolean }) => {
@@ -210,6 +216,32 @@ function JournalPageContent() {
   }, [authLoading, user?.email, loadEntries, router]);
 
   useEffect(() => {
+    if (authLoading || !user?.email?.trim()) {
+      setProfilesSnapshot(null);
+      return;
+    }
+    let cancelled = false;
+    void fetch("/api/profiles", { credentials: "same-origin", cache: "no-store" })
+      .then(async (res) => {
+        const data = (await res.json()) as {
+          profiles?: Array<{ id: string; nickname: string }>;
+          activeProfileId?: string;
+        };
+        if (!res.ok || cancelled) return;
+        setProfilesSnapshot({
+          profiles: data.profiles ?? [],
+          activeProfileId: String(data.activeProfileId ?? ""),
+        });
+      })
+      .catch(() => {
+        if (!cancelled) setProfilesSnapshot(null);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [authLoading, user?.email]);
+
+  useEffect(() => {
     if (editingId) return;
     if (!dateFromQuery || !isValidDateInput(dateFromQuery)) {
       setEntryDate(toDateInputValue(new Date()));
@@ -246,12 +278,20 @@ function JournalPageContent() {
             new Date(data.entry.createdAt != null ? data.entry.createdAt : Date.now()),
           ),
         );
+        const rowPid =
+          typeof data.entry.profileId === "string" ? data.entry.profileId.trim() : "";
+        if (rowPid && searchParams.get("profile") !== rowPid) {
+          const next = new URLSearchParams(searchParams.toString());
+          next.set("profile", rowPid);
+          next.set("edit", editingId);
+          router.replace(`/journal?${next.toString()}`);
+        }
       })
       .catch((e) => {
         setError(e instanceof Error ? e.message : "編集対象の読み込みに失敗しました。");
       })
       .finally(() => setLoadingEdit(false));
-  }, [editingId]);
+  }, [editingId, router, searchParams]);
 
   useEffect(() => {
     if (!selectedPhotoFile) return;
@@ -378,6 +418,14 @@ function JournalPageContent() {
     }
   }
 
+  const effectiveProfileIdForLabel =
+    profileId.trim() || (profilesSnapshot?.activeProfileId ?? "").trim() || "";
+  const diaryTargetLabel =
+    profilesSnapshot && effectiveProfileIdForLabel
+      ? profilesSnapshot.profiles.find((p) => p.id === effectiveProfileIdForLabel)?.nickname ??
+        "メイン"
+      : null;
+
   return (
     <div className="space-y-5">
       <div>
@@ -385,6 +433,13 @@ function JournalPageContent() {
         <p className="mt-1 text-sm text-stone-600">
           今日感じたことや気づきを、短くメモして残しておけます。
         </p>
+        {diaryTargetLabel !== null ? (
+          <p className="mt-3 rounded-lg border border-violet-100 bg-violet-50/90 px-3 py-2 text-sm font-medium text-violet-950">
+            現在の日記対象: 「{diaryTargetLabel}」
+          </p>
+        ) : !authLoading && user?.email ? (
+          <p className="mt-3 text-xs text-stone-500">プロフィール情報を読み込み中…</p>
+        ) : null}
         <p className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-2">
           <Link href="/orders" className="text-sm text-stone-600 underline-offset-2 hover:underline">
             ← マイページに戻る
