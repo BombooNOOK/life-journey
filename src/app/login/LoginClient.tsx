@@ -32,6 +32,24 @@ function resolveSafeReturnTo(raw: string | null): string {
   return raw;
 }
 
+/**
+ * Safari 系では `fetch(/api/auth/session)` 直後の `router.push` だと、
+ * Set-Cookie が次の RSC リクエストに乗る前に保護ページへ行き、ミドルウェアで `/login` に戻されることがある。
+ * iOS/Android と同様にフルページ遷移で確実にクッキーを送る。
+ */
+function browserWantsFullPagePostLoginNavigation(): boolean {
+  if (typeof navigator === "undefined") return false;
+  const ua = navigator.userAgent;
+  const isIosLike =
+    /iPad|iPhone|iPod/i.test(ua) ||
+    (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+  if (isIosLike || /Android/i.test(ua)) return true;
+  // デスクトップ Safari（Chrome / Edge / Opera / Firefox は除外）
+  if (!/Safari/i.test(ua)) return false;
+  if (/(Chrome|Chromium|CriOS|Edg|OPR|Firefox|FxiOS)/i.test(ua)) return false;
+  return true;
+}
+
 /** Google リダイレクトで `/login` に着地した直後（クッキー／保留フラグで検知） */
 function readLoginOAuthReturnLikely(): boolean {
   if (typeof window === "undefined") return false;
@@ -216,10 +234,10 @@ export function LoginClient() {
         /iPad|iPhone|iPod/i.test(navigator.userAgent) ||
         (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
       const isAndroid = /Android/i.test(navigator.userAgent);
+      const hardNavAfterSession = browserWantsFullPagePostLoginNavigation();
 
       const completeGoogleSignIn = async (cred: UserCredential) => {
-        /** 先にオーバーレイを出す（クッキー解除で handoff が消え、一瞬フォームが見えるのを防ぐ） */
-        if (isIOS || isAndroid) {
+        if (hardNavAfterSession) {
           flushSync(() => setFullPagePostLoginPending(true));
         }
         clearGoogleOAuthRedirectFlow();
@@ -231,8 +249,7 @@ export function LoginClient() {
           body: JSON.stringify({ email: cred.user.email ?? "" }),
           credentials: "same-origin",
         }).catch(() => {});
-        /** スマホの Safari 等では client 遷移だとクッキーが次リクエストに乗る前に /orders へ行き、一度 /login に弾かれることがある */
-        if (isIOS || isAndroid) {
+        if (hardNavAfterSession) {
           await new Promise((r) => setTimeout(r, 400));
           window.location.assign(new URL(returnTo, window.location.origin).toString());
           return;
@@ -335,7 +352,11 @@ export function LoginClient() {
         body: JSON.stringify({ email: cred.user.email ?? "" }),
         credentials: "same-origin",
       }).catch(() => {});
-      navigateAfterLogin(returnTo);
+      if (browserWantsFullPagePostLoginNavigation()) {
+        window.location.assign(new URL(returnTo, window.location.origin).toString());
+      } else {
+        navigateAfterLogin(returnTo);
+      }
     } catch (e) {
       console.error("[login:email]", e);
       setError(pickErrorMessage(e, "メールでの認証に失敗しました。"));
