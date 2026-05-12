@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { flushSync } from "react-dom";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
@@ -29,6 +30,34 @@ function resolveSafeReturnTo(raw: string | null): string {
   if (!raw.startsWith("/")) return "/orders";
   if (raw.startsWith("//")) return "/orders";
   return raw;
+}
+
+/** Google リダイレクトで `/login` に着地した直後（クッキー／保留フラグで検知） */
+function readLoginOAuthReturnLikely(): boolean {
+  if (typeof window === "undefined") return false;
+  if (window.location.pathname !== "/login") return false;
+  return isGoogleOAuthFlowCookieActive() || readOAuthReturnPendingAgeMs() != null;
+}
+
+function PostLoginTransitionOverlay() {
+  return (
+    <div
+      className="fixed inset-0 z-[200] flex items-center justify-center bg-stone-900/35 px-4 backdrop-blur-[2px]"
+      role="status"
+      aria-live="polite"
+      aria-busy="true"
+    >
+      <div className="mx-auto max-w-md space-y-3 rounded-xl border border-stone-200 bg-white p-8 text-center shadow-lg">
+        <p className="text-base font-semibold text-stone-900">マイページへ移動しています…</p>
+        <p className="text-sm leading-relaxed text-stone-600">
+          Google でのサインインから戻ってきたあと、一度この画面を経由します。ログインが取り込め次第、自動で次の画面へ進みます。このまま少しお待ちください。
+        </p>
+        <p className="text-xs text-stone-500" aria-hidden>
+          移動中
+        </p>
+      </div>
+    </div>
+  );
 }
 
 function pickErrorMessage(e: unknown, fallback: string): string {
@@ -83,6 +112,10 @@ export function LoginClient() {
   const [busyEmail, setBusyEmail] = useState(false);
   const [busyReset, setBusyReset] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  /** iOS/Android の Google ポップアップ成功後にフルページ遷移する直前だけ表示 */
+  const [fullPagePostLoginPending, setFullPagePostLoginPending] = useState(false);
+  /** Google リダイレクトで `/login` に戻った最初から全画面案内（`dynamic` の ssr:false とセット） */
+  const [oauthReturnHandoffUi, setOauthReturnHandoffUi] = useState(() => readLoginOAuthReturnLikely());
   /** Google から戻った直後に再描画してバナーを出す（Safari は pageshow が必要なことがある） */
   const [oauthReturnSurface, setOauthReturnSurface] = useState(0);
   /** 連打で途中状態が重なり「3回押すと入る」になるのを防ぐ */
@@ -96,11 +129,23 @@ export function LoginClient() {
     (isGoogleOAuthFlowCookieActive() || readOAuthReturnPendingAgeMs() != null);
 
   useLayoutEffect(() => {
-    const bump = () => setOauthReturnSurface((n) => n + 1);
+    const bump = () => {
+      setOauthReturnSurface((n) => n + 1);
+      if (readLoginOAuthReturnLikely()) {
+        setOauthReturnHandoffUi(true);
+      }
+    };
     bump();
     window.addEventListener("pageshow", bump);
     return () => window.removeEventListener("pageshow", bump);
   }, []);
+
+  useEffect(() => {
+    if (authLoading) return;
+    if (user) return;
+    if (isGoogleOAuthFlowCookieActive() || readOAuthReturnPendingAgeMs() != null) return;
+    setOauthReturnHandoffUi(false);
+  }, [authLoading, user]);
 
   useEffect(() => {
     if (authLoading) return;
@@ -120,6 +165,7 @@ export function LoginClient() {
         }
         if (readOAuthReturnPendingAgeMs() == null && !isGoogleOAuthFlowCookieActive()) return;
         clearGoogleOAuthRedirectFlow();
+        setOauthReturnHandoffUi(false);
         setError(
           [
             "Googleから戻りましたが、この端末でログイン状態を取り込めませんでした（Firebase がエラーを出さないことがあります）。",
@@ -172,7 +218,12 @@ export function LoginClient() {
       const isAndroid = /Android/i.test(navigator.userAgent);
 
       const completeGoogleSignIn = async (cred: UserCredential) => {
+        /** 先にオーバーレイを出す（クッキー解除で handoff が消え、一瞬フォームが見えるのを防ぐ） */
+        if (isIOS || isAndroid) {
+          flushSync(() => setFullPagePostLoginPending(true));
+        }
         clearGoogleOAuthRedirectFlow();
+        setOauthReturnHandoffUi(false);
         syncLjAuthClientCookies({ email: cred.user.email ?? null });
         await fetch("/api/auth/session", {
           method: "POST",
@@ -182,6 +233,7 @@ export function LoginClient() {
         }).catch(() => {});
         /** スマホの Safari 等では client 遷移だとクッキーが次リクエストに乗る前に /orders へ行き、一度 /login に弾かれることがある */
         if (isIOS || isAndroid) {
+          await new Promise((r) => setTimeout(r, 400));
           window.location.assign(new URL(returnTo, window.location.origin).toString());
           return;
         }
@@ -330,6 +382,13 @@ export function LoginClient() {
     }
   };
 
+  const showFullTransitionOverlay =
+    fullPagePostLoginPending || oauthReturnHandoffUi || (authLoading && Boolean(user));
+
+  if (showFullTransitionOverlay) {
+    return <PostLoginTransitionOverlay />;
+  }
+
   if (authLoading) {
     return (
       <div className="mx-auto max-w-md space-y-4 rounded-xl border border-stone-200 bg-white p-8 text-center shadow-sm">
@@ -385,6 +444,7 @@ export function LoginClient() {
             className="text-sm font-medium text-stone-700 underline underline-offset-2 hover:text-stone-900"
             onClick={() => {
               setError(null);
+              setOauthReturnHandoffUi(false);
               clearGoogleOAuthRedirectFlow();
             }}
           >
