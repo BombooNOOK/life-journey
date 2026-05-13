@@ -59,11 +59,12 @@ const TEMPLATE_LAYOUT: TemplateLayout = {
   dateMonthLeft: "44.3%",
   dateDayLeft: "51.85%",
   dateWeekLeft: "64.55%",
-  dateTop: "11.45%",
+  /** 日付と気分ブロックの回答を同じだけ下げてテンプレの見出しと揃える */
+  dateTop: "12.1%",
   moodLeft: "20.35%",
   moodTop: "35.65%",
   activityLeft: "16.95%",
-  activityTop: "46.45%",
+  activityTop: "47.1%",
   contentLeft: "13.2%",
   /** 画像の「今日の記録」見出しと本文1行目が被らないよう少し下げる */
   contentTop: "54.35%",
