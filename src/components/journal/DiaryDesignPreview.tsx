@@ -62,7 +62,8 @@ const TEMPLATE_LAYOUT: TemplateLayout = {
   contentTop: "53.65%",
   contentWidth: "72.8%",
   commentLeft: "9.15%",
-  commentTop: "80.45%",
+  /** 罫線なしテンプレで吹き出し位置に合わせ、約1行ぶん上へ */
+  commentTop: "79.35%",
   commentWidth: "62.2%",
   commentMaxHeight: "18.2%",
   numberLeft: "36.1%",
