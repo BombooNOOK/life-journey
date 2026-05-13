@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import { useEffect, useRef, useState } from "react";
 import { getActivityMeta, getMoodMeta, type DiaryDesignId } from "@/lib/journal/meta";
 import { diaryTemplateScreenImageMap } from "@/lib/journal/templateAssets";
 
@@ -53,10 +54,11 @@ const OVERLAY_FONT_FAMILY =
   'ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans JP", "Hiragino Sans", "Hiragino Kaku Gothic ProN", sans-serif';
 
 const TEMPLATE_LAYOUT: TemplateLayout = {
-  dateYearLeft: "30.5%",
+  /** 画像の「年」と被らないようやや左寄せ / 曜はやや左へ */
+  dateYearLeft: "30.25%",
   dateMonthLeft: "44.3%",
   dateDayLeft: "51.85%",
-  dateWeekLeft: "64.8%",
+  dateWeekLeft: "64.55%",
   dateTop: "11.45%",
   moodLeft: "20.35%",
   moodTop: "35.65%",
@@ -70,12 +72,13 @@ const TEMPLATE_LAYOUT: TemplateLayout = {
   /** フクロウ先生コメント（画像の吹き出しに合わせる） */
   commentTop: "78.55%",
   commentWidth: "62.2%",
-  commentMaxHeight: "18.2%",
-  numberLeft: "36.1%",
-  numberTodayTop: "19.65%",
-  numberMonthTop: "25.05%",
-  numberYearTop: "30.95%",
-  numberCalmTop: "36.65%",
+  commentMaxHeight: "19.8%",
+  /** 丸印中心が画像より右下に見えるためわずかに左上へ */
+  numberLeft: "36.02%",
+  numberTodayTop: "19.52%",
+  numberMonthTop: "24.92%",
+  numberYearTop: "30.82%",
+  numberCalmTop: "36.52%",
 };
 
 export function DiaryDesignPreview({
@@ -107,12 +110,34 @@ export function DiaryDesignPreview({
   const contentFontSize = `clamp(${(8 * sc).toFixed(2)}px, ${contentMid}, ${(10.25 * sc).toFixed(2)}px)`;
   const baseContentLineHeight = 1.95 * (1 / Math.max(safeContentFontScale, 0.85));
   const contentLineHeight = (baseContentLineHeight * 0.97).toFixed(3);
-  const commentMid = `min(${1.72}cqw, ${2.42}cqh)`;
-  const commentFontSize = `clamp(6.85px, ${commentMid}, 9.35px)`;
-  const commentLineHeight = "1.48";
-  /** 年・月・日・曜は近接配置のため小さめ（重なり・はみ出しを抑える） */
-  const dateMid = `min(1.38cqw, 1.94cqh)`;
-  const dateRowFontSize = `clamp(6.5px, ${dateMid}, 9px)`;
+
+  const templateShellRef = useRef<HTMLDivElement>(null);
+  const [wideTemplate, setWideTemplate] = useState(false);
+  useEffect(() => {
+    const el = templateShellRef.current;
+    if (!el || typeof ResizeObserver === "undefined") return;
+    const ro = new ResizeObserver((entries) => {
+      const w = entries[0]?.contentRect.width ?? 0;
+      setWideTemplate(w >= 440);
+    });
+    ro.observe(el);
+    setWideTemplate(el.clientWidth >= 440);
+    return () => ro.disconnect();
+  }, []);
+
+  /** 狭いコンテナ＝iPhone 想定で踏み過ぎない／広い＝PC でフクロウ文を大きく */
+  const commentFontSize = wideTemplate
+    ? `clamp(9px, max(1.82cqw, 1.38cqh), 12px)`
+    : `clamp(7px, min(1.72cqw, 2.35cqh), 9.35px)`;
+  const commentLineHeight = wideTemplate ? "1.42" : "1.48";
+
+  /** 日付：スマホは小さめで重なり回避、広い枠では一段大きく */
+  const dateRowFontSize = wideTemplate
+    ? `clamp(5.9px, min(1.22cqw, 1.72cqh), 7.75px)`
+    : `clamp(5.2px, min(1.12cqw, 1.58cqh), 7.1px)`;
+
+  /** 今日の数字〜年の数字・気分：やや小さめ＋中央寄せの見え方補正 */
+  const numberFontSize = `clamp(7px, min(1.72cqw, 2.42cqh), 11px)`;
 
   return (
     <section className="rounded-xl border border-stone-200 bg-white p-3 shadow-sm sm:p-4">
@@ -125,6 +150,7 @@ export function DiaryDesignPreview({
       </p>
       <div className="mt-3">
         <div
+          ref={templateShellRef}
           className="relative mx-auto w-full max-w-[540px] overflow-hidden rounded-lg border border-stone-200 bg-stone-50 [container-type:inline-size] [-webkit-text-size-adjust:100%] [text-size-adjust:100%]"
           style={{ aspectRatio: `${templateSize.width} / ${templateSize.height}` }}
         >
@@ -140,7 +166,7 @@ export function DiaryDesignPreview({
             style={{ fontFamily: OVERLAY_FONT_FAMILY }}
           >
             <p
-              className="absolute whitespace-nowrap text-stone-700"
+              className="absolute whitespace-nowrap text-stone-700 [font-variant-numeric:tabular-nums]"
               style={{
                 left: layout.dateYearLeft,
                 top: layout.dateTop,
@@ -219,41 +245,45 @@ export function DiaryDesignPreview({
               {owlComment.length > 145 ? `${owlComment.slice(0, 145)}…` : owlComment}
             </p>
             <p
-              className="absolute -translate-x-1/2 -translate-y-1/2 font-semibold text-stone-700"
+              className="absolute font-semibold text-stone-700 [font-variant-numeric:tabular-nums]"
               style={{
                 left: layout.numberLeft,
                 top: layout.numberTodayTop,
-                fontSize: "clamp(8px, min(2.15cqw, 3.02cqh), 13px)",
+                fontSize: numberFontSize,
+                transform: "translate(-50%, -50%) translate(-0.5px, -0.5px)",
               }}
             >
               {displayedNumbers.today}
             </p>
             <p
-              className="absolute -translate-x-1/2 -translate-y-1/2 font-semibold text-stone-700"
+              className="absolute font-semibold text-stone-700 [font-variant-numeric:tabular-nums]"
               style={{
                 left: layout.numberLeft,
                 top: layout.numberMonthTop,
-                fontSize: "clamp(8px, min(2.15cqw, 3.02cqh), 13px)",
+                fontSize: numberFontSize,
+                transform: "translate(-50%, -50%) translate(-0.5px, -0.5px)",
               }}
             >
               {displayedNumbers.month}
             </p>
             <p
-              className="absolute -translate-x-1/2 -translate-y-1/2 font-semibold text-stone-700"
+              className="absolute font-semibold text-stone-700 [font-variant-numeric:tabular-nums]"
               style={{
                 left: layout.numberLeft,
                 top: layout.numberYearTop,
-                fontSize: "clamp(8px, min(2.15cqw, 3.02cqh), 13px)",
+                fontSize: numberFontSize,
+                transform: "translate(-50%, -50%) translate(-0.5px, -0.5px)",
               }}
             >
               {displayedNumbers.year}
             </p>
             <p
-              className="absolute -translate-x-1/2 -translate-y-1/2 font-semibold text-stone-700"
+              className="absolute font-semibold text-stone-700"
               style={{
                 left: layout.numberLeft,
                 top: layout.numberCalmTop,
-                fontSize: "clamp(8px, min(2.15cqw, 3.02cqh), 13px)",
+                fontSize: numberFontSize,
+                transform: "translate(-50%, -50%) translate(-0.5px, -0.5px)",
               }}
             >
               {moodEmoji}
