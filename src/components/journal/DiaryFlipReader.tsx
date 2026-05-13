@@ -22,7 +22,7 @@ import {
 import { BookshelfDiaryBindingOrder } from "@/components/orders/BookshelfDiaryBindingOrder";
 import { formatDateTimeJa } from "@/lib/date/formatJa";
 import { journalEntryInBookshelfPeriod } from "@/lib/journal/bookshelfPeriod";
-import { getActivityMeta, isDiaryDesignId, type DiaryDesignId } from "@/lib/journal/meta";
+import { getActivityMeta, normalizeDiaryDesignTheme, type DiaryDesignId } from "@/lib/journal/meta";
 
 type Props = {
   year: number;
@@ -199,7 +199,7 @@ export function DiaryFlipReader({ year, initialSettings, bookshelfProfileId }: P
     if (current?.kind !== "entry") return "simple";
     const t = current.entry.designTheme;
     if (!t) return "simple";
-    return isDiaryDesignId(t) ? t : "simple";
+    return normalizeDiaryDesignTheme(t);
   }, [current]);
 
   const tryGoDelta = useCallback(

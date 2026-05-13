@@ -12,9 +12,9 @@ import {
   diaryDesignOptions,
   getActivityMeta,
   getDiaryDesignLabel,
-  isDiaryDesignId,
   getMoodMeta,
   moodOptions,
+  normalizeDiaryDesignTheme,
   type ActivityId,
   type DiaryDesignId,
   type MoodId,
@@ -272,7 +272,7 @@ function JournalPageContent() {
         setMood(data.entry.mood ?? "calm");
         setActivity(data.entry.activity ?? "record_anyway");
         const design = data.entry.designTheme;
-        setDesignTheme(design && isDiaryDesignId(design) ? design : "simple");
+        setDesignTheme(normalizeDiaryDesignTheme(design ?? "simple"));
         setPhotoDataUrl(data.entry.photoDataUrl ?? "");
         setIncludeInBook(data.entry.includeInBook !== false);
         setEntryDate(
@@ -689,8 +689,9 @@ function JournalPageContent() {
                       className="text-xs text-violet-700 underline underline-offset-2 hover:text-violet-900"
                       onClick={() => {
                         const themeId = entry.designTheme;
-                        const previewTheme =
-                          themeId && isDiaryDesignId(themeId) ? themeId : designTheme;
+                        const previewTheme = themeId
+                          ? normalizeDiaryDesignTheme(themeId)
+                          : designTheme;
                         router.push(
                           `/journal/preview?entry=${encodeURIComponent(entry.id)}&theme=${encodeURIComponent(previewTheme)}&pv=3`,
                         );
@@ -712,12 +713,7 @@ function JournalPageContent() {
                   今日やったこと: {getActivityMeta(entry.activity).label}
                 </p>
                 <p className="mt-1 text-xs text-stone-500">
-                  デザイン:{" "}
-                  {getDiaryDesignLabel(
-                    entry.designTheme && isDiaryDesignId(entry.designTheme)
-                      ? entry.designTheme
-                      : "simple",
-                  )}
+                  デザイン: {getDiaryDesignLabel(entry.designTheme ?? "simple")}
                 </p>
                 <p className="mt-1 text-xs text-stone-500">
                   本への掲載: {entry.includeInBook ? "入れる" : "入れない"}

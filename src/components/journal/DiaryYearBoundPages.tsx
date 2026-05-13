@@ -4,7 +4,7 @@ import Image from "next/image";
 
 import { diaryTemplateScreenImageMap } from "@/lib/journal/templateAssets";
 import { phraseForMonth, phraseForYear } from "@/lib/journal/diaryPhrases";
-import { getCompanionStamp, getMoodMeta, isDiaryDesignId, type DiaryDesignId } from "@/lib/journal/meta";
+import { getCompanionStamp, getMoodMeta, normalizeDiaryDesignTheme, type DiaryDesignId } from "@/lib/journal/meta";
 
 /** 本棚の年次めくりと共有する最小エントリ形 */
 export type BoundDiaryEntry = {
@@ -56,7 +56,7 @@ export function DiaryBoundFrontCover({
   displayTitle?: string | null;
 }) {
   const rawTheme = String(coverTheme ?? "");
-  const theme: DiaryDesignId = isDiaryDesignId(rawTheme) ? rawTheme : "simple";
+  const theme: DiaryDesignId = normalizeDiaryDesignTheme(rawTheme);
   const headline = displayTitle?.trim() ? displayTitle.trim() : `${year}年`;
   return (
     <BookPageFrame eyebrow="製本イメージ" title={`表紙 · ${year}年`}>

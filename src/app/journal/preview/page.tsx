@@ -4,7 +4,7 @@ import { Suspense, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { DiaryDesignPreview } from "@/components/journal/DiaryDesignPreview";
-import { getDiaryDesignLabel, isDiaryDesignId, type DiaryDesignId } from "@/lib/journal/meta";
+import { getDiaryDesignLabel, normalizeDiaryDesignTheme, type DiaryDesignId } from "@/lib/journal/meta";
 
 type PreviewEntry = {
   id: string;
@@ -69,9 +69,9 @@ function JournalPreviewPageContent() {
   }, [entryId]);
 
   const designTheme: DiaryDesignId = useMemo(() => {
-    if (themeParam && isDiaryDesignId(themeParam)) return themeParam;
-    if (!entry?.designTheme) return "cute";
-    return isDiaryDesignId(entry.designTheme) ? entry.designTheme : "cute";
+    if (themeParam?.trim()) return normalizeDiaryDesignTheme(themeParam);
+    if (!entry?.designTheme) return "simple";
+    return normalizeDiaryDesignTheme(entry.designTheme);
   }, [entry?.designTheme, themeParam]);
 
   return (

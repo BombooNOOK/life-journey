@@ -15,7 +15,13 @@ import { profileByIdForViewer, resolveActiveProfileId } from "@/lib/profile/acti
 import { collectTemplateIdsFromReadingText } from "@/lib/diary-reading/generateDiaryReading";
 import { buildDiaryReadingFromJournalInput } from "@/lib/diary-reading/fromJournal";
 import { normalizeJournalCommentText } from "@/lib/journal/comment";
-import { isActivityId, isCompanionType, isDiaryDesignId, isMoodId } from "@/lib/journal/meta";
+import {
+  isActivityId,
+  isAllowedDiaryDesignThemeRaw,
+  isCompanionType,
+  isMoodId,
+  normalizeDiaryDesignTheme,
+} from "@/lib/journal/meta";
 
 function isDesignThemeValidationError(error: unknown): boolean {
   if (!(error instanceof Prisma.PrismaClientValidationError)) return false;
@@ -190,6 +196,7 @@ export async function GET(req: Request) {
             : row.generatedComment;
           const base = {
             ...row,
+            designTheme: normalizeDiaryDesignTheme(row.designTheme ?? "simple"),
             generatedComment: normalizedComment,
           };
           if (!yearFilter) return base;
@@ -252,7 +259,7 @@ export async function POST(req: Request) {
   const rawDesignTheme =
     typeof json === "object" && json !== null && "designTheme" in json
       ? String((json as { designTheme: unknown }).designTheme)
-      : "cute";
+      : "simple";
   const rawEntryDate =
     typeof json === "object" && json !== null && "entryDate" in json
       ? String((json as { entryDate: unknown }).entryDate)
@@ -277,10 +284,17 @@ export async function POST(req: Request) {
   const mood = rawMood.trim();
   const activity = rawActivity.trim();
   const companionType = rawCompanionType.trim();
-  const designTheme = rawDesignTheme.trim();
   const photoDataUrl = rawPhotoDataUrl.trim();
   const parsedEntryDate = parseEntryDate(rawEntryDate.trim());
   const includeInBook = typeof rawIncludeInBook === "boolean" ? rawIncludeInBook : true;
+
+  if (!isAllowedDiaryDesignThemeRaw(rawDesignTheme)) {
+    return NextResponse.json(
+      { error: "デザインの値が不正です。", code: "BAD_DESIGN" },
+      { status: 400 },
+    );
+  }
+  const designTheme = normalizeDiaryDesignTheme(rawDesignTheme.trim() || "simple");
 
   if (!content) {
     return NextResponse.json({ error: "本文を入力してください。", code: "EMPTY_CONTENT" }, { status: 400 });
@@ -306,12 +320,6 @@ export async function POST(req: Request) {
   if (!isCompanionType(companionType)) {
     return NextResponse.json(
       { error: "companionType の値が不正です。", code: "BAD_COMPANION" },
-      { status: 400 },
-    );
-  }
-  if (!isDiaryDesignId(designTheme)) {
-    return NextResponse.json(
-      { error: "デザインの値が不正です。", code: "BAD_DESIGN" },
       { status: 400 },
     );
   }

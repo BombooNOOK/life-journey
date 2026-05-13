@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { getViewerEmailFromCookie } from "@/lib/auth/viewer";
 import { prisma } from "@/lib/db";
 import { clampMonthOrder } from "@/lib/journal/bookshelfPeriod";
-import { isDiaryDesignId } from "@/lib/journal/meta";
+import { isAllowedDiaryDesignThemeRaw, normalizeDiaryDesignTheme } from "@/lib/journal/meta";
 import { resolveActiveProfileId } from "@/lib/profile/activeProfile";
 
 type RouteParams = { params: Promise<{ year: string }> };
@@ -125,7 +125,10 @@ export async function PATCH(req: Request, { params }: RouteParams) {
       : 12;
 
   const displayTitle = rawTitle.trim() === "" ? null : rawTitle.trim().slice(0, 80);
-  const coverTheme = isDiaryDesignId(rawCover.trim()) ? rawCover.trim() : "simple";
+  if (!isAllowedDiaryDesignThemeRaw(rawCover)) {
+    return NextResponse.json({ error: "表紙デザインの値が不正です。", code: "BAD_COVER" }, { status: 400 });
+  }
+  const coverTheme = normalizeDiaryDesignTheme(rawCover.trim() || "simple");
   const { start: periodStartMonth, end: periodEndMonth } = clampMonthOrder(rawStart, rawEnd);
 
   const delegate = getDiaryBookshelfBookDelegate();

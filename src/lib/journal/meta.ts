@@ -8,15 +8,46 @@ export const companionTypes = [
 
 export type CompanionType = (typeof companionTypes)[number];
 
+/** 日記ページ背景テンプレはシンプル系のみ（罫線あり／なし）。キャラ差は companion とテンプレ画像で表現 */
 export const diaryDesignOptions = [
-  { id: "cute", label: "かわいい系（スタンダード）" },
-  { id: "cute_plain", label: "かわいい系（罫線なし）" },
   { id: "simple", label: "シンプル系" },
   { id: "simple_plain", label: "シンプル系（罫線なし）" },
 ] as const;
 
 export type DiaryDesignId = (typeof diaryDesignOptions)[number]["id"];
 export const diaryDesignIds = diaryDesignOptions.map((d) => d.id);
+
+/** 旧「キュート」系はシンプルへ読み替え（API・URLの後方互換用） */
+export function normalizeDiaryDesignTheme(value: string): DiaryDesignId {
+  const t = value.trim();
+  if (t === "simple_plain") return "simple_plain";
+  if (t === "simple") return "simple";
+  if (t === "cute_plain") return "simple_plain";
+  if (t === "cute") return "simple";
+  return "simple";
+}
+
+export function isDiaryDesignId(value: string): value is DiaryDesignId {
+  return diaryDesignIds.includes(value as DiaryDesignId);
+}
+
+/** 送信されうる raw（現行＋旧キュート）。それ以外は BAD_DESIGN */
+export function isAllowedDiaryDesignThemeRaw(raw: string): boolean {
+  const t = raw.trim();
+  return (
+    t === "" ||
+    t === "simple" ||
+    t === "simple_plain" ||
+    t === "cute" ||
+    t === "cute_plain"
+  );
+}
+
+export function getDiaryDesignLabel(id: string): string {
+  const canon = normalizeDiaryDesignTheme(id);
+  const row = diaryDesignOptions.find((d) => d.id === canon);
+  return row?.label ?? "シンプル系";
+}
 
 export const moodOptions = [
   { id: "happy", label: "うれしい", emoji: "😊" },
@@ -64,20 +95,6 @@ export function isMoodId(value: string): value is MoodId {
 
 export function isActivityId(value: string): value is ActivityId {
   return activityOptionIds.includes(value as ActivityId);
-}
-
-export function isDiaryDesignId(value: string): value is DiaryDesignId {
-  return diaryDesignIds.includes(value as DiaryDesignId);
-}
-
-/** シンプル系・シンプル罫線なし（レイアウト・フォント係数の共用） */
-export function isSimpleDiaryDesign(id: DiaryDesignId): boolean {
-  return id === "simple" || id === "simple_plain";
-}
-
-export function getDiaryDesignLabel(id: string): string {
-  const row = diaryDesignOptions.find((d) => d.id === id);
-  return row?.label ?? "シンプル系";
 }
 
 export function getMoodMeta(mood: string) {

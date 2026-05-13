@@ -72,7 +72,7 @@ model JournalEntry {
   mood          String @default("calm")
   activity      String @default("record_anyway")
   companionType String @default("owl")
-  designTheme   String @default("cute")
+  designTheme   String @default("simple")
   photoDataUrl  String?
   generatedComment String?
   includeInBook Boolean @default(true)

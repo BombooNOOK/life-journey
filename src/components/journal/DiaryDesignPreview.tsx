@@ -1,12 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import {
-  getActivityMeta,
-  getMoodMeta,
-  isSimpleDiaryDesign,
-  type DiaryDesignId,
-} from "@/lib/journal/meta";
+import { getActivityMeta, getMoodMeta, type DiaryDesignId } from "@/lib/journal/meta";
 import { diaryTemplateScreenImageMap } from "@/lib/journal/templateAssets";
 
 type Props = {
@@ -50,35 +45,10 @@ type TemplateLayout = {
   numberCalmTop: string;
 };
 
-const TEMPLATE_SIZE_CUTE = { width: 723, height: 1024 };
-const TEMPLATE_SIZE_SIMPLE = { width: 724, height: 1024 };
+const TEMPLATE_SIZE = { width: 724, height: 1024 };
 
-const TEMPLATE_LAYOUT_CUTE: TemplateLayout = {
-  dateYearLeft: "30.4%",
-  dateMonthLeft: "44.1%",
-  dateDayLeft: "51.6%",
-  dateWeekLeft: "64.5%",
-  dateTop: "11.15%",
-  moodLeft: "20.3%",
-  moodTop: "35.2%",
-  activityLeft: "19.1%",
-  activityTop: "48.15%",
-  contentLeft: "13.15%",
-  contentTop: "58.9%",
-  contentWidth: "72.8%",
-  commentLeft: "12.7%",
-  commentTop: "85.85%",
-  commentWidth: "58.8%",
-  /** コメント枠（テンプレ底の吹き出し）。狭い画面では行間・自動文字拡大で溢れやすいため十分な％を確保 */
-  commentMaxHeight: "10.8%",
-  numberLeft: "36.0%",
-  numberTodayTop: "19.5%",
-  numberMonthTop: "24.9%",
-  numberYearTop: "30.8%",
-  numberCalmTop: "36.6%",
-};
-
-const TEMPLATE_LAYOUT_SIMPLE: TemplateLayout = {
+/** シンプル系のみ（罫線あり／なしは背景画像の差）。座標は共通でキャラ差し替えでもずれない */
+const TEMPLATE_LAYOUT: TemplateLayout = {
   dateYearLeft: "30.5%",
   dateMonthLeft: "44.3%",
   dateDayLeft: "51.85%",
@@ -102,20 +72,6 @@ const TEMPLATE_LAYOUT_SIMPLE: TemplateLayout = {
   numberCalmTop: "36.65%",
 };
 
-const TEMPLATE_SIZE_MAP: Record<DiaryDesignId, { width: number; height: number }> = {
-  cute: TEMPLATE_SIZE_CUTE,
-  cute_plain: TEMPLATE_SIZE_CUTE,
-  simple: TEMPLATE_SIZE_SIMPLE,
-  simple_plain: TEMPLATE_SIZE_SIMPLE,
-};
-
-const TEMPLATE_LAYOUT_MAP: Record<DiaryDesignId, TemplateLayout> = {
-  cute: TEMPLATE_LAYOUT_CUTE,
-  cute_plain: TEMPLATE_LAYOUT_CUTE,
-  simple: TEMPLATE_LAYOUT_SIMPLE,
-  simple_plain: TEMPLATE_LAYOUT_SIMPLE,
-};
-
 export function DiaryDesignPreview({
   designTheme,
   mood,
@@ -131,23 +87,17 @@ export function DiaryDesignPreview({
   const activityLabel = getActivityMeta(activity).label;
   const textPreview = content.trim() || "ここに本文が入ります。";
   const owlComment = comment?.trim() || "保存後に「フクロウ先生の読み解き」がここに入ります。";
-  const templateSize = TEMPLATE_SIZE_MAP[designTheme];
-  const layout = TEMPLATE_LAYOUT_MAP[designTheme];
+  const templateSize = TEMPLATE_SIZE;
+  const layout = TEMPLATE_LAYOUT;
   const weekdayLabel = ["日", "月", "火", "水", "木", "金", "土"][previewDate.getDay()];
   const displayedNumbers = diaryNumbers ?? { today: "-", month: "-", year: "-", calmness: "-" };
   const safeContentFontScale = Math.max(0.7, Math.min(1.2, contentFontScale));
   /** `vw` だとプレビュー枠よりビューポ基準で伸び、スマホで文字だけ大きく見える。`cqw` で枠幅に追従 */
   const contentFontSize = `clamp(${(7.5 * safeContentFontScale).toFixed(2)}px, ${(2.35 * safeContentFontScale).toFixed(2)}cqw, ${(12.5 * safeContentFontScale).toFixed(2)}px)`;
-  // テンプレの罫線間隔に寄せる（シンプル系は新レイアウトに合わせてややタイトめ）
   const baseContentLineHeight = 1.95 * (1 / Math.max(safeContentFontScale, 0.85));
-  const contentLineHeight = isSimpleDiaryDesign(designTheme)
-    ? (baseContentLineHeight * 0.97).toFixed(3)
-    : baseContentLineHeight.toFixed(3);
-  // シンプル系: コメント欄は行数が増えやすい。iOS Safari の文字自動拡大で溢れないよう clamp を抑えめに＋行間はややタイト
-  const commentFontSize = isSimpleDiaryDesign(designTheme)
-    ? "clamp(6.75px, 1.88cqw, 10.5px)"
-    : "clamp(7.5px, 2.05cqw, 11.5px)";
-  const commentLineHeight = isSimpleDiaryDesign(designTheme) ? "1.5" : "1.72";
+  const contentLineHeight = (baseContentLineHeight * 0.97).toFixed(3);
+  const commentFontSize = "clamp(6.75px, 1.88cqw, 10.5px)";
+  const commentLineHeight = "1.5";
   /** 年・月・日・曜は近接配置のため小さめ（重なり・はみ出しを抑える） */
   const dateRowFontSize = "clamp(6px, 1.45cqw, 9.5px)";
 
