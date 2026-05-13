@@ -48,6 +48,10 @@ type TemplateLayout = {
 const TEMPLATE_SIZE = { width: 724, height: 1024 };
 
 /** シンプル系のみ（罫線あり／なしは背景画像の差）。座標は共通でキャラ差し替えでもずれない */
+/** body と同じスタック（globals.css）で Mac / iOS のメトリクス差を抑える */
+const OVERLAY_FONT_FAMILY =
+  'ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans JP", "Hiragino Sans", "Hiragino Kaku Gothic ProN", sans-serif';
+
 const TEMPLATE_LAYOUT: TemplateLayout = {
   dateYearLeft: "30.5%",
   dateMonthLeft: "44.3%",
@@ -59,11 +63,12 @@ const TEMPLATE_LAYOUT: TemplateLayout = {
   activityLeft: "16.95%",
   activityTop: "46.45%",
   contentLeft: "13.2%",
-  contentTop: "53.65%",
+  /** 画像の「今日の記録」見出しと本文1行目が被らないよう少し下げる */
+  contentTop: "54.35%",
   contentWidth: "72.8%",
   commentLeft: "9.15%",
-  /** 罫線なしテンプレで吹き出し位置に合わせ、約1行ぶん上へ */
-  commentTop: "79.35%",
+  /** フクロウ先生コメント（画像の吹き出しに合わせる） */
+  commentTop: "78.55%",
   commentWidth: "62.2%",
   commentMaxHeight: "18.2%",
   numberLeft: "36.1%",
@@ -93,14 +98,21 @@ export function DiaryDesignPreview({
   const weekdayLabel = ["日", "月", "火", "水", "木", "金", "土"][previewDate.getDay()];
   const displayedNumbers = diaryNumbers ?? { today: "-", month: "-", year: "-", calmness: "-" };
   const safeContentFontScale = Math.max(0.7, Math.min(1.2, contentFontScale));
-  /** `vw` だとプレビュー枠よりビューポ基準で伸び、スマホで文字だけ大きく見える。`cqw` で枠幅に追従 */
-  const contentFontSize = `clamp(${(7.5 * safeContentFontScale).toFixed(2)}px, ${(2.35 * safeContentFontScale).toFixed(2)}cqw, ${(12.5 * safeContentFontScale).toFixed(2)}px)`;
+  /**
+   * 枠幅 cqw のみだと max が広い画面で大きくなりすぎ、狭い画面と差が出る。
+   * min(cqw,cqh) で縦横の小さい方に寄せ、上限を抑えてデバイス間の差を縮める。
+   */
+  const sc = safeContentFontScale;
+  const contentMid = `min(${(2.12 * sc).toFixed(3)}cqw, ${(2.98 * sc).toFixed(3)}cqh)`;
+  const contentFontSize = `clamp(${(8 * sc).toFixed(2)}px, ${contentMid}, ${(10.25 * sc).toFixed(2)}px)`;
   const baseContentLineHeight = 1.95 * (1 / Math.max(safeContentFontScale, 0.85));
   const contentLineHeight = (baseContentLineHeight * 0.97).toFixed(3);
-  const commentFontSize = "clamp(6.75px, 1.88cqw, 10.5px)";
-  const commentLineHeight = "1.5";
+  const commentMid = `min(${1.72}cqw, ${2.42}cqh)`;
+  const commentFontSize = `clamp(6.85px, ${commentMid}, 9.35px)`;
+  const commentLineHeight = "1.48";
   /** 年・月・日・曜は近接配置のため小さめ（重なり・はみ出しを抑える） */
-  const dateRowFontSize = "clamp(6px, 1.45cqw, 9.5px)";
+  const dateMid = `min(1.38cqw, 1.94cqh)`;
+  const dateRowFontSize = `clamp(6.5px, ${dateMid}, 9px)`;
 
   return (
     <section className="rounded-xl border border-stone-200 bg-white p-3 shadow-sm sm:p-4">
@@ -123,7 +135,10 @@ export function DiaryDesignPreview({
             sizes="(max-width: 640px) 100vw, 540px"
             className="object-contain"
           />
-          <div className="absolute inset-0">
+          <div
+            className="absolute inset-0 antialiased"
+            style={{ fontFamily: OVERLAY_FONT_FAMILY }}
+          >
             <p
               className="absolute whitespace-nowrap text-stone-700"
               style={{
@@ -173,13 +188,13 @@ export function DiaryDesignPreview({
               style={{
                 left: layout.activityLeft,
                 top: layout.activityTop,
-                fontSize: "clamp(7px, 1.95cqw, 12px)",
+                fontSize: "clamp(7px, min(1.88cqw, 2.64cqh), 11px)",
               }}
             >
               {activityLabel.length > 62 ? `${activityLabel.slice(0, 62)}…` : activityLabel}
             </p>
             <p
-              className="absolute max-h-[18.6%] overflow-hidden whitespace-pre-wrap break-words text-stone-700/90"
+              className="absolute max-h-[18.6%] overflow-hidden whitespace-pre-wrap break-words text-stone-700/90 [overflow-wrap:anywhere]"
               style={{
                 left: layout.contentLeft,
                 top: layout.contentTop,
@@ -191,7 +206,7 @@ export function DiaryDesignPreview({
               {textPreview.length > 500 ? `${textPreview.slice(0, 500)}…` : textPreview}
             </p>
             <p
-              className="absolute m-0 overflow-hidden whitespace-pre-wrap break-words text-stone-700/90"
+              className="absolute m-0 overflow-hidden whitespace-pre-wrap break-words text-stone-700/90 [overflow-wrap:anywhere]"
               style={{
                 left: layout.commentLeft,
                 top: layout.commentTop,
@@ -208,7 +223,7 @@ export function DiaryDesignPreview({
               style={{
                 left: layout.numberLeft,
                 top: layout.numberTodayTop,
-                fontSize: "clamp(8px, 2.5cqw, 16px)",
+                fontSize: "clamp(8px, min(2.15cqw, 3.02cqh), 13px)",
               }}
             >
               {displayedNumbers.today}
@@ -218,7 +233,7 @@ export function DiaryDesignPreview({
               style={{
                 left: layout.numberLeft,
                 top: layout.numberMonthTop,
-                fontSize: "clamp(8px, 2.5cqw, 16px)",
+                fontSize: "clamp(8px, min(2.15cqw, 3.02cqh), 13px)",
               }}
             >
               {displayedNumbers.month}
@@ -228,7 +243,7 @@ export function DiaryDesignPreview({
               style={{
                 left: layout.numberLeft,
                 top: layout.numberYearTop,
-                fontSize: "clamp(8px, 2.5cqw, 16px)",
+                fontSize: "clamp(8px, min(2.15cqw, 3.02cqh), 13px)",
               }}
             >
               {displayedNumbers.year}
@@ -238,7 +253,7 @@ export function DiaryDesignPreview({
               style={{
                 left: layout.numberLeft,
                 top: layout.numberCalmTop,
-                fontSize: "clamp(8px, 2.5cqw, 16px)",
+                fontSize: "clamp(8px, min(2.15cqw, 3.02cqh), 13px)",
               }}
             >
               {moodEmoji}
