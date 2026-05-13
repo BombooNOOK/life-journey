@@ -125,24 +125,29 @@ export function DiaryDesignPreview({
     return () => ro.disconnect();
   }, []);
 
-  /** 広い枠では吹き出し内を縦にも少し多く使う */
-  const commentMaxHeightPct = wideTemplate ? "21.6%" : layout.commentMaxHeight;
+  /** 広い枠では吹き出しの縦スペースをフクロウ文にも割り当てる */
+  const commentMaxHeightPct = wideTemplate ? "24%" : layout.commentMaxHeight;
 
-  /** 狭いコンテナ＝iPhone 想定で踏み過ぎない／広い＝PC では一段はっきり大きく（差が目に見える程度まで） */
+  /**
+   * 狭い枠＝iPhone：重なり回避のため抑える。
+   * 広い枠＝PC：cq の mid が小さくなりがちなので clamp の下限・上限を高くし、max(cqw,cqh) で実寸を確保。
+   */
   const commentFontSize = wideTemplate
-    ? `clamp(11px, max(2.12cqw, 1.58cqh), 14px)`
+    ? `clamp(13px, max(2.45cqw, 1.85cqh), 17px)`
     : `clamp(7px, min(1.72cqw, 2.35cqh), 9.35px)`;
-  const commentLineHeight = wideTemplate ? "1.38" : "1.48";
+  const commentLineHeight = wideTemplate ? "1.32" : "1.48";
 
-  /** 日付：スマホは小さめで重なり回避、広い枠では読みやすく */
+  /** 日付：広い枠では min(cqw,cqh) が ~7px 前後に張り付くため、下限を 10px 台に固定して読みやすく */
   const dateRowFontSize = wideTemplate
-    ? `clamp(6.75px, min(1.32cqw, 1.85cqh), 8.85px)`
+    ? `clamp(10.5px, min(1.52cqw, 2.08cqh), 13px)`
     : `clamp(5.2px, min(1.12cqw, 1.58cqh), 7.1px)`;
 
-  /** 今日の数字〜年の数字・気分：広い枠では一段大きく（スマホは従来どおり抑える） */
+  /** 今日の数字〜年・気分：広い枠では丸内を大きく（中央ズレは transform で微補正） */
   const numberFontSize = wideTemplate
-    ? `clamp(8px, min(1.78cqw, 2.48cqh), 12px)`
+    ? `clamp(11px, max(2.08cqw, 1.55cqh), 15px)`
     : `clamp(7px, min(1.72cqw, 2.42cqh), 11px)`;
+
+  const numberCenterNudge = wideTemplate ? "translate(-50%, -50%) translate(-0.85px, -0.85px)" : "translate(-50%, -50%) translate(-0.5px, -0.5px)";
 
   return (
     <section className="rounded-xl border border-stone-200 bg-white p-3 shadow-sm sm:p-4">
@@ -255,7 +260,7 @@ export function DiaryDesignPreview({
                 left: layout.numberLeft,
                 top: layout.numberTodayTop,
                 fontSize: numberFontSize,
-                transform: "translate(-50%, -50%) translate(-0.5px, -0.5px)",
+                transform: numberCenterNudge,
               }}
             >
               {displayedNumbers.today}
@@ -266,7 +271,7 @@ export function DiaryDesignPreview({
                 left: layout.numberLeft,
                 top: layout.numberMonthTop,
                 fontSize: numberFontSize,
-                transform: "translate(-50%, -50%) translate(-0.5px, -0.5px)",
+                transform: numberCenterNudge,
               }}
             >
               {displayedNumbers.month}
@@ -277,7 +282,7 @@ export function DiaryDesignPreview({
                 left: layout.numberLeft,
                 top: layout.numberYearTop,
                 fontSize: numberFontSize,
-                transform: "translate(-50%, -50%) translate(-0.5px, -0.5px)",
+                transform: numberCenterNudge,
               }}
             >
               {displayedNumbers.year}
@@ -288,7 +293,7 @@ export function DiaryDesignPreview({
                 left: layout.numberLeft,
                 top: layout.numberCalmTop,
                 fontSize: numberFontSize,
-                transform: "translate(-50%, -50%) translate(-0.5px, -0.5px)",
+                transform: numberCenterNudge,
               }}
             >
               {moodEmoji}
