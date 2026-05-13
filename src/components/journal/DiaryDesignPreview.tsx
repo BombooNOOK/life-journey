@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useRef, useState } from "react";
+import { useLayoutEffect, useRef, useState } from "react";
 import { getActivityMeta, getMoodMeta, type DiaryDesignId } from "@/lib/journal/meta";
 import { diaryTemplateScreenImageMap } from "@/lib/journal/templateAssets";
 
@@ -113,31 +113,36 @@ export function DiaryDesignPreview({
 
   const templateShellRef = useRef<HTMLDivElement>(null);
   const [wideTemplate, setWideTemplate] = useState(false);
-  useEffect(() => {
+  useLayoutEffect(() => {
     const el = templateShellRef.current;
     if (!el || typeof ResizeObserver === "undefined") return;
+    const apply = (w: number) => setWideTemplate(w >= 440);
     const ro = new ResizeObserver((entries) => {
-      const w = entries[0]?.contentRect.width ?? 0;
-      setWideTemplate(w >= 440);
+      apply(entries[0]?.contentRect.width ?? 0);
     });
     ro.observe(el);
-    setWideTemplate(el.clientWidth >= 440);
+    apply(el.getBoundingClientRect().width);
     return () => ro.disconnect();
   }, []);
 
-  /** 狭いコンテナ＝iPhone 想定で踏み過ぎない／広い＝PC でフクロウ文を大きく */
-  const commentFontSize = wideTemplate
-    ? `clamp(9px, max(1.82cqw, 1.38cqh), 12px)`
-    : `clamp(7px, min(1.72cqw, 2.35cqh), 9.35px)`;
-  const commentLineHeight = wideTemplate ? "1.42" : "1.48";
+  /** 広い枠では吹き出し内を縦にも少し多く使う */
+  const commentMaxHeightPct = wideTemplate ? "21.6%" : layout.commentMaxHeight;
 
-  /** 日付：スマホは小さめで重なり回避、広い枠では一段大きく */
+  /** 狭いコンテナ＝iPhone 想定で踏み過ぎない／広い＝PC では一段はっきり大きく（差が目に見える程度まで） */
+  const commentFontSize = wideTemplate
+    ? `clamp(11px, max(2.12cqw, 1.58cqh), 14px)`
+    : `clamp(7px, min(1.72cqw, 2.35cqh), 9.35px)`;
+  const commentLineHeight = wideTemplate ? "1.38" : "1.48";
+
+  /** 日付：スマホは小さめで重なり回避、広い枠では読みやすく */
   const dateRowFontSize = wideTemplate
-    ? `clamp(5.9px, min(1.22cqw, 1.72cqh), 7.75px)`
+    ? `clamp(6.75px, min(1.32cqw, 1.85cqh), 8.85px)`
     : `clamp(5.2px, min(1.12cqw, 1.58cqh), 7.1px)`;
 
-  /** 今日の数字〜年の数字・気分：やや小さめ＋中央寄せの見え方補正 */
-  const numberFontSize = `clamp(7px, min(1.72cqw, 2.42cqh), 11px)`;
+  /** 今日の数字〜年の数字・気分：広い枠では一段大きく（スマホは従来どおり抑える） */
+  const numberFontSize = wideTemplate
+    ? `clamp(8px, min(1.78cqw, 2.48cqh), 12px)`
+    : `clamp(7px, min(1.72cqw, 2.42cqh), 11px)`;
 
   return (
     <section className="rounded-xl border border-stone-200 bg-white p-3 shadow-sm sm:p-4">
@@ -237,7 +242,7 @@ export function DiaryDesignPreview({
                 left: layout.commentLeft,
                 top: layout.commentTop,
                 width: layout.commentWidth,
-                maxHeight: layout.commentMaxHeight,
+                maxHeight: commentMaxHeightPct,
                 fontSize: commentFontSize,
                 lineHeight: commentLineHeight,
               }}
