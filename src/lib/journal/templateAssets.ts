@@ -3,16 +3,17 @@ import type { DiaryDesignId } from "@/lib/journal/meta";
 /** 画面上のプレビュー・入力補助用（軽量・ライト版など） */
 export const diaryTemplateScreenImageMap: Record<DiaryDesignId, string> = {
   simple: "/images/diary-template-simple.png?v=4",
-  simple_plain: "/images/diary-template-simple-plain.png?v=2",
+  /** 罫線なし・伴走キャラ別はファイル名で区別（例: drfukuro）。レイアウト寸法は共通 */
+  simple_plain: "/images/diary-template-simple-plain-drfukuro.png?v=3",
 };
 
 /**
  * 印刷・PDF・製本取り込み用。
  * `public/images/diary-template-simple-print.png` に高解像度版を置き替えれば、ここだけ `?v=` を上げれば反映される。
- * 罫線なし版は `*-plain*.png` に同名構成で差し替え可能。
+ * 罫線なし版は伴走キャラ別 PNG（現状: simple-plain-drfukuro）を参照。
  * （現状のコードはプレビューが screen を参照。print パイプライン実装時にこのマップを使う）
  */
 export const diaryTemplatePrintImageMap: Record<DiaryDesignId, string> = {
   simple: "/images/diary-template-simple-print.png?v=1",
-  simple_plain: "/images/diary-template-simple-plain-print.png?v=2",
+  simple_plain: "/images/diary-template-simple-plain-drfukuro.png?v=3",
 };
