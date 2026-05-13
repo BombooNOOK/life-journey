@@ -1,7 +1,12 @@
 "use client";
 
 import Image from "next/image";
-import { getActivityMeta, getMoodMeta, type DiaryDesignId } from "@/lib/journal/meta";
+import {
+  getActivityMeta,
+  getMoodMeta,
+  isSimpleDiaryDesign,
+  type DiaryDesignId,
+} from "@/lib/journal/meta";
 import { diaryTemplateScreenImageMap } from "@/lib/journal/templateAssets";
 
 type Props = {
@@ -21,84 +26,94 @@ type Props = {
   contentFontScale?: number;
 };
 
-const TEMPLATE_SIZE_MAP: Record<DiaryDesignId, { width: number; height: number }> = {
-  cute: { width: 723, height: 1024 },
-  simple: { width: 724, height: 1024 },
+type TemplateLayout = {
+  dateYearLeft: string;
+  dateMonthLeft: string;
+  dateDayLeft: string;
+  dateWeekLeft: string;
+  dateTop: string;
+  moodLeft: string;
+  moodTop: string;
+  activityLeft: string;
+  activityTop: string;
+  contentLeft: string;
+  contentTop: string;
+  contentWidth: string;
+  commentLeft: string;
+  commentTop: string;
+  commentWidth: string;
+  commentMaxHeight: string;
+  numberLeft: string;
+  numberTodayTop: string;
+  numberMonthTop: string;
+  numberYearTop: string;
+  numberCalmTop: string;
 };
 
-const TEMPLATE_LAYOUT_MAP: Record<
-  DiaryDesignId,
-  {
-    dateYearLeft: string;
-    dateMonthLeft: string;
-    dateDayLeft: string;
-    dateWeekLeft: string;
-    dateTop: string;
-    moodLeft: string;
-    moodTop: string;
-    activityLeft: string;
-    activityTop: string;
-    contentLeft: string;
-    contentTop: string;
-    contentWidth: string;
-    commentLeft: string;
-    commentTop: string;
-    commentWidth: string;
-    commentMaxHeight: string;
-    numberLeft: string;
-    numberTodayTop: string;
-    numberMonthTop: string;
-    numberYearTop: string;
-    numberCalmTop: string;
-  }
-> = {
-  cute: {
-    dateYearLeft: "30.4%",
-    dateMonthLeft: "44.1%",
-    dateDayLeft: "51.6%",
-    dateWeekLeft: "64.5%",
-    dateTop: "11.15%",
-    moodLeft: "20.3%",
-    moodTop: "35.2%",
-    activityLeft: "19.1%",
-    activityTop: "48.15%",
-    contentLeft: "13.15%",
-    contentTop: "58.9%",
-    contentWidth: "72.8%",
-    commentLeft: "12.7%",
-    commentTop: "85.85%",
-    commentWidth: "58.8%",
-    /** コメント枠（テンプレ底の吹き出し）。狭い画面では行間・自動文字拡大で溢れやすいため十分な％を確保 */
-    commentMaxHeight: "10.8%",
-    numberLeft: "36.0%",
-    numberTodayTop: "19.5%",
-    numberMonthTop: "24.9%",
-    numberYearTop: "30.8%",
-    numberCalmTop: "36.6%",
-  },
-  simple: {
-    dateYearLeft: "30.5%",
-    dateMonthLeft: "44.3%",
-    dateDayLeft: "51.85%",
-    dateWeekLeft: "64.8%",
-    dateTop: "11.45%",
-    moodLeft: "20.35%",
-    moodTop: "35.65%",
-    activityLeft: "16.95%",
-    activityTop: "46.45%",
-    contentLeft: "13.2%",
-    contentTop: "53.65%",
-    contentWidth: "72.8%",
-    commentLeft: "9.15%",
-    commentTop: "80.45%",
-    commentWidth: "62.2%",
-    commentMaxHeight: "18.2%",
-    numberLeft: "36.1%",
-    numberTodayTop: "19.65%",
-    numberMonthTop: "25.05%",
-    numberYearTop: "30.95%",
-    numberCalmTop: "36.65%",
-  },
+const TEMPLATE_SIZE_CUTE = { width: 723, height: 1024 };
+const TEMPLATE_SIZE_SIMPLE = { width: 724, height: 1024 };
+
+const TEMPLATE_LAYOUT_CUTE: TemplateLayout = {
+  dateYearLeft: "30.4%",
+  dateMonthLeft: "44.1%",
+  dateDayLeft: "51.6%",
+  dateWeekLeft: "64.5%",
+  dateTop: "11.15%",
+  moodLeft: "20.3%",
+  moodTop: "35.2%",
+  activityLeft: "19.1%",
+  activityTop: "48.15%",
+  contentLeft: "13.15%",
+  contentTop: "58.9%",
+  contentWidth: "72.8%",
+  commentLeft: "12.7%",
+  commentTop: "85.85%",
+  commentWidth: "58.8%",
+  /** コメント枠（テンプレ底の吹き出し）。狭い画面では行間・自動文字拡大で溢れやすいため十分な％を確保 */
+  commentMaxHeight: "10.8%",
+  numberLeft: "36.0%",
+  numberTodayTop: "19.5%",
+  numberMonthTop: "24.9%",
+  numberYearTop: "30.8%",
+  numberCalmTop: "36.6%",
+};
+
+const TEMPLATE_LAYOUT_SIMPLE: TemplateLayout = {
+  dateYearLeft: "30.5%",
+  dateMonthLeft: "44.3%",
+  dateDayLeft: "51.85%",
+  dateWeekLeft: "64.8%",
+  dateTop: "11.45%",
+  moodLeft: "20.35%",
+  moodTop: "35.65%",
+  activityLeft: "16.95%",
+  activityTop: "46.45%",
+  contentLeft: "13.2%",
+  contentTop: "53.65%",
+  contentWidth: "72.8%",
+  commentLeft: "9.15%",
+  commentTop: "80.45%",
+  commentWidth: "62.2%",
+  commentMaxHeight: "18.2%",
+  numberLeft: "36.1%",
+  numberTodayTop: "19.65%",
+  numberMonthTop: "25.05%",
+  numberYearTop: "30.95%",
+  numberCalmTop: "36.65%",
+};
+
+const TEMPLATE_SIZE_MAP: Record<DiaryDesignId, { width: number; height: number }> = {
+  cute: TEMPLATE_SIZE_CUTE,
+  cute_plain: TEMPLATE_SIZE_CUTE,
+  simple: TEMPLATE_SIZE_SIMPLE,
+  simple_plain: TEMPLATE_SIZE_SIMPLE,
+};
+
+const TEMPLATE_LAYOUT_MAP: Record<DiaryDesignId, TemplateLayout> = {
+  cute: TEMPLATE_LAYOUT_CUTE,
+  cute_plain: TEMPLATE_LAYOUT_CUTE,
+  simple: TEMPLATE_LAYOUT_SIMPLE,
+  simple_plain: TEMPLATE_LAYOUT_SIMPLE,
 };
 
 export function DiaryDesignPreview({
@@ -123,18 +138,16 @@ export function DiaryDesignPreview({
   const safeContentFontScale = Math.max(0.7, Math.min(1.2, contentFontScale));
   /** `vw` だとプレビュー枠よりビューポ基準で伸び、スマホで文字だけ大きく見える。`cqw` で枠幅に追従 */
   const contentFontSize = `clamp(${(7.5 * safeContentFontScale).toFixed(2)}px, ${(2.35 * safeContentFontScale).toFixed(2)}cqw, ${(12.5 * safeContentFontScale).toFixed(2)}px)`;
-  // テンプレの罫線間隔に寄せる（simple は新レイアウトに合わせてややタイトめ）
+  // テンプレの罫線間隔に寄せる（シンプル系は新レイアウトに合わせてややタイトめ）
   const baseContentLineHeight = 1.95 * (1 / Math.max(safeContentFontScale, 0.85));
-  const contentLineHeight =
-    designTheme === "simple"
-      ? (baseContentLineHeight * 0.97).toFixed(3)
-      : baseContentLineHeight.toFixed(3);
-  // simple: コメント欄は行数が増えやすい。iOS Safari の文字自動拡大で溢れないよう clamp を抑えめに＋行間はややタイト
-  const commentFontSize =
-    designTheme === "simple"
-      ? "clamp(6.75px, 1.88cqw, 10.5px)"
-      : "clamp(7.5px, 2.05cqw, 11.5px)";
-  const commentLineHeight = designTheme === "simple" ? "1.5" : "1.72";
+  const contentLineHeight = isSimpleDiaryDesign(designTheme)
+    ? (baseContentLineHeight * 0.97).toFixed(3)
+    : baseContentLineHeight.toFixed(3);
+  // シンプル系: コメント欄は行数が増えやすい。iOS Safari の文字自動拡大で溢れないよう clamp を抑えめに＋行間はややタイト
+  const commentFontSize = isSimpleDiaryDesign(designTheme)
+    ? "clamp(6.75px, 1.88cqw, 10.5px)"
+    : "clamp(7.5px, 2.05cqw, 11.5px)";
+  const commentLineHeight = isSimpleDiaryDesign(designTheme) ? "1.5" : "1.72";
   /** 年・月・日・曜は近接配置のため小さめ（重なり・はみ出しを抑える） */
   const dateRowFontSize = "clamp(6px, 1.45cqw, 9.5px)";
 

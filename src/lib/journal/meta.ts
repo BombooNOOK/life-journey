@@ -10,7 +10,9 @@ export type CompanionType = (typeof companionTypes)[number];
 
 export const diaryDesignOptions = [
   { id: "cute", label: "かわいい系（スタンダード）" },
+  { id: "cute_plain", label: "かわいい系（罫線なし）" },
   { id: "simple", label: "シンプル系" },
+  { id: "simple_plain", label: "シンプル系（罫線なし）" },
 ] as const;
 
 export type DiaryDesignId = (typeof diaryDesignOptions)[number]["id"];
@@ -66,6 +68,16 @@ export function isActivityId(value: string): value is ActivityId {
 
 export function isDiaryDesignId(value: string): value is DiaryDesignId {
   return diaryDesignIds.includes(value as DiaryDesignId);
+}
+
+/** シンプル系・シンプル罫線なし（レイアウト・フォント係数の共用） */
+export function isSimpleDiaryDesign(id: DiaryDesignId): boolean {
+  return id === "simple" || id === "simple_plain";
+}
+
+export function getDiaryDesignLabel(id: string): string {
+  const row = diaryDesignOptions.find((d) => d.id === id);
+  return row?.label ?? "シンプル系";
 }
 
 export function getMoodMeta(mood: string) {

@@ -9,7 +9,9 @@ import { formatDateTimeJa } from "@/lib/date/formatJa";
 import { parseSafeBookshelfDiaryReturnTo } from "@/lib/journal/bookshelfReturnTo";
 import {
   activityOptions,
+  diaryDesignOptions,
   getActivityMeta,
+  getDiaryDesignLabel,
   isDiaryDesignId,
   getMoodMeta,
   moodOptions,
@@ -499,6 +501,21 @@ function JournalPageContent() {
             </option>
           ))}
         </select>
+        <label className="block text-sm font-medium text-stone-700" htmlFor="journal-design">
+          ページの見た目（テンプレート）
+        </label>
+        <select
+          id="journal-design"
+          value={designTheme}
+          onChange={(e) => setDesignTheme(e.target.value as DiaryDesignId)}
+          className="w-full rounded-lg border border-stone-300 px-3 py-2 text-sm text-stone-900 outline-none ring-stone-400 focus:ring-2"
+        >
+          {diaryDesignOptions.map((option) => (
+            <option key={option.id} value={option.id}>
+              {option.label}
+            </option>
+          ))}
+        </select>
         <label className="block text-sm font-medium text-stone-700" htmlFor="journal-content">
           記録する内容
         </label>
@@ -695,7 +712,12 @@ function JournalPageContent() {
                   今日やったこと: {getActivityMeta(entry.activity).label}
                 </p>
                 <p className="mt-1 text-xs text-stone-500">
-                  デザイン: {entry.designTheme === "simple" ? "シンプル系" : "かわいい系（スタンダード）"}
+                  デザイン:{" "}
+                  {getDiaryDesignLabel(
+                    entry.designTheme && isDiaryDesignId(entry.designTheme)
+                      ? entry.designTheme
+                      : "simple",
+                  )}
                 </p>
                 <p className="mt-1 text-xs text-stone-500">
                   本への掲載: {entry.includeInBook ? "入れる" : "入れない"}

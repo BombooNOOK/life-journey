@@ -4,7 +4,7 @@ import { Suspense, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { DiaryDesignPreview } from "@/components/journal/DiaryDesignPreview";
-import { isDiaryDesignId, type DiaryDesignId } from "@/lib/journal/meta";
+import { getDiaryDesignLabel, isDiaryDesignId, type DiaryDesignId } from "@/lib/journal/meta";
 
 type PreviewEntry = {
   id: string;
@@ -148,7 +148,7 @@ function JournalPreviewPageContent() {
                 {new Date(entry.createdAt).getFullYear()}年 日記
               </h2>
               <p className="mt-3 text-sm text-stone-600">
-                デザイン: {designTheme === "simple" ? "シンプル系" : "かわいい系（スタンダード）"}
+                デザイン: {getDiaryDesignLabel(designTheme)}
               </p>
               <p className="mt-8 text-sm text-stone-700">
                 ※ 表紙は次段で本デザインに合わせて正式連動します（今回先行は本文優先）。
