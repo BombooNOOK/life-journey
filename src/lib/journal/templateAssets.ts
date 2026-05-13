@@ -5,7 +5,7 @@ export const diaryTemplateScreenImageMap: Record<DiaryDesignId, string> = {
   cute: "/images/diary-template-cute.png?v=2",
   cute_plain: "/images/diary-template-cute-plain.png?v=1",
   simple: "/images/diary-template-simple.png?v=4",
-  simple_plain: "/images/diary-template-simple-plain.png?v=1",
+  simple_plain: "/images/diary-template-simple-plain.png?v=2",
 };
 
 /**
@@ -18,5 +18,5 @@ export const diaryTemplatePrintImageMap: Record<DiaryDesignId, string> = {
   cute: "/images/diary-template-cute.png?v=2",
   cute_plain: "/images/diary-template-cute-plain-print.png?v=1",
   simple: "/images/diary-template-simple-print.png?v=1",
-  simple_plain: "/images/diary-template-simple-plain-print.png?v=1",
+  simple_plain: "/images/diary-template-simple-plain-print.png?v=2",
 };
