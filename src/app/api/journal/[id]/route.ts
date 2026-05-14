@@ -163,7 +163,16 @@ export async function PATCH(req: Request, { params }: Params) {
   const { id } = await params;
   const exists = await prisma.journalEntry.findFirst({
     where: { id, email: viewerEmail },
-    select: { id: true, profileId: true, includeInBook: true },
+    select: {
+      id: true,
+      profileId: true,
+      includeInBook: true,
+      createdAt: true,
+      mood: true,
+      activity: true,
+      companionType: true,
+      generatedComment: true,
+    },
   });
   if (!exists) {
     return NextResponse.json({ error: "対象の記録が見つかりません。", code: "NOT_FOUND" }, { status: 404 });
@@ -278,35 +287,48 @@ export async function PATCH(req: Request, { params }: Params) {
     );
   }
 
-  const latestOrder = await prisma.order.findFirst({
-    where: { email: viewerEmail, profileId: exists.profileId },
-    orderBy: { createdAt: "desc" },
-    select: {
-      birthMonth: true,
-      birthDay: true,
-      numerologyJson: true,
-    },
-  });
-  const recentRows = await prisma.journalEntry.findMany({
-    where: { email: viewerEmail, profileId: exists.profileId },
-    orderBy: { createdAt: "desc" },
-    take: 5,
-    select: { generatedComment: true },
-  });
-  const recentTemplateIds = recentRows.flatMap((row) =>
-    collectTemplateIdsFromReadingText(row.generatedComment ?? ""),
-  );
+  /** 本文・写真・デザインだけ直すときは読み解きを固定し、言い回しが毎回変わらないようにする */
+  const preserveDiaryReading =
+    exists.mood === mood &&
+    exists.activity === activity &&
+    exists.companionType === companionType &&
+    parsedEntryDate.getTime() === exists.createdAt.getTime() &&
+    Boolean(exists.generatedComment?.trim());
 
-  const generatedComment = normalizeJournalCommentText(
-    buildDiaryReadingFromJournalInput({
-      activity,
-      mood,
-      referenceDate: parsedEntryDate,
-      birthMonth: latestOrder?.birthMonth ?? null,
-      birthDay: latestOrder?.birthDay ?? null,
-      recentTemplateIds,
-    }).text,
-  );
+  let generatedComment: string;
+  if (preserveDiaryReading) {
+    generatedComment = normalizeJournalCommentText(exists.generatedComment!);
+  } else {
+    const latestOrder = await prisma.order.findFirst({
+      where: { email: viewerEmail, profileId: exists.profileId },
+      orderBy: { createdAt: "desc" },
+      select: {
+        birthMonth: true,
+        birthDay: true,
+        numerologyJson: true,
+      },
+    });
+    const recentRows = await prisma.journalEntry.findMany({
+      where: { email: viewerEmail, profileId: exists.profileId },
+      orderBy: { createdAt: "desc" },
+      take: 5,
+      select: { generatedComment: true },
+    });
+    const recentTemplateIds = recentRows.flatMap((row) =>
+      collectTemplateIdsFromReadingText(row.generatedComment ?? ""),
+    );
+
+    generatedComment = normalizeJournalCommentText(
+      buildDiaryReadingFromJournalInput({
+        activity,
+        mood,
+        referenceDate: parsedEntryDate,
+        birthMonth: latestOrder?.birthMonth ?? null,
+        birthDay: latestOrder?.birthDay ?? null,
+        recentTemplateIds,
+      }).text,
+    );
+  }
 
   let entry:
     | {
