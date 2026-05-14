@@ -13,6 +13,7 @@ import {
   CONTENT_FONT_MODES,
   DEFAULT_CONTENT_FONT_MODE,
   type ContentFontMode,
+  journalEntryContentCountDenominator,
   JOURNAL_CONTENT_SOFT_MAX_BY_MODE,
   normalizeContentFontMode,
 } from "@/lib/journal/contentFontMode";
@@ -531,9 +532,6 @@ function JournalPageContent() {
             </option>
           ))}
         </select>
-        <label className="block text-sm font-medium text-stone-700" htmlFor="journal-content">
-          記録する内容
-        </label>
         <label className="block text-sm font-medium text-stone-700" htmlFor="journal-entry-date">
           記録日
         </label>
@@ -553,6 +551,20 @@ function JournalPageContent() {
           />
           このページを本に入れる
         </label>
+        <div className="flex flex-wrap items-end justify-between gap-2">
+          <label className="text-sm font-medium text-stone-700" htmlFor="journal-content">
+            記録する内容
+          </label>
+          <span className="text-base font-semibold tabular-nums text-stone-900 sm:text-lg">
+            {content.length}
+            <span className="font-medium text-stone-500">
+              /{journalEntryContentCountDenominator(contentFontMode)}
+            </span>
+          </span>
+        </div>
+        <p className="mb-1.5 text-[11px] leading-snug text-stone-500">
+          分母は「{CONTENT_FONT_MODE_LABELS_JA[contentFontMode]}」の目安文字数です。保存上限は 2000 字までです。
+        </p>
         <textarea
           id="journal-content"
           value={content}
@@ -643,9 +655,7 @@ function JournalPageContent() {
             className="aspect-square w-full rounded-lg border border-stone-200 bg-[#f7f4ee] object-contain"
           />
         ) : null}
-        <div className="flex flex-col items-start justify-between gap-3 sm:flex-row sm:items-center">
-          <p className="text-xs text-stone-500">{content.length}/2000</p>
-          <div className="flex w-full flex-col items-stretch gap-2 sm:w-auto sm:flex-row sm:items-center">
+        <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:justify-end">
             <button
               type="submit"
               disabled={saving || processingPhoto}
@@ -709,7 +719,6 @@ function JournalPageContent() {
                 編集をやめる
               </button>
             ) : null}
-          </div>
         </div>
       </form>
 

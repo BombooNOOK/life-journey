@@ -6,13 +6,48 @@ import {
 
 import type { AccentTemplate, NumerologyNumber } from "./types";
 
+const DIGITS = [1, 2, 3, 4, 5, 6, 7, 8, 9] as const;
+
+/** パーソナルデイ＝暦の月（桁おろし）が同じときだけ使う */
+export const personalDayCalendarMonthOverlapAccents: AccentTemplate[] = DIGITS.flatMap((n) =>
+  specialAccentDraft.personalDayEqualsCalendarMonth.map((s, idx) => ({
+    id: `special_overlap_pm_${n}_${idx + 1}`,
+    number: n as NumerologyNumber,
+    type: "special_overlap" as const,
+    text: s.replaceAll("{n}", String(n)),
+    overlapSource: "personal_month" as const,
+  })),
+);
+
+/** パーソナルデイ＝日付の桁おろしが同じときだけ使う */
+export const personalDayCalendarDayOverlapAccents: AccentTemplate[] = DIGITS.flatMap((n) =>
+  specialAccentDraft.personalDayEqualsCalendarDay.map((s, idx) => ({
+    id: `special_overlap_pd_${n}_${idx + 1}`,
+    number: n as NumerologyNumber,
+    type: "special_overlap" as const,
+    text: s.replaceAll("{n}", String(n)),
+    overlapSource: "personal_day" as const,
+  })),
+);
+
+/** 暦の月と日の桁おろしが同じだけのとき（パーソナルデイとは無関係の重なり） */
+export const calendarMonthDayOverlapAccents: AccentTemplate[] = DIGITS.flatMap((n) =>
+  specialAccentDraft.calendarMonthEqualsCalendarDay.map((s, idx) => ({
+    id: `special_overlap_md_${n}_${idx + 1}`,
+    number: n as NumerologyNumber,
+    type: "special_overlap" as const,
+    text: s.replaceAll("{n}", String(n)),
+    overlapSource: "calendar_md" as const,
+  })),
+);
+
 export const calendarMonthAccents: AccentTemplate[] = Object.entries(
   calendarMonthAccentDraft,
 ).flatMap(([number, entry]) =>
   entry.lines.map((text, idx) => ({
     id: `calendar_month_${number}_${idx + 1}`,
     number: Number(number) as NumerologyNumber,
-    type: "calendar_month",
+    type: "calendar_month" as const,
     text,
   })),
 );
@@ -23,33 +58,14 @@ export const calendarDayAccents: AccentTemplate[] = Object.entries(
   entry.lines.map((text, idx) => ({
     id: `calendar_day_${number}_${idx + 1}`,
     number: Number(number) as NumerologyNumber,
-    type: "calendar_day",
+    type: "calendar_day" as const,
     text,
   })),
 );
 
-const overlapLinesByNumber = new Map<NumerologyNumber, string[]>(
-  ([1, 2, 3, 4, 5, 6, 7, 8, 9] as const).map((n): [NumerologyNumber, string[]] => {
-    const month = specialAccentDraft.personalDayEqualsCalendarMonth.map((s) =>
-      s.replaceAll("{n}", String(n)),
-    );
-    const day = specialAccentDraft.personalDayEqualsCalendarDay.map((s) =>
-      s.replaceAll("{n}", String(n)),
-    );
-    const calendar = specialAccentDraft.calendarMonthEqualsCalendarDay.map((s) =>
-      s.replaceAll("{n}", String(n)),
-    );
-    return [n as NumerologyNumber, [...month, ...day, ...calendar]];
-  }),
-);
-
-export const specialOverlapAccents: AccentTemplate[] = Array.from(
-  overlapLinesByNumber.entries(),
-).flatMap(([number, lines]) =>
-  lines.map((text, idx) => ({
-    id: `special_overlap_${number}_${idx + 1}`,
-    number,
-    type: "special_overlap",
-    text,
-  })),
-);
+/** 重なりアクセント全体（重複検出などで列挙する用） */
+export const specialOverlapAccents: AccentTemplate[] = [
+  ...personalDayCalendarMonthOverlapAccents,
+  ...personalDayCalendarDayOverlapAccents,
+  ...calendarMonthDayOverlapAccents,
+];

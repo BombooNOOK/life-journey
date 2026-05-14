@@ -2,6 +2,9 @@ import { baseComments } from "./baseComments";
 import {
   calendarDayAccents,
   calendarMonthAccents,
+  calendarMonthDayOverlapAccents,
+  personalDayCalendarDayOverlapAccents,
+  personalDayCalendarMonthOverlapAccents,
   specialOverlapAccents,
 } from "./calendarAccents";
 import { reduceToSingleDigit } from "./numerology";
@@ -41,15 +44,25 @@ function pickAccent(input: {
   const { baseTextLength, personalDay, monthNumber, dayNumber, seed, recentTemplateIds } =
     input;
 
-  if (
-    personalDay === monthNumber ||
-    personalDay === dayNumber ||
-    monthNumber === dayNumber
-  ) {
-    const overlapCandidates = specialOverlapAccents.filter(
-      (item) => item.number === personalDay || item.number === monthNumber,
-    );
+  if (personalDay === monthNumber || personalDay === dayNumber) {
+    const overlapCandidates: AccentTemplate[] = [];
+    if (personalDay === monthNumber) {
+      overlapCandidates.push(
+        ...personalDayCalendarMonthOverlapAccents.filter((item) => item.number === personalDay),
+      );
+    }
+    if (personalDay === dayNumber) {
+      overlapCandidates.push(
+        ...personalDayCalendarDayOverlapAccents.filter((item) => item.number === personalDay),
+      );
+    }
     const overlap = pickTemplate(overlapCandidates, seed + 17, recentTemplateIds);
+    if (overlap) return overlap;
+  }
+
+  if (monthNumber === dayNumber) {
+    const calOnly = calendarMonthDayOverlapAccents.filter((item) => item.number === monthNumber);
+    const overlap = pickTemplate(calOnly, seed + 19, recentTemplateIds);
     if (overlap) return overlap;
   }
 

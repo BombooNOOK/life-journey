@@ -9,6 +9,7 @@ import {
   contentFontModeToPreviewScale,
   DEFAULT_CONTENT_FONT_MODE,
   normalizeContentFontMode,
+  PREVIEW_OVERFLOW_HINT_MESSAGE,
 } from "@/lib/journal/contentFontMode";
 
 type Props = {
@@ -244,7 +245,11 @@ export function DiaryDesignPreview({
               {activityLabel.length > 62 ? `${activityLabel.slice(0, 62)}…` : activityLabel}
             </p>
             <p
-              className="absolute max-h-[18.6%] overflow-hidden whitespace-pre-wrap break-words text-stone-700/90 [overflow-wrap:anywhere]"
+              className={[
+                "absolute overflow-y-auto overscroll-y-contain whitespace-pre-wrap break-words text-stone-700/90 [overflow-wrap:anywhere] touch-pan-y",
+                wideTemplate ? "max-h-[26%]" : "max-h-[32%]",
+                "[-webkit-overflow-scrolling:touch]",
+              ].join(" ")}
               style={{
                 left: layout.contentLeft,
                 top: layout.contentTop,
@@ -332,8 +337,10 @@ export function DiaryDesignPreview({
       <JournalContentLengthAlerts
         contentFontMode={contentFontMode}
         contentLength={trimmedBody.length}
-        showPreviewOverflowHint
       />
+      {!bodyEmpty ? (
+        <p className="mt-1.5 text-[11px] leading-relaxed text-stone-500">{PREVIEW_OVERFLOW_HINT_MESSAGE}</p>
+      ) : null}
     </section>
   );
 }

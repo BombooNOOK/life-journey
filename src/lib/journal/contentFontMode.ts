@@ -42,9 +42,14 @@ export const JOURNAL_LONG_CONTENT_WARN_MESSAGE =
 export const JOURNAL_VERY_LONG_CONTENT_WARN_MESSAGE =
   "本文がかなり長くなっています。製本時に収まりきらない可能性があります。『ぎゅっと』に変更するか、文章を短くしてください。";
 
-/** プレビュー枠は overflow のため、長文では末尾が見えないことがある旨（全文は保存済み） */
+/** プレビュー枠は高さに限りがある旨（全文は保存済み）。枠内を縦にスクロールすると続きを読めます。 */
 export const PREVIEW_OVERFLOW_HINT_MESSAGE =
-  "プレビューでは枠の高さの都合で、本文の一部が見えない場合があります。全文は保存されています。";
+  "プレビューでは枠の高さに限りがあります。本文エリアを縦にスクロールすると続きを読めます。全文は保存されています。";
+
+/** 入力欄カウンタの分母（目安文字数＝ソフト上限と同じ。保存上限 2000 字とは別） */
+export function journalEntryContentCountDenominator(mode: ContentFontMode): number {
+  return JOURNAL_CONTENT_SOFT_MAX_BY_MODE[mode];
+}
 
 export function isContentFontMode(value: string): value is ContentFontMode {
   return (CONTENT_FONT_MODES as readonly string[]).includes(value);

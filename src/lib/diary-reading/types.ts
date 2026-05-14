@@ -52,4 +52,6 @@ export type AccentTemplate = {
   number: NumerologyNumber;
   type: "calendar_month" | "calendar_day" | "special_overlap";
   text: string;
+  /** special_overlap のみ。暦の月=日だけの重なりと、パーソナルデイ一致を混同しないため */
+  overlapSource?: "personal_month" | "personal_day" | "calendar_md";
 };
