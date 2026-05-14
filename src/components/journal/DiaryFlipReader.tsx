@@ -5,6 +5,7 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { DiaryDesignPreview } from "@/components/journal/DiaryDesignPreview";
+import { JournalBindingContentWarnings } from "@/components/journal/JournalBindingContentWarnings";
 import {
   type BoundDiaryEntry,
   buildBoundYearPages,
@@ -498,6 +499,8 @@ export function DiaryFlipReader({ year, initialSettings, bookshelfProfileId }: P
         <p className="text-xs text-stone-600">
           「このページを本に入れる」のON/OFFを見直せます。月ごとの一括操作もできます。
         </p>
+
+        <JournalBindingContentWarnings entries={includedEntries} />
 
         <BookshelfDiaryBindingOrder year={year} pageCount={includedPageCount} />
 

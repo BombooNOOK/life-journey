@@ -7,7 +7,10 @@ export type ContentFontMode = (typeof CONTENT_FONT_MODES)[number];
 
 export const DEFAULT_CONTENT_FONT_MODE: ContentFontMode = "standard";
 
-/** モード別の「目安文字数」（超過で長文警告。後から調整可能） */
+/**
+ * モード別の「目安を超えたら注意」（文字数 > この値でソフト警告）。
+ * 製本に必ず収まる保証ではなく、読みやすさの目安（後から調整可能）。
+ */
 export const JOURNAL_CONTENT_SOFT_MAX_BY_MODE: Record<ContentFontMode, number> = {
   relaxed: 120,
   standard: 180,
@@ -15,8 +18,16 @@ export const JOURNAL_CONTENT_SOFT_MAX_BY_MODE: Record<ContentFontMode, number> =
   compact: 320,
 };
 
-/** プレビュー HTML で本文を切る上限（性能・レイアウト用。製本上限ではない） */
-export const PREVIEW_BODY_DISPLAY_CHAR_LIMIT = 500;
+/**
+ * さらに長い場合の警告しきい値（文字数 > この値でストロング警告）。
+ * ソフト上限より大きくすること（後から調整可能）。
+ */
+export const JOURNAL_CONTENT_STRONG_MAX_BY_MODE: Record<ContentFontMode, number> = {
+  relaxed: 180,
+  standard: 270,
+  generous: 380,
+  compact: 500,
+};
 
 export const CONTENT_FONT_MODE_LABELS_JA: Record<ContentFontMode, string> = {
   relaxed: "ゆったり",
@@ -28,8 +39,12 @@ export const CONTENT_FONT_MODE_LABELS_JA: Record<ContentFontMode, string> = {
 export const JOURNAL_LONG_CONTENT_WARN_MESSAGE =
   "本文が長めです。製本時に読みやすく仕上げるため、文字サイズを小さくするか、文章を短くしてください。";
 
-export const PREVIEW_TRUNCATION_NOTICE =
-  "本文が長いため、プレビューでは一部省略されています。";
+export const JOURNAL_VERY_LONG_CONTENT_WARN_MESSAGE =
+  "本文がかなり長くなっています。製本時に収まりきらない可能性があります。『ぎゅっと』に変更するか、文章を短くしてください。";
+
+/** プレビュー枠は overflow のため、長文では末尾が見えないことがある旨（全文は保存済み） */
+export const PREVIEW_OVERFLOW_HINT_MESSAGE =
+  "プレビューでは枠の高さの都合で、本文の一部が見えない場合があります。全文は保存されています。";
 
 export function isContentFontMode(value: string): value is ContentFontMode {
   return (CONTENT_FONT_MODES as readonly string[]).includes(value);
@@ -60,8 +75,8 @@ export function isJournalContentOverSoftLimit(mode: ContentFontMode, contentLeng
   return contentLength > JOURNAL_CONTENT_SOFT_MAX_BY_MODE[mode];
 }
 
-export function isPreviewBodyTruncated(content: string): boolean {
-  return content.trim().length > PREVIEW_BODY_DISPLAY_CHAR_LIMIT;
+export function isJournalContentStrongLong(mode: ContentFontMode, contentLength: number): boolean {
+  return contentLength > JOURNAL_CONTENT_STRONG_MAX_BY_MODE[mode];
 }
 
 /**

@@ -4,14 +4,11 @@ import Image from "next/image";
 import { useLayoutEffect, useRef, useState } from "react";
 import { getActivityMeta, getMoodMeta, type DiaryDesignId } from "@/lib/journal/meta";
 import { diaryTemplateScreenImageMap } from "@/lib/journal/templateAssets";
+import { JournalContentLengthAlerts } from "@/components/journal/JournalContentLengthAlerts";
 import {
   contentFontModeToPreviewScale,
   DEFAULT_CONTENT_FONT_MODE,
-  isJournalContentOverSoftLimit,
-  JOURNAL_LONG_CONTENT_WARN_MESSAGE,
   normalizeContentFontMode,
-  PREVIEW_BODY_DISPLAY_CHAR_LIMIT,
-  PREVIEW_TRUNCATION_NOTICE,
 } from "@/lib/journal/contentFontMode";
 
 type Props = {
@@ -108,10 +105,6 @@ export function DiaryDesignPreview({
   const trimmedBody = content.trim();
   const bodyEmpty = !trimmedBody;
   const textPreview = trimmedBody || "ここに本文が入ります。";
-  const bodyInFrame =
-    !bodyEmpty && trimmedBody.length > PREVIEW_BODY_DISPLAY_CHAR_LIMIT
-      ? `${trimmedBody.slice(0, PREVIEW_BODY_DISPLAY_CHAR_LIMIT)}…`
-      : textPreview;
   const owlComment = comment?.trim() || "保存後に「フクロウ先生の読み解き」がここに入ります。";
   const templateSize = TEMPLATE_SIZE;
   const layout = TEMPLATE_LAYOUT;
@@ -260,7 +253,7 @@ export function DiaryDesignPreview({
                 lineHeight: contentLineHeight,
               }}
             >
-              {bodyInFrame}
+              {textPreview}
             </p>
             <p
               className="absolute m-0 overflow-hidden whitespace-pre-wrap break-words text-stone-700/90 [overflow-wrap:anywhere]"
@@ -336,16 +329,11 @@ export function DiaryDesignPreview({
           </div>
         </div>
       </div>
-      {!bodyEmpty && isJournalContentOverSoftLimit(contentFontMode, trimmedBody.length) ? (
-        <p className="mt-2 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs leading-relaxed text-amber-950">
-          {JOURNAL_LONG_CONTENT_WARN_MESSAGE}
-        </p>
-      ) : null}
-      {!bodyEmpty && trimmedBody.length > PREVIEW_BODY_DISPLAY_CHAR_LIMIT ? (
-        <p className="mt-2 rounded-md border border-stone-200 bg-stone-50 px-3 py-2 text-xs leading-relaxed text-stone-700">
-          {PREVIEW_TRUNCATION_NOTICE}
-        </p>
-      ) : null}
+      <JournalContentLengthAlerts
+        contentFontMode={contentFontMode}
+        contentLength={trimmedBody.length}
+        showPreviewOverflowHint
+      />
     </section>
   );
 }

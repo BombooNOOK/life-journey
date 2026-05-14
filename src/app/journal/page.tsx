@@ -6,15 +6,14 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useFirebaseAuth } from "@/components/auth/FirebaseAuthProvider";
 import { formatDateTimeJa } from "@/lib/date/formatJa";
 
+import { JournalContentLengthAlerts } from "@/components/journal/JournalContentLengthAlerts";
 import { parseSafeBookshelfDiaryReturnTo } from "@/lib/journal/bookshelfReturnTo";
 import {
   CONTENT_FONT_MODE_LABELS_JA,
   CONTENT_FONT_MODES,
   DEFAULT_CONTENT_FONT_MODE,
   type ContentFontMode,
-  isJournalContentOverSoftLimit,
   JOURNAL_CONTENT_SOFT_MAX_BY_MODE,
-  JOURNAL_LONG_CONTENT_WARN_MESSAGE,
   normalizeContentFontMode,
 } from "@/lib/journal/contentFontMode";
 import {
@@ -597,11 +596,10 @@ function JournalPageContent() {
             ).join(" · ")}
           </p>
         </fieldset>
-        {content.trim() && isJournalContentOverSoftLimit(contentFontMode, content.trim().length) ? (
-          <p className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs leading-relaxed text-amber-950">
-            {JOURNAL_LONG_CONTENT_WARN_MESSAGE}
-          </p>
-        ) : null}
+        <JournalContentLengthAlerts
+          contentFontMode={contentFontMode}
+          contentLength={content.trim().length}
+        />
         <label className="block text-sm font-medium text-stone-700" htmlFor="journal-photo">
           写真（任意）
         </label>
