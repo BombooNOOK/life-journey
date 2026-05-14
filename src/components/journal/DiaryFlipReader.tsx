@@ -469,6 +469,7 @@ export function DiaryFlipReader({ year, initialSettings, bookshelfProfileId }: P
                 photoDataUrl={current.entry.photoDataUrl}
                 previewDate={new Date(current.entry.createdAt)}
                 diaryNumbers={current.entry.diaryNumbers}
+                contentFontMode={current.entry.contentFontMode}
               />
               <p className="mt-2 text-center">
                 <Link

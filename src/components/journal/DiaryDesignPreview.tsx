@@ -4,6 +4,15 @@ import Image from "next/image";
 import { useLayoutEffect, useRef, useState } from "react";
 import { getActivityMeta, getMoodMeta, type DiaryDesignId } from "@/lib/journal/meta";
 import { diaryTemplateScreenImageMap } from "@/lib/journal/templateAssets";
+import {
+  contentFontModeToPreviewScale,
+  DEFAULT_CONTENT_FONT_MODE,
+  isJournalContentOverSoftLimit,
+  JOURNAL_LONG_CONTENT_WARN_MESSAGE,
+  normalizeContentFontMode,
+  PREVIEW_BODY_DISPLAY_CHAR_LIMIT,
+  PREVIEW_TRUNCATION_NOTICE,
+} from "@/lib/journal/contentFontMode";
 
 type Props = {
   designTheme: DiaryDesignId;
@@ -19,7 +28,8 @@ type Props = {
     year: number;
     calmness: number;
   };
-  contentFontScale?: number;
+  /** DB の contentFontMode（英キー）。未指定は標準 */
+  contentFontMode?: string | null;
 };
 
 type TemplateLayout = {
@@ -91,17 +101,27 @@ export function DiaryDesignPreview({
   photoDataUrl,
   previewDate = new Date(),
   diaryNumbers,
-  contentFontScale = 1,
+  contentFontMode: contentFontModeProp,
 }: Props) {
   const moodEmoji = getMoodMeta(mood).emoji;
   const activityLabel = getActivityMeta(activity).label;
-  const textPreview = content.trim() || "ここに本文が入ります。";
+  const trimmedBody = content.trim();
+  const bodyEmpty = !trimmedBody;
+  const textPreview = trimmedBody || "ここに本文が入ります。";
+  const bodyInFrame =
+    !bodyEmpty && trimmedBody.length > PREVIEW_BODY_DISPLAY_CHAR_LIMIT
+      ? `${trimmedBody.slice(0, PREVIEW_BODY_DISPLAY_CHAR_LIMIT)}…`
+      : textPreview;
   const owlComment = comment?.trim() || "保存後に「フクロウ先生の読み解き」がここに入ります。";
   const templateSize = TEMPLATE_SIZE;
   const layout = TEMPLATE_LAYOUT;
   const weekdayLabel = ["日", "月", "火", "水", "木", "金", "土"][previewDate.getDay()];
   const displayedNumbers = diaryNumbers ?? { today: "-", month: "-", year: "-", calmness: "-" };
-  const safeContentFontScale = Math.max(0.7, Math.min(1.2, contentFontScale));
+  const contentFontMode = normalizeContentFontMode(contentFontModeProp ?? DEFAULT_CONTENT_FONT_MODE);
+  const safeContentFontScale = Math.max(
+    0.7,
+    Math.min(1.2, contentFontModeToPreviewScale(contentFontMode)),
+  );
   /**
    * 枠幅 cqw のみだと max が広い画面で大きくなりすぎ、狭い画面と差が出る。
    * min(cqw,cqh) で縦横の小さい方に寄せ、上限を抑えてデバイス間の差を縮める。
@@ -240,7 +260,7 @@ export function DiaryDesignPreview({
                 lineHeight: contentLineHeight,
               }}
             >
-              {textPreview.length > 500 ? `${textPreview.slice(0, 500)}…` : textPreview}
+              {bodyInFrame}
             </p>
             <p
               className="absolute m-0 overflow-hidden whitespace-pre-wrap break-words text-stone-700/90 [overflow-wrap:anywhere]"
@@ -316,6 +336,16 @@ export function DiaryDesignPreview({
           </div>
         </div>
       </div>
+      {!bodyEmpty && isJournalContentOverSoftLimit(contentFontMode, trimmedBody.length) ? (
+        <p className="mt-2 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs leading-relaxed text-amber-950">
+          {JOURNAL_LONG_CONTENT_WARN_MESSAGE}
+        </p>
+      ) : null}
+      {!bodyEmpty && trimmedBody.length > PREVIEW_BODY_DISPLAY_CHAR_LIMIT ? (
+        <p className="mt-2 rounded-md border border-stone-200 bg-stone-50 px-3 py-2 text-xs leading-relaxed text-stone-700">
+          {PREVIEW_TRUNCATION_NOTICE}
+        </p>
+      ) : null}
     </section>
   );
 }

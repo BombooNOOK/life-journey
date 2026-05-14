@@ -18,6 +18,7 @@ export type BoundDiaryEntry = {
   photoDataUrl: string | null;
   generatedComment: string | null;
   includeInBook?: boolean;
+  contentFontMode?: string;
   diaryNumbers?: {
     today: number;
     month: number;

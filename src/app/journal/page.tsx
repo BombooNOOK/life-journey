@@ -8,6 +8,16 @@ import { formatDateTimeJa } from "@/lib/date/formatJa";
 
 import { parseSafeBookshelfDiaryReturnTo } from "@/lib/journal/bookshelfReturnTo";
 import {
+  CONTENT_FONT_MODE_LABELS_JA,
+  CONTENT_FONT_MODES,
+  DEFAULT_CONTENT_FONT_MODE,
+  type ContentFontMode,
+  isJournalContentOverSoftLimit,
+  JOURNAL_CONTENT_SOFT_MAX_BY_MODE,
+  JOURNAL_LONG_CONTENT_WARN_MESSAGE,
+  normalizeContentFontMode,
+} from "@/lib/journal/contentFontMode";
+import {
   activityOptions,
   diaryDesignOptions,
   getActivityMeta,
@@ -28,6 +38,7 @@ type Entry = {
   activity: ActivityId;
   companionType: string;
   designTheme?: DiaryDesignId;
+  contentFontMode?: string;
   photoDataUrl: string | null;
   generatedComment: string | null;
   includeInBook: boolean;
@@ -101,6 +112,7 @@ function JournalPageContent() {
   const [mood, setMood] = useState<MoodId>("calm");
   const [activity, setActivity] = useState<ActivityId>("record_anyway");
   const [designTheme, setDesignTheme] = useState<DiaryDesignId>("simple");
+  const [contentFontMode, setContentFontMode] = useState<ContentFontMode>(DEFAULT_CONTENT_FONT_MODE);
   const [includeInBook, setIncludeInBook] = useState(true);
   const [entries, setEntries] = useState<Entry[]>([]);
   const [photoDataUrl, setPhotoDataUrl] = useState<string>("");
@@ -273,6 +285,7 @@ function JournalPageContent() {
         setActivity(data.entry.activity ?? "record_anyway");
         const design = data.entry.designTheme;
         setDesignTheme(normalizeDiaryDesignTheme(design ?? "simple"));
+        setContentFontMode(normalizeContentFontMode(data.entry.contentFontMode));
         setPhotoDataUrl(data.entry.photoDataUrl ?? "");
         setIncludeInBook(data.entry.includeInBook !== false);
         setEntryDate(
@@ -339,6 +352,7 @@ function JournalPageContent() {
           activity,
           companionType: "owl",
           designTheme,
+          contentFontMode,
           photoDataUrl,
           entryDate,
           includeInBook,
@@ -354,6 +368,7 @@ function JournalPageContent() {
       setContent("");
       setPhotoDataUrl("");
       setSelectedPhotoFile(null);
+      setContentFontMode(DEFAULT_CONTENT_FONT_MODE);
       setIncludeInBook(true);
       setEntryDate(toDateInputValue(new Date()));
       await loadEntries({ silent: true });
@@ -409,6 +424,7 @@ function JournalPageContent() {
         setMood("calm");
         setActivity("record_anyway");
         setDesignTheme("simple");
+        setContentFontMode(DEFAULT_CONTENT_FONT_MODE);
         setIncludeInBook(true);
         router.replace("/journal");
       }
@@ -547,6 +563,45 @@ function JournalPageContent() {
           className="w-full rounded-lg border border-stone-300 px-3 py-2 text-sm text-stone-900 outline-none ring-stone-400 focus:ring-2"
           placeholder="例）今日は数字のメッセージを読んで、焦らなくていいと思えた。"
         />
+        <fieldset className="rounded-lg border border-stone-200 bg-stone-50/80 px-3 py-3">
+          <legend className="px-1 text-sm font-medium text-stone-800">
+            今日の記録の文字サイズ（製本イメージ）
+          </legend>
+          <div className="mt-2 flex flex-wrap gap-2">
+            {CONTENT_FONT_MODES.map((mode) => (
+              <label
+                key={mode}
+                className={[
+                  "inline-flex cursor-pointer items-center gap-2 rounded-lg border px-3 py-2 text-sm",
+                  contentFontMode === mode
+                    ? "border-emerald-600 bg-emerald-50 text-emerald-950"
+                    : "border-stone-200 bg-white text-stone-800 hover:bg-stone-50",
+                ].join(" ")}
+              >
+                <input
+                  type="radio"
+                  name="journal-content-font-mode"
+                  value={mode}
+                  checked={contentFontMode === mode}
+                  onChange={() => setContentFontMode(mode)}
+                  className="h-4 w-4 border-stone-300 text-emerald-700 focus:ring-emerald-600"
+                />
+                {CONTENT_FONT_MODE_LABELS_JA[mode]}
+              </label>
+            ))}
+          </div>
+          <p className="mt-2 text-[11px] leading-relaxed text-stone-600">
+            目安の文字数:{" "}
+            {CONTENT_FONT_MODES.map(
+              (m) => `${CONTENT_FONT_MODE_LABELS_JA[m]}〜${JOURNAL_CONTENT_SOFT_MAX_BY_MODE[m]}字`,
+            ).join(" · ")}
+          </p>
+        </fieldset>
+        {content.trim() && isJournalContentOverSoftLimit(contentFontMode, content.trim().length) ? (
+          <p className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs leading-relaxed text-amber-950">
+            {JOURNAL_LONG_CONTENT_WARN_MESSAGE}
+          </p>
+        ) : null}
         <label className="block text-sm font-medium text-stone-700" htmlFor="journal-photo">
           写真（任意）
         </label>
@@ -626,6 +681,7 @@ function JournalPageContent() {
                 setMood("calm");
                 setActivity("record_anyway");
                 setDesignTheme("simple");
+                setContentFontMode(DEFAULT_CONTENT_FONT_MODE);
                 setIncludeInBook(true);
                 setEntryDate(toDateInputValue(new Date()));
                 setError(null);
@@ -645,6 +701,7 @@ function JournalPageContent() {
                   setMood("calm");
                   setActivity("record_anyway");
                   setDesignTheme("simple");
+                  setContentFontMode(DEFAULT_CONTENT_FONT_MODE);
                   setIncludeInBook(true);
                   setEntryDate(toDateInputValue(new Date()));
                   router.replace("/journal");

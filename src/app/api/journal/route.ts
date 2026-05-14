@@ -15,6 +15,7 @@ import { profileByIdForViewer, resolveActiveProfileId } from "@/lib/profile/acti
 import { collectTemplateIdsFromReadingText } from "@/lib/diary-reading/generateDiaryReading";
 import { buildDiaryReadingFromJournalInput } from "@/lib/diary-reading/fromJournal";
 import { normalizeJournalCommentText } from "@/lib/journal/comment";
+import { resolveContentFontModeFromRequest } from "@/lib/journal/contentFontMode";
 import {
   isActivityId,
   isAllowedDiaryDesignThemeRaw,
@@ -106,6 +107,7 @@ export async function GET(req: Request) {
           activity: string;
           companionType: string;
           designTheme?: string;
+          contentFontMode: string;
           photoDataUrl: string | null;
           generatedComment: string | null;
           includeInBook: boolean;
@@ -130,6 +132,7 @@ export async function GET(req: Request) {
           activity: true,
           companionType: true,
           designTheme: true,
+          contentFontMode: true,
           photoDataUrl: true,
           generatedComment: true,
           includeInBook: true,
@@ -154,6 +157,7 @@ export async function GET(req: Request) {
           mood: true,
           activity: true,
           companionType: true,
+          contentFontMode: true,
           photoDataUrl: true,
           generatedComment: true,
           includeInBook: true,
@@ -288,6 +292,15 @@ export async function POST(req: Request) {
   const parsedEntryDate = parseEntryDate(rawEntryDate.trim());
   const includeInBook = typeof rawIncludeInBook === "boolean" ? rawIncludeInBook : true;
 
+  const resolvedFontMode = resolveContentFontModeFromRequest(json);
+  if ("error" in resolvedFontMode) {
+    return NextResponse.json(
+      { error: resolvedFontMode.error, code: "BAD_CONTENT_FONT_MODE" },
+      { status: 400 },
+    );
+  }
+  const contentFontMode = resolvedFontMode.mode;
+
   if (!isAllowedDiaryDesignThemeRaw(rawDesignTheme)) {
     return NextResponse.json(
       { error: "デザインの値が不正です。", code: "BAD_DESIGN" },
@@ -382,6 +395,7 @@ export async function POST(req: Request) {
           activity: string;
           companionType: string;
           designTheme?: string;
+          contentFontMode: string;
           photoDataUrl: string | null;
           generatedComment: string | null;
           includeInBook: boolean;
@@ -398,6 +412,7 @@ export async function POST(req: Request) {
           activity,
           companionType,
           designTheme,
+          contentFontMode,
           photoDataUrl: photoDataUrl || null,
           generatedComment,
           includeInBook,
@@ -410,6 +425,7 @@ export async function POST(req: Request) {
           activity: true,
           companionType: true,
           designTheme: true,
+          contentFontMode: true,
           photoDataUrl: true,
           generatedComment: true,
           includeInBook: true,
@@ -426,6 +442,7 @@ export async function POST(req: Request) {
           mood,
           activity,
           companionType,
+          contentFontMode,
           photoDataUrl: photoDataUrl || null,
           generatedComment,
           includeInBook,
@@ -437,6 +454,7 @@ export async function POST(req: Request) {
           mood: true,
           activity: true,
           companionType: true,
+          contentFontMode: true,
           photoDataUrl: true,
           generatedComment: true,
           includeInBook: true,

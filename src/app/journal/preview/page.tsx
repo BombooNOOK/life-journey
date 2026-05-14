@@ -14,6 +14,7 @@ type PreviewEntry = {
   activity: string;
   companionType: string;
   designTheme?: DiaryDesignId;
+  contentFontMode?: string;
   photoDataUrl: string | null;
   generatedComment: string | null;
   diaryNumbers?: {
@@ -33,7 +34,6 @@ function JournalPreviewPageContent() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [spread, setSpread] = useState<"cover" | "body">("body");
-  const [contentFontScale, setContentFontScale] = useState(1);
 
   useEffect(() => {
     if (!entryId) {
@@ -112,28 +112,6 @@ function JournalPreviewPageContent() {
       </div>
 
       <div className="rounded-xl border border-stone-200 bg-white p-4 shadow-sm">
-        {spread === "body" ? (
-          <div className="mb-3 rounded-lg border border-stone-200 bg-stone-50 px-3 py-2">
-            <label className="block text-xs font-medium text-stone-700" htmlFor="content-font-scale">
-              今日の記録フォントサイズ（長文のときは小さめ）
-            </label>
-            <div className="mt-1 flex items-center gap-3">
-              <input
-                id="content-font-scale"
-                type="range"
-                min={70}
-                max={115}
-                step={1}
-                value={Math.round(contentFontScale * 100)}
-                onChange={(e) => setContentFontScale(Number(e.target.value) / 100)}
-                className="w-full"
-              />
-              <span className="w-14 text-right text-xs text-stone-600">
-                {Math.round(contentFontScale * 100)}%
-              </span>
-            </div>
-          </div>
-        ) : null}
         {loading ? (
           <p className="text-sm text-stone-500">プレビューを読み込み中…</p>
         ) : error ? (
@@ -165,7 +143,7 @@ function JournalPreviewPageContent() {
             photoDataUrl={entry.photoDataUrl}
             previewDate={new Date(entry.createdAt)}
             diaryNumbers={entry.diaryNumbers}
-            contentFontScale={contentFontScale}
+            contentFontMode={entry.contentFontMode}
           />
         )}
       </div>

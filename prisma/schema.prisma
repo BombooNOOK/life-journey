@@ -73,6 +73,8 @@ model JournalEntry {
   activity      String @default("record_anyway")
   companionType String @default("owl")
   designTheme   String @default("simple")
+  /// 今日の記録欄の文字サイズ: relaxed | standard | generous | compact
+  contentFontMode String @default("standard")
   photoDataUrl  String?
   generatedComment String?
   includeInBook Boolean @default(true)

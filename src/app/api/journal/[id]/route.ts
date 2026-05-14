@@ -7,6 +7,7 @@ import { collectTemplateIdsFromReadingText } from "@/lib/diary-reading/generateD
 import { buildDiaryReadingFromJournalInput } from "@/lib/diary-reading/fromJournal";
 import { normalizeJournalCommentText } from "@/lib/journal/comment";
 import { buildDiaryNumbers } from "@/lib/journal/numbers";
+import { resolveContentFontModeFromRequest } from "@/lib/journal/contentFontMode";
 import {
   isActivityId,
   isAllowedDiaryDesignThemeRaw,
@@ -60,6 +61,7 @@ export async function GET(_: Request, { params }: Params) {
         activity: string;
         companionType: string;
         designTheme?: string;
+        contentFontMode: string;
         photoDataUrl: string | null;
         generatedComment: string | null;
         createdAt: Date;
@@ -77,6 +79,7 @@ export async function GET(_: Request, { params }: Params) {
         activity: true,
         companionType: true,
         designTheme: true,
+        contentFontMode: true,
         photoDataUrl: true,
         generatedComment: true,
         createdAt: true,
@@ -94,6 +97,7 @@ export async function GET(_: Request, { params }: Params) {
         mood: true,
         activity: true,
         companionType: true,
+        contentFontMode: true,
         photoDataUrl: true,
         generatedComment: true,
         createdAt: true,
@@ -214,6 +218,15 @@ export async function PATCH(req: Request, { params }: Params) {
   const includeInBook =
     typeof rawIncludeInBook === "boolean" ? rawIncludeInBook : exists.includeInBook;
 
+  const resolvedFontMode = resolveContentFontModeFromRequest(json);
+  if ("error" in resolvedFontMode) {
+    return NextResponse.json(
+      { error: resolvedFontMode.error, code: "BAD_CONTENT_FONT_MODE" },
+      { status: 400 },
+    );
+  }
+  const contentFontMode = resolvedFontMode.mode;
+
   if (!isAllowedDiaryDesignThemeRaw(rawDesignTheme)) {
     return NextResponse.json(
       { error: "デザインの値が不正です。", code: "BAD_DESIGN" },
@@ -303,6 +316,7 @@ export async function PATCH(req: Request, { params }: Params) {
         activity: string;
         companionType: string;
         designTheme?: string;
+        contentFontMode: string;
         photoDataUrl: string | null;
         generatedComment: string | null;
         createdAt: Date;
@@ -320,6 +334,7 @@ export async function PATCH(req: Request, { params }: Params) {
         activity,
         companionType,
         designTheme,
+        contentFontMode,
         photoDataUrl: photoDataUrl || null,
         generatedComment,
         includeInBook,
@@ -331,6 +346,7 @@ export async function PATCH(req: Request, { params }: Params) {
         activity: true,
         companionType: true,
         designTheme: true,
+        contentFontMode: true,
         photoDataUrl: true,
         generatedComment: true,
         createdAt: true,
@@ -348,6 +364,7 @@ export async function PATCH(req: Request, { params }: Params) {
         mood,
         activity,
         companionType,
+        contentFontMode,
         photoDataUrl: photoDataUrl || null,
         generatedComment,
         includeInBook,
@@ -358,6 +375,7 @@ export async function PATCH(req: Request, { params }: Params) {
         mood: true,
         activity: true,
         companionType: true,
+        contentFontMode: true,
         photoDataUrl: true,
         generatedComment: true,
         createdAt: true,
