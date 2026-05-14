@@ -230,6 +230,10 @@ export async function PATCH(req: Request, { params }: Params) {
     typeof json === "object" && json !== null && "includeInBook" in json
       ? (json as { includeInBook: unknown }).includeInBook
       : exists.includeInBook;
+  const regenerateOwlComment =
+    typeof json === "object" &&
+    json !== null &&
+    (json as { regenerateOwlComment?: unknown }).regenerateOwlComment === true;
 
   const content = rawContent.trim();
   const mood = rawMood.trim();
@@ -302,6 +306,7 @@ export async function PATCH(req: Request, { params }: Params) {
 
   /** 本文・写真・デザインだけ直すときは読み解きを固定し、言い回しが毎回変わらないようにする */
   const preserveDiaryReading =
+    !regenerateOwlComment &&
     exists.mood === mood &&
     exists.activity === activity &&
     exists.companionType === companionType &&

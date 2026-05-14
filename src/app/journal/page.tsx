@@ -141,6 +141,7 @@ function JournalPageContent() {
   } | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [numerologyDebug, setNumerologyDebug] = useState<JournalNumerologyDebug | null>(null);
+  const [owlRegenLoading, setOwlRegenLoading] = useState(false);
 
   const loadEntries = useCallback(async (opts?: { silent?: boolean }) => {
     const silent = opts?.silent ?? false;
@@ -417,6 +418,63 @@ function JournalPageContent() {
     }
   }
 
+  async function regenerateOwlCommentOnce() {
+    if (!editingId) return;
+    const text = content.trim();
+    if (!text) {
+      setError("本文を入力してください。");
+      return;
+    }
+    if (!isValidDateInput(entryDate)) {
+      setError("記録日を正しく入力してください。");
+      return;
+    }
+
+    setOwlRegenLoading(true);
+    setError(null);
+    try {
+      const res = await fetch(`/api/journal/${encodeURIComponent(editingId)}`, {
+        method: "PATCH",
+        credentials: "same-origin",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          content: text,
+          mood,
+          activity,
+          companionType: "owl",
+          designTheme,
+          contentFontMode,
+          photoDataUrl,
+          entryDate,
+          includeInBook,
+          profileId,
+          regenerateOwlComment: true,
+        }),
+      });
+      const data = (await res.json()) as { error?: string };
+      if (!res.ok) {
+        setError(data.error ?? "読み解きの再生成に失敗しました。");
+        return;
+      }
+      await loadEntries({ silent: true });
+      const qs = new URLSearchParams();
+      qs.set("_", String(Date.now()));
+      if (showNumerologyDebug) qs.set("numerologyDebug", "1");
+      const getRes = await fetch(`/api/journal/${encodeURIComponent(editingId)}?${qs.toString()}`, {
+        cache: "no-store",
+        credentials: "same-origin",
+      });
+      const getData = (await getRes.json()) as { entry?: Entry };
+      if (getRes.ok && getData.entry?.numerologyDebug) {
+        setNumerologyDebug(getData.entry.numerologyDebug);
+      }
+    } catch {
+      setError("通信に失敗しました。");
+    } finally {
+      setOwlRegenLoading(false);
+    }
+  }
+
   async function onSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     await saveEntry();
@@ -580,6 +638,10 @@ function JournalPageContent() {
             <p className="mt-2 text-[11px] leading-relaxed text-stone-500">
               フォームで選んだ記録日は、UTC のその暦日 12:00 として保存されます。数秘の計算はその UTC 暦日（年・月・日）だけを使うため、サーバーや端末のタイムゾーン設定に依存しません。iPhone と Mac で同じ記録を開いても API の結果は同じです。
             </p>
+            <p className="mt-2 text-[11px] leading-relaxed text-stone-600">
+              「パーソナルデイと、日付を桁おろした数字がどちらも同じ」という補足は、下の accentDayDigit
+              と personalDay が一致するときだけ選ばれます。暦の月の数字だけがパーソナルデイと重なるときは、「暦の月の〜」の文になります（暦の日の桁とは別扱い）。
+            </p>
             <dl className="mt-2 grid grid-cols-[auto_1fr] gap-x-3 gap-y-1.5 tabular-nums">
               <dt className="text-stone-500">記録日（暦）</dt>
               <dd>
@@ -598,20 +660,36 @@ function JournalPageContent() {
               <dd>{numerologyDebug.personalMonth}</dd>
               <dt className="text-stone-500">パーソナルデイ</dt>
               <dd>{numerologyDebug.personalDay}</dd>
+              <dt className="col-span-2 mt-1 font-medium text-stone-600">
+                読み解き生成へ渡す値（fromJournal → generateDiaryReading）
+              </dt>
               <dt className="text-stone-500">暦の月（1–12）</dt>
-              <dd>{numerologyDebug.calendarMonth}</dd>
+              <dd>{numerologyDebug.owlReadingInput.calendarMonth1To12}</dd>
               <dt className="text-stone-500">暦の日（1–31）</dt>
-              <dd>{numerologyDebug.calendarDay}</dd>
-              <dt className="text-stone-500">暦の月（桁おろし）</dt>
-              <dd>{numerologyDebug.calendarMonthDigit}</dd>
-              <dt className="text-stone-500">暦の日（桁おろし）</dt>
-              <dd>{numerologyDebug.calendarDayDigit}</dd>
+              <dd>{numerologyDebug.owlReadingInput.calendarDay1To31}</dd>
+              <dt className="text-stone-500">accentMonthDigit</dt>
+              <dd>{numerologyDebug.owlReadingInput.accentMonthDigit}</dd>
+              <dt className="text-stone-500">accentDayDigit</dt>
+              <dd>{numerologyDebug.owlReadingInput.accentDayDigit}</dd>
               <dt className="text-stone-500">本棚用 diaryNumbers</dt>
               <dd>
                 PY {numerologyDebug.diaryNumbers.year} / PM {numerologyDebug.diaryNumbers.month} / PD{" "}
                 {numerologyDebug.diaryNumbers.today}
               </dd>
             </dl>
+            <div className="mt-3 border-t border-stone-200 pt-2">
+              <p className="mb-2 text-[11px] leading-relaxed text-stone-600">
+                DB に残っている古い読み解きを、いまのロジックで上書きするときは（検証用・通常保存では再生成しません）:
+              </p>
+              <button
+                type="button"
+                className="rounded-lg border border-amber-300 bg-amber-50 px-3 py-1.5 text-xs font-medium text-amber-950 hover:bg-amber-100 disabled:opacity-50"
+                disabled={owlRegenLoading || saving || loadingEdit}
+                onClick={() => void regenerateOwlCommentOnce()}
+              >
+                {owlRegenLoading ? "再生成中…" : "この記録の読み解きだけ再生成"}
+              </button>
+            </div>
           </details>
         ) : null}
         <label className="flex items-center gap-2 rounded-lg border border-stone-200 bg-stone-50 px-3 py-2 text-sm text-stone-800">
