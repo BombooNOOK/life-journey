@@ -12,11 +12,12 @@ import {
   CONTENT_FONT_MODE_LABELS_JA,
   CONTENT_FONT_MODES,
   DEFAULT_CONTENT_FONT_MODE,
+  JOURNAL_CONTENT_BOOK_GUIDE_HINT,
   type ContentFontMode,
-  journalEntryContentCountDenominator,
   JOURNAL_CONTENT_SOFT_MAX_BY_MODE,
   normalizeContentFontMode,
 } from "@/lib/journal/contentFontMode";
+import type { JournalNumerologyDebug } from "@/lib/journal/journalNumerologyDebug";
 import {
   activityOptions,
   diaryDesignOptions,
@@ -44,12 +45,21 @@ type Entry = {
   includeInBook: boolean;
   /** 単件 GET などで付与。編集時に URL の profile と揃えるために使う */
   profileId?: string;
+  /** GET `?numerologyDebug=1` のときのみ */
+  numerologyDebug?: JournalNumerologyDebug;
 };
 
 function toDateInputValue(date: Date): string {
   const y = date.getFullYear();
   const m = String(date.getMonth() + 1).padStart(2, "0");
   const d = String(date.getDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
+}
+
+function toDateInputValueUtc(date: Date): string {
+  const y = date.getUTCFullYear();
+  const m = String(date.getUTCMonth() + 1).padStart(2, "0");
+  const d = String(date.getUTCDate()).padStart(2, "0");
   return `${y}-${m}-${d}`;
 }
 
@@ -103,6 +113,7 @@ function JournalPageContent() {
   const editingId = searchParams.get("edit");
   const profileId = (searchParams.get("profile") ?? "").trim();
   const dateFromQuery = searchParams.get("date");
+  const showNumerologyDebug = searchParams.get("numerologyDebug") === "1";
   const safeReturnToBookshelf = useMemo(
     () => parseSafeBookshelfDiaryReturnTo(searchParams.get("returnTo")),
     [searchParams],
@@ -129,6 +140,7 @@ function JournalPageContent() {
     activeProfileId: string;
   } | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [numerologyDebug, setNumerologyDebug] = useState<JournalNumerologyDebug | null>(null);
 
   const loadEntries = useCallback(async (opts?: { silent?: boolean }) => {
     const silent = opts?.silent ?? false;
@@ -265,10 +277,16 @@ function JournalPageContent() {
   }, [editingId, dateFromQuery]);
 
   useEffect(() => {
-    if (!editingId) return;
+    if (!editingId) {
+      setNumerologyDebug(null);
+      return;
+    }
     setLoadingEdit(true);
     setError(null);
-    void fetch(`/api/journal/${encodeURIComponent(editingId)}?_=${Date.now()}`, {
+    const qs = new URLSearchParams();
+    qs.set("_", String(Date.now()));
+    if (showNumerologyDebug) qs.set("numerologyDebug", "1");
+    void fetch(`/api/journal/${encodeURIComponent(editingId)}?${qs.toString()}`, {
       cache: "no-store",
       credentials: "same-origin",
     })
@@ -289,10 +307,11 @@ function JournalPageContent() {
         setPhotoDataUrl(data.entry.photoDataUrl ?? "");
         setIncludeInBook(data.entry.includeInBook !== false);
         setEntryDate(
-          toDateInputValue(
+          toDateInputValueUtc(
             new Date(data.entry.createdAt != null ? data.entry.createdAt : Date.now()),
           ),
         );
+        setNumerologyDebug(data.entry.numerologyDebug ?? null);
         const rowPid =
           typeof data.entry.profileId === "string" ? data.entry.profileId.trim() : "";
         if (rowPid && searchParams.get("profile") !== rowPid) {
@@ -305,8 +324,10 @@ function JournalPageContent() {
       .catch((e) => {
         setError(e instanceof Error ? e.message : "編集対象の読み込みに失敗しました。");
       })
-      .finally(() => setLoadingEdit(false));
-  }, [editingId, router, searchParams]);
+      .finally(() => {
+        setLoadingEdit(false);
+      });
+  }, [editingId, router, searchParams, showNumerologyDebug]);
 
   useEffect(() => {
     if (!selectedPhotoFile) return;
@@ -542,6 +563,57 @@ function JournalPageContent() {
           onChange={(e) => setEntryDate(e.target.value)}
           className="w-full rounded-lg border border-stone-300 px-3 py-2 text-sm text-stone-900 outline-none ring-stone-400 focus:ring-2"
         />
+        {editingId && !showNumerologyDebug ? (
+          <p className="text-[11px] leading-relaxed text-stone-500">
+            記録日まわりの数値（パーソナルデイ・暦など）を画面で確認するときは、URL に{" "}
+            <code className="rounded bg-stone-100 px-1 py-0.5 text-[10px] text-stone-800">
+              numerologyDebug=1
+            </code>{" "}
+            を付けて再読み込みしてください。
+          </p>
+        ) : null}
+        {numerologyDebug ? (
+          <details className="rounded-lg border border-stone-200 bg-stone-50 px-3 py-2 text-xs text-stone-800">
+            <summary className="cursor-pointer select-none font-medium text-stone-700">
+              数値の確認（サポート用）
+            </summary>
+            <p className="mt-2 text-[11px] leading-relaxed text-stone-500">
+              フォームで選んだ記録日は、UTC のその暦日 12:00 として保存されます。数秘の計算はその UTC 暦日（年・月・日）だけを使うため、サーバーや端末のタイムゾーン設定に依存しません。iPhone と Mac で同じ記録を開いても API の結果は同じです。
+            </p>
+            <dl className="mt-2 grid grid-cols-[auto_1fr] gap-x-3 gap-y-1.5 tabular-nums">
+              <dt className="text-stone-500">記録日（暦）</dt>
+              <dd>
+                {numerologyDebug.calendarYear}年{numerologyDebug.calendarMonth}月
+                {numerologyDebug.calendarDay}日
+              </dd>
+              <dt className="text-stone-500">UTC インスタント</dt>
+              <dd className="break-all">{numerologyDebug.referenceInstantIsoUtc}</dd>
+              <dt className="text-stone-500">生まれ（月・日）</dt>
+              <dd>
+                {numerologyDebug.birthMonth ?? "—"}月{numerologyDebug.birthDay ?? "—"}日（注文プロフィール）
+              </dd>
+              <dt className="text-stone-500">パーソナルイヤー</dt>
+              <dd>{numerologyDebug.personalYear}</dd>
+              <dt className="text-stone-500">パーソナルマンス</dt>
+              <dd>{numerologyDebug.personalMonth}</dd>
+              <dt className="text-stone-500">パーソナルデイ</dt>
+              <dd>{numerologyDebug.personalDay}</dd>
+              <dt className="text-stone-500">暦の月（1–12）</dt>
+              <dd>{numerologyDebug.calendarMonth}</dd>
+              <dt className="text-stone-500">暦の日（1–31）</dt>
+              <dd>{numerologyDebug.calendarDay}</dd>
+              <dt className="text-stone-500">暦の月（桁おろし）</dt>
+              <dd>{numerologyDebug.calendarMonthDigit}</dd>
+              <dt className="text-stone-500">暦の日（桁おろし）</dt>
+              <dd>{numerologyDebug.calendarDayDigit}</dd>
+              <dt className="text-stone-500">本棚用 diaryNumbers</dt>
+              <dd>
+                PY {numerologyDebug.diaryNumbers.year} / PM {numerologyDebug.diaryNumbers.month} / PD{" "}
+                {numerologyDebug.diaryNumbers.today}
+              </dd>
+            </dl>
+          </details>
+        ) : null}
         <label className="flex items-center gap-2 rounded-lg border border-stone-200 bg-stone-50 px-3 py-2 text-sm text-stone-800">
           <input
             type="checkbox"
@@ -556,15 +628,12 @@ function JournalPageContent() {
             記録する内容
           </label>
           <span className="text-base font-semibold tabular-nums text-stone-900 sm:text-lg">
-            {content.length}
-            <span className="font-medium text-stone-500">
-              /{journalEntryContentCountDenominator(contentFontMode)}
-            </span>
+            {CONTENT_FONT_MODE_LABELS_JA[contentFontMode]}：{content.length} /{" "}
+            {JOURNAL_CONTENT_SOFT_MAX_BY_MODE[contentFontMode]}
+            <span className="font-semibold text-stone-700">文字</span>
           </span>
         </div>
-        <p className="mb-1.5 text-[11px] leading-snug text-stone-500">
-          分母は「{CONTENT_FONT_MODE_LABELS_JA[contentFontMode]}」の目安文字数です。保存上限は 2000 字までです。
-        </p>
+        <p className="mb-1.5 text-[11px] leading-snug text-stone-500">{JOURNAL_CONTENT_BOOK_GUIDE_HINT}</p>
         <textarea
           id="journal-content"
           value={content}
@@ -602,10 +671,7 @@ function JournalPageContent() {
             ))}
           </div>
           <p className="mt-2 text-[11px] leading-relaxed text-stone-600">
-            目安の文字数:{" "}
-            {CONTENT_FONT_MODES.map(
-              (m) => `${CONTENT_FONT_MODE_LABELS_JA[m]}〜${JOURNAL_CONTENT_SOFT_MAX_BY_MODE[m]}字`,
-            ).join(" · ")}
+            上の「現在文字数 / 目安」は、選んだサイズごとの製本向けの目安です。モードを変えると分母も変わります。
           </p>
         </fieldset>
         <JournalContentLengthAlerts

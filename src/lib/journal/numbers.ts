@@ -1,3 +1,5 @@
+import { journalReferenceUtcYMD } from "./referenceDateParts";
+
 type DiaryNumbersInput = {
   birthMonth: number | null;
   birthDay: number | null;
@@ -23,9 +25,7 @@ function reduceToSingleDigit(value: number): number {
 }
 
 export function buildDiaryNumbers(input: DiaryNumbersInput): DiaryNumbers {
-  const y = input.date.getFullYear();
-  const m = input.date.getMonth() + 1;
-  const d = input.date.getDate();
+  const { year: y, month: m, day: d } = journalReferenceUtcYMD(input.date);
   const birthMonth = input.birthMonth ?? 1;
   const birthDay = input.birthDay ?? 1;
 

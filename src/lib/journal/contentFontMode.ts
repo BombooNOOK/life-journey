@@ -36,20 +36,17 @@ export const CONTENT_FONT_MODE_LABELS_JA: Record<ContentFontMode, string> = {
   compact: "ぎゅっと",
 };
 
+export const JOURNAL_CONTENT_BOOK_GUIDE_HINT = "製本時に読みやすく残すための目安です";
+
 export const JOURNAL_LONG_CONTENT_WARN_MESSAGE =
   "本文が長めです。製本時に読みやすく仕上げるため、文字サイズを小さくするか、文章を短くしてください。";
 
 export const JOURNAL_VERY_LONG_CONTENT_WARN_MESSAGE =
-  "本文がかなり長くなっています。製本時に収まりきらない可能性があります。『ぎゅっと』に変更するか、文章を短くしてください。";
+  "本文がかなり長くなっています。1ページに収まりきらない可能性があります。『ぎゅっと』に変更するか、文章を短くしてください。";
 
 /** プレビュー枠は高さに限りがある旨（全文は保存済み）。枠内を縦にスクロールすると続きを読めます。 */
 export const PREVIEW_OVERFLOW_HINT_MESSAGE =
   "プレビューでは枠の高さに限りがあります。本文エリアを縦にスクロールすると続きを読めます。全文は保存されています。";
-
-/** 入力欄カウンタの分母（目安文字数＝ソフト上限と同じ。保存上限 2000 字とは別） */
-export function journalEntryContentCountDenominator(mode: ContentFontMode): number {
-  return JOURNAL_CONTENT_SOFT_MAX_BY_MODE[mode];
-}
 
 export function isContentFontMode(value: string): value is ContentFontMode {
   return (CONTENT_FONT_MODES as readonly string[]).includes(value);

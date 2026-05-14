@@ -6,6 +6,7 @@ import { prisma } from "@/lib/db";
 import { collectTemplateIdsFromReadingText } from "@/lib/diary-reading/generateDiaryReading";
 import { buildDiaryReadingFromJournalInput } from "@/lib/diary-reading/fromJournal";
 import { normalizeJournalCommentText } from "@/lib/journal/comment";
+import { buildJournalNumerologyDebug } from "@/lib/journal/journalNumerologyDebug";
 import { buildDiaryNumbers } from "@/lib/journal/numbers";
 import { resolveContentFontModeFromRequest } from "@/lib/journal/contentFontMode";
 import {
@@ -42,7 +43,7 @@ function parseEntryDate(input: string): Date | null {
   return probe;
 }
 
-export async function GET(_: Request, { params }: Params) {
+export async function GET(req: Request, { params }: Params) {
   const viewerEmail = await getViewerEmailFromCookie();
   if (!viewerEmail) {
     return NextResponse.json(
@@ -138,11 +139,23 @@ export async function GET(_: Request, { params }: Params) {
     date: row.createdAt,
   });
 
+  const numerologyDebugOn =
+    new URL(req.url).searchParams.get("numerologyDebug") === "1";
+  const numerologyDebug = numerologyDebugOn
+    ? buildJournalNumerologyDebug({
+        referenceDate: row.createdAt,
+        birthMonth: latestOrder?.birthMonth ?? null,
+        birthDay: latestOrder?.birthDay ?? null,
+        lifePathNumber,
+      })
+    : undefined;
+
   return NextResponse.json({
     entry: {
       ...row,
       designTheme: normalizeDiaryDesignTheme(row.designTheme ?? "simple"),
       diaryNumbers,
+      ...(numerologyDebug ? { numerologyDebug } : {}),
       generatedComment: row.generatedComment
         ? normalizeJournalCommentText(row.generatedComment)
         : row.generatedComment,

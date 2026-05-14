@@ -1,3 +1,4 @@
+import { journalReferenceUtcYMD } from "@/lib/journal/referenceDateParts";
 import {
   personalDayNumber,
   personalMonthNumber,
@@ -66,12 +67,11 @@ export function buildDiaryReadingFromJournalInput(input: BuildFromJournalInput):
   const date = input.referenceDate;
   const birthMonth = input.birthMonth ?? 1;
   const birthDay = input.birthDay ?? 1;
+  const { year: calYear, month: calMonth, day: calDay } = journalReferenceUtcYMD(date);
 
-  const py = toNumerologyNumber(
-    personalYearNumber(birthMonth, birthDay, date.getFullYear()),
-  );
-  const pm = toNumerologyNumber(personalMonthNumber(py, date.getMonth() + 1));
-  const pd = toNumerologyNumber(personalDayNumber(pm, date.getDate()));
+  const py = toNumerologyNumber(personalYearNumber(birthMonth, birthDay, calYear));
+  const pm = toNumerologyNumber(personalMonthNumber(py, calMonth));
+  const pd = toNumerologyNumber(personalDayNumber(pm, calDay));
 
   const readingInput: DiaryReadingInput = {
     actionCategory,
@@ -79,8 +79,8 @@ export function buildDiaryReadingFromJournalInput(input: BuildFromJournalInput):
     personalYear: py,
     personalMonth: pm,
     personalDay: pd,
-    calendarMonth: date.getMonth() + 1,
-    calendarDay: date.getDate(),
+    calendarMonth: calMonth,
+    calendarDay: calDay,
     recentTemplateIds: input.recentTemplateIds,
   };
 
