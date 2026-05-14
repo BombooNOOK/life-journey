@@ -66,12 +66,12 @@ const TEMPLATE_LAYOUT: TemplateLayout = {
   activityLeft: "16.95%",
   activityTop: "47.1%",
   contentLeft: "13.2%",
-  /** 画像の「今日の記録」見出しと本文1行目が被らないよう少し下げる */
-  contentTop: "54.35%",
+  /** 「今日の記録」本文：日付・気分と同じ 0.65% だけ下げて帯を揃える */
+  contentTop: "55%",
   contentWidth: "72.8%",
   commentLeft: "9.15%",
-  /** フクロウ先生コメント（画像の吹き出しに合わせる） */
-  commentTop: "78.55%",
+  /** フクロウ先生コメント（画像の吹き出しに合わせる）— 上記と同量下げ */
+  commentTop: "79.2%",
   commentWidth: "62.2%",
   commentMaxHeight: "19.8%",
   /** 丸印中心が画像より右下に見えるためわずかに左上へ */
@@ -310,9 +310,7 @@ export function DiaryDesignPreview({
                   className="object-contain"
                 />
               ) : (
-                <div className="flex h-full w-full items-center justify-center bg-[#f8f4ea]/80 text-[11px] text-stone-500">
-                  写真
-                </div>
+                <div className="h-full w-full bg-[#f8f4ea]/80" aria-hidden />
               )}
             </div>
           </div>
