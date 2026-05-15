@@ -44,9 +44,12 @@ export const JOURNAL_LONG_CONTENT_WARN_MESSAGE =
 export const JOURNAL_VERY_LONG_CONTENT_WARN_MESSAGE =
   "本文がかなり長くなっています。1ページに収まりきらない可能性があります。『ぎゅっと』に変更するか、文章を短くしてください。";
 
-/** プレビュー枠は高さに限りがある旨（全文は保存済み）。枠内を縦にスクロールすると続きを読めます。 */
+/** 製本イメージプレビュー下の説明（印刷用PDF未実装のため断定しない表現） */
 export const PREVIEW_OVERFLOW_HINT_MESSAGE =
-  "プレビューでは枠の高さに限りがあります。本文エリアを縦にスクロールすると続きを読めます。全文は保存されています。";
+  "こちらは本になる雰囲気を確認するためのプレビューです。\n" +
+  "長い本文は枠内でスクロールして確認できます。\n" +
+  "入力した全文は保存されています。\n" +
+  "製本の際は、内容を確認のうえ印刷用に整えて進行します。";
 
 export function isContentFontMode(value: string): value is ContentFontMode {
   return (CONTENT_FONT_MODES as readonly string[]).includes(value);

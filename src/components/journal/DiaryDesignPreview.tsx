@@ -417,7 +417,9 @@ export function DiaryDesignPreview({
         contentLength={trimmedBody.length}
       />
       {!bodyEmpty ? (
-        <p className="mt-1.5 text-[11px] leading-relaxed text-stone-500">{PREVIEW_OVERFLOW_HINT_MESSAGE}</p>
+        <p className="mt-1.5 whitespace-pre-line text-[11px] leading-relaxed text-stone-500">
+          {PREVIEW_OVERFLOW_HINT_MESSAGE}
+        </p>
       ) : null}
     </section>
   );
