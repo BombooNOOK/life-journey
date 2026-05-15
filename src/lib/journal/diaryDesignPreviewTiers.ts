@@ -47,7 +47,19 @@ export const DIARY_PREVIEW_LARGE_COMMENT_REGION: DiaryPreviewRegionBox = {
   heightPct: "24%",
 };
 
-/** small / medium の本文枠（コメント帯の手前で打ち切り） */
+/** コメント左端（テンプレ共通） */
+const COMMENT_REGION_LEFT_PCT = 9.15;
+/** フクロウ頭の左端おおよそ（tier ごとに右へ余裕があるため medium はやや広げる） */
+const OWL_ART_SAFE_LEFT_BY_TIER = { small: 54.2, medium: 57.8 } as const;
+const COMMENT_WIDTH_MARGIN_PCT = 0.35;
+
+function commentMaxWidthPct(tier: "small" | "medium"): string {
+  const safeLeft = OWL_ART_SAFE_LEFT_BY_TIER[tier];
+  const w = safeLeft - COMMENT_REGION_LEFT_PCT - COMMENT_WIDTH_MARGIN_PCT;
+  return `${w.toFixed(2)}%`;
+}
+
+/** small / medium の本文枠（コメント帯・フクロウ頭の手前で打ち切り） */
 export const DIARY_PREVIEW_TIER_BODY: Record<
   "small" | "medium",
   {
@@ -60,7 +72,8 @@ export const DIARY_PREVIEW_TIER_BODY: Record<
       left: "13.2%",
       top: "55%",
       width: "72.8%",
-      heightPct: "21%",
+      /** 見た目優先：フクロウ頭手前で余白を確保（全文は枠内スクロール） */
+      heightPct: "17.5%",
     },
     scrollAffordance: { gradient: true, rail: true, chevron: true },
   },
@@ -69,13 +82,13 @@ export const DIARY_PREVIEW_TIER_BODY: Record<
       left: "13.2%",
       top: "55%",
       width: "72.8%",
-      heightPct: "22.5%",
+      heightPct: "19%",
     },
     scrollAffordance: { gradient: true, rail: true, chevron: false },
   },
 } as const;
 
-/** small / medium のフクロウ欄（イラスト右側にはみ出さない幅） */
+/** small / medium のフクロウ欄 */
 export const DIARY_PREVIEW_TIER_COMMENT: Record<
   "small" | "medium",
   {
@@ -89,23 +102,23 @@ export const DIARY_PREVIEW_TIER_COMMENT: Record<
     region: {
       left: "9.15%",
       top: "79.2%",
-      width: "42%",
+      width: commentMaxWidthPct("small"),
       heightPct: "17.5%",
     },
     fontSize: "clamp(8px, min(1.88cqw, 2.48cqh), 10.5px)",
     lineHeight: "1.44",
-    scrollAffordance: { gradient: true, rail: true, chevron: false },
+    scrollAffordance: { gradient: true, rail: true, chevron: true },
   },
   medium: {
     region: {
       left: "9.15%",
       top: "79.2%",
-      width: "46%",
+      width: commentMaxWidthPct("medium"),
       heightPct: "18.5%",
     },
     fontSize: "clamp(9.5px, min(2.05cqw, 2.15cqh), 12px)",
     lineHeight: "1.36",
-    scrollAffordance: { gradient: true, rail: true, chevron: false },
+    scrollAffordance: { gradient: true, rail: true, chevron: true },
   },
 } as const;
 
