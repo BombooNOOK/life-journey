@@ -53,7 +53,7 @@ const COMMENT_REGION_LEFT_PCT = 9.15;
  * 下端フクロウ本体が始まるおおよその左端（%）。
  * large の commentWidth 62.2% は吹き出し全体用。スマホは本体手前まで広げる。
  */
-const OWL_ART_SAFE_LEFT_BY_TIER = { small: 62.5, medium: 66 } as const;
+const OWL_ART_SAFE_LEFT_BY_TIER = { small: 65.5, medium: 69 } as const;
 /** イラストとの隙間（ギリギリまで広げるため最小） */
 const COMMENT_WIDTH_MARGIN_PCT = 0.15;
 
