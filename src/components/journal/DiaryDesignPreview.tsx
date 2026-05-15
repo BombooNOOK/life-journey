@@ -11,6 +11,17 @@ import {
   normalizeContentFontMode,
   PREVIEW_OVERFLOW_HINT_MESSAGE,
 } from "@/lib/journal/contentFontMode";
+import {
+  DIARY_PREVIEW_LARGE_BODY_MAX_HEIGHT_PCT,
+  DIARY_PREVIEW_LARGE_COMMENT_INNER_SURFACE_CLASS,
+  DIARY_PREVIEW_TIER_BODY,
+  DIARY_PREVIEW_TIER_COMMENT,
+  DIARY_PREVIEW_TIER_DATE_ROW,
+  DIARY_PREVIEW_TIER_NUMBER,
+  PREVIEW_SHELL_MAX_WIDTH_PX,
+  type DiaryPreviewTier,
+  resolveDiaryPreviewTier,
+} from "@/lib/journal/diaryDesignPreviewTiers";
 
 type Props = {
   designTheme: DiaryDesignId;
@@ -127,11 +138,11 @@ export function DiaryDesignPreview({
   const contentLineHeight = (baseContentLineHeight * 0.97).toFixed(3);
 
   const templateShellRef = useRef<HTMLDivElement>(null);
-  const [wideTemplate, setWideTemplate] = useState(false);
+  const [tier, setTier] = useState<DiaryPreviewTier>("large");
   useLayoutEffect(() => {
     const el = templateShellRef.current;
     if (!el || typeof ResizeObserver === "undefined") return;
-    const apply = (w: number) => setWideTemplate(w >= 440);
+    const apply = (w: number) => setTier(resolveDiaryPreviewTier(w));
     const ro = new ResizeObserver((entries) => {
       apply(entries[0]?.contentRect.width ?? 0);
     });
@@ -140,29 +151,40 @@ export function DiaryDesignPreview({
     return () => ro.disconnect();
   }, []);
 
-  /** 広い枠では吹き出しの縦スペースをフクロウ文にも割り当てる */
-  const commentMaxHeightPct = wideTemplate ? "24%" : layout.commentMaxHeight;
+  const isLarge = tier === "large";
+  const bodyScrollAff = !isLarge ? DIARY_PREVIEW_TIER_BODY[tier].scrollAffordance : null;
+  const contentBodyMaxHeightPct = isLarge
+    ? DIARY_PREVIEW_LARGE_BODY_MAX_HEIGHT_PCT
+    : DIARY_PREVIEW_TIER_BODY[tier].maxHeightPct;
 
-  /**
-   * 狭い枠＝iPhone：重なり回避のため抑える。
-   * 広い枠＝PC：cq の mid が小さくなりがちなので clamp の下限・上限を高くし、max(cqw,cqh) で実寸を確保。
-   */
-  const commentFontSize = wideTemplate
+  /** large：従来の wideTemplate と同式。small / medium は tiers の補正のみ */
+  const commentMaxHeightPct = isLarge ? "24%" : DIARY_PREVIEW_TIER_COMMENT[tier].maxHeightPct;
+
+  const commentFontSize = isLarge
     ? `clamp(13px, max(2.45cqw, 1.85cqh), 17px)`
-    : `clamp(7px, min(1.72cqw, 2.35cqh), 9.35px)`;
-  const commentLineHeight = wideTemplate ? "1.32" : "1.48";
+    : DIARY_PREVIEW_TIER_COMMENT[tier].fontSize;
+  const commentLineHeight = isLarge ? "1.32" : DIARY_PREVIEW_TIER_COMMENT[tier].lineHeight;
 
-  /** 日付：広い枠では min(cqw,cqh) が ~7px 前後に張り付くため、下限を 10px 台に固定して読みやすく */
-  const dateRowFontSize = wideTemplate
+  const commentInnerSurfaceClass = isLarge
+    ? DIARY_PREVIEW_LARGE_COMMENT_INNER_SURFACE_CLASS
+    : DIARY_PREVIEW_TIER_COMMENT[tier].innerSurfaceClass;
+
+  const dateRowFontSize = isLarge
     ? `clamp(10.5px, min(1.52cqw, 2.08cqh), 13px)`
-    : `clamp(5.2px, min(1.12cqw, 1.58cqh), 7.1px)`;
+    : DIARY_PREVIEW_TIER_DATE_ROW[tier].fontSize;
 
-  /** 今日の数字〜年・気分：広い枠では丸内を大きく（中央ズレは transform で微補正） */
-  const numberFontSize = wideTemplate
+  const numberFontSize = isLarge
     ? `clamp(11px, max(2.08cqw, 1.55cqh), 15px)`
-    : `clamp(7px, min(1.72cqw, 2.42cqh), 11px)`;
+    : DIARY_PREVIEW_TIER_NUMBER[tier].fontSize;
 
-  const numberCenterNudge = wideTemplate ? "translate(-50%, -50%) translate(-0.85px, -0.85px)" : "translate(-50%, -50%) translate(-0.5px, -0.5px)";
+  const numberCenterNudge = isLarge
+    ? "translate(-50%, -50%) translate(-0.85px, -0.85px)"
+    : DIARY_PREVIEW_TIER_NUMBER[tier].centerNudge;
+
+  const bodyScrollbarClasses =
+    bodyScrollAff?.rail === true
+      ? "[scrollbar-width:thin] [scrollbar-color:rgba(120,113,108,0.42)_transparent] [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-stone-400/45"
+      : "";
 
   return (
     <section className="rounded-xl border border-stone-200 bg-white p-3 shadow-sm sm:p-4">
@@ -176,14 +198,17 @@ export function DiaryDesignPreview({
       <div className="mt-3">
         <div
           ref={templateShellRef}
-          className="relative mx-auto w-full max-w-[540px] overflow-hidden rounded-lg border border-stone-200 bg-stone-50 [container-type:inline-size] [-webkit-text-size-adjust:100%] [text-size-adjust:100%]"
-          style={{ aspectRatio: `${templateSize.width} / ${templateSize.height}` }}
+          className="relative mx-auto w-full max-w-full overflow-hidden rounded-lg border border-stone-200 bg-stone-50 [container-type:inline-size] [-webkit-text-size-adjust:100%] [text-size-adjust:100%]"
+          style={{
+            aspectRatio: `${templateSize.width} / ${templateSize.height}`,
+            maxWidth: PREVIEW_SHELL_MAX_WIDTH_PX,
+          }}
         >
           <Image
             src={diaryTemplateScreenImageMap[designTheme]}
             alt="日記テンプレート背景"
             fill
-            sizes="(max-width: 640px) 100vw, 540px"
+            sizes={`(max-width: 640px) 100vw, ${PREVIEW_SHELL_MAX_WIDTH_PX}px`}
             className="object-contain"
           />
           <div
@@ -247,21 +272,34 @@ export function DiaryDesignPreview({
             <p
               className={[
                 "absolute overflow-y-auto overscroll-y-contain whitespace-pre-wrap break-words text-stone-700/90 [overflow-wrap:anywhere] touch-pan-y",
-                wideTemplate ? "max-h-[26%]" : "max-h-[32%]",
                 "[-webkit-overflow-scrolling:touch]",
-              ].join(" ")}
+                bodyScrollbarClasses,
+                bodyScrollAff?.gradient
+                  ? "after:pointer-events-none after:absolute after:inset-x-0 after:bottom-0 after:z-[1] after:h-7 after:bg-gradient-to-t after:from-[#f0ebe3]/95 after:via-[#f0ebe3]/25 after:to-transparent after:content-['']"
+                  : "",
+                bodyScrollAff?.chevron
+                  ? "before:pointer-events-none before:absolute before:bottom-0.5 before:left-1/2 before:z-[2] before:-translate-x-1/2 before:text-[9px] before:leading-none before:text-stone-500/90 before:content-['▼']"
+                  : "",
+              ]
+                .filter(Boolean)
+                .join(" ")}
               style={{
                 left: layout.contentLeft,
                 top: layout.contentTop,
                 width: layout.contentWidth,
+                maxHeight: contentBodyMaxHeightPct,
                 fontSize: contentFontSize,
                 lineHeight: contentLineHeight,
               }}
             >
               {textPreview}
             </p>
-            <p
-              className="absolute m-0 overflow-hidden whitespace-pre-wrap break-words text-stone-700/90 [overflow-wrap:anywhere]"
+            <div
+              className={[
+                "absolute box-border overflow-y-auto overscroll-y-contain whitespace-pre-wrap break-words text-stone-700/90 [overflow-wrap:anywhere] touch-pan-y",
+                "[-webkit-overflow-scrolling:touch]",
+                commentInnerSurfaceClass,
+              ].join(" ")}
               style={{
                 left: layout.commentLeft,
                 top: layout.commentTop,
@@ -271,8 +309,8 @@ export function DiaryDesignPreview({
                 lineHeight: commentLineHeight,
               }}
             >
-              {owlComment.length > 145 ? `${owlComment.slice(0, 145)}…` : owlComment}
-            </p>
+              {owlComment}
+            </div>
             <p
               className="absolute font-semibold text-stone-700 [font-variant-numeric:tabular-nums]"
               style={{
