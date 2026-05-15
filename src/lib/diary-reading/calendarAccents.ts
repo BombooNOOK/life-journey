@@ -14,7 +14,7 @@ export const personalDayCalendarMonthOverlapAccents: AccentTemplate[] = DIGITS.f
     id: `special_overlap_pm_${n}_${idx + 1}`,
     number: n as NumerologyNumber,
     type: "special_overlap" as const,
-    text: s.replaceAll("{n}", String(n)),
+    text: s.replaceAll("{pd}", String(n)).replaceAll("{monthDigit}", String(n)),
     overlapSource: "personal_month" as const,
   })),
 );
@@ -25,7 +25,7 @@ export const personalDayCalendarDayOverlapAccents: AccentTemplate[] = DIGITS.fla
     id: `special_overlap_pd_${n}_${idx + 1}`,
     number: n as NumerologyNumber,
     type: "special_overlap" as const,
-    text: s.replaceAll("{n}", String(n)),
+    text: s.replaceAll("{pd}", String(n)).replaceAll("{dayDigit}", String(n)),
     overlapSource: "personal_day" as const,
   })),
 );
@@ -36,7 +36,10 @@ export const calendarMonthDayOverlapAccents: AccentTemplate[] = DIGITS.flatMap((
     id: `special_overlap_md_${n}_${idx + 1}`,
     number: n as NumerologyNumber,
     type: "special_overlap" as const,
-    text: s.replaceAll("{n}", String(n)),
+    text: s
+      .replaceAll("{monthDigit}", String(n))
+      .replaceAll("{dayDigit}", String(n))
+      .replaceAll("{n}", String(n)),
     overlapSource: "calendar_md" as const,
   })),
 );

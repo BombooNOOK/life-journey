@@ -639,8 +639,7 @@ function JournalPageContent() {
               フォームで選んだ記録日は、UTC のその暦日 12:00 として保存されます。数秘の計算はその UTC 暦日（年・月・日）だけを使うため、サーバーや端末のタイムゾーン設定に依存しません。iPhone と Mac で同じ記録を開いても API の結果は同じです。
             </p>
             <p className="mt-2 text-[11px] leading-relaxed text-stone-600">
-              「パーソナルデイと、日付を桁おろした数字がどちらも同じ」という補足は、下の accentDayDigit
-              と personalDay が一致するときだけ選ばれます。暦の月の数字だけがパーソナルデイと重なるときは、「暦の月の〜」の文になります（暦の日の桁とは別扱い）。
+              補足文ではパーソナルデイ（pd）と暦の桁（monthDigit / dayDigit）を別プレースホルダで埋めています。暦の「日」を桁おろした数字がパーソナルデイと同じときだけ、日付重なりの補足が選ばれます。月だけ重なるときは「暦の月を桁おろすと…」の文です。
             </p>
             <dl className="mt-2 grid grid-cols-[auto_1fr] gap-x-3 gap-y-1.5 tabular-nums">
               <dt className="text-stone-500">記録日（暦）</dt>
