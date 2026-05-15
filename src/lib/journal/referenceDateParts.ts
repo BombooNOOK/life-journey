@@ -13,3 +13,9 @@ export function journalReferenceUtcYMD(date: Date): {
     day: date.getUTCDate(),
   };
 }
+
+/** DB の `createdAt`（UTC 正午の記録日）を `<input type="date">` 用 `YYYY-MM-DD` にする */
+export function journalEntryDateToIsoDateInput(date: Date): string {
+  const { year, month, day } = journalReferenceUtcYMD(date);
+  return `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+}

@@ -8,6 +8,7 @@ import { buildDiaryReadingFromJournalInput } from "@/lib/diary-reading/fromJourn
 import { normalizeJournalCommentText } from "@/lib/journal/comment";
 import { buildJournalNumerologyDebug } from "@/lib/journal/journalNumerologyDebug";
 import { buildDiaryNumbers } from "@/lib/journal/numbers";
+import { shouldPreserveJournalGeneratedComment } from "@/lib/journal/preserveDiaryReading";
 import { resolveContentFontModeFromRequest } from "@/lib/journal/contentFontMode";
 import {
   isActivityId,
@@ -18,6 +19,12 @@ import {
 } from "@/lib/journal/meta";
 
 type Params = { params: Promise<{ id: string }> };
+
+const JSON_NO_STORE = {
+  headers: {
+    "Cache-Control": "private, no-store, max-age=0, must-revalidate",
+  },
+} as const;
 
 function isDesignThemeValidationError(error: unknown): boolean {
   if (!(error instanceof Prisma.PrismaClientValidationError)) return false;
@@ -48,7 +55,7 @@ export async function GET(req: Request, { params }: Params) {
   if (!viewerEmail) {
     return NextResponse.json(
       { error: "ログイン情報を確認できませんでした。", code: "AUTH_REQUIRED" },
-      { status: 401 },
+      { status: 401, ...JSON_NO_STORE },
     );
   }
 
@@ -107,7 +114,10 @@ export async function GET(req: Request, { params }: Params) {
     });
   }
   if (!row) {
-    return NextResponse.json({ error: "対象の記録が見つかりません。", code: "NOT_FOUND" }, { status: 404 });
+    return NextResponse.json(
+      { error: "対象の記録が見つかりません。", code: "NOT_FOUND" },
+      { status: 404, ...JSON_NO_STORE },
+    );
   }
 
   const latestOrder = await prisma.order.findFirst({
@@ -150,18 +160,21 @@ export async function GET(req: Request, { params }: Params) {
       })
     : undefined;
 
-  return NextResponse.json({
-    entry: {
-      ...row,
-      designTheme: normalizeDiaryDesignTheme(row.designTheme ?? "simple"),
-      diaryNumbers,
-      ...(numerologyDebug ? { numerologyDebug } : {}),
-      generatedComment: row.generatedComment
-        ? normalizeJournalCommentText(row.generatedComment)
-        : row.generatedComment,
+  return NextResponse.json(
+    {
+      entry: {
+        ...row,
+        designTheme: normalizeDiaryDesignTheme(row.designTheme ?? "simple"),
+        diaryNumbers,
+        ...(numerologyDebug ? { numerologyDebug } : {}),
+        generatedComment: row.generatedComment
+          ? normalizeJournalCommentText(row.generatedComment)
+          : row.generatedComment,
+      },
+      code: "OK",
     },
-    code: "OK",
-  });
+    JSON_NO_STORE,
+  );
 }
 
 export async function PATCH(req: Request, { params }: Params) {
@@ -169,7 +182,7 @@ export async function PATCH(req: Request, { params }: Params) {
   if (!viewerEmail) {
     return NextResponse.json(
       { error: "ログイン情報を確認できませんでした。", code: "AUTH_REQUIRED" },
-      { status: 401 },
+      { status: 401, ...JSON_NO_STORE },
     );
   }
 
@@ -304,14 +317,15 @@ export async function PATCH(req: Request, { params }: Params) {
     );
   }
 
-  /** 本文・写真・デザインだけ直すときは読み解きを固定し、言い回しが毎回変わらないようにする */
-  const preserveDiaryReading =
-    !regenerateOwlComment &&
-    exists.mood === mood &&
-    exists.activity === activity &&
-    exists.companionType === companionType &&
-    parsedEntryDate.getTime() === exists.createdAt.getTime() &&
-    Boolean(exists.generatedComment?.trim());
+  /** 記録日・気分・活動・おともが変わったら再生成。本文・写真・文字サイズ等のみなら preserve（regenerateOwlComment で強制再生成可） */
+  const preserveDiaryReading = shouldPreserveJournalGeneratedComment({
+    regenerateOwlComment,
+    moodUnchanged: exists.mood === mood,
+    activityUnchanged: exists.activity === activity,
+    companionUnchanged: exists.companionType === companionType,
+    entryDateUnchanged: parsedEntryDate.getTime() === exists.createdAt.getTime(),
+    hasExistingComment: Boolean(exists.generatedComment?.trim()),
+  });
 
   let generatedComment: string;
   if (preserveDiaryReading) {
@@ -424,7 +438,7 @@ export async function PATCH(req: Request, { params }: Params) {
       },
     });
   }
-  return NextResponse.json({ entry, code: "OK" });
+  return NextResponse.json({ entry, code: "OK" }, JSON_NO_STORE);
 }
 
 export async function DELETE(_: Request, { params }: Params) {

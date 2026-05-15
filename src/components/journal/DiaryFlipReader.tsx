@@ -22,8 +22,10 @@ import {
 } from "@/components/journal/DiaryBookshelfSettingsForm";
 import { BookshelfDiaryBindingOrder } from "@/components/orders/BookshelfDiaryBindingOrder";
 import { formatDateTimeJa } from "@/lib/date/formatJa";
+import { normalizeContentFontMode } from "@/lib/journal/contentFontMode";
 import { journalEntryInBookshelfPeriod } from "@/lib/journal/bookshelfPeriod";
 import { getActivityMeta, normalizeDiaryDesignTheme, type DiaryDesignId } from "@/lib/journal/meta";
+import { journalEntryDateToIsoDateInput } from "@/lib/journal/referenceDateParts";
 
 type Props = {
   year: number;
@@ -305,8 +307,9 @@ export function DiaryFlipReader({ year, initialSettings, bookshelfProfileId }: P
             activity: target.activity,
             companionType: target.companionType,
             designTheme: target.designTheme ?? "simple",
+            contentFontMode: normalizeContentFontMode(target.contentFontMode),
             photoDataUrl: target.photoDataUrl ?? "",
-            entryDate: new Date(target.createdAt).toISOString().slice(0, 10),
+            entryDate: journalEntryDateToIsoDateInput(new Date(target.createdAt)),
             includeInBook: nextIncludeInBook,
           }),
         });
