@@ -24,50 +24,88 @@ export type DiaryPreviewScrollAffordance = {
   chevron: boolean;
 };
 
-/** small / medium の本文エリア（large は 26% 固定で現行維持） */
+/** 紙面上の固定表示枠（% 座標はテンプレート画像基準） */
+export type DiaryPreviewRegionBox = {
+  left: string;
+  top: string;
+  width: string;
+  heightPct: string;
+};
+
+/** large：本文・コメント枠（従来レイアウト） */
+export const DIARY_PREVIEW_LARGE_BODY_REGION: DiaryPreviewRegionBox = {
+  left: "13.2%",
+  top: "55%",
+  width: "72.8%",
+  heightPct: "26%",
+};
+
+export const DIARY_PREVIEW_LARGE_COMMENT_REGION: DiaryPreviewRegionBox = {
+  left: "9.15%",
+  top: "79.2%",
+  width: "62.2%",
+  heightPct: "24%",
+};
+
+/** small / medium の本文枠（コメント帯の手前で打ち切り） */
 export const DIARY_PREVIEW_TIER_BODY: Record<
   "small" | "medium",
   {
-    maxHeightPct: string;
+    region: DiaryPreviewRegionBox;
     scrollAffordance: DiaryPreviewScrollAffordance;
   }
 > = {
   small: {
-    maxHeightPct: "37%",
+    region: {
+      left: "13.2%",
+      top: "55%",
+      width: "72.8%",
+      heightPct: "21%",
+    },
     scrollAffordance: { gradient: true, rail: true, chevron: true },
   },
   medium: {
-    maxHeightPct: "33%",
+    region: {
+      left: "13.2%",
+      top: "55%",
+      width: "72.8%",
+      heightPct: "22.5%",
+    },
     scrollAffordance: { gradient: true, rail: true, chevron: false },
   },
 } as const;
 
-/** large 時の本文 max-height（テンプレート高さに対する %） */
-export const DIARY_PREVIEW_LARGE_BODY_MAX_HEIGHT_PCT = "26%" as const;
-
-/** small / medium のフクロウ欄（高さ・フォント・本文背後の半透明面） */
+/** small / medium のフクロウ欄（イラスト右側にはみ出さない幅） */
 export const DIARY_PREVIEW_TIER_COMMENT: Record<
   "small" | "medium",
   {
-    maxHeightPct: string;
+    region: DiaryPreviewRegionBox;
     fontSize: string;
     lineHeight: string;
-    innerSurfaceClass: string;
+    scrollAffordance: DiaryPreviewScrollAffordance;
   }
 > = {
   small: {
-    maxHeightPct: "21.5%",
+    region: {
+      left: "9.15%",
+      top: "79.2%",
+      width: "42%",
+      heightPct: "17.5%",
+    },
     fontSize: "clamp(8px, min(1.88cqw, 2.48cqh), 10.5px)",
     lineHeight: "1.44",
-    innerSurfaceClass:
-      "rounded-md bg-[#faf7f0]/93 px-1.5 py-1 shadow-[0_1px_0_rgba(0,0,0,0.04)]",
+    scrollAffordance: { gradient: true, rail: true, chevron: false },
   },
   medium: {
-    maxHeightPct: "23%",
+    region: {
+      left: "9.15%",
+      top: "79.2%",
+      width: "46%",
+      heightPct: "18.5%",
+    },
     fontSize: "clamp(9.5px, min(2.05cqw, 2.15cqh), 12px)",
     lineHeight: "1.36",
-    innerSurfaceClass:
-      "rounded-md bg-[#faf7f0]/90 px-1.5 py-0.5 shadow-[0_1px_0_rgba(0,0,0,0.03)]",
+    scrollAffordance: { gradient: true, rail: true, chevron: false },
   },
 } as const;
 
@@ -95,7 +133,3 @@ export const DIARY_PREVIEW_TIER_NUMBER: Record<
     centerNudge: "translate(-50%, -50%) translate(-0.65px, -0.65px)",
   },
 } as const;
-
-/** large 時は極力従来の見た目に寄せた薄い生成り面（長文は内側スクロール） */
-export const DIARY_PREVIEW_LARGE_COMMENT_INNER_SURFACE_CLASS =
-  "rounded-sm bg-white/78 px-0.5 py-0.5";
