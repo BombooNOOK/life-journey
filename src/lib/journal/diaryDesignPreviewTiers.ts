@@ -126,15 +126,42 @@ export const DIARY_PREVIEW_TIER_COMMENT: Record<
   },
 } as const;
 
-/** small / medium の日付行 */
-export const DIARY_PREVIEW_TIER_DATE_ROW: Record<"small" | "medium", { fontSize: string }> = {
-  small: {
-    fontSize: "clamp(6px, min(1.16cqw, 1.66cqh), 8.2px)",
-  },
-  medium: {
-    fontSize: "clamp(7.2px, min(1.3cqw, 1.82cqh), 10.5px)",
-  },
-} as const;
+/** small / medium の日付行（large は TEMPLATE_LAYOUT の % をそのまま使用） */
+export type DiaryPreviewDateRowTierStyle = {
+  fontSize: string;
+  lineHeight: string;
+  letterSpacing: string;
+  /** 曜日スロットのみ（画像の括弧と被らないよう少し広げる） */
+  weekLetterSpacing: string;
+  yearLeft: string;
+  monthLeft: string;
+  dayLeft: string;
+  weekLeft: string;
+};
+
+export const DIARY_PREVIEW_TIER_DATE_ROW: Record<"small" | "medium", DiaryPreviewDateRowTierStyle> =
+  {
+    small: {
+      fontSize: "clamp(5px, min(1.02cqw, 1.42cqh), 6.5px)",
+      lineHeight: "1",
+      letterSpacing: "0.01em",
+      weekLetterSpacing: "0.1em",
+      yearLeft: "29.6%",
+      monthLeft: "42.7%",
+      dayLeft: "50.05%",
+      weekLeft: "62.4%",
+    },
+    medium: {
+      fontSize: "clamp(5.6px, min(1.1cqw, 1.54cqh), 7.15px)",
+      lineHeight: "1",
+      letterSpacing: "0.005em",
+      weekLetterSpacing: "0.08em",
+      yearLeft: "30.05%",
+      monthLeft: "43.55%",
+      dayLeft: "51.15%",
+      weekLeft: "63.35%",
+    },
+  } as const;
 
 /** small / medium の丸印内数字・絵文字 */
 export const DIARY_PREVIEW_TIER_NUMBER: Record<

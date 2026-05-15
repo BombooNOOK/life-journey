@@ -19,6 +19,7 @@ import {
   DIARY_PREVIEW_TIER_DATE_ROW,
   DIARY_PREVIEW_TIER_NUMBER,
   PREVIEW_SHELL_MAX_WIDTH_PX,
+  type DiaryPreviewDateRowTierStyle,
   type DiaryPreviewRegionBox,
   type DiaryPreviewScrollAffordance,
   type DiaryPreviewTier,
@@ -234,9 +235,18 @@ export function DiaryDesignPreview({
     : DIARY_PREVIEW_TIER_COMMENT[tier].fontSize;
   const commentLineHeight = isLarge ? "1.32" : DIARY_PREVIEW_TIER_COMMENT[tier].lineHeight;
 
-  const dateRowFontSize = isLarge
-    ? `clamp(10.5px, min(1.52cqw, 2.08cqh), 13px)`
-    : DIARY_PREVIEW_TIER_DATE_ROW[tier].fontSize;
+  const dateRow: DiaryPreviewDateRowTierStyle = isLarge
+    ? {
+        fontSize: `clamp(10.5px, min(1.52cqw, 2.08cqh), 13px)`,
+        lineHeight: "1",
+        letterSpacing: "0",
+        weekLetterSpacing: "0",
+        yearLeft: layout.dateYearLeft,
+        monthLeft: layout.dateMonthLeft,
+        dayLeft: layout.dateDayLeft,
+        weekLeft: layout.dateWeekLeft,
+      }
+    : DIARY_PREVIEW_TIER_DATE_ROW[tier];
 
   const numberFontSize = isLarge
     ? `clamp(11px, max(2.08cqw, 1.55cqh), 15px)`
@@ -278,32 +288,35 @@ export function DiaryDesignPreview({
             <p
               className="absolute whitespace-nowrap text-stone-700 [font-variant-numeric:tabular-nums]"
               style={{
-                left: layout.dateYearLeft,
+                left: dateRow.yearLeft,
                 top: layout.dateTop,
-                fontSize: dateRowFontSize,
-                lineHeight: 1,
+                fontSize: dateRow.fontSize,
+                lineHeight: dateRow.lineHeight,
+                letterSpacing: dateRow.letterSpacing,
               }}
             >
               {previewDate.getFullYear()}
             </p>
             <p
-              className="absolute whitespace-nowrap text-stone-700"
+              className="absolute whitespace-nowrap text-stone-700 [font-variant-numeric:tabular-nums]"
               style={{
-                left: layout.dateMonthLeft,
+                left: dateRow.monthLeft,
                 top: layout.dateTop,
-                fontSize: dateRowFontSize,
-                lineHeight: 1,
+                fontSize: dateRow.fontSize,
+                lineHeight: dateRow.lineHeight,
+                letterSpacing: dateRow.letterSpacing,
               }}
             >
               {previewDate.getMonth() + 1}
             </p>
             <p
-              className="absolute whitespace-nowrap text-stone-700"
+              className="absolute whitespace-nowrap text-stone-700 [font-variant-numeric:tabular-nums]"
               style={{
-                left: layout.dateDayLeft,
+                left: dateRow.dayLeft,
                 top: layout.dateTop,
-                fontSize: dateRowFontSize,
-                lineHeight: 1,
+                fontSize: dateRow.fontSize,
+                lineHeight: dateRow.lineHeight,
+                letterSpacing: dateRow.letterSpacing,
               }}
             >
               {previewDate.getDate()}
@@ -311,10 +324,11 @@ export function DiaryDesignPreview({
             <p
               className="absolute whitespace-nowrap text-stone-700"
               style={{
-                left: layout.dateWeekLeft,
+                left: dateRow.weekLeft,
                 top: layout.dateTop,
-                fontSize: dateRowFontSize,
-                lineHeight: 1,
+                fontSize: dateRow.fontSize,
+                lineHeight: dateRow.lineHeight,
+                letterSpacing: dateRow.weekLetterSpacing,
               }}
             >
               {weekdayLabel}
