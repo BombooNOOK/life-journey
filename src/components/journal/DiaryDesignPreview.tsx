@@ -3,7 +3,7 @@
 import Image from "next/image";
 import { useLayoutEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import {
-  IOS_SAFARI_PREVIEW_BOTTOM_SAFE_PX,
+  IOS_SAFARI_PREVIEW_IMAGE_SCALE,
   readIsIOSSafariFromNavigator,
 } from "@/lib/browser/isIOSSafari";
 import { getActivityMeta, getMoodMeta, type DiaryDesignId } from "@/lib/journal/meta";
@@ -212,7 +212,6 @@ export function DiaryDesignPreview({
   const [tier, setTier] = useState<DiaryPreviewTier>("large");
   /** aspect-ratio + overflow:hidden + object-contain の組み合わせで下端が欠ける（iOS Safari） */
   const [iosSafariClipSafe] = useState(() => readIsIOSSafariFromNavigator());
-  const iosSafariClipPx = IOS_SAFARI_PREVIEW_BOTTOM_SAFE_PX;
 
   useLayoutEffect(() => {
     const el = templateShellRef.current;
@@ -276,27 +275,21 @@ export function DiaryDesignPreview({
       <div className="mt-3">
         <div
           ref={templateShellRef}
-          className={[
-            "relative mx-auto w-full max-w-full rounded-lg border border-stone-200 bg-stone-50 [container-type:inline-size] [-webkit-text-size-adjust:100%] [text-size-adjust:100%]",
-            iosSafariClipSafe ? "overflow-visible" : "overflow-hidden",
-          ].join(" ")}
+          className="relative mx-auto w-full max-w-full overflow-hidden rounded-lg border border-stone-200 bg-stone-50 [container-type:inline-size] [-webkit-text-size-adjust:100%] [text-size-adjust:100%]"
           style={{
             aspectRatio: `${templateSize.width} / ${templateSize.height}`,
             maxWidth: PREVIEW_SHELL_MAX_WIDTH_PX,
           }}
         >
           <div
-            className={[
-              "absolute left-0 right-0 top-0 rounded-[7px]",
-              iosSafariClipSafe ? "overflow-visible" : "bottom-0 h-full overflow-hidden",
-            ].join(" ")}
+            className="absolute inset-0"
             style={
               iosSafariClipSafe
                 ? {
-                    bottom: -iosSafariClipPx,
-                    height: `calc(100% + ${iosSafariClipPx}px)`,
+                    transform: `scale(${IOS_SAFARI_PREVIEW_IMAGE_SCALE})`,
+                    transformOrigin: "center bottom",
                   }
-                : { bottom: 0, height: "100%" }
+                : undefined
             }
           >
             <Image
@@ -305,16 +298,9 @@ export function DiaryDesignPreview({
               fill
               sizes={`(max-width: 640px) 100vw, ${PREVIEW_SHELL_MAX_WIDTH_PX}px`}
               className={iosSafariClipSafe ? "object-contain object-bottom" : "object-contain"}
-              style={
-                iosSafariClipSafe
-                  ? {
-                      height: `calc(100% + ${iosSafariClipPx}px)`,
-                      maxHeight: "none",
-                    }
-                  : undefined
-              }
             />
-            <div
+          </div>
+          <div
             className="absolute inset-0 antialiased"
             style={{ fontFamily: OVERLAY_FONT_FAMILY }}
           >
@@ -456,7 +442,6 @@ export function DiaryDesignPreview({
                 <div className="h-full w-full bg-[#f8f4ea]/80" aria-hidden />
               )}
             </div>
-          </div>
           </div>
         </div>
       </div>

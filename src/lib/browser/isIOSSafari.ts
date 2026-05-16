@@ -1,5 +1,5 @@
-/** iOS Safari プレビュー下端クリップ対策の余白（px） */
-export const IOS_SAFARI_PREVIEW_BOTTOM_SAFE_PX = 6;
+/** iOS Safari: テンプレ画像を下端基準で枠内拡大（下の説明文と重ならない） */
+export const IOS_SAFARI_PREVIEW_IMAGE_SCALE = 1.018;
 
 /** iPhone / iPad の Safari（CriOS 等の他ブラウザは除外） */
 export function isIOSSafariUserAgent(
