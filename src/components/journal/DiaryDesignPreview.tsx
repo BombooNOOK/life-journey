@@ -2,7 +2,10 @@
 
 import Image from "next/image";
 import { useLayoutEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
-import { isIOSSafariUserAgent } from "@/lib/browser/isIOSSafari";
+import {
+  IOS_SAFARI_PREVIEW_BOTTOM_SAFE_PX,
+  readIsIOSSafariFromNavigator,
+} from "@/lib/browser/isIOSSafari";
 import { getActivityMeta, getMoodMeta, type DiaryDesignId } from "@/lib/journal/meta";
 import { diaryTemplateScreenImageMap } from "@/lib/journal/templateAssets";
 import { JournalContentLengthAlerts } from "@/components/journal/JournalContentLengthAlerts";
@@ -207,17 +210,9 @@ export function DiaryDesignPreview({
 
   const templateShellRef = useRef<HTMLDivElement>(null);
   const [tier, setTier] = useState<DiaryPreviewTier>("large");
-  /** aspect-ratio + overflow:hidden + object-contain の組み合わせで下端が 1〜3px 欠けることがある */
-  const [iosSafariClipSafe, setIosSafariClipSafe] = useState(false);
-  useLayoutEffect(() => {
-    setIosSafariClipSafe(
-      isIOSSafariUserAgent(
-        navigator.userAgent,
-        navigator.platform,
-        navigator.maxTouchPoints,
-      ),
-    );
-  }, []);
+  /** aspect-ratio + overflow:hidden + object-contain の組み合わせで下端が欠ける（iOS Safari） */
+  const [iosSafariClipSafe] = useState(() => readIsIOSSafariFromNavigator());
+  const iosSafariClipPx = IOS_SAFARI_PREVIEW_BOTTOM_SAFE_PX;
 
   useLayoutEffect(() => {
     const el = templateShellRef.current;
@@ -292,20 +287,34 @@ export function DiaryDesignPreview({
         >
           <div
             className={[
-              "absolute inset-0 overflow-hidden rounded-[7px]",
-              iosSafariClipSafe ? "bottom-[-3px] h-[calc(100%+3px)]" : "",
-            ]
-              .filter(Boolean)
-              .join(" ")}
+              "absolute left-0 right-0 top-0 rounded-[7px]",
+              iosSafariClipSafe ? "overflow-visible" : "bottom-0 h-full overflow-hidden",
+            ].join(" ")}
+            style={
+              iosSafariClipSafe
+                ? {
+                    bottom: -iosSafariClipPx,
+                    height: `calc(100% + ${iosSafariClipPx}px)`,
+                  }
+                : { bottom: 0, height: "100%" }
+            }
           >
             <Image
               src={diaryTemplateScreenImageMap[designTheme]}
               alt="日記テンプレート背景"
               fill
               sizes={`(max-width: 640px) 100vw, ${PREVIEW_SHELL_MAX_WIDTH_PX}px`}
-              className="object-contain"
+              className={iosSafariClipSafe ? "object-contain object-bottom" : "object-contain"}
+              style={
+                iosSafariClipSafe
+                  ? {
+                      height: `calc(100% + ${iosSafariClipPx}px)`,
+                      maxHeight: "none",
+                    }
+                  : undefined
+              }
             />
-          <div
+            <div
             className="absolute inset-0 antialiased"
             style={{ fontFamily: OVERLAY_FONT_FAMILY }}
           >
