@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import { useLayoutEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
+import { isIOSSafariUserAgent } from "@/lib/browser/isIOSSafari";
 import { getActivityMeta, getMoodMeta, type DiaryDesignId } from "@/lib/journal/meta";
 import { diaryTemplateScreenImageMap } from "@/lib/journal/templateAssets";
 import { JournalContentLengthAlerts } from "@/components/journal/JournalContentLengthAlerts";
@@ -206,6 +207,18 @@ export function DiaryDesignPreview({
 
   const templateShellRef = useRef<HTMLDivElement>(null);
   const [tier, setTier] = useState<DiaryPreviewTier>("large");
+  /** aspect-ratio + overflow:hidden + object-contain の組み合わせで下端が 1〜3px 欠けることがある */
+  const [iosSafariClipSafe, setIosSafariClipSafe] = useState(false);
+  useLayoutEffect(() => {
+    setIosSafariClipSafe(
+      isIOSSafariUserAgent(
+        navigator.userAgent,
+        navigator.platform,
+        navigator.maxTouchPoints,
+      ),
+    );
+  }, []);
+
   useLayoutEffect(() => {
     const el = templateShellRef.current;
     if (!el || typeof ResizeObserver === "undefined") return;
@@ -268,19 +281,30 @@ export function DiaryDesignPreview({
       <div className="mt-3">
         <div
           ref={templateShellRef}
-          className="relative mx-auto w-full max-w-full overflow-hidden rounded-lg border border-stone-200 bg-stone-50 [container-type:inline-size] [-webkit-text-size-adjust:100%] [text-size-adjust:100%]"
+          className={[
+            "relative mx-auto w-full max-w-full rounded-lg border border-stone-200 bg-stone-50 [container-type:inline-size] [-webkit-text-size-adjust:100%] [text-size-adjust:100%]",
+            iosSafariClipSafe ? "overflow-visible" : "overflow-hidden",
+          ].join(" ")}
           style={{
             aspectRatio: `${templateSize.width} / ${templateSize.height}`,
             maxWidth: PREVIEW_SHELL_MAX_WIDTH_PX,
           }}
         >
-          <Image
-            src={diaryTemplateScreenImageMap[designTheme]}
-            alt="日記テンプレート背景"
-            fill
-            sizes={`(max-width: 640px) 100vw, ${PREVIEW_SHELL_MAX_WIDTH_PX}px`}
-            className="object-contain"
-          />
+          <div
+            className={[
+              "absolute inset-0 overflow-hidden rounded-[7px]",
+              iosSafariClipSafe ? "bottom-[-3px] h-[calc(100%+3px)]" : "",
+            ]
+              .filter(Boolean)
+              .join(" ")}
+          >
+            <Image
+              src={diaryTemplateScreenImageMap[designTheme]}
+              alt="日記テンプレート背景"
+              fill
+              sizes={`(max-width: 640px) 100vw, ${PREVIEW_SHELL_MAX_WIDTH_PX}px`}
+              className="object-contain"
+            />
           <div
             className="absolute inset-0 antialiased"
             style={{ fontFamily: OVERLAY_FONT_FAMILY }}
@@ -423,6 +447,7 @@ export function DiaryDesignPreview({
                 <div className="h-full w-full bg-[#f8f4ea]/80" aria-hidden />
               )}
             </div>
+          </div>
           </div>
         </div>
       </div>
