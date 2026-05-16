@@ -5,6 +5,10 @@ import {
   personalYearNumber,
 } from "@/lib/numerology/personalYearMonth";
 
+/**
+ * 日記 API → generateDiaryReading の橋渡し。
+ * 現状は常に owl 用テンプレート（comment*Draft.ts）のみ。companionType は未参照。
+ */
 import { generateDiaryReading } from "./generateDiaryReading";
 import type {
   DiaryActionCategory,

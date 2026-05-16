@@ -10,36 +10,33 @@ const DIGITS = [1, 2, 3, 4, 5, 6, 7, 8, 9] as const;
 
 /** パーソナルデイ＝暦の月（桁おろし）が同じときだけ使う */
 export const personalDayCalendarMonthOverlapAccents: AccentTemplate[] = DIGITS.flatMap((n) =>
-  specialAccentDraft.personalDayEqualsCalendarMonth.map((s, idx) => ({
+  specialAccentDraft.personalDayEqualsCalendarMonth[n].map((text, idx) => ({
     id: `special_overlap_pm_${n}_${idx + 1}`,
     number: n as NumerologyNumber,
     type: "special_overlap" as const,
-    text: s.replaceAll("{pd}", String(n)).replaceAll("{monthDigit}", String(n)),
+    text,
     overlapSource: "personal_month" as const,
   })),
 );
 
 /** パーソナルデイ＝日付の桁おろしが同じときだけ使う */
 export const personalDayCalendarDayOverlapAccents: AccentTemplate[] = DIGITS.flatMap((n) =>
-  specialAccentDraft.personalDayEqualsCalendarDay.map((s, idx) => ({
+  specialAccentDraft.personalDayEqualsCalendarDay[n].map((text, idx) => ({
     id: `special_overlap_pd_${n}_${idx + 1}`,
     number: n as NumerologyNumber,
     type: "special_overlap" as const,
-    text: s.replaceAll("{pd}", String(n)).replaceAll("{dayDigit}", String(n)),
+    text,
     overlapSource: "personal_day" as const,
   })),
 );
 
 /** 暦の月と日の桁おろしが同じだけのとき（パーソナルデイとは無関係の重なり） */
 export const calendarMonthDayOverlapAccents: AccentTemplate[] = DIGITS.flatMap((n) =>
-  specialAccentDraft.calendarMonthEqualsCalendarDay.map((s, idx) => ({
+  specialAccentDraft.calendarMonthEqualsCalendarDay[n].map((text, idx) => ({
     id: `special_overlap_md_${n}_${idx + 1}`,
     number: n as NumerologyNumber,
     type: "special_overlap" as const,
-    text: s
-      .replaceAll("{monthDigit}", String(n))
-      .replaceAll("{dayDigit}", String(n))
-      .replaceAll("{n}", String(n)),
+    text,
     overlapSource: "calendar_md" as const,
   })),
 );
