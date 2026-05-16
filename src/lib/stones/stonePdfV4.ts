@@ -1,7 +1,7 @@
 import { COLOR_BY_NUMBER } from "./catalog";
 import { getAllStonePdfV4Entries, getStonePdfV4EntryById } from "./stonePdfV4Master";
 import { shortEffectSummaryFromStonePdf } from "./stonePdfV4Summary";
-import type { StonePdfV4Entry, StonePdfV4File } from "./stonePdfV4Types";
+import type { StonePdfV4Entry } from "./stonePdfV4Types";
 
 export type { StonePdfV4Entry, StonePdfV4File, StonePdfV4Category } from "./stonePdfV4Types";
 

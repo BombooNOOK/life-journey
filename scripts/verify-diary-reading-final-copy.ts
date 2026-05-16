@@ -1,17 +1,17 @@
 /**
  * Verifies No.001-262 final copy is applied (ID ↔ text).
- * Run: node scripts/verify-diary-reading-final-copy.mjs
+ * Run: npx tsx scripts/verify-diary-reading-final-copy.ts
  */
 import { readFileSync } from "fs";
-import { baseComments } from "../src/lib/diary-reading/baseComments.ts";
+import { baseComments } from "../src/lib/diary-reading/baseComments";
 import {
   calendarDayAccents,
   calendarMonthAccents,
   calendarMonthDayOverlapAccents,
   personalDayCalendarDayOverlapAccents,
   personalDayCalendarMonthOverlapAccents,
-} from "../src/lib/diary-reading/calendarAccents.ts";
-import { generateDiaryReading } from "../src/lib/diary-reading/generateDiaryReading.ts";
+} from "../src/lib/diary-reading/calendarAccents";
+import { generateDiaryReading } from "../src/lib/diary-reading/generateDiaryReading";
 
 const manifest = JSON.parse(
   readFileSync("scripts/diary-reading-final-copy-manifest.json", "utf8"),
