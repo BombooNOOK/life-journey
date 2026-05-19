@@ -58,6 +58,9 @@ model Order {
 
   status String @default("draft")
 
+  /// 鑑定書の表示用コード（PDFファイル名など）。形式: LJK-YYYYMMDD-XXXX
+  kanteiCode String? @unique
+
   @@index([email, profileId])
 }
 

@@ -5,6 +5,7 @@ import { prisma } from "@/lib/db";
 import { buildOrderPayload } from "@/lib/order/buildSnapshot";
 import { toIsoDateString } from "@/lib/order/birthDate";
 import { fetchAccountPdfDownloadLimitOrNull } from "@/lib/order/effectivePdfDownloadLimit";
+import { ensureOrderKanteiCode } from "@/lib/order/kanteiCode";
 import type { CustomerFormValues } from "@/lib/order/types";
 import { profileByIdForViewer, resolveActiveProfileId } from "@/lib/profile/activeProfile";
 import { isHiraganaOnly } from "@/lib/validation/hiragana";
@@ -178,6 +179,7 @@ export async function POST(req: Request) {
         status: "completed",
       },
     });
+    await ensureOrderKanteiCode(order.id);
     return NextResponse.json({ id: order.id, code: "OK" });
   } catch (err) {
     const desc = describeSaveError(err);

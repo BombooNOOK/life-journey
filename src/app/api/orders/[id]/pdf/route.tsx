@@ -33,6 +33,11 @@ import {
 } from "@/lib/pdf/orderPdfBlobCache";
 import { prisma } from "@/lib/db";
 import { combinePdfDownloadLimit, fetchAccountPdfDownloadLimitOrNull } from "@/lib/order/effectivePdfDownloadLimit";
+import {
+  buildKanteiPdfDownloadFilename,
+  ensureOrderKanteiCode,
+  type KanteiPdfVariant,
+} from "@/lib/order/kanteiCode";
 import type { OrderPayload } from "@/lib/order/types";
 import { orderPayloadFromOrderRow } from "@/lib/order/serialize";
 
@@ -185,6 +190,8 @@ export async function GET(req: Request, { params }: RouteParams) {
       { status: 403, headers: { ...PDF_API_CACHE_HEADERS } },
     );
   }
+
+  const kanteiCode = await ensureOrderKanteiCode(row.id);
 
   const url = new URL(req.url);
   const focusPage = parseFocusPage(url.searchParams.get("focus"));
@@ -389,11 +396,11 @@ export async function GET(req: Request, { params }: RouteParams) {
   copy.set(u8);
   const body = new Blob([copy], { type: "application/pdf" });
 
-  const variantSlug = quality === "high" ? "print" : "preview";
+  const variantSlug: KanteiPdfVariant = quality === "high" ? "print" : "preview";
   const filename =
     bodyTune === "normal" && focusPage === "all"
-      ? `kantei-${id.slice(0, 8)}-${variantSlug}.pdf`
-      : `kantei-${id.slice(0, 8)}-${focusPage}-${bodyTune}-${variantSlug}.pdf`;
+      ? buildKanteiPdfDownloadFilename(kanteiCode, variantSlug)
+      : `LifeJourney_Kantei_${kanteiCode}_${focusPage}-${bodyTune}-${variantSlug}.pdf`;
   const response = new NextResponse(body, {
     status: 200,
     headers: {

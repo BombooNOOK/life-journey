@@ -7,6 +7,7 @@ import { PdfDownloadButton } from "@/components/orders/PdfDownloadButton";
 import { getViewerEmailFromCookie, normalizeEmail } from "@/lib/auth/viewer";
 import { prisma } from "@/lib/db";
 import { combinePdfDownloadLimit, fetchAccountPdfDownloadLimitOrNull } from "@/lib/order/effectivePdfDownloadLimit";
+import { buildKanteiPdfDownloadFilename, ensureOrderKanteiCode } from "@/lib/order/kanteiCode";
 import { numerologyWithRefreshedLifePath } from "@/lib/order/numerologyDisplay";
 import { personalYearCycleEntry } from "@/lib/numerology/data/personalYearCycleData";
 import { personalYearNumber } from "@/lib/numerology/personalYearMonth";
@@ -68,6 +69,8 @@ export default async function OrderDetailPage({ params }: Props) {
 
   if (!order) notFound();
   if (normalizeEmail(order.email) !== viewerEmail) notFound();
+
+  const kanteiCode = await ensureOrderKanteiCode(order.id);
 
   const numerology = numerologyWithRefreshedLifePath(order.numerologyJson, order.birthDate, {
     birthYear: order.birthYear,
@@ -156,7 +159,7 @@ export default async function OrderDetailPage({ params }: Props) {
             label="プレビュー版（軽量）をダウンロード"
             className="inline-block rounded-lg bg-stone-800 px-5 py-2.5 text-sm font-medium text-white hover:bg-stone-700"
             loadingLabel="タップ後、ブラウザがそのままPDFを受け取ります。初回は30秒〜数分かかることがあります。"
-            suggestedFileName={`kantei-${order.id.slice(0, 8)}-preview.pdf`}
+            suggestedFileName={buildKanteiPdfDownloadFilename(kanteiCode, "preview")}
           />
           {showPrintQualityPdf ? (
             <PdfDownloadButton
@@ -164,7 +167,7 @@ export default async function OrderDetailPage({ params }: Props) {
               label="製本用（高画質）をダウンロード"
               className="inline-block rounded-lg border border-amber-300 bg-amber-50 px-5 py-2.5 text-sm font-medium text-amber-950 hover:bg-amber-100"
               loadingLabel="高画質は容量が大きいため、1〜3分かかることがあります。画面を閉じずにお待ちください。"
-              suggestedFileName={`kantei-${order.id.slice(0, 8)}-print.pdf`}
+              suggestedFileName={buildKanteiPdfDownloadFilename(kanteiCode, "print")}
             />
           ) : (
             <p className="max-w-xs rounded-lg border border-stone-200 bg-stone-50 px-3 py-2 text-xs leading-relaxed text-stone-600">

@@ -10,6 +10,7 @@ import { prisma } from "@/lib/db";
 import { withPrismaConnectionRetry } from "@/lib/db/prismaRetry";
 import { listProfilesAndActiveProfileId } from "@/lib/profile/activeProfile";
 import { combinePdfDownloadLimit, fetchAccountPdfDownloadLimitOrNull } from "@/lib/order/effectivePdfDownloadLimit";
+import { buildKanteiPdfDownloadFilename, ensureOrderKanteiCode } from "@/lib/order/kanteiCode";
 
 export const dynamic = "force-dynamic";
 
@@ -22,6 +23,8 @@ type ShelfBook = {
   boundPdfHref?: string;
   /** 鑑定書カードのみ。製本用（高画質）DLのための注文ID */
   reportOrderId?: string;
+  pdfPreviewFileName?: string;
+  pdfPrintFileName?: string;
   pdfRemainingDownloads?: number;
   pdfDownloadLimit?: number;
   /** 日記カードのみ：その西暦年の製本カウント用 */
@@ -72,6 +75,7 @@ export default async function BookshelfPage() {
       take: 20,
       select: {
         id: true,
+        kanteiCode: true,
         fullNameDisplay: true,
         createdAt: true,
         pdfDownloadCount: true,
@@ -148,20 +152,25 @@ export default async function BookshelfPage() {
       };
     });
 
-  const reportBooks: ShelfBook[] = orders.map((order) => {
-    const effectiveLimit = combinePdfDownloadLimit(order.pdfDownloadLimit, accountPdfCap);
-    return {
-      id: `report-${order.id}`,
-      title: "鑑定書",
-      subtitle: `${order.fullNameDisplay} · ${order.createdAt.toLocaleDateString("ja-JP")}`,
-      href: `/orders/${order.id}`,
-      reportOrderId: order.id,
-      boundPdfHref: `/api/orders/${order.id}/pdf?download=1&quality=low`,
-      pdfRemainingDownloads: Math.max(0, effectiveLimit - (order.pdfDownloadCount ?? 0)),
-      pdfDownloadLimit: effectiveLimit,
-      tone: "amber" as const,
-    };
-  });
+  const reportBooks: ShelfBook[] = await Promise.all(
+    orders.map(async (order) => {
+      const kanteiCode = order.kanteiCode ?? (await ensureOrderKanteiCode(order.id));
+      const effectiveLimit = combinePdfDownloadLimit(order.pdfDownloadLimit, accountPdfCap);
+      return {
+        id: `report-${order.id}`,
+        title: "鑑定書",
+        subtitle: `${order.fullNameDisplay} · ${order.createdAt.toLocaleDateString("ja-JP")}`,
+        href: `/orders/${order.id}`,
+        reportOrderId: order.id,
+        boundPdfHref: `/api/orders/${order.id}/pdf?download=1&quality=low`,
+        pdfPreviewFileName: buildKanteiPdfDownloadFilename(kanteiCode, "preview"),
+        pdfPrintFileName: buildKanteiPdfDownloadFilename(kanteiCode, "print"),
+        pdfRemainingDownloads: Math.max(0, effectiveLimit - (order.pdfDownloadCount ?? 0)),
+        pdfDownloadLimit: effectiveLimit,
+        tone: "amber" as const,
+      };
+    }),
+  );
 
   const books = [...diaryBooks, ...reportBooks];
 
@@ -218,11 +227,7 @@ export default async function BookshelfPage() {
                           label="プレビュー版（軽量）"
                           className="inline-flex rounded-lg bg-amber-800 px-3 py-2 text-xs font-medium text-white hover:bg-amber-900"
                           loadingLabel="タップ後にブラウザが受け取ります。初回は30秒〜数分かかることがあります。"
-                          suggestedFileName={
-                            book.reportOrderId
-                              ? `kantei-${book.reportOrderId.slice(0, 8)}-preview.pdf`
-                              : undefined
-                          }
+                          suggestedFileName={book.pdfPreviewFileName}
                         />
                         {showPrintQualityPdf && book.reportOrderId ? (
                           <PdfDownloadButton
@@ -230,7 +235,7 @@ export default async function BookshelfPage() {
                             label="製本用（高画質）"
                             className="inline-flex rounded-lg border border-amber-400 bg-amber-50 px-3 py-2 text-xs font-medium text-amber-950 hover:bg-amber-100"
                             loadingLabel="高画質は1〜3分かかることがあります。画面を閉じずにお待ちください。"
-                            suggestedFileName={`kantei-${book.reportOrderId.slice(0, 8)}-print.pdf`}
+                            suggestedFileName={book.pdfPrintFileName}
                           />
                         ) : null}
                         {book.pdfRemainingDownloads != null && book.pdfDownloadLimit != null ? (
