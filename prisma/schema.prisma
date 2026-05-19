@@ -119,6 +119,32 @@ model AccountSettings {
   subscriberPdfAccess Boolean @default(false)
 }
 
+/// 鑑定書製本版（BASE単発）の申込予定・製本進捗（決済前は pending）
+model KanteiBookBindingRequest {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  orderId   String
+  email     String
+  profileId String @default("")
+
+  status String @default("pending")
+
+  baseOrderNumber String?
+  baseBuyerName   String?
+
+  kanteiCode      String
+  fullNameDisplay String
+  birthDate       String
+  orderCreatedAt  DateTime
+
+  @@index([status, createdAt])
+  @@index([orderId])
+  @@index([email])
+  @@index([kanteiCode])
+}
+
 /// 1アカウント配下のプロフィール（ニックネーム表示用）
 model Profile {
   id        String   @id @default(cuid())

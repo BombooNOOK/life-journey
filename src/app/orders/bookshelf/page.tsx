@@ -257,13 +257,21 @@ export default async function BookshelfPage() {
                             </p>
                           </div>
                         ) : null}
-                        <div>
+                        <div className="flex flex-wrap gap-x-3 gap-y-1">
                           <Link
                             href={book.href}
                             className="text-xs font-medium text-amber-900 underline-offset-2 hover:underline"
                           >
                             概要ページ（コアナンバー・今日のヒントへ）
                           </Link>
+                          {book.reportOrderId ? (
+                            <Link
+                              href={`/orders/${book.reportOrderId}/book-binding`}
+                              className="text-xs font-medium text-violet-900 underline-offset-2 hover:underline"
+                            >
+                              製本版を注文する
+                            </Link>
+                          ) : null}
                         </div>
                         <p className="text-[11px] leading-snug text-stone-500">
                           PDFの生成に1分ほどかかることがあります。

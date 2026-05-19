@@ -189,6 +189,12 @@ export default async function OrderDetailPage({ params }: Props) {
           >
             Life Journey Diary へ
           </Link>
+          <Link
+            href={`/orders/${order.id}/book-binding`}
+            className="rounded-lg border border-violet-300 bg-violet-50 px-5 py-2.5 text-sm font-medium text-violet-950 hover:bg-violet-100"
+          >
+            製本版を注文する
+          </Link>
         </div>
         <p className="mt-2 text-xs text-stone-500">
           PDF生成は数分かかることがあり、長いときは10分近くまで続くこともあります。混雑時やスマホではさらに時間がかかり、サーバー側の上限で途中終了することがあります（時間をおいて再試行するか、Wi‑Fi・PCでの利用をおすすめします）。
