@@ -5,7 +5,7 @@ import { prisma } from "@/lib/db";
 import { buildOrderPayload } from "@/lib/order/buildSnapshot";
 import { toIsoDateString } from "@/lib/order/birthDate";
 import { fetchAccountPdfDownloadLimitOrNull } from "@/lib/order/effectivePdfDownloadLimit";
-import { ensureOrderKanteiCode } from "@/lib/order/kanteiCode";
+import { ensureOrderKanteiCode, formatKanteiCodeErrorDetail } from "@/lib/order/kanteiCode";
 import type { CustomerFormValues } from "@/lib/order/types";
 import { profileByIdForViewer, resolveActiveProfileId } from "@/lib/profile/activeProfile";
 import { isHiraganaOnly } from "@/lib/validation/hiragana";
@@ -180,11 +180,12 @@ export async function POST(req: Request) {
       },
     });
     try {
-      await ensureOrderKanteiCode(order.id);
+      const kanteiCode = await ensureOrderKanteiCode(order.id);
+      console.log("[POST /api/orders] kanteiCode assigned", { orderId: order.id, kanteiCode });
     } catch (e) {
       console.error("[POST /api/orders] kanteiCode assign failed (order saved)", {
         orderId: order.id,
-        error: e instanceof Error ? e.message : String(e),
+        error: formatKanteiCodeErrorDetail(e),
       });
     }
     return NextResponse.json({ id: order.id, code: "OK" });

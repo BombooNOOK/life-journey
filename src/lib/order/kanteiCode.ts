@@ -1,5 +1,7 @@
 import { randomBytes } from "node:crypto";
 
+import { Prisma } from "@prisma/client";
+
 import { prisma } from "@/lib/db";
 
 const KANTEI_CODE_PREFIX = "LJK";
@@ -80,9 +82,132 @@ export function resolveKanteiPdfDownloadFilename(
     : `kantei-${orderId.slice(0, 8)}-${focusPage}-${bodyTune}-${variant}.pdf`;
 }
 
+/** Runtime Logs / 切り分け用のエラー整形 */
+export function formatKanteiCodeErrorDetail(err: unknown): Record<string, unknown> {
+  if (err instanceof Prisma.PrismaClientKnownRequestError) {
+    return {
+      kind: "PrismaClientKnownRequestError",
+      name: err.name,
+      message: err.message,
+      prismaCode: err.code,
+      meta: err.meta,
+      clientVersion: err.clientVersion,
+    };
+  }
+  if (err instanceof Prisma.PrismaClientUnknownRequestError) {
+    return {
+      kind: "PrismaClientUnknownRequestError",
+      name: err.name,
+      message: err.message,
+      clientVersion: err.clientVersion,
+    };
+  }
+  if (err instanceof Prisma.PrismaClientInitializationError) {
+    return {
+      kind: "PrismaClientInitializationError",
+      name: err.name,
+      message: err.message,
+      errorCode: err.errorCode,
+      clientVersion: err.clientVersion,
+    };
+  }
+  if (err instanceof Error) {
+    return {
+      kind: "Error",
+      name: err.name,
+      message: err.message,
+      stack: err.stack,
+      cause:
+        err.cause instanceof Error
+          ? { name: err.cause.name, message: err.cause.message }
+          : err.cause != null
+            ? String(err.cause)
+            : undefined,
+    };
+  }
+  return { kind: "unknown", raw: String(err) };
+}
+
+/** 本番DBに kanteiCode 列があるか（information_schema） */
+export async function kanteiCodeColumnExistsInDatabase(): Promise<boolean> {
+  const rows = await prisma.$queryRaw<{ exists: boolean }[]>`
+    SELECT EXISTS (
+      SELECT 1
+      FROM information_schema.columns
+      WHERE table_schema = 'public'
+        AND table_name = 'Order'
+        AND column_name = 'kanteiCode'
+    ) AS "exists"
+  `;
+  return rows[0]?.exists === true;
+}
+
+export type KanteiCodeDiagnostics = {
+  columnExists: boolean;
+  ordersMissingKanteiCode: number | null;
+  ordersWithKanteiCode: number | null;
+  sampleWithCode: { id: string; kanteiCode: string } | null;
+  prismaClientHasKanteiCodeField: boolean;
+};
+
+/** /api/health 等での切り分け用 */
+export async function getKanteiCodeDiagnostics(): Promise<KanteiCodeDiagnostics> {
+  const columnExists = await kanteiCodeColumnExistsInDatabase();
+  const prismaClientHasKanteiCodeField = "kanteiCode" in Prisma.OrderScalarFieldEnum;
+
+  if (!columnExists) {
+    return {
+      columnExists: false,
+      ordersMissingKanteiCode: null,
+      ordersWithKanteiCode: null,
+      sampleWithCode: null,
+      prismaClientHasKanteiCodeField,
+    };
+  }
+
+  const [ordersMissingKanteiCode, ordersWithKanteiCode, sampleWithCode] = await Promise.all([
+    prisma.order.count({
+      where: { OR: [{ kanteiCode: null }, { kanteiCode: "" }] },
+    }),
+    prisma.order.count({
+      where: { kanteiCode: { not: null } },
+    }),
+    prisma.order.findFirst({
+      where: { kanteiCode: { not: null } },
+      select: { id: true, kanteiCode: true },
+      orderBy: { createdAt: "desc" },
+    }),
+  ]);
+
+  return {
+    columnExists: true,
+    ordersMissingKanteiCode,
+    ordersWithKanteiCode,
+    sampleWithCode:
+      sampleWithCode?.kanteiCode != null && sampleWithCode.kanteiCode !== ""
+        ? { id: sampleWithCode.id, kanteiCode: sampleWithCode.kanteiCode }
+        : null,
+    prismaClientHasKanteiCodeField,
+  };
+}
+
+function isPrismaUniqueViolation(err: unknown): boolean {
+  return err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2002";
+}
+
+function isKanteiCodeUnset(value: string | null | undefined): boolean {
+  return value == null || value.trim() === "";
+}
+
+function orderWithUnsetKanteiCodeWhere(orderId: string) {
+  return {
+    id: orderId,
+    OR: [{ kanteiCode: null }, { kanteiCode: "" }],
+  };
+}
+
 /**
  * kanteiCode 付与を試みる。失敗しても例外を投げず null（ログのみ）。
- * DB カラム未反映・unique 衝突連続などで PDF API 全体が落ちないようにする。
  */
 export async function resolveOrderKanteiCodeSafe(
   orderId: string,
@@ -91,42 +216,50 @@ export async function resolveOrderKanteiCodeSafe(
   try {
     return await ensureOrderKanteiCode(orderId);
   } catch (err) {
-    const detail =
-      err instanceof Error
-        ? { name: err.name, message: err.message, stack: err.stack }
-        : { raw: String(err) };
-    console.error(`[kanteiCode] ${logTag} failed`, { orderId, error: detail });
+    const columnExists = await kanteiCodeColumnExistsInDatabase().catch(() => false);
+    console.error(`[kanteiCode] ${logTag} failed`, {
+      orderId,
+      columnExists,
+      error: formatKanteiCodeErrorDetail(err),
+    });
+
+    if (!columnExists) {
+      console.error(
+        `[kanteiCode] ${logTag}: DB column "Order.kanteiCode" is missing. Run prisma migrate deploy (repair migration).`,
+        { orderId },
+      );
+    }
 
     try {
       const row = await prisma.order.findUnique({
         where: { id: orderId },
         select: { kanteiCode: true },
       });
-      return row?.kanteiCode ?? null;
+      if (!isKanteiCodeUnset(row?.kanteiCode)) {
+        return row!.kanteiCode;
+      }
     } catch (readErr) {
       console.error(`[kanteiCode] ${logTag} read-back failed`, {
         orderId,
-        error: readErr instanceof Error ? readErr.message : String(readErr),
+        columnExists,
+        error: formatKanteiCodeErrorDetail(readErr),
       });
-      return null;
     }
+    return null;
   }
-}
-
-function isPrismaUniqueViolation(err: unknown): boolean {
-  return (
-    typeof err === "object" &&
-    err !== null &&
-    "code" in err &&
-    (err as { code: string }).code === "P2002"
-  );
 }
 
 /**
  * 未設定の注文に kanteiCode を付与して返す。設定済みならそのまま返す。
- * unique 衝突時はリトライ。並行リクエスト時は再読込で既存値を拾う。
  */
 export async function ensureOrderKanteiCode(orderId: string): Promise<string> {
+  const columnExists = await kanteiCodeColumnExistsInDatabase();
+  if (!columnExists) {
+    throw new Error(
+      'Order.kanteiCode column is missing in database (run prisma migrate deploy / repair migration)',
+    );
+  }
+
   const existing = await prisma.order.findUnique({
     where: { id: orderId },
     select: { kanteiCode: true, createdAt: true },
@@ -134,34 +267,48 @@ export async function ensureOrderKanteiCode(orderId: string): Promise<string> {
   if (!existing) {
     throw new Error(`Order not found: ${orderId}`);
   }
-  if (existing.kanteiCode) {
-    return existing.kanteiCode;
+  if (!isKanteiCodeUnset(existing.kanteiCode)) {
+    return existing.kanteiCode as string;
   }
 
   for (let attempt = 0; attempt < ASSIGN_MAX_ATTEMPTS; attempt++) {
     const candidate = buildKanteiCode(existing.createdAt);
     try {
       const updated = await prisma.order.updateMany({
-        where: { id: orderId, kanteiCode: null },
+        where: orderWithUnsetKanteiCodeWhere(orderId),
         data: { kanteiCode: candidate },
       });
       if (updated.count === 1) {
+        console.log("[kanteiCode] assigned", { orderId, kanteiCode: candidate, attempt });
         return candidate;
       }
+
+      const raced = await prisma.order.findUnique({
+        where: { id: orderId },
+        select: { kanteiCode: true },
+      });
+      if (raced && !isKanteiCodeUnset(raced.kanteiCode)) {
+        return raced.kanteiCode as string;
+      }
+
+      console.warn("[kanteiCode] updateMany count=0", {
+        orderId,
+        attempt,
+        candidate,
+        currentKanteiCode: raced?.kanteiCode ?? null,
+      });
     } catch (err) {
       if (!isPrismaUniqueViolation(err)) {
         throw err;
       }
-    }
-
-    const raced = await prisma.order.findUnique({
-      where: { id: orderId },
-      select: { kanteiCode: true },
-    });
-    if (raced?.kanteiCode) {
-      return raced.kanteiCode;
+      console.warn("[kanteiCode] unique violation, retrying", {
+        orderId,
+        attempt,
+        candidate,
+        error: formatKanteiCodeErrorDetail(err),
+      });
     }
   }
 
-  throw new Error(`Failed to assign kanteiCode for order ${orderId}`);
+  throw new Error(`Failed to assign kanteiCode for order ${orderId} after ${ASSIGN_MAX_ATTEMPTS} attempts`);
 }
