@@ -5,8 +5,6 @@ import { PdfText as Text } from "../PdfText";
 import { PdfPageFrame } from "../PdfPageFrame";
 
 import { getMaturityArticle } from "@/lib/numerology/maturityData";
-import { breakTitleAtCommaForPdf } from "@/lib/pdf/breakTitleAtComma";
-import { PDF_MATURITY_FIRST_PAGE_PATH } from "../pdfAssetPaths";
 
 import { pdfLongFormProsePropsWithTallContinuation } from "../pdfLongFormSpacing";
 import type { BodyRenderOverrides } from "../pdfRenderConfig";
@@ -22,11 +20,7 @@ export function MaturityPage({ maturity, bodyStyle, bodyExpandWidth }: Props) {
 
   if (maturity == null) {
     return (
-      <PdfPageFrame
-      title={headerTitle}
-      pageType="body"
-      firstPageBodyBackgroundSrc={PDF_MATURITY_FIRST_PAGE_PATH}
-    >
+      <PdfPageFrame title={headerTitle} pageType="body">
         <Text style={pdfStyles.muted}>
           ディスティニーが算出できないため、マチュリティナンバー（LP＋D）は定義されません。
         </Text>
@@ -38,38 +32,23 @@ export function MaturityPage({ maturity, bodyStyle, bodyExpandWidth }: Props) {
 
   if (!article) {
     return (
-      <PdfPageFrame
-      title={headerTitle}
-      pageType="body"
-      firstPageBodyBackgroundSrc={PDF_MATURITY_FIRST_PAGE_PATH}
-    >
+      <PdfPageFrame title={headerTitle} pageType="body">
         <Text style={pdfStyles.muted}>マチュリティ本文データが未登録のため、このページは簡易表示です。</Text>
       </PdfPageFrame>
     );
   }
 
   return (
-    <>
-      <PdfPageFrame
-        title={headerTitle}
-        pageType="body"
-        firstPageBodyBackgroundSrc={PDF_MATURITY_FIRST_PAGE_PATH}
-      >
-        <View style={pdfStyles.maturityNumberFirstPageHero}>
-          <Text style={pdfStyles.resultTitle}>{breakTitleAtCommaForPdf(article.title)}</Text>
-        </View>
-      </PdfPageFrame>
-      <PdfPageFrame title={headerTitle} pageType="body">
-        <View style={pdfStyles.lifePathSectionBlock}>
-          <PdfLongFormBody
-            text={article.article}
-            readableSentenceWrap
-            {...pdfLongFormProsePropsWithTallContinuation}
-            bodyStyle={bodyStyle}
-            expandWidth={bodyExpandWidth}
-          />
-        </View>
-      </PdfPageFrame>
-    </>
+    <PdfPageFrame title={headerTitle} pageType="body">
+      <View style={pdfStyles.lifePathSectionBlock}>
+        <PdfLongFormBody
+          text={article.article}
+          readableSentenceWrap
+          {...pdfLongFormProsePropsWithTallContinuation}
+          bodyStyle={bodyStyle}
+          expandWidth={bodyExpandWidth}
+        />
+      </View>
+    </PdfPageFrame>
   );
 }

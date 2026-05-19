@@ -1,6 +1,9 @@
-import { View } from "@react-pdf/renderer";
+import { Text as RawText, View } from "@react-pdf/renderer";
 import type { Style } from "@react-pdf/types";
 
+import { parseManuscriptLineMarkup } from "@/lib/pdf/pdfManuscriptMarkup";
+
+import { PDF_GUIDE_BODY_NO_WRAP_MIN_WIDTH_PT } from "./pdfGuideBleedLayout";
 import { PdfText as Text } from "./PdfText";
 import { pdfStyles } from "./styles";
 
@@ -154,11 +157,80 @@ type Props = {
   readableSentenceWrap?: boolean;
   /** true のときは readableSentenceWrap を無視し、原稿の改行・空行をそのまま描画する */
   preserveManuscriptLineBreaks?: boolean;
+  /** `preserveManuscriptLineBreaks` 時の空行の高さ（pt）。未指定は 19 */
+  manuscriptBlankLineHeight?: number;
+  /** 原稿1行を折り返さない（長い1行を句読点どおりに維持） */
+  disableWrap?: boolean;
+  noWrapMinChars?: number;
+  noWrapMinWidthPt?: number;
 };
 
 const DEFAULT_SENTENCE_LINE_GAP = 3;
 /** preserve 時の空行相当の高さ（sectionBody 10pt × lineHeight 1.9 に近い） */
 const MANUSCRIPT_BLANK_LINE_HEIGHT = 19;
+
+function manuscriptLineTextStyle(bodyStyle: Style | Style[] | undefined, italic: boolean): Style[] {
+  const base = bodyStyle == null ? [pdfStyles.sectionBody] : Array.isArray(bodyStyle) ? bodyStyle : [bodyStyle];
+  if (!italic) return base;
+  return [...base, pdfStyles.numberGuideBleedBodyItalic];
+}
+
+function ManuscriptLineText({
+  line,
+  bodyStyle,
+  disableWrap,
+  noWrapMinChars = 22,
+  noWrapMinWidthPt = PDF_GUIDE_BODY_NO_WRAP_MIN_WIDTH_PT,
+}: {
+  line: string;
+  bodyStyle?: Style | Style[];
+  disableWrap?: boolean;
+  /** `disableWrap` 時に1行幅を確保する最小文字数 */
+  noWrapMinChars?: number;
+  noWrapMinWidthPt?: number;
+}) {
+  const segments = parseManuscriptLineMarkup(line);
+  const useNoWrap = Boolean(disableWrap && line.length >= noWrapMinChars);
+  const lineStyle: Style[] = [
+    ...manuscriptLineTextStyle(bodyStyle, false),
+    defaultJapaneseBodyFont,
+    leftAlignedBody,
+  ];
+
+  const textNode =
+    segments.length === 1 && !segments[0].italic ? (
+      <RawText wrap={!useNoWrap} style={lineStyle}>
+        {segments[0].text}
+      </RawText>
+    ) : (
+      <RawText wrap={!useNoWrap} style={lineStyle}>
+        {segments.map((seg, si) =>
+          seg.italic ? (
+            <RawText key={si} style={manuscriptLineTextStyle(bodyStyle, true)}>
+              {seg.text}
+            </RawText>
+          ) : (
+            <RawText key={si}>{seg.text}</RawText>
+          ),
+        )}
+      </RawText>
+    );
+
+  if (!useNoWrap) return textNode;
+
+  return (
+    <View
+      wrap={false}
+      style={{
+        width: noWrapMinWidthPt,
+        minWidth: noWrapMinWidthPt,
+        flexShrink: 0,
+      }}
+    >
+      {textNode}
+    </View>
+  );
+}
 
 export function PdfLongFormBody({
   text,
@@ -172,8 +244,13 @@ export function PdfLongFormBody({
   expandWidth = 2,
   readableSentenceWrap = false,
   preserveManuscriptLineBreaks = false,
+  manuscriptBlankLineHeight,
+  disableWrap = false,
+  noWrapMinChars,
+  noWrapMinWidthPt,
 }: Props) {
   if (preserveManuscriptLineBreaks) {
+    const blankLineHeight = manuscriptBlankLineHeight ?? MANUSCRIPT_BLANK_LINE_HEIGHT;
     const nodes = splitBodyIntoManuscriptLineNodes(text);
     const hasRenderable = nodes.some((n) => n.kind === "text");
     if (!hasRenderable) return null;
@@ -191,12 +268,12 @@ export function PdfLongFormBody({
     let prev: "start" | "text" | "blank" = "start";
 
     return (
-      <View style={{ marginTop, marginHorizontal: expandWidth > 0 ? -expandWidth : 0 }}>
+      <View style={{ marginTop, marginHorizontal: expandWidth !== 0 ? -Math.abs(expandWidth) : 0 }}>
         {continuationSpacer}
         {nodes.map((node, i) => {
           if (node.kind === "blank") {
             prev = "blank";
-            return <View key={i} style={{ height: MANUSCRIPT_BLANK_LINE_HEIGHT }} />;
+            return <View key={i} style={{ height: blankLineHeight }} />;
           }
           const marginTopForLine =
             prev === "start"
@@ -205,19 +282,21 @@ export function PdfLongFormBody({
                 ? paragraphGap
                 : sentenceLineGap;
           prev = "text";
+          const useNoWrap = Boolean(disableWrap && node.content.length >= (noWrapMinChars ?? 22));
           return (
-            <Text
+            <View
               key={i}
-              style={[
-                pdfStyles.sectionBody,
-                defaultJapaneseBodyFont,
-                leftAlignedBody,
-                ...(bodyStyle == null ? [] : Array.isArray(bodyStyle) ? bodyStyle : [bodyStyle]),
-                { marginTop: marginTopForLine },
-              ]}
+              wrap={useNoWrap ? false : undefined}
+              style={{ marginTop: marginTopForLine, flexShrink: useNoWrap ? 0 : undefined }}
             >
-              {node.content}
-            </Text>
+              <ManuscriptLineText
+                line={node.content}
+                bodyStyle={bodyStyle}
+                disableWrap={disableWrap}
+                noWrapMinChars={noWrapMinChars}
+                noWrapMinWidthPt={noWrapMinWidthPt}
+              />
+            </View>
           );
         })}
       </View>

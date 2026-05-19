@@ -5,6 +5,7 @@ import { PdfText as Text } from "../PdfText";
 import { PdfPageFrame } from "../PdfPageFrame";
 
 import { buildPersonalMonthThreeMonthRows } from "@/lib/numerology/personalYearMonth";
+import { PDF_TOC_LINK_DESTINATION } from "@/lib/pdf/pdfTocLinkDestinations";
 
 import { pdfLongFormProseProps } from "../pdfLongFormSpacing";
 import { pdfStyles } from "../styles";
@@ -38,7 +39,7 @@ export function PersonalMonthBonusPage({ birthMonth, birthDay, purchaseDate }: P
   const startYearMonth = `${purchaseDate.getFullYear()}年${purchaseDate.getMonth() + 1}月`;
 
   return (
-    <PdfPageFrame title="おまけのページ">
+    <PdfPageFrame title="おまけのページ" linkDestinationId={PDF_TOC_LINK_DESTINATION.personalMonthFlow}>
       <Text style={pdfStyles.h1}>今日から3ヶ月の流れ</Text>
       <PdfLongFormBody
         text={`起点月は注文作成月（${startYearMonth}）です。起点月を含む3か月分を表示します。`}

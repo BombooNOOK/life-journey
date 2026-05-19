@@ -9,6 +9,10 @@ import {
   PDF_CHAPTER_INSERT_BEFORE_4_PATH,
   PDF_FINAL_BACK_COVER_INSERT_PATH,
 } from "@/components/pdf/pdfAssetPaths";
+import {
+  chapterInsertBefore3PageCount,
+  chapterInsertBefore4PageCount,
+} from "@/lib/pdf/chapterInsertConfig";
 import type {
   BodyTuneStep,
   FocusPage,
@@ -17,7 +21,6 @@ import type {
 } from "@/components/pdf/pdfRenderConfig";
 import { setPdfPageNumberOffset } from "@/components/pdf/pdfPageNumberOffset";
 import { ensureJapaneseFont } from "@/components/pdf/registerFonts";
-import { resolveSubscriberPdfAccess } from "@/lib/account/pdfAccess";
 import { isAdminEmail } from "@/lib/admin/access";
 import { getViewerEmailFromCookie, normalizeEmail } from "@/lib/auth/viewer";
 import { mergeReportPdfWithChapterInserts } from "@/lib/pdf/mergeReportPdfWithInserts";
@@ -28,7 +31,6 @@ import {
   orderPdfBlobWriteEnabled,
   putOrderFullPdfToBlob,
 } from "@/lib/pdf/orderPdfBlobCache";
-import { getPdfPageCountFromStaticFile } from "@/lib/pdf/staticPdfFilePageCount";
 import { prisma } from "@/lib/db";
 import { combinePdfDownloadLimit, fetchAccountPdfDownloadLimitOrNull } from "@/lib/order/effectivePdfDownloadLimit";
 import type { OrderPayload } from "@/lib/order/types";
@@ -46,8 +48,8 @@ async function renderFullReportWithChapterPdfInserts(
 
   try {
     const [insertBeforeChapter3Pages, insertBeforeChapter4Pages] = await Promise.all([
-      getPdfPageCountFromStaticFile(PDF_CHAPTER_INSERT_BEFORE_3_PATH),
-      getPdfPageCountFromStaticFile(PDF_CHAPTER_INSERT_BEFORE_4_PATH),
+      chapterInsertBefore3PageCount(),
+      chapterInsertBefore4PageCount(),
     ]);
 
     setPdfPageNumberOffset(0);
@@ -192,15 +194,14 @@ export async function GET(req: Request, { params }: RouteParams) {
   const shouldDownload = downloadParam !== "0";
 
   if (quality === "high") {
-    const subscriberPdf = await resolveSubscriberPdfAccess(viewerEmail);
     const admin = await isAdminEmail(viewerEmail);
-    if (!subscriberPdf && !admin) {
+    if (!admin) {
       console.log("[pdf-api] 早期終了 403 高画質権限なし", { orderId: id });
       return NextResponse.json(
         {
           error:
-            "製本用（高画質）PDFはサブスク加入者向けです。プレビュー版（軽量）をご利用ください。",
-          code: "SUBSCRIBER_PDF_REQUIRED",
+            "製本用（高画質）PDFは管理者・製本確認用です。プレビュー版（軽量）をご利用ください。",
+          code: "ADMIN_PRINT_PDF_REQUIRED",
         },
         { status: 403, headers: { ...PDF_API_CACHE_HEADERS } },
       );

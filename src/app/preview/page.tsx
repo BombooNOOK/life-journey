@@ -1,10 +1,21 @@
 import Link from "next/link";
 
-const links: { href: string; label: string; note?: string }[] = [
+const links: { href: string; label: string; note?: string; highlight?: boolean }[] = [
+  {
+    href: "/preview/pdf-quick",
+    label: "PDF サク見（リンクでペコッと表示）",
+    note: "npm run dev 中のみ。各ページを左メニューから即プレビュー",
+    highlight: true,
+  },
   {
     href: "/preview/sample-booklet",
     label: "サンプル冊子 PDF（ブラウザ・ワンクリック）",
     note: "npm run dev 中のみ。初回は 1〜2 分かかることがあります",
+  },
+  {
+    href: "/preview/pdf-design-map",
+    label: "鑑定書アセット：PDF ↔ PNG 対応表",
+    note: "デザイン元 PDF をクリックすると本番 PNG を表示（npm run dev 中のみ）",
   },
   { href: "/verify", label: "数値の突合（コア5・ローマ字）", note: "旧鑑定書・Excel との照合用" },
   { href: "/preview/all-bodies", label: "鑑定本文まとめ（全データ・1ページ）", note: "LP〜ブリッジ・PY/PM/PD まで一括" },
@@ -42,11 +53,16 @@ export default function PreviewMenuPage() {
           原稿データの一覧表示や、計算結果の確認用です。本番のお客様向け導線には含まれていません。
         </p>
         <ul className="mt-8 space-y-3">
-          {links.map(({ href, label, note }) => (
+          {links.map(({ href, label, note, highlight }) => (
             <li key={href}>
               <Link
                 href={href}
-                className="block rounded-lg border border-stone-200 bg-white px-4 py-3 text-stone-800 shadow-sm transition hover:border-stone-300 hover:bg-stone-50"
+                className={[
+                  "block rounded-lg border px-4 py-3 text-stone-800 shadow-sm transition",
+                  highlight
+                    ? "border-emerald-500 bg-emerald-50 hover:border-emerald-600 hover:bg-emerald-100/80"
+                    : "border-stone-200 bg-white hover:border-stone-300 hover:bg-stone-50",
+                ].join(" ")}
               >
                 <span className="font-medium">{label}</span>
                 {note ? <span className="mt-1 block text-xs text-stone-500">{note}</span> : null}

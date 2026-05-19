@@ -1,6 +1,5 @@
 import { Document, renderToBuffer } from "@react-pdf/renderer";
 import { NextResponse } from "next/server";
-import { readFile } from "node:fs/promises";
 import { PDFDocument } from "pdf-lib";
 
 import { ReportPdfPages } from "@/components/pdf/ReportPdfPages";
@@ -11,27 +10,26 @@ import {
 } from "@/components/pdf/pdfAssetPaths";
 import { setPdfPageNumberOffset } from "@/components/pdf/pdfPageNumberOffset";
 import { ensureJapaneseFont } from "@/components/pdf/registerFonts";
+import {
+  chapterInsertBefore3PageCount,
+  chapterInsertBefore4PageCount,
+} from "@/lib/pdf/chapterInsertConfig";
 import { mergeReportPdfWithChapterInserts } from "@/lib/pdf/mergeReportPdfWithInserts";
 import { getSampleBookletOrder } from "@/lib/pdf/sampleBookletOrder";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-async function renderSampleBookletWithChapterInserts() {
+async function renderSampleBookletWithChapterInserts(quality: "low" | "high") {
   const order = getSampleBookletOrder();
-  const baseProps = { order, renderConfig: { focusPage: "all" as const } };
+  const baseProps = { order, renderConfig: { focusPage: "all" as const, quality } };
   const countPages = async (bytes: Uint8Array | Buffer): Promise<number> => {
     const doc = await PDFDocument.load(bytes);
     return doc.getPageCount();
   };
-  const countPdfPagesFromPath = async (pdfPath: string): Promise<number> => {
-    const doc = await PDFDocument.load(await readFile(pdfPath));
-    return doc.getPageCount();
-  };
-
   try {
-    const insertBeforeChapter3Pages = await countPdfPagesFromPath(PDF_CHAPTER_INSERT_BEFORE_3_PATH);
-    const insertBeforeChapter4Pages = await countPdfPagesFromPath(PDF_CHAPTER_INSERT_BEFORE_4_PATH);
+    const insertBeforeChapter3Pages = await chapterInsertBefore3PageCount();
+    const insertBeforeChapter4Pages = await chapterInsertBefore4PageCount();
 
     setPdfPageNumberOffset(0);
     const partBeforeChapter3 = await renderToBuffer(
@@ -75,13 +73,16 @@ async function renderSampleBookletWithChapterInserts() {
  * 開発専用: サンプル冊子 PDF をその場でレンダリングして返す。
  * 初回は 1〜2 分かかることがあります。
  */
-export async function GET() {
+export async function GET(request: Request) {
   if (process.env.NODE_ENV !== "development") {
     return NextResponse.json({ error: "Not available outside development." }, { status: 404 });
   }
 
+  const qualityParam = new URL(request.url).searchParams.get("quality");
+  const quality = qualityParam === "low" ? "low" : "high";
+
   ensureJapaneseFont();
-  const buffer = await renderSampleBookletWithChapterInserts();
+  const buffer = await renderSampleBookletWithChapterInserts(quality);
 
   return new NextResponse(Buffer.from(buffer), {
     status: 200,

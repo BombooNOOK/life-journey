@@ -14,6 +14,10 @@ import {
 } from "@/components/pdf/pdfAssetPaths";
 import { setPdfPageNumberOffset } from "@/components/pdf/pdfPageNumberOffset";
 import { ensureJapaneseFont } from "@/components/pdf/registerFonts";
+import {
+  chapterInsertBefore3PageCount,
+  chapterInsertBefore4PageCount,
+} from "@/lib/pdf/chapterInsertConfig";
 import { mergeReportPdfWithChapterInserts } from "@/lib/pdf/mergeReportPdfWithInserts";
 import { getSampleBookletOrder } from "@/lib/pdf/sampleBookletOrder";
 
@@ -31,14 +35,11 @@ async function main() {
     const doc = await PDFDocument.load(bytes);
     return doc.getPageCount();
   };
-  const countPdfPagesFromPath = async (pdfPath: string): Promise<number> => {
-    const doc = await PDFDocument.load(fs.readFileSync(pdfPath));
-    return doc.getPageCount();
-  };
-  const baseProps = { order, renderConfig: { focusPage: "all" as const } };
+  const quality = process.env.PDF_QUALITY === "high" ? "high" : "low";
+  const baseProps = { order, renderConfig: { focusPage: "all" as const, quality } };
 
-  const insertBeforeChapter3Pages = await countPdfPagesFromPath(PDF_CHAPTER_INSERT_BEFORE_3_PATH);
-  const insertBeforeChapter4Pages = await countPdfPagesFromPath(PDF_CHAPTER_INSERT_BEFORE_4_PATH);
+  const insertBeforeChapter3Pages = await chapterInsertBefore3PageCount();
+  const insertBeforeChapter4Pages = await chapterInsertBefore4PageCount();
 
   setPdfPageNumberOffset(0);
   const partBeforeChapter3 = await renderToBuffer(
@@ -84,7 +85,8 @@ async function main() {
   // eslint-disable-next-line no-console
   console.error(
     [
-      `[sample-booklet] 書き出し完了（${(bytes / (1024 * 1024)).toFixed(1)} MB）。`,
+      `[sample-booklet] 書き出し完了（quality=${quality}, ${(bytes / (1024 * 1024)).toFixed(1)} MB）。`,
+      "iPhone: AirDrop で sample-booklet.pdf を送るか、npm run dev:lan 後に Safari で http://<MacのIP>:3000/api/dev/sample-booklet?quality=low",
       "PDF を『テキスト』として開くと真っ白に見えることがあります（PDF 用拡張のプレビューならエディターで表示できます）。",
       "ブラウザで見る: npm run dev のあと http://127.0.0.1:3000/preview/sample-booklet",
       "エディターでサクッと: npm run pdf:sample（生成後に Cursor / VS Code でこの PDF を開き直す）",

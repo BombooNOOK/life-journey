@@ -1,15 +1,6 @@
-import { PdfPageFrame } from "../PdfPageFrame";
+import { NumberGuideBleedPage } from "./NumberGuideBleedPage";
 
-import { PDF_LIFE_PATH_GUIDE_PAGE_PATH } from "../pdfAssetPaths";
-
-/** 「ライフパスナンバーとは」— デザインPDFを全面1ページとして表示（表紙と同様） */
+/** 「ライフパスナンバーとは」— `number-guide-bg.png` + 生成テキスト（パイロット） */
 export function LifePathGuidePage() {
-  return (
-    <PdfPageFrame
-      title="ライフパスナンバーとは"
-      pageType="guide"
-      showHeader={false}
-      fullBleedImageSrc={PDF_LIFE_PATH_GUIDE_PAGE_PATH}
-    />
-  );
+  return <NumberGuideBleedPage guideKey="lifePath" />;
 }

@@ -2,6 +2,8 @@ import { View } from "@react-pdf/renderer";
 
 import { PdfPageFrame } from "../PdfPageFrame";
 import { PdfText as Text } from "../PdfText";
+import { PDF_TOC_LINK_DESTINATION } from "@/lib/pdf/pdfTocLinkDestinations";
+
 import { pdfStyles } from "../styles";
 
 type KeywordRow = {
@@ -26,7 +28,7 @@ const NUMBER_KEYWORDS: KeywordRow[] = [
 
 export function NumberKeywordsPage() {
   return (
-    <PdfPageFrame title="数のキーワード">
+    <PdfPageFrame title="数のキーワード" linkDestinationId={PDF_TOC_LINK_DESTINATION.numberKeywords}>
       <Text style={pdfStyles.h1}>数のキーワード</Text>
       <Text style={pdfStyles.numberKeywordLead}>
         「数」には、ひとつひとつに固有の性質があり、特別な意味があります。{"\n"}

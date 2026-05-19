@@ -1,35 +1,19 @@
-import { PdfPageFrame } from "../PdfPageFrame";
+import { NumberGuideBleedPage } from "./NumberGuideBleedPage";
+import { PersonalYearMessageBleedPage } from "./PersonalYearMessageBleedPage";
 
-import {
-  PDF_PERSONAL_YEAR_GUIDE_PAGE_PATH,
-  PDF_PERSONAL_YEAR_MESSAGE_PAGE_PATH,
-} from "../pdfAssetPaths";
-
+/** マチュリティの次 — `personal-year-message-bg.png` + 生成テキスト */
 export function PersonalYearMessagePage() {
-  return (
-    <PdfPageFrame
-      title="フクロウ先生からのメッセージ"
-      pageType="guide"
-      showHeader={false}
-      fullBleedImageSrc={PDF_PERSONAL_YEAR_MESSAGE_PAGE_PATH}
-    />
-  );
+  return <PersonalYearMessageBleedPage />;
 }
 
+/** 「パーソナルイヤーナンバーとは」— `number-guide-bg.png` + 生成テキスト */
 export function PersonalYearGuidePage() {
-  return (
-    <PdfPageFrame
-      title="パーソナルイヤー"
-      pageType="guide"
-      showHeader={false}
-      fullBleedImageSrc={PDF_PERSONAL_YEAR_GUIDE_PAGE_PATH}
-    />
-  );
+  return <NumberGuideBleedPage guideKey="personalYear" />;
 }
 
 /**
  * マチュリティの後に入る 2 ページ導入（全面画像・ヘッダーなし・ページ番号のみ）。
- * 1P: フクロウ先生からのメッセージ / 2P: パーソナルイヤー導入
+ * 1P: フクロウ先生メッセージ（生成テキスト） / 2P: パーソナルイヤー「とは」
  */
 export function PersonalYearIntroPages() {
   return (

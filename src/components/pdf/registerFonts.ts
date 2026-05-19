@@ -17,9 +17,31 @@ export function ensureJapaneseFont(): void {
   Font.register({
     family: "NotoSansJP",
     fonts: [
-      { src: getRepoFontPath("NotoSansCJKjp-Regular.otf"), fontWeight: 400 },
-      { src: getRepoFontPath("NotoSansCJKjp-Bold.otf"), fontWeight: 700 },
+      { src: getRepoFontPath("NotoSansCJKjp-Regular.otf"), fontWeight: 400, fontStyle: "normal" },
+      {
+        src: getRepoFontPath("NotoSansCJKjp-Regular.otf"),
+        fontWeight: 400,
+        fontStyle: "italic",
+      },
+      { src: getRepoFontPath("NotoSansCJKjp-Bold.otf"), fontWeight: 700, fontStyle: "normal" },
     ],
   });
+
+  Font.register({
+    family: "LibreBaskerville",
+    fonts: [
+      {
+        src: getRepoFontPath("LibreBaskerville-Regular.ttf"),
+        fontWeight: 400,
+        fontStyle: "normal",
+      },
+      {
+        src: getRepoFontPath("LibreBaskerville-Bold.ttf"),
+        fontWeight: 700,
+        fontStyle: "normal",
+      },
+    ],
+  });
+
   registered = true;
 }

@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev --hostname 127.0.0.1 --port 3000",
+    "dev:lan": "next dev --hostname 0.0.0.0 --port 3000",
     "dev:fresh": "node scripts/kill-port.mjs 3000 && rm -rf .next node_modules/.cache && next dev --hostname 127.0.0.1 --port 3000",
     "build": "next build",
     "start": "next start --hostname 127.0.0.1 --port 3000",
@@ -20,7 +21,7 @@
     "dump:bodies": "npx tsx scripts/dump-numerology-body-text.ts",
     "dump:bridge-comments": "npx tsx scripts/dump-bridge-score-comments.ts",
     "pdf:sample:text": "npx tsx scripts/print-sample-booklet-text.ts",
-    "pdf:sample": "npx tsx scripts/render-sample-booklet.tsx && node scripts/open-sample-pdf-in-editor.mjs",
+    "pdf:sample": "PDF_QUALITY=low npx tsx scripts/render-sample-booklet.tsx && node scripts/open-sample-pdf-in-editor.mjs",
     "build:stone-pdf-data": "node scripts/extractStonePdfText.mjs && node scripts/parseStonePdfV4.mjs",
     "fix:lp-bg-header": "python3 scripts/transparentizeCoreFirstPageHeaderBand.py src/components/pdf/assets/haikei-lp.png",
     "fix:destiny-bg-header": "python3 scripts/transparentizeCoreFirstPageHeaderBand.py src/components/pdf/assets/destiny-first-page.png",
@@ -29,7 +30,10 @@
     "fix:birthday-bg-header": "python3 scripts/transparentizeCoreFirstPageHeaderBand.py src/components/pdf/assets/birthday-first-page.png",
     "fix:maturity-bg-header": "python3 scripts/transparentizeCoreFirstPageHeaderBand.py src/components/pdf/assets/maturity-first-page.png",
     "fix:toc-continuation-bg-header": "python3 scripts/transparentizeCoreFirstPageHeaderBand.py src/components/pdf/assets/haikei-kekka2.png",
-    "pdf:preview-assets": "node scripts/build-pdf-preview-assets.mjs"
+    "pdf:preview-assets": "node scripts/build-pdf-preview-assets.mjs",
+    "pdf:preview-assets:legacy": "PREVIEW_MAX_EDGE=900 PREVIEW_JPEG_QUALITY=80 node scripts/build-pdf-preview-assets.mjs",
+    "pdf:preview-assets:strong": "PREVIEW_MAX_EDGE=600 PREVIEW_JPEG_QUALITY=50 node scripts/build-pdf-preview-assets.mjs",
+    "pdf:preview-assets:soft": "PREVIEW_MAX_EDGE=800 PREVIEW_JPEG_QUALITY=65 node scripts/build-pdf-preview-assets.mjs"
   },
   "dependencies": {
     "@fontsource/noto-sans-jp": "^5.2.5",

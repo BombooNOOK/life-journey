@@ -1,14 +1,6 @@
-import { PdfPageFrame } from "../PdfPageFrame";
-import { PDF_CHAPTER_2_DIVIDER_PATH } from "../pdfAssetPaths";
+import { ChapterDividerBleedPage } from "./ChapterDividerBleedPage";
 
-/** 第2章の扉ページ（パーソナルイヤー導入ページの前） */
+/** 第2章の扉ページ（パーソナルイヤー章の前） */
 export function Chapter2DividerPage() {
-  return (
-    <PdfPageFrame
-      title="第2章"
-      pageType="guide"
-      showHeader={false}
-      fullBleedImageSrc={PDF_CHAPTER_2_DIVIDER_PATH}
-    />
-  );
+  return <ChapterDividerBleedPage chapter={2} />;
 }

@@ -1,26 +1,15 @@
-import { PdfPageFrame } from "../PdfPageFrame";
-
-import { PDF_INTRODUCTION_PAGE_1_PATH, PDF_INTRODUCTION_PAGE_2_PATH } from "../pdfAssetPaths";
+import { IntroductionPage1 } from "./IntroductionPage1";
+import { IntroductionPage2 } from "./IntroductionPage2";
 
 /**
- * はじめに 2 ページ。各ページとも全面画像（「〇〇ナンバーとは」と同様・文案は画像内）。
- * フッターのページ番号のみ表示。画像は `introduction-page-1.png` / `introduction-page-2.png` を差し替え。
+ * はじめに 2 ページ（背景 PNG + 生成テキスト）。
+ * レガシー `introduction-page-1.png` / `introduction-page-2.png` は参照用に残置。
  */
 export function IntroductionPages() {
   return (
     <>
-      <PdfPageFrame
-        title="はじめに"
-        pageType="guide"
-        showHeader={false}
-        fullBleedImageSrc={PDF_INTRODUCTION_PAGE_1_PATH}
-      />
-      <PdfPageFrame
-        title="このガイドの案内人"
-        pageType="guide"
-        showHeader={false}
-        fullBleedImageSrc={PDF_INTRODUCTION_PAGE_2_PATH}
-      />
+      <IntroductionPage1 />
+      <IntroductionPage2 />
     </>
   );
 }

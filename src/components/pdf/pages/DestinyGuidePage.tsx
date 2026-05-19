@@ -1,15 +1,6 @@
-import { PdfPageFrame } from "../PdfPageFrame";
+import { NumberGuideBleedPage } from "./NumberGuideBleedPage";
 
-import { PDF_DESTINY_GUIDE_PAGE_PATH } from "../pdfAssetPaths";
-
-/** 「ディスティニーナンバーとは」— デザイン由来の全面1ページ */
+/** 「ディスティニーナンバーとは」— `number-guide-bg.png` + 生成テキスト */
 export function DestinyGuidePage() {
-  return (
-    <PdfPageFrame
-      title="ディスティニーナンバーとは"
-      pageType="guide"
-      showHeader={false}
-      fullBleedImageSrc={PDF_DESTINY_GUIDE_PAGE_PATH}
-    />
-  );
+  return <NumberGuideBleedPage guideKey="destiny" />;
 }

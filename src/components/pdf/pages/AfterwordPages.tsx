@@ -1,22 +1,11 @@
-import { PdfPageFrame } from "../PdfPageFrame";
-import { PDF_AFTERWORD_PAGE_1_PATH, PDF_AFTERWORD_PAGE_2_PATH } from "../pdfAssetPaths";
+import { AfterwordBleedPage } from "./AfterwordBleedPage";
 
-/** あとがき 2ページ（全面画像・順序固定: owari01 -> owari02） */
+/** おわりに 2ページ（`afterword-1-bg` / `afterword-2-bg` + 生成テキスト） */
 export function AfterwordPages() {
   return (
     <>
-      <PdfPageFrame
-        title="あとがき"
-        pageType="writing"
-        showHeader={false}
-        fullBleedImageSrc={PDF_AFTERWORD_PAGE_1_PATH}
-      />
-      <PdfPageFrame
-        title="あとがき"
-        pageType="writing"
-        showHeader={false}
-        fullBleedImageSrc={PDF_AFTERWORD_PAGE_2_PATH}
-      />
+      <AfterwordBleedPage pageKey="left" />
+      <AfterwordBleedPage pageKey="right" />
     </>
   );
 }

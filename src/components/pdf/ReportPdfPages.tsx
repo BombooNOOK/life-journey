@@ -9,6 +9,7 @@ import { BridgesPdfPage } from "./pages/BridgeLifePathDestinyPage";
 import { BridgeReferencePage } from "./pages/BridgeReferencePage";
 import { CoverPage } from "./pages/CoverPage";
 import { Chapter1DividerPage } from "./pages/Chapter1DividerPage";
+import { CoreNumberIntroBleedPage } from "./pages/CoreNumberIntroBleedPage";
 import { Chapter2DividerPage } from "./pages/Chapter2DividerPage";
 import { Chapter3DividerPage } from "./pages/Chapter3DividerPage";
 import { InsideCoverPage } from "./pages/InsideCoverPage";
@@ -22,21 +23,29 @@ import {
   JournalInviteLeadPage,
   JournalInvitePagesFromChapter4Divider,
 } from "./pages/JournalInvitePages";
+import { JournalDiaryInvitePage } from "./pages/JournalDiaryInvitePage";
 import { MaturityGuidePage } from "./pages/MaturityGuidePage";
 import { MaturityPage } from "./pages/MaturityPage";
 import { NumerologyPage } from "./pages/NumerologyPage";
 import { NumberKeywordsPage } from "./pages/NumberKeywordsPage";
 import { PersonalYearDetailPages } from "./pages/PersonalYearDetailPages";
 import { PersonalMonthBonusPage } from "./pages/PersonalMonthBonusPage";
-import { PersonalMonthIntroExtraPage } from "./pages/PersonalMonthIntroExtraPage";
+import { SHOW_JOURNAL_INVITE_LEAD_PAGE } from "@/lib/pdf/chapterInsertConfig";
+import {
+  getCoreNumberIntroSubtitle,
+  getCoreNumberIntroThemeLine,
+} from "@/lib/numerology/pdfCoreIntroSubtitle";
+import type { CoreNumberIntroKey } from "@/lib/numerology/pdfCoreNumberIntroCopy";
+import { PersonalYearChapterTransitionPage } from "./pages/PersonalYearChapterTransitionPage";
+import { PersonalYearAfterMessagePage } from "./pages/PersonalYearAfterMessagePage";
 import { PersonalYearGuidePage, PersonalYearMessagePage } from "./pages/PersonalYearIntroPages";
 import { PersonalYearOverviewPage } from "./pages/PersonalYearOverviewPage";
 import { PersonalityGuidePage } from "./pages/PersonalityGuidePage";
 import { PersonalityPage } from "./pages/PersonalityPage";
 import { SoulGuidePage } from "./pages/SoulGuidePage";
 import { SoulPage } from "./pages/SoulPage";
+import { BridgeAfterMessagePage } from "./pages/BridgeAfterMessagePage";
 import { BridgeIntroPages } from "./pages/BridgeIntroPages";
-import { BridgeSectionCoverPage } from "./pages/BridgeSectionCoverPage";
 import { bodyStyleFromConfig, type PdfRenderConfig } from "./pdfRenderConfig";
 import { setPdfRenderQuality } from "./pdfRenderQualityState";
 
@@ -46,7 +55,7 @@ const INCLUDE_BRIDGE_REFERENCE_IN_REPORT_PDF = false;
 export type ReportPdfPageSegment =
   /** パーソナルイヤー導入のフクロウ先生ページまで（ここに blank01 を挟む） */
   | "beforeChapter3Insert"
-  /** 第2章扉〜第3章直前メッセージまで（ここに blank02 を挟む） */
+  /** 第2章扉〜PY章後フクロウまで（足跡装飾→章後メッセージ。第3章扉は fromChapter4DividerOnward） */
   | "chapter3ThroughJournalInviteLead"
   /** 第3章扉以降〜末尾 */
   | "fromChapter4DividerOnward"
@@ -79,16 +88,25 @@ export function ReportPdfPages({ order, renderConfig, segment }: Props) {
     bridgeChunks.push(bridgeBlocks.slice(i, i + bridgeChunkSize));
   }
 
+  const coreIntroPage = (coreKey: CoreNumberIntroKey) => (
+    <CoreNumberIntroBleedPage
+      coreKey={coreKey}
+      subtitle={getCoreNumberIntroSubtitle(coreKey, order, maturity)}
+      themeLine={getCoreNumberIntroThemeLine(coreKey, order)}
+    />
+  );
+
   const beforeChapter3Insert = (
     <>
       {showAll ? <CoverPage /> : null}
-      {showAll ? <InsideCoverPage /> : null}
-      {showAll ? <CustomerPage customer={order} /> : null}
+      {showAll ? <InsideCoverPage customer={order} /> : null}
+      {showAll ? <CustomerPage /> : null}
       {showAll ? <NumerologyPage numerology={order.numerology} /> : null}
       {showAll ? <IntroductionPages /> : null}
       {showAll ? <NumberKeywordsPage /> : null}
       {showAll && includeRichVisualPages ? <Chapter1DividerPage /> : null}
       {showAll && includeRichVisualPages ? <LifePathGuidePage /> : null}
+      {showAll && includeRichVisualPages ? coreIntroPage("lifePath") : null}
       {showAll || focus === "lifePath" ? (
         <LifePathPage
           lifePath={order.numerology.lifePathNumber}
@@ -97,6 +115,7 @@ export function ReportPdfPages({ order, renderConfig, segment }: Props) {
         />
       ) : null}
       {showAll && includeRichVisualPages ? <DestinyGuidePage /> : null}
+      {showAll && includeRichVisualPages ? coreIntroPage("destiny") : null}
       {showAll ? (
         <DestinyPage
           destiny={order.numerology.destinyNumber}
@@ -105,10 +124,12 @@ export function ReportPdfPages({ order, renderConfig, segment }: Props) {
         />
       ) : null}
       {showAll && includeRichVisualPages ? <SoulGuidePage /> : null}
+      {showAll && includeRichVisualPages ? coreIntroPage("soul") : null}
       {showAll ? (
         <SoulPage soul={order.numerology.soulNumber} bodyStyle={bodyStyle} bodyExpandWidth={bodyExpandWidth} />
       ) : null}
       {showAll && includeRichVisualPages ? <PersonalityGuidePage /> : null}
+      {showAll && includeRichVisualPages ? coreIntroPage("personality") : null}
       {showAll ? (
         <PersonalityPage
           personality={order.numerology.personalityNumber}
@@ -117,6 +138,7 @@ export function ReportPdfPages({ order, renderConfig, segment }: Props) {
         />
       ) : null}
       {showAll && includeRichVisualPages ? <BirthdayGuidePage /> : null}
+      {showAll && includeRichVisualPages ? coreIntroPage("birthday") : null}
       {showAll ? (
         <BirthdayPage
           birthday={order.numerology.birthdayNumber}
@@ -125,6 +147,7 @@ export function ReportPdfPages({ order, renderConfig, segment }: Props) {
         />
       ) : null}
       {showAll && includeRichVisualPages ? <MaturityGuidePage /> : null}
+      {showAll && includeRichVisualPages ? coreIntroPage("maturity") : null}
       {showAll ? (
         <MaturityPage maturity={maturity} bodyStyle={bodyStyle} bodyExpandWidth={bodyExpandWidth} />
       ) : null}
@@ -154,7 +177,8 @@ export function ReportPdfPages({ order, renderConfig, segment }: Props) {
           bodyExpandWidth={bodyExpandWidth}
         />
       ) : null}
-      {showAll && includeRichVisualPages ? <BridgeSectionCoverPage /> : null}
+      {showAll && includeRichVisualPages ? <PersonalYearChapterTransitionPage /> : null}
+      {showAll ? <PersonalYearAfterMessagePage /> : null}
     </>
   );
 
@@ -173,9 +197,12 @@ export function ReportPdfPages({ order, renderConfig, segment }: Props) {
           ))
         : null}
       {INCLUDE_BRIDGE_REFERENCE_IN_REPORT_PDF && showAll ? <BridgeReferencePage /> : null}
-      {showAll && includeRichVisualPages ? <JournalInviteLeadPage /> : null}
+      {showAll ? <BridgeAfterMessagePage /> : null}
+      {showAll && includeRichVisualPages && SHOW_JOURNAL_INVITE_LEAD_PAGE ? (
+        <JournalInviteLeadPage />
+      ) : null}
       {showAll && includeRichVisualPages ? <JournalInvitePagesFromChapter4Divider /> : null}
-      {showAll && includeRichVisualPages ? <PersonalMonthIntroExtraPage /> : null}
+      {showAll && includeRichVisualPages ? <JournalDiaryInvitePage /> : null}
       {showAll ? (
         <PersonalMonthBonusPage
           birthMonth={order.birthMonth}

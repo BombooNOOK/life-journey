@@ -7,13 +7,18 @@ export const CORE_NUMBER_FIRST_PAGE_HERO_MARGIN_TOP = 350;
 export const BIRTHDAY_NUMBER_FIRST_PAGE_HERO_MARGIN_TOP =
   CORE_NUMBER_FIRST_PAGE_HERO_MARGIN_TOP - 44;
 
+/** `pdfStyles.page` の padding（装飾背景を物理ページ端まで伸ばすときのオフセット用） */
+export const PDF_PAGE_PADDING_TOP = 30;
+export const PDF_PAGE_PADDING_BOTTOM = 48;
+export const PDF_PAGE_PADDING_HORIZONTAL = 40;
+
 export const pdfStyles = StyleSheet.create({
   page: {
     fontFamily: "NotoSansJP",
     fontSize: 11,
-    paddingTop: 30,
-    paddingBottom: 48,
-    paddingHorizontal: 40,
+    paddingTop: PDF_PAGE_PADDING_TOP,
+    paddingBottom: PDF_PAGE_PADDING_BOTTOM,
+    paddingHorizontal: PDF_PAGE_PADDING_HORIZONTAL,
     lineHeight: 1.5,
     textAlign: "left",
     color: "#222",
@@ -107,6 +112,32 @@ export const pdfStyles = StyleSheet.create({
     bottom: 0,
     zIndex: -10,
   },
+  /** Canva 枠付き背景を物理ページ全面に敷くページ（`padding: 0`）。本文は `pageBleedForeground` */
+  pageWithBleedBackground: {
+    paddingTop: 0,
+    paddingBottom: 0,
+    paddingHorizontal: 0,
+  },
+  pageFullBleedBackgroundLayer: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    zIndex: -10,
+  },
+  pageFullBleedBackgroundImage: {
+    width: "100%",
+    height: "100%",
+    objectFit: "cover",
+  },
+  /** 全面背景の上に載せる本文（従来 `page` の padding と同じ） */
+  pageBleedForeground: {
+    paddingTop: PDF_PAGE_PADDING_TOP,
+    paddingBottom: PDF_PAGE_PADDING_BOTTOM,
+    paddingHorizontal: PDF_PAGE_PADDING_HORIZONTAL,
+    flexGrow: 1,
+  },
   /** 見開き左／右／裏表紙の全面背景（デザイン画像側で濃さ調整推奨） */
   pageBindingBackgroundImage: {
     width: "100%",
@@ -131,6 +162,41 @@ export const pdfStyles = StyleSheet.create({
     color: "#525252",
     letterSpacing: 0.3,
     textAlign: "center",
+  },
+  /** `number-guide-bg.png` 上の「〇〇ナンバーとは」（Canva 座標は `pdfGuideBleedLayout.ts`） */
+  numberGuideBleedContent: {
+    marginTop: 0,
+    paddingLeft: 0,
+    paddingRight: 34,
+  },
+  numberGuideBleedTitle: {
+    fontSize: 22,
+    fontWeight: 700,
+    lineHeight: 1.35,
+    color: "#545454",
+    textAlign: "center",
+  },
+  /** 下段ブロック用。上段は `NumberGuideBleedPage` で paddingRight を小さくする */
+  numberGuideBleedBody: {
+    marginTop: 0,
+    paddingLeft: 0,
+    paddingRight: 52,
+  },
+  numberGuideBleedBodyText: {
+    fontSize: 11.5,
+    lineHeight: 1.65,
+    letterSpacing: 0,
+    color: "#545454",
+    textAlign: "left",
+  },
+  /** ガイド原稿の `~` / `*…*` 斜体（italic 登録＋わずかに色を変えて視認しやすく） */
+  numberGuideBleedBodyItalic: {
+    fontSize: 11.5,
+    lineHeight: 1.65,
+    letterSpacing: 0.15,
+    color: "#6a6a6a",
+    textAlign: "left",
+    fontStyle: "italic",
   },
   resultTitle: {
     fontSize: 17,
@@ -167,6 +233,20 @@ export const pdfStyles = StyleSheet.create({
     fontSize: 10,
     color: "#4d4d4d",
     lineHeight: 1.7,
+  },
+  /** 目次リストをページ中央に置く外枠（`CustomerPage`） */
+  tocBodyWrap: {
+    width: "100%",
+    alignItems: "center",
+    /** タイトル「目次」との間を約1行分あける（8.8pt × lineHeight 1.35 相当） */
+    marginTop: 14,
+  },
+  /** 目次行ブロックの幅（各行は `textAlign: center`） */
+  tocBodyColumn: {
+    width: 272,
+  },
+  tocLineAlign: {
+    textAlign: "center",
   },
   muted: {
     fontSize: 9,

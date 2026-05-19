@@ -1,24 +1,13 @@
-import { PdfPageFrame } from "../PdfPageFrame";
-import { PDF_BRIDGE_INTRO_PAGE_1_PATH, PDF_BRIDGE_INTRO_PAGE_2_PATH } from "../pdfAssetPaths";
+import { BridgeGuideBleedPage } from "./BridgeGuideBleedPage";
 
 /**
- * ブリッジナンバー導入 2 ページ（全面画像・ヘッダーなし・ページ番号あり）。
+ * ブリッジナンバー「とは」2 ページ（背景 PNG + 生成テキスト・ページ番号のみ）。
  */
 export function BridgeIntroPages() {
   return (
     <>
-      <PdfPageFrame
-        title="ブリッジナンバーとは"
-        pageType="guide"
-        showHeader={false}
-        fullBleedImageSrc={PDF_BRIDGE_INTRO_PAGE_1_PATH}
-      />
-      <PdfPageFrame
-        title="ブリッジナンバーとは"
-        pageType="guide"
-        showHeader={false}
-        fullBleedImageSrc={PDF_BRIDGE_INTRO_PAGE_2_PATH}
-      />
+      <BridgeGuideBleedPage page="page1" />
+      <BridgeGuideBleedPage page="page2" />
     </>
   );
 }

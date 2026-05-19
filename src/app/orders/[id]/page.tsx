@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
-import { resolveSubscriberPdfAccess } from "@/lib/account/pdfAccess";
 import { isAdminEmail } from "@/lib/admin/access";
 import { OrderIdentityCorrectionCard } from "@/components/orders/OrderIdentityCorrectionCard";
 import { PdfDownloadButton } from "@/components/orders/PdfDownloadButton";
@@ -92,11 +91,8 @@ export default async function OrderDetailPage({ params }: Props) {
   const pdfDownloadCount = order.pdfDownloadCount ?? 0;
   const pdfRemaining = Math.max(0, pdfDownloadLimit - pdfDownloadCount);
   const canCorrectIdentity = (order.identityCorrectionCount ?? 0) === 0;
-  const [subscriberPdf, viewerIsAdmin] = await Promise.all([
-    resolveSubscriberPdfAccess(viewerEmail),
-    isAdminEmail(viewerEmail),
-  ]);
-  const showPrintQualityPdf = subscriberPdf || viewerIsAdmin;
+  const viewerIsAdmin = await isAdminEmail(viewerEmail);
+  const showPrintQualityPdf = viewerIsAdmin;
 
   return (
     <div className="space-y-6">
@@ -172,7 +168,7 @@ export default async function OrderDetailPage({ params }: Props) {
             />
           ) : (
             <p className="max-w-xs rounded-lg border border-stone-200 bg-stone-50 px-3 py-2 text-xs leading-relaxed text-stone-600">
-              製本用（高画質）はサブスク加入者向けです。お申し込み後、管理者がアカウントに反映するとこのボタンが表示されます。
+              製本用（高画質）は管理者・製本確認用です。閲覧・保存はプレビュー版（軽量）をご利用ください。
             </p>
           )}
           <Link

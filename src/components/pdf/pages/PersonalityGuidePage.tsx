@@ -1,15 +1,6 @@
-import { PdfPageFrame } from "../PdfPageFrame";
+import { NumberGuideBleedPage } from "./NumberGuideBleedPage";
 
-import { PDF_PERSONALITY_GUIDE_PAGE_PATH } from "../pdfAssetPaths";
-
-/** 「パーソナリティナンバーとは」— デザイン由来の全面1ページ */
+/** 「パーソナリティナンバーとは」— `number-guide-bg.png` + 生成テキスト */
 export function PersonalityGuidePage() {
-  return (
-    <PdfPageFrame
-      title="パーソナリティナンバーとは"
-      pageType="guide"
-      showHeader={false}
-      fullBleedImageSrc={PDF_PERSONALITY_GUIDE_PAGE_PATH}
-    />
-  );
+  return <NumberGuideBleedPage guideKey="personality" />;
 }

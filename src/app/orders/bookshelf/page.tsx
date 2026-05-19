@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
-import { resolveSubscriberPdfAccess } from "@/lib/account/pdfAccess";
 import { isAdminEmail } from "@/lib/admin/access";
 import { BookshelfDiaryBindingOrder } from "@/components/orders/BookshelfDiaryBindingOrder";
 import { PdfDownloadButton } from "@/components/orders/PdfDownloadButton";
@@ -42,11 +41,8 @@ export default async function BookshelfPage() {
   );
   const activeProfileLabel =
     profiles.find((p) => p.id === activeProfileId)?.nickname ?? "メイン";
-  const [subscriberPdf, viewerIsAdmin] = await Promise.all([
-    resolveSubscriberPdfAccess(viewerEmail),
-    isAdminEmail(viewerEmail),
-  ]);
-  const showPrintQualityPdf = subscriberPdf || viewerIsAdmin;
+  const viewerIsAdmin = await isAdminEmail(viewerEmail);
+  const showPrintQualityPdf = viewerIsAdmin;
   const accountPdfCap = await fetchAccountPdfDownloadLimitOrNull(viewerEmail);
   const shelfBookDelegate = (prisma as unknown as {
     diaryBookshelfBook?: {

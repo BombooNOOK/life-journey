@@ -36,7 +36,10 @@ export function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  const loginUrl = new URL("/login", request.url);
+  /** `new URL("/login", request.url)` だと Next が host を `localhost` に正規化することがある（127.0.0.1 利用時に Cookie が効かない） */
+  const loginUrl = request.nextUrl.clone();
+  loginUrl.pathname = "/login";
+  loginUrl.search = "";
   const returnTo = `${pathname}${search}`;
   if (returnTo.startsWith("/")) {
     loginUrl.searchParams.set("returnTo", returnTo);

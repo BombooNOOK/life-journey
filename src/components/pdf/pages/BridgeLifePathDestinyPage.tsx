@@ -25,6 +25,13 @@ const MSG_SCORE_PLANNED =
 
 const MSG_BODY_PLANNED = "このブリッジの個別解説は次段階で追加予定です。";
 
+/** 見開き（タイトル左／本文続き右）の縦ズレを和らげる。他章の `resultTitle` は触らない */
+const BRIDGE_BLOCK_MARGIN_TOP_PT = 10;
+const BRIDGE_RESULT_TITLE_MARGIN_TOP_PT = 2;
+
+/** 一致度の星と短い scoreLabel のあいだ（長文用 firstParagraphMarginTop=18 は使わない） */
+const BRIDGE_SCORE_LABEL_FIRST_PARAGRAPH_MARGIN_TOP_PT = 2;
+
 function bridgeStarImagePath(filledOf5: number): string {
   const n = Math.max(1, Math.min(5, Math.floor(filledOf5)));
   const byCount: Record<number, string> = {
@@ -48,8 +55,10 @@ function BridgePdfBlockSection({
   const introLead = block.intro.lead.replace(/^[’'→\s]+/, "");
 
   return (
-    <View style={{ marginTop: 18 }}>
-      <Text style={pdfStyles.resultTitle}>{block.intro.title}</Text>
+    <View style={{ marginTop: BRIDGE_BLOCK_MARGIN_TOP_PT }}>
+      <Text style={[pdfStyles.resultTitle, { marginTop: BRIDGE_RESULT_TITLE_MARGIN_TOP_PT }]}>
+        {block.intro.title}
+      </Text>
       <Text style={[pdfStyles.softLead, { marginTop: 2, textAlign: "center" }]}>{introLead}</Text>
       <PdfLongFormBody
         text={block.intro.article}
@@ -97,6 +106,7 @@ function BridgePdfBlockSection({
               text={block.scoreLabel}
               marginTop={2}
               {...pdfLongFormProseProps}
+              firstParagraphMarginTop={BRIDGE_SCORE_LABEL_FIRST_PARAGRAPH_MARGIN_TOP_PT}
               bodyStyle={bodyStyle ? { ...bodyStyle, textAlign: "center" } : { textAlign: "center" }}
               expandWidth={bodyExpandWidth}
             />
@@ -134,11 +144,13 @@ function BridgePdfBlockSection({
 
 interface BridgesPdfPageProps {
   blocks: PdfBridgeBlock[];
+  linkDestinationId?: string;
 }
 
 /** ブリッジを複数件まとめて表示（配列で拡張） */
 export function BridgesPdfPage({
   blocks,
+  linkDestinationId,
   bodyStyle,
   bodyExpandWidth,
 }: BridgesPdfPageProps & BodyRenderOverrides) {
@@ -146,7 +158,12 @@ export function BridgesPdfPage({
   const lpDestinyUnavailable = lpDestinyBlock != null && lpDestinyBlock.bridgeNumber == null;
 
   return (
-    <PdfPageFrame title="ブリッジナンバー" pageType="body" showHeader={true}>
+    <PdfPageFrame
+      title="ブリッジナンバー"
+      pageType="body"
+      showHeader={true}
+      linkDestinationId={linkDestinationId}
+    >
       {lpDestinyUnavailable ? (
         <Text style={[pdfStyles.muted, { marginTop: 16 }]}>
           ローマ字名が空、またはディスティニーが算出できない場合、LP×D

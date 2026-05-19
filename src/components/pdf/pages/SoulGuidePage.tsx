@@ -1,15 +1,6 @@
-import { PdfPageFrame } from "../PdfPageFrame";
+import { NumberGuideBleedPage } from "./NumberGuideBleedPage";
 
-import { PDF_SOUL_GUIDE_PAGE_PATH } from "../pdfAssetPaths";
-
-/** 「ソウルナンバーとは」— デザイン由来の全面1ページ */
+/** 「ソウルナンバーとは」— `number-guide-bg.png` + 生成テキスト */
 export function SoulGuidePage() {
-  return (
-    <PdfPageFrame
-      title="ソウルナンバーとは"
-      pageType="guide"
-      showHeader={false}
-      fullBleedImageSrc={PDF_SOUL_GUIDE_PAGE_PATH}
-    />
-  );
+  return <NumberGuideBleedPage guideKey="soul" />;
 }

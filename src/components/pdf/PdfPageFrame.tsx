@@ -28,6 +28,8 @@ type Props = PropsWithChildren<{
   size?: PageSize;
   orientation?: Orientation;
   pageType?: PdfPageType;
+  /** 軽量版目次の内部リンク先（`<Page id>`） */
+  linkDestinationId?: string;
 }>;
 
 type ViewRenderPageProps = {
@@ -75,6 +77,7 @@ export function PdfPageFrame({
   size = "A5",
   orientation = "portrait",
   pageType = "body",
+  linkDestinationId,
   children,
 }: Props) {
   const pageNumberOffset = getPdfPageNumberOffset();
@@ -108,6 +111,9 @@ export function PdfPageFrame({
     const bleedSrc = resolvePdfAssetPath(fullBleedImageSrc);
     return (
       <Page size={size} orientation={orientation} style={[pdfStyles.page, { padding: 0 }]}>
+        {linkDestinationId ? (
+          <View id={linkDestinationId} fixed style={{ width: 0, height: 0, opacity: 0 }} />
+        ) : null}
         <View style={{ width: "100%", height: "100%", zIndex: 0 }}>
           <Image
             cache={false}
@@ -120,11 +126,19 @@ export function PdfPageFrame({
     );
   }
 
+  const bleedBackgroundSrc = firstPageBodyBackgroundSrc;
+  const pageStyle = bleedBackgroundSrc
+    ? [pdfStyles.page, pdfStyles.pageWithBleedBackground]
+    : pdfStyles.page;
+
   return (
-    <Page size={size} orientation={orientation} style={pdfStyles.page}>
-      {firstPageBodyBackgroundSrc ? (
+    <Page size={size} orientation={orientation} style={pageStyle}>
+      {linkDestinationId ? (
+        <View id={linkDestinationId} fixed style={{ width: 0, height: 0, opacity: 0 }} />
+      ) : null}
+      {bleedBackgroundSrc ? (
         <View
-          style={[pdfStyles.pageBackgroundLeaveFooter, { top: 18 }]}
+          style={pdfStyles.pageFullBleedBackgroundLayer}
           fixed
           render={(props) => {
             const p = props as ViewRenderPageProps;
@@ -132,8 +146,8 @@ export function PdfPageFrame({
             return (
               <Image
                 cache={false}
-                src={resolvePdfAssetPath(firstPageBodyBackgroundSrc)}
-                style={pdfStyles.pageBindingBackgroundImage}
+                src={resolvePdfAssetPath(bleedBackgroundSrc)}
+                style={pdfStyles.pageFullBleedBackgroundImage}
               />
             );
           }}
@@ -191,14 +205,16 @@ export function PdfPageFrame({
         </View>
       ) : null}
 
-      <View style={[pdfStyles.pageBody, { marginTop: 16 }]}>
-        <View
-          render={(props) => {
-            const p = props as ViewRenderPageProps;
-            return <View style={{ height: p.subPageNumber > 1 ? 18 : 0 }} />;
-          }}
-        />
-        {children}
+      <View style={bleedBackgroundSrc ? pdfStyles.pageBleedForeground : undefined}>
+        <View style={[pdfStyles.pageBody, { marginTop: 16 }]}>
+          <View
+            render={(props) => {
+              const p = props as ViewRenderPageProps;
+              return <View style={{ height: p.subPageNumber > 1 ? 18 : 0 }} />;
+            }}
+          />
+          {children}
+        </View>
       </View>
 
       {floatingPageNumberBlock}

@@ -290,6 +290,7 @@ export function hiraganaToHepburn(kana: string): string {
 export function romanizeFromKanaParts(lastNameKana: string, firstNameKana: string): RomanizedNameParts {
   const lastNameRoman = hiraganaToHepburn(lastNameKana);
   const firstNameRoman = hiraganaToHepburn(firstNameKana);
+  /** 数秘 `computeNumerology({ romanName })` へ渡す結合（姓→名・大文字）。中表紙は各パーツを名→姓で表示。 */
   const romanNameForNumerology = [lastNameRoman, firstNameRoman].filter(Boolean).join(" ");
   const romanNameForDisplay = romanNameForNumerology;
   return { lastNameRoman, firstNameRoman, romanNameForNumerology, romanNameForDisplay };

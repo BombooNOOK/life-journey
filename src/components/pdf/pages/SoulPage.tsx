@@ -5,8 +5,6 @@ import { PdfText as Text } from "../PdfText";
 import { PdfPageFrame } from "../PdfPageFrame";
 
 import { getSoulArticle } from "@/lib/numerology/soulData";
-import { breakTitleAtCommaForPdf } from "@/lib/pdf/breakTitleAtComma";
-import { PDF_SOUL_FIRST_PAGE_PATH } from "../pdfAssetPaths";
 
 import { pdfLongFormProsePropsWithTallContinuation } from "../pdfLongFormSpacing";
 import type { BodyRenderOverrides } from "../pdfRenderConfig";
@@ -21,38 +19,26 @@ export function SoulPage({ soul, bodyStyle, bodyExpandWidth }: Props) {
 
   if (!article) {
     return (
-      <PdfPageFrame
-      title={headerTitle}
-      pageType="body"
-      firstPageBodyBackgroundSrc={PDF_SOUL_FIRST_PAGE_PATH}
-    >
+      <PdfPageFrame title={headerTitle} pageType="body">
         <Text style={pdfStyles.muted}>ソウル本文データが未登録のため、このページは簡易表示です。</Text>
       </PdfPageFrame>
     );
   }
 
   return (
-    <>
-      <PdfPageFrame
-        title={headerTitle}
-        pageType="body"
-        firstPageBodyBackgroundSrc={PDF_SOUL_FIRST_PAGE_PATH}
-      >
-        <View style={pdfStyles.soulNumberFirstPageHero}>
-          <Text style={pdfStyles.resultTitle}>{breakTitleAtCommaForPdf(article.title)}</Text>
-        </View>
-      </PdfPageFrame>
-      <PdfPageFrame title={headerTitle} pageType="body">
-        <View style={pdfStyles.lifePathSectionBlock}>
-          <PdfLongFormBody
-            text={article.article}
-            readableSentenceWrap
-            {...pdfLongFormProsePropsWithTallContinuation}
-            bodyStyle={bodyStyle}
-            expandWidth={bodyExpandWidth}
-          />
-        </View>
-      </PdfPageFrame>
-    </>
+    <PdfPageFrame title={headerTitle} pageType="body">
+      <View wrap={false} style={pdfStyles.lifePathSectionBlock}>
+        <PdfLongFormBody
+          text={article.article}
+          readableSentenceWrap
+          {...pdfLongFormProsePropsWithTallContinuation}
+          paragraphGap={10}
+          majorBlockExtraGap={6}
+          continuationPageTopGap={26}
+          bodyStyle={bodyStyle}
+          expandWidth={bodyExpandWidth}
+        />
+      </View>
+    </PdfPageFrame>
   );
 }

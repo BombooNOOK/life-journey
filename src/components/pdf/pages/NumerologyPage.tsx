@@ -6,6 +6,8 @@ import { PdfPageFrame } from "../PdfPageFrame";
 import { maturityNumberFromNumerology } from "@/lib/numerology/reduce";
 import type { NumerologyResult } from "@/lib/numerology/types";
 
+import { PDF_TOC_LINK_DESTINATION } from "@/lib/pdf/pdfTocLinkDestinations";
+
 import { pdfStyles } from "../styles";
 
 interface Props {
@@ -36,7 +38,10 @@ export function NumerologyPage({ numerology }: Props) {
   ];
 
   return (
-    <PdfPageFrame title="コアナンバー・ブリッジナンバー">
+    <PdfPageFrame
+      title="コアナンバー・ブリッジナンバー"
+      linkDestinationId={PDF_TOC_LINK_DESTINATION.yourNumbers}
+    >
       <Text style={pdfStyles.h1}>あなたのナンバー</Text>
 
       <View style={pdfStyles.coreTableSection}>
