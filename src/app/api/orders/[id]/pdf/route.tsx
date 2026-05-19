@@ -34,8 +34,8 @@ import {
 import { prisma } from "@/lib/db";
 import { combinePdfDownloadLimit, fetchAccountPdfDownloadLimitOrNull } from "@/lib/order/effectivePdfDownloadLimit";
 import {
-  buildKanteiPdfDownloadFilename,
-  ensureOrderKanteiCode,
+  resolveKanteiPdfDownloadFilename,
+  resolveOrderKanteiCodeSafe,
   type KanteiPdfVariant,
 } from "@/lib/order/kanteiCode";
 import type { OrderPayload } from "@/lib/order/types";
@@ -191,7 +191,7 @@ export async function GET(req: Request, { params }: RouteParams) {
     );
   }
 
-  const kanteiCode = await ensureOrderKanteiCode(row.id);
+  const kanteiCode = await resolveOrderKanteiCodeSafe(row.id, "pdf-api");
 
   const url = new URL(req.url);
   const focusPage = parseFocusPage(url.searchParams.get("focus"));
@@ -397,10 +397,10 @@ export async function GET(req: Request, { params }: RouteParams) {
   const body = new Blob([copy], { type: "application/pdf" });
 
   const variantSlug: KanteiPdfVariant = quality === "high" ? "print" : "preview";
-  const filename =
-    bodyTune === "normal" && focusPage === "all"
-      ? buildKanteiPdfDownloadFilename(kanteiCode, variantSlug)
-      : `LifeJourney_Kantei_${kanteiCode}_${focusPage}-${bodyTune}-${variantSlug}.pdf`;
+  const filename = resolveKanteiPdfDownloadFilename(row.id, kanteiCode, variantSlug, {
+    focusPage,
+    bodyTune,
+  });
   const response = new NextResponse(body, {
     status: 200,
     headers: {
@@ -420,6 +420,7 @@ export async function GET(req: Request, { params }: RouteParams) {
     ...pdfLogBase,
     bytes: u8.byteLength,
     filename,
+    kanteiCode: kanteiCode ?? "(fallback)",
     contentDisposition: shouldDownload ? "attachment" : "inline",
   });
   return response;

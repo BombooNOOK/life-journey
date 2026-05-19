@@ -10,7 +10,10 @@ import { prisma } from "@/lib/db";
 import { withPrismaConnectionRetry } from "@/lib/db/prismaRetry";
 import { listProfilesAndActiveProfileId } from "@/lib/profile/activeProfile";
 import { combinePdfDownloadLimit, fetchAccountPdfDownloadLimitOrNull } from "@/lib/order/effectivePdfDownloadLimit";
-import { buildKanteiPdfDownloadFilename, ensureOrderKanteiCode } from "@/lib/order/kanteiCode";
+import {
+  resolveKanteiPdfDownloadFilename,
+  resolveOrderKanteiCodeSafe,
+} from "@/lib/order/kanteiCode";
 
 export const dynamic = "force-dynamic";
 
@@ -154,7 +157,8 @@ export default async function BookshelfPage() {
 
   const reportBooks: ShelfBook[] = await Promise.all(
     orders.map(async (order) => {
-      const kanteiCode = order.kanteiCode ?? (await ensureOrderKanteiCode(order.id));
+      const kanteiCode =
+        order.kanteiCode ?? (await resolveOrderKanteiCodeSafe(order.id, "bookshelf"));
       const effectiveLimit = combinePdfDownloadLimit(order.pdfDownloadLimit, accountPdfCap);
       return {
         id: `report-${order.id}`,
@@ -163,8 +167,8 @@ export default async function BookshelfPage() {
         href: `/orders/${order.id}`,
         reportOrderId: order.id,
         boundPdfHref: `/api/orders/${order.id}/pdf?download=1&quality=low`,
-        pdfPreviewFileName: buildKanteiPdfDownloadFilename(kanteiCode, "preview"),
-        pdfPrintFileName: buildKanteiPdfDownloadFilename(kanteiCode, "print"),
+        pdfPreviewFileName: resolveKanteiPdfDownloadFilename(order.id, kanteiCode, "preview"),
+        pdfPrintFileName: resolveKanteiPdfDownloadFilename(order.id, kanteiCode, "print"),
         pdfRemainingDownloads: Math.max(0, effectiveLimit - (order.pdfDownloadCount ?? 0)),
         pdfDownloadLimit: effectiveLimit,
         tone: "amber" as const,

@@ -179,7 +179,14 @@ export async function POST(req: Request) {
         status: "completed",
       },
     });
-    await ensureOrderKanteiCode(order.id);
+    try {
+      await ensureOrderKanteiCode(order.id);
+    } catch (e) {
+      console.error("[POST /api/orders] kanteiCode assign failed (order saved)", {
+        orderId: order.id,
+        error: e instanceof Error ? e.message : String(e),
+      });
+    }
     return NextResponse.json({ id: order.id, code: "OK" });
   } catch (err) {
     const desc = describeSaveError(err);

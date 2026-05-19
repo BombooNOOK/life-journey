@@ -43,6 +43,76 @@ export function buildKanteiPdfDownloadFilename(
   return `LifeJourney_Kantei_${kanteiCode}_${variant}.pdf`;
 }
 
+/** kanteiCode 未付与時の旧ファイル名（内部 id 先頭8文字） */
+export function buildLegacyKanteiPdfDownloadFilename(
+  orderId: string,
+  variant: KanteiPdfVariant,
+): string {
+  return `kantei-${orderId.slice(0, 8)}-${variant}.pdf`;
+}
+
+export type KanteiPdfFilenameTune = {
+  focusPage?: string;
+  bodyTune?: string;
+};
+
+/**
+ * kanteiCode があれば新形式、なければ旧形式。PDF 返却を止めないための統一ヘルパー。
+ */
+export function resolveKanteiPdfDownloadFilename(
+  orderId: string,
+  kanteiCode: string | null | undefined,
+  variant: KanteiPdfVariant,
+  tune: KanteiPdfFilenameTune = {},
+): string {
+  const focusPage = tune.focusPage ?? "all";
+  const bodyTune = tune.bodyTune ?? "normal";
+  const fullBooklet = bodyTune === "normal" && focusPage === "all";
+
+  if (kanteiCode) {
+    return fullBooklet
+      ? buildKanteiPdfDownloadFilename(kanteiCode, variant)
+      : `LifeJourney_Kantei_${kanteiCode}_${focusPage}-${bodyTune}-${variant}.pdf`;
+  }
+
+  return fullBooklet
+    ? buildLegacyKanteiPdfDownloadFilename(orderId, variant)
+    : `kantei-${orderId.slice(0, 8)}-${focusPage}-${bodyTune}-${variant}.pdf`;
+}
+
+/**
+ * kanteiCode 付与を試みる。失敗しても例外を投げず null（ログのみ）。
+ * DB カラム未反映・unique 衝突連続などで PDF API 全体が落ちないようにする。
+ */
+export async function resolveOrderKanteiCodeSafe(
+  orderId: string,
+  logTag = "resolveOrderKanteiCodeSafe",
+): Promise<string | null> {
+  try {
+    return await ensureOrderKanteiCode(orderId);
+  } catch (err) {
+    const detail =
+      err instanceof Error
+        ? { name: err.name, message: err.message, stack: err.stack }
+        : { raw: String(err) };
+    console.error(`[kanteiCode] ${logTag} failed`, { orderId, error: detail });
+
+    try {
+      const row = await prisma.order.findUnique({
+        where: { id: orderId },
+        select: { kanteiCode: true },
+      });
+      return row?.kanteiCode ?? null;
+    } catch (readErr) {
+      console.error(`[kanteiCode] ${logTag} read-back failed`, {
+        orderId,
+        error: readErr instanceof Error ? readErr.message : String(readErr),
+      });
+      return null;
+    }
+  }
+}
+
 function isPrismaUniqueViolation(err: unknown): boolean {
   return (
     typeof err === "object" &&
