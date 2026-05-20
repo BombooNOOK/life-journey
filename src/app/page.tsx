@@ -3,14 +3,14 @@ import Link from "next/link";
 export default function HomePage() {
   return (
     <div className="space-y-6 md:space-y-8">
-      <section className="relative overflow-hidden rounded-3xl border border-emerald-100 bg-[#f6f4ef] p-4 pb-20 shadow-sm sm:p-6 sm:pb-24 md:min-h-[480px] md:p-8 md:pb-12 lg:min-h-[520px]">
+      <section className="relative overflow-hidden rounded-3xl border border-emerald-100 bg-[#f6f4ef] p-4 pb-16 shadow-sm sm:p-6 sm:pb-20 md:min-h-[480px] md:p-8 md:pb-12 lg:min-h-[520px]">
         <div
           aria-hidden
-          className="pointer-events-none absolute inset-0 bg-[url('/images/mainhaikei-smartphone.png')] bg-cover bg-no-repeat bg-[position:100%_92%] md:hidden"
+          className="pointer-events-none absolute inset-0 bg-[url('/images/mainhaikei-smartphone.png')] bg-cover bg-no-repeat bg-[position:98%_72%] md:hidden"
         />
         <div
           aria-hidden
-          className="absolute inset-x-0 bottom-0 h-[42%] bg-gradient-to-t from-[#f6f4ef] via-[#f6f4ef]/85 to-transparent md:hidden"
+          className="pointer-events-none absolute bottom-0 left-0 top-[48%] w-[70%] bg-gradient-to-t from-[#f6f4ef]/92 via-[#f6f4ef]/45 to-transparent md:hidden"
         />
         <div aria-hidden className="pointer-events-none absolute inset-0 hidden md:block">
           <div className="absolute inset-0 bg-[#f6f4ef]" />
