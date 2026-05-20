@@ -3,6 +3,7 @@ import Link from "next/link";
 import { LifeJourneyDiaryCard } from "@/components/journal/LifeJourneyDiaryCard";
 import { PlanStatusCard } from "@/components/orders/PlanStatusCard";
 import { ProfileSwitcher } from "@/components/profile/ProfileSwitcher";
+import { isAdminEmail } from "@/lib/admin/access";
 import { getViewerEmailFromCookie } from "@/lib/auth/viewer";
 import { prisma } from "@/lib/db";
 import { withPrismaConnectionRetry } from "@/lib/db/prismaRetry";
@@ -23,6 +24,8 @@ export default async function OrdersListPage() {
       </div>
     );
   }
+
+  const viewerIsAdmin = await isAdminEmail(viewerEmail);
 
   let profiles: Awaited<ReturnType<typeof listProfilesAndActiveProfileId>>["profiles"] = [];
   let activeProfileId = "";
@@ -137,6 +140,17 @@ export default async function OrdersListPage() {
           </ul>
         )}
       </section>
+
+      {viewerIsAdmin ? (
+        <div className="border-t border-stone-200 pt-6">
+          <Link
+            href="/admin"
+            className="inline-flex min-h-[44px] items-center rounded-lg border border-stone-300 bg-stone-50 px-4 py-2.5 text-sm font-medium text-stone-700 transition hover:bg-stone-100"
+          >
+            管理者ページへ
+          </Link>
+        </div>
+      ) : null}
 
     </div>
   );
