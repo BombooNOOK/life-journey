@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 import { LifeJourneyDiaryCard } from "@/components/journal/LifeJourneyDiaryCard";
+import { PlanStatusCard } from "@/components/orders/PlanStatusCard";
 import { ProfileSwitcher } from "@/components/profile/ProfileSwitcher";
 import { getViewerEmailFromCookie } from "@/lib/auth/viewer";
 import { prisma } from "@/lib/db";
@@ -82,6 +83,8 @@ export default async function OrdersListPage() {
         </p>
       </div>
 
+      <PlanStatusCard />
+
       <ProfileSwitcher profiles={profiles} activeProfileId={activeProfileId} />
 
       <LifeJourneyDiaryCard />
@@ -104,12 +107,6 @@ export default async function OrdersListPage() {
           className="rounded-xl border border-violet-200 bg-violet-50 px-4 py-3 text-sm font-medium text-violet-900 transition hover:bg-violet-100"
         >
           本棚を見る
-        </Link>
-        <Link
-          href="/plans"
-          className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-900 transition hover:bg-emerald-100 sm:col-span-3"
-        >
-          プランを見る
         </Link>
       </section>
 
