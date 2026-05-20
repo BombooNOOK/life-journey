@@ -25,8 +25,13 @@ export default function HomePage() {
             <p className="text-[11px] tracking-[0.2em] text-emerald-800 sm:text-xs">
               BAMBOONOOK / LIFE JOURNEY
             </p>
-            <h1 className="mt-2 whitespace-nowrap font-extrabold leading-tight tracking-tight text-stone-900 text-[clamp(1.375rem,0.8rem+3.6vw,2.125rem)] sm:text-3xl md:whitespace-normal md:text-4xl lg:text-5xl">
-              数字で紡ぐ、人生の旅
+            <h1 className="mt-2 font-extrabold leading-tight tracking-tight text-stone-900 text-[clamp(1.375rem,0.8rem+3.6vw,2.125rem)] sm:text-3xl md:text-4xl lg:text-5xl">
+              <span className="inline whitespace-nowrap md:hidden">数字で紡ぐ、人生の旅</span>
+              <span className="hidden md:block">
+                数字で紡ぐ、
+                <br />
+                人生の旅
+              </span>
             </h1>
             <p className="mt-3 whitespace-pre-line text-sm leading-6 text-stone-700 sm:text-base sm:leading-7">
               どうぶつ鑑定士たちのことばに導かれながら、
