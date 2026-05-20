@@ -3,10 +3,14 @@ import Link from "next/link";
 export default function HomePage() {
   return (
     <div className="space-y-6 md:space-y-8">
-      <section className="relative overflow-hidden rounded-3xl border border-emerald-100 bg-[#f6f4ef] p-4 pb-14 shadow-sm sm:p-6 sm:pb-14 md:min-h-[480px] md:p-8 md:pb-12 lg:min-h-[520px]">
+      <section className="relative overflow-hidden rounded-3xl border border-emerald-100 bg-[#f6f4ef] p-4 pb-20 shadow-sm sm:p-6 sm:pb-24 md:min-h-[480px] md:p-8 md:pb-12 lg:min-h-[520px]">
         <div
           aria-hidden
-          className="pointer-events-none absolute inset-0 bg-[url('/images/mainhaikei-smartphone.png')] bg-cover bg-no-repeat bg-[position:98%_72%] md:hidden"
+          className="pointer-events-none absolute inset-0 bg-[url('/images/mainhaikei-smartphone.png')] bg-cover bg-no-repeat bg-[position:100%_92%] md:hidden"
+        />
+        <div
+          aria-hidden
+          className="absolute inset-x-0 bottom-0 h-[42%] bg-gradient-to-t from-[#f6f4ef] via-[#f6f4ef]/85 to-transparent md:hidden"
         />
         <div aria-hidden className="pointer-events-none absolute inset-0 hidden md:block">
           <div className="absolute inset-0 bg-[#f6f4ef]" />
@@ -44,7 +48,7 @@ export default function HomePage() {
             </p>
           </div>
 
-          <div className="w-full max-w-full space-y-3 rounded-2xl p-3 sm:p-4 md:max-w-xs">
+          <div className="w-full max-w-full space-y-3 rounded-2xl bg-[#fffdf9]/75 p-3 backdrop-blur-[2px] sm:p-4 md:max-w-xs md:bg-transparent md:backdrop-blur-none">
             <Link
               href="/order"
               className="block w-full rounded-xl border border-[#5b6b4d]/45 bg-[#6f8460]/76 px-4 py-3.5 text-center text-sm font-semibold text-white shadow-[0_1px_2px_rgba(58,73,47,0.2)] backdrop-blur-[1px] transition hover:bg-[#667b58]/84 sm:text-base"
@@ -60,7 +64,9 @@ export default function HomePage() {
             <p className="text-xs leading-5 text-stone-600">
               はじめての方は無料鑑定から。
               <br />
-              保存済みの結果は、マイページから開けます。
+              保存済みの結果は、
+              <br />
+              マイページから開けます。
             </p>
           </div>
         </div>
