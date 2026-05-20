@@ -3,25 +3,31 @@ import Link from "next/link";
 export default function HomePage() {
   return (
     <div className="space-y-6 md:space-y-8">
-      <section className="relative overflow-hidden rounded-3xl border border-emerald-100 bg-[#f6f4ef] p-4 pb-14 shadow-sm sm:p-6 sm:pb-14 md:min-h-[520px] md:p-8 md:pb-16 lg:min-h-[560px]">
+      <section className="relative overflow-hidden rounded-3xl border border-emerald-100 bg-[#f6f4ef] p-4 pb-14 shadow-sm sm:p-6 sm:pb-14 md:min-h-[480px] md:p-8 md:pb-12 lg:min-h-[520px]">
         <div
           aria-hidden
-          className="pointer-events-none absolute inset-0 bg-[url('/images/mainhaikei-smartphone.png')] bg-cover bg-no-repeat bg-[position:98%_72%] md:bg-contain md:bg-right-bottom"
+          className="pointer-events-none absolute inset-0 bg-[url('/images/mainhaikei-smartphone.png')] bg-cover bg-no-repeat bg-[position:98%_72%] md:hidden"
+        />
+        <div aria-hidden className="pointer-events-none absolute inset-0 hidden md:block">
+          <div className="absolute inset-0 bg-[#f6f4ef]" />
+          <div className="absolute inset-0 bg-[url('/images/mainhaikei-smartphone.png')] bg-no-repeat bg-[length:auto_min(88%,480px)] bg-[position:100%_100%] lg:bg-[length:auto_min(90%,520px)]" />
+          <div className="absolute inset-0 bg-gradient-to-r from-[#f6f4ef] from-[38%] via-[#f6f4ef]/90 via-[52%] to-transparent to-[78%]" />
+          <div className="absolute inset-x-0 top-0 h-28 bg-gradient-to-b from-[#f6f4ef]/80 to-transparent" />
+        </div>
+        <div
+          aria-hidden
+          className="absolute inset-x-0 top-0 h-[26%] bg-gradient-to-b from-white/72 via-white/20 to-transparent md:hidden"
         />
         <div
           aria-hidden
-          className="absolute inset-x-0 top-0 h-[26%] bg-gradient-to-b from-white/72 via-white/20 to-transparent md:h-[28%] md:from-white/56 md:via-white/16"
+          className="pointer-events-none absolute -right-10 -top-12 h-40 w-40 rounded-full bg-emerald-200/30 blur-2xl md:hidden"
         />
         <div
           aria-hidden
-          className="pointer-events-none absolute -right-10 -top-12 h-40 w-40 rounded-full bg-emerald-200/30 blur-2xl md:h-52 md:w-52"
+          className="pointer-events-none absolute -bottom-12 -left-10 h-36 w-36 rounded-full bg-amber-200/30 blur-2xl md:hidden"
         />
-        <div
-          aria-hidden
-          className="pointer-events-none absolute -bottom-12 -left-10 h-36 w-36 rounded-full bg-amber-200/30 blur-2xl md:h-44 md:w-44"
-        />
-        <div className="relative z-10 grid gap-3 p-2 sm:p-3 md:grid-cols-2 md:gap-8">
-          <div className="min-w-0 rounded-2xl bg-[#fffdf9]/72 p-3 backdrop-blur-[1px] sm:p-4 md:bg-[#fffdf9]/62">
+        <div className="relative z-10 grid gap-3 p-2 sm:p-3 md:max-w-xl md:gap-5 lg:max-w-2xl">
+          <div className="min-w-0 rounded-2xl bg-[#fffdf9]/72 p-3 backdrop-blur-[1px] sm:p-4 md:bg-[#fffdf9]/78">
             <p className="text-[11px] tracking-[0.2em] text-emerald-800 sm:text-xs">
               BAMBOONOOK / LIFE JOURNEY
             </p>
@@ -38,7 +44,7 @@ export default function HomePage() {
             </p>
           </div>
 
-          <div className="space-y-3 rounded-2xl p-3 sm:p-4 md:self-end">
+          <div className="space-y-3 rounded-2xl p-3 sm:p-4">
             <Link
               href="/order"
               className="block rounded-xl border border-[#5b6b4d]/45 bg-[#6f8460]/76 px-4 py-3.5 text-center text-sm font-semibold text-white shadow-[0_1px_2px_rgba(58,73,47,0.2)] backdrop-blur-[1px] transition hover:bg-[#667b58]/84 sm:text-base"
