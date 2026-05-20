@@ -44,25 +44,23 @@ export default function HomePage() {
             </p>
           </div>
 
-          <div className="space-y-3 rounded-2xl p-3 sm:p-4">
+          <div className="w-full max-w-full space-y-3 rounded-2xl p-3 sm:p-4 md:max-w-xs">
             <Link
               href="/order"
-              className="block rounded-xl border border-[#5b6b4d]/45 bg-[#6f8460]/76 px-4 py-3.5 text-center text-sm font-semibold text-white shadow-[0_1px_2px_rgba(58,73,47,0.2)] backdrop-blur-[1px] transition hover:bg-[#667b58]/84 sm:text-base"
+              className="block w-full rounded-xl border border-[#5b6b4d]/45 bg-[#6f8460]/76 px-4 py-3.5 text-center text-sm font-semibold text-white shadow-[0_1px_2px_rgba(58,73,47,0.2)] backdrop-blur-[1px] transition hover:bg-[#667b58]/84 sm:text-base"
             >
               無料鑑定をはじめる
             </Link>
             <Link
               href="/orders"
-              className="block rounded-xl border border-stone-300/75 bg-white/62 px-4 py-3.5 text-center text-sm font-semibold text-stone-700 backdrop-blur-[1px] transition hover:bg-white/78 sm:text-base"
+              className="block w-full rounded-xl border border-stone-300/75 bg-white/62 px-4 py-3.5 text-center text-sm font-semibold text-stone-700 backdrop-blur-[1px] transition hover:bg-white/78 sm:text-base"
             >
               マイページへ
             </Link>
             <p className="text-xs leading-5 text-stone-600">
               はじめての方は無料鑑定から。
               <br />
-              保存済みの結果は、
-              <br />
-              マイページから開けます。
+              保存済みの結果は、マイページから開けます。
             </p>
           </div>
         </div>
