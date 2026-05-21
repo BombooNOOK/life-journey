@@ -4,51 +4,59 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 
 import { useFirebaseAuth } from "@/components/auth/FirebaseAuthProvider";
+import { isLjLoggedInOnClient } from "@/lib/auth/clientCookies";
+
+/** sm 以上でメインリンクと同じ行に並べるときだけ区切りを表示 */
+function AuthSeparator() {
+  return (
+    <span className="hidden shrink-0 select-none text-stone-300 sm:inline" aria-hidden>
+      |
+    </span>
+  );
+}
+
+const authActionClass =
+  "shrink-0 whitespace-nowrap text-xs text-stone-600 underline-offset-2 hover:text-stone-900 hover:underline sm:text-sm";
 
 export function AuthNav() {
   const router = useRouter();
   const { user, loading, signOutUser } = useFirebaseAuth();
+  const cookieLoggedIn = isLjLoggedInOnClient();
 
-  if (loading) {
+  const showLogout = Boolean(user) || (loading && cookieLoggedIn);
+  const showLogin = !showLogout && (!loading || !cookieLoggedIn);
+
+  if (showLogout) {
     return (
-      <span className="inline-block w-24 align-middle text-stone-400">…</span>
+      <>
+        <AuthSeparator />
+        <button
+          type="button"
+          className={`${authActionClass} cursor-pointer border-0 bg-transparent p-0`}
+          onClick={() => {
+            void (async () => {
+              await signOutUser();
+              router.push("/");
+              router.refresh();
+            })();
+          }}
+        >
+          ログアウト
+        </button>
+      </>
     );
   }
 
-  if (!user) {
+  if (showLogin) {
     return (
       <>
-        <span className="mx-2 text-stone-300">|</span>
-        <Link href="/login" className="hover:text-stone-900">
+        <AuthSeparator />
+        <Link href="/login" className={authActionClass}>
           ログイン
         </Link>
       </>
     );
   }
 
-  return (
-    <>
-      <span className="mx-2 text-stone-300">|</span>
-      <span
-        className="inline-block max-w-[7rem] truncate align-middle text-stone-500 sm:max-w-[10rem]"
-        title={user.email ?? undefined}
-      >
-        {user.email ?? user.uid.slice(0, 8)}
-      </span>
-      <span className="mx-2 text-stone-300">|</span>
-      <button
-        type="button"
-        className="cursor-pointer border-0 bg-transparent p-0 text-sm text-stone-600 underline-offset-2 hover:text-stone-900 hover:underline"
-        onClick={() => {
-          void (async () => {
-            await signOutUser();
-            router.push("/");
-            router.refresh();
-          })();
-        }}
-      >
-        ログアウト
-      </button>
-    </>
-  );
+  return null;
 }

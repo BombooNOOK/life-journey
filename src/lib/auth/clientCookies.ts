@@ -26,6 +26,12 @@ export function clearLjAuthCookiesOnClient(): void {
   syncLjAuthClientCookies(null);
 }
 
+/** ヘッダー表示用。Firebase 初期化前でも `lj_logged_in` があればログイン済みとみなす */
+export function isLjLoggedInOnClient(): boolean {
+  if (typeof document === "undefined") return false;
+  return document.cookie.split(";").some((part) => part.trim() === "lj_logged_in=1");
+}
+
 /** Google `signInWithRedirect` 完了後に戻すパス（同一オリジン・先頭 `/` のみ） */
 export const OAUTH_RETURN_SESSION_KEY = "lj_oauth_return_to";
 

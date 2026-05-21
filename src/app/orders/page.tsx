@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import { MyPageGuideLink } from "@/components/guide/MyPageGuideLink";
 import { LifeJourneyDiaryCard } from "@/components/journal/LifeJourneyDiaryCard";
 import { PlanStatusCard } from "@/components/orders/PlanStatusCard";
 import { ProfileSwitcher } from "@/components/profile/ProfileSwitcher";
@@ -52,7 +53,12 @@ export default async function OrdersListPage() {
     const showDevHint = process.env.NODE_ENV === "development";
     return (
       <div className="space-y-4">
-        <h1 className="text-2xl font-bold text-stone-900">マイページ</h1>
+        <div>
+          <h1 className="text-2xl font-bold text-stone-900">マイページ</h1>
+          <div className="mt-3">
+            <MyPageGuideLink />
+          </div>
+        </div>
         <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-900">
           <p className="font-semibold">マイページを読み込めませんでした</p>
           <p className="mt-2 text-stone-800">
@@ -84,6 +90,9 @@ export default async function OrdersListPage() {
         <p className="mt-1 text-sm text-stone-600">
           保存した鑑定結果と、最近の記録をここから確認できます。
         </p>
+        <div className="mt-3">
+          <MyPageGuideLink />
+        </div>
       </div>
 
       <PlanStatusCard />
