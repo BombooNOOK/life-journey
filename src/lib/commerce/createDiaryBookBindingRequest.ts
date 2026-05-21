@@ -25,7 +25,34 @@ export type DiaryBookBindingSnapshot = {
   periodEndMonth: number;
 };
 
-async function loadDiaryBindingSnapshot(
+export type DiaryBookBindingPublic = {
+  requestId: string;
+  diaryBindingCode: string;
+  baseShopUrl: string;
+  pageCount: number;
+  planId: BookPlanId;
+};
+
+function snapshotDiffersFromRow(
+  snapshot: DiaryBookBindingSnapshot,
+  row: {
+    pageCount: number;
+    planId: string;
+    displayTitle: string | null;
+    periodStartMonth: number;
+    periodEndMonth: number;
+  },
+): boolean {
+  return (
+    row.pageCount !== snapshot.pageCount ||
+    row.planId !== snapshot.planId ||
+    (row.displayTitle ?? null) !== snapshot.displayTitle ||
+    row.periodStartMonth !== snapshot.periodStartMonth ||
+    row.periodEndMonth !== snapshot.periodEndMonth
+  );
+}
+
+export async function loadDiaryBindingSnapshot(
   viewerEmail: string,
   profileId: string,
   year: number,
@@ -70,6 +97,79 @@ async function loadDiaryBindingSnapshot(
   };
 }
 
+async function syncPendingRow(
+  pendingId: string,
+  snapshot: DiaryBookBindingSnapshot,
+  existing: {
+    pageCount: number;
+    planId: string;
+    displayTitle: string | null;
+    periodStartMonth: number;
+    periodEndMonth: number;
+    diaryBindingCode: string;
+  },
+): Promise<{ contentUpdated: boolean }> {
+  const contentUpdated = snapshotDiffersFromRow(snapshot, existing);
+  if (contentUpdated) {
+    await prisma.diaryBookBindingRequest.update({
+      where: { id: pendingId },
+      data: {
+        pageCount: snapshot.pageCount,
+        planId: snapshot.planId,
+        displayTitle: snapshot.displayTitle,
+        periodStartMonth: snapshot.periodStartMonth,
+        periodEndMonth: snapshot.periodEndMonth,
+      },
+    });
+  }
+  return { contentUpdated };
+}
+
+/**
+ * 画面表示用: pending があれば現在の掲載内容に同期して返す。
+ */
+export async function getPendingDiaryBookBindingForYear(
+  input: CreateDiaryBookBindingRequestInput,
+): Promise<
+  | { ok: true; pending: DiaryBookBindingPublic | null; contentUpdated: boolean }
+  | { ok: false; error: string }
+> {
+  const snapshot = await loadDiaryBindingSnapshot(input.viewerEmail, input.profileId, input.year);
+  if ("error" in snapshot) {
+    return { ok: true, pending: null, contentUpdated: false };
+  }
+
+  const plan = getBookPlan(snapshot.pageCount);
+
+  const existing = await prisma.diaryBookBindingRequest.findFirst({
+    where: {
+      email: input.viewerEmail,
+      profileId: input.profileId,
+      year: input.year,
+      status: "pending",
+    },
+    orderBy: { createdAt: "desc" },
+  });
+
+  if (!existing) {
+    return { ok: true, pending: null, contentUpdated: false };
+  }
+
+  const { contentUpdated } = await syncPendingRow(existing.id, snapshot, existing);
+
+  return {
+    ok: true,
+    pending: {
+      requestId: existing.id,
+      diaryBindingCode: existing.diaryBindingCode,
+      baseShopUrl: plan.baseUrl,
+      pageCount: snapshot.pageCount,
+      planId: snapshot.planId,
+    },
+    contentUpdated,
+  };
+}
+
 export async function createOrReusePendingDiaryBookBindingRequest(
   input: CreateDiaryBookBindingRequestInput,
 ) {
@@ -91,22 +191,14 @@ export async function createOrReusePendingDiaryBookBindingRequest(
   });
 
   if (existing) {
-    await prisma.diaryBookBindingRequest.update({
-      where: { id: existing.id },
-      data: {
-        pageCount: snapshot.pageCount,
-        planId: snapshot.planId,
-        displayTitle: snapshot.displayTitle,
-        periodStartMonth: snapshot.periodStartMonth,
-        periodEndMonth: snapshot.periodEndMonth,
-      },
-    });
+    const { contentUpdated } = await syncPendingRow(existing.id, snapshot, existing);
 
     return {
       ok: true as const,
       requestId: existing.id,
       diaryBindingCode: existing.diaryBindingCode,
       reused: true,
+      contentUpdated,
       baseShopUrl: plan.baseUrl,
       pageCount: snapshot.pageCount,
       planId: snapshot.planId,
@@ -138,6 +230,7 @@ export async function createOrReusePendingDiaryBookBindingRequest(
         requestId: created.id,
         diaryBindingCode: created.diaryBindingCode,
         reused: false,
+        contentUpdated: false,
         baseShopUrl: plan.baseUrl,
         pageCount: snapshot.pageCount,
         planId: snapshot.planId,

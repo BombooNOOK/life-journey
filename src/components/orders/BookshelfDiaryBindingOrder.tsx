@@ -26,8 +26,83 @@ const INITIAL_BINDING_CHECKS: Record<BindingConfirmCheckId, boolean> = {
 
 type ModalStep = "confirm" | "code";
 
+type IssuedBinding = {
+  diaryBindingCode: string;
+  baseShopUrl: string;
+};
+
 function allBindingChecksComplete(checks: Record<BindingConfirmCheckId, boolean>): boolean {
   return BINDING_CONFIRM_CHECK_ITEMS.every((item) => checks[item.id]);
+}
+
+function DiaryBindingCodePanel({
+  code,
+  baseShopUrl,
+  copyToast,
+  onCopy,
+  onGoToBase,
+  variant = "inline",
+}: {
+  code: string;
+  baseShopUrl: string;
+  copyToast: string | null;
+  onCopy: () => void;
+  onGoToBase: () => void;
+  variant?: "inline" | "modal";
+}) {
+  const title =
+    variant === "inline" ? "発行済みの製本申込コード" : "製本申込コード";
+  const helpText =
+    variant === "inline"
+      ? "このコードは、BASEで注文するときに必要です。コピーし忘れた場合も、ここから再度コピーできます。"
+      : "このコードは、どの日記を製本するか確認するために必要です。BASEの商品ページで「製本申込コード」欄に必ず貼り付けてください。";
+
+  return (
+    <div className={variant === "inline" ? "space-y-3" : "space-y-4"}>
+      <div>
+        <p className="text-sm font-semibold text-stone-900">{title}</p>
+        <div
+          className={[
+            "mt-2 rounded-lg border border-emerald-200 bg-emerald-50/50 text-center",
+            variant === "modal" ? "px-4 py-4" : "px-3 py-3",
+          ].join(" ")}
+        >
+          {variant === "modal" ? (
+            <p className="text-xs font-medium text-stone-600">製本申込コード</p>
+          ) : null}
+          <p
+            className={[
+              "break-all font-mono font-bold tracking-wide text-emerald-950",
+              variant === "modal" ? "mt-2 text-xl sm:text-2xl" : "text-lg sm:text-xl",
+            ].join(" ")}
+          >
+            {code}
+          </p>
+        </div>
+      </div>
+      <p className="text-xs leading-relaxed text-stone-700">{helpText}</p>
+      {copyToast ? (
+        <p className="text-center text-xs font-medium text-emerald-800">{copyToast}</p>
+      ) : null}
+      <div className="flex flex-col gap-2">
+        <button
+          type="button"
+          onClick={() => void onCopy()}
+          className="w-full rounded-lg border border-emerald-400 bg-white px-4 py-2.5 text-sm font-medium text-emerald-900 hover:bg-emerald-50"
+        >
+          コードをコピー
+        </button>
+        <button
+          type="button"
+          disabled={!baseShopUrl}
+          onClick={onGoToBase}
+          className="w-full rounded-lg bg-emerald-800 px-4 py-2.5 text-sm font-medium text-white hover:bg-emerald-900 disabled:opacity-50"
+        >
+          BASEで注文へ進む
+        </button>
+      </div>
+    </div>
+  );
 }
 
 export function BookshelfDiaryBindingOrder({
@@ -45,22 +120,63 @@ export function BookshelfDiaryBindingOrder({
     useState<Record<BindingConfirmCheckId, boolean>>(INITIAL_BINDING_CHECKS);
   const [issueLoading, setIssueLoading] = useState(false);
   const [issueError, setIssueError] = useState<string | null>(null);
-  const [diaryBindingCode, setDiaryBindingCode] = useState<string | null>(null);
-  const [baseShopUrl, setBaseShopUrl] = useState<string | null>(null);
+  const [pendingBinding, setPendingBinding] = useState<IssuedBinding | null>(null);
+  const [pendingLoading, setPendingLoading] = useState(true);
+  const [contentUpdatedNotice, setContentUpdatedNotice] = useState(false);
+  const [modalBinding, setModalBinding] = useState<IssuedBinding | null>(null);
   const [copyToast, setCopyToast] = useState<string | null>(null);
   const dialogRef = useRef<HTMLDivElement>(null);
   const previouslyFocused = useRef<HTMLElement | null>(null);
   const copyToastTimerRef = useRef<number | null>(null);
 
   const checksComplete = allBindingChecksComplete(bindingChecks);
+  const activeCode = modalStep === "code" && modalBinding ? modalBinding.diaryBindingCode : null;
+  const copyTargetCode = activeCode ?? pendingBinding?.diaryBindingCode ?? null;
+  const copyTargetBaseUrl = modalBinding?.baseShopUrl ?? pendingBinding?.baseShopUrl ?? null;
+
+  const fetchPendingBinding = useCallback(async () => {
+    setPendingLoading(true);
+    try {
+      const res = await fetch(`/api/journal/bookshelf/${year}/diary-book-binding`, {
+        cache: "no-store",
+        credentials: "same-origin",
+      });
+      const data = (await res.json()) as {
+        pending?: IssuedBinding | null;
+        contentUpdated?: boolean;
+        error?: string;
+      };
+      if (!res.ok) {
+        setPendingBinding(null);
+        return;
+      }
+      if (data.pending?.diaryBindingCode && data.pending?.baseShopUrl) {
+        setPendingBinding({
+          diaryBindingCode: data.pending.diaryBindingCode,
+          baseShopUrl: data.pending.baseShopUrl,
+        });
+        setContentUpdatedNotice(Boolean(data.contentUpdated));
+      } else {
+        setPendingBinding(null);
+        setContentUpdatedNotice(false);
+      }
+    } catch {
+      setPendingBinding(null);
+    } finally {
+      setPendingLoading(false);
+    }
+  }, [year]);
+
+  useEffect(() => {
+    void fetchPendingBinding();
+  }, [fetchPendingBinding, pageCount]);
 
   const resetModalState = useCallback(() => {
     setModalStep("confirm");
     setBindingChecks({ ...INITIAL_BINDING_CHECKS });
     setIssueLoading(false);
     setIssueError(null);
-    setDiaryBindingCode(null);
-    setBaseShopUrl(null);
+    setModalBinding(null);
     setCopyToast(null);
   }, []);
 
@@ -92,44 +208,8 @@ export function BookshelfDiaryBindingOrder({
     };
   }, []);
 
-  const handleIssueCode = async () => {
-    if (!checksComplete || issueLoading) return;
-    setIssueLoading(true);
-    setIssueError(null);
-    try {
-      const res = await fetch(
-        `/api/journal/bookshelf/${year}/diary-book-binding`,
-        {
-          method: "POST",
-          credentials: "same-origin",
-        },
-      );
-      const data = (await res.json()) as {
-        diaryBindingCode?: string;
-        baseShopUrl?: string;
-        error?: string;
-      };
-      if (!res.ok || !data.diaryBindingCode || !data.baseShopUrl) {
-        throw new Error(data.error ?? "製本申込コードの発行に失敗しました。");
-      }
-      setDiaryBindingCode(data.diaryBindingCode);
-      setBaseShopUrl(data.baseShopUrl);
-      setModalStep("code");
-    } catch (e) {
-      setIssueError(e instanceof Error ? e.message : "製本申込コードの発行に失敗しました。");
-    } finally {
-      setIssueLoading(false);
-    }
-  };
-
-  const handleCopyCode = async () => {
-    if (!diaryBindingCode) return;
-    try {
-      await navigator.clipboard.writeText(diaryBindingCode);
-      setCopyToast("コピーしました");
-    } catch {
-      setCopyToast("コピーできませんでした。コードを手動で選択してください。");
-    }
+  const showCopyToast = useCallback((message: string) => {
+    setCopyToast(message);
     if (copyToastTimerRef.current !== null) {
       window.clearTimeout(copyToastTimerRef.current);
     }
@@ -137,11 +217,72 @@ export function BookshelfDiaryBindingOrder({
       setCopyToast(null);
       copyToastTimerRef.current = null;
     }, 2200);
-  };
+  }, []);
 
-  const handleGoToBase = () => {
-    if (!baseShopUrl) return;
-    navigateToShop(baseShopUrl);
+  const handleCopyCode = useCallback(async () => {
+    if (!copyTargetCode) return;
+    try {
+      await navigator.clipboard.writeText(copyTargetCode);
+      showCopyToast("コピーしました");
+    } catch {
+      showCopyToast("コピーできませんでした。コードを手動で選択してください。");
+    }
+  }, [copyTargetCode, showCopyToast]);
+
+  const handleGoToBase = useCallback(() => {
+    const url = copyTargetBaseUrl;
+    if (!url) return;
+    navigateToShop(url);
+  }, [copyTargetBaseUrl]);
+
+  const applyIssueResult = useCallback(
+    (data: {
+      diaryBindingCode: string;
+      baseShopUrl: string;
+      contentUpdated?: boolean;
+    }) => {
+      const binding = {
+        diaryBindingCode: data.diaryBindingCode,
+        baseShopUrl: data.baseShopUrl,
+      };
+      setPendingBinding(binding);
+      setModalBinding(binding);
+      if (data.contentUpdated) {
+        setContentUpdatedNotice(true);
+      }
+    },
+    [],
+  );
+
+  const handleIssueCode = async () => {
+    if (!checksComplete || issueLoading) return;
+    setIssueLoading(true);
+    setIssueError(null);
+    try {
+      const res = await fetch(`/api/journal/bookshelf/${year}/diary-book-binding`, {
+        method: "POST",
+        credentials: "same-origin",
+      });
+      const data = (await res.json()) as {
+        diaryBindingCode?: string;
+        baseShopUrl?: string;
+        contentUpdated?: boolean;
+        error?: string;
+      };
+      if (!res.ok || !data.diaryBindingCode || !data.baseShopUrl) {
+        throw new Error(data.error ?? "製本申込コードの発行に失敗しました。");
+      }
+      applyIssueResult({
+        diaryBindingCode: data.diaryBindingCode,
+        baseShopUrl: data.baseShopUrl,
+        contentUpdated: data.contentUpdated,
+      });
+      setModalStep("code");
+    } catch (e) {
+      setIssueError(e instanceof Error ? e.message : "製本申込コードの発行に失敗しました。");
+    } finally {
+      setIssueLoading(false);
+    }
   };
 
   const planName = planData.label;
@@ -178,13 +319,31 @@ export function BookshelfDiaryBindingOrder({
           </p>
         </div>
 
+        {!pendingLoading && pendingBinding ? (
+          <div className="mt-4 rounded-lg border border-emerald-300/80 bg-emerald-50/60 p-3">
+            {contentUpdatedNotice ? (
+              <p className="mb-3 rounded-md border border-amber-200/90 bg-amber-50/90 px-2.5 py-2 text-xs leading-relaxed text-amber-950">
+                現在の掲載内容に合わせて、申込内容を更新しました。コードは同じままお使いいただけます。
+              </p>
+            ) : null}
+            <DiaryBindingCodePanel
+              variant="inline"
+              code={pendingBinding.diaryBindingCode}
+              baseShopUrl={pendingBinding.baseShopUrl}
+              copyToast={confirmOpen ? null : copyToast}
+              onCopy={handleCopyCode}
+              onGoToBase={handleGoToBase}
+            />
+          </div>
+        ) : null}
+
         <button
           type="button"
           onClick={() => setConfirmOpen(true)}
           disabled={!hasPages}
           className="mt-4 w-full rounded-lg bg-emerald-800 px-4 py-2.5 text-sm font-medium text-white hover:bg-emerald-900 disabled:cursor-not-allowed disabled:opacity-50"
         >
-          この内容で注文する
+          {pendingBinding ? "製本内容を確認して注文する" : "この内容で注文する"}
         </button>
       </div>
 
@@ -288,7 +447,11 @@ export function BookshelfDiaryBindingOrder({
                     className="rounded-lg bg-emerald-800 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-900 disabled:cursor-not-allowed disabled:opacity-50"
                     onClick={() => void handleIssueCode()}
                   >
-                    {issueLoading ? "発行中…" : "製本申込コードを発行する"}
+                    {issueLoading
+                      ? "発行中…"
+                      : pendingBinding
+                        ? "製本申込コードを表示する"
+                        : "製本申込コードを発行する"}
                   </button>
                 </div>
                 {!checksComplete ? (
@@ -297,58 +460,41 @@ export function BookshelfDiaryBindingOrder({
                   </p>
                 ) : null}
               </>
-            ) : (
+            ) : modalBinding ? (
               <>
                 <h2 id="binding-confirm-title" className="text-base font-semibold text-stone-900">
                   製本申込コード
                 </h2>
-
                 <p className="mt-1 text-xs text-stone-600">
                   BASEの商品ページで「製本申込コード」欄に必ず貼り付けてください。
                 </p>
-
-                <div className="mt-4 rounded-lg border border-emerald-200 bg-emerald-50/50 px-4 py-4 text-center">
-                  <p className="text-xs font-medium text-stone-600">製本申込コード</p>
-                  <p className="mt-2 break-all font-mono text-xl font-bold tracking-wide text-emerald-950 sm:text-2xl">
-                    {diaryBindingCode}
+                {contentUpdatedNotice ? (
+                  <p className="mt-3 rounded-md border border-amber-200/90 bg-amber-50/90 px-2.5 py-2 text-xs leading-relaxed text-amber-950">
+                    現在の掲載内容に合わせて、申込内容を更新しました。コードは同じままお使いいただけます。
                   </p>
-                </div>
-
-                <p className="mt-4 text-xs leading-relaxed text-stone-700">
-                  このコードは、どの日記を製本するか確認するために必要です。
-                  BASEの商品ページで「製本申込コード」欄に必ず貼り付けてください。
-                </p>
-
-                {copyToast ? (
-                  <p className="mt-2 text-center text-xs font-medium text-emerald-800">{copyToast}</p>
                 ) : null}
-
-                <div className="mt-6 flex flex-col gap-2">
-                  <button
-                    type="button"
-                    onClick={() => void handleCopyCode()}
-                    className="w-full rounded-lg border border-emerald-400 bg-white px-4 py-2.5 text-sm font-medium text-emerald-900 hover:bg-emerald-50"
-                  >
-                    コードをコピー
-                  </button>
-                  <button
-                    type="button"
-                    disabled={!baseShopUrl}
-                    onClick={handleGoToBase}
-                    className="w-full rounded-lg bg-emerald-800 px-4 py-2.5 text-sm font-medium text-white hover:bg-emerald-900 disabled:opacity-50"
-                  >
-                    BASEで注文へ進む
-                  </button>
-                  <button
-                    type="button"
-                    className="w-full rounded-lg border border-stone-300 bg-white px-4 py-2 text-sm text-stone-700 hover:bg-stone-50"
-                    onClick={closeModal}
-                  >
-                    閉じる
-                  </button>
+                <div className="mt-4">
+                  <DiaryBindingCodePanel
+                    variant="modal"
+                    code={modalBinding.diaryBindingCode}
+                    baseShopUrl={modalBinding.baseShopUrl}
+                    copyToast={copyToast}
+                    onCopy={handleCopyCode}
+                    onGoToBase={handleGoToBase}
+                  />
                 </div>
+                <button
+                  type="button"
+                  className="mt-4 w-full rounded-lg border border-stone-300 bg-white px-4 py-2 text-sm text-stone-700 hover:bg-stone-50"
+                  onClick={closeModal}
+                >
+                  閉じる
+                </button>
+                <p className="mt-2 text-center text-[11px] text-stone-500">
+                  閉じたあとも、下の「発行済みの製本申込コード」から再度コピーできます。
+                </p>
               </>
-            )}
+            ) : null}
           </div>
         </div>
       ) : null}
