@@ -2,7 +2,32 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
-import { getBookPlan } from "@/lib/order/bookBindingPlan";
+import { getBookPlan, type BookPlanResult } from "@/lib/order/bookBindingPlan";
+
+function PlanSummaryBlock({ plan }: { plan: BookPlanResult }) {
+  if (plan.plan === "over_limit") {
+    return (
+      <div className="rounded-lg border border-red-200 bg-red-50/80 px-3 py-3 text-sm text-red-900">
+        <p className="font-medium">{plan.overLimitMessage}</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="rounded-lg border border-emerald-200/90 bg-white/80 px-3 py-3 text-sm text-stone-800">
+      <p className="text-xs font-medium text-stone-600">選択されるプラン</p>
+      <p className="mt-1 font-semibold text-emerald-950">{plan.productName}</p>
+      <p className="mt-1 text-[13px] leading-relaxed text-stone-700">
+        最大{plan.maxPages}ページまで
+        {plan.periodHint ? `（${plan.periodHint}）` : null}
+      </p>
+      <p className="mt-1 text-[13px] font-semibold text-stone-900">{plan.priceDisplay}</p>
+      {plan.priceNote ? (
+        <p className="mt-1 text-[12px] leading-snug text-stone-600">{plan.priceNote}</p>
+      ) : null}
+    </div>
+  );
+}
 
 function navigateToShop(url: string) {
   window.open(url, "_blank", "noopener,noreferrer");
@@ -42,6 +67,7 @@ function DiaryBindingCodePanel({
   onCopy,
   onGoToBase,
   variant = "inline",
+  baseOrderable = true,
 }: {
   code: string;
   baseShopUrl: string;
@@ -49,6 +75,7 @@ function DiaryBindingCodePanel({
   onCopy: () => void;
   onGoToBase: () => void;
   variant?: "inline" | "modal";
+  baseOrderable?: boolean;
 }) {
   const title =
     variant === "inline" ? "発行済みの製本申込コード" : "製本申込コード";
@@ -94,9 +121,9 @@ function DiaryBindingCodePanel({
         </button>
         <button
           type="button"
-          disabled={!baseShopUrl}
+          disabled={!baseShopUrl || !baseOrderable}
           onClick={onGoToBase}
-          className="w-full rounded-lg bg-emerald-800 px-4 py-2.5 text-sm font-medium text-white hover:bg-emerald-900 disabled:opacity-50"
+          className="w-full rounded-lg bg-emerald-800 px-4 py-2.5 text-sm font-medium text-white hover:bg-emerald-900 disabled:cursor-not-allowed disabled:opacity-50"
         >
           BASEで注文へ進む
         </button>
@@ -285,8 +312,9 @@ export function BookshelfDiaryBindingOrder({
     }
   };
 
-  const planName = planData.label;
   const hasPages = pageCount > 0;
+  const canOrder = hasPages && planData.orderable;
+  const showPendingBlock = !pendingLoading && pendingBinding && planData.orderable;
 
   return (
     <>
@@ -299,27 +327,21 @@ export function BookshelfDiaryBindingOrder({
         </p>
         <div className="mt-3 space-y-2 text-sm text-stone-800">
           <p>
-            <span className="font-semibold text-stone-900">本に入れるページ数：{pageCount}ページ</span>
+            <span className="font-semibold text-stone-900">現在の製本対象：{pageCount}ページ</span>
           </p>
-          {hasPages ? (
-            <p className="text-[13px] leading-relaxed">
-              この内容は<span className="font-semibold text-emerald-900">「{planName}」</span>
-              で製本されます。
-            </p>
-          ) : (
+          <p className="text-[12px] leading-snug text-stone-600">
+            ※日記本文のみを数えます（1投稿＝1ページ）。表紙・カレンダー・振り返り等は含みません。
+          </p>
+          {!hasPages ? (
             <p className="text-[13px] leading-relaxed text-amber-900">
               本に入れるページがありません。製本したい日記をONにしてください。
             </p>
+          ) : (
+            <PlanSummaryBlock plan={planData} />
           )}
-          <p className="text-[12px] leading-snug text-stone-600">
-            ※ページ数に応じて自動で選択されています。
-          </p>
-          <p className="rounded-md bg-white/70 px-2 py-2 text-[12px] font-medium leading-snug text-emerald-950">
-            あなたのページ数に合わせて、最適なプランが自動選択されています。
-          </p>
         </div>
 
-        {!pendingLoading && pendingBinding ? (
+        {showPendingBlock ? (
           <div className="mt-4 rounded-lg border border-emerald-300/80 bg-emerald-50/60 p-3">
             {contentUpdatedNotice ? (
               <p className="mb-3 rounded-md border border-amber-200/90 bg-amber-50/90 px-2.5 py-2 text-xs leading-relaxed text-amber-950">
@@ -333,6 +355,7 @@ export function BookshelfDiaryBindingOrder({
               copyToast={confirmOpen ? null : copyToast}
               onCopy={handleCopyCode}
               onGoToBase={handleGoToBase}
+              baseOrderable={canOrder}
             />
           </div>
         ) : null}
@@ -340,7 +363,7 @@ export function BookshelfDiaryBindingOrder({
         <button
           type="button"
           onClick={() => setConfirmOpen(true)}
-          disabled={!hasPages}
+          disabled={!canOrder}
           className="mt-4 w-full rounded-lg bg-emerald-800 px-4 py-2.5 text-sm font-medium text-white hover:bg-emerald-900 disabled:cursor-not-allowed disabled:opacity-50"
         >
           {pendingBinding ? "製本内容を確認して注文する" : "この内容で注文する"}
@@ -385,24 +408,13 @@ export function BookshelfDiaryBindingOrder({
                   </p>
                 </div>
 
-                <ul className="mt-4 space-y-2 text-sm text-stone-800">
-                  <li>
-                    <span className="text-stone-600">本に入れるページ数：</span>
+                <div className="mt-4 space-y-2 text-sm text-stone-800">
+                  <p>
+                    <span className="text-stone-600">現在の製本対象：</span>
                     <span className="font-semibold">{pageCount}ページ</span>
-                  </li>
-                  <li>
-                    <span className="text-stone-600">プラン：</span>
-                    <span className="font-semibold">{planName}</span>
-                  </li>
-                </ul>
-
-                {planData.plan === "standard_plus" ? (
-                  <p className="mt-4 text-xs leading-relaxed text-stone-700">
-                    120ページを超えるため、「スタンダード版」と「追加ページ（20ページ単位）」の組み合わせになります。追加の目安は約{" "}
-                    <span className="font-semibold">{planData.extra}</span>{" "}
-                    単位です。まずスタンダードの商品ページへ進み、続けて追加ページも注文画面でご確認ください。
                   </p>
-                ) : null}
+                  <PlanSummaryBlock plan={planData} />
+                </div>
 
                 <fieldset className="mt-4 space-y-2.5">
                   <legend className="text-sm font-medium text-stone-900">ご確認</legend>
@@ -443,7 +455,7 @@ export function BookshelfDiaryBindingOrder({
                   </button>
                   <button
                     type="button"
-                    disabled={!checksComplete || issueLoading}
+                    disabled={!checksComplete || issueLoading || !canOrder}
                     className="rounded-lg bg-emerald-800 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-900 disabled:cursor-not-allowed disabled:opacity-50"
                     onClick={() => void handleIssueCode()}
                   >
@@ -481,6 +493,7 @@ export function BookshelfDiaryBindingOrder({
                     copyToast={copyToast}
                     onCopy={handleCopyCode}
                     onGoToBase={handleGoToBase}
+                    baseOrderable={canOrder}
                   />
                 </div>
                 <button

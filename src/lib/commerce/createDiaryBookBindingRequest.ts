@@ -87,6 +87,9 @@ export async function loadDiaryBindingSnapshot(
   }
 
   const plan = getBookPlan(pageCount);
+  if (!plan.orderable) {
+    return { error: plan.overLimitMessage ?? "製本できないページ数です。" };
+  }
 
   return {
     pageCount,
@@ -140,6 +143,9 @@ export async function getPendingDiaryBookBindingForYear(
   }
 
   const plan = getBookPlan(snapshot.pageCount);
+  if (!plan.orderable || !plan.baseUrl) {
+    return { ok: true, pending: null, contentUpdated: false };
+  }
 
   const existing = await prisma.diaryBookBindingRequest.findFirst({
     where: {
@@ -179,6 +185,12 @@ export async function createOrReusePendingDiaryBookBindingRequest(
   }
 
   const plan = getBookPlan(snapshot.pageCount);
+  if (!plan.orderable || !plan.baseUrl) {
+    return {
+      ok: false as const,
+      error: plan.overLimitMessage ?? "製本できないページ数です。",
+    };
+  }
 
   const existing = await prisma.diaryBookBindingRequest.findFirst({
     where: {

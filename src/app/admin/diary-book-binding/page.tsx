@@ -8,7 +8,7 @@ import {
   DIARY_BOOK_BINDING_STATUSES,
   DIARY_BOOK_BINDING_STATUS_LABELS,
 } from "@/lib/commerce/diaryBookBindingStatus";
-import { type BookPlanId } from "@/lib/order/bookBindingPlan";
+import { BOOK_PLAN_LABELS_JA, type BookPlanId } from "@/lib/order/bookBindingPlan";
 import { prisma } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
@@ -17,16 +17,9 @@ type Props = {
   searchParams: Promise<{ q?: string; status?: string }>;
 };
 
-const BOOK_PLAN_LABELS: Record<BookPlanId, string> = {
-  trial: "お試し版",
-  light: "ライト版",
-  standard: "スタンダード版",
-  standard_plus: "スタンダード＋追加ページ",
-};
-
 function planLabel(planId: string): string {
-  if (planId in BOOK_PLAN_LABELS) {
-    return BOOK_PLAN_LABELS[planId as BookPlanId];
+  if (planId in BOOK_PLAN_LABELS_JA) {
+    return BOOK_PLAN_LABELS_JA[planId as BookPlanId];
   }
   return planId;
 }
