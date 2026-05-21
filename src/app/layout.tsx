@@ -3,11 +3,48 @@ import Link from "next/link";
 
 import { AuthNav } from "@/components/auth/AuthNav";
 import { FirebaseAuthProvider } from "@/components/auth/FirebaseAuthProvider";
+import {
+  APP_DESCRIPTION,
+  APP_DISPLAY_NAME,
+  APP_DISPLAY_SHORT_NAME,
+} from "@/lib/branding/appDisplayName";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "数秘術鑑定書ジェネレーター（MVP）",
-  description: "顧客情報から数秘と守護石を算出し、鑑定書PDFを生成します。",
+  metadataBase:
+    process.env.NEXT_PUBLIC_APP_URL != null && process.env.NEXT_PUBLIC_APP_URL !== ""
+      ? new URL(process.env.NEXT_PUBLIC_APP_URL)
+      : process.env.VERCEL_URL != null && process.env.VERCEL_URL !== ""
+        ? new URL(`https://${process.env.VERCEL_URL}`)
+        : undefined,
+  title: {
+    default: APP_DISPLAY_NAME,
+    template: `%s | ${APP_DISPLAY_NAME}`,
+  },
+  applicationName: APP_DISPLAY_NAME,
+  description: APP_DESCRIPTION,
+  appleWebApp: {
+    capable: true,
+    title: APP_DISPLAY_NAME,
+    statusBarStyle: "default",
+  },
+  icons: {
+    icon: [
+      { url: "/favicon-16x16.png", type: "image/png", sizes: "16x16" },
+      { url: "/favicon-32x32.png", type: "image/png", sizes: "32x32" },
+      { url: "/icons/icon-192.png", type: "image/png", sizes: "192x192" },
+      { url: "/icons/icon-512.png", type: "image/png", sizes: "512x512" },
+    ],
+    apple: [{ url: "/apple-touch-icon.png", type: "image/png", sizes: "180x180" }],
+  },
+  manifest: "/manifest.webmanifest",
+  openGraph: {
+    title: APP_DISPLAY_NAME,
+    description: APP_DESCRIPTION,
+    siteName: APP_DISPLAY_SHORT_NAME,
+    locale: "ja_JP",
+    type: "website",
+  },
 };
 
 export default function RootLayout({
@@ -27,7 +64,7 @@ export default function RootLayout({
                 href="/"
                 className="text-lg font-semibold text-stone-800 no-underline hover:text-stone-900"
               >
-                Life Journey
+                Life Journey Diary
               </a>
               <nav className="flex min-w-0 w-full flex-wrap items-center justify-start gap-y-1 text-xs text-stone-600 sm:w-auto sm:justify-end sm:text-sm">
                 <Link href="/order" className="hover:text-stone-900">

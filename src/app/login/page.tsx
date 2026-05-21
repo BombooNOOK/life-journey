@@ -1,7 +1,7 @@
 import { LoginGate } from "./LoginGate";
 
 export const metadata = {
-  title: "ログイン | Life Journey",
+  title: "ログイン",
 };
 
 export default function LoginPage() {
