@@ -9,7 +9,7 @@ export const DIARY_BINDING_MAX_PAGES = 400;
 export const BINDING_PRODUCT_NAMES = {
   trial: "Life Journey Diary お試し製本版",
   light: "Life Journey Diary ライト製本版",
-  standard: "Life Journey Diary まるごとスタンダード製本版",
+  standard: "Life Journey Diary スタンダード製本版",
   full_year: "Life Journey Diary まるごと1年製本版",
 } as const;
 
@@ -70,7 +70,7 @@ export const DIARY_BINDING_OVER_LIMIT_MESSAGE =
 export const BOOK_PLAN_LABELS_JA: Record<BookPlanId, string> = {
   trial: "お試し製本版",
   light: "ライト製本版",
-  standard: "まるごとスタンダード製本版",
+  standard: "スタンダード製本版",
   full_year: "まるごと1年製本版",
   over_limit: "対象外（400ページ超）",
 };
@@ -99,13 +99,13 @@ export function getBookPlan(pageCount: number): BookPlanResult {
     };
   }
 
-  if (n <= 35) {
+  if (n <= 50) {
     return {
       plan: "trial",
       label: BOOK_PLAN_LABELS_JA.trial,
       productName: BINDING_PRODUCT_NAMES.trial,
       minPages: 1,
-      maxPages: 35,
+      maxPages: 50,
       priceYen: 1980,
       priceDisplay: formatYen(1980),
       periodHint: null,
@@ -121,7 +121,7 @@ export function getBookPlan(pageCount: number): BookPlanResult {
       plan: "light",
       label: BOOK_PLAN_LABELS_JA.light,
       productName: BINDING_PRODUCT_NAMES.light,
-      minPages: 36,
+      minPages: 51,
       maxPages: 100,
       priceYen: 2980,
       priceDisplay: formatYen(2980),

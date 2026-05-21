@@ -1,26 +1,35 @@
 import { describe, expect, it } from "vitest";
 
-import { DIARY_BINDING_MAX_PAGES, getBookPlan } from "./bookBindingPlan";
+import {
+  DIARY_BINDING_MAX_PAGES,
+  DIARY_BOOK_LIGHT_URL,
+  DIARY_BOOK_TRIAL_URL,
+  getBookPlan,
+} from "./bookBindingPlan";
 
 describe("getBookPlan", () => {
-  it("1〜35ページはお試し製本版", () => {
+  it("1〜50ページはお試し製本版", () => {
     expect(getBookPlan(1).plan).toBe("trial");
-    expect(getBookPlan(35).plan).toBe("trial");
-    expect(getBookPlan(35).priceYen).toBe(1980);
+    expect(getBookPlan(50).plan).toBe("trial");
+    expect(getBookPlan(50).maxPages).toBe(50);
+    expect(getBookPlan(50).priceYen).toBe(1980);
+    expect(getBookPlan(50).baseUrl).toBe(DIARY_BOOK_TRIAL_URL);
   });
 
-  it("36〜100ページはライト製本版", () => {
-    expect(getBookPlan(36).plan).toBe("light");
+  it("51〜100ページはライト製本版", () => {
+    expect(getBookPlan(51).plan).toBe("light");
     expect(getBookPlan(100).plan).toBe("light");
     expect(getBookPlan(100).maxPages).toBe(100);
+    expect(getBookPlan(51).baseUrl).toBe(DIARY_BOOK_LIGHT_URL);
   });
 
   it("101〜200ページはスタンダード製本版", () => {
     expect(getBookPlan(101).plan).toBe("standard");
     expect(getBookPlan(200).plan).toBe("standard");
+    expect(getBookPlan(200).productName).toBe("Life Journey Diary スタンダード製本版");
   });
 
-  it("201〜400ページはまるごと一年製本版", () => {
+  it("201〜400ページはまるごと1年製本版", () => {
     expect(getBookPlan(201).plan).toBe("full_year");
     expect(getBookPlan(400).plan).toBe("full_year");
     expect(getBookPlan(400).maxPages).toBe(DIARY_BINDING_MAX_PAGES);
