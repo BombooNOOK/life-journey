@@ -25,15 +25,7 @@ function StepCard({
   );
 }
 
-function GuideAppLink({
-  href,
-  label,
-  loginRequired,
-}: {
-  href: string;
-  label: string;
-  loginRequired?: boolean;
-}) {
+function GuideAppLink({ href, label }: { href: string; label: string }) {
   return (
     <p className="mt-3">
       <Link
@@ -42,9 +34,6 @@ function GuideAppLink({
       >
         {label} →
       </Link>
-      {loginRequired ? (
-        <span className="mt-1 block text-xs text-stone-500">※ ログインが必要です</span>
-      ) : null}
     </p>
   );
 }
@@ -73,7 +62,7 @@ export default function GuidePage() {
             <p className="text-xs text-stone-500">
               ヘッダーの「はじめての方」からも同じ画面を開けます（無料鑑定フォームです）。
             </p>
-            <GuideAppLink href="/order" label="無料鑑定をはじめる" loginRequired />
+            <GuideAppLink href="/order" label="無料鑑定をはじめる" />
           </StepCard>
         </li>
 
@@ -82,7 +71,7 @@ export default function GuidePage() {
             <p>
               保存した鑑定は「本棚」に並びます。カードを開いて本文を読んだり、鑑定書PDFを端末に保存したりできます（PDFの保存手順は別ページにあります）。
             </p>
-            <GuideAppLink href="/orders/bookshelf" label="本棚を開く" loginRequired />
+            <GuideAppLink href="/orders/bookshelf" label="本棚を開く" />
             <p className="mt-2 text-xs text-stone-500">
               PDFの保存方法は
               <Link href="/help/pdf-download" className="mx-0.5 text-emerald-900 hover:underline">
@@ -98,7 +87,7 @@ export default function GuidePage() {
             <p>
               ヘッダーの「今日の記録」から、その日の気持ちや出来事を短く残せます。活動の種類（仕事・休息など）を選び、本文を書いて保存します。
             </p>
-            <GuideAppLink href="/journal" label="今日の記録を書く" loginRequired />
+            <GuideAppLink href="/journal" label="今日の記録を書く" />
           </StepCard>
         </li>
 
@@ -107,7 +96,7 @@ export default function GuidePage() {
             <p>
               記録フォームから、1日につき1枚まで写真を添付できます。製本イメージのプレビューでも、写真の見え方を確認できます。
             </p>
-            <GuideAppLink href="/journal" label="記録画面で写真を添える" loginRequired />
+            <GuideAppLink href="/journal" label="記録画面で写真を添える" />
           </StepCard>
         </li>
 
@@ -116,7 +105,7 @@ export default function GuidePage() {
             <p>
               日記を保存すると、フクロウ先生の読み解き（数字に沿ったことば）が届きます。記録画面やプレビューで、いつでも読み返せます。
             </p>
-            <GuideAppLink href="/journal" label="記録を保存して読み解きを見る" loginRequired />
+            <GuideAppLink href="/journal" label="記録を保存して読み解きを見る" />
           </StepCard>
         </li>
 
@@ -125,8 +114,8 @@ export default function GuidePage() {
             <p>
               マイページの Life Journey Diary カードでは、月ごとのカレンダーで記録のある日を確認できます。本棚の日記（年ごとの本）では、月別一覧から各日のプレビューを開けます。
             </p>
-            <GuideAppLink href="/orders" label="マイページのカレンダーを見る" loginRequired />
-            <GuideAppLink href="/orders/bookshelf" label="本棚から日記の年を開く" loginRequired />
+            <GuideAppLink href="/orders" label="マイページのカレンダーを見る" />
+            <GuideAppLink href="/orders/bookshelf" label="本棚から日記の年を開く" />
           </StepCard>
         </li>
 
@@ -135,7 +124,7 @@ export default function GuidePage() {
             <p>
               日記を製本する前に、本棚からその年の日記を開き、「製本前確認」でページの並び・長文の注意・本に入れる記事の選択を確認してください。問題なければ製本申込コードを発行し、BASEで注文します。
             </p>
-            <GuideAppLink href="/orders/bookshelf" label="本棚から製本前確認へ" loginRequired />
+            <GuideAppLink href="/orders/bookshelf" label="本棚から製本前確認へ" />
             <p className="mt-2 text-xs leading-5 text-stone-500">
               長い本文がある日は、一覧に「長文注意」が表示されます。該当日のプレビューで表示を確認してから申し込むことをおすすめします。
             </p>
@@ -148,7 +137,7 @@ export default function GuidePage() {
         <p className="mt-2 leading-6">
           無料鑑定 → 本棚で鑑定書を読む → 日記を書く → 振り返り → 製本前確認、の順が基本です。迷ったらマイページから各機能へ進めます。
         </p>
-        <GuideAppLink href="/order" label="いま無料鑑定からはじめる" loginRequired />
+        <GuideAppLink href="/order" label="いま無料鑑定からはじめる" />
       </div>
 
       <LinkToDiaryGuide />
