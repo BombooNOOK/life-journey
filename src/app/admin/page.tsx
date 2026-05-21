@@ -422,12 +422,18 @@ export default async function AdminPage({ searchParams }: Props) {
           ユーザー検索と、プロフィール上限（1 /
           3）、鑑定書PDFの無料ダウンロード上限、製本用（高画質）PDFの付与、管理者権限の切り替えを行います。
         </p>
-        <p className="mt-2">
+        <p className="mt-2 flex flex-wrap gap-x-4 gap-y-1">
           <Link
             href="/admin/kantei-book-binding"
             className="text-sm font-medium text-violet-800 underline-offset-2 hover:underline"
           >
             鑑定書 製本申込予定一覧 →
+          </Link>
+          <Link
+            href="/admin/diary-book-binding"
+            className="text-sm font-medium text-emerald-800 underline-offset-2 hover:underline"
+          >
+            日記 製本申込予定一覧 →
           </Link>
         </p>
       </div>

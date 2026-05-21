@@ -1,0 +1,21 @@
+export const DIARY_BOOK_BINDING_STATUSES = [
+  "pending",
+  "ordered",
+  "in_production",
+  "shipped",
+  "cancelled",
+] as const;
+
+export type DiaryBookBindingStatus = (typeof DIARY_BOOK_BINDING_STATUSES)[number];
+
+export const DIARY_BOOK_BINDING_STATUS_LABELS: Record<DiaryBookBindingStatus, string> = {
+  pending: "申込予定（決済未確認）",
+  ordered: "決済確認済み",
+  in_production: "製本手配中",
+  shipped: "発送済み",
+  cancelled: "キャンセル",
+};
+
+export function isDiaryBookBindingStatus(value: string): value is DiaryBookBindingStatus {
+  return (DIARY_BOOK_BINDING_STATUSES as readonly string[]).includes(value);
+}

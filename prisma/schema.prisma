@@ -145,6 +145,33 @@ model KanteiBookBindingRequest {
   @@index([kanteiCode])
 }
 
+/// 日記製本（BASE）の申込予定・製本進捗（決済前は pending）
+model DiaryBookBindingRequest {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  email     String
+  profileId String @default("")
+  year      Int
+
+  diaryBindingCode String @unique
+  status           String @default("pending")
+
+  pageCount          Int
+  planId             String
+  displayTitle       String?
+  periodStartMonth   Int
+  periodEndMonth     Int
+
+  baseOrderNumber String?
+  baseBuyerName   String?
+
+  @@index([status, createdAt])
+  @@index([email, profileId, year])
+  @@index([diaryBindingCode])
+}
+
 /// 1アカウント配下のプロフィール（ニックネーム表示用）
 model Profile {
   id        String   @id @default(cuid())

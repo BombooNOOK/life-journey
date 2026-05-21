@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
-import { STANDARD_URL, getBookPlan } from "@/lib/order/bookBindingPlan";
+import { getBookPlan } from "@/lib/order/bookBindingPlan";
 
 function navigateToShop(url: string) {
   window.open(url, "_blank", "noopener,noreferrer");
@@ -24,6 +24,8 @@ const INITIAL_BINDING_CHECKS: Record<BindingConfirmCheckId, boolean> = {
   consent: false,
 };
 
+type ModalStep = "confirm" | "code";
+
 function allBindingChecksComplete(checks: Record<BindingConfirmCheckId, boolean>): boolean {
   return BINDING_CONFIRM_CHECK_ITEMS.every((item) => checks[item.id]);
 }
@@ -38,36 +40,108 @@ export function BookshelfDiaryBindingOrder({
 }) {
   const planData = useMemo(() => getBookPlan(pageCount), [pageCount]);
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const [modalStep, setModalStep] = useState<ModalStep>("confirm");
   const [bindingChecks, setBindingChecks] =
     useState<Record<BindingConfirmCheckId, boolean>>(INITIAL_BINDING_CHECKS);
+  const [issueLoading, setIssueLoading] = useState(false);
+  const [issueError, setIssueError] = useState<string | null>(null);
+  const [diaryBindingCode, setDiaryBindingCode] = useState<string | null>(null);
+  const [baseShopUrl, setBaseShopUrl] = useState<string | null>(null);
+  const [copyToast, setCopyToast] = useState<string | null>(null);
   const dialogRef = useRef<HTMLDivElement>(null);
   const previouslyFocused = useRef<HTMLElement | null>(null);
+  const copyToastTimerRef = useRef<number | null>(null);
 
   const checksComplete = allBindingChecksComplete(bindingChecks);
 
+  const resetModalState = useCallback(() => {
+    setModalStep("confirm");
+    setBindingChecks({ ...INITIAL_BINDING_CHECKS });
+    setIssueLoading(false);
+    setIssueError(null);
+    setDiaryBindingCode(null);
+    setBaseShopUrl(null);
+    setCopyToast(null);
+  }, []);
+
+  const closeModal = useCallback(() => {
+    setConfirmOpen(false);
+    resetModalState();
+  }, [resetModalState]);
+
   useEffect(() => {
     if (!confirmOpen) return;
-    setBindingChecks({ ...INITIAL_BINDING_CHECKS });
+    resetModalState();
     previouslyFocused.current = document.activeElement as HTMLElement | null;
     dialogRef.current?.focus();
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setConfirmOpen(false);
+      if (e.key === "Escape") closeModal();
     };
     window.addEventListener("keydown", onKey);
     return () => {
       window.removeEventListener("keydown", onKey);
       previouslyFocused.current?.focus?.();
     };
-  }, [confirmOpen]);
+  }, [confirmOpen, closeModal, resetModalState]);
 
-  const handleConfirmOrder = () => {
-    if (!checksComplete) return;
-    setConfirmOpen(false);
-    if (planData.plan === "standard_plus") {
-      navigateToShop(STANDARD_URL);
-      return;
+  useEffect(() => {
+    return () => {
+      if (copyToastTimerRef.current !== null) {
+        window.clearTimeout(copyToastTimerRef.current);
+      }
+    };
+  }, []);
+
+  const handleIssueCode = async () => {
+    if (!checksComplete || issueLoading) return;
+    setIssueLoading(true);
+    setIssueError(null);
+    try {
+      const res = await fetch(
+        `/api/journal/bookshelf/${year}/diary-book-binding`,
+        {
+          method: "POST",
+          credentials: "same-origin",
+        },
+      );
+      const data = (await res.json()) as {
+        diaryBindingCode?: string;
+        baseShopUrl?: string;
+        error?: string;
+      };
+      if (!res.ok || !data.diaryBindingCode || !data.baseShopUrl) {
+        throw new Error(data.error ?? "製本申込コードの発行に失敗しました。");
+      }
+      setDiaryBindingCode(data.diaryBindingCode);
+      setBaseShopUrl(data.baseShopUrl);
+      setModalStep("code");
+    } catch (e) {
+      setIssueError(e instanceof Error ? e.message : "製本申込コードの発行に失敗しました。");
+    } finally {
+      setIssueLoading(false);
     }
-    navigateToShop(planData.baseUrl);
+  };
+
+  const handleCopyCode = async () => {
+    if (!diaryBindingCode) return;
+    try {
+      await navigator.clipboard.writeText(diaryBindingCode);
+      setCopyToast("コピーしました");
+    } catch {
+      setCopyToast("コピーできませんでした。コードを手動で選択してください。");
+    }
+    if (copyToastTimerRef.current !== null) {
+      window.clearTimeout(copyToastTimerRef.current);
+    }
+    copyToastTimerRef.current = window.setTimeout(() => {
+      setCopyToast(null);
+      copyToastTimerRef.current = null;
+    }, 2200);
+  };
+
+  const handleGoToBase = () => {
+    if (!baseShopUrl) return;
+    navigateToShop(baseShopUrl);
   };
 
   const planName = planData.label;
@@ -119,7 +193,7 @@ export function BookshelfDiaryBindingOrder({
           className="fixed inset-0 z-50 flex items-end justify-center bg-black/45 p-4 sm:items-center"
           role="presentation"
           onMouseDown={(e) => {
-            if (e.target === e.currentTarget) setConfirmOpen(false);
+            if (e.target === e.currentTarget) closeModal();
           }}
         >
           <div
@@ -131,91 +205,150 @@ export function BookshelfDiaryBindingOrder({
             className="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-xl border border-stone-200 bg-white p-5 shadow-xl outline-none"
             onMouseDown={(e) => e.stopPropagation()}
           >
-            <h2 id="binding-confirm-title" className="text-base font-semibold text-stone-900">
-              この内容で製本しますか？
-            </h2>
+            {modalStep === "confirm" ? (
+              <>
+                <h2 id="binding-confirm-title" className="text-base font-semibold text-stone-900">
+                  この内容で製本しますか？
+                </h2>
 
-            <div className="mt-4 space-y-2.5 rounded-lg border border-emerald-200/90 bg-emerald-50/40 px-3 py-3 text-xs leading-relaxed text-stone-800">
-              <p className="font-medium text-stone-900">
-                製本前に、プレビューで内容をご確認ください。
-              </p>
-              <p>
-                掲載する日付・日記本文・写真に誤りがないか、ご自身で確認してからお進みください。
-              </p>
-              <p>
-                運営側では、日記本文を読んで校正したり、内容を確認したりすることはありません。
-              </p>
-              <p>
-                ご本人が確認した内容をもとに、製本用データを作成し、原則としてそのまま印刷・製本手配に使用します。
-              </p>
-            </div>
+                <div className="mt-4 space-y-2.5 rounded-lg border border-emerald-200/90 bg-emerald-50/40 px-3 py-3 text-xs leading-relaxed text-stone-800">
+                  <p className="font-medium text-stone-900">
+                    製本前に、プレビューで内容をご確認ください。
+                  </p>
+                  <p>
+                    掲載する日付・日記本文・写真に誤りがないか、ご自身で確認してからお進みください。
+                  </p>
+                  <p>
+                    運営側では、日記本文を読んで校正したり、内容を確認したりすることはありません。
+                  </p>
+                  <p>
+                    ご本人が確認した内容をもとに、製本用データを作成し、原則としてそのまま印刷・製本手配に使用します。
+                  </p>
+                </div>
 
-            <ul className="mt-4 space-y-2 text-sm text-stone-800">
-              <li>
-                <span className="text-stone-600">本に入れるページ数：</span>
-                <span className="font-semibold">{pageCount}ページ</span>
-              </li>
-              <li>
-                <span className="text-stone-600">プラン：</span>
-                <span className="font-semibold">{planName}</span>
-              </li>
-            </ul>
+                <ul className="mt-4 space-y-2 text-sm text-stone-800">
+                  <li>
+                    <span className="text-stone-600">本に入れるページ数：</span>
+                    <span className="font-semibold">{pageCount}ページ</span>
+                  </li>
+                  <li>
+                    <span className="text-stone-600">プラン：</span>
+                    <span className="font-semibold">{planName}</span>
+                  </li>
+                </ul>
 
-            {planData.plan === "standard_plus" ? (
-              <p className="mt-4 text-xs leading-relaxed text-stone-700">
-                120ページを超えるため、「スタンダード版」と「追加ページ（20ページ単位）」の組み合わせになります。追加の目安は約{" "}
-                <span className="font-semibold">{planData.extra}</span>{" "}
-                単位です。まずスタンダードの商品ページへ進み、続けて追加ページも注文画面でご確認ください。
-              </p>
-            ) : null}
+                {planData.plan === "standard_plus" ? (
+                  <p className="mt-4 text-xs leading-relaxed text-stone-700">
+                    120ページを超えるため、「スタンダード版」と「追加ページ（20ページ単位）」の組み合わせになります。追加の目安は約{" "}
+                    <span className="font-semibold">{planData.extra}</span>{" "}
+                    単位です。まずスタンダードの商品ページへ進み、続けて追加ページも注文画面でご確認ください。
+                  </p>
+                ) : null}
 
-            <fieldset className="mt-4 space-y-2.5">
-              <legend className="text-sm font-medium text-stone-900">ご確認</legend>
-              {BINDING_CONFIRM_CHECK_ITEMS.map((item) => (
-                <label
-                  key={item.id}
-                  className="flex cursor-pointer items-start gap-2.5 rounded-md border border-stone-200 bg-stone-50/80 px-3 py-2.5 text-sm text-stone-800"
-                >
-                  <input
-                    type="checkbox"
-                    checked={bindingChecks[item.id]}
-                    onChange={(e) =>
-                      setBindingChecks((prev) => ({ ...prev, [item.id]: e.target.checked }))
-                    }
-                    className="mt-0.5 h-5 w-5 shrink-0 rounded border-stone-300 text-emerald-700 focus:ring-emerald-600"
-                  />
-                  <span className="leading-snug">{item.label}</span>
-                </label>
-              ))}
-            </fieldset>
+                <fieldset className="mt-4 space-y-2.5">
+                  <legend className="text-sm font-medium text-stone-900">ご確認</legend>
+                  {BINDING_CONFIRM_CHECK_ITEMS.map((item) => (
+                    <label
+                      key={item.id}
+                      className="flex cursor-pointer items-start gap-2.5 rounded-md border border-stone-200 bg-stone-50/80 px-3 py-2.5 text-sm text-stone-800"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={bindingChecks[item.id]}
+                        onChange={(e) =>
+                          setBindingChecks((prev) => ({ ...prev, [item.id]: e.target.checked }))
+                        }
+                        className="mt-0.5 h-5 w-5 shrink-0 rounded border-stone-300 text-emerald-700 focus:ring-emerald-600"
+                      />
+                      <span className="leading-snug">{item.label}</span>
+                    </label>
+                  ))}
+                </fieldset>
 
-            <p className="mt-4 text-sm font-medium text-amber-900">この内容は後から変更できません。</p>
-            <p className="mt-2 text-[11px] leading-snug text-stone-500">
-              ※ページ数はご注文時の内容で確定します。
-            </p>
+                <p className="mt-4 text-sm font-medium text-amber-900">この内容は後から変更できません。</p>
+                <p className="mt-2 text-[11px] leading-snug text-stone-500">
+                  ※ページ数はご注文時の内容で確定します。
+                </p>
 
-            <div className="mt-6 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
-              <button
-                type="button"
-                className="rounded-lg border border-stone-300 bg-white px-4 py-2 text-sm font-medium text-stone-800 hover:bg-stone-50"
-                onClick={() => setConfirmOpen(false)}
-              >
-                キャンセル
-              </button>
-              <button
-                type="button"
-                disabled={!checksComplete}
-                className="rounded-lg bg-emerald-800 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-900 disabled:cursor-not-allowed disabled:opacity-50"
-                onClick={() => void handleConfirmOrder()}
-              >
-                BASEで注文へ
-              </button>
-            </div>
-            {!checksComplete ? (
-              <p className="mt-2 text-center text-[11px] text-stone-500 sm:text-right">
-                すべての確認項目にチェックを入れると注文に進めます。
-              </p>
-            ) : null}
+                {issueError ? (
+                  <p className="mt-3 text-sm text-red-700">{issueError}</p>
+                ) : null}
+
+                <div className="mt-6 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+                  <button
+                    type="button"
+                    className="rounded-lg border border-stone-300 bg-white px-4 py-2 text-sm font-medium text-stone-800 hover:bg-stone-50"
+                    onClick={closeModal}
+                  >
+                    キャンセル
+                  </button>
+                  <button
+                    type="button"
+                    disabled={!checksComplete || issueLoading}
+                    className="rounded-lg bg-emerald-800 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-900 disabled:cursor-not-allowed disabled:opacity-50"
+                    onClick={() => void handleIssueCode()}
+                  >
+                    {issueLoading ? "発行中…" : "製本申込コードを発行する"}
+                  </button>
+                </div>
+                {!checksComplete ? (
+                  <p className="mt-2 text-center text-[11px] text-stone-500 sm:text-right">
+                    すべての確認項目にチェックを入れるとコードを発行できます。
+                  </p>
+                ) : null}
+              </>
+            ) : (
+              <>
+                <h2 id="binding-confirm-title" className="text-base font-semibold text-stone-900">
+                  製本申込コード
+                </h2>
+
+                <p className="mt-1 text-xs text-stone-600">
+                  BASEの商品ページで「製本申込コード」欄に必ず貼り付けてください。
+                </p>
+
+                <div className="mt-4 rounded-lg border border-emerald-200 bg-emerald-50/50 px-4 py-4 text-center">
+                  <p className="text-xs font-medium text-stone-600">製本申込コード</p>
+                  <p className="mt-2 break-all font-mono text-xl font-bold tracking-wide text-emerald-950 sm:text-2xl">
+                    {diaryBindingCode}
+                  </p>
+                </div>
+
+                <p className="mt-4 text-xs leading-relaxed text-stone-700">
+                  このコードは、どの日記を製本するか確認するために必要です。
+                  BASEの商品ページで「製本申込コード」欄に必ず貼り付けてください。
+                </p>
+
+                {copyToast ? (
+                  <p className="mt-2 text-center text-xs font-medium text-emerald-800">{copyToast}</p>
+                ) : null}
+
+                <div className="mt-6 flex flex-col gap-2">
+                  <button
+                    type="button"
+                    onClick={() => void handleCopyCode()}
+                    className="w-full rounded-lg border border-emerald-400 bg-white px-4 py-2.5 text-sm font-medium text-emerald-900 hover:bg-emerald-50"
+                  >
+                    コードをコピー
+                  </button>
+                  <button
+                    type="button"
+                    disabled={!baseShopUrl}
+                    onClick={handleGoToBase}
+                    className="w-full rounded-lg bg-emerald-800 px-4 py-2.5 text-sm font-medium text-white hover:bg-emerald-900 disabled:opacity-50"
+                  >
+                    BASEで注文へ進む
+                  </button>
+                  <button
+                    type="button"
+                    className="w-full rounded-lg border border-stone-300 bg-white px-4 py-2 text-sm text-stone-700 hover:bg-stone-50"
+                    onClick={closeModal}
+                  >
+                    閉じる
+                  </button>
+                </div>
+              </>
+            )}
           </div>
         </div>
       ) : null}
