@@ -30,6 +30,9 @@ function JournalPreviewPageContent() {
   const searchParams = useSearchParams();
   const entryId = searchParams.get("entry");
   const themeParam = searchParams.get("theme");
+  const returnToRaw = searchParams.get("returnTo");
+  const returnTo =
+    returnToRaw && returnToRaw.startsWith("/") && !returnToRaw.startsWith("//") ? returnToRaw : null;
   const [entry, setEntry] = useState<PreviewEntry | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -149,6 +152,14 @@ function JournalPreviewPageContent() {
       </div>
 
       <div className="flex flex-wrap gap-2">
+        {returnTo ? (
+          <Link
+            href={returnTo}
+            className="rounded-lg border border-emerald-300 bg-emerald-50 px-4 py-2 text-sm font-medium text-emerald-900 hover:bg-emerald-100"
+          >
+            一覧に戻る
+          </Link>
+        ) : null}
         <button
           type="button"
           onClick={() => {
@@ -159,18 +170,22 @@ function JournalPreviewPageContent() {
         >
           この記録を編集する
         </button>
-        <Link
-          href="/journal"
-          className="rounded-lg border border-stone-300 bg-white px-4 py-2 text-sm text-stone-700 hover:bg-stone-50"
-        >
-          入力ページへ戻る
-        </Link>
-        <Link
-          href="/orders/bookshelf"
-          className="rounded-lg border border-amber-300 bg-amber-50 px-4 py-2 text-sm text-amber-900 hover:bg-amber-100"
-        >
-          本棚を見る
-        </Link>
+        {!returnTo ? (
+          <>
+            <Link
+              href="/journal"
+              className="rounded-lg border border-stone-300 bg-white px-4 py-2 text-sm text-stone-700 hover:bg-stone-50"
+            >
+              入力ページへ戻る
+            </Link>
+            <Link
+              href="/orders/bookshelf"
+              className="rounded-lg border border-amber-300 bg-amber-50 px-4 py-2 text-sm text-amber-900 hover:bg-amber-100"
+            >
+              本棚を見る
+            </Link>
+          </>
+        ) : null}
       </div>
     </div>
   );

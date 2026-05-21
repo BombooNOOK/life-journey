@@ -34,6 +34,23 @@ type Props = {
   bookshelfProfileId: string;
 };
 
+function bindingListReturnTo(pathname: string, searchParams: URLSearchParams, monthKey: string): string {
+  const qs = new URLSearchParams(searchParams.toString());
+  qs.set("openMonth", monthKey);
+  return `${pathname}?${qs.toString()}`;
+}
+
+function journalPreviewHref(entry: BoundDiaryEntry, returnTo: string): string {
+  const theme = normalizeDiaryDesignTheme(entry.designTheme ?? "simple");
+  const qs = new URLSearchParams({
+    entry: entry.id,
+    theme,
+    pv: "3",
+    returnTo,
+  });
+  return `/journal/preview?${qs.toString()}`;
+}
+
 export function DiaryFlipReader({ year, initialSettings, bookshelfProfileId }: Props) {
   const pathname = usePathname();
   const router = useRouter();
@@ -56,6 +73,12 @@ export function DiaryFlipReader({ year, initialSettings, bookshelfProfileId }: P
   useEffect(() => {
     setBookSettings(initialSettings);
   }, [initialSettings]);
+
+  const openMonthParam = searchParams.get("openMonth");
+  useEffect(() => {
+    if (!openMonthParam) return;
+    setOpenedMonths((prev) => ({ ...prev, [openMonthParam]: true }));
+  }, [openMonthParam]);
 
   useEffect(() => {
     let cancelled = false;
@@ -500,7 +523,7 @@ export function DiaryFlipReader({ year, initialSettings, bookshelfProfileId }: P
       <section className="space-y-3 rounded-xl border border-emerald-200 bg-white p-4 shadow-sm">
         <h3 className="text-base font-semibold text-stone-900">製本前確認</h3>
         <p className="text-xs text-stone-600">
-          「このページを本に入れる」のON/OFFを見直せます。月ごとの一括操作もできます。
+          日付・タイトル部分をタップするとその日のプレビューを開けます。右端のチェックだけで本に入れる／外すを切り替えられます。月ごとの一括操作もできます。
         </p>
 
         <JournalBindingContentWarnings entries={includedEntries} />
@@ -580,25 +603,42 @@ export function DiaryFlipReader({ year, initialSettings, bookshelfProfileId }: P
                         {visibleEntries.map((entry) => {
                           const d = new Date(entry.createdAt);
                           const dateLabel = `${d.getMonth() + 1}/${d.getDate()}`;
+                          const returnTo = bindingListReturnTo(pathname, searchParams, bucket.key);
                           return (
-                            <li key={entry.id} className="rounded-md border border-stone-200 bg-white px-2 py-2 text-xs">
-                              <label className="flex items-start justify-between gap-3">
-                                <span className="min-w-0 text-stone-700">
-                                  {dateLabel}　{getActivityMeta(entry.activity).label}
-                                </span>
-                                <span className="shrink-0">
+                            <li key={entry.id} className="rounded-md border border-stone-200 bg-white text-xs">
+                              <div className="flex items-stretch justify-between gap-1">
+                                <button
+                                  type="button"
+                                  className="min-w-0 flex-1 px-2 py-2.5 text-left text-stone-700 transition hover:bg-stone-50/80"
+                                  onClick={() => router.push(journalPreviewHref(entry, returnTo))}
+                                >
+                                  <span className="font-medium text-stone-800">
+                                    {dateLabel}　{getActivityMeta(entry.activity).label}
+                                  </span>
+                                  <span className="mt-0.5 block text-[10px] tabular-nums text-stone-500">
+                                    {formatDateTimeJa(entry.createdAt)}
+                                  </span>
+                                </button>
+                                <label
+                                  className="flex shrink-0 cursor-pointer items-center gap-1.5 self-center px-2 py-2"
+                                  onClick={(e) => e.stopPropagation()}
+                                >
                                   <input
                                     type="checkbox"
                                     checked={entry.includeInBook !== false}
                                     disabled={updatingEntryId !== null}
-                                    onChange={(e) => void setEntryInclude(entry.id, e.target.checked)}
-                                    className="h-4 w-4 rounded border-stone-300 text-emerald-700 focus:ring-emerald-600"
+                                    onClick={(e) => e.stopPropagation()}
+                                    onChange={(e) => {
+                                      e.stopPropagation();
+                                      void setEntryInclude(entry.id, e.target.checked);
+                                    }}
+                                    className="h-5 w-5 rounded border-stone-300 text-emerald-700 focus:ring-emerald-600"
                                   />
-                                  <span className="ml-1.5 text-stone-600">
+                                  <span className="min-w-[2rem] text-stone-600">
                                     {entry.includeInBook !== false ? "ON" : "OFF"}
                                   </span>
-                                </span>
-                              </label>
+                                </label>
+                              </div>
                             </li>
                           );
                         })}
