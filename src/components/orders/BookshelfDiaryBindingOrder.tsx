@@ -8,6 +8,26 @@ function navigateToShop(url: string) {
   window.open(url, "_blank", "noopener,noreferrer");
 }
 
+const BINDING_CONFIRM_CHECK_ITEMS = [
+  { id: "date", label: "掲載する日付を確認しました" },
+  { id: "content", label: "日記本文を確認しました" },
+  { id: "photo", label: "写真を確認しました" },
+  { id: "consent", label: "表示内容を確認し、この内容で製本に進むことを了承します" },
+] as const;
+
+type BindingConfirmCheckId = (typeof BINDING_CONFIRM_CHECK_ITEMS)[number]["id"];
+
+const INITIAL_BINDING_CHECKS: Record<BindingConfirmCheckId, boolean> = {
+  date: false,
+  content: false,
+  photo: false,
+  consent: false,
+};
+
+function allBindingChecksComplete(checks: Record<BindingConfirmCheckId, boolean>): boolean {
+  return BINDING_CONFIRM_CHECK_ITEMS.every((item) => checks[item.id]);
+}
+
 export function BookshelfDiaryBindingOrder({
   year,
   pageCount,
@@ -18,11 +38,16 @@ export function BookshelfDiaryBindingOrder({
 }) {
   const planData = useMemo(() => getBookPlan(pageCount), [pageCount]);
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const [bindingChecks, setBindingChecks] =
+    useState<Record<BindingConfirmCheckId, boolean>>(INITIAL_BINDING_CHECKS);
   const dialogRef = useRef<HTMLDivElement>(null);
   const previouslyFocused = useRef<HTMLElement | null>(null);
 
+  const checksComplete = allBindingChecksComplete(bindingChecks);
+
   useEffect(() => {
     if (!confirmOpen) return;
+    setBindingChecks({ ...INITIAL_BINDING_CHECKS });
     previouslyFocused.current = document.activeElement as HTMLElement | null;
     dialogRef.current?.focus();
     const onKey = (e: KeyboardEvent) => {
@@ -36,6 +61,7 @@ export function BookshelfDiaryBindingOrder({
   }, [confirmOpen]);
 
   const handleConfirmOrder = () => {
+    if (!checksComplete) return;
     setConfirmOpen(false);
     if (planData.plan === "standard_plus") {
       navigateToShop(STANDARD_URL);
@@ -109,6 +135,21 @@ export function BookshelfDiaryBindingOrder({
               この内容で製本しますか？
             </h2>
 
+            <div className="mt-4 space-y-2.5 rounded-lg border border-emerald-200/90 bg-emerald-50/40 px-3 py-3 text-xs leading-relaxed text-stone-800">
+              <p className="font-medium text-stone-900">
+                製本前に、プレビューで内容をご確認ください。
+              </p>
+              <p>
+                掲載する日付・日記本文・写真に誤りがないか、ご自身で確認してからお進みください。
+              </p>
+              <p>
+                運営側では、日記本文を読んで校正したり、内容を確認したりすることはありません。
+              </p>
+              <p>
+                ご本人が確認した内容をもとに、製本用データを作成し、原則としてそのまま印刷・製本手配に使用します。
+              </p>
+            </div>
+
             <ul className="mt-4 space-y-2 text-sm text-stone-800">
               <li>
                 <span className="text-stone-600">本に入れるページ数：</span>
@@ -128,6 +169,26 @@ export function BookshelfDiaryBindingOrder({
               </p>
             ) : null}
 
+            <fieldset className="mt-4 space-y-2.5">
+              <legend className="text-sm font-medium text-stone-900">ご確認</legend>
+              {BINDING_CONFIRM_CHECK_ITEMS.map((item) => (
+                <label
+                  key={item.id}
+                  className="flex cursor-pointer items-start gap-2.5 rounded-md border border-stone-200 bg-stone-50/80 px-3 py-2.5 text-sm text-stone-800"
+                >
+                  <input
+                    type="checkbox"
+                    checked={bindingChecks[item.id]}
+                    onChange={(e) =>
+                      setBindingChecks((prev) => ({ ...prev, [item.id]: e.target.checked }))
+                    }
+                    className="mt-0.5 h-5 w-5 shrink-0 rounded border-stone-300 text-emerald-700 focus:ring-emerald-600"
+                  />
+                  <span className="leading-snug">{item.label}</span>
+                </label>
+              ))}
+            </fieldset>
+
             <p className="mt-4 text-sm font-medium text-amber-900">この内容は後から変更できません。</p>
             <p className="mt-2 text-[11px] leading-snug text-stone-500">
               ※ページ数はご注文時の内容で確定します。
@@ -143,12 +204,18 @@ export function BookshelfDiaryBindingOrder({
               </button>
               <button
                 type="button"
-                className="rounded-lg bg-emerald-800 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-900"
+                disabled={!checksComplete}
+                className="rounded-lg bg-emerald-800 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-900 disabled:cursor-not-allowed disabled:opacity-50"
                 onClick={() => void handleConfirmOrder()}
               >
-                OK
+                BASEで注文へ
               </button>
             </div>
+            {!checksComplete ? (
+              <p className="mt-2 text-center text-[11px] text-stone-500 sm:text-right">
+                すべての確認項目にチェックを入れると注文に進めます。
+              </p>
+            ) : null}
           </div>
         </div>
       ) : null}

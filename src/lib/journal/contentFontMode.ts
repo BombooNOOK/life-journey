@@ -46,10 +46,10 @@ export const JOURNAL_VERY_LONG_CONTENT_WARN_MESSAGE =
 
 /** 製本イメージプレビュー下の説明（印刷用PDF未実装のため断定しない表現） */
 export const PREVIEW_OVERFLOW_HINT_MESSAGE =
-  "こちらは本になる雰囲気を確認するためのプレビューです。\n" +
-  "長い本文は枠内でスクロールして確認できます。\n" +
-  "入力した全文は保存されています。\n" +
-  "製本の際は、内容を確認のうえ印刷用に整えて進行します。";
+  "こちらは製本に近い見え方を確認するためのプレビューです。\n" +
+  "長い本文は枠内でスクロールして全文を確認できます。\n" +
+  "掲載日・本文・写真は、ご注文前にご自身でご確認ください。\n" +
+  "表示内容をもとに製本用データを作成します。";
 
 export function isContentFontMode(value: string): value is ContentFontMode {
   return (CONTENT_FONT_MODES as readonly string[]).includes(value);
