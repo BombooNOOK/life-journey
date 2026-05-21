@@ -5,7 +5,10 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { DiaryDesignPreview } from "@/components/journal/DiaryDesignPreview";
-import { JournalBindingContentWarnings } from "@/components/journal/JournalBindingContentWarnings";
+import {
+  collectLongContentWarningEntries,
+  JournalBindingContentWarnings,
+} from "@/components/journal/JournalBindingContentWarnings";
 import {
   type BoundDiaryEntry,
   buildBoundYearPages,
@@ -38,6 +41,11 @@ function bindingListReturnTo(pathname: string, searchParams: URLSearchParams, mo
   const qs = new URLSearchParams(searchParams.toString());
   qs.set("openMonth", monthKey);
   return `${pathname}?${qs.toString()}`;
+}
+
+function monthKeyForEntry(entry: BoundDiaryEntry, year: number): string {
+  const d = new Date(entry.createdAt);
+  return `${year}-${d.getMonth() + 1}`;
 }
 
 function journalPreviewHref(entry: BoundDiaryEntry, returnTo: string): string {
@@ -130,6 +138,14 @@ export function DiaryFlipReader({ year, initialSettings, bookshelfProfileId }: P
     () => periodFilteredEntries.filter((entry) => entry.includeInBook !== false),
     [periodFilteredEntries],
   );
+
+  const longContentWarningByEntryId = useMemo(() => {
+    const map = new Map<string, "soft" | "strong">();
+    for (const { entry, flag } of collectLongContentWarningEntries(includedEntries)) {
+      map.set(entry.id, flag);
+    }
+    return map;
+  }, [includedEntries]);
 
   const monthRange = useMemo(() => {
     const lo = Math.min(bookSettings.periodStartMonth, bookSettings.periodEndMonth) - 1;
@@ -526,7 +542,15 @@ export function DiaryFlipReader({ year, initialSettings, bookshelfProfileId }: P
           日付・タイトル部分をタップするとその日のプレビューを開けます。右端のチェックだけで本に入れる／外すを切り替えられます。月ごとの一括操作もできます。
         </p>
 
-        <JournalBindingContentWarnings entries={includedEntries} />
+        <JournalBindingContentWarnings
+          entries={includedEntries}
+          buildPreviewHref={(entry) =>
+            journalPreviewHref(
+              entry,
+              bindingListReturnTo(pathname, searchParams, monthKeyForEntry(entry, year)),
+            )
+          }
+        />
 
         <BookshelfDiaryBindingOrder year={year} pageCount={includedPageCount} />
 
@@ -604,16 +628,33 @@ export function DiaryFlipReader({ year, initialSettings, bookshelfProfileId }: P
                           const d = new Date(entry.createdAt);
                           const dateLabel = `${d.getMonth() + 1}/${d.getDate()}`;
                           const returnTo = bindingListReturnTo(pathname, searchParams, bucket.key);
+                          const longWarn = longContentWarningByEntryId.get(entry.id);
                           return (
-                            <li key={entry.id} className="rounded-md border border-stone-200 bg-white text-xs">
+                            <li
+                              key={entry.id}
+                              className={`rounded-md border text-xs ${
+                                longWarn
+                                  ? "border-amber-300/90 bg-red-50/60"
+                                  : "border-stone-200 bg-white"
+                              }`}
+                            >
                               <div className="flex items-stretch justify-between gap-1">
                                 <button
                                   type="button"
-                                  className="min-w-0 flex-1 px-2 py-2.5 text-left text-stone-700 transition hover:bg-stone-50/80"
+                                  className="min-w-0 flex-1 px-2 py-2.5 text-left transition hover:bg-stone-50/80"
                                   onClick={() => router.push(journalPreviewHref(entry, returnTo))}
                                 >
-                                  <span className="font-medium text-stone-800">
+                                  <span
+                                    className={`font-medium ${
+                                      longWarn ? "text-amber-950" : "text-stone-800"
+                                    }`}
+                                  >
                                     {dateLabel}　{getActivityMeta(entry.activity).label}
+                                    {longWarn ? (
+                                      <span className="ml-1.5 inline rounded bg-amber-200/80 px-1 py-0.5 text-[10px] font-medium text-amber-950">
+                                        長文注意
+                                      </span>
+                                    ) : null}
                                   </span>
                                   <span className="mt-0.5 block text-[10px] tabular-nums text-stone-500">
                                     {formatDateTimeJa(entry.createdAt)}

@@ -84,6 +84,27 @@ export function isJournalContentStrongLong(mode: ContentFontMode, contentLength:
   return contentLength > JOURNAL_CONTENT_STRONG_MAX_BY_MODE[mode];
 }
 
+/** 製本前確認の長文注意（ソフト＝長め、ストロング＝かなり長い） */
+export type JournalContentLengthFlag = "ok" | "soft" | "strong";
+
+export function journalEntryContentLengthFlag(
+  contentFontMode: string | null | undefined,
+  contentLength: number,
+): JournalContentLengthFlag {
+  if (contentLength <= 0) return "ok";
+  const mode = normalizeContentFontMode(contentFontMode);
+  if (isJournalContentStrongLong(mode, contentLength)) return "strong";
+  if (isJournalContentOverSoftLimit(mode, contentLength)) return "soft";
+  return "ok";
+}
+
+export function entryNeedsLongContentBindingWarning(
+  contentFontMode: string | null | undefined,
+  content: string,
+): boolean {
+  return journalEntryContentLengthFlag(contentFontMode, content.trim().length) !== "ok";
+}
+
 /**
  * POST/PATCH の JSON から `contentFontMode` を解決する。
  * キー省略・空文字は `standard` 相当の既定。不正な文字列はエラー。
