@@ -8,6 +8,7 @@ import { fetchAccountPdfDownloadLimitOrNull } from "@/lib/order/effectivePdfDown
 import { ensureOrderKanteiCode, formatKanteiCodeErrorDetail } from "@/lib/order/kanteiCode";
 import type { CustomerFormValues } from "@/lib/order/types";
 import { profileByIdForViewer, resolveActiveProfileId } from "@/lib/profile/activeProfile";
+import { findExistingOrderForProfile } from "@/lib/profile/orderPerProfile";
 import { isHiraganaOnly } from "@/lib/validation/hiragana";
 
 import { describeSaveError, tryNormalizeCreateBody } from "./postHelpers";
@@ -81,6 +82,19 @@ export async function POST(req: Request) {
       );
     }
   }
+
+  const existingOrder = await findExistingOrderForProfile({ viewerEmail, profileId });
+  if (existingOrder) {
+    return NextResponse.json(
+      {
+        error: "このプロフィールには既に鑑定書があります。",
+        code: "ORDER_EXISTS_FOR_PROFILE",
+        existingOrderId: existingOrder.id,
+      },
+      { status: 409 },
+    );
+  }
+
   const yNow = new Date().getFullYear();
   if (j.birthYear < 1870 || j.birthYear > yNow) {
     return NextResponse.json({ error: "生年が許容範囲外です", code: "YEAR_RANGE" }, { status: 400 });

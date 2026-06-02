@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useCallback, useMemo, useState } from "react";
 
@@ -52,6 +53,7 @@ function OrderPageContent() {
   const [step, setStep] = useState<1 | 2>(1);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [existingOrderId, setExistingOrderId] = useState<string | null>(null);
 
   const years = useMemo(() => yearRange(), []);
 
@@ -153,6 +155,7 @@ function OrderPageContent() {
     e.stopPropagation();
     setLoading(true);
     setError(null);
+    setExistingOrderId(null);
     try {
       const res = await fetch("/api/orders", {
         method: "POST",
@@ -169,9 +172,15 @@ function OrderPageContent() {
         }),
       });
 
-      let data: { id?: string; error?: string; hint?: string; code?: string };
+      let data: {
+        id?: string;
+        error?: string;
+        hint?: string;
+        code?: string;
+        existingOrderId?: string;
+      };
       try {
-        data = (await res.json()) as { id?: string; error?: string; hint?: string; code?: string };
+        data = (await res.json()) as typeof data;
       } catch {
         setError(
           res.ok
@@ -182,6 +191,11 @@ function OrderPageContent() {
       }
 
       if (!res.ok) {
+        if (res.status === 409 && data.code === "ORDER_EXISTS_FOR_PROFILE") {
+          setError(data.error ?? "このプロフィールには既に鑑定書があります。");
+          setExistingOrderId(data.existingOrderId ?? null);
+          return;
+        }
         const parts: string[] = [];
         if (data.error) parts.push(data.error);
         else parts.push("保存に失敗しました（理由はサーバーから返っていません）");
@@ -316,12 +330,7 @@ function OrderPageContent() {
           </section>
 
           {error ? (
-            <p
-              role="alert"
-              className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-800"
-            >
-              {error}
-            </p>
+            <OrderFormError message={error} existingOrderId={existingOrderId} />
           ) : null}
 
           <button
@@ -376,12 +385,7 @@ function OrderPageContent() {
           </dl>
 
           {error ? (
-            <p
-              role="alert"
-              className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-800"
-            >
-              {error}
-            </p>
+            <OrderFormError message={error} existingOrderId={existingOrderId} />
           ) : null}
 
           <div className="flex flex-col gap-2 sm:flex-row">
@@ -391,6 +395,7 @@ function OrderPageContent() {
               onClick={() => {
                 setStep(1);
                 setError(null);
+                setExistingOrderId(null);
               }}
             >
               戻って修正する
@@ -414,6 +419,31 @@ export default function OrderPage() {
     <Suspense fallback={<p className="text-sm text-stone-500">読み込み中…</p>}>
       <OrderPageContent />
     </Suspense>
+  );
+}
+
+function OrderFormError({
+  message,
+  existingOrderId,
+}: {
+  message: string;
+  existingOrderId?: string | null;
+}) {
+  return (
+    <div
+      role="alert"
+      className="space-y-2 rounded-md bg-red-50 px-3 py-2 text-sm text-red-800"
+    >
+      <p>{message}</p>
+      {existingOrderId ? (
+        <Link
+          href={`/orders/${existingOrderId}`}
+          className="inline-block font-medium text-red-950 underline-offset-2 hover:underline"
+        >
+          保存済み鑑定を開く
+        </Link>
+      ) : null}
+    </div>
   );
 }
 

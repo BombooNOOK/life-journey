@@ -49,7 +49,7 @@ function monthKeyForEntry(entry: BoundDiaryEntry, year: number): string {
 }
 
 function journalPreviewHref(entry: BoundDiaryEntry, returnTo: string): string {
-  const theme = normalizeDiaryDesignTheme(entry.designTheme ?? "simple");
+  const theme = normalizeDiaryDesignTheme(entry.designTheme ?? "simple_plain");
   const qs = new URLSearchParams({
     entry: entry.id,
     theme,
@@ -238,9 +238,9 @@ export function DiaryFlipReader({ year, initialSettings, bookshelfProfileId }: P
   }, [periodFilteredEntries]);
 
   const entryTheme: DiaryDesignId = useMemo(() => {
-    if (current?.kind !== "entry") return "simple";
+    if (current?.kind !== "entry") return "simple_plain";
     const t = current.entry.designTheme;
-    if (!t) return "simple";
+    if (!t) return "simple_plain";
     return normalizeDiaryDesignTheme(t);
   }, [current]);
 
@@ -345,7 +345,7 @@ export function DiaryFlipReader({ year, initialSettings, bookshelfProfileId }: P
             mood: target.mood,
             activity: target.activity,
             companionType: target.companionType,
-            designTheme: target.designTheme ?? "simple",
+            designTheme: target.designTheme ?? "simple_plain",
             contentFontMode: normalizeContentFontMode(target.contentFontMode),
             photoDataUrl: target.photoDataUrl ?? "",
             entryDate: journalEntryDateToIsoDateInput(new Date(target.createdAt)),
@@ -505,6 +505,7 @@ export function DiaryFlipReader({ year, initialSettings, bookshelfProfileId }: P
             <div>
               <DiaryDesignPreview
                 designTheme={entryTheme}
+                companionType={current.entry.companionType}
                 mood={current.entry.mood}
                 activity={current.entry.activity}
                 content={current.entry.content}

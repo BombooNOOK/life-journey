@@ -5,7 +5,7 @@ import Link from "next/link";
 import type { BoundDiaryEntry } from "@/components/journal/DiaryYearBoundPages";
 import { getActivityMeta } from "@/lib/journal/meta";
 import {
-  journalEntryContentLengthFlag,
+  journalEntryLayoutLengthFlag,
   JOURNAL_LONG_CONTENT_WARN_MESSAGE,
   JOURNAL_VERY_LONG_CONTENT_WARN_MESSAGE,
 } from "@/lib/journal/contentFontMode";
@@ -18,9 +18,8 @@ export type LongContentWarningEntry = {
 export function collectLongContentWarningEntries(entries: BoundDiaryEntry[]): LongContentWarningEntry[] {
   const flagged: LongContentWarningEntry[] = [];
   for (const entry of entries) {
-    const len = entry.content.trim().length;
-    if (len === 0) continue;
-    const flag = journalEntryContentLengthFlag(entry.contentFontMode, len);
+    if (entry.content.trim().length === 0) continue;
+    const flag = journalEntryLayoutLengthFlag(entry.contentFontMode, entry.content);
     if (flag === "soft" || flag === "strong") {
       flagged.push({ entry, flag });
     }

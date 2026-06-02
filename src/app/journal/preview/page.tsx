@@ -3,7 +3,9 @@
 import { Suspense, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { DiaryDesignPreview } from "@/components/journal/DiaryDesignPreview";
+import { JournalPreviewSpread } from "@/components/journal/JournalPreviewSpread";
+import { useEnsureServerAuthSession } from "@/hooks/useEnsureServerAuthSession";
+import { journalEditPath } from "@/lib/journal/journalNav";
 import { getDiaryDesignLabel, normalizeDiaryDesignTheme, type DiaryDesignId } from "@/lib/journal/meta";
 
 type PreviewEntry = {
@@ -15,6 +17,7 @@ type PreviewEntry = {
   companionType: string;
   designTheme?: DiaryDesignId;
   contentFontMode?: string;
+  profileId?: string;
   photoDataUrl: string | null;
   generatedComment: string | null;
   diaryNumbers?: {
@@ -23,6 +26,7 @@ type PreviewEntry = {
     year: number;
     calmness: number;
   };
+  kanteiOrderExists?: boolean;
 };
 
 function JournalPreviewPageContent() {
@@ -34,9 +38,11 @@ function JournalPreviewPageContent() {
   const returnTo =
     returnToRaw && returnToRaw.startsWith("/") && !returnToRaw.startsWith("//") ? returnToRaw : null;
   const [entry, setEntry] = useState<PreviewEntry | null>(null);
+  const [kanteiOrderExists, setKanteiOrderExists] = useState<boolean | undefined>(undefined);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [spread, setSpread] = useState<"cover" | "body">("body");
+  const authSession = useEnsureServerAuthSession();
 
   useEffect(() => {
     if (!entryId) {
@@ -44,17 +50,26 @@ function JournalPreviewPageContent() {
       setError("表示する記録が指定されていません。");
       return;
     }
+    if (!authSession.ready) return;
     let cancelled = false;
     setLoading(true);
     setError(null);
-    void fetch(`/api/journal/${encodeURIComponent(entryId)}`, { cache: "no-store" })
+    void fetch(`/api/journal/${encodeURIComponent(entryId)}`, {
+      cache: "no-store",
+      credentials: "same-origin",
+    })
       .then(async (res) => {
-        const data = (await res.json()) as { entry?: PreviewEntry; error?: string };
+        const data = (await res.json()) as {
+          entry?: PreviewEntry;
+          kanteiOrderExists?: boolean;
+          error?: string;
+        };
         if (!res.ok || !data.entry) {
           throw new Error(data.error ?? "プレビュー対象の読み込みに失敗しました。");
         }
         if (!cancelled) {
           setEntry(data.entry);
+          setKanteiOrderExists(data.kanteiOrderExists);
         }
       })
       .catch((e) => {
@@ -69,11 +84,11 @@ function JournalPreviewPageContent() {
     return () => {
       cancelled = true;
     };
-  }, [entryId]);
+  }, [entryId, authSession.ready]);
 
   const designTheme: DiaryDesignId = useMemo(() => {
     if (themeParam?.trim()) return normalizeDiaryDesignTheme(themeParam);
-    if (!entry?.designTheme) return "simple";
+    if (!entry?.designTheme) return "simple_plain";
     return normalizeDiaryDesignTheme(entry.designTheme);
   }, [entry?.designTheme, themeParam]);
 
@@ -114,7 +129,13 @@ function JournalPreviewPageContent() {
         </div>
       </div>
 
-      <div className="rounded-xl border border-stone-200 bg-white p-4 shadow-sm">
+      <div
+        className={
+          spread === "body"
+            ? "sm:rounded-xl sm:border sm:border-stone-200 sm:bg-white sm:p-4 sm:shadow-sm"
+            : "rounded-xl border border-stone-200 bg-white p-4 shadow-sm"
+        }
+      >
         {loading ? (
           <p className="text-sm text-stone-500">プレビューを読み込み中…</p>
         ) : error ? (
@@ -137,8 +158,9 @@ function JournalPreviewPageContent() {
             </div>
           </div>
         ) : (
-          <DiaryDesignPreview
+          <JournalPreviewSpread
             designTheme={designTheme}
+            companionType={entry.companionType}
             mood={entry.mood}
             activity={entry.activity}
             content={entry.content}
@@ -147,24 +169,35 @@ function JournalPreviewPageContent() {
             previewDate={new Date(entry.createdAt)}
             diaryNumbers={entry.diaryNumbers}
             contentFontMode={entry.contentFontMode}
+            kanteiOrderExists={kanteiOrderExists}
+            returnTo={returnTo}
+            returnHomeLabel={
+              returnTo?.startsWith("/orders/calendar") ? "日記ホームに戻る" : "一覧に戻る"
+            }
           />
         )}
       </div>
 
-      <div className="flex flex-wrap gap-2">
+      <div className="flex flex-wrap gap-2 pb-[max(1rem,env(safe-area-inset-bottom))] sm:pb-0">
         {returnTo ? (
           <Link
             href={returnTo}
-            className="rounded-lg border border-emerald-300 bg-emerald-50 px-4 py-2 text-sm font-medium text-emerald-900 hover:bg-emerald-100"
+            className="relative z-[1] min-h-[44px] rounded-lg border border-emerald-300 bg-emerald-50 px-4 py-2.5 text-sm font-medium text-emerald-900 hover:bg-emerald-100 active:bg-emerald-100/90"
           >
-            一覧に戻る
+            {returnTo.startsWith("/orders/calendar") ? "日記ホームに戻る" : "一覧に戻る"}
           </Link>
         ) : null}
         <button
           type="button"
           onClick={() => {
             if (!entry?.id) return;
-            router.push(`/journal?edit=${encodeURIComponent(entry.id)}`);
+            router.push(
+              journalEditPath(
+                entry.id,
+                returnTo ?? "/journal",
+                entry.profileId,
+              ),
+            );
           }}
           className="rounded-lg border border-stone-300 bg-white px-4 py-2 text-sm text-stone-700 hover:bg-stone-50"
         >

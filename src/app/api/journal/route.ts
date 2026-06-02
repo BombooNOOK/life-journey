@@ -11,10 +11,17 @@ const JSON_NO_STORE = {
 } as const;
 import { prisma } from "@/lib/db";
 import { buildDiaryNumbers } from "@/lib/journal/numbers";
-import { profileByIdForViewer, resolveActiveProfileId } from "@/lib/profile/activeProfile";
+import {
+  journalProfileIdsForQuery,
+  profileByIdForViewer,
+  resolveActiveProfileId,
+} from "@/lib/profile/activeProfile";
 import { collectTemplateIdsFromReadingText } from "@/lib/diary-reading/generateDiaryReading";
-import { buildDiaryReadingFromJournalInput } from "@/lib/diary-reading/fromJournal";
-import { normalizeJournalCommentText } from "@/lib/journal/comment";
+import {
+  buildJournalGeneratedComment,
+  profileHasKanteiOrder,
+  sanitizeJournalCommentForResponse,
+} from "@/lib/journal/kanteiCommentEligibility";
 import { resolveContentFontModeFromRequest } from "@/lib/journal/contentFontMode";
 import {
   isActivityId,
@@ -98,71 +105,88 @@ export async function GET(req: Request) {
     const monthFilter = yearFilter ? null : parseMonth(url.searchParams.get("month"));
     const rangeFilter = yearFilter ?? monthFilter;
     const takeLimit = yearFilter ? 500 : monthFilter ? 400 : 120;
-    let rows:
-      | Array<{
-          id: string;
-          content: string;
-          createdAt: Date;
-          mood: string;
-          activity: string;
-          companionType: string;
-          designTheme?: string;
-          contentFontMode: string;
-          photoDataUrl: string | null;
-          generatedComment: string | null;
-          includeInBook: boolean;
-        }>
-      | [] = [];
+    /** カレンダー・月一覧用（写真 base64・読み解き全文を返さない） */
+    const calendarView = url.searchParams.get("view") === "calendar" && Boolean(monthFilter);
+    const profileIds = journalProfileIdsForQuery(profileId, viewerEmail);
+    const profileWhere =
+      profileIds.length === 1 ? { profileId: profileIds[0]! } : { profileId: { in: profileIds } };
+    type JournalRow = {
+      id: string;
+      content: string;
+      createdAt: Date;
+      updatedAt: Date;
+      mood: string;
+      activity: string;
+      companionType: string;
+      designTheme?: string;
+      contentFontMode: string;
+      photoDataUrl?: string | null;
+      generatedComment?: string | null;
+      includeInBook: boolean;
+    };
+
+    const fullSelect = {
+      id: true,
+      content: true,
+      createdAt: true,
+      updatedAt: true,
+      mood: true,
+      activity: true,
+      companionType: true,
+      designTheme: true,
+      contentFontMode: true,
+      photoDataUrl: true,
+      generatedComment: true,
+      includeInBook: true,
+    } as const;
+
+    const calendarSelect = {
+      id: true,
+      content: true,
+      createdAt: true,
+      updatedAt: true,
+      mood: true,
+      activity: true,
+      companionType: true,
+      designTheme: true,
+      contentFontMode: true,
+      includeInBook: true,
+    } as const;
+
+    const calendarSelectFallback = {
+      id: true,
+      content: true,
+      createdAt: true,
+      updatedAt: true,
+      mood: true,
+      activity: true,
+      companionType: true,
+      contentFontMode: true,
+      includeInBook: true,
+    } as const;
+
+    const whereClause = {
+      email: viewerEmail,
+      ...profileWhere,
+      ...(rangeFilter ? { createdAt: { gte: rangeFilter.from, lt: rangeFilter.to } } : {}),
+    };
+
+    let rows: JournalRow[] = [];
     try {
-      rows = await prisma.journalEntry.findMany({
-        where: {
-          email: viewerEmail,
-          profileId,
-          ...(rangeFilter
-            ? { createdAt: { gte: rangeFilter.from, lt: rangeFilter.to } }
-            : {}),
-        },
+      rows = (await prisma.journalEntry.findMany({
+        where: whereClause,
         orderBy: { createdAt: "desc" },
         take: takeLimit,
-        select: {
-          id: true,
-          content: true,
-          createdAt: true,
-          mood: true,
-          activity: true,
-          companionType: true,
-          designTheme: true,
-          contentFontMode: true,
-          photoDataUrl: true,
-          generatedComment: true,
-          includeInBook: true,
-        },
-      });
+        select: calendarView ? calendarSelect : fullSelect,
+      })) as JournalRow[];
     } catch (error) {
       if (!isDesignThemeValidationError(error)) throw error;
-      rows = await prisma.journalEntry.findMany({
-        where: {
-          email: viewerEmail,
-          profileId,
-          ...(rangeFilter
-            ? { createdAt: { gte: rangeFilter.from, lt: rangeFilter.to } }
-            : {}),
-        },
+      rows = (await prisma.journalEntry.findMany({
+        where: whereClause,
         orderBy: { createdAt: "desc" },
         take: takeLimit,
-        select: {
-          id: true,
-          content: true,
-          createdAt: true,
-          mood: true,
-          activity: true,
-          companionType: true,
-          contentFontMode: true,
-          photoDataUrl: true,
-          generatedComment: true,
-          includeInBook: true,
-        },
-      });
+        select: calendarView ? calendarSelectFallback : calendarSelectFallback,
+      })) as JournalRow[];
     }
     let lifePathNumber: number | null = null;
     let birthMonth: number | null = null;
@@ -192,15 +216,22 @@ export async function GET(req: Request) {
       }
     }
 
+    const kanteiOrderExists = profileId
+      ? await profileHasKanteiOrder(viewerEmail, profileId)
+      : false;
+
     return NextResponse.json(
       {
+        kanteiOrderExists,
         entries: rows.map((row) => {
-          const normalizedComment = row.generatedComment
-            ? normalizeJournalCommentText(row.generatedComment)
-            : row.generatedComment;
+          const normalizedComment =
+            row.generatedComment != null && row.generatedComment !== ""
+              ? sanitizeJournalCommentForResponse(row.generatedComment, kanteiOrderExists)
+              : null;
           const base = {
             ...row,
-            designTheme: normalizeDiaryDesignTheme(row.designTheme ?? "simple"),
+            photoDataUrl: row.photoDataUrl ?? null,
+            designTheme: normalizeDiaryDesignTheme(row.designTheme ?? "simple_plain"),
             generatedComment: normalizedComment,
           };
           if (!yearFilter) return base;
@@ -307,7 +338,7 @@ export async function POST(req: Request) {
       { status: 400 },
     );
   }
-  const designTheme = normalizeDiaryDesignTheme(rawDesignTheme.trim() || "simple");
+  const designTheme = normalizeDiaryDesignTheme(rawDesignTheme.trim() || "simple_plain");
 
   if (!content) {
     return NextResponse.json({ error: "本文を入力してください。", code: "EMPTY_CONTENT" }, { status: 400 });
@@ -356,15 +387,6 @@ export async function POST(req: Request) {
   }
 
   try {
-    const latestOrder = await prisma.order.findFirst({
-      where: { email: viewerEmail, profileId },
-      orderBy: { createdAt: "desc" },
-      select: {
-        birthMonth: true,
-        birthDay: true,
-        numerologyJson: true,
-      },
-    });
     const recentRows = await prisma.journalEntry.findMany({
       where: { email: viewerEmail, profileId },
       orderBy: { createdAt: "desc" },
@@ -375,16 +397,14 @@ export async function POST(req: Request) {
       collectTemplateIdsFromReadingText(row.generatedComment ?? ""),
     );
 
-    const generatedComment = normalizeJournalCommentText(
-      buildDiaryReadingFromJournalInput({
-        activity,
-        mood,
-        referenceDate: parsedEntryDate,
-        birthMonth: latestOrder?.birthMonth ?? null,
-        birthDay: latestOrder?.birthDay ?? null,
-        recentTemplateIds,
-      }).text,
-    );
+    const generatedComment = await buildJournalGeneratedComment({
+      viewerEmail,
+      profileId,
+      activity,
+      mood,
+      referenceDate: parsedEntryDate,
+      recentTemplateIds,
+    });
 
     let entry:
       | {
@@ -461,7 +481,12 @@ export async function POST(req: Request) {
         },
       });
     }
-    return NextResponse.json({ entry, code: "OK" });
+    const kanteiOrderExists = await profileHasKanteiOrder(viewerEmail, profileId);
+    return NextResponse.json({
+      entry,
+      kanteiOrderExists,
+      code: "OK",
+    });
   } catch (e) {
     const message = e instanceof Error ? e.message : "日記の保存に失敗しました。";
     return NextResponse.json({ error: message, code: "DB_SAVE" }, { status: 500 });

@@ -72,8 +72,18 @@ export async function profileByIdForViewer(profileId: string, viewerEmail: strin
   return profile;
 }
 
-function defaultProfileIdForEmail(email: string): string {
-  return `legacy:${createHash("md5").update(email).digest("hex")}`;
+export function defaultProfileIdForEmail(email: string): string {
+  return `legacy:${createHash("md5").update(normalizeEmail(email)).digest("hex")}`;
+}
+
+/** 旧データ（profileId 空）を既定レガシープロフィールと同一視して読む */
+export function journalProfileIdsForQuery(profileId: string, viewerEmail: string): string[] {
+  const normalized = normalizeEmail(viewerEmail);
+  if (!profileId) return [LEGACY_PROFILE_ID];
+  if (profileId === defaultProfileIdForEmail(normalized)) {
+    return [profileId, LEGACY_PROFILE_ID];
+  }
+  return [profileId];
 }
 
 async function ensureDefaultProfile(email: string): Promise<void> {

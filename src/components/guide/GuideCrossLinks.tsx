@@ -1,15 +1,20 @@
 import Link from "next/link";
 
+import { SoftIllustrationAccent } from "@/components/ui/SoftIllustrationAccent";
+
 /** /guide から /diary-guide への導線 */
 export function LinkToDiaryGuide() {
   return (
-    <div className="rounded-xl border border-amber-100/90 bg-[#fdfaf4] px-4 py-3.5">
-      <p className="text-sm leading-6 text-stone-700">
+    <div className="relative overflow-hidden rounded-xl border border-amber-100/90 bg-gradient-to-br from-[#fdfaf4] via-amber-50/30 to-white px-4 py-3.5">
+      <div className="pointer-events-none absolute right-3 top-3 hidden select-none sm:block">
+        <SoftIllustrationAccent variant="moon" size="sm" tone="amber" />
+      </div>
+      <p className="relative z-10 text-sm leading-6 text-stone-700">
         Life Journey Diary の考え方や、鑑定書と日記のつながりを知りたい方へ。
       </p>
       <Link
         href="/diary-guide"
-        className="mt-2 inline-block text-sm font-medium text-emerald-900 underline-offset-2 hover:underline"
+        className="relative z-10 mt-2 inline-block text-sm font-medium text-emerald-900 underline-offset-2 hover:underline"
       >
         Life Journey Diaryの歩き方を読む →
       </Link>
@@ -28,7 +33,7 @@ export function LinkToOperationGuide() {
         href="/guide"
         className="mt-2 inline-block text-sm font-medium text-emerald-900 underline-offset-2 hover:underline"
       >
-        操作方法を見る →
+        使い方を見る →
       </Link>
     </div>
   );

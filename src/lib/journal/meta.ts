@@ -8,9 +8,46 @@ export const companionTypes = [
 
 export type CompanionType = (typeof companionTypes)[number];
 
-/** 日記ページ背景テンプレはシンプル系のみ（罫線あり／なし）。キャラ差は companion とテンプレ画像で表現 */
+/** 入力画面「伴走キャラを選ぶ」用 */
+export const companionOptions = [
+  { id: "owl", label: "フクロウ先生" },
+  { id: "hedgehog", label: "ハリネズミくん" },
+  { id: "sloth", label: "ナマケモノくん" },
+  { id: "squirrel", label: "リスくん" },
+  { id: "frog", label: "ケロシオン" },
+] as const;
+
+/** 第1フェーズで保存・入力画面表示に使う伴走キャラ（常に owl） */
+export const PHASE1_COMPANION_TYPE: CompanionType = "owl";
+
+export function isCompanionType(value: string): value is CompanionType {
+  return companionTypes.includes(value as CompanionType);
+}
+
+export function normalizeCompanionType(raw: string | null | undefined): CompanionType {
+  const t = (raw ?? "").trim();
+  return isCompanionType(t) ? t : "owl";
+}
+
+/** 第1フェーズ：DB に別キャラが入っていても owl として扱う */
+export function normalizeCompanionTypeForPhase1(
+  _raw?: string | null | undefined,
+): CompanionType {
+  return PHASE1_COMPANION_TYPE;
+}
+
+export function getCompanionLabel(companion: string): string {
+  const id = normalizeCompanionType(companion);
+  return companionOptions.find((c) => c.id === id)?.label ?? "フクロウ先生";
+}
+
+/** 読み解き欄の見出し（テンプレ上のキャラ名に合わせる） */
+export function getCompanionReadingHeading(companion: string): string {
+  return `${getCompanionLabel(companion)}の読み解き`;
+}
+
+/** 日記ページ背景は罫線なしのみ。キャラ差は companion とテンプレ PNG で表現 */
 export const diaryDesignOptions = [
-  { id: "simple", label: "シンプル系" },
   { id: "simple_plain", label: "シンプル系（罫線なし）" },
 ] as const;
 
@@ -21,10 +58,8 @@ export const diaryDesignIds = diaryDesignOptions.map((d) => d.id);
 export function normalizeDiaryDesignTheme(value: string): DiaryDesignId {
   const t = value.trim();
   if (t === "simple_plain") return "simple_plain";
-  if (t === "simple") return "simple";
-  if (t === "cute_plain") return "simple_plain";
-  if (t === "cute") return "simple";
-  return "simple";
+  if (t === "simple" || t === "cute" || t === "cute_plain") return "simple_plain";
+  return "simple_plain";
 }
 
 export function isDiaryDesignId(value: string): value is DiaryDesignId {
@@ -36,8 +71,8 @@ export function isAllowedDiaryDesignThemeRaw(raw: string): boolean {
   const t = raw.trim();
   return (
     t === "" ||
-    t === "simple" ||
     t === "simple_plain" ||
+    t === "simple" ||
     t === "cute" ||
     t === "cute_plain"
   );
@@ -84,10 +119,6 @@ export const activityOptions = [
 
 export type ActivityId = (typeof activityOptions)[number]["id"];
 export const activityOptionIds = activityOptions.map((a) => a.id);
-
-export function isCompanionType(value: string): value is CompanionType {
-  return companionTypes.includes(value as CompanionType);
-}
 
 export function isMoodId(value: string): value is MoodId {
   return moodOptionIds.includes(value as MoodId);

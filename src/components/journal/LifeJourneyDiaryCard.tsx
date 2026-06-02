@@ -3,6 +3,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 
+import { useEnsureServerAuthSession } from "@/hooks/useEnsureServerAuthSession";
+import { entryDayKeyInJapan } from "@/lib/journal/journalNav";
 import { phraseForMonth } from "@/lib/journal/diaryPhrases";
 import { getCompanionStamp, getMoodMeta } from "@/lib/journal/meta";
 
@@ -35,8 +37,14 @@ function toDateParam(year: number, monthZeroBased: number, day: number): string 
   return `${y}-${m}-${d}`;
 }
 
-async function fetchJournalMonth(monthKey: string): Promise<Entry[]> {
-  const res = await fetch(`/api/journal?month=${encodeURIComponent(monthKey)}&_=${Date.now()}`, {
+async function fetchJournalMonth(monthKey: string, profileId: string): Promise<Entry[]> {
+  const qs = new URLSearchParams({
+    month: monthKey,
+    profileId,
+    view: "calendar",
+    _: String(Date.now()),
+  });
+  const res = await fetch(`/api/journal?${qs.toString()}`, {
     cache: "no-store",
     credentials: "same-origin",
   });
@@ -46,6 +54,8 @@ async function fetchJournalMonth(monthKey: string): Promise<Entry[]> {
 }
 
 export function LifeJourneyDiaryCard() {
+  const authSession = useEnsureServerAuthSession();
+  const [profileId, setProfileId] = useState("");
   const [cursorMonth, setCursorMonth] = useState(() => dayGridAnchor(new Date()));
   const [entries, setEntries] = useState<Entry[]>([]);
   const [loading, setLoading] = useState(true);
@@ -54,14 +64,34 @@ export function LifeJourneyDiaryCard() {
   const monthKey = useMemo(() => toMonthKey(cursorMonth), [cursorMonth]);
   const monthKeyRef = useRef(monthKey);
   monthKeyRef.current = monthKey;
+  const profileIdRef = useRef(profileId);
+  profileIdRef.current = profileId;
 
   useEffect(() => {
+    if (!authSession.ready) return;
+    let cancelled = false;
+    void fetch("/api/profiles", { cache: "no-store", credentials: "same-origin" })
+      .then(async (res) => {
+        const data = (await res.json()) as { activeProfileId?: string };
+        if (!res.ok || cancelled) return;
+        setProfileId(String(data.activeProfileId ?? "").trim());
+      })
+      .catch(() => {
+        if (!cancelled) setProfileId("");
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [authSession.ready, authSession.firebaseEmail]);
+
+  useEffect(() => {
+    if (!authSession.ready || !profileId) return;
     let cancelled = false;
     setLoading(true);
     setError(null);
     void (async () => {
       try {
-        const list = await fetchJournalMonth(monthKey);
+        const list = await fetchJournalMonth(monthKey, profileId);
         if (!cancelled) setEntries(list);
       } catch (e) {
         if (!cancelled) {
@@ -77,13 +107,14 @@ export function LifeJourneyDiaryCard() {
     return () => {
       cancelled = true;
     };
-  }, [monthKey]);
+  }, [monthKey, authSession.ready, profileId]);
 
   useEffect(() => {
     const reload = () => {
+      if (!authSession.ready || !profileIdRef.current) return;
       void (async () => {
         try {
-          const list = await fetchJournalMonth(monthKeyRef.current);
+          const list = await fetchJournalMonth(monthKeyRef.current, profileIdRef.current);
           setEntries(list);
           setError(null);
         } catch (e) {
@@ -103,33 +134,29 @@ export function LifeJourneyDiaryCard() {
       window.removeEventListener("pageshow", reload);
       document.removeEventListener("visibilitychange", onVisibility);
     };
-  }, []);
+  }, [authSession.ready]);
 
   const daysWithEntry = useMemo(() => {
     const set = new Set<number>();
+    const prefix = `${cursorMonth.getFullYear()}-${String(cursorMonth.getMonth() + 1).padStart(2, "0")}-`;
     for (const entry of entries) {
-      const d = new Date(entry.createdAt);
-      if (
-        d.getFullYear() === cursorMonth.getFullYear() &&
-        d.getMonth() === cursorMonth.getMonth()
-      ) {
-        set.add(d.getDate());
-      }
+      const key = entryDayKeyInJapan(entry.createdAt);
+      if (!key.startsWith(prefix)) continue;
+      const day = Number(key.slice(-2));
+      if (Number.isFinite(day)) set.add(day);
     }
     return set;
   }, [entries, cursorMonth]);
 
   const latestEntryByDay = useMemo(() => {
     const map = new Map<number, Entry>();
+    const prefix = `${cursorMonth.getFullYear()}-${String(cursorMonth.getMonth() + 1).padStart(2, "0")}-`;
     for (const entry of entries) {
-      const d = new Date(entry.createdAt);
-      if (
-        d.getFullYear() === cursorMonth.getFullYear() &&
-        d.getMonth() === cursorMonth.getMonth()
-      ) {
-        const day = d.getDate();
-        if (!map.has(day)) map.set(day, entry);
-      }
+      const key = entryDayKeyInJapan(entry.createdAt);
+      if (!key.startsWith(prefix)) continue;
+      const day = Number(key.slice(-2));
+      if (!Number.isFinite(day)) continue;
+      if (!map.has(day)) map.set(day, entry);
     }
     return map;
   }, [entries, cursorMonth]);

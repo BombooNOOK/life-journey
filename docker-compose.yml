@@ -1,0 +1,22 @@
+# ローカル開発用 Postgres（Neon を消費せずに LJD を動かす）
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: ljd-postgres-dev
+    restart: unless-stopped
+    ports:
+      - "5433:5432"
+    environment:
+      POSTGRES_USER: ljd
+      POSTGRES_PASSWORD: ljd_local_dev
+      POSTGRES_DB: ljd_dev
+    volumes:
+      - ljd_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ljd -d ljd_dev"]
+      interval: 3s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  ljd_postgres_data:

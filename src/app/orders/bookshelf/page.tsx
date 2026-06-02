@@ -1,13 +1,18 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
+import { BookshelfBookCard, type BookshelfBookDetailRow } from "@/components/orders/BookshelfBookCard";
+import { BookshelfPageHeader } from "@/components/orders/BookshelfPageHeader";
+import { DiaryBookCreateForm } from "@/components/orders/DiaryBookCreateForm";
 import { isAdminEmail } from "@/lib/admin/access";
-import { BookshelfDiaryBindingOrder } from "@/components/orders/BookshelfDiaryBindingOrder";
 import { PdfDownloadButton } from "@/components/orders/PdfDownloadButton";
 import { getViewerEmailFromCookie } from "@/lib/auth/viewer";
-import { journalEntryInBookshelfPeriod } from "@/lib/journal/bookshelfPeriod";
 import { prisma } from "@/lib/db";
 import { withPrismaConnectionRetry } from "@/lib/db/prismaRetry";
+import { listDiaryBooksForViewer } from "@/lib/journal/listDiaryBooks";
+import { diaryCoverImagePath, getDiaryCoverStyleLabel } from "@/lib/journal/coverAssets";
+import { resolveDiaryBookBindingOffer } from "@/lib/journal/diaryBookBindingOffer";
+import { listJournalEntriesForDiaryBookRow } from "@/lib/journal/listDiaryBookEntries";
 import { listProfilesAndActiveProfileId } from "@/lib/profile/activeProfile";
 import { combinePdfDownloadLimit, fetchAccountPdfDownloadLimitOrNull } from "@/lib/order/effectivePdfDownloadLimit";
 import {
@@ -17,293 +22,190 @@ import {
 
 export const dynamic = "force-dynamic";
 
-type ShelfBook = {
-  id: string;
-  title: string;
-  subtitle: string;
-  href: string;
-  /** チャプター挿入込みの製本PDF（`/api/orders/.../pdf`）。鑑定書のみ。 */
-  boundPdfHref?: string;
-  /** 鑑定書カードのみ。製本用（高画質）DLのための注文ID */
-  reportOrderId?: string;
-  pdfPreviewFileName?: string;
-  pdfPrintFileName?: string;
-  pdfRemainingDownloads?: number;
-  pdfDownloadLimit?: number;
-  /** 日記カードのみ：その西暦年の製本カウント用 */
-  diaryYear?: number;
-  /** 製本ページ数の目安（記録件数）。日記カードのみ */
-  pageCount?: number;
-  tone: "amber" | "emerald";
-};
-
 export default async function BookshelfPage() {
   const viewerEmail = await getViewerEmailFromCookie();
   if (!viewerEmail) redirect("/login?returnTo=/orders/bookshelf");
 
   try {
-  const { activeProfileId, profiles } = await withPrismaConnectionRetry(() =>
-    listProfilesAndActiveProfileId(viewerEmail),
-  );
-  const activeProfileLabel =
-    profiles.find((p) => p.id === activeProfileId)?.nickname ?? "メイン";
-  const viewerIsAdmin = await isAdminEmail(viewerEmail);
-  const showPrintQualityPdf = viewerIsAdmin;
-  const accountPdfCap = await fetchAccountPdfDownloadLimitOrNull(viewerEmail);
-  const shelfBookDelegate = (prisma as unknown as {
-    diaryBookshelfBook?: {
-      findMany: (args: {
-        where: { email: string; profileId: string };
+    const { activeProfileId, profiles } = await withPrismaConnectionRetry(() =>
+      listProfilesAndActiveProfileId(viewerEmail),
+    );
+    const activeProfileLabel =
+      profiles.find((p) => p.id === activeProfileId)?.nickname ?? "メイン";
+    const viewerIsAdmin = await isAdminEmail(viewerEmail);
+    const showPrintQualityPdf = viewerIsAdmin;
+    const accountPdfCap = await fetchAccountPdfDownloadLimitOrNull(viewerEmail);
+
+    const [orders, diaryBookRows] = await Promise.all([
+      prisma.order.findMany({
+        where: { email: viewerEmail, profileId: activeProfileId },
+        orderBy: { createdAt: "desc" },
+        take: 20,
         select: {
-          year: boolean;
-          displayTitle: boolean;
-          periodStartMonth: boolean;
-          periodEndMonth: boolean;
-        };
-      }) => Promise<
-        {
-          year: number;
-          displayTitle: string | null;
-          periodStartMonth: number;
-          periodEndMonth: number;
-        }[]
-      >;
-    };
-  }).diaryBookshelfBook;
+          id: true,
+          kanteiCode: true,
+          fullNameDisplay: true,
+          fullNameRomanDisplay: true,
+          createdAt: true,
+          pdfDownloadCount: true,
+          pdfDownloadLimit: true,
+        },
+      }),
+      listDiaryBooksForViewer({
+        email: viewerEmail,
+        profileId: activeProfileId,
+      }),
+    ]);
 
-  const [orders, journalEntries, shelfBooks] = await Promise.all([
-    prisma.order.findMany({
-      where: { email: viewerEmail, profileId: activeProfileId },
-      orderBy: { createdAt: "desc" },
-      take: 20,
-      select: {
-        id: true,
-        kanteiCode: true,
-        fullNameDisplay: true,
-        createdAt: true,
-        pdfDownloadCount: true,
-        pdfDownloadLimit: true,
-      },
-    }),
-    prisma.journalEntry.findMany({
-      where: { email: viewerEmail, profileId: activeProfileId },
-      orderBy: { createdAt: "desc" },
-      take: 400,
-      select: { id: true, createdAt: true, includeInBook: true },
-    }),
-    shelfBookDelegate
-      ? shelfBookDelegate.findMany({
-          where: { email: viewerEmail, profileId: activeProfileId },
-          select: {
-            year: true,
-            displayTitle: true,
-            periodStartMonth: true,
-            periodEndMonth: true,
+    const diaryBookCards = await Promise.all(
+      diaryBookRows.map(async (book) => {
+        const entries = await listJournalEntriesForDiaryBookRow({
+          book: {
+            email: viewerEmail,
+            profileId: activeProfileId,
+            startDate: book.startDate,
+            endDate: book.endDate,
           },
-        })
-      : Promise.resolve([]),
-  ]);
+          viewerEmail,
+        });
+        const bindingOffer = resolveDiaryBookBindingOffer(
+          entries,
+          book.startDate,
+          book.endDate,
+        );
+        const rangeLabel = `${book.startDate.replace(/-/g, "/")} 〜 ${book.endDate.replace(/-/g, "/")}`;
+        const details: BookshelfBookDetailRow[] = [
+          { label: "期間", value: rangeLabel },
+          { label: "記録数", value: `${book.entryCount}件` },
+          { label: "表紙", value: getDiaryCoverStyleLabel(book.coverTheme) },
+          {
+            label: "作成日",
+            value: new Date(book.createdAt).toLocaleDateString("ja-JP"),
+          },
+          { label: "製本対象", value: bindingOffer.overviewBindingValue },
+        ];
+        return {
+          id: `diary-book-${book.id}`,
+          kind: "diary-book" as const,
+          title: book.title,
+          href: `/orders/bookshelf/diary-book/${book.id}`,
+          tone: "emerald" as const,
+          coverImageSrc: diaryCoverImagePath(book.coverTheme, "owl"),
+          coverAlt: `${book.title}の表紙`,
+          details,
+          bindingLabel: "製本版を注文する",
+          bindingHref: `/orders/bookshelf/diary-book/${book.id}/book-binding`,
+        };
+      }),
+    );
 
-  const shelfByYear = new Map(
-    shelfBooks.map((b) => [
-      b.year,
-      {
-        displayTitle: b.displayTitle,
-        periodStartMonth: b.periodStartMonth,
-        periodEndMonth: b.periodEndMonth,
-      },
-    ]),
-  );
-
-  /** その年に「本に入れる」がONの記録がある（カード表示の対象年） */
-  const diaryYearMeta = new Map<number, { firstId: string }>();
-  for (const row of journalEntries) {
-    if (!row.includeInBook) continue;
-    const y = row.createdAt.getFullYear();
-    if (!diaryYearMeta.has(y)) {
-      diaryYearMeta.set(y, { firstId: row.id });
-    }
-  }
-
-  const diaryBooks: ShelfBook[] = Array.from(diaryYearMeta.entries())
-    .sort((a, b) => b[0] - a[0])
-    .map(([yearKey]) => {
-      const shelf = shelfByYear.get(yearKey);
-      const periodStart = shelf?.periodStartMonth ?? 1;
-      const periodEnd = shelf?.periodEndMonth ?? 12;
-      let count = 0;
-      for (const row of journalEntries) {
-        if (!row.includeInBook) continue;
-        if (row.createdAt.getFullYear() !== yearKey) continue;
-        if (
-          !journalEntryInBookshelfPeriod(row.createdAt, yearKey, periodStart, periodEnd)
-        ) {
-          continue;
-        }
-        count += 1;
-      }
-      const title =
-        shelf?.displayTitle?.trim() || `${yearKey}年の記録`;
-      return {
-        id: `diary-${yearKey}`,
-        title,
-        subtitle: `${count}件の記録`,
-        href: `/orders/bookshelf/diary/${yearKey}`,
-        diaryYear: yearKey,
-        pageCount: count,
-        tone: "emerald" as const,
-      };
-    });
-
-  const reportBooks: ShelfBook[] = await Promise.all(
-    orders.map(async (order) => {
-      const kanteiCode =
-        order.kanteiCode ?? (await resolveOrderKanteiCodeSafe(order.id, "bookshelf"));
-      const effectiveLimit = combinePdfDownloadLimit(order.pdfDownloadLimit, accountPdfCap);
-      return {
-        id: `report-${order.id}`,
-        title: "鑑定書",
-        subtitle: `${order.fullNameDisplay} · ${order.createdAt.toLocaleDateString("ja-JP")}`,
-        href: `/orders/${order.id}`,
-        reportOrderId: order.id,
-        boundPdfHref: `/api/orders/${order.id}/pdf?download=1&quality=low`,
-        pdfPreviewFileName: resolveKanteiPdfDownloadFilename(order.id, kanteiCode, "preview"),
-        pdfPrintFileName: resolveKanteiPdfDownloadFilename(order.id, kanteiCode, "print"),
-        pdfRemainingDownloads: Math.max(0, effectiveLimit - (order.pdfDownloadCount ?? 0)),
-        pdfDownloadLimit: effectiveLimit,
-        tone: "amber" as const,
-      };
-    }),
-  );
-
-  const books = [...diaryBooks, ...reportBooks];
-
-  return (
-    <div className="space-y-5">
-      <div>
-        <Link href="/orders" className="text-sm text-stone-600 hover:text-stone-900">
-          ← マイページへ
-        </Link>
-        <h1 className="mt-2 text-2xl font-bold text-stone-900">本棚</h1>
-        <p className="mt-3 rounded-lg border border-violet-100 bg-violet-50/90 px-3 py-2 text-sm font-medium text-violet-950">
-          表示中のプロフィール: 「{activeProfileLabel}」
-        </p>
-        <p className="mt-1 text-sm text-stone-600">
-          あなたの「日記」と「鑑定書」を、本のように並べて管理できます。鑑定書はブラウザで読める製本レイアウトのPDFにもなります。
-        </p>
-      </div>
-
-      {books.length === 0 ? (
-        <div className="rounded-xl border border-stone-200 bg-white p-5 text-sm text-stone-600 shadow-sm">
-          まだ本棚に並べる本がありません。まずは記録や鑑定を作ってみましょう。
-        </div>
-      ) : (
-        <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {books.map((book) => (
-            <li key={book.id}>
-              <div
-                className={[
-                  "rounded-xl border bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:shadow",
-                  book.tone === "emerald"
-                    ? "border-emerald-200"
-                    : "border-amber-200",
-                ].join(" ")}
+    const reportCards = await Promise.all(
+      orders.map(async (order) => {
+        const kanteiCode =
+          order.kanteiCode ?? (await resolveOrderKanteiCodeSafe(order.id, "bookshelf"));
+        const effectiveLimit = combinePdfDownloadLimit(order.pdfDownloadLimit, accountPdfCap);
+        const remaining = Math.max(0, effectiveLimit - (order.pdfDownloadCount ?? 0));
+        const createdLabel = order.createdAt.toLocaleDateString("ja-JP");
+        const details: BookshelfBookDetailRow[] = [
+          { label: "お名前", value: order.fullNameDisplay },
+          { label: "作成日", value: createdLabel },
+          { label: "PDF形式", value: "目次リンクつき軽量PDF（ブラウザ表示対応）" },
+          {
+            label: "ダウンロード",
+            value: `ダウンロード残り ${remaining} / ${effectiveLimit} 回`,
+          },
+        ];
+        const previewPdfHref = `/api/orders/${order.id}/pdf?download=0&quality=low`;
+        const boundPdfHref = `/api/orders/${order.id}/pdf?download=1&quality=low`;
+        const overviewExtra = (
+          <>
+            <PdfDownloadButton
+              href={boundPdfHref}
+              label="PDFをダウンロード（端末に保存）"
+              className="inline-flex w-full justify-center rounded-lg bg-amber-800 px-3 py-2 text-xs font-medium text-white hover:bg-amber-900"
+              loadingLabel="タップ後にブラウザが受け取ります。初回は30秒〜数分かかることがあります。"
+              suggestedFileName={resolveKanteiPdfDownloadFilename(order.id, kanteiCode, "preview")}
+            />
+            {showPrintQualityPdf ? (
+              <PdfDownloadButton
+                href={`/api/orders/${order.id}/pdf?download=1&quality=high`}
+                label="製本用PDFをダウンロード（端末に保存）"
+                className="inline-flex w-full justify-center rounded-lg border border-amber-400 bg-amber-50 px-3 py-2 text-xs font-medium text-amber-950 hover:bg-amber-100"
+                loadingLabel="高画質は1〜3分かかることがあります。画面を閉じずにお待ちください。"
+                suggestedFileName={resolveKanteiPdfDownloadFilename(order.id, kanteiCode, "print")}
+              />
+            ) : null}
+            <div className="flex flex-wrap gap-x-3 gap-y-1">
+              <Link
+                href={`/orders/${order.id}/manage`}
+                className="text-xs font-medium text-amber-900 underline-offset-2 hover:underline"
               >
-                <div className="flex items-start gap-3">
-                  <div
-                    aria-hidden
-                    className={[
-                      "grid h-14 w-11 shrink-0 place-items-center rounded-sm border text-lg",
-                      book.tone === "emerald"
-                        ? "border-emerald-300 bg-emerald-50"
-                        : "border-amber-300 bg-amber-50",
-                    ].join(" ")}
-                  >
-                    📕
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="font-medium text-stone-900">{book.title}</p>
-                    <p className="mt-1 truncate text-xs text-stone-500">{book.subtitle}</p>
-                    {book.boundPdfHref ? (
-                      <div className="mt-3 space-y-2">
-                        <PdfDownloadButton
-                          href={book.boundPdfHref}
-                          label="プレビュー版（軽量）"
-                          className="inline-flex rounded-lg bg-amber-800 px-3 py-2 text-xs font-medium text-white hover:bg-amber-900"
-                          loadingLabel="タップ後にブラウザが受け取ります。初回は30秒〜数分かかることがあります。"
-                          suggestedFileName={book.pdfPreviewFileName}
-                        />
-                        {showPrintQualityPdf && book.reportOrderId ? (
-                          <PdfDownloadButton
-                            href={`/api/orders/${book.reportOrderId}/pdf?download=1&quality=high`}
-                            label="製本用（高画質）"
-                            className="inline-flex rounded-lg border border-amber-400 bg-amber-50 px-3 py-2 text-xs font-medium text-amber-950 hover:bg-amber-100"
-                            loadingLabel="高画質は1〜3分かかることがあります。画面を閉じずにお待ちください。"
-                            suggestedFileName={book.pdfPrintFileName}
-                          />
-                        ) : null}
-                        {book.pdfRemainingDownloads != null && book.pdfDownloadLimit != null ? (
-                          <div className="space-y-1">
-                            <p className="text-[11px] leading-snug text-stone-500">
-                              無料閲覧残り {book.pdfRemainingDownloads} / {book.pdfDownloadLimit} 回（閲覧・ダウンロード共通）
-                            </p>
-                            <p>
-                              <Link
-                                href="/help/pdf-download"
-                                className="text-[11px] font-medium text-amber-900 underline-offset-2 hover:underline"
-                              >
-                                ダウンロード方法を見る（PC / スマホ）
-                              </Link>
-                            </p>
-                          </div>
-                        ) : null}
-                        <div className="flex flex-wrap gap-x-3 gap-y-1">
-                          <Link
-                            href={book.href}
-                            className="text-xs font-medium text-amber-900 underline-offset-2 hover:underline"
-                          >
-                            概要ページ（コアナンバー・今日のヒントへ）
-                          </Link>
-                          {book.reportOrderId ? (
-                            <Link
-                              href={`/orders/${book.reportOrderId}/book-binding`}
-                              className="text-xs font-medium text-violet-900 underline-offset-2 hover:underline"
-                            >
-                              製本版を注文する
-                            </Link>
-                          ) : null}
-                        </div>
-                        <p className="text-[11px] leading-snug text-stone-500">
-                          PDFの生成に1分ほどかかることがあります。
-                        </p>
-                      </div>
-                    ) : book.diaryYear != null && book.pageCount != null ? (
-                      <div className="space-y-2">
-                        <BookshelfDiaryBindingOrder year={book.diaryYear} pageCount={book.pageCount} />
-                        <Link
-                          href={book.href}
-                          className="inline-block text-xs font-medium text-stone-700 underline-offset-2 hover:underline"
-                        >
-                          この本を読む →
-                        </Link>
-                      </div>
-                    ) : (
-                      <Link
-                        href={book.href}
-                        className="mt-2 inline-block text-xs font-medium text-stone-700 underline-offset-2 hover:underline"
-                      >
-                        開く →
-                      </Link>
-                    )}
-                  </div>
-                </div>
-              </div>
-            </li>
-          ))}
-        </ul>
-      )}
-    </div>
-  );
+                入力内容を修正する
+              </Link>
+              <Link
+                href="/help/pdf-download"
+                className="text-xs text-stone-600 underline-offset-2 hover:underline"
+              >
+                DL方法（PC / スマホ）
+              </Link>
+            </div>
+            <p className="text-[11px] leading-snug text-stone-500">
+              PDFの生成に1分ほどかかることがあります。混雑時は時間をおいて再試行してください。
+            </p>
+          </>
+        );
+        const romanizedName = order.fullNameRomanDisplay?.trim() || order.fullNameDisplay;
+        return {
+          id: `report-${order.id}`,
+          kind: "report" as const,
+          title: `鑑定書（${romanizedName}）`,
+          href: previewPdfHref,
+          readButtonLabel: "PDFで読む",
+          quickPreviewHref: `/orders/${order.id}`,
+          quickPreviewLabel: "鑑定結果を見る",
+          quickPreviewHelpText: "目次リンクつき。気になる章へすぐ移動できます。",
+          quickPreviewOpenInNewTab: false,
+          bindingHref: `/orders/${order.id}/book-binding`,
+          bindingLabel: "製本版を注文する",
+          tone: "amber" as const,
+          coverImageSrc: "/images/kantei-cover.png?v=1",
+          coverAlt: "鑑定書の表紙",
+          details,
+          overviewExtra,
+        };
+      }),
+    );
+
+    const books = [...diaryBookCards, ...reportCards];
+
+    return (
+      <div className="space-y-5">
+        <BookshelfPageHeader activeProfileLabel={activeProfileLabel} />
+
+        <DiaryBookCreateForm />
+
+        {diaryBookCards.length === 0 ? (
+          <p className="text-xs text-stone-500">
+            まだ日記ブックはありません。「本にする」から作成すると、ここに並びます。
+          </p>
+        ) : null}
+
+        {books.length === 0 ? (
+          <div className="rounded-xl border border-stone-200 bg-white p-5 text-sm text-stone-600 shadow-sm">
+            <p>まだ本棚に並べる本がありません。</p>
+            <p className="mt-2 text-xs text-stone-500">
+              日記ブックは「本にする」から、鑑定書は鑑定作成後に表示されます。
+            </p>
+          </div>
+        ) : (
+          <ul className="grid list-none gap-4 p-0 sm:grid-cols-2 lg:grid-cols-3">
+            {books.map((book) => (
+              <BookshelfBookCard key={book.id} {...book} />
+            ))}
+          </ul>
+        )}
+      </div>
+    );
   } catch (e) {
     console.error("[orders/bookshelf]", e);
     return (

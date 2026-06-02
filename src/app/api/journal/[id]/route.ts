@@ -4,8 +4,12 @@ import { Prisma } from "@prisma/client";
 import { getViewerEmailFromCookie } from "@/lib/auth/viewer";
 import { prisma } from "@/lib/db";
 import { collectTemplateIdsFromReadingText } from "@/lib/diary-reading/generateDiaryReading";
-import { buildDiaryReadingFromJournalInput } from "@/lib/diary-reading/fromJournal";
-import { normalizeJournalCommentText } from "@/lib/journal/comment";
+import {
+  buildJournalGeneratedComment,
+  profileHasKanteiOrder,
+  sanitizeJournalCommentForResponse,
+} from "@/lib/journal/kanteiCommentEligibility";
+import { findKanteiOrderForProfile } from "@/lib/profile/orderPerProfile";
 import { buildJournalNumerologyDebug } from "@/lib/journal/journalNumerologyDebug";
 import { buildDiaryNumbers } from "@/lib/journal/numbers";
 import { shouldPreserveJournalGeneratedComment } from "@/lib/journal/preserveDiaryReading";
@@ -120,20 +124,16 @@ export async function GET(req: Request, { params }: Params) {
     );
   }
 
-  const latestOrder = await prisma.order.findFirst({
-    where: { email: viewerEmail, profileId: row.profileId },
-    orderBy: { createdAt: "desc" },
-    select: {
-      birthMonth: true,
-      birthDay: true,
-      numerologyJson: true,
-    },
+  const kanteiOrder = await findKanteiOrderForProfile({
+    viewerEmail,
+    profileId: row.profileId,
   });
+  const kanteiOrderExists = kanteiOrder != null;
 
   let lifePathNumber: number | null = null;
-  if (latestOrder?.numerologyJson) {
+  if (kanteiOrder?.numerologyJson) {
     try {
-      const parsed = JSON.parse(latestOrder.numerologyJson) as { lifePathNumber?: unknown };
+      const parsed = JSON.parse(kanteiOrder.numerologyJson) as { lifePathNumber?: unknown };
       const value = Number(parsed.lifePathNumber);
       if (Number.isFinite(value)) {
         lifePathNumber = value;
@@ -143,8 +143,8 @@ export async function GET(req: Request, { params }: Params) {
     }
   }
   const diaryNumbers = buildDiaryNumbers({
-    birthMonth: latestOrder?.birthMonth ?? null,
-    birthDay: latestOrder?.birthDay ?? null,
+    birthMonth: kanteiOrder?.birthMonth ?? null,
+    birthDay: kanteiOrder?.birthDay ?? null,
     lifePathNumber,
     date: row.createdAt,
   });
@@ -154,22 +154,21 @@ export async function GET(req: Request, { params }: Params) {
   const numerologyDebug = numerologyDebugOn
     ? buildJournalNumerologyDebug({
         referenceDate: row.createdAt,
-        birthMonth: latestOrder?.birthMonth ?? null,
-        birthDay: latestOrder?.birthDay ?? null,
+        birthMonth: kanteiOrder?.birthMonth ?? null,
+        birthDay: kanteiOrder?.birthDay ?? null,
         lifePathNumber,
       })
     : undefined;
 
   return NextResponse.json(
     {
+      kanteiOrderExists,
       entry: {
         ...row,
-        designTheme: normalizeDiaryDesignTheme(row.designTheme ?? "simple"),
+        designTheme: normalizeDiaryDesignTheme(row.designTheme ?? "simple_plain"),
         diaryNumbers,
         ...(numerologyDebug ? { numerologyDebug } : {}),
-        generatedComment: row.generatedComment
-          ? normalizeJournalCommentText(row.generatedComment)
-          : row.generatedComment,
+        generatedComment: sanitizeJournalCommentForResponse(row.generatedComment, kanteiOrderExists),
       },
       code: "OK",
     },
@@ -272,7 +271,7 @@ export async function PATCH(req: Request, { params }: Params) {
       { status: 400 },
     );
   }
-  const designTheme = normalizeDiaryDesignTheme(rawDesignTheme.trim() || "simple");
+  const designTheme = normalizeDiaryDesignTheme(rawDesignTheme.trim() || "simple_plain");
 
   if (!content) {
     return NextResponse.json({ error: "本文を入力してください。", code: "EMPTY_CONTENT" }, { status: 400 });
@@ -327,40 +326,28 @@ export async function PATCH(req: Request, { params }: Params) {
     hasExistingComment: Boolean(exists.generatedComment?.trim()),
   });
 
-  let generatedComment: string;
-  if (preserveDiaryReading) {
-    generatedComment = normalizeJournalCommentText(exists.generatedComment!);
-  } else {
-    const latestOrder = await prisma.order.findFirst({
-      where: { email: viewerEmail, profileId: exists.profileId },
-      orderBy: { createdAt: "desc" },
-      select: {
-        birthMonth: true,
-        birthDay: true,
-        numerologyJson: true,
-      },
-    });
-    const recentRows = await prisma.journalEntry.findMany({
-      where: { email: viewerEmail, profileId: exists.profileId },
-      orderBy: { createdAt: "desc" },
-      take: 5,
-      select: { generatedComment: true },
-    });
-    const recentTemplateIds = recentRows.flatMap((row) =>
-      collectTemplateIdsFromReadingText(row.generatedComment ?? ""),
-    );
+  const recentRows = await prisma.journalEntry.findMany({
+    where: { email: viewerEmail, profileId: exists.profileId },
+    orderBy: { createdAt: "desc" },
+    take: 5,
+    select: { generatedComment: true },
+  });
+  const recentTemplateIds = recentRows.flatMap((row) =>
+    collectTemplateIdsFromReadingText(row.generatedComment ?? ""),
+  );
 
-    generatedComment = normalizeJournalCommentText(
-      buildDiaryReadingFromJournalInput({
-        activity,
-        mood,
-        referenceDate: parsedEntryDate,
-        birthMonth: latestOrder?.birthMonth ?? null,
-        birthDay: latestOrder?.birthDay ?? null,
-        recentTemplateIds,
-      }).text,
-    );
-  }
+  const generatedComment = await buildJournalGeneratedComment({
+    viewerEmail,
+    profileId: exists.profileId,
+    activity,
+    mood,
+    referenceDate: parsedEntryDate,
+    recentTemplateIds,
+    existingComment: exists.generatedComment,
+    preserveDiaryReading,
+  });
+
+  const kanteiOrderExists = await profileHasKanteiOrder(viewerEmail, exists.profileId);
 
   let entry:
     | {
@@ -438,7 +425,7 @@ export async function PATCH(req: Request, { params }: Params) {
       },
     });
   }
-  return NextResponse.json({ entry, code: "OK" }, JSON_NO_STORE);
+  return NextResponse.json({ entry, kanteiOrderExists, code: "OK" }, JSON_NO_STORE);
 }
 
 export async function DELETE(_: Request, { params }: Params) {

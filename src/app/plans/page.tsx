@@ -16,7 +16,7 @@ export default async function PlansPage() {
         </Link>
         <h1 className="mt-2 text-2xl font-bold text-stone-900">プラン</h1>
         <p className="mt-1 text-sm text-stone-600">
-          Life Journey Diary を継続して使うための月額プランです。初回14日間は無料でお試しできます。
+          Life Journey Diary を継続して使うための月額プランです。お支払いは Stripe の安全な決済ページで行います。
         </p>
         {!viewerEmail ? (
           <p className="mt-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">

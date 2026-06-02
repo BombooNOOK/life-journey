@@ -1,16 +1,8 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
-import { isAdminEmail } from "@/lib/admin/access";
-import { OrderIdentityCorrectionCard } from "@/components/orders/OrderIdentityCorrectionCard";
-import { PdfDownloadButton } from "@/components/orders/PdfDownloadButton";
 import { getViewerEmailFromCookie, normalizeEmail } from "@/lib/auth/viewer";
 import { prisma } from "@/lib/db";
-import { combinePdfDownloadLimit, fetchAccountPdfDownloadLimitOrNull } from "@/lib/order/effectivePdfDownloadLimit";
-import {
-  resolveKanteiPdfDownloadFilename,
-  resolveOrderKanteiCodeSafe,
-} from "@/lib/order/kanteiCode";
 import { numerologyWithRefreshedLifePath } from "@/lib/order/numerologyDisplay";
 import { personalYearCycleEntry } from "@/lib/numerology/data/personalYearCycleData";
 import { personalYearNumber } from "@/lib/numerology/personalYearMonth";
@@ -73,8 +65,6 @@ export default async function OrderDetailPage({ params }: Props) {
   if (!order) notFound();
   if (normalizeEmail(order.email) !== viewerEmail) notFound();
 
-  const kanteiCode = await resolveOrderKanteiCodeSafe(order.id, "order-detail");
-
   const numerology = numerologyWithRefreshedLifePath(order.numerologyJson, order.birthDate, {
     birthYear: order.birthYear,
     birthMonth: order.birthMonth,
@@ -92,13 +82,7 @@ export default async function OrderDetailPage({ params }: Props) {
   const currentYear = new Date().getFullYear();
   const yearCycle = personalYearNumber(order.birthMonth, order.birthDay, currentYear);
   const yearTheme = personalYearCycleEntry(yearCycle);
-  const accountPdfCap = await fetchAccountPdfDownloadLimitOrNull(viewerEmail);
-  const pdfDownloadLimit = combinePdfDownloadLimit(order.pdfDownloadLimit, accountPdfCap);
-  const pdfDownloadCount = order.pdfDownloadCount ?? 0;
-  const pdfRemaining = Math.max(0, pdfDownloadLimit - pdfDownloadCount);
   const canCorrectIdentity = (order.identityCorrectionCount ?? 0) === 0;
-  const viewerIsAdmin = await isAdminEmail(viewerEmail);
-  const showPrintQualityPdf = viewerIsAdmin;
 
   return (
     <div className="space-y-6">
@@ -106,28 +90,14 @@ export default async function OrderDetailPage({ params }: Props) {
         <Link href="/orders" className="text-sm text-stone-600 hover:text-stone-900">
           ← マイページ
         </Link>
-        <h1 className="mt-2 text-2xl font-bold text-stone-900">{order.fullNameDisplay} さんの最初の結果</h1>
+        <h1 className="mt-2 text-2xl font-bold text-stone-900">{order.fullNameDisplay} さんの鑑定結果</h1>
         <p className="mt-1 text-sm text-stone-600">
           あなたのコアナンバーと、今年の流れをまとめました。
         </p>
-        {!canCorrectIdentity ? (
-          <p className="mt-2 text-xs text-stone-500">
-            氏名・生年月日の1回限りの救済修正は、すでに利用済みです。
-          </p>
-        ) : null}
+        <p className="mt-2 text-xs text-stone-500">
+          保存・製本・修正は、本棚の「概要」から行えます。
+        </p>
       </div>
-
-      <OrderIdentityCorrectionCard
-        orderId={order.id}
-        initialLastName={order.lastName}
-        initialFirstName={order.firstName}
-        initialLastNameKana={order.lastNameKana}
-        initialFirstNameKana={order.firstNameKana}
-        initialBirthYear={order.birthYear}
-        initialBirthMonth={order.birthMonth}
-        initialBirthDay={order.birthDay}
-        canCorrect={canCorrectIdentity}
-      />
 
       <section className="rounded-2xl border border-amber-100 bg-gradient-to-br from-white to-amber-50 p-5 shadow-sm">
         <h2 className="flex items-center gap-2 text-lg font-semibold text-stone-900">
@@ -151,67 +121,30 @@ export default async function OrderDetailPage({ params }: Props) {
         <p className="mt-2 whitespace-pre-line text-sm leading-6 text-stone-600">{yearTheme.subtitle}</p>
       </section>
 
-      <section className="rounded-xl border border-stone-200 bg-white p-6 shadow-sm">
-        <h2 className="flex items-center gap-2 font-semibold text-stone-800">
-          次に進む
-          <span aria-hidden>🦉</span>
-        </h2>
-        <div className="mt-4 flex flex-wrap items-start gap-3">
-          <PdfDownloadButton
-            href={`/api/orders/${order.id}/pdf?download=1&quality=low`}
-            label="プレビュー版（軽量）をダウンロード"
-            className="inline-block rounded-lg bg-stone-800 px-5 py-2.5 text-sm font-medium text-white hover:bg-stone-700"
-            loadingLabel="タップ後、ブラウザがそのままPDFを受け取ります。初回は30秒〜数分かかることがあります。"
-            suggestedFileName={resolveKanteiPdfDownloadFilename(order.id, kanteiCode, "preview")}
-          />
-          {showPrintQualityPdf ? (
-            <PdfDownloadButton
-              href={`/api/orders/${order.id}/pdf?download=1&quality=high`}
-              label="製本用（高画質）をダウンロード"
-              className="inline-block rounded-lg border border-amber-300 bg-amber-50 px-5 py-2.5 text-sm font-medium text-amber-950 hover:bg-amber-100"
-              loadingLabel="高画質は容量が大きいため、1〜3分かかることがあります。画面を閉じずにお待ちください。"
-              suggestedFileName={resolveKanteiPdfDownloadFilename(order.id, kanteiCode, "print")}
-            />
-          ) : (
-            <p className="max-w-xs rounded-lg border border-stone-200 bg-stone-50 px-3 py-2 text-xs leading-relaxed text-stone-600">
-              製本用（高画質）は管理者・製本確認用です。閲覧・保存はプレビュー版（軽量）をご利用ください。
-            </p>
-          )}
+      <section className="rounded-xl border border-amber-200/80 bg-gradient-to-br from-amber-50/80 via-white to-white p-5 shadow-sm">
+        <h2 className="text-lg font-semibold text-stone-900">鑑定結果の活かし方</h2>
+        <p className="mt-2 text-sm leading-6 text-stone-600">
+          コアナンバーと今年のテーマを見ながら、気になる章から読み進めるのがおすすめです。
+        </p>
+        <div className="mt-4 rounded-lg border border-amber-100 bg-amber-50/60 px-4 py-3">
+          <p className="text-sm leading-relaxed text-stone-700">
+            今日の数字から、今のあなたに合う小さなメッセージを表示します。
+          </p>
           <Link
             href={`/orders/${order.id}/today`}
-            className="rounded-lg border border-stone-300 bg-white px-5 py-2.5 text-sm font-medium text-stone-800 hover:bg-stone-50"
+            className="mt-3 inline-flex min-h-[42px] items-center justify-center rounded-lg border border-amber-400 bg-white px-5 py-2.5 text-sm font-semibold text-amber-950 shadow-sm transition hover:border-amber-500 hover:bg-amber-50"
           >
             今日のヒントを見る
           </Link>
+        </div>
+        <div className="mt-4">
           <Link
-            href="/orders"
-            className="rounded-lg border border-amber-200 bg-amber-50 px-5 py-2.5 text-sm font-medium text-amber-800 hover:bg-amber-100"
+            href="/orders/bookshelf"
+            className="text-sm text-stone-600 underline-offset-2 hover:text-stone-900 hover:underline"
           >
-            Life Journey Diary へ
-          </Link>
-          <Link
-            href={`/orders/${order.id}/book-binding`}
-            className="rounded-lg border border-violet-300 bg-violet-50 px-5 py-2.5 text-sm font-medium text-violet-950 hover:bg-violet-100"
-          >
-            製本版を注文する
+            ← 本棚に戻る
           </Link>
         </div>
-        <p className="mt-2 text-xs text-stone-500">
-          PDF生成は数分かかることがあり、長いときは10分近くまで続くこともあります。混雑時やスマホではさらに時間がかかり、サーバー側の上限で途中終了することがあります（時間をおいて再試行するか、Wi‑Fi・PCでの利用をおすすめします）。
-          無料閲覧残り {pdfRemaining} / {pdfDownloadLimit}{" "}
-          回（プレビュー・製本どちらのDLでも1回としてカウント）。
-        </p>
-        <p className="mt-1 text-xs text-stone-500">
-          プレビュー版はファイルが軽くスマホ向けです。製本用は章扉・見開き・裏表紙まで含む最高画質です。
-        </p>
-        <p className="mt-1">
-          <Link
-            href="/help/pdf-download"
-            className="text-xs font-medium text-amber-900 underline-offset-2 hover:underline"
-          >
-            ダウンロード方法を見る（PC / スマホ）
-          </Link>
-        </p>
       </section>
 
       <details className="rounded-xl border border-stone-200 bg-stone-50 p-4 text-xs text-stone-600">
@@ -220,6 +153,7 @@ export default async function OrderDetailPage({ params }: Props) {
           <p>注文ID: {order.id}</p>
           <p>ステータス: {order.status}</p>
           <p>登録: {order.createdAt.toLocaleString("ja-JP")}</p>
+          <p>入力修正可能: {canCorrectIdentity ? "はい（1回まで）" : "いいえ（利用済み）"}</p>
           <p>
             LP: {numerology.lifePathNumber} / Maturity: {maturityNumber}
           </p>

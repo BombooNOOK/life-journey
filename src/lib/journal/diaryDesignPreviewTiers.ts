@@ -44,7 +44,7 @@ export const DIARY_PREVIEW_LARGE_COMMENT_REGION: DiaryPreviewRegionBox = {
   left: "9.15%",
   top: "79.2%",
   width: "62.2%",
-  heightPct: "24%",
+  heightPct: "19.8%",
 };
 
 /** コメント左端（テンプレ共通） */

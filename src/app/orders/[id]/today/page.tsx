@@ -51,7 +51,7 @@ export default async function TodayHintPage({ params }: Props) {
     <div className="space-y-6">
       <div>
         <Link href={`/orders/${order.id}`} className="text-sm text-stone-600 hover:text-stone-900">
-          ← 最初の結果へ戻る
+          ← 鑑定結果へ戻る
         </Link>
         <h1 className="mt-2 text-2xl font-bold text-stone-900">今日のヒント</h1>
         <p className="mt-1 text-sm text-stone-600">

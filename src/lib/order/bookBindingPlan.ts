@@ -1,5 +1,5 @@
 /**
- * 日記製本プラン（ページ数は includeInBook=true の JournalEntry 件数のみ。表紙・カレンダー等は含めない）
+ * 日記製本プラン（ページ数は bookReader / 製本PDF 相当の総ページ数）
  */
 
 /** 製本可能な日記本文ページの上限 */
@@ -65,7 +65,7 @@ export type BookPlanResult = {
 };
 
 export const DIARY_BINDING_OVER_LIMIT_MESSAGE =
-  "製本可能ページ数を超えています。掲載する日記を400ページ以内に調整してください。";
+  "ページ数が多いため、個別相談が必要です";
 
 export const BOOK_PLAN_LABELS_JA: Record<BookPlanId, string> = {
   trial: "お試し製本版",

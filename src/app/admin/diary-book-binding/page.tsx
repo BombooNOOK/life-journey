@@ -1,9 +1,15 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import { BookBindingAdminFilterBar } from "@/components/admin/BookBindingAdminFilterBar";
 import { updateDiaryBookBindingRequest } from "@/app/admin/diary-book-binding/actions";
 import { getViewerEmailFromCookie } from "@/lib/auth/viewer";
 import { isAdminEmail } from "@/lib/admin/access";
+import {
+  bookBindingStatusWhereClause,
+  mapStatusCounts,
+  openStatusTotal,
+} from "@/lib/commerce/bookBindingAdminFilter";
 import {
   DIARY_BOOK_BINDING_STATUSES,
   DIARY_BOOK_BINDING_STATUS_LABELS,
@@ -31,33 +37,43 @@ export default async function AdminDiaryBookBindingPage({ searchParams }: Props)
   const { q = "", status: statusFilter = "" } = await searchParams;
   const keyword = q.trim();
 
+  const statusClause = bookBindingStatusWhereClause(statusFilter);
+
   const where: {
-    status?: string;
+    status?: string | { in: string[] };
     OR?: Array<
       | { email: { contains: string; mode: "insensitive" } }
       | { diaryBindingCode: { contains: string; mode: "insensitive" } }
+      | { diaryBookId: { contains: string; mode: "insensitive" } }
       | { displayTitle: { contains: string; mode: "insensitive" } }
       | { baseOrderNumber: { contains: string; mode: "insensitive" } }
     >;
-  } = {};
+  } = { ...statusClause };
 
-  if (statusFilter) {
-    where.status = statusFilter;
-  }
   if (keyword) {
     where.OR = [
       { email: { contains: keyword, mode: "insensitive" } },
       { diaryBindingCode: { contains: keyword, mode: "insensitive" } },
+      { diaryBookId: { contains: keyword, mode: "insensitive" } },
       { displayTitle: { contains: keyword, mode: "insensitive" } },
       { baseOrderNumber: { contains: keyword, mode: "insensitive" } },
     ];
   }
 
-  const rows = await prisma.diaryBookBindingRequest.findMany({
-    where,
-    orderBy: [{ status: "asc" }, { createdAt: "desc" }],
-    take: 200,
-  });
+  const [rows, statusGroups] = await Promise.all([
+    prisma.diaryBookBindingRequest.findMany({
+      where,
+      orderBy: [{ status: "asc" }, { createdAt: "desc" }],
+      take: 200,
+    }),
+    prisma.diaryBookBindingRequest.groupBy({
+      by: ["status"],
+      _count: { id: true },
+    }),
+  ]);
+
+  const statusCounts = mapStatusCounts(statusGroups);
+  const openTotal = openStatusTotal(statusCounts);
 
   return (
     <div className="space-y-6">
@@ -67,41 +83,18 @@ export default async function AdminDiaryBookBindingPage({ searchParams }: Props)
         </Link>
         <h1 className="mt-2 text-2xl font-bold text-stone-900">日記 製本申込予定</h1>
         <p className="mt-1 text-sm text-stone-600">
-          ユーザーが本棚から「製本申込コードを発行」した申込予定です。BASEの「製本申込コード」と照合し、ステータスを更新してください。
+          日記ブック本棚または年本棚から発行された製本申込予定です。BASEの「製本申込コード」と照合し、ステータスを更新してください。
         </p>
       </div>
 
-      <form method="get" className="flex flex-wrap items-end gap-3">
-        <label className="block text-sm">
-          <span className="text-stone-600">検索（製本申込コード・メール・表示名・BASE注文番号）</span>
-          <input
-            name="q"
-            defaultValue={keyword}
-            className="mt-1 block w-64 rounded-md border border-stone-300 px-3 py-2 text-sm"
-          />
-        </label>
-        <label className="block text-sm">
-          <span className="text-stone-600">ステータス</span>
-          <select
-            name="status"
-            defaultValue={statusFilter}
-            className="mt-1 block rounded-md border border-stone-300 px-3 py-2 text-sm"
-          >
-            <option value="">すべて</option>
-            {DIARY_BOOK_BINDING_STATUSES.map((s) => (
-              <option key={s} value={s}>
-                {DIARY_BOOK_BINDING_STATUS_LABELS[s]}
-              </option>
-            ))}
-          </select>
-        </label>
-        <button
-          type="submit"
-          className="rounded-md bg-stone-800 px-4 py-2 text-sm font-medium text-white hover:bg-stone-700"
-        >
-          絞り込み
-        </button>
-      </form>
+      <BookBindingAdminFilterBar
+        basePath="/admin/diary-book-binding"
+        statusFilter={statusFilter}
+        keyword={keyword}
+        statusCounts={statusCounts}
+        openTotal={openTotal}
+        searchPlaceholder="検索（製本コード・メール・表示名・日記ブックID・BASE注文番号）"
+      />
 
       {rows.length === 0 ? (
         <p className="text-sm text-stone-600">該当する申込予定はありません。</p>
@@ -128,11 +121,40 @@ export default async function AdminDiaryBookBindingPage({ searchParams }: Props)
               </div>
 
               <dl className="mt-3 grid gap-1 text-sm text-stone-700 sm:grid-cols-2">
-                <div>
-                  <span className="text-stone-500">年: </span>
-                  {row.year}年
-                  {row.displayTitle ? `（${row.displayTitle}）` : null}
+                <div className="sm:col-span-2">
+                  <span className="text-stone-500">種別: </span>
+                  {row.diaryBookId ? (
+                    <span className="font-medium text-emerald-900">日記ブック</span>
+                  ) : (
+                    <span className="font-medium text-stone-800">年本棚（旧）</span>
+                  )}
                 </div>
+                <div className="sm:col-span-2">
+                  <span className="text-stone-500">タイトル: </span>
+                  {row.displayTitle ?? "—"}
+                </div>
+                {row.diaryBookId ? (
+                  <>
+                    <div className="sm:col-span-2">
+                      <span className="text-stone-500">日記ブックID: </span>
+                      <span className="font-mono text-xs">{row.diaryBookId}</span>
+                    </div>
+                    <div className="sm:col-span-2">
+                      <span className="text-stone-500">対象期間: </span>
+                      {row.startDate && row.endDate
+                        ? `${row.startDate} 〜 ${row.endDate}`
+                        : "—"}
+                    </div>
+                  </>
+                ) : (
+                  <div>
+                    <span className="text-stone-500">年: </span>
+                    {row.year != null ? `${row.year}年` : "—"}
+                    {row.periodStartMonth != null && row.periodEndMonth != null
+                      ? `（${row.periodStartMonth}月〜${row.periodEndMonth}月）`
+                      : null}
+                  </div>
+                )}
                 <div>
                   <span className="text-stone-500">ページ数: </span>
                   {row.pageCount}
@@ -142,10 +164,19 @@ export default async function AdminDiaryBookBindingPage({ searchParams }: Props)
                   {planLabel(row.planId)}
                   <span className="font-mono text-xs text-stone-500"> ({row.planId})</span>
                 </div>
-                <div>
-                  <span className="text-stone-500">製本期間: </span>
-                  {row.periodStartMonth}月〜{row.periodEndMonth}月
-                </div>
+                {row.baseShopUrl ? (
+                  <div className="sm:col-span-2">
+                    <span className="text-stone-500">BASE商品: </span>
+                    <a
+                      href={row.baseShopUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-xs text-violet-800 underline-offset-2 hover:underline"
+                    >
+                      商品ページを開く
+                    </a>
+                  </div>
+                ) : null}
                 <div>
                   <span className="text-stone-500">メール: </span>
                   {row.email}

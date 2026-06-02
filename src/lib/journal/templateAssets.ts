@@ -1,19 +1,37 @@
-import type { DiaryDesignId } from "@/lib/journal/meta";
+import type { CompanionType } from "@/lib/journal/meta";
+import { isCompanionType } from "@/lib/journal/meta";
+import { companionTypeToTemplateSlug } from "@/lib/journal/coverAssets";
 
-/** 画面上のプレビュー・入力補助用（軽量・ライト版など） */
-export const diaryTemplateScreenImageMap: Record<DiaryDesignId, string> = {
-  simple: "/images/diary-template-simple.png?v=4",
-  /** 罫線なし・伴走キャラ別はファイル名で区別（例: drfukuro）。レイアウト寸法は共通 */
-  simple_plain: "/images/diary-template-simple-plain-drfukuro.png?v=3",
-};
+/** 日記ページ背景（罫線なしのみ）。キャラ別 PNG。 */
+const TEMPLATE_BASENAME = "diary-template-simple-plain";
+const TEMPLATE_CACHE_VERSION = "4";
 
-/**
- * 印刷・PDF・製本取り込み用。
- * `public/images/diary-template-simple-print.png` に高解像度版を置き替えれば、ここだけ `?v=` を上げれば反映される。
- * 罫線なし版は伴走キャラ別 PNG（現状: simple-plain-drfukuro）を参照。
- * （現状のコードはプレビューが screen を参照。print パイプライン実装時にこのマップを使う）
- */
-export const diaryTemplatePrintImageMap: Record<DiaryDesignId, string> = {
-  simple: "/images/diary-template-simple-print.png?v=1",
-  simple_plain: "/images/diary-template-simple-plain-drfukuro.png?v=3",
-};
+function templatePath(slug: string): string {
+  return `/images/${TEMPLATE_BASENAME}-${slug}.png?v=${TEMPLATE_CACHE_VERSION}`;
+}
+
+/** 画面上のプレビュー・入力補助用 */
+export function diaryTemplateScreenPathForCompanion(companionType: string): string {
+  return templatePath(companionTypeToTemplateSlug(companionType));
+}
+
+/** 印刷・製本取り込み用（現状は screen と同じ PNG。高解像度版は `-print` サフィックスで追加可） */
+export function diaryTemplatePrintPathForCompanion(companionType: string): string {
+  return diaryTemplateScreenPathForCompanion(companionType);
+}
+
+/** @deprecated 常に罫線なし。`diaryTemplateScreenPathForCompanion` を使用 */
+export const diaryTemplateScreenImageMap = {
+  simple_plain: templatePath("drfukuro"),
+} as const;
+
+/** @deprecated `diaryTemplatePrintPathForCompanion` を使用 */
+export const diaryTemplatePrintImageMap = {
+  simple_plain: templatePath("drfukuro"),
+} as const;
+
+export function diaryTemplatePathForCompanion(companionType: string): string {
+  return diaryTemplateScreenPathForCompanion(companionType);
+}
+
+export type DiaryCompanionWithTemplate = CompanionType;

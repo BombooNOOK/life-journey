@@ -6,30 +6,46 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useFirebaseAuth } from "@/components/auth/FirebaseAuthProvider";
 import { formatDateTimeJa } from "@/lib/date/formatJa";
 
+import { JournalCompanionPicker } from "@/components/journal/JournalCompanionPicker";
+import { FieldLabelWithHelp } from "@/components/ui/InlineHelpButton";
+import {
+  JOURNAL_CONTENT_HELP,
+  JOURNAL_FONT_SIZE_HELP,
+} from "@/lib/journal/journalInputHelpCopy";
+import {
+  formatJournalRecordPageTitle,
+  journalBodyInputHeading,
+} from "@/lib/journal/journalRecordDateDisplay";
+import { JournalWritingComposer } from "@/components/journal/JournalWritingComposer";
 import { JournalContentLengthAlerts } from "@/components/journal/JournalContentLengthAlerts";
-import { parseSafeBookshelfDiaryReturnTo } from "@/lib/journal/bookshelfReturnTo";
+import { parseSafeJournalReturnTo } from "@/lib/journal/bookshelfReturnTo";
 import {
   CONTENT_FONT_MODE_LABELS_JA,
   CONTENT_FONT_MODES,
   DEFAULT_CONTENT_FONT_MODE,
-  JOURNAL_CONTENT_BOOK_GUIDE_HINT,
   type ContentFontMode,
   JOURNAL_CONTENT_SOFT_MAX_BY_MODE,
   normalizeContentFontMode,
 } from "@/lib/journal/contentFontMode";
+import {
+  countBodyLayoutLines,
+  getDiaryBodyLineLimit,
+  isDiaryBodyOverLineLimit,
+} from "@/lib/journal/diaryPreviewBodyLineLimits";
 import type { JournalNumerologyDebug } from "@/lib/journal/journalNumerologyDebug";
 import {
   activityOptions,
-  diaryDesignOptions,
   getActivityMeta,
-  getDiaryDesignLabel,
+  getCompanionLabel,
+  getCompanionReadingHeading,
   getMoodMeta,
   moodOptions,
-  normalizeDiaryDesignTheme,
+  PHASE1_COMPANION_TYPE,
   type ActivityId,
   type DiaryDesignId,
   type MoodId,
 } from "@/lib/journal/meta";
+import { JOURNAL_OWL_COMMENT_KANTEI_REQUIRED_MESSAGE } from "@/lib/journal/kanteiCommentCopy";
 
 type Entry = {
   id: string;
@@ -114,15 +130,21 @@ function JournalPageContent() {
   const profileId = (searchParams.get("profile") ?? "").trim();
   const dateFromQuery = searchParams.get("date");
   const showNumerologyDebug = searchParams.get("numerologyDebug") === "1";
-  const safeReturnToBookshelf = useMemo(
-    () => parseSafeBookshelfDiaryReturnTo(searchParams.get("returnTo")),
+  const showSyncDebug = searchParams.get("syncDebug") === "1";
+  const showAuthDebug =
+    showNumerologyDebug ||
+    showSyncDebug ||
+    process.env.NODE_ENV === "development";
+  const safeReturnTo = useMemo(
+    () => parseSafeJournalReturnTo(searchParams.get("returnTo")),
     [searchParams],
   );
+  const returnToIsCalendar = safeReturnTo?.startsWith("/orders/calendar") ?? false;
   const [content, setContent] = useState("");
   const [entryDate, setEntryDate] = useState(() => toDateInputValue(new Date()));
   const [mood, setMood] = useState<MoodId>("calm");
   const [activity, setActivity] = useState<ActivityId>("record_anyway");
-  const [designTheme, setDesignTheme] = useState<DiaryDesignId>("simple");
+  const designTheme: DiaryDesignId = "simple_plain";
   const [contentFontMode, setContentFontMode] = useState<ContentFontMode>(DEFAULT_CONTENT_FONT_MODE);
   const [includeInBook, setIncludeInBook] = useState(true);
   const [entries, setEntries] = useState<Entry[]>([]);
@@ -142,6 +164,8 @@ function JournalPageContent() {
   const [error, setError] = useState<string | null>(null);
   const [numerologyDebug, setNumerologyDebug] = useState<JournalNumerologyDebug | null>(null);
   const [owlRegenLoading, setOwlRegenLoading] = useState(false);
+  const [navigatingToPreview, setNavigatingToPreview] = useState(false);
+  const [kanteiOrderExists, setKanteiOrderExists] = useState<boolean | undefined>(undefined);
 
   const loadEntries = useCallback(async (opts?: { silent?: boolean }) => {
     const silent = opts?.silent ?? false;
@@ -159,12 +183,14 @@ function JournalPageContent() {
       });
       const data = (await res.json()) as {
         entries?: Entry[];
+        kanteiOrderExists?: boolean;
         error?: string;
       };
       if (!res.ok) {
         setError(data.error ?? "日記の読み込みに失敗しました。");
         return;
       }
+      setKanteiOrderExists(data.kanteiOrderExists);
       setEntries(data.entries ?? []);
     } catch {
       setError("日記の読み込みに失敗しました。");
@@ -294,16 +320,16 @@ function JournalPageContent() {
       .then(async (res) => {
         const data = (await res.json()) as {
           entry?: Entry;
+          kanteiOrderExists?: boolean;
           error?: string;
         };
         if (!res.ok || !data.entry) {
           throw new Error(data.error ?? "編集対象の読み込みに失敗しました。");
         }
+        setKanteiOrderExists(data.kanteiOrderExists);
         setContent(data.entry.content ?? "");
         setMood(data.entry.mood ?? "calm");
         setActivity(data.entry.activity ?? "record_anyway");
-        const design = data.entry.designTheme;
-        setDesignTheme(normalizeDiaryDesignTheme(design ?? "simple"));
         setContentFontMode(normalizeContentFontMode(data.entry.contentFontMode));
         setPhotoDataUrl(data.entry.photoDataUrl ?? "");
         setIncludeInBook(data.entry.includeInBook !== false);
@@ -372,7 +398,7 @@ function JournalPageContent() {
           content: text,
           mood,
           activity,
-          companionType: "owl",
+          companionType: PHASE1_COMPANION_TYPE,
           designTheme,
           contentFontMode,
           photoDataUrl,
@@ -387,6 +413,17 @@ function JournalPageContent() {
         return;
       }
       const savedId = data.entry?.id ? String(data.entry.id) : editingId;
+      if (options?.redirectToPreview && savedId) {
+        setNavigatingToPreview(true);
+        const previewQs = new URLSearchParams({
+          entry: savedId,
+          theme: designTheme,
+          pv: "3",
+        });
+        if (safeReturnTo) previewQs.set("returnTo", safeReturnTo);
+        router.push(`/journal/preview?${previewQs.toString()}`);
+        return;
+      }
       setContent("");
       setPhotoDataUrl("");
       setSelectedPhotoFile(null);
@@ -394,18 +431,12 @@ function JournalPageContent() {
       setIncludeInBook(true);
       setEntryDate(toDateInputValue(new Date()));
       await loadEntries({ silent: true });
-      if (options?.redirectToPreview && savedId) {
-        router.push(
-          `/journal/preview?entry=${encodeURIComponent(savedId)}&theme=${encodeURIComponent(designTheme)}&pv=3`,
-        );
-        return;
-      }
       if (options?.redirectToOrders) {
         router.push("/orders");
         return;
       }
-      if (editingId && safeReturnToBookshelf) {
-        router.push(safeReturnToBookshelf);
+      if (safeReturnTo) {
+        router.push(safeReturnTo);
         return;
       }
       if (editingId) {
@@ -441,7 +472,7 @@ function JournalPageContent() {
           content: text,
           mood,
           activity,
-          companionType: "owl",
+          companionType: PHASE1_COMPANION_TYPE,
           designTheme,
           contentFontMode,
           photoDataUrl,
@@ -502,7 +533,6 @@ function JournalPageContent() {
         setSelectedPhotoFile(null);
         setMood("calm");
         setActivity("record_anyway");
-        setDesignTheme("simple");
         setContentFontMode(DEFAULT_CONTENT_FONT_MODE);
         setIncludeInBook(true);
         router.replace("/journal");
@@ -523,41 +553,78 @@ function JournalPageContent() {
         "メイン"
       : null;
 
+  const trimmedContent = content.trim();
+  const charCount = trimmedContent.length;
+  const charMax = JOURNAL_CONTENT_SOFT_MAX_BY_MODE[contentFontMode];
+  const { maxLines: bodyMaxLines } = getDiaryBodyLineLimit(contentFontMode);
+  const bodyLineCount = useMemo(
+    () => countBodyLayoutLines(trimmedContent, contentFontMode),
+    [trimmedContent, contentFontMode],
+  );
+  const bodyOverflows = useMemo(
+    () => isDiaryBodyOverLineLimit(trimmedContent, contentFontMode),
+    [trimmedContent, contentFontMode],
+  );
+  const commentOverflows = false;
+
+  const recordPageTitle = formatJournalRecordPageTitle(entryDate);
+  const bodyInputHeading = journalBodyInputHeading(entryDate);
+
   return (
-    <div className="space-y-5">
-      <div>
-        <h1 className="text-2xl font-bold text-stone-900">今日の記録</h1>
-        <p className="mt-1 text-sm text-stone-600">
-          今日感じたことや気づきを、短くメモして残しておけます。
-        </p>
-        {diaryTargetLabel !== null ? (
-          <p className="mt-3 rounded-lg border border-violet-100 bg-violet-50/90 px-3 py-2 text-sm font-medium text-violet-950">
-            現在の日記対象: 「{diaryTargetLabel}」
+    <div className="relative space-y-3">
+      {navigatingToPreview ? (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-[#faf8f5]/90 backdrop-blur-[2px]"
+          aria-live="polite"
+          aria-busy="true"
+        >
+          <p className="rounded-xl border border-stone-200 bg-white px-5 py-4 text-sm text-stone-700 shadow-sm">
+            プレビューを準備しています…
           </p>
-        ) : !authLoading && user?.email ? (
-          <p className="mt-3 text-xs text-stone-500">プロフィール情報を読み込み中…</p>
-        ) : null}
-        <p className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-2">
-          <Link href="/orders" className="text-sm text-stone-600 underline-offset-2 hover:underline">
-            ← マイページに戻る
-          </Link>
-          {editingId && safeReturnToBookshelf ? (
-            <Link
-              href={safeReturnToBookshelf}
-              className="text-sm text-emerald-800 underline-offset-2 hover:underline"
+        </div>
+      ) : null}
+      <div className="space-y-1">
+        <div className="flex flex-wrap items-center gap-2">
+          <h1 className="text-xl font-bold leading-tight text-stone-900 sm:text-2xl">
+            {recordPageTitle}
+          </h1>
+          {diaryTargetLabel !== null ? (
+            <span
+              className="rounded-full border border-violet-200/90 bg-violet-50 px-2.5 py-0.5 text-xs font-medium text-violet-900"
+              title="いま書いている日記の対象"
             >
-              ← 本の最終確認に戻る（保存しない）
-            </Link>
+              {diaryTargetLabel}
+            </span>
+          ) : !authLoading && user?.email ? (
+            <span className="text-[11px] text-stone-400">読み込み中…</span>
           ) : null}
+        </div>
+        <p className="text-xs leading-relaxed text-stone-500">
+          こんな日だった。こんなことを思った。
+          <br />
+          そのままの言葉で残してみましょう。
         </p>
-        {!authLoading && user?.email ? (
-          <p className="mt-2 text-xs text-stone-500">
-            ログイン中: {user.email}
+        {showAuthDebug && user?.email ? (
+          <p className="text-[10px] leading-snug text-stone-400">
+            ログイン: {user.email}
             {serverViewerEmail && serverViewerEmail !== user.email.toLowerCase()
-              ? `（サーバー認識: ${serverViewerEmail}）`
+              ? `（サーバー: ${serverViewerEmail}）`
               : ""}
           </p>
         ) : null}
+        <p className="flex flex-wrap items-center gap-x-3 text-[11px] text-stone-400">
+          <Link href="/orders" className="underline-offset-2 hover:text-stone-600 hover:underline">
+            マイページ
+          </Link>
+          {safeReturnTo ? (
+            <Link
+              href={safeReturnTo}
+              className="text-emerald-800 underline-offset-2 hover:underline"
+            >
+              {returnToIsCalendar ? "日記ホームへ" : "本の確認へ"}
+            </Link>
+          ) : null}
+        </p>
       </div>
 
       <form onSubmit={(e) => void onSubmit(e)} className="space-y-3 rounded-xl border border-stone-200 bg-white p-4 shadow-sm sm:p-5">
@@ -566,51 +633,124 @@ function JournalPageContent() {
             {loadingEdit ? "記録を読み込み中…" : "編集モードです。内容を更新できます。"}
           </div>
         ) : null}
-        <label className="block text-sm font-medium text-stone-700" htmlFor="journal-mood">
-          今日の気分
-        </label>
-        <select
-          id="journal-mood"
-          value={mood}
-          onChange={(e) => setMood(e.target.value as MoodId)}
-          className="w-full rounded-lg border border-stone-300 px-3 py-2 text-sm text-stone-900 outline-none ring-stone-400 focus:ring-2"
-        >
-          {moodOptions.map((option) => (
-            <option key={option.id} value={option.id}>
-              {option.emoji} {option.label}
-            </option>
-          ))}
-        </select>
-        <label className="block text-sm font-medium text-stone-700" htmlFor="journal-activity">
-          今日はどんな一日でしたか？
-        </label>
-        <select
-          id="journal-activity"
-          value={activity}
-          onChange={(e) => setActivity(e.target.value as ActivityId)}
-          className="w-full rounded-lg border border-stone-300 px-3 py-2 text-sm text-stone-900 outline-none ring-stone-400 focus:ring-2"
-        >
-          {activityOptions.map((option) => (
-            <option key={option.id} value={option.id}>
-              {option.label}
-            </option>
-          ))}
-        </select>
-        <label className="block text-sm font-medium text-stone-700" htmlFor="journal-design">
-          ページの見た目（テンプレート）
-        </label>
-        <select
-          id="journal-design"
-          value={designTheme}
-          onChange={(e) => setDesignTheme(e.target.value as DiaryDesignId)}
-          className="w-full rounded-lg border border-stone-300 px-3 py-2 text-sm text-stone-900 outline-none ring-stone-400 focus:ring-2"
-        >
-          {diaryDesignOptions.map((option) => (
-            <option key={option.id} value={option.id}>
-              {option.label}
-            </option>
-          ))}
-        </select>
+
+        <JournalWritingComposer
+          label={
+            <FieldLabelWithHelp
+              as="label"
+              htmlFor="journal-content"
+              label={bodyInputHeading}
+              help={JOURNAL_CONTENT_HELP}
+              helpAriaLabel={`${bodyInputHeading}の説明`}
+              labelClassName="text-base font-semibold text-stone-800"
+            />
+          }
+          recordPageTitle={recordPageTitle}
+          bodyInputHeading={bodyInputHeading}
+          content={content}
+          onContentChange={setContent}
+          onContentFontModeChange={setContentFontMode}
+          disabled={saving || loadingEdit || processingPhoto}
+          placeholder="例）今日は少し疲れたけれど、帰り道の空がきれいだった。"
+          contentFontMode={contentFontMode}
+          charCount={charCount}
+          charMax={charMax}
+          bodyLineCount={bodyLineCount}
+          bodyMaxLines={bodyMaxLines}
+          bodyOverflows={bodyOverflows}
+          commentOverflows={commentOverflows}
+        />
+
+        <fieldset className="hidden rounded-lg border border-stone-200/80 bg-stone-50/60 px-3 py-2.5 sm:block">
+          <legend className="sr-only">文字サイズ</legend>
+          <div className="px-1">
+            <FieldLabelWithHelp
+              label="文字サイズ"
+              help={JOURNAL_FONT_SIZE_HELP}
+              labelClassName="text-sm font-medium text-stone-800"
+            />
+          </div>
+          <div className="mt-2 flex flex-wrap gap-2">
+            {CONTENT_FONT_MODES.map((mode) => (
+              <label
+                key={mode}
+                className={[
+                  "inline-flex cursor-pointer items-center gap-2 rounded-lg border px-3 py-2 text-sm",
+                  contentFontMode === mode
+                    ? "border-emerald-600 bg-emerald-50 text-emerald-950"
+                    : "border-stone-200 bg-white text-stone-800 hover:bg-stone-50",
+                ].join(" ")}
+              >
+                <input
+                  type="radio"
+                  name="journal-content-font-mode"
+                  value={mode}
+                  checked={contentFontMode === mode}
+                  onChange={() => setContentFontMode(mode)}
+                  className="h-4 w-4 border-stone-300 text-emerald-700 focus:ring-emerald-600"
+                />
+                {CONTENT_FONT_MODE_LABELS_JA[mode]}
+              </label>
+            ))}
+          </div>
+        </fieldset>
+
+        <JournalContentLengthAlerts
+          contentFontMode={contentFontMode}
+          contentLength={charCount}
+          bodyOverflows={bodyOverflows}
+          commentOverflows={commentOverflows}
+        />
+
+        <div className="space-y-2 rounded-lg border border-dashed border-stone-200/90 bg-[#faf8f5]/50 px-3 py-3">
+          <label className="block text-sm font-medium text-stone-700" htmlFor="journal-photo">
+            この日の写真（任意）
+          </label>
+          <input
+            id="journal-photo"
+            type="file"
+            accept="image/*"
+            className="w-full rounded-lg border border-stone-300 bg-white px-3 py-2 text-sm text-stone-700 file:mr-3 file:rounded file:border-0 file:bg-stone-100 file:px-3 file:py-1.5 file:text-sm file:text-stone-700"
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              if (!file) {
+                setPhotoDataUrl("");
+                setSelectedPhotoFile(null);
+                return;
+              }
+              setCropOffset(50);
+              setSelectedPhotoFile(file);
+            }}
+          />
+          {selectedPhotoFile ? (
+            <label className="block">
+              <span className="text-xs text-stone-600">写真の位置調整（{cropOffset}%）</span>
+              <input
+                type="range"
+                min={0}
+                max={100}
+                step={1}
+                value={cropOffset}
+                onChange={(e) => setCropOffset(Number(e.target.value))}
+                className="mt-1 w-full"
+              />
+            </label>
+          ) : null}
+          {processingPhoto ? (
+            <p className="text-xs text-stone-500">写真を最適化しています…</p>
+          ) : null}
+          {photoDataUrl ? (
+            <img
+              src={photoDataUrl}
+              alt="選択した写真プレビュー"
+              className="aspect-square w-full max-w-xs rounded-lg border border-stone-200 bg-[#f7f4ee] object-contain"
+            />
+          ) : null}
+        </div>
+
+        <div className="space-y-3 border-t border-stone-100 pt-3">
+          <JournalCompanionPicker disabled={saving || loadingEdit || processingPhoto} />
+
         <label className="block text-sm font-medium text-stone-700" htmlFor="journal-entry-date">
           記録日
         </label>
@@ -691,7 +831,7 @@ function JournalPageContent() {
             </div>
           </details>
         ) : null}
-        <label className="flex items-center gap-2 rounded-lg border border-stone-200 bg-stone-50 px-3 py-2 text-sm text-stone-800">
+        <label className="flex items-center gap-2 rounded-lg border border-stone-200 bg-white px-3 py-2 text-sm text-stone-800">
           <input
             type="checkbox"
             checked={includeInBook}
@@ -700,105 +840,40 @@ function JournalPageContent() {
           />
           このページを本に入れる
         </label>
-        <div className="flex flex-wrap items-end justify-between gap-2">
-          <label className="text-sm font-medium text-stone-700" htmlFor="journal-content">
-            記録する内容
-          </label>
-          <span className="text-base font-semibold tabular-nums text-stone-900 sm:text-lg">
-            {CONTENT_FONT_MODE_LABELS_JA[contentFontMode]}：{content.length} /{" "}
-            {JOURNAL_CONTENT_SOFT_MAX_BY_MODE[contentFontMode]}
-            <span className="font-semibold text-stone-700">文字</span>
-          </span>
-        </div>
-        <p className="mb-1.5 text-[11px] leading-snug text-stone-500">{JOURNAL_CONTENT_BOOK_GUIDE_HINT}</p>
-        <textarea
-          id="journal-content"
-          value={content}
-          onChange={(e) => setContent(e.target.value)}
-          maxLength={2000}
-          rows={6}
-          className="w-full rounded-lg border border-stone-300 px-3 py-2 text-sm text-stone-900 outline-none ring-stone-400 focus:ring-2"
-          placeholder="例）今日は数字のメッセージを読んで、焦らなくていいと思えた。"
-        />
-        <fieldset className="rounded-lg border border-stone-200 bg-stone-50/80 px-3 py-3">
-          <legend className="px-1 text-sm font-medium text-stone-800">
-            今日の記録の文字サイズ（製本イメージ）
-          </legend>
-          <div className="mt-2 flex flex-wrap gap-2">
-            {CONTENT_FONT_MODES.map((mode) => (
-              <label
-                key={mode}
-                className={[
-                  "inline-flex cursor-pointer items-center gap-2 rounded-lg border px-3 py-2 text-sm",
-                  contentFontMode === mode
-                    ? "border-emerald-600 bg-emerald-50 text-emerald-950"
-                    : "border-stone-200 bg-white text-stone-800 hover:bg-stone-50",
-                ].join(" ")}
-              >
-                <input
-                  type="radio"
-                  name="journal-content-font-mode"
-                  value={mode}
-                  checked={contentFontMode === mode}
-                  onChange={() => setContentFontMode(mode)}
-                  className="h-4 w-4 border-stone-300 text-emerald-700 focus:ring-emerald-600"
-                />
-                {CONTENT_FONT_MODE_LABELS_JA[mode]}
-              </label>
-            ))}
-          </div>
-          <p className="mt-2 text-[11px] leading-relaxed text-stone-600">
-            上の「現在文字数 / 目安」は、選んだサイズごとの製本向けの目安です。モードを変えると分母も変わります。
-          </p>
-        </fieldset>
-        <JournalContentLengthAlerts
-          contentFontMode={contentFontMode}
-          contentLength={content.trim().length}
-        />
-        <label className="block text-sm font-medium text-stone-700" htmlFor="journal-photo">
-          写真（任意）
+
+        <label className="block text-sm font-medium text-stone-700" htmlFor="journal-mood">
+          今日の気分
         </label>
-        <input
-          id="journal-photo"
-          type="file"
-          accept="image/*"
-          className="w-full rounded-lg border border-stone-300 px-3 py-2 text-sm text-stone-700 file:mr-3 file:rounded file:border-0 file:bg-stone-100 file:px-3 file:py-1.5 file:text-sm file:text-stone-700"
-          onChange={(e) => {
-            const file = e.target.files?.[0];
-            if (!file) {
-              setPhotoDataUrl("");
-              setSelectedPhotoFile(null);
-              return;
-            }
-            setCropOffset(50);
-            setSelectedPhotoFile(file);
-          }}
-        />
-        {selectedPhotoFile ? (
-          <label className="block">
-            <span className="text-xs text-stone-600">写真の位置調整（{cropOffset}%）</span>
-            <input
-              type="range"
-              min={0}
-              max={100}
-              step={1}
-              value={cropOffset}
-              onChange={(e) => setCropOffset(Number(e.target.value))}
-              className="mt-1 w-full"
-            />
-          </label>
-        ) : null}
-        {processingPhoto ? (
-          <p className="text-xs text-stone-500">写真を最適化しています…</p>
-        ) : null}
-        {photoDataUrl ? (
-          <img
-            src={photoDataUrl}
-            alt="選択した写真プレビュー"
-            className="aspect-square w-full rounded-lg border border-stone-200 bg-[#f7f4ee] object-contain"
-          />
-        ) : null}
-        <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:justify-end">
+        <select
+          id="journal-mood"
+          value={mood}
+          onChange={(e) => setMood(e.target.value as MoodId)}
+          className="w-full rounded-lg border border-stone-300 bg-white px-3 py-2 text-sm text-stone-900 outline-none ring-stone-400 focus:ring-2"
+        >
+          {moodOptions.map((option) => (
+            <option key={option.id} value={option.id}>
+              {option.emoji} {option.label}
+            </option>
+          ))}
+        </select>
+        <label className="block text-sm font-medium text-stone-700" htmlFor="journal-activity">
+          今日はどんな一日でしたか？
+        </label>
+        <select
+          id="journal-activity"
+          value={activity}
+          onChange={(e) => setActivity(e.target.value as ActivityId)}
+          className="w-full rounded-lg border border-stone-300 bg-white px-3 py-2 text-sm text-stone-900 outline-none ring-stone-400 focus:ring-2"
+        >
+          {activityOptions.map((option) => (
+            <option key={option.id} value={option.id}>
+              {option.label}
+            </option>
+          ))}
+        </select>
+        </div>
+
+        <div className="flex flex-col gap-2 border-t border-stone-100 pt-3 sm:flex-row sm:flex-wrap sm:justify-end">
             <button
               type="submit"
               disabled={saving || processingPhoto}
@@ -831,7 +906,6 @@ function JournalPageContent() {
                 setSelectedPhotoFile(null);
                 setMood("calm");
                 setActivity("record_anyway");
-                setDesignTheme("simple");
                 setContentFontMode(DEFAULT_CONTENT_FONT_MODE);
                 setIncludeInBook(true);
                 setEntryDate(toDateInputValue(new Date()));
@@ -851,7 +925,6 @@ function JournalPageContent() {
                   setSelectedPhotoFile(null);
                   setMood("calm");
                   setActivity("record_anyway");
-                  setDesignTheme("simple");
                   setContentFontMode(DEFAULT_CONTENT_FONT_MODE);
                   setIncludeInBook(true);
                   setEntryDate(toDateInputValue(new Date()));
@@ -895,12 +968,8 @@ function JournalPageContent() {
                       type="button"
                       className="text-xs text-violet-700 underline underline-offset-2 hover:text-violet-900"
                       onClick={() => {
-                        const themeId = entry.designTheme;
-                        const previewTheme = themeId
-                          ? normalizeDiaryDesignTheme(themeId)
-                          : designTheme;
                         router.push(
-                          `/journal/preview?entry=${encodeURIComponent(entry.id)}&theme=${encodeURIComponent(previewTheme)}&pv=3`,
+                          `/journal/preview?entry=${encodeURIComponent(entry.id)}&theme=simple_plain&pv=3`,
                         );
                       }}
                     >
@@ -920,7 +989,8 @@ function JournalPageContent() {
                   今日やったこと: {getActivityMeta(entry.activity).label}
                 </p>
                 <p className="mt-1 text-xs text-stone-500">
-                  デザイン: {getDiaryDesignLabel(entry.designTheme ?? "simple")}
+                  伴走キャラ:{" "}
+                  {getCompanionLabel(PHASE1_COMPANION_TYPE)}
                 </p>
                 <p className="mt-1 text-xs text-stone-500">
                   本への掲載: {entry.includeInBook ? "入れる" : "入れない"}
@@ -935,9 +1005,20 @@ function JournalPageContent() {
                 <p className="whitespace-pre-wrap leading-7 text-stone-800">{entry.content}</p>
                 {entry.generatedComment ? (
                   <div className="mt-3 rounded-lg border border-emerald-100 bg-emerald-50/70 px-3 py-2">
-                    <p className="text-xs font-medium text-emerald-900">フクロウ先生の読み解き</p>
+                    <p className="text-xs font-medium text-emerald-900">
+                      {getCompanionReadingHeading(PHASE1_COMPANION_TYPE)}
+                    </p>
                     <p className="mt-1 whitespace-pre-line text-sm leading-6 text-emerald-900/90">
                       {entry.generatedComment}
+                    </p>
+                  </div>
+                ) : kanteiOrderExists === false ? (
+                  <div className="mt-3 rounded-lg border border-stone-200 bg-stone-50 px-3 py-2">
+                    <p className="text-xs font-medium text-stone-700">
+                      {getCompanionReadingHeading(PHASE1_COMPANION_TYPE)}
+                    </p>
+                    <p className="mt-1 text-sm leading-6 text-stone-600">
+                      {JOURNAL_OWL_COMMENT_KANTEI_REQUIRED_MESSAGE}
                     </p>
                   </div>
                 ) : null}

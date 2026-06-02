@@ -1,10 +1,16 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import { BookBindingAdminFilterBar } from "@/components/admin/BookBindingAdminFilterBar";
 import { updateKanteiBookBindingRequest } from "@/app/admin/kantei-book-binding/actions";
 import { KanteiBookBindingPrintDownload } from "@/components/admin/KanteiBookBindingPrintDownload";
 import { getViewerEmailFromCookie } from "@/lib/auth/viewer";
 import { isAdminEmail } from "@/lib/admin/access";
+import {
+  bookBindingStatusWhereClause,
+  mapStatusCounts,
+  openStatusTotal,
+} from "@/lib/commerce/bookBindingAdminFilter";
 import {
   KANTEI_BOOK_BINDING_STATUSES,
   KANTEI_BOOK_BINDING_STATUS_LABELS,
@@ -25,19 +31,18 @@ export default async function AdminKanteiBookBindingPage({ searchParams }: Props
   const { q = "", status: statusFilter = "" } = await searchParams;
   const keyword = q.trim();
 
+  const statusClause = bookBindingStatusWhereClause(statusFilter);
+
   const where: {
-    status?: string;
+    status?: string | { in: string[] };
     OR?: Array<
       | { email: { contains: string; mode: "insensitive" } }
       | { kanteiCode: { contains: string; mode: "insensitive" } }
       | { fullNameDisplay: { contains: string; mode: "insensitive" } }
       | { baseOrderNumber: { contains: string; mode: "insensitive" } }
     >;
-  } = {};
+  } = { ...statusClause };
 
-  if (statusFilter) {
-    where.status = statusFilter;
-  }
   if (keyword) {
     where.OR = [
       { email: { contains: keyword, mode: "insensitive" } },
@@ -47,11 +52,20 @@ export default async function AdminKanteiBookBindingPage({ searchParams }: Props
     ];
   }
 
-  const rows = await prisma.kanteiBookBindingRequest.findMany({
-    where,
-    orderBy: [{ status: "asc" }, { createdAt: "desc" }],
-    take: 200,
-  });
+  const [rows, statusGroups] = await Promise.all([
+    prisma.kanteiBookBindingRequest.findMany({
+      where,
+      orderBy: [{ status: "asc" }, { createdAt: "desc" }],
+      take: 200,
+    }),
+    prisma.kanteiBookBindingRequest.groupBy({
+      by: ["status"],
+      _count: { id: true },
+    }),
+  ]);
+
+  const statusCounts = mapStatusCounts(statusGroups);
+  const openTotal = openStatusTotal(statusCounts);
 
   return (
     <div className="space-y-6">
@@ -65,37 +79,14 @@ export default async function AdminKanteiBookBindingPage({ searchParams }: Props
         </p>
       </div>
 
-      <form method="get" className="flex flex-wrap items-end gap-3">
-        <label className="block text-sm">
-          <span className="text-stone-600">検索（メール・鑑定コード・氏名・BASE注文番号）</span>
-          <input
-            name="q"
-            defaultValue={keyword}
-            className="mt-1 block w-64 rounded-md border border-stone-300 px-3 py-2 text-sm"
-          />
-        </label>
-        <label className="block text-sm">
-          <span className="text-stone-600">ステータス</span>
-          <select
-            name="status"
-            defaultValue={statusFilter}
-            className="mt-1 block rounded-md border border-stone-300 px-3 py-2 text-sm"
-          >
-            <option value="">すべて</option>
-            {KANTEI_BOOK_BINDING_STATUSES.map((s) => (
-              <option key={s} value={s}>
-                {KANTEI_BOOK_BINDING_STATUS_LABELS[s]}
-              </option>
-            ))}
-          </select>
-        </label>
-        <button
-          type="submit"
-          className="rounded-md bg-stone-800 px-4 py-2 text-sm font-medium text-white hover:bg-stone-700"
-        >
-          絞り込み
-        </button>
-      </form>
+      <BookBindingAdminFilterBar
+        basePath="/admin/kantei-book-binding"
+        statusFilter={statusFilter}
+        keyword={keyword}
+        statusCounts={statusCounts}
+        openTotal={openTotal}
+        searchPlaceholder="検索（メール・鑑定コード・氏名・BASE注文番号）"
+      />
 
       {rows.length === 0 ? (
         <p className="text-sm text-stone-600">該当する申込予定はありません。</p>

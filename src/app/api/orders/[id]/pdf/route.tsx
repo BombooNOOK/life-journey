@@ -119,7 +119,7 @@ function htmlWhenDownloadLimitExceeded(reissueUrl: string, limit: number): strin
     <p>この鑑定書は無料閲覧回数（${limit}回）を使い切りました。</p>
     <p>追加の再発行をご希望の場合は、下のリンクからお手続きください。</p>
     <a class="btn" href="${reissueUrl}" target="_blank" rel="noreferrer">再発行（有料）ページへ</a>
-    <p class="muted">閲覧・ダウンロードのどちらでも、1回アクセスするごとに回数を1つ消費します。</p>
+    <p class="muted">ダウンロード回数の上限に達しています。回数はダウンロード時にのみ消費されます。</p>
   </div>
 </body>
 </html>`;

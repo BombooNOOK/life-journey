@@ -20,13 +20,20 @@ type UserRow = {
   email: string;
   sourceOrderCount: number;
   sourceJournalCount: number;
+  profileIds: string[];
+  profileNames: string[];
+  /** AccountSettings.createdAt（プラン開始日の暫定表示用） */
+  accountSettingsCreatedAt: Date | null;
+  firstAppraisalAt: Date | null;
   isAdmin: boolean;
   profileLimit: number;
   /** 鑑定PDFの無料ダウンロード上限（鑑定1件あたり） */
   pdfDownloadLimitPerOrder: number;
-  /** 製本用（高画質）PDFのダウンロード可否 */
+  /** 鑑定書の高画質PDFダウンロード権限 */
   subscriberPdfAccess: boolean;
 };
+
+type ProfileMeta = { id: string; nickname: string };
 
 function isPostgresDb(): boolean {
   const u = process.env.DATABASE_URL ?? "";
@@ -42,6 +49,21 @@ function isPostgresDb(): boolean {
 function countCell(v: bigint | number): number {
   const n = typeof v === "bigint" ? Number(v) : v;
   return Number.isFinite(n) ? n : 0;
+}
+
+function derivePlanLabel(subscriberPdfAccess: boolean): string {
+  return subscriberPdfAccess ? "ライトプラン" : "フリープラン";
+}
+
+function formatPlanStartedAt(row: UserRow): string {
+  if (!row.subscriberPdfAccess) return "—";
+  if (!row.accountSettingsCreatedAt) return "未設定";
+  return row.accountSettingsCreatedAt.toLocaleDateString("ja-JP");
+}
+
+function formatFirstAppraisalAt(at: Date | null): string {
+  if (!at) return "未設定";
+  return at.toLocaleDateString("ja-JP");
 }
 
 /** LIKE 用に % _ を検索語から外す（ワイルドカード注入回避の簡易版） */
@@ -80,11 +102,15 @@ async function loadOrderPdfMaxByNormalizedEmailPostgres(keyword: string): Promis
 type RawEmailCount = { e: string; c: bigint | number };
 
 /** PostgreSQL: Prisma の groupBy / insensitive より確実にメール別件数を取る */
-async function loadRowsPostgres(keyword: string): Promise<UserRow[]> {
+async function loadRowsPostgres(
+  keyword: string,
+  matchedProfileEmails: Set<string>,
+): Promise<UserRow[]> {
   const kw = keyword.trim();
   const pattern = kw ? likePatternFromKeyword(kw) : "";
 
-  const [orderRows, journalRows, settingsList, orderPdfMaxByEmail] = await Promise.all([
+  const [orderRows, journalRows, settingsList, orderPdfMaxByEmail, firstPurchaseRows] =
+    await Promise.all([
     kw
       ? prisma.$queryRaw<RawEmailCount[]>`
           SELECT LOWER(TRIM("email")) AS e, COUNT(*)::bigint AS c
@@ -110,8 +136,20 @@ async function loadRowsPostgres(keyword: string): Promise<UserRow[]> {
           GROUP BY LOWER(TRIM("email"))
         `,
     fetchAccountSettingsForAdminList(kw),
-    loadOrderPdfMaxByNormalizedEmailPostgres(kw),
-  ]);
+      loadOrderPdfMaxByNormalizedEmailPostgres(kw),
+      kw
+        ? prisma.$queryRaw<Array<{ e: string; firstAt: Date | null }>>`
+            SELECT LOWER(TRIM("email")) AS e, MIN("createdAt") AS "firstAt"
+            FROM "Order"
+            WHERE LOWER(TRIM("email")) LIKE LOWER(${pattern})
+            GROUP BY LOWER(TRIM("email"))
+          `
+        : prisma.$queryRaw<Array<{ e: string; firstAt: Date | null }>>`
+            SELECT LOWER(TRIM("email")) AS e, MIN("createdAt") AS "firstAt"
+            FROM "Order"
+            GROUP BY LOWER(TRIM("email"))
+          `,
+    ]);
 
   const orderCountByEmail = new Map<string, number>();
   for (const r of orderRows) {
@@ -125,11 +163,65 @@ async function loadRowsPostgres(keyword: string): Promise<UserRow[]> {
   }
 
   const settingsByEmail = collapseAccountSettingsByNormalizedEmail(settingsList);
+  const firstPurchaseAtByEmail = new Map<string, Date | null>();
+  for (const row of firstPurchaseRows) {
+    firstPurchaseAtByEmail.set(normalizeEmail(row.e), row.firstAt ?? null);
+  }
+
+  if (kw.length > 0 && matchedProfileEmails.size > 0) {
+    const matchedEmails = Array.from(matchedProfileEmails);
+    const [extraOrderRows, extraJournalRows, extraFirstPurchaseRows, extraSettingsRows] =
+      await Promise.all([
+        prisma.$queryRaw<RawEmailCount[]>`
+          SELECT LOWER(TRIM("email")) AS e, COUNT(*)::bigint AS c
+          FROM "Order"
+          WHERE LOWER(TRIM("email")) IN (${Prisma.join(matchedEmails)})
+          GROUP BY LOWER(TRIM("email"))
+        `,
+        prisma.$queryRaw<RawEmailCount[]>`
+          SELECT LOWER(TRIM("email")) AS e, COUNT(*)::bigint AS c
+          FROM "JournalEntry"
+          WHERE LOWER(TRIM("email")) IN (${Prisma.join(matchedEmails)})
+          GROUP BY LOWER(TRIM("email"))
+        `,
+        prisma.$queryRaw<Array<{ e: string; firstAt: Date | null }>>`
+          SELECT LOWER(TRIM("email")) AS e, MIN("createdAt") AS "firstAt"
+          FROM "Order"
+          WHERE LOWER(TRIM("email")) IN (${Prisma.join(matchedEmails)})
+          GROUP BY LOWER(TRIM("email"))
+        `,
+        prisma.accountSettings.findMany({
+          where: { email: { in: matchedEmails } },
+          select: {
+            id: true,
+            email: true,
+            createdAt: true,
+            isAdmin: true,
+            profileLimit: true,
+            updatedAt: true,
+            pdfDownloadLimitPerOrder: true,
+            subscriberPdfAccess: true,
+          },
+        }),
+      ]);
+    for (const r of extraOrderRows) {
+      orderCountByEmail.set(normalizeEmail(r.e), countCell(r.c));
+    }
+    for (const r of extraJournalRows) {
+      journalCountByEmail.set(normalizeEmail(r.e), countCell(r.c));
+    }
+    for (const r of extraFirstPurchaseRows) {
+      firstPurchaseAtByEmail.set(normalizeEmail(r.e), r.firstAt ?? null);
+    }
+    const merged = collapseAccountSettingsByNormalizedEmail([...settingsList, ...extraSettingsRows]);
+    for (const [k, v] of merged.entries()) settingsByEmail.set(k, v);
+  }
 
   const emails = new Set<string>([
     ...orderCountByEmail.keys(),
     ...journalCountByEmail.keys(),
     ...settingsByEmail.keys(),
+    ...matchedProfileEmails,
   ]);
   return Array.from(emails)
     .map((email) => {
@@ -140,6 +232,10 @@ async function loadRowsPostgres(keyword: string): Promise<UserRow[]> {
         email,
         sourceOrderCount: orderCountByEmail.get(email) ?? 0,
         sourceJournalCount: journalCountByEmail.get(email) ?? 0,
+        profileIds: [],
+        profileNames: [],
+        accountSettingsCreatedAt: setting?.createdAt ?? null,
+        firstAppraisalAt: firstPurchaseAtByEmail.get(email) ?? null,
         isAdmin: setting?.isAdmin ?? false,
         profileLimit: setting?.profileLimit ?? 1,
         pdfDownloadLimitPerOrder: Math.max(fromAccount, fromOrders),
@@ -153,6 +249,7 @@ async function loadRowsPostgres(keyword: string): Promise<UserRow[]> {
 type AccountSettingsAdminRow = {
   id: string;
   email: string;
+  createdAt: Date;
   isAdmin: boolean;
   profileLimit: number;
   updatedAt: Date;
@@ -163,6 +260,7 @@ type AccountSettingsAdminRow = {
 type CollapsedAccountSettings = {
   id: string;
   email: string;
+  createdAt: Date;
   isAdmin: boolean;
   profileLimit: number;
   pdfDownloadLimitPerOrder: number;
@@ -188,8 +286,10 @@ function collapseAccountSettingsByNormalizedEmail(
   const out = new Map<string, CollapsedAccountSettings>();
   for (const [key, arr] of groups) {
     let latest = arr[0]!;
+    let earliestCreatedAt = arr[0]!.createdAt;
     for (const s of arr) {
       if (s.updatedAt > latest.updatedAt) latest = s;
+      if (s.createdAt < earliestCreatedAt) earliestCreatedAt = s.createdAt;
     }
     const pdfDownloadLimitPerOrder = Math.max(
       ...arr.map((s) => (s.pdfDownloadLimitPerOrder != null ? s.pdfDownloadLimitPerOrder : 2)),
@@ -201,6 +301,7 @@ function collapseAccountSettingsByNormalizedEmail(
     out.set(key, {
       id: latest.id,
       email: latest.email,
+      createdAt: earliestCreatedAt,
       isAdmin,
       profileLimit,
       pdfDownloadLimitPerOrder,
@@ -223,14 +324,14 @@ async function fetchAccountSettingsForAdminList(keyword: string): Promise<Accoun
     try {
       if (!kw) {
         base = await prisma.$queryRaw<AccountSettingsAdminRow[]>`
-          SELECT "id", "email", "isAdmin", "profileLimit", "updatedAt"
+          SELECT "id", "email", "createdAt", "isAdmin", "profileLimit", "updatedAt"
           FROM "AccountSettings"
           ORDER BY "updatedAt" DESC
         `;
       } else {
         const pattern = likePatternFromKeyword(kw);
         base = await prisma.$queryRaw<AccountSettingsAdminRow[]>`
-          SELECT "id", "email", "isAdmin", "profileLimit", "updatedAt"
+          SELECT "id", "email", "createdAt", "isAdmin", "profileLimit", "updatedAt"
           FROM "AccountSettings"
           WHERE LOWER(TRIM("email")) LIKE LOWER(${pattern})
           ORDER BY "updatedAt" DESC
@@ -277,6 +378,7 @@ async function fetchAccountSettingsForAdminList(keyword: string): Promise<Accoun
       select: {
         id: true,
         email: true,
+        createdAt: true,
         isAdmin: true,
         profileLimit: true,
         pdfDownloadLimitPerOrder: true,
@@ -292,6 +394,7 @@ async function fetchAccountSettingsForAdminList(keyword: string): Promise<Accoun
       select: {
         id: true,
         email: true,
+        createdAt: true,
         isAdmin: true,
         profileLimit: true,
         updatedAt: true,
@@ -313,7 +416,45 @@ function emailContainsWhere(keyword: string, preferInsensitive: boolean) {
   };
 }
 
-async function loadRowsWithEmailMode(keyword: string, insensitive: boolean): Promise<UserRow[]> {
+async function searchMatchedEmailsByProfileId(keyword: string): Promise<Set<string>> {
+  const kw = keyword.trim();
+  if (!kw) return new Set();
+  const rows = await prisma.profile.findMany({
+    where: {
+      id: { contains: kw, mode: "insensitive" },
+      isArchived: false,
+    },
+    select: { email: true },
+    take: 200,
+  });
+  return new Set(rows.map((r) => normalizeEmail(r.email)));
+}
+
+async function loadProfileMetaByEmails(emails: string[]): Promise<Map<string, ProfileMeta[]>> {
+  if (emails.length === 0) return new Map();
+  const rows = await prisma.profile.findMany({
+    where: {
+      email: { in: emails },
+      isArchived: false,
+    },
+    orderBy: { createdAt: "asc" },
+    select: { email: true, id: true, nickname: true },
+  });
+  const out = new Map<string, ProfileMeta[]>();
+  for (const row of rows) {
+    const key = normalizeEmail(row.email);
+    const arr = out.get(key) ?? [];
+    arr.push({ id: row.id, nickname: row.nickname });
+    out.set(key, arr);
+  }
+  return out;
+}
+
+async function loadRowsWithEmailMode(
+  keyword: string,
+  insensitive: boolean,
+  matchedProfileEmails: Set<string>,
+): Promise<UserRow[]> {
   const where = keyword ? emailContainsWhere(keyword, insensitive) : {};
 
   const [orderGroups, journalGroups, settings, orderPdfMaxByEmail] = await Promise.all([
@@ -348,10 +489,48 @@ async function loadRowsWithEmailMode(keyword: string, insensitive: boolean): Pro
 
   const settingsByEmail = collapseAccountSettingsByNormalizedEmail(settings);
 
+  if (keyword.trim().length > 0 && matchedProfileEmails.size > 0) {
+    const matchedEmails = Array.from(matchedProfileEmails);
+    const [extraOrderGroups, extraJournalGroups, extraSettings] = await Promise.all([
+      prisma.order.groupBy({
+        by: ["email"],
+        where: { email: { in: matchedEmails } },
+        _count: { _all: true },
+      }),
+      prisma.journalEntry.groupBy({
+        by: ["email"],
+        where: { email: { in: matchedEmails } },
+        _count: { _all: true },
+      }),
+      prisma.accountSettings.findMany({
+        where: { email: { in: matchedEmails } },
+        select: {
+          id: true,
+          email: true,
+          createdAt: true,
+          isAdmin: true,
+          profileLimit: true,
+          updatedAt: true,
+          pdfDownloadLimitPerOrder: true,
+          subscriberPdfAccess: true,
+        },
+      }),
+    ]);
+    for (const g of extraOrderGroups) {
+      orderCountByEmail.set(normalizeEmail(g.email), g._count._all);
+    }
+    for (const g of extraJournalGroups) {
+      journalCountByEmail.set(normalizeEmail(g.email), g._count._all);
+    }
+    const merged = collapseAccountSettingsByNormalizedEmail([...settings, ...extraSettings]);
+    for (const [k, v] of merged.entries()) settingsByEmail.set(k, v);
+  }
+
   const emails = new Set<string>([
     ...orderCountByEmail.keys(),
     ...journalCountByEmail.keys(),
     ...settingsByEmail.keys(),
+    ...matchedProfileEmails,
   ]);
   return Array.from(emails)
     .map((email) => {
@@ -362,6 +541,10 @@ async function loadRowsWithEmailMode(keyword: string, insensitive: boolean): Pro
         email,
         sourceOrderCount: orderCountByEmail.get(email) ?? 0,
         sourceJournalCount: journalCountByEmail.get(email) ?? 0,
+        profileIds: [],
+        profileNames: [],
+        accountSettingsCreatedAt: setting?.createdAt ?? null,
+        firstAppraisalAt: null,
         isAdmin: setting?.isAdmin ?? false,
         profileLimit: setting?.profileLimit ?? 1,
         pdfDownloadLimitPerOrder: Math.max(fromAccount, fromOrders),
@@ -372,20 +555,20 @@ async function loadRowsWithEmailMode(keyword: string, insensitive: boolean): Pro
     .slice(0, 200);
 }
 
-async function loadRows(keyword: string): Promise<UserRow[]> {
+async function loadRows(keyword: string, matchedProfileEmails: Set<string>): Promise<UserRow[]> {
   const kw = keyword.trim().toLowerCase();
   if (isPostgresDb()) {
     try {
-      return await loadRowsPostgres(kw);
+      return await loadRowsPostgres(kw, matchedProfileEmails);
     } catch (e) {
       console.warn("[admin] loadRowsPostgres failed, falling back to Prisma:", e);
     }
   }
   try {
-    return await loadRowsWithEmailMode(kw, true);
+    return await loadRowsWithEmailMode(kw, true, matchedProfileEmails);
   } catch (e) {
     console.warn("[admin] loadRows insensitive failed, retrying:", e);
-    return loadRowsWithEmailMode(kw, false);
+    return loadRowsWithEmailMode(kw, false, matchedProfileEmails);
   }
 }
 
@@ -400,7 +583,17 @@ export default async function AdminPage({ searchParams }: Props) {
   let rows: UserRow[] = [];
   let loadError: string | null = null;
   try {
-    rows = await loadRows(q);
+    const matchedProfileEmails = await searchMatchedEmailsByProfileId(q);
+    rows = await loadRows(q, matchedProfileEmails);
+    const profileMetaByEmail = await loadProfileMetaByEmails(rows.map((r) => r.email));
+    rows = rows.map((row) => {
+      const metas = profileMetaByEmail.get(row.email) ?? [];
+      return {
+        ...row,
+        profileIds: metas.map((m) => m.id),
+        profileNames: metas.map((m) => m.nickname),
+      };
+    });
   } catch (e) {
     console.error("[admin] loadRows:", e);
     loadError =
@@ -420,7 +613,7 @@ export default async function AdminPage({ searchParams }: Props) {
         <h1 className="mt-2 text-2xl font-bold text-stone-900">管理者ページ</h1>
         <p className="mt-1 text-sm text-stone-600">
           ユーザー検索と、プロフィール上限（1 /
-          3）、鑑定書PDFの無料ダウンロード上限、製本用（高画質）PDFの付与、管理者権限の切り替えを行います。
+          3）、鑑定書PDFの無料ダウンロード上限、鑑定書の高画質PDFダウンロード権限、管理者権限の切り替えを行います。
         </p>
         <p className="mt-2 flex flex-wrap gap-x-4 gap-y-1">
           <Link
@@ -443,7 +636,7 @@ export default async function AdminPage({ searchParams }: Props) {
           type="text"
           name="q"
           defaultValue={q}
-          placeholder="メールで検索"
+          placeholder="メール / プロフィールIDで検索"
           className="w-full max-w-sm rounded-md border border-stone-300 px-3 py-2 text-sm"
         />
         <button
@@ -481,11 +674,15 @@ export default async function AdminPage({ searchParams }: Props) {
           <thead className="bg-stone-50 text-left text-stone-700">
             <tr>
               <th className="px-4 py-3 font-medium">メール</th>
+              <th className="px-4 py-3 font-medium">プロフィールID / 名</th>
+              <th className="px-4 py-3 font-medium">プラン名</th>
+              <th className="px-4 py-3 font-medium">プラン開始日</th>
+              <th className="px-4 py-3 font-medium">初回鑑定日</th>
               <th className="px-4 py-3 font-medium">鑑定</th>
               <th className="px-4 py-3 font-medium">日記</th>
               <th className="px-4 py-3 font-medium">プロフィール上限</th>
               <th className="px-4 py-3 font-medium">PDF無料回数</th>
-              <th className="px-4 py-3 font-medium">製本PDF</th>
+              <th className="px-4 py-3 font-medium">鑑定書 高画質PDF</th>
               <th className="px-4 py-3 font-medium">管理者</th>
               <th className="px-4 py-3 font-medium">操作</th>
             </tr>
@@ -494,6 +691,25 @@ export default async function AdminPage({ searchParams }: Props) {
             {rows.map((row) => (
               <tr key={row.email} className="border-t border-stone-100">
                 <td className="px-4 py-3 text-stone-800">{row.email}</td>
+                <td className="px-4 py-3 text-xs text-stone-700">
+                  {row.profileIds.length === 0 ? (
+                    <span className="text-stone-400">未設定</span>
+                  ) : (
+                    <div className="space-y-1">
+                      {row.profileIds.map((id, idx) => (
+                        <div key={`${row.email}-${id}`}>
+                          <p className="font-mono text-[11px]">{id}</p>
+                          <p className="text-stone-500">{row.profileNames[idx] ?? "プロフィール名未設定"}</p>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </td>
+                <td className="px-4 py-3 text-stone-700">{derivePlanLabel(row.subscriberPdfAccess)}</td>
+                <td className="px-4 py-3 text-xs text-stone-600">{formatPlanStartedAt(row)}</td>
+                <td className="px-4 py-3 text-xs text-stone-600">
+                  {formatFirstAppraisalAt(row.firstAppraisalAt)}
+                </td>
                 <td className="px-4 py-3 text-stone-600">{row.sourceOrderCount}</td>
                 <td className="px-4 py-3 text-stone-600">{row.sourceJournalCount}</td>
                 <td className="px-4 py-3">
@@ -552,7 +768,7 @@ export default async function AdminPage({ searchParams }: Props) {
                     <button
                       type="submit"
                       className="rounded-md border border-stone-300 px-2 py-1 text-xs hover:bg-stone-50"
-                      title="サブスク加入者向け・製本用（高画質）PDF"
+                      title="鑑定書の高画質PDFダウンロード権限（プレビュー版は全員）"
                     >
                       切替
                     </button>

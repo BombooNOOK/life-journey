@@ -6,10 +6,9 @@ import { useRouter } from "next/navigation";
 import { useFirebaseAuth } from "@/components/auth/FirebaseAuthProvider";
 import { isLjLoggedInOnClient } from "@/lib/auth/clientCookies";
 
-/** sm 以上でメインリンクと同じ行に並べるときだけ区切りを表示 */
 function AuthSeparator() {
   return (
-    <span className="hidden shrink-0 select-none text-stone-300 sm:inline" aria-hidden>
+    <span className="mx-1 shrink-0 select-none px-0.5 text-stone-300 sm:mx-1.5" aria-hidden>
       |
     </span>
   );

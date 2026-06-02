@@ -54,21 +54,22 @@ export default async function KanteiBookBindingConfirmPage({ params }: Props) {
             <dd>{order.createdAt.toLocaleString("ja-JP")}</dd>
           </div>
         </dl>
-        <p className="mt-4 text-xs leading-relaxed text-stone-600">
-          「この鑑定書で注文に進む」を押すと、アプリ内に申込予定を記録したうえで BASE の商品ページへ移動します。
-          BASEでのお支払いは別途必要です。鑑定コードのコピーは不要です。
+        <p className="mt-4 text-sm leading-relaxed text-stone-700">
+          この鑑定書を、紙の本として注文できます。
+          <br />
+          ボタンを押すと、注文用の記録を作成してからBASEの商品ページへ移動します。
+          <br />
+          鑑定コードは自動で記録されるため、コピーは不要です。
         </p>
       </section>
 
       <KanteiBookBindingConfirmButton orderId={order.id} />
 
-      <p className="text-xs leading-relaxed text-stone-500">
-        ※BASEの商品ページへ移動します。
-        <br />
-        ※受注生産のため、注文後のキャンセルは原則できません。
-        <br />
-        ※ライトプラン（月額）とは別の単発商品です。
-      </p>
+      <ul className="list-inside list-disc space-y-1 text-xs leading-relaxed text-stone-500">
+        <li>BASEの商品ページでお支払いします。</li>
+        <li>受注生産のため、注文後のキャンセルは原則できません。</li>
+        <li>月額プランとは別料金です。</li>
+      </ul>
     </div>
   );
 }

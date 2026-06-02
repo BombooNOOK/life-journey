@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "next dev --hostname 127.0.0.1 --port 3000",
     "dev:lan": "next dev --hostname 0.0.0.0 --port 3000",
+    "dev:lan:fresh": "node scripts/kill-port.mjs 3000 && rm -rf .next node_modules/.cache && next dev --hostname 0.0.0.0 --port 3000",
     "dev:fresh": "node scripts/kill-port.mjs 3000 && rm -rf .next node_modules/.cache && next dev --hostname 127.0.0.1 --port 3000",
     "build": "next build",
     "start": "next start --hostname 127.0.0.1 --port 3000",
@@ -12,6 +13,13 @@
     "db:generate": "prisma generate",
     "db:push": "prisma db push",
     "db:sync": "prisma db push && prisma generate",
+    "db:local:up": "docker compose up -d",
+    "db:local:down": "docker compose down",
+    "db:local:sync": "DATABASE_URL=postgresql://ljd:ljd_local_dev@127.0.0.1:5433/ljd_dev?schema=public prisma migrate deploy && DATABASE_URL=postgresql://ljd:ljd_local_dev@127.0.0.1:5433/ljd_dev?schema=public prisma generate",
+    "db:local:stripe-status": "DATABASE_URL=postgresql://ljd:ljd_local_dev@127.0.0.1:5433/ljd_dev?schema=public npx tsx scripts/check-account-settings-stripe.ts",
+    "stripe:listen": "stripe listen --forward-to localhost:3000/api/stripe/webhook",
+    "db:local:seed": "prisma db seed",
+    "db:local:reset": "docker compose down -v && docker compose up -d && sleep 3 && prisma migrate deploy && prisma generate && prisma db seed",
     "db:migrate:dev": "prisma migrate dev",
     "db:migrate:deploy": "prisma migrate deploy",
     "build:vercel": "prisma generate && prisma migrate deploy && next build",
@@ -44,7 +52,11 @@
     "next": "^15.2.0",
     "pdf-lib": "^1.17.1",
     "react": "^19.0.0",
-    "react-dom": "^19.0.0"
+    "react-dom": "^19.0.0",
+    "stripe": "^17.7.0"
+  },
+  "prisma": {
+    "seed": "npx tsx prisma/seed.ts"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.0.0",

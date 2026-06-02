@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { getViewerEmailFromCookie } from "@/lib/auth/viewer";
 import { prisma } from "@/lib/db";
 import { clampMonthOrder } from "@/lib/journal/bookshelfPeriod";
-import { isAllowedDiaryDesignThemeRaw, normalizeDiaryDesignTheme } from "@/lib/journal/meta";
+import { isDiaryCoverStyleRawAllowed, normalizeDiaryCoverStyle } from "@/lib/journal/coverAssets";
 import { resolveActiveProfileId } from "@/lib/profile/activeProfile";
 
 type RouteParams = { params: Promise<{ year: string }> };
@@ -114,7 +114,7 @@ export async function PATCH(req: Request, { params }: RouteParams) {
   const rawCover =
     typeof json === "object" && json !== null && "coverTheme" in json
       ? String((json as { coverTheme: unknown }).coverTheme)
-      : "simple";
+      : "casual";
   const rawStart =
     typeof json === "object" && json !== null && "periodStartMonth" in json
       ? Number((json as { periodStartMonth: unknown }).periodStartMonth)
@@ -125,10 +125,10 @@ export async function PATCH(req: Request, { params }: RouteParams) {
       : 12;
 
   const displayTitle = rawTitle.trim() === "" ? null : rawTitle.trim().slice(0, 80);
-  if (!isAllowedDiaryDesignThemeRaw(rawCover)) {
+  if (!isDiaryCoverStyleRawAllowed(rawCover)) {
     return NextResponse.json({ error: "表紙デザインの値が不正です。", code: "BAD_COVER" }, { status: 400 });
   }
-  const coverTheme = normalizeDiaryDesignTheme(rawCover.trim() || "simple");
+  const coverTheme = normalizeDiaryCoverStyle(rawCover.trim() || "casual");
   const { start: periodStartMonth, end: periodEndMonth } = clampMonthOrder(rawStart, rawEnd);
 
   const delegate = getDiaryBookshelfBookDelegate();

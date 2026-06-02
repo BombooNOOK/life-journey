@@ -39,16 +39,16 @@ function snapshotDiffersFromRow(
     pageCount: number;
     planId: string;
     displayTitle: string | null;
-    periodStartMonth: number;
-    periodEndMonth: number;
+    periodStartMonth: number | null;
+    periodEndMonth: number | null;
   },
 ): boolean {
   return (
     row.pageCount !== snapshot.pageCount ||
     row.planId !== snapshot.planId ||
     (row.displayTitle ?? null) !== snapshot.displayTitle ||
-    row.periodStartMonth !== snapshot.periodStartMonth ||
-    row.periodEndMonth !== snapshot.periodEndMonth
+    (row.periodStartMonth ?? 1) !== snapshot.periodStartMonth ||
+    (row.periodEndMonth ?? 12) !== snapshot.periodEndMonth
   );
 }
 
@@ -107,8 +107,8 @@ async function syncPendingRow(
     pageCount: number;
     planId: string;
     displayTitle: string | null;
-    periodStartMonth: number;
-    periodEndMonth: number;
+    periodStartMonth: number | null;
+    periodEndMonth: number | null;
     diaryBindingCode: string;
   },
 ): Promise<{ contentUpdated: boolean }> {

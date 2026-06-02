@@ -3,7 +3,11 @@
 import { useRouter } from "next/navigation";
 import { FormEvent, useEffect, useState } from "react";
 
-import { diaryDesignOptions, type DiaryDesignId } from "@/lib/journal/meta";
+import {
+  diaryCoverStyleOptions,
+  normalizeDiaryCoverStyle,
+  type DiaryCoverStyleId,
+} from "@/lib/journal/coverAssets";
 
 export type DiaryBookshelfBookClientSettings = {
   displayTitle: string | null;
@@ -37,7 +41,9 @@ export function DiaryBookshelfSettingsForm({
 }) {
   const router = useRouter();
   const [displayTitle, setDisplayTitle] = useState(initialSettings.displayTitle ?? "");
-  const [coverTheme, setCoverTheme] = useState<string>(initialSettings.coverTheme || "simple");
+  const [coverTheme, setCoverTheme] = useState<string>(
+    normalizeDiaryCoverStyle(initialSettings.coverTheme || "casual"),
+  );
   const [periodStartMonth, setPeriodStartMonth] = useState(initialSettings.periodStartMonth);
   const [periodEndMonth, setPeriodEndMonth] = useState(initialSettings.periodEndMonth);
   const [saving, setSaving] = useState(false);
@@ -45,7 +51,7 @@ export function DiaryBookshelfSettingsForm({
 
   useEffect(() => {
     setDisplayTitle(initialSettings.displayTitle ?? "");
-    setCoverTheme(initialSettings.coverTheme || "simple");
+    setCoverTheme(normalizeDiaryCoverStyle(initialSettings.coverTheme || "casual"));
     setPeriodStartMonth(initialSettings.periodStartMonth);
     setPeriodEndMonth(initialSettings.periodEndMonth);
   }, [initialSettings]);
@@ -117,10 +123,10 @@ export function DiaryBookshelfSettingsForm({
           <span className="text-xs font-medium text-stone-700">表紙の雰囲気</span>
           <select
             value={coverTheme}
-            onChange={(e) => setCoverTheme(e.target.value as DiaryDesignId)}
+            onChange={(e) => setCoverTheme(e.target.value as DiaryCoverStyleId)}
             className="mt-1 w-full rounded-lg border border-stone-300 px-3 py-2 text-sm text-stone-900 outline-none ring-stone-400 focus:ring-2"
           >
-            {diaryDesignOptions.map((opt) => (
+            {diaryCoverStyleOptions.map((opt) => (
               <option key={opt.id} value={opt.id}>
                 {opt.label}
               </option>

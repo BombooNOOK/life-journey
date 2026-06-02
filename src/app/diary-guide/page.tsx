@@ -2,6 +2,9 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 import { LinkToOperationGuide } from "@/components/guide/GuideCrossLinks";
+import { PageTitleWithAccent } from "@/components/ui/PageTitleWithAccent";
+import { SoftIllustrationAccent } from "@/components/ui/SoftIllustrationAccent";
+import { SoftSectionDivider } from "@/components/ui/SoftSectionDivider";
 
 export const dynamic = "force-static";
 
@@ -56,30 +59,39 @@ const RECOMMENDED_FOR_ITEMS = [
 
 export default function DiaryGuidePage() {
   return (
-    <div className="space-y-8">
-      <div>
-        <Link href="/guide" className="text-sm text-stone-600 hover:text-stone-900">
-          ← 使い方
-        </Link>
-        <h1 className="mt-2 text-2xl font-bold text-stone-900">Life Journey Diaryの歩き方</h1>
-      </div>
+    <div className="space-y-6 sm:space-y-8">
+      <PageTitleWithAccent
+        tone="diary"
+        decoration="owl-md"
+        title="Life Journey Diaryの歩き方"
+        backLink={{ href: "/orders", label: "← マイページ" }}
+        description={
+          <>
+            <p>ここは、数字で紡ぐ人生の旅を、鑑定書と日記のふたつで支える場所です。</p>
+            <p className="mt-3">
+              Life Journey Diaryは、鑑定書を読むだけで終わる場所ではありません。日々の出来事や気持ちを重ねながら、自分だけの一冊を育てていくための場所です。
+            </p>
+          </>
+        }
+      />
 
-      <LinkToOperationGuide />
+      <section className="relative overflow-hidden rounded-2xl border border-emerald-100 bg-emerald-50/40 p-5 shadow-sm sm:rounded-3xl sm:p-6">
+        <p className="relative z-10 text-lg font-semibold leading-relaxed text-emerald-950">
+          なんでもないような日でも、意味があった。
+        </p>
+        <p className="relative z-10 mt-3 text-sm leading-7 text-stone-700 sm:text-[15px] sm:leading-8">
+          その日を過ごしたあなたの言葉を、未来のあなたへそっと残していきます。
+        </p>
+        <p className="relative z-10 mt-3 text-sm leading-7 text-stone-700 sm:text-[15px] sm:leading-8">
+          Life Journey Diary は、毎日の気持ちや出来事を、そっと書き残していく日記です。
+          特別なことがあった日だけでなく、いつも通りに過ぎていった日も、少し疲れていた日も、なんとなく心が動いた日も。
+        </p>
+        <p className="relative z-10 mt-3 text-sm leading-7 text-stone-700 sm:text-[15px] sm:leading-8">
+          Life Journey Diary は、あなたの毎日を評価したり、正解に導いたりする場所ではありません。今日という一日を、あなた自身の言葉で残していくための場所です。
+        </p>
+      </section>
 
-      <div className="space-y-8 rounded-2xl border border-emerald-100/80 bg-[#fdfaf4]/80 p-5 sm:p-6">
-        <ProseSection title="なんでもないような日でも、意味があった">
-          <p>
-            Life Journey Diary は、毎日の気持ちや出来事を、そっと書き残していく日記です。
-            特別なことがあった日だけでなく、いつも通りに過ぎていった日も、少し疲れていた日も、なんとなく心が動いた日も。
-          </p>
-          <p>
-            その日感じたことを、短くてもいいから残しておくことで、あとから振り返ったときに、「あの日の自分は、こんなことを感じていたんだ」と、やさしく受け取れることがあります。
-          </p>
-          <p>
-            Life Journey Diary は、あなたの毎日を評価したり、正解に導いたりする場所ではありません。今日という一日を、あなた自身の言葉で残していくための場所です。
-          </p>
-        </ProseSection>
-
+      <div className="space-y-2 rounded-2xl border border-emerald-100/80 bg-[#fdfaf4]/80 p-5 sm:space-y-0 sm:p-6">
         <ProseSection title="できること">
           <p>日々の記録をつけながら、あなたの歩みを少しずつ残していくことができます。</p>
           <BulletList items={CAN_DO_ITEMS} />
@@ -95,6 +107,8 @@ export default function DiaryGuidePage() {
           </p>
         </ProseSection>
 
+        <SoftSectionDivider variant="leaf" />
+
         <ProseSection title="まずは無料鑑定から">
           <p>
             Life Journey Diary では、はじめに無料鑑定を行います。
@@ -105,21 +119,38 @@ export default function DiaryGuidePage() {
           </p>
         </ProseSection>
 
-        <ProseSection title="鑑定書と日記は、どうつながるの？">
-          <p>
-            鑑定書は、あなたの数字から、生まれ持った性質や心の奥にある願い、人生の流れを読み解いていくものです。あなたという人の中に流れている、大きな道すじを知るための地図のようなものかもしれません。
+        <SoftSectionDivider variant="star" />
+
+        <section className="relative rounded-2xl border border-amber-100 bg-amber-50/30 p-5 sm:p-6">
+          <div className="pointer-events-none absolute right-4 top-4 hidden select-none sm:flex sm:items-center sm:gap-2">
+            <SoftIllustrationAccent variant="moon" size="sm" tone="amber" />
+            <SoftIllustrationAccent variant="book" size="sm" tone="amber" />
+            <span className="text-xs tracking-wide text-amber-800/40">点と線</span>
+          </div>
+          <h2 className="pr-2 text-base font-semibold tracking-tight text-stone-900">
+            鑑定書と日記は、どうつながるの？
+          </h2>
+          <p className="mt-3 text-sm font-medium leading-7 text-amber-900/80 sm:text-[15px]">
+            鑑定書は、遠くから見た地図。日記は、足元に残していく小さな足あと。
           </p>
-          <p>
-            一方で、日記は、その日その日の出来事や気持ちを残していくものです。うれしかったこと、少し疲れていたこと、誰かの言葉が心に残ったこと、何もなかったように見えたけれど、なんとなく忘れたくなかったこと。
-          </p>
-          <p>
-            一日一日の記録は、小さな点のように見えることがあります。けれど続けていくうちに、その点と点がつながり、やがて自分の歩いてきた道が少しずつ見えてくることがあります。
-          </p>
-          <p>
-            鑑定書は、大きな流れを知るために。日記は、その流れの中にある今日を残すために。
-            遠くから見た地図と、足元に残していく小さな足あと。その二つが重なったとき、なんでもないように思えた一日にも、あとから意味が宿っていたことに気づくかもしれません。
-          </p>
-        </ProseSection>
+          <div className="mt-4 space-y-3 text-sm leading-7 text-stone-700 sm:text-[15px] sm:leading-8">
+            <p>
+              鑑定書は、あなたの数字から、生まれ持った性質や心の奥にある願い、人生の流れを読み解いていくものです。あなたという人の中に流れている、大きな道すじを知るための地図のようなものかもしれません。
+            </p>
+            <p>
+              一方で、日記は、その日その日の出来事や気持ちを残していくものです。うれしかったこと、少し疲れていたこと、誰かの言葉が心に残ったこと、何もなかったように見えたけれど、なんとなく忘れたくなかったこと。
+            </p>
+            <p>
+              一日一日の記録は、小さな点のように見えることがあります。けれど続けていくうちに、その点と点がつながり、やがて自分の歩いてきた道が少しずつ見えてくることがあります。
+            </p>
+            <p>
+              鑑定書は、大きな流れを知るために。日記は、その流れの中にある今日を残すために。
+              遠くから見た地図と、足元に残していく小さな足あと。その二つが重なったとき、なんでもないように思えた一日にも、あとから意味が宿っていたことに気づくかもしれません。
+            </p>
+          </div>
+        </section>
+
+        <SoftSectionDivider variant="footprints" />
 
         <ProseSection title="毎日書かなくても大丈夫です">
           <p>
@@ -132,6 +163,8 @@ export default function DiaryGuidePage() {
           </p>
         </ProseSection>
 
+        <SoftSectionDivider variant="leaf" />
+
         <ProseSection title="インストール不要で、すぐに使えます">
           <p>
             Life Journey Diary は、スマホやパソコンのブラウザから使えるウェブアプリです。アプリストアからのインストールは必要ありません。
@@ -141,6 +174,8 @@ export default function DiaryGuidePage() {
             スマホのホーム画面に追加しておくと、アプリのような感覚で毎日の記録を開きやすくなります。
           </p>
         </ProseSection>
+
+        <SoftSectionDivider variant="moon" />
 
         <ProseSection title="おすすめの使い方">
           <ol className="list-inside list-decimal space-y-3 text-stone-700">
@@ -177,6 +212,8 @@ export default function DiaryGuidePage() {
           </ol>
         </ProseSection>
 
+        <SoftSectionDivider variant="star" />
+
         <ProseSection title="特別な日も、なんでもない日も">
           <p>
             Life Journey Diary は、特別な日だけのための日記ではありません。
@@ -187,9 +224,13 @@ export default function DiaryGuidePage() {
           </p>
         </ProseSection>
 
+        <SoftSectionDivider variant="leaf" />
+
         <ProseSection title="こんな方におすすめです">
           <BulletList items={RECOMMENDED_FOR_ITEMS} />
         </ProseSection>
+
+        <SoftSectionDivider variant="moon" />
 
         <ProseSection title="最後に">
           <p>

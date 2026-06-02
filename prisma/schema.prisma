@@ -85,6 +85,23 @@ model JournalEntry {
   @@index([email, profileId])
 }
 
+/// アプリ内日記ブック（ユーザーが明示的に生成）
+model DiaryBook {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  email     String
+  profileId String
+
+  title      String
+  startDate  String /// YYYY-MM-DD（記録日の下限・含む）
+  endDate    String /// YYYY-MM-DD（記録日の上限・含む）
+  coverTheme String @default("casual")
+
+  @@index([email, profileId, createdAt])
+}
+
 /// 本棚の「年別日記」ごとの表示名・表紙・製本期間（その西暦年内の月レンジ）
 model DiaryBookshelfBook {
   id        String   @id @default(cuid())
@@ -117,6 +134,12 @@ model AccountSettings {
   pdfDownloadLimitPerOrder Int @default(2)
   /// 製本用（高画質）鑑定書PDFのダウンロード可否（プレビュー版は全員）
   subscriberPdfAccess Boolean @default(false)
+
+  /// Stripe Billing（月額プラン）
+  stripeCustomerId     String? @unique
+  stripeSubscriptionId String? @unique
+  subscriptionPlan     String? /// "light" | "standard" | null
+  subscriptionStatus   String? /// active | canceled | past_due 等
 }
 
 /// 鑑定書製本版（BASE単発）の申込予定・製本進捗（決済前は pending）
@@ -146,6 +169,8 @@ model KanteiBookBindingRequest {
 }
 
 /// 日記製本（BASE）の申込予定・製本進捗（決済前は pending）
+/// - diaryBookId あり: 日記ブック（DiaryBook）単位
+/// - diaryBookId なし: 年本棚（year + periodStartMonth/EndMonth）単位（旧フロー）
 model DiaryBookBindingRequest {
   id        String   @id @default(cuid())
   createdAt DateTime @default(now())
@@ -153,22 +178,29 @@ model DiaryBookBindingRequest {
 
   email     String
   profileId String @default("")
-  year      Int
+
+  diaryBookId String?
+  year        Int?
 
   diaryBindingCode String @unique
   status           String @default("pending")
 
-  pageCount          Int
-  planId             String
-  displayTitle       String?
-  periodStartMonth   Int
-  periodEndMonth     Int
+  pageCount        Int
+  planId           String
+  displayTitle     String?
+  startDate        String?
+  endDate          String?
+  periodStartMonth Int?
+  periodEndMonth   Int?
+  baseShopUrl      String?
 
   baseOrderNumber String?
   baseBuyerName   String?
 
   @@index([status, createdAt])
   @@index([email, profileId, year])
+  @@index([email, profileId, diaryBookId])
+  @@index([diaryBookId])
   @@index([diaryBindingCode])
 }
 

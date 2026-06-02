@@ -12,10 +12,10 @@ export const DEFAULT_CONTENT_FONT_MODE: ContentFontMode = "standard";
  * 製本に必ず収まる保証ではなく、読みやすさの目安（後から調整可能）。
  */
 export const JOURNAL_CONTENT_SOFT_MAX_BY_MODE: Record<ContentFontMode, number> = {
-  relaxed: 120,
-  standard: 180,
-  generous: 250,
-  compact: 320,
+  relaxed: 112,
+  standard: 192,
+  generous: 280,
+  compact: 352,
 };
 
 /**
@@ -23,10 +23,10 @@ export const JOURNAL_CONTENT_SOFT_MAX_BY_MODE: Record<ContentFontMode, number> =
  * ソフト上限より大きくすること（後から調整可能）。
  */
 export const JOURNAL_CONTENT_STRONG_MAX_BY_MODE: Record<ContentFontMode, number> = {
-  relaxed: 180,
-  standard: 270,
-  generous: 380,
-  compact: 500,
+  relaxed: 160,
+  standard: 300,
+  generous: 400,
+  compact: 472,
 };
 
 export const CONTENT_FONT_MODE_LABELS_JA: Record<ContentFontMode, string> = {
@@ -36,7 +36,33 @@ export const CONTENT_FONT_MODE_LABELS_JA: Record<ContentFontMode, string> = {
   compact: "ぎゅっと",
 };
 
-export const JOURNAL_CONTENT_BOOK_GUIDE_HINT = "製本時に読みやすく残すための目安です";
+/** 改行1回あたりの軽いレイアウト加算（厳密な行末計算は使わない） */
+export const JOURNAL_NEWLINE_LAYOUT_EXTRA_BY_MODE: Record<ContentFontMode, number> = {
+  relaxed: 10,
+  standard: 10,
+  generous: 12,
+  compact: 8,
+};
+
+/**
+ * 本文から毎回再計算する「文字相当」長。
+ * 通常の文字数 + 改行ごとの軽い加算（累積や行末の大きな加算はしない）。
+ */
+export function layoutEquivalentContentLength(
+  content: string,
+  contentFontMode: string | null | undefined,
+): number {
+  const normalized = content.replace(/\r\n/g, "\n").replace(/\r/g, "\n");
+  const mode = normalizeContentFontMode(contentFontMode);
+  const perNewline = JOURNAL_NEWLINE_LAYOUT_EXTRA_BY_MODE[mode];
+  let chars = 0;
+  let newlines = 0;
+  for (let i = 0; i < normalized.length; i += 1) {
+    if (normalized[i] === "\n") newlines += 1;
+    else chars += 1;
+  }
+  return chars + newlines * perNewline;
+}
 
 export const JOURNAL_LONG_CONTENT_WARN_MESSAGE =
   "本文が長めです。製本時に読みやすく仕上げるため、文字サイズを小さくするか、文章を短くしてください。";
@@ -46,10 +72,10 @@ export const JOURNAL_VERY_LONG_CONTENT_WARN_MESSAGE =
 
 /** 製本イメージプレビュー下の説明（印刷用PDF未実装のため断定しない表現） */
 export const PREVIEW_OVERFLOW_HINT_MESSAGE =
-  "こちらは製本に近い見え方を確認するためのプレビューです。\n" +
-  "長い本文は枠内でスクロールして全文を確認できます。\n" +
-  "掲載日・本文・写真は、ご注文前にご自身でご確認ください。\n" +
-  "表示内容をもとに製本用データを作成します。";
+  "こちらは、製本したときに1ページに載る見え方を確認するプレビューです。\n" +
+  "最大行数を超えた本文は、このページには表示されません（製本にも載りません）。\n" +
+  "全文の確認・編集は入力画面で行ってください。\n" +
+  "掲載日・本文・写真は、ご注文前にご自身でご確認ください。";
 
 export function isContentFontMode(value: string): value is ContentFontMode {
   return (CONTENT_FONT_MODES as readonly string[]).includes(value);
@@ -98,11 +124,22 @@ export function journalEntryContentLengthFlag(
   return "ok";
 }
 
+/** レイアウト換算長での長文フラグ（一覧・製本前確認用） */
+export function journalEntryLayoutLengthFlag(
+  contentFontMode: string | null | undefined,
+  content: string,
+): JournalContentLengthFlag {
+  return journalEntryContentLengthFlag(
+    contentFontMode,
+    layoutEquivalentContentLength(content, contentFontMode),
+  );
+}
+
 export function entryNeedsLongContentBindingWarning(
   contentFontMode: string | null | undefined,
   content: string,
 ): boolean {
-  return journalEntryContentLengthFlag(contentFontMode, content.trim().length) !== "ok";
+  return journalEntryLayoutLengthFlag(contentFontMode, content) !== "ok";
 }
 
 /**
