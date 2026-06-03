@@ -1,5 +1,7 @@
 "use client";
 
+import { OwlLoadingInline } from "@/components/ui/OwlLoadingInline";
+
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { diaryBookBindingOverviewValue } from "@/lib/journal/diaryBookBindingOffer";
@@ -221,9 +223,14 @@ export function DiaryBookBindingOrderPanel({ bookId, pageCount, planId, orderabl
           type="button"
           onClick={() => void handleIssue()}
           disabled={issueLoading}
+          aria-busy={issueLoading}
           className="text-xs text-stone-500 underline-offset-2 hover:text-stone-800 hover:underline disabled:opacity-50"
         >
-          {issueLoading ? "更新中…" : "申込内容を最新の日記に合わせて更新する"}
+          {issueLoading ? (
+            <OwlLoadingInline label="注文ページを準備しています…" size="sm" />
+          ) : (
+            "申込内容を最新の日記に合わせて更新する"
+          )}
         </button>
       </div>
     );
@@ -238,9 +245,14 @@ export function DiaryBookBindingOrderPanel({ bookId, pageCount, planId, orderabl
         type="button"
         onClick={() => void handleIssue()}
         disabled={issueLoading}
+        aria-busy={issueLoading}
         className="inline-flex rounded-lg border border-violet-300 bg-violet-50 px-5 py-2.5 text-sm font-medium text-violet-950 hover:bg-violet-100 disabled:opacity-60"
       >
-        {issueLoading ? "発行中…" : "製本版を注文する"}
+        {issueLoading ? (
+          <OwlLoadingInline label="注文ページを準備しています…" size="sm" />
+        ) : (
+          "製本版を注文する"
+        )}
       </button>
       {issueError ? <p className="text-xs text-red-700">{issueError}</p> : null}
     </div>

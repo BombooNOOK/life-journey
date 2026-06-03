@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import { BookshelfBookCard, type BookshelfBookDetailRow } from "@/components/orders/BookshelfBookCard";
+import { BookshelfEditIncludesNavButton } from "@/components/orders/BookshelfEditIncludesNavButton";
 import { BookshelfPageHeader } from "@/components/orders/BookshelfPageHeader";
 import { DiaryBookCreateForm } from "@/components/orders/DiaryBookCreateForm";
 import { isAdminEmail } from "@/lib/admin/access";
@@ -81,17 +82,14 @@ export default async function BookshelfPage() {
         bindingLabel: "製本版を注文する",
         bindingHref: `/orders/bookshelf/diary-book/${book.id}/book-binding`,
         overviewExtra: (
-          <Link
-            href={`/orders/bookshelf/diary-book/${book.id}/edit-includes`}
-            className="block w-full rounded-lg border border-emerald-200 bg-white px-3 py-2 text-center text-xs font-medium text-emerald-900 hover:bg-emerald-50"
-          >
-            本に入れる日記を編集する
+          <BookshelfEditIncludesNavButton bookId={book.id}>
+            <span className="block">本に入れる日記を編集する</span>
             {book.needsContentRefresh ? (
               <span className="mt-1 block text-[10px] font-normal text-amber-800">
                 日記の変更を本に反映できます
               </span>
             ) : null}
-          </Link>
+          </BookshelfEditIncludesNavButton>
         ),
       };
     });

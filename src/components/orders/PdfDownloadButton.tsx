@@ -2,6 +2,9 @@
 
 import { useCallback, useEffect, useState } from "react";
 
+import { OwlLoadingInline } from "@/components/ui/OwlLoadingInline";
+import { OwlSpinIndicator } from "@/components/ui/OwlSpinIndicator";
+
 type Props = {
   href: string;
   label: string;
@@ -82,23 +85,24 @@ export function PdfDownloadButton({
       <button
         type="button"
         disabled={busy}
+        aria-busy={busy}
         onClick={() => void runDownload()}
         className={[className, busy ? "cursor-wait opacity-90" : ""].filter(Boolean).join(" ")}
       >
-        {busy ? "鑑定書を準備中…" : label}
+        {busy ? (
+          <OwlLoadingInline label="PDFを準備しています…" size="sm" className="w-full" />
+        ) : (
+          label
+        )}
       </button>
       {busy ? (
         <p className="flex items-start gap-2 text-sm leading-relaxed text-stone-800" role="status" aria-live="polite">
-          <span className="inline-block shrink-0 origin-center animate-spin text-lg leading-none" aria-hidden>
-            🦉
-          </span>
+          <OwlSpinIndicator size="md" />
           <span>{loadingLabel}</span>
         </p>
       ) : (
         <p className="flex items-start gap-2 text-xs leading-relaxed text-stone-500">
-          <span className="inline-block shrink-0 text-base leading-none" aria-hidden>
-            🦉
-          </span>
+          <OwlSpinIndicator size="sm" />
           <span>
             タップするとダウンロードが始まります。フクロウが回っているあいだは画面を閉じずにお待ちください（完了すると保存ダイアログが開きます）。
           </span>

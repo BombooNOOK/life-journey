@@ -18,6 +18,8 @@ import {
 import { DiaryBookPageViewport } from "@/components/journal/DiaryBookPageViewport";
 import { DiaryPreviewFixedPage } from "@/components/journal/DiaryPreviewFixedPage";
 import { InlineHelpButton } from "@/components/ui/InlineHelpButton";
+import { OwlLoadingInline } from "@/components/ui/OwlLoadingInline";
+import { BookshelfEditIncludesNavButton } from "@/components/orders/BookshelfEditIncludesNavButton";
 import { useVisualViewportDock } from "@/hooks/useVisualViewportDock";
 import type { BoundDiaryEntry } from "@/components/journal/DiaryYearBoundPages";
 import { parseSafeJournalReturnTo } from "@/lib/journal/bookshelfReturnTo";
@@ -539,17 +541,20 @@ export function DiaryBookFlipReader({
               <button
                 type="button"
                 disabled={refreshing || loading}
+                aria-busy={refreshing}
                 onClick={() => void refreshDiaryBookContent()}
                 className="rounded-lg bg-emerald-800 px-3 py-2 text-xs font-medium text-white hover:bg-emerald-900 disabled:opacity-50"
               >
-                {refreshing ? "更新中…" : "日記ブックを更新する"}
+                {refreshing ? (
+                  <OwlLoadingInline label="日記ブックを更新しています…" size="sm" />
+                ) : (
+                  "日記ブックを更新する"
+                )}
               </button>
-              <Link
-                href={`/orders/bookshelf/diary-book/${bookId}/edit-includes`}
+              <BookshelfEditIncludesNavButton
+                bookId={bookId}
                 className="rounded-lg border border-emerald-300 bg-white px-3 py-2 text-xs font-medium text-emerald-900 hover:bg-emerald-50"
-              >
-                本に入れる日記を編集する
-              </Link>
+              />
             </div>
           </div>
         ) : null}

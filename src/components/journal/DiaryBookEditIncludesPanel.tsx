@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 
 import { DiaryBookIncludeInBookMonthList } from "@/components/journal/DiaryBookIncludeInBookMonthList";
+import { OwlLoadingInline } from "@/components/ui/OwlLoadingInline";
 import type { DiaryBookIncludePickerEntryDto } from "@/lib/journal/diaryBookIncludePicker";
 
 type Props = {
@@ -125,10 +126,15 @@ export function DiaryBookEditIncludesPanel({ bookId, bookTitle, rangeLabel }: Pr
         <button
           type="button"
           disabled={refreshing || loading || includeDirty}
+          aria-busy={refreshing}
           onClick={() => void refreshDiaryBook()}
           className="mt-3 rounded-lg bg-emerald-800 px-4 py-2.5 text-sm font-medium text-white hover:bg-emerald-900 disabled:opacity-50"
         >
-          {refreshing ? "更新中…" : "日記ブックを更新する"}
+          {refreshing ? (
+            <OwlLoadingInline label="日記ブックを更新しています…" size="sm" />
+          ) : (
+            "日記ブックを更新する"
+          )}
         </button>
         {includeDirty ? (
           <p className="mt-2 text-xs text-amber-800">

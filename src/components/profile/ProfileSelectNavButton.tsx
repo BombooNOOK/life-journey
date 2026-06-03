@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useState, type ReactNode } from "react";
 
+import { OwlLoadingInline } from "@/components/ui/OwlLoadingInline";
 import { selectViewerProfile } from "@/lib/profile/selectViewerProfile";
 
 type Props = {
@@ -15,15 +16,6 @@ type Props = {
   /** 遷移中に表示する文言 */
   loadingLabel?: string;
 };
-
-function NavSpinner() {
-  return (
-    <span
-      className="inline-block h-4 w-4 shrink-0 animate-spin rounded-full border-2 border-current border-t-transparent"
-      aria-hidden
-    />
-  );
-}
 
 /** 遷移前に /api/profiles/select で選択中プロフィールを切り替える（必要時） */
 export function ProfileSelectNavButton({
@@ -74,14 +66,7 @@ export function ProfileSelectNavButton({
       onClick={() => void handleNavigate()}
       className={`${className} ${stateClass} transition-[transform,opacity] duration-75`}
     >
-      {busy ? (
-        <span className="inline-flex items-center justify-center gap-2">
-          <NavSpinner />
-          <span>{loadingLabel}</span>
-        </span>
-      ) : (
-        children
-      )}
+      {busy ? <OwlLoadingInline label={loadingLabel} size="sm" /> : children}
     </button>
   );
 }

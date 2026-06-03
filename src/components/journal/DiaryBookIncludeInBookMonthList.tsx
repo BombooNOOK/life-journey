@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 
+import { OwlLoadingInline } from "@/components/ui/OwlLoadingInline";
 import {
   groupDiaryBookIncludePickerEntriesByMonth,
   type DiaryBookIncludePickerEntryDto,
@@ -252,10 +253,15 @@ export function DiaryBookIncludeInBookMonthList({
       <button
         type="button"
         disabled={!dirty || saving}
+        aria-busy={saving}
         onClick={() => void saveChanges()}
         className="w-full rounded-lg border border-emerald-700 bg-emerald-50 px-3 py-2.5 text-sm font-medium text-emerald-900 hover:bg-emerald-100 disabled:opacity-50 sm:w-auto"
       >
-        {saving ? "保存中…" : "選択を保存する"}
+        {saving ? (
+          <OwlLoadingInline label="選択を保存しています…" size="sm" />
+        ) : (
+          "選択を保存する"
+        )}
       </button>
     </section>
   );

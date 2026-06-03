@@ -1,8 +1,9 @@
 "use client";
 
 import Image from "next/image";
-import Link from "next/link";
 import { useCallback, useEffect, useId, useRef, useState, type ReactNode } from "react";
+
+import { OwlNavButton } from "@/components/ui/OwlNavButton";
 
 export type BookshelfBookDetailRow = {
   label: string;
@@ -22,6 +23,12 @@ type Props = {
   details: BookshelfBookDetailRow[];
   /** 読むボタンの文言（鑑定書は「鑑定結果を見る」など） */
   readButtonLabel?: string;
+  /** 読む押下時のフクロウ文言 */
+  readLoadingLabel?: string;
+  /** 製本注文押下時のフクロウ文言 */
+  bindingLoadingLabel?: string;
+  /** PDFプレビュー押下時のフクロウ文言 */
+  quickPreviewLoadingLabel?: string;
   /** カード本体に常時表示する補助導線（例: PDFプレビュー） */
   quickPreviewHref?: string;
   quickPreviewLabel?: string;
@@ -79,6 +86,9 @@ export function BookshelfBookCard({
   coverAlt,
   details,
   readButtonLabel = "読む",
+  readLoadingLabel = "開いています…",
+  bindingLoadingLabel = "注文ページを準備しています…",
+  quickPreviewLoadingLabel = "PDFを準備しています…",
   quickPreviewHref,
   quickPreviewLabel = "プレビューで読む",
   quickPreviewHelpText,
@@ -159,15 +169,18 @@ export function BookshelfBookCard({
           ) : null}
 
           <div className="mt-auto flex flex-col gap-2 pt-3">
-            <Link
+            <OwlNavButton
               href={href}
+              loadingLabel={
+                kind === "diary-book" ? "日記ブックを開いています…" : readLoadingLabel
+              }
               className={[
-                "flex min-h-[40px] items-center justify-center rounded-lg px-3 text-sm font-medium text-white",
+                "flex min-h-[40px] w-full items-center justify-center rounded-lg px-3 text-sm font-medium text-white",
                 readButtonClass,
               ].join(" ")}
             >
               {readButtonLabel}
-            </Link>
+            </OwlNavButton>
             {quickPreviewHref && quickPreviewHelpText ? (
               <p className="text-center text-[11px] leading-snug text-stone-500">
                 {quickPreviewHelpText}
@@ -189,9 +202,13 @@ export function BookshelfBookCard({
                     {bindingLabel}
                   </a>
                 ) : (
-                  <Link href={bindingHref} className={BINDING_BUTTON_CLASS}>
+                  <OwlNavButton
+                    href={bindingHref}
+                    loadingLabel={bindingLoadingLabel}
+                    className={["w-full", BINDING_BUTTON_CLASS].join(" ")}
+                  >
                     {bindingLabel}
-                  </Link>
+                  </OwlNavButton>
                 )
               ) : (
                 <button
@@ -209,23 +226,15 @@ export function BookshelfBookCard({
               )
             ) : null}
             {quickPreviewHref ? (
-              quickPreviewOpenInNewTab ? (
-                <a
-                  href={quickPreviewHref}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="text-center text-xs font-medium text-stone-700 underline-offset-2 hover:text-stone-900 hover:underline"
-                >
-                  {quickPreviewLabel}
-                </a>
-              ) : (
-                <Link
-                  href={quickPreviewHref}
-                  className="text-center text-xs font-medium text-stone-700 underline-offset-2 hover:text-stone-900 hover:underline"
-                >
-                  {quickPreviewLabel}
-                </Link>
-              )
+              <OwlNavButton
+                href={quickPreviewHref}
+                loadingLabel={quickPreviewLoadingLabel}
+                openInNewTab={quickPreviewOpenInNewTab}
+                prefetch={!quickPreviewOpenInNewTab}
+                className="w-full text-center text-xs font-medium text-stone-700 underline-offset-2 hover:text-stone-900 hover:underline"
+              >
+                {quickPreviewLabel}
+              </OwlNavButton>
             ) : null}
             <button
               type="button"

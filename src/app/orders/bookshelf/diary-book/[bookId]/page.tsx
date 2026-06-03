@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
 
+import { BookshelfEditIncludesNavButton } from "@/components/orders/BookshelfEditIncludesNavButton";
 import { DiaryBookFlipReader } from "@/components/journal/DiaryBookFlipReader";
 import { getViewerEmailFromCookie } from "@/lib/auth/viewer";
 import { getDiaryBookWithEntriesForViewer } from "@/lib/journal/listDiaryBookEntries";
@@ -52,12 +53,10 @@ export default async function DiaryBookReadPage({ params }: Props) {
           ) : null}
         </p>
         <p className="mt-2">
-          <Link
-            href={`/orders/bookshelf/diary-book/${book.id}/edit-includes`}
+          <BookshelfEditIncludesNavButton
+            bookId={book.id}
             className="text-sm font-medium text-emerald-800 underline-offset-2 hover:underline"
-          >
-            本に入れる日記を編集する
-          </Link>
+          />
         </p>
       </div>
       <Suspense fallback={<p className="text-sm text-stone-500">日記ブックを読み込み中…</p>}>

@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
 import { heroCtaSecondaryClass } from "@/components/home/heroCtaStyles";
-import { OwlSpinIndicator } from "@/components/ui/OwlSpinIndicator";
+import { OwlLoadingInline } from "@/components/ui/OwlLoadingInline";
 
 const MY_PAGE_HREF = "/orders";
 
@@ -35,14 +35,7 @@ export function HomeMyPageNavButton() {
         "transition-[transform,opacity] duration-75",
       ].join(" ")}
     >
-      {busy ? (
-        <span className="inline-flex items-center justify-center gap-2">
-          <OwlSpinIndicator size="sm" />
-          <span>マイページを開いています…</span>
-        </span>
-      ) : (
-        "マイページへ"
-      )}
+      {busy ? <OwlLoadingInline label="マイページを開いています…" size="sm" /> : "マイページへ"}
     </button>
   );
 }
