@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { getViewerEmailFromCookie } from "@/lib/auth/viewer";
 import { prisma } from "@/lib/db";
 import { profileByIdForViewer } from "@/lib/profile/activeProfile";
+import { parseProfileIdFromRouteParam } from "@/lib/profile/parseProfileIdFromRouteParam";
 
 type Params = { params: Promise<{ profileId: string }> };
 
@@ -12,7 +13,8 @@ export async function PATCH(req: Request, { params }: Params) {
     return NextResponse.json({ error: "ログインが必要です", code: "AUTH_REQUIRED" }, { status: 401 });
   }
 
-  const { profileId } = await params;
+  const { profileId: profileIdRaw } = await params;
+  const profileId = parseProfileIdFromRouteParam(profileIdRaw);
   const existing = await profileByIdForViewer(profileId, viewerEmail);
   if (!existing) {
     return NextResponse.json(

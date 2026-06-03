@@ -1,8 +1,8 @@
 import Link from "next/link";
 
 import { MyPageAccountSection } from "@/components/orders/MyPageAccountSection";
-import { MyPageGuideLink } from "@/components/guide/MyPageGuideLink";
 import { MyPageHeaderIllustration } from "@/components/orders/MyPageHeaderIllustration";
+import { MyPageMainActions } from "@/components/orders/MyPageMainActions";
 import { MyPageProfileList } from "@/components/orders/MyPageProfileList";
 import { ProfileAddCard } from "@/components/profile/ProfileAddCard";
 import { isAdminEmail } from "@/lib/admin/access";
@@ -104,14 +104,29 @@ export default async function OrdersListPage() {
     );
   }
 
+  const activeProfile = profiles.find((p) => p.id === activeProfileId) ?? null;
+
   return (
     <div className="space-y-6">
       <div className="flex items-start justify-between gap-3">
-        <h1 className="text-2xl font-bold text-stone-900">マイページ</h1>
+        <div>
+          <h1 className="text-2xl font-bold text-stone-900">マイページ</h1>
+          <p className="mt-2 text-sm leading-relaxed text-stone-600">
+            プロフィールを選んでから、日記の記録や本棚（鑑定書・日記ブック）へ進めます。
+          </p>
+        </div>
         <MyPageHeaderIllustration />
       </div>
 
       <MyPageProfileList profiles={profiles} activeProfileId={activeProfileId} />
+
+      {activeProfile ? (
+        <MyPageMainActions
+          profileId={activeProfile.id}
+          profileNickname={activeProfile.nickname}
+          isActive
+        />
+      ) : null}
 
       <ProfileAddCard
         profileCount={profiles.length}
@@ -119,7 +134,17 @@ export default async function OrdersListPage() {
         subscriptionPlan={accountInfo.subscriptionPlan}
       />
 
-      <MyPageGuideLink />
+      <nav
+        aria-label="ガイド"
+        className="flex flex-wrap gap-x-4 gap-y-1 border-t border-stone-200 pt-4 text-sm text-stone-600"
+      >
+        <Link href="/guide" className="font-medium text-emerald-900 underline-offset-2 hover:underline">
+          使い方
+        </Link>
+        <Link href="/diary-guide" className="font-medium text-emerald-900 underline-offset-2 hover:underline">
+          歩き方
+        </Link>
+      </nav>
 
       <MyPageAccountSection
         viewerEmail={viewerEmail}

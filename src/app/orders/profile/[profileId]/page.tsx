@@ -3,7 +3,6 @@ import { notFound, redirect } from "next/navigation";
 
 import { ProfileDetailActiveSync } from "@/components/profile/ProfileDetailActiveSync";
 import { ProfileNicknameEditor } from "@/components/profile/ProfileNicknameEditor";
-import { ProfileSelectNavButton } from "@/components/profile/ProfileSelectNavButton";
 import { prisma } from "@/lib/db";
 import { withPrismaConnectionRetry } from "@/lib/db/prismaRetry";
 import {
@@ -11,6 +10,7 @@ import {
   listProfilesAndActiveProfileId,
   profileByIdForViewer,
 } from "@/lib/profile/activeProfile";
+import { parseProfileIdFromRouteParam } from "@/lib/profile/parseProfileIdFromRouteParam";
 import { getViewerEmailFromCookie, normalizeEmail } from "@/lib/auth/viewer";
 
 export const dynamic = "force-dynamic";
@@ -20,7 +20,8 @@ type Props = {
 };
 
 export default async function ProfileDetailPage({ params }: Props) {
-  const { profileId } = await params;
+  const { profileId: profileIdRaw } = await params;
+  const profileId = parseProfileIdFromRouteParam(profileIdRaw);
   const viewerEmail = await getViewerEmailFromCookie();
   if (!viewerEmail) {
     redirect("/login?returnTo=/orders");
@@ -55,9 +56,6 @@ export default async function ProfileDetailPage({ params }: Props) {
   const isActive = activeProfileId === profileId;
   const hasKantei = orders.length > 0;
 
-  const mainNavButtonClass =
-    "flex min-h-[48px] w-full items-center justify-center rounded-xl border px-4 py-3.5 text-center text-sm font-medium shadow-sm transition hover:shadow disabled:opacity-60";
-
   return (
     <div className="space-y-6">
       <ProfileDetailActiveSync profileId={profile.id} isActive={isActive} />
@@ -66,36 +64,19 @@ export default async function ProfileDetailPage({ params }: Props) {
           ← マイページ
         </Link>
         <h1 className="mt-2 text-2xl font-bold text-stone-900">{profile.nickname}</h1>
-        <p className="mt-1 text-sm text-stone-600">
-          このプロフィールに紐づく機能と情報を確認できます。
-        </p>
+        <p className="mt-1 text-sm text-stone-600">名前の変更と、保存済み鑑定の一覧です。</p>
         <p className="mt-2 text-xs text-stone-500">
-          {isActive
-            ? "現在選択中のプロフィールです。"
-            : "このプロフィールを開くと、日記・本棚の表示対象もここに切り替わります。"}
+          {isActive ? "現在選択中のプロフィールです。" : "表示を切り替えています。"}
         </p>
       </div>
 
-      <section aria-label="メインの操作" className="flex flex-col items-center">
-        <div className="grid w-full max-w-[17.5rem] grid-cols-1 gap-3 sm:max-w-2xl sm:grid-cols-2">
-          <ProfileSelectNavButton
-            profileId={profile.id}
-            href="/orders/calendar"
-            directNav={isActive}
-            className={`${mainNavButtonClass} border-emerald-200/90 bg-gradient-to-br from-emerald-50 to-white text-emerald-900 hover:border-emerald-300 hover:bg-emerald-50`}
-          >
-            日記を書く
-          </ProfileSelectNavButton>
-          <ProfileSelectNavButton
-            profileId={profile.id}
-            href="/orders/bookshelf"
-            directNav={isActive}
-            className={`${mainNavButtonClass} border-violet-200/90 bg-gradient-to-br from-violet-50/80 to-white text-violet-900 hover:border-violet-300 hover:bg-violet-50`}
-          >
-            本棚を見る
-          </ProfileSelectNavButton>
-        </div>
-      </section>
+      <p className="rounded-lg border border-stone-200 bg-stone-50 px-3 py-2.5 text-sm text-stone-700">
+        「日記を書く」「本棚を見る」は
+        <Link href="/orders#main-actions" className="font-medium text-emerald-900 underline-offset-2 hover:underline">
+          マイページ
+        </Link>
+        から開けます。
+      </p>
 
       <section className="space-y-3 rounded-xl border border-stone-200 bg-white p-4 shadow-sm">
         <h2 className="text-lg font-semibold text-stone-900">プロフィール情報</h2>

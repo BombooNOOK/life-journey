@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
@@ -13,12 +14,13 @@ type Props = {
   activeProfileId: string;
 };
 
+/** マイページ：プロフィールを選ぶ（詳細ページへは自動遷移しない） */
 export function MyPageProfileList({ profiles, activeProfileId }: Props) {
   const router = useRouter();
   const [busyId, setBusyId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  async function openProfile(profileId: string) {
+  async function selectProfile(profileId: string) {
     if (busyId) return;
     setError(null);
     setBusyId(profileId);
@@ -30,17 +32,19 @@ export function MyPageProfileList({ profiles, activeProfileId }: Props) {
           return;
         }
       }
-      router.push(`/orders/profile/${encodeURIComponent(profileId)}`);
+      router.refresh();
     } finally {
       setBusyId(null);
     }
   }
 
+  const multiple = profiles.length > 1;
+
   return (
     <section id="profile-list" className="space-y-3">
       <div>
         <FieldLabelWithHelp
-          label="プロフィール一覧"
+          label="① プロフィールを選ぶ"
           labelClassName="text-lg font-semibold text-stone-900"
           helpAriaLabel="プロフィール一覧の説明"
           help={
@@ -50,7 +54,11 @@ export function MyPageProfileList({ profiles, activeProfileId }: Props) {
             </>
           }
         />
-        <p className="mt-1 text-sm text-stone-600">日記を書くプロフィールを選びます。</p>
+        <p className="mt-1 text-sm text-stone-600">
+          {multiple
+            ? "使うプロフィールを選んでから、下の「日記を書く」「本棚を見る」へ進んでください。"
+            : "このプロフィールで、下の「日記を書く」「本棚を見る」が使えます。"}
+        </p>
       </div>
       {error ? (
         <p className="rounded-md bg-red-50 px-3 py-2 text-xs text-red-800" role="alert">
@@ -64,31 +72,44 @@ export function MyPageProfileList({ profiles, activeProfileId }: Props) {
           {profiles.map((profile) => {
             const isActive = profile.id === activeProfileId;
             const isBusy = busyId === profile.id;
+            const profileDetailHref = `/orders/profile/${encodeURIComponent(profile.id)}`;
             return (
               <li key={profile.id}>
-                <button
-                  type="button"
-                  disabled={busyId !== null}
-                  onClick={() => void openProfile(profile.id)}
+                <div
                   className={[
-                    "block w-full rounded-xl border bg-white px-4 py-4 text-left text-sm shadow-sm transition hover:-translate-y-0.5 hover:shadow-md disabled:opacity-60",
+                    "rounded-xl border bg-white shadow-sm transition",
                     isActive
                       ? "border-emerald-300 ring-1 ring-emerald-100"
-                      : "border-stone-200 hover:border-stone-300",
+                      : "border-stone-200",
                   ].join(" ")}
                 >
-                  <div className="flex flex-wrap items-center gap-2">
-                    <p className="font-medium text-stone-900">{profile.nickname}</p>
-                    {isActive ? (
-                      <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-medium text-emerald-900">
-                        現在選択中
-                      </span>
-                    ) : null}
+                  <button
+                    type="button"
+                    disabled={busyId !== null}
+                    onClick={() => void selectProfile(profile.id)}
+                    className="block w-full rounded-t-xl px-4 py-4 text-left text-sm transition hover:bg-stone-50/80 disabled:opacity-60"
+                  >
+                    <div className="flex flex-wrap items-center gap-2">
+                      <p className="font-medium text-stone-900">{profile.nickname}</p>
+                      {isActive ? (
+                        <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-medium text-emerald-900">
+                          選択中
+                        </span>
+                      ) : null}
+                    </div>
+                    <p className="mt-2 text-xs font-medium text-emerald-900">
+                      {isBusy ? "切り替え中…" : isActive ? "このプロフィールで続ける" : "このプロフィールを選ぶ"}
+                    </p>
+                  </button>
+                  <div className="border-t border-stone-100 px-4 py-2.5">
+                    <Link
+                      href={profileDetailHref}
+                      className="text-xs text-stone-600 underline-offset-2 hover:text-stone-900 hover:underline"
+                    >
+                      名前の変更・保存済み鑑定 →
+                    </Link>
                   </div>
-                  <p className="mt-2 text-xs font-medium text-emerald-900">
-                    {isBusy ? "切り替え中…" : "このプロフィールを開く →"}
-                  </p>
-                </button>
+                </div>
               </li>
             );
           })}
