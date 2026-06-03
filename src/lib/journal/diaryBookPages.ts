@@ -1,4 +1,5 @@
 import type { BoundDiaryEntry } from "@/components/journal/DiaryYearBoundPages";
+import { filterEntriesForDiaryBook } from "@/lib/journal/includeInBook";
 import { parseDiaryBookDateRange } from "@/lib/journal/diaryBookPeriod";
 
 export type DiaryBookMonthKey = { year: number; monthIndex: number };
@@ -87,6 +88,7 @@ export function buildBoundDiaryBookPages(
   startDate: string,
   endDate: string,
 ): DiaryBookPageKind[] {
+  const bookEntries = filterEntriesForDiaryBook(entries);
   const months = monthsInDiaryBookPeriod(startDate, endDate);
   const lastMonth = months[months.length - 1];
 
@@ -104,7 +106,7 @@ export function buildBoundDiaryBookPages(
     pages.push({ kind: "month-index", monthIndex, calendarYear: year });
     pages.push({ kind: "month-illustration", monthIndex, calendarYear: year });
 
-    const monthEntries = diaryBookEntriesInMonth(entries, year, monthIndex);
+    const monthEntries = diaryBookEntriesInMonth(bookEntries, year, monthIndex);
     for (const entry of monthEntries) {
       pages.push({ kind: "entry", entry, entryIndex });
       entryIndex += 1;

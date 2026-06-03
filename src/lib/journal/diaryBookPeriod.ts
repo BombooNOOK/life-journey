@@ -67,6 +67,7 @@ export async function countJournalEntriesInDiaryBookPeriod(params: {
       email: params.email,
       profileId: params.profileId,
       createdAt,
+      includeInBook: true,
     },
   });
 }

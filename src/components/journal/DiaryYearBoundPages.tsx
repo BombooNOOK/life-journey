@@ -5,6 +5,7 @@ import Image from "next/image";
 import { diaryCoverImagePath, normalizeDiaryCoverStyle } from "@/lib/journal/coverAssets";
 import { diaryBookMonthIndexMoonImagePath } from "@/lib/journal/diaryBookAssets";
 import { phraseForMonth, phraseForYear } from "@/lib/journal/diaryPhrases";
+import { isEntryIncludedInDiaryBook } from "@/lib/journal/includeInBook";
 import { getCompanionStamp, getMoodMeta } from "@/lib/journal/meta";
 
 /** 本棚の年次めくりと共有する最小エントリ形 */
@@ -215,7 +216,10 @@ export function DiaryBoundMonthCalendarPage({
   /** 日記ブック読書用（724×1024 フルページ・外枠なし） */
   bookReader?: boolean;
 }) {
-  const monthEntries = entriesInMonth(entries, year, monthIndex);
+  const monthEntriesAll = entriesInMonth(entries, year, monthIndex);
+  const monthEntries = bookReader
+    ? monthEntriesAll.filter(isEntryIncludedInDiaryBook)
+    : monthEntriesAll;
   const daysWithEntry = new Set<number>();
   const entryCountByDay = new Map<number, number>();
   const latestByDay = new Map<number, BoundDiaryEntry>();

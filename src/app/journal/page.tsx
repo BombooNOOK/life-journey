@@ -16,6 +16,7 @@ import {
   formatJournalRecordPageTitle,
   journalBodyInputHeading,
 } from "@/lib/journal/journalRecordDateDisplay";
+import { JournalIncludeInBookField } from "@/components/journal/JournalIncludeInBookField";
 import { JournalWritingComposer } from "@/components/journal/JournalWritingComposer";
 import { JournalContentLengthAlerts } from "@/components/journal/JournalContentLengthAlerts";
 import { parseSafeJournalReturnTo } from "@/lib/journal/bookshelfReturnTo";
@@ -748,6 +749,12 @@ function JournalPageContent() {
           ) : null}
         </div>
 
+        <JournalIncludeInBookField
+          checked={includeInBook}
+          onChange={setIncludeInBook}
+          disabled={saving || loadingEdit || processingPhoto}
+        />
+
         <div className="space-y-3 border-t border-stone-100 pt-3">
           <JournalCompanionPicker disabled={saving || loadingEdit || processingPhoto} />
 
@@ -831,16 +838,6 @@ function JournalPageContent() {
             </div>
           </details>
         ) : null}
-        <label className="flex items-center gap-2 rounded-lg border border-stone-200 bg-white px-3 py-2 text-sm text-stone-800">
-          <input
-            type="checkbox"
-            checked={includeInBook}
-            onChange={(e) => setIncludeInBook(e.target.checked)}
-            className="h-4 w-4 rounded border-stone-300 text-emerald-700 focus:ring-emerald-600"
-          />
-          このページを本に入れる
-        </label>
-
         <label className="block text-sm font-medium text-stone-700" htmlFor="journal-mood">
           今日の気分
         </label>
@@ -993,7 +990,7 @@ function JournalPageContent() {
                   {getCompanionLabel(PHASE1_COMPANION_TYPE)}
                 </p>
                 <p className="mt-1 text-xs text-stone-500">
-                  本への掲載: {entry.includeInBook ? "入れる" : "入れない"}
+                  この日記を本に入れる: {entry.includeInBook !== false ? "ON" : "OFF"}
                 </p>
                 {entry.photoDataUrl ? (
                   <img

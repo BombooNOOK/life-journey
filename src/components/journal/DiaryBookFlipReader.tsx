@@ -22,6 +22,7 @@ import { useVisualViewportDock } from "@/hooks/useVisualViewportDock";
 import type { BoundDiaryEntry } from "@/components/journal/DiaryYearBoundPages";
 import { parseSafeJournalReturnTo } from "@/lib/journal/bookshelfReturnTo";
 import { diaryBookBodyTemplatePathForCompanion } from "@/lib/journal/diaryBookAssets";
+import { filterEntriesForDiaryBook } from "@/lib/journal/includeInBook";
 import {
   boundDiaryBookPageLabel,
   buildBoundDiaryBookPages,
@@ -143,7 +144,7 @@ export function DiaryBookFlipReader({
     [entries, startDate, endDate],
   );
   const totalPages = pages.length;
-  const entryTotal = entries.length;
+  const entryTotal = filterEntriesForDiaryBook(entries).length;
 
   const backHref = useMemo(() => {
     const fromQuery = parseSafeJournalReturnTo(searchParams.get("returnTo"));
