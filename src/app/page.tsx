@@ -57,31 +57,18 @@ export default function HomePage() {
             >
               マイページへ
             </Link>
+            <Link
+              href="/diary-guide"
+              className="block w-full rounded-xl border border-stone-200/90 bg-white/40 px-4 py-3 text-center text-sm font-medium text-stone-600 backdrop-blur-[1px] transition hover:border-stone-300 hover:bg-white/55 hover:text-stone-800"
+            >
+              歩き方を見る
+            </Link>
             <p className="text-xs leading-5 text-stone-600">
               はじめての方は無料鑑定から。保存済みの結果はマイページから開けます。
-            </p>
-            <p className="text-xs leading-5 text-stone-500">
-              <span aria-hidden>🦉 </span>
-              迷ったら、まずは無料鑑定からで大丈夫です。
             </p>
           </div>
         </div>
       </section>
-
-      <nav
-        aria-label="ガイド"
-        className="flex flex-wrap gap-x-4 gap-y-1 border-t border-stone-200 pt-4 text-sm text-stone-600"
-      >
-        <Link href="/guide" className="font-medium text-emerald-900 underline-offset-2 hover:underline">
-          使い方
-        </Link>
-        <Link
-          href="/diary-guide"
-          className="font-medium text-emerald-900 underline-offset-2 hover:underline"
-        >
-          歩き方
-        </Link>
-      </nav>
     </div>
   );
 }

@@ -19,7 +19,7 @@ export function MyPageMainActions({ profileId, profileNickname, isActive }: Prop
       aria-label="メインの操作"
       className="rounded-2xl border border-emerald-100 bg-gradient-to-br from-[#f6f4ef] via-white to-emerald-50/40 p-4 shadow-sm sm:p-5"
     >
-      <p className="text-xs font-medium tracking-wide text-emerald-800">② つぎに進む</p>
+      <p className="text-lg font-semibold text-stone-900">② つぎに進む</p>
       <h2 className="mt-1 text-lg font-semibold text-stone-900">
         {profileNickname}
         <span className="ml-2 text-sm font-normal text-stone-600">さんの記録</span>

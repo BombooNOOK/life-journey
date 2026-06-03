@@ -134,18 +134,6 @@ export default async function OrdersListPage() {
         subscriptionPlan={accountInfo.subscriptionPlan}
       />
 
-      <nav
-        aria-label="ガイド"
-        className="flex flex-wrap gap-x-4 gap-y-1 border-t border-stone-200 pt-4 text-sm text-stone-600"
-      >
-        <Link href="/guide" className="font-medium text-emerald-900 underline-offset-2 hover:underline">
-          使い方
-        </Link>
-        <Link href="/diary-guide" className="font-medium text-emerald-900 underline-offset-2 hover:underline">
-          歩き方
-        </Link>
-      </nav>
-
       <MyPageAccountSection
         viewerEmail={viewerEmail}
         subscriptionPlan={accountInfo.subscriptionPlan}
