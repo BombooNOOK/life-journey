@@ -2,7 +2,7 @@ import Link from "next/link";
 
 export default function HomePage() {
   return (
-    <div className="space-y-6 md:space-y-8">
+    <div className="space-y-5">
       <section className="relative overflow-hidden rounded-3xl border border-emerald-100 bg-[#f6f4ef] p-4 pb-14 shadow-sm sm:p-6 sm:pb-14 md:min-h-[480px] md:p-8 md:pb-12 lg:min-h-[520px]">
         <div
           aria-hidden
@@ -58,65 +58,30 @@ export default function HomePage() {
               マイページへ
             </Link>
             <p className="text-xs leading-5 text-stone-600">
-              はじめての方は無料鑑定から。
-              <br />
-              保存済みの結果は、
-              <br />
-              マイページから開けます。
+              はじめての方は無料鑑定から。保存済みの結果はマイページから開けます。
             </p>
-          </div>
-        </div>
-      </section>
-
-      <section className="rounded-2xl border border-stone-200 bg-white p-5 text-sm text-stone-600 sm:p-6">
-        <h2 className="font-semibold text-stone-800">この場所でできること</h2>
-        <ul className="mt-3 list-inside list-disc space-y-2 leading-7">
-          <li>あなたのコアナンバーを読み解く</li>
-          <li>今の流れと、これからのテーマを見る</li>
-          <li>気づいたことを、日々の記録として残す</li>
-        </ul>
-      </section>
-
-      <section className="rounded-2xl border border-amber-200 bg-amber-50 p-5 sm:p-6">
-        <p className="whitespace-pre-line text-base font-semibold leading-8 text-stone-800">
-          知ることから、残すことへ。
-          {"\n"}今日の気づきを、
-          {"\n"}あなた自身の物語にしていきましょう。
-        </p>
-        <Link
-          href="/orders"
-          className="mt-4 inline-block rounded-lg border border-amber-300 bg-white px-4 py-2 text-sm font-medium text-amber-900 hover:bg-amber-100"
-        >
-          日々の記録を見る
-        </Link>
-      </section>
-
-      <section className="rounded-2xl border border-emerald-100 bg-emerald-50/60 p-5 text-sm text-stone-700 sm:p-6">
-        <h2 className="font-semibold text-stone-800">BambooNOOK の物語</h2>
-        <p className="mt-2 leading-7">
-          ここは、元おもちゃ屋の記憶を抱いた古民家カフェ。
-          かつて誰かの宝物だったものたちと、どうぶつ鑑定士たちが、あなたの一日をそっと見守っています。
-        </p>
-        <p className="mt-2 leading-7">
-          数字は「当てる」ためではなく、今のあなたをやさしく整えるための灯り。
-          焦らず、静かに、あなたのペースで受け取ってください。
-        </p>
-      </section>
-
-      <section className="rounded-2xl border border-amber-100 bg-amber-50/70 p-4 text-sm text-stone-700 sm:p-5">
-        <div className="flex items-start gap-3">
-          <div className="mt-0.5 text-xl" aria-hidden>
-            🦉
-          </div>
-          <div>
-            <p className="font-medium text-stone-800">フクロウ先生より</p>
-            <p className="mt-1 leading-7">
+            <p className="text-xs leading-5 text-stone-500">
+              <span aria-hidden>🦉 </span>
               迷ったら、まずは無料鑑定からで大丈夫です。
-              今日のあなたに必要なヒントを、静かにお届けします。
             </p>
           </div>
         </div>
       </section>
+
+      <nav
+        aria-label="ガイド"
+        className="flex flex-wrap gap-x-4 gap-y-1 border-t border-stone-200 pt-4 text-sm text-stone-600"
+      >
+        <Link href="/guide" className="font-medium text-emerald-900 underline-offset-2 hover:underline">
+          使い方
+        </Link>
+        <Link
+          href="/diary-guide"
+          className="font-medium text-emerald-900 underline-offset-2 hover:underline"
+        >
+          歩き方
+        </Link>
+      </nav>
     </div>
   );
 }

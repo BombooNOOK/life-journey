@@ -86,8 +86,12 @@ export function MyPageProfileList({ profiles, activeProfileId }: Props) {
                   <button
                     type="button"
                     disabled={busyId !== null}
+                    aria-busy={isBusy}
                     onClick={() => void selectProfile(profile.id)}
-                    className="block w-full rounded-t-xl px-4 py-4 text-left text-sm transition hover:bg-stone-50/80 disabled:opacity-60"
+                    className={[
+                      "block w-full rounded-t-xl px-4 py-4 text-left text-sm transition hover:bg-stone-50/80 disabled:opacity-60",
+                      isBusy ? "scale-[0.98] opacity-80" : "active:scale-[0.98]",
+                    ].join(" ")}
                   >
                     <div className="flex flex-wrap items-center gap-2">
                       <p className="font-medium text-stone-900">{profile.nickname}</p>
