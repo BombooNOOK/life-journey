@@ -5,10 +5,15 @@ import { HomeMyPageNavButton } from "@/components/home/HomeMyPageNavButton";
 export default function HomePage() {
   return (
     <div className="space-y-4 sm:space-y-5">
-      <section className="relative overflow-hidden rounded-3xl border border-emerald-100 bg-[#f6f4ef] p-4 pb-10 shadow-sm sm:p-6 sm:pb-12 md:min-h-[480px] md:p-8 md:pb-12 lg:min-h-[520px]">
+      <section className="relative overflow-hidden rounded-3xl border border-emerald-100 bg-[#f6f4ef] p-4 pb-12 shadow-sm sm:p-6 sm:pb-12 md:min-h-[480px] md:p-8 md:pb-12 lg:min-h-[520px]">
+        {/* スマホ：フクロウを右下に小さめ配置し、中段のボタンと重ならないようにする */}
         <div
           aria-hidden
-          className="pointer-events-none absolute inset-0 bg-[url('/images/mainhaikei-smartphone.png')] bg-cover bg-no-repeat bg-[position:98%_72%] md:hidden"
+          className="pointer-events-none absolute inset-0 bg-[url('/images/mainhaikei-smartphone.png')] bg-no-repeat bg-[length:auto_min(52%,248px)] bg-[position:100%_100%] opacity-95 md:hidden"
+        />
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-x-0 bottom-0 z-[1] h-20 bg-gradient-to-t from-[#f6f4ef] via-[#f6f4ef]/60 to-transparent md:hidden"
         />
         <div aria-hidden className="pointer-events-none absolute inset-0 hidden md:block">
           <div className="absolute inset-0 bg-[#f6f4ef]" />
@@ -46,7 +51,7 @@ export default function HomePage() {
             </p>
           </div>
 
-          <div className="w-full max-w-full space-y-3 rounded-2xl p-3 sm:p-4 md:max-w-xs">
+          <div className="relative z-10 w-full max-w-full space-y-3 rounded-2xl bg-[#f6f4ef]/45 p-3 backdrop-blur-[1px] sm:bg-transparent sm:p-4 sm:backdrop-blur-0 md:max-w-xs">
             <Link
               href="/order"
               className="block w-full rounded-xl border border-[#5b6b4d]/45 bg-[#6f8460]/76 px-4 py-3.5 text-center text-sm font-semibold text-white shadow-[0_1px_2px_rgba(58,73,47,0.2)] backdrop-blur-[1px] transition hover:bg-[#667b58]/84 sm:text-base"
