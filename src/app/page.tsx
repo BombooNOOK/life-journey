@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 import { HomeMyPageNavButton } from "@/components/home/HomeMyPageNavButton";
+import { heroCtaPrimaryClass, heroCtaStackClass } from "@/components/home/heroCtaStyles";
 
 export default function HomePage() {
   return (
@@ -46,11 +47,8 @@ export default function HomePage() {
             </p>
           </div>
 
-          <div className="w-full max-w-full space-y-3 rounded-2xl p-3 sm:p-4 md:max-w-xs">
-            <Link
-              href="/order"
-              className="block w-full rounded-xl border border-[#5b6b4d]/45 bg-[#6f8460]/76 px-4 py-3.5 text-center text-sm font-semibold text-white shadow-[0_1px_2px_rgba(58,73,47,0.2)] backdrop-blur-[1px] transition hover:bg-[#667b58]/84 sm:text-base"
-            >
+          <div className={heroCtaStackClass}>
+            <Link href="/order" className={heroCtaPrimaryClass}>
               無料鑑定をはじめる
             </Link>
             <HomeMyPageNavButton />
