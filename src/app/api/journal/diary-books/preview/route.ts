@@ -2,9 +2,11 @@ import { NextResponse } from "next/server";
 
 import { getViewerEmailFromCookie } from "@/lib/auth/viewer";
 import { parseDiaryBookPreviewFields } from "@/lib/journal/diaryBookForm";
+import { listJournalEntriesForDiaryBookIncludePicker } from "@/lib/journal/diaryBookIncludePicker";
 import {
   countJournalEntriesInDiaryBookPeriod,
   NO_ENTRIES_IN_DIARY_BOOK_PERIOD_MESSAGE,
+  NO_INCLUDED_ENTRIES_IN_DIARY_BOOK_PERIOD_MESSAGE,
 } from "@/lib/journal/diaryBookPeriod";
 import { resolveDiaryBookProfileId } from "@/lib/journal/diaryBookProfile";
 
@@ -53,20 +55,36 @@ export async function POST(req: Request) {
     );
   }
 
-  const entryCount = await countJournalEntriesInDiaryBookPeriod({
-    email: viewerEmail,
-    profileId: profileResult.profileId,
-    startDate: parsed.data.startDate,
-    endDate: parsed.data.endDate,
-  });
+  const [entryCount, pickerEntries] = await Promise.all([
+    countJournalEntriesInDiaryBookPeriod({
+      email: viewerEmail,
+      profileId: profileResult.profileId,
+      startDate: parsed.data.startDate,
+      endDate: parsed.data.endDate,
+    }),
+    listJournalEntriesForDiaryBookIncludePicker({
+      email: viewerEmail,
+      profileId: profileResult.profileId,
+      startDate: parsed.data.startDate,
+      endDate: parsed.data.endDate,
+    }),
+  ]);
 
+  const totalEntryCount = pickerEntries.length;
   const canCreate = entryCount > 0;
+  const message = canCreate
+    ? undefined
+    : totalEntryCount === 0
+      ? NO_ENTRIES_IN_DIARY_BOOK_PERIOD_MESSAGE
+      : NO_INCLUDED_ENTRIES_IN_DIARY_BOOK_PERIOD_MESSAGE;
 
   return NextResponse.json(
     {
       entryCount,
+      totalEntryCount,
       canCreate,
-      ...(canCreate ? {} : { message: NO_ENTRIES_IN_DIARY_BOOK_PERIOD_MESSAGE }),
+      entries: pickerEntries,
+      ...(message ? { message } : {}),
       code: "OK",
     },
     JSON_NO_STORE,

@@ -3,6 +3,9 @@ import { prisma } from "@/lib/db";
 export const NO_ENTRIES_IN_DIARY_BOOK_PERIOD_MESSAGE =
   "この期間には日記がありません。\n期間を変更するか、日記を書いてから日記ブックを作成してください。";
 
+export const NO_INCLUDED_ENTRIES_IN_DIARY_BOOK_PERIOD_MESSAGE =
+  "この期間に日記はありますが、本に入れる日記が0件です。\n下の一覧で「この日記を本に入れる」にチェックを入れ、「選択を保存する」を押してから日記ブックを作成してください。";
+
 export type DiaryBookDateRange = {
   startDate: string;
   endDate: string;

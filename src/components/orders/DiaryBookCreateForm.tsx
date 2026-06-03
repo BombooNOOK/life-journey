@@ -4,16 +4,21 @@ import Image from "next/image";
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 
+import { DiaryBookIncludeInBookMonthList } from "@/components/journal/DiaryBookIncludeInBookMonthList";
 import {
   diaryCoverImagePath,
   diaryCoverStyleOptions,
   type DiaryCoverStyleId,
 } from "@/lib/journal/coverAssets";
+import type { DiaryBookIncludePickerEntryDto } from "@/lib/journal/diaryBookIncludePicker";
+import { NO_INCLUDED_ENTRIES_IN_DIARY_BOOK_PERIOD_MESSAGE } from "@/lib/journal/diaryBookPeriod";
 
 type PreviewResponse = {
   entryCount?: number;
+  totalEntryCount?: number;
   canCreate?: boolean;
   message?: string;
+  entries?: DiaryBookIncludePickerEntryDto[];
   error?: string;
   code?: string;
 };
@@ -39,6 +44,10 @@ export function DiaryBookCreateForm() {
   const [entryCount, setEntryCount] = useState<number | null>(null);
   const [canCreate, setCanCreate] = useState<boolean>(false);
   const [previewMessage, setPreviewMessage] = useState<string | null>(null);
+  const [pickerEntries, setPickerEntries] = useState<DiaryBookIncludePickerEntryDto[] | null>(
+    null,
+  );
+  const [periodChecked, setPeriodChecked] = useState(false);
 
   const [creating, setCreating] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -54,6 +63,8 @@ export function DiaryBookCreateForm() {
     setError(null);
     setNotice(null);
     setPreviewMessage(null);
+    setPickerEntries(null);
+    setPeriodChecked(false);
     try {
       const res = await fetch("/api/journal/diary-books/preview", {
         method: "POST",
@@ -74,11 +85,16 @@ export function DiaryBookCreateForm() {
         return;
       }
       const count = Number.isFinite(data.entryCount) ? Number(data.entryCount) : 0;
+      const list = Array.isArray(data.entries) ? data.entries : [];
       const creatable = data.canCreate === true && count > 0;
       setEntryCount(count);
       setCanCreate(creatable);
+      setPickerEntries(list.length > 0 ? list : null);
+      setPeriodChecked(true);
       if (!creatable) {
         setPreviewMessage(data.message ?? DEFAULT_NO_ENTRIES_MESSAGE);
+      } else {
+        setPreviewMessage(null);
       }
     } catch {
       setEntryCount(null);
@@ -119,6 +135,8 @@ export function DiaryBookCreateForm() {
       setEntryCount(null);
       setCanCreate(false);
       setPreviewMessage(null);
+      setPickerEntries(null);
+      setPeriodChecked(false);
       router.refresh();
     } catch {
       setError("日記ブックの作成に失敗しました。");
@@ -216,7 +234,14 @@ export function DiaryBookCreateForm() {
               <input
                 type="date"
                 value={startDate}
-                onChange={(e) => setStartDate(e.target.value)}
+                onChange={(e) => {
+                  setStartDate(e.target.value);
+                  setPeriodChecked(false);
+                  setPickerEntries(null);
+                  setEntryCount(null);
+                  setCanCreate(false);
+                  setPreviewMessage(null);
+                }}
                 className="w-full rounded-md border border-stone-300 px-3 py-2 text-sm"
               />
             </label>
@@ -225,7 +250,14 @@ export function DiaryBookCreateForm() {
               <input
                 type="date"
                 value={endDate}
-                onChange={(e) => setEndDate(e.target.value)}
+                onChange={(e) => {
+                  setEndDate(e.target.value);
+                  setPeriodChecked(false);
+                  setPickerEntries(null);
+                  setEntryCount(null);
+                  setCanCreate(false);
+                  setPreviewMessage(null);
+                }}
                 className="w-full rounded-md border border-stone-300 px-3 py-2 text-sm"
               />
             </label>
@@ -241,6 +273,21 @@ export function DiaryBookCreateForm() {
               </>
             )}
           </div>
+
+          {periodChecked && pickerEntries && pickerEntries.length > 0 ? (
+            <DiaryBookIncludeInBookMonthList
+              entries={pickerEntries}
+              onSaved={({ includedCount, entries }) => {
+                setPickerEntries(entries);
+                setEntryCount(includedCount);
+                const creatable = includedCount > 0;
+                setCanCreate(creatable);
+                setPreviewMessage(
+                  creatable ? null : NO_INCLUDED_ENTRIES_IN_DIARY_BOOK_PERIOD_MESSAGE,
+                );
+              }}
+            />
+          ) : null}
 
           {previewMessage ? (
             <p className="whitespace-pre-line rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">
@@ -266,7 +313,7 @@ export function DiaryBookCreateForm() {
                 onClick={() => void checkPreview()}
                 className="rounded-lg border border-stone-300 bg-white px-3 py-2 text-sm font-medium text-stone-800 hover:bg-stone-100 disabled:opacity-50"
               >
-                {checking ? "確認中…" : "この期間の日記を確認"}
+                {checking ? "確認中…" : "掲載する日記を確認"}
               </button>
               <button
                 type="button"
@@ -279,7 +326,7 @@ export function DiaryBookCreateForm() {
             </div>
             {showCreateHint ? (
               <p className="mt-2 text-xs text-red-600">
-                日記ブック名・開始日・終了日を入力し、「この期間の日記を確認」を押してください。
+                日記ブック名・開始日・終了日を入力し、「この期間の日記を確認」で掲載する日記を選んでから作成してください。
               </p>
             ) : null}
           </div>
