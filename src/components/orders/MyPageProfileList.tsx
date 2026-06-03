@@ -108,9 +108,9 @@ export function MyPageProfileList({ profiles, activeProfileId }: Props) {
                   <div className="border-t border-stone-100 px-4 py-2.5">
                     <Link
                       href={profileDetailHref}
-                      className="text-xs text-stone-600 underline-offset-2 hover:text-stone-900 hover:underline"
+                      className="text-xs font-medium text-emerald-900 underline-offset-2 hover:underline"
                     >
-                      名前の変更・保存済み鑑定 →
+                      プロフィール名の変更・保存済み鑑定 →
                     </Link>
                   </div>
                 </div>

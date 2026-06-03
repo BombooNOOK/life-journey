@@ -62,10 +62,10 @@ export function ProfileNicknameEditor({ profileId, initialNickname }: Props) {
 
   return (
     <div className="space-y-3">
-      <label className="block text-sm font-medium text-stone-700" htmlFor="profile-nickname">
-        プロフィール名
-      </label>
-      <div className="flex flex-wrap items-center gap-2">
+      <div className="space-y-2">
+        <label className="block text-sm font-medium text-stone-700" htmlFor="profile-nickname">
+          プロフィール名
+        </label>
         <input
           id="profile-nickname"
           type="text"
@@ -73,18 +73,20 @@ export function ProfileNicknameEditor({ profileId, initialNickname }: Props) {
           onChange={(e) => setNickname(e.target.value)}
           disabled={busy}
           maxLength={40}
-          className="w-full max-w-xs rounded-md border border-stone-300 px-3 py-2 text-sm text-stone-900 disabled:opacity-60"
+          className="w-full rounded-md border border-stone-300 px-3 py-2 text-sm text-stone-900 disabled:opacity-60"
         />
         <button
           type="button"
           disabled={busy || unchanged || !trimmed}
           onClick={() => void saveNickname()}
-          className="rounded-md bg-stone-800 px-4 py-2 text-sm font-medium text-white hover:bg-stone-700 disabled:opacity-60"
+          className="inline-flex min-h-[44px] items-center justify-center rounded-md bg-stone-800 px-4 py-2 text-sm font-medium text-white hover:bg-stone-700 disabled:opacity-60"
         >
           {busy ? "保存中…" : "変更を保存"}
         </button>
       </div>
-      <p className="text-xs text-stone-500">40文字以内。マイページの一覧にも反映されます。</p>
+      <p className="text-xs leading-relaxed text-stone-500">
+        40文字以内。マイページの一覧にも反映されます。
+      </p>
       {error ? (
         <p className="text-xs text-red-700" role="alert">
           {error}

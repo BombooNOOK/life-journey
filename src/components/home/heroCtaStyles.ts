@@ -1,9 +1,9 @@
-/** トップヒーロー内CTA（スマホはややコンパクト・中央寄せでフクロウと重なりにくく） */
+/** トップヒーロー内CTA（スマホはコンパクト・中央寄せでフクロウと重なりにくく） */
 export const heroCtaStackClass =
-  "mx-auto w-full max-w-[15.75rem] space-y-2.5 rounded-2xl p-3 sm:max-w-full sm:space-y-3 sm:p-4 md:max-w-xs";
+  "mx-auto w-full max-w-[11.75rem] space-y-2 rounded-2xl p-2.5 sm:max-w-full sm:space-y-3 sm:p-4 md:max-w-xs";
 
 const heroCtaButtonBase =
-  "flex min-h-[44px] w-full items-center justify-center rounded-xl px-3.5 py-2.5 text-center text-[13px] font-semibold leading-snug backdrop-blur-[1px] transition sm:px-4 sm:py-3.5 sm:text-sm md:text-base";
+  "flex min-h-[42px] w-full items-center justify-center rounded-lg px-3 py-2 text-center text-xs font-semibold leading-snug backdrop-blur-[1px] transition sm:min-h-[44px] sm:rounded-xl sm:px-4 sm:py-3.5 sm:text-sm md:text-base";
 
 export const heroCtaPrimaryClass = [
   heroCtaButtonBase,
