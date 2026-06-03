@@ -2,8 +2,8 @@ import Link from "next/link";
 
 export default function HomePage() {
   return (
-    <div className="space-y-5">
-      <section className="relative overflow-hidden rounded-3xl border border-emerald-100 bg-[#f6f4ef] p-4 pb-14 shadow-sm sm:p-6 sm:pb-14 md:min-h-[480px] md:p-8 md:pb-12 lg:min-h-[520px]">
+    <div className="space-y-4 sm:space-y-5">
+      <section className="relative overflow-hidden rounded-3xl border border-emerald-100 bg-[#f6f4ef] p-4 pb-10 shadow-sm sm:p-6 sm:pb-12 md:min-h-[480px] md:p-8 md:pb-12 lg:min-h-[520px]">
         <div
           aria-hidden
           className="pointer-events-none absolute inset-0 bg-[url('/images/mainhaikei-smartphone.png')] bg-cover bg-no-repeat bg-[position:98%_72%] md:hidden"
@@ -57,17 +57,23 @@ export default function HomePage() {
             >
               マイページへ
             </Link>
-            <Link
-              href="/diary-guide"
-              className="block w-full rounded-xl border border-stone-200/90 bg-white/40 px-4 py-3 text-center text-sm font-medium text-stone-600 backdrop-blur-[1px] transition hover:border-stone-300 hover:bg-white/55 hover:text-stone-800"
-            >
-              歩き方を見る
-            </Link>
-            <p className="text-xs leading-5 text-stone-600">
-              はじめての方は無料鑑定から。保存済みの結果はマイページから開けます。
-            </p>
           </div>
         </div>
+      </section>
+
+      <section className="rounded-2xl border border-stone-200/75 bg-[#faf8f5] p-4 sm:p-5">
+        <h2 className="text-base font-semibold leading-snug text-stone-900">
+          Life Journey Diary の歩き方
+        </h2>
+        <p className="mt-2.5 text-sm leading-relaxed text-stone-600">
+          Life Journey Diary の考え方や、鑑定書と日記のつながりを知りたい方へ。
+        </p>
+        <Link
+          href="/diary-guide"
+          className="mt-4 inline-flex min-h-[44px] items-center text-sm font-medium text-emerald-900 underline-offset-2 transition hover:text-emerald-950 hover:underline"
+        >
+          Life Journey Diary の歩き方を読む →
+        </Link>
       </section>
     </div>
   );
