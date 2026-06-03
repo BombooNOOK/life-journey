@@ -17,6 +17,7 @@ type SavedPayload = {
 type Props = {
   entries: DiaryBookIncludePickerEntryDto[];
   onSaved: (payload: SavedPayload) => void;
+  onDirtyChange?: (dirty: boolean) => void;
 };
 
 function includeSnapshot(entries: DiaryBookIncludePickerEntryDto[]): string {
@@ -28,7 +29,11 @@ function lengthHintLabel(flag: DiaryBookIncludePickerEntryDto["lengthFlag"]): st
   return "長め";
 }
 
-export function DiaryBookIncludeInBookMonthList({ entries: initialEntries, onSaved }: Props) {
+export function DiaryBookIncludeInBookMonthList({
+  entries: initialEntries,
+  onSaved,
+  onDirtyChange,
+}: Props) {
   const [entries, setEntries] = useState(initialEntries);
   const [savedSnapshot, setSavedSnapshot] = useState(() => includeSnapshot(initialEntries));
   const [saving, setSaving] = useState(false);
@@ -46,6 +51,10 @@ export function DiaryBookIncludeInBookMonthList({ entries: initialEntries, onSav
     () => includeSnapshot(entries) !== savedSnapshot,
     [entries, savedSnapshot],
   );
+
+  useEffect(() => {
+    onDirtyChange?.(dirty);
+  }, [dirty, onDirtyChange]);
 
   const monthlyBuckets = useMemo(
     () => groupDiaryBookIncludePickerEntriesByMonth(entries),

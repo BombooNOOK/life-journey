@@ -8,9 +8,15 @@ export type DiaryBookDto = {
   coverTheme: string;
   entryCount: number;
   createdAt: string;
+  updatedAt: string;
+  needsContentRefresh?: boolean;
 };
 
-export function serializeDiaryBook(row: DiaryBook, entryCount: number): DiaryBookDto {
+export function serializeDiaryBook(
+  row: DiaryBook,
+  entryCount: number,
+  extras?: { needsContentRefresh?: boolean },
+): DiaryBookDto {
   return {
     id: row.id,
     title: row.title,
@@ -19,5 +25,9 @@ export function serializeDiaryBook(row: DiaryBook, entryCount: number): DiaryBoo
     coverTheme: row.coverTheme,
     entryCount,
     createdAt: row.createdAt.toISOString(),
+    updatedAt: row.updatedAt.toISOString(),
+    ...(extras?.needsContentRefresh != null
+      ? { needsContentRefresh: extras.needsContentRefresh }
+      : {}),
   };
 }

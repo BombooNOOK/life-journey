@@ -91,6 +91,8 @@ export function DiaryBookFlipReader({
 
   const [entries, setEntries] = useState<BoundDiaryEntry[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [needsContentRefresh, setNeedsContentRefresh] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [pageIndex, setPageIndex] = useState(0);
   const [panelVisible, setPanelVisible] = useState(true);
@@ -106,38 +108,57 @@ export function DiaryBookFlipReader({
     setFullscreenOpen(true);
   }, []);
 
-  useEffect(() => {
-    let cancelled = false;
+  const loadEntries = useCallback(async () => {
     setLoading(true);
     setError(null);
-    void fetch(`/api/journal/diary-books/${encodeURIComponent(bookId)}/entries?_=${Date.now()}`, {
-      cache: "no-store",
-      credentials: "same-origin",
-    })
-      .then(async (res) => {
-        const data = (await res.json()) as { entries?: BoundDiaryEntry[]; error?: string };
-        if (!res.ok) throw new Error(data.error ?? "記録の取得に失敗しました。");
-        const list = [...(data.entries ?? [])].sort(
-          (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
-        );
-        if (!cancelled) {
-          setEntries(list);
-          setPanelVisible(true);
-        }
-      })
-      .catch((e) => {
-        if (!cancelled) {
-          setError(e instanceof Error ? e.message : "記録の取得に失敗しました。");
-          setEntries([]);
-        }
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false);
-      });
-    return () => {
-      cancelled = true;
-    };
+    try {
+      const res = await fetch(
+        `/api/journal/diary-books/${encodeURIComponent(bookId)}/entries?_=${Date.now()}`,
+        { cache: "no-store", credentials: "same-origin" },
+      );
+      const data = (await res.json()) as {
+        entries?: BoundDiaryEntry[];
+        needsContentRefresh?: boolean;
+        error?: string;
+      };
+      if (!res.ok) throw new Error(data.error ?? "記録の取得に失敗しました。");
+      const list = [...(data.entries ?? [])].sort(
+        (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
+      );
+      setEntries(list);
+      setNeedsContentRefresh(data.needsContentRefresh === true);
+      setPanelVisible(true);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "記録の取得に失敗しました。");
+      setEntries([]);
+      setNeedsContentRefresh(false);
+    } finally {
+      setLoading(false);
+    }
   }, [bookId]);
+
+  useEffect(() => {
+    void loadEntries();
+  }, [loadEntries]);
+
+  const refreshDiaryBookContent = useCallback(async () => {
+    setRefreshing(true);
+    setError(null);
+    try {
+      const res = await fetch(
+        `/api/journal/diary-books/${encodeURIComponent(bookId)}/refresh`,
+        { method: "POST", credentials: "same-origin" },
+      );
+      const data = (await res.json()) as { error?: string };
+      if (!res.ok) throw new Error(data.error ?? "日記ブックの更新に失敗しました。");
+      await loadEntries();
+      setNeedsContentRefresh(false);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "日記ブックの更新に失敗しました。");
+    } finally {
+      setRefreshing(false);
+    }
+  }, [bookId, loadEntries]);
 
   const pages = useMemo(
     () => buildBoundDiaryBookPages(entries, startDate, endDate),
@@ -477,6 +498,30 @@ export function DiaryBookFlipReader({
   return (
     <>
       <div className="space-y-3">
+        {needsContentRefresh ? (
+          <div className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-3 text-sm text-amber-950">
+            <p>
+              日記の追加・編集、または本への掲載変更があります。内容を反映するには更新してください。
+            </p>
+            <div className="mt-2 flex flex-wrap gap-2">
+              <button
+                type="button"
+                disabled={refreshing || loading}
+                onClick={() => void refreshDiaryBookContent()}
+                className="rounded-lg bg-emerald-800 px-3 py-2 text-xs font-medium text-white hover:bg-emerald-900 disabled:opacity-50"
+              >
+                {refreshing ? "更新中…" : "日記ブックを更新する"}
+              </button>
+              <Link
+                href={`/orders/bookshelf/diary-book/${bookId}/edit-includes`}
+                className="rounded-lg border border-emerald-300 bg-white px-3 py-2 text-xs font-medium text-emerald-900 hover:bg-emerald-50"
+              >
+                本に入れる日記を編集する
+              </Link>
+            </div>
+          </div>
+        ) : null}
+
         {/* 通常ビューワー：戻る・アクション */}
         <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
           <Link

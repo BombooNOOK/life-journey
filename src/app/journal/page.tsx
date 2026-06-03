@@ -16,7 +16,6 @@ import {
   formatJournalRecordPageTitle,
   journalBodyInputHeading,
 } from "@/lib/journal/journalRecordDateDisplay";
-import { JournalIncludeInBookField } from "@/components/journal/JournalIncludeInBookField";
 import { JournalWritingComposer } from "@/components/journal/JournalWritingComposer";
 import { JournalContentLengthAlerts } from "@/components/journal/JournalContentLengthAlerts";
 import { parseSafeJournalReturnTo } from "@/lib/journal/bookshelfReturnTo";
@@ -147,7 +146,6 @@ function JournalPageContent() {
   const [activity, setActivity] = useState<ActivityId>("record_anyway");
   const designTheme: DiaryDesignId = "simple_plain";
   const [contentFontMode, setContentFontMode] = useState<ContentFontMode>(DEFAULT_CONTENT_FONT_MODE);
-  const [includeInBook, setIncludeInBook] = useState(true);
   const [entries, setEntries] = useState<Entry[]>([]);
   const [photoDataUrl, setPhotoDataUrl] = useState<string>("");
   const [selectedPhotoFile, setSelectedPhotoFile] = useState<File | null>(null);
@@ -333,7 +331,6 @@ function JournalPageContent() {
         setActivity(data.entry.activity ?? "record_anyway");
         setContentFontMode(normalizeContentFontMode(data.entry.contentFontMode));
         setPhotoDataUrl(data.entry.photoDataUrl ?? "");
-        setIncludeInBook(data.entry.includeInBook !== false);
         setEntryDate(
           toDateInputValueUtc(
             new Date(data.entry.createdAt != null ? data.entry.createdAt : Date.now()),
@@ -404,7 +401,6 @@ function JournalPageContent() {
           contentFontMode,
           photoDataUrl,
           entryDate,
-          includeInBook,
           profileId,
         }),
       });
@@ -429,7 +425,6 @@ function JournalPageContent() {
       setPhotoDataUrl("");
       setSelectedPhotoFile(null);
       setContentFontMode(DEFAULT_CONTENT_FONT_MODE);
-      setIncludeInBook(true);
       setEntryDate(toDateInputValue(new Date()));
       await loadEntries({ silent: true });
       if (options?.redirectToOrders) {
@@ -478,7 +473,6 @@ function JournalPageContent() {
           contentFontMode,
           photoDataUrl,
           entryDate,
-          includeInBook,
           profileId,
           regenerateOwlComment: true,
         }),
@@ -535,7 +529,6 @@ function JournalPageContent() {
         setMood("calm");
         setActivity("record_anyway");
         setContentFontMode(DEFAULT_CONTENT_FONT_MODE);
-        setIncludeInBook(true);
         router.replace("/journal");
       }
       await loadEntries({ silent: true });
@@ -749,12 +742,6 @@ function JournalPageContent() {
           ) : null}
         </div>
 
-        <JournalIncludeInBookField
-          checked={includeInBook}
-          onChange={setIncludeInBook}
-          disabled={saving || loadingEdit || processingPhoto}
-        />
-
         <div className="space-y-3 border-t border-stone-100 pt-3">
           <JournalCompanionPicker disabled={saving || loadingEdit || processingPhoto} />
 
@@ -904,7 +891,6 @@ function JournalPageContent() {
                 setMood("calm");
                 setActivity("record_anyway");
                 setContentFontMode(DEFAULT_CONTENT_FONT_MODE);
-                setIncludeInBook(true);
                 setEntryDate(toDateInputValue(new Date()));
                 setError(null);
               }}
@@ -923,7 +909,6 @@ function JournalPageContent() {
                   setMood("calm");
                   setActivity("record_anyway");
                   setContentFontMode(DEFAULT_CONTENT_FONT_MODE);
-                  setIncludeInBook(true);
                   setEntryDate(toDateInputValue(new Date()));
                   router.replace("/journal");
                 }}
@@ -988,9 +973,6 @@ function JournalPageContent() {
                 <p className="mt-1 text-xs text-stone-500">
                   伴走キャラ:{" "}
                   {getCompanionLabel(PHASE1_COMPANION_TYPE)}
-                </p>
-                <p className="mt-1 text-xs text-stone-500">
-                  この日記を本に入れる: {entry.includeInBook !== false ? "ON" : "OFF"}
                 </p>
                 {entry.photoDataUrl ? (
                   <img

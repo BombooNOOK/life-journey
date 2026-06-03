@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { getViewerEmailFromCookie } from "@/lib/auth/viewer";
-import { getDiaryBookWithEntriesForViewer } from "@/lib/journal/listDiaryBookEntries";
+import { refreshDiaryBookContent } from "@/lib/journal/diaryBookSnapshot";
 
 const JSON_NO_STORE = {
   headers: {
@@ -11,7 +11,7 @@ const JSON_NO_STORE = {
 
 type RouteParams = { params: Promise<{ bookId: string }> };
 
-export async function GET(_: Request, { params }: RouteParams) {
+export async function POST(_: Request, { params }: RouteParams) {
   const viewerEmail = await getViewerEmailFromCookie();
   if (!viewerEmail) {
     return NextResponse.json(
@@ -21,24 +21,18 @@ export async function GET(_: Request, { params }: RouteParams) {
   }
 
   const { bookId } = await params;
-  const payload = await getDiaryBookWithEntriesForViewer({
-    bookId,
-    viewerEmail,
-  });
-
-  if (!payload) {
+  const result = await refreshDiaryBookContent({ bookId, viewerEmail });
+  if (!result.ok) {
     return NextResponse.json(
-      { error: "日記ブックが見つかりません。", code: "NOT_FOUND" },
-      { status: 404, ...JSON_NO_STORE },
+      { error: result.error, code: result.code },
+      { status: result.status, ...JSON_NO_STORE },
     );
   }
 
   return NextResponse.json(
     {
-      book: payload.book,
-      profileId: payload.profileId,
-      entries: payload.entries,
-      needsContentRefresh: payload.book.needsContentRefresh === true,
+      entryCount: result.entryCount,
+      updatedAt: result.updatedAt,
       code: "OK",
     },
     JSON_NO_STORE,

@@ -38,7 +38,7 @@ export function MyPageMainActions({ profileId, profileNickname, isActive }: Prop
             loadingLabel="日記を開いています…"
             className={`${mainNavButtonClass} border-emerald-200/90 bg-gradient-to-br from-emerald-50 to-white text-emerald-900 hover:border-emerald-300 hover:bg-emerald-50`}
           >
-            日記を書く
+            日記を書く・編集する
           </ProfileSelectNavButton>
           <ProfileSelectNavButton
             profileId={profileId}

@@ -1,6 +1,9 @@
 import { prisma } from "@/lib/db";
 import { serializeDiaryBook, type DiaryBookDto } from "@/lib/journal/diaryBookDto";
-import { countJournalEntriesInDiaryBookPeriod } from "@/lib/journal/diaryBookPeriod";
+import {
+  countDiaryBookSnapshotEntries,
+  diaryBookNeedsContentRefresh,
+} from "@/lib/journal/diaryBookSnapshot";
 
 export async function listDiaryBooksForViewer(params: {
   email: string;
@@ -13,13 +16,23 @@ export async function listDiaryBooksForViewer(params: {
 
   return Promise.all(
     rows.map(async (row) => {
-      const entryCount = await countJournalEntriesInDiaryBookPeriod({
-        email: params.email,
-        profileId: row.profileId,
-        startDate: row.startDate,
-        endDate: row.endDate,
-      });
-      return serializeDiaryBook(row, entryCount);
+      const [entryCount, needsContentRefresh] = await Promise.all([
+        countDiaryBookSnapshotEntries({
+          email: params.email,
+          profileId: row.profileId,
+          startDate: row.startDate,
+          endDate: row.endDate,
+          bookUpdatedAt: row.updatedAt,
+        }),
+        diaryBookNeedsContentRefresh({
+          email: params.email,
+          profileId: row.profileId,
+          startDate: row.startDate,
+          endDate: row.endDate,
+          bookUpdatedAt: row.updatedAt,
+        }),
+      ]);
+      return serializeDiaryBook(row, entryCount, { needsContentRefresh });
     }),
   );
 }

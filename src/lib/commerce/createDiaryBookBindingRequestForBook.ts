@@ -74,6 +74,7 @@ export async function loadDiaryBookBindingSnapshotForBook(
   const entries = await listJournalEntriesForDiaryBookRow({
     book: row,
     viewerEmail: input.viewerEmail,
+    respectSnapshot: false,
   });
 
   const pageCount = countBoundDiaryBookTotalPages(entries, row.startDate, row.endDate);

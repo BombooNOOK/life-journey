@@ -8,6 +8,10 @@ import {
   journalEntryCreatedAtRangeForBookPeriod,
   parseDiaryBookDateRange,
 } from "@/lib/journal/diaryBookPeriod";
+import {
+  diaryBookNeedsContentRefresh,
+  entryVisibleInDiaryBookSnapshot,
+} from "@/lib/journal/diaryBookSnapshot";
 import { buildDiaryNumbers } from "@/lib/journal/numbers";
 import {
   profileHasKanteiOrder,
@@ -25,6 +29,7 @@ type JournalRow = {
   id: string;
   content: string;
   createdAt: Date;
+  updatedAt: Date;
   mood: string;
   activity: string;
   companionType: string;
@@ -35,10 +40,11 @@ type JournalRow = {
   includeInBook: boolean;
 };
 
-const entrySelect = {
+  const entrySelect = {
   id: true,
   content: true,
   createdAt: true,
+  updatedAt: true,
   mood: true,
   activity: true,
   companionType: true,
@@ -53,6 +59,7 @@ const entrySelectFallback = {
   id: true,
   content: true,
   createdAt: true,
+  updatedAt: true,
   mood: true,
   activity: true,
   companionType: true,
@@ -88,22 +95,35 @@ export async function getDiaryBookWithEntriesForViewer(params: {
   });
   if (!row) return null;
 
-  const entries = await listJournalEntriesForDiaryBookRow({
-    book: row,
-    viewerEmail: params.viewerEmail,
-  });
+  const [entries, needsContentRefresh] = await Promise.all([
+    listJournalEntriesForDiaryBookRow({
+      book: row,
+      viewerEmail: params.viewerEmail,
+      respectSnapshot: true,
+    }),
+    diaryBookNeedsContentRefresh({
+      email: row.email,
+      profileId: row.profileId,
+      startDate: row.startDate,
+      endDate: row.endDate,
+      bookUpdatedAt: row.updatedAt,
+    }),
+  ]);
 
   return {
-    book: serializeDiaryBook(row, entries.length),
+    book: serializeDiaryBook(row, entries.length, { needsContentRefresh }),
     profileId: row.profileId,
     entries,
   };
 }
 
 export async function listJournalEntriesForDiaryBookRow(params: {
-  book: Pick<DiaryBook, "email" | "profileId" | "startDate" | "endDate">;
+  book: Pick<DiaryBook, "email" | "profileId" | "startDate" | "endDate" | "updatedAt">;
   viewerEmail: string;
+  /** false のとき製本判定など最新の includeInBook をそのまま使う */
+  respectSnapshot?: boolean;
 }): Promise<BoundDiaryEntry[]> {
+  const respectSnapshot = params.respectSnapshot !== false;
   const range = parseDiaryBookDateRange(params.book.startDate, params.book.endDate);
   if (!range) return [];
 
@@ -163,7 +183,13 @@ export async function listJournalEntriesForDiaryBookRow(params: {
     params.book.profileId,
   );
 
-  return rows.map((row) => {
+  const snapshotRows = respectSnapshot
+    ? rows.filter((row) =>
+        entryVisibleInDiaryBookSnapshot(row, params.book.updatedAt),
+      )
+    : rows.filter((row) => row.includeInBook !== false);
+
+  return snapshotRows.map((row) => {
     const normalizedComment =
       row.generatedComment != null && row.generatedComment !== ""
         ? sanitizeJournalCommentForResponse(row.generatedComment, kanteiOrderExists)

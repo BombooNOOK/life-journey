@@ -8,6 +8,7 @@ import {
   NO_ENTRIES_IN_DIARY_BOOK_PERIOD_MESSAGE,
 } from "@/lib/journal/diaryBookPeriod";
 import { resolveDiaryBookProfileId } from "@/lib/journal/diaryBookProfile";
+import { refreshDiaryBookContent } from "@/lib/journal/diaryBookSnapshot";
 import { listDiaryBooksForViewer } from "@/lib/journal/listDiaryBooks";
 
 const JSON_NO_STORE = {
@@ -112,6 +113,12 @@ export async function POST(req: Request) {
     },
   });
 
+  const refreshed = await refreshDiaryBookContent({
+    bookId: row.id,
+    viewerEmail,
+  });
+  const snapshotEntryCount = refreshed.ok ? refreshed.entryCount : entryCount;
+
   return NextResponse.json(
     {
       book: {
@@ -120,7 +127,7 @@ export async function POST(req: Request) {
         startDate: row.startDate,
         endDate: row.endDate,
         coverTheme: row.coverTheme,
-        entryCount,
+        entryCount: snapshotEntryCount,
         createdAt: row.createdAt.toISOString(),
       },
       code: "OK",
