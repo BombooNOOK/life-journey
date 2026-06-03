@@ -1,5 +1,7 @@
 import Link from "next/link";
 
+import { HomeMyPageNavButton } from "@/components/home/HomeMyPageNavButton";
+
 export default function HomePage() {
   return (
     <div className="space-y-4 sm:space-y-5">
@@ -51,12 +53,7 @@ export default function HomePage() {
             >
               無料鑑定をはじめる
             </Link>
-            <Link
-              href="/orders"
-              className="block w-full rounded-xl border border-stone-300/75 bg-white/62 px-4 py-3.5 text-center text-sm font-semibold text-stone-700 backdrop-blur-[1px] transition hover:bg-white/78 sm:text-base"
-            >
-              マイページへ
-            </Link>
+            <HomeMyPageNavButton />
           </div>
         </div>
       </section>
