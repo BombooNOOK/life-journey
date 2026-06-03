@@ -231,7 +231,9 @@ export function getFixedPreviewActivityTextStyle(): {
 
 export const DIARY_PREVIEW_NUMBER_STYLE = {
   fontSize: `${clampCqwCqh(11, 2.08, 1.55, 15, true)}px`,
-  centerNudge: "translate(-50%, -50%) translate(-0.85px, -1.15px)",
+  /** 今日・月・年の数字を同じ枠内で中央揃えする（724×1024 基準 px） */
+  slotWidthPx: 56,
+  slotHeightPx: 28,
 } as const;
 
 /** 日付行：スロット中央寄せ（控えめ） */

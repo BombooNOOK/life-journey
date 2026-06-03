@@ -13,6 +13,8 @@ type Props = {
   id: string;
   kind: "diary-book" | "report";
   title: string;
+  /** タイトルと「読む」の間に表示（例: 日記ブックの対象期間） */
+  periodLabel?: string;
   href: string;
   tone: "emerald" | "amber";
   coverImageSrc?: string | null;
@@ -70,6 +72,7 @@ export function BookshelfBookCard({
   id,
   kind,
   title,
+  periodLabel,
   href,
   tone,
   coverImageSrc,
@@ -151,6 +154,9 @@ export function BookshelfBookCard({
           <h2 className="mt-1 line-clamp-2 text-center text-sm font-semibold leading-snug text-stone-900">
             {title}
           </h2>
+          {periodLabel ? (
+            <p className="mt-2 text-center text-[11px] leading-snug text-stone-500">{periodLabel}</p>
+          ) : null}
 
           <div className="mt-auto flex flex-col gap-2 pt-3">
             <Link

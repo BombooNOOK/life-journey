@@ -319,39 +319,29 @@ export function DiaryPreviewFixedPage({
         >
           {owlComment}
         </PreviewScrollRegion>
-        <p
-          className="absolute font-semibold text-stone-700 [font-variant-numeric:tabular-nums]"
-          style={{
-            left: layout.numberLeft,
-            top: layout.numberTodayTop,
-            fontSize: DIARY_PREVIEW_NUMBER_STYLE.fontSize,
-            transform: DIARY_PREVIEW_NUMBER_STYLE.centerNudge,
-          }}
-        >
-          {displayedNumbers.today}
-        </p>
-        <p
-          className="absolute font-semibold text-stone-700 [font-variant-numeric:tabular-nums]"
-          style={{
-            left: layout.numberLeft,
-            top: layout.numberMonthTop,
-            fontSize: DIARY_PREVIEW_NUMBER_STYLE.fontSize,
-            transform: DIARY_PREVIEW_NUMBER_STYLE.centerNudge,
-          }}
-        >
-          {displayedNumbers.month}
-        </p>
-        <p
-          className="absolute font-semibold text-stone-700 [font-variant-numeric:tabular-nums]"
-          style={{
-            left: layout.numberLeft,
-            top: layout.numberYearTop,
-            fontSize: DIARY_PREVIEW_NUMBER_STYLE.fontSize,
-            transform: DIARY_PREVIEW_NUMBER_STYLE.centerNudge,
-          }}
-        >
-          {displayedNumbers.year}
-        </p>
+        {(
+          [
+            { top: layout.numberTodayTop, value: displayedNumbers.today },
+            { top: layout.numberMonthTop, value: displayedNumbers.month },
+            { top: layout.numberYearTop, value: displayedNumbers.year },
+          ] as const
+        ).map((slot) => (
+          <div
+            key={slot.top}
+            className="absolute flex items-center justify-center font-semibold text-stone-700 [font-variant-numeric:tabular-nums]"
+            style={{
+              left: layout.numberLeft,
+              top: slot.top,
+              width: DIARY_PREVIEW_NUMBER_STYLE.slotWidthPx,
+              height: DIARY_PREVIEW_NUMBER_STYLE.slotHeightPx,
+              transform: "translate(-50%, -50%)",
+              fontSize: DIARY_PREVIEW_NUMBER_STYLE.fontSize,
+              lineHeight: 1,
+            }}
+          >
+            {slot.value}
+          </div>
+        ))}
         <div
           className="absolute flex items-center justify-center text-stone-700"
           style={{

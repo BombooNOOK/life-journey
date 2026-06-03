@@ -72,6 +72,7 @@ export default async function BookshelfPage() {
         id: `diary-book-${book.id}`,
         kind: "diary-book" as const,
         title: book.title,
+        periodLabel: rangeLabel,
         href: `/orders/bookshelf/diary-book/${book.id}`,
         tone: "emerald" as const,
         coverImageSrc: diaryCoverImagePath(book.coverTheme, "owl"),

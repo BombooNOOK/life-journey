@@ -103,13 +103,17 @@ export function DiaryBookFlipReader({
   const touchStartRef = useRef<{ x: number; y: number } | null>(null);
   const didSwipeRef = useRef(false);
   const tapHandledRef = useRef(false);
+  const urlPageInitializedRef = useRef(false);
+  /** router.replace 完了前に URL の p が古い値のまま effect で上書きされるのを防ぐ */
+  const suppressUrlPageSyncUntilRef = useRef(0);
 
   const openFullscreen = useCallback(() => {
     setFullscreenOpen(true);
   }, []);
 
-  const loadEntries = useCallback(async () => {
-    setLoading(true);
+  const loadEntries = useCallback(async (options?: { silent?: boolean }) => {
+    const silent = options?.silent === true;
+    if (!silent) setLoading(true);
     setError(null);
     try {
       const res = await fetch(
@@ -133,7 +137,7 @@ export function DiaryBookFlipReader({
       setEntries([]);
       setNeedsContentRefresh(false);
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   }, [bookId]);
 
@@ -151,7 +155,7 @@ export function DiaryBookFlipReader({
       );
       const data = (await res.json()) as { error?: string };
       if (!res.ok) throw new Error(data.error ?? "日記ブックの更新に失敗しました。");
-      await loadEntries();
+      await loadEntries({ silent: true });
       setNeedsContentRefresh(false);
     } catch (e) {
       setError(e instanceof Error ? e.message : "日記ブックの更新に失敗しました。");
@@ -186,7 +190,7 @@ export function DiaryBookFlipReader({
   );
 
   useEffect(() => {
-    if (totalPages < 1) return;
+    if (totalPages < 1 || urlPageInitializedRef.current) return;
     let targetIdx = 0;
     if (pParam != null && /^\d+$/.test(pParam)) {
       const p1 = parseInt(pParam, 10);
@@ -194,7 +198,23 @@ export function DiaryBookFlipReader({
         targetIdx = Math.min(totalPages - 1, p1 - 1);
       }
     }
-    setPageIndex((prev) => (prev === targetIdx ? prev : targetIdx));
+    setPageIndex(targetIdx);
+    urlPageInitializedRef.current = true;
+  }, [pParam, totalPages]);
+
+  useEffect(() => {
+    if (!urlPageInitializedRef.current || totalPages < 1) return;
+    setPageIndex((prev) => Math.min(prev, totalPages - 1));
+  }, [totalPages]);
+
+  useEffect(() => {
+    if (!urlPageInitializedRef.current || totalPages < 1) return;
+    if (Date.now() < suppressUrlPageSyncUntilRef.current) return;
+    if (pParam == null || !/^\d+$/.test(pParam)) return;
+
+    const urlIdx = Math.min(totalPages - 1, parseInt(pParam, 10) - 1);
+    if (urlIdx < 0) return;
+    setPageIndex((prev) => (prev === urlIdx ? prev : urlIdx));
   }, [pParam, totalPages]);
 
   const editReturnToParam = useMemo(() => {
@@ -211,14 +231,6 @@ export function DiaryBookFlipReader({
   }, [pages]);
 
   const canBackFromCover = useMemo(() => pages.some((p) => p.kind === "entry"), [pages]);
-
-  useEffect(() => {
-    if (pageIndex >= totalPages) {
-      const clamped = Math.max(0, totalPages - 1);
-      setPageIndex(clamped);
-      syncPageQuery(clamped);
-    }
-  }, [pageIndex, totalPages, syncPageQuery]);
 
   useEffect(() => {
     if (!fullscreenOpen) return;
@@ -270,6 +282,7 @@ export function DiaryBookFlipReader({
   const goToPage = useCallback(
     (next: number) => {
       if (next < 0 || next >= totalPages) return;
+      suppressUrlPageSyncUntilRef.current = Date.now() + 600;
       const apply = () => {
         setPageIndex(next);
         syncPageQuery(next);
@@ -314,6 +327,9 @@ export function DiaryBookFlipReader({
         setFullscreenOpen(false);
         return;
       }
+      if (!fullscreenOpen) return;
+      const tag = (e.target as HTMLElement | null)?.tagName;
+      if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
       if (e.key === "ArrowRight") {
         e.preventDefault();
         tryGoDelta(1);
@@ -437,7 +453,7 @@ export function DiaryBookFlipReader({
     }
   }, [current, coverTheme, endDate, entries, entryTheme, startDate, title]);
 
-  if (loading) {
+  if (loading && entries.length === 0) {
     return <p className="text-sm text-stone-500">日記ブックを読み込み中…</p>;
   }
 
