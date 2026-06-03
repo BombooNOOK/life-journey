@@ -174,7 +174,10 @@ export default async function BookshelfPage() {
 
     return (
       <div className="space-y-5">
-        <BookshelfPageHeader activeProfileLabel={activeProfileLabel} />
+        <BookshelfPageHeader
+          activeProfileLabel={activeProfileLabel}
+          deployRevision={process.env.VERCEL_GIT_COMMIT_SHA?.slice(0, 7) ?? null}
+        />
 
         <DiaryBookCreateForm />
 

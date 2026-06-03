@@ -9,9 +9,11 @@ const BOOKSHELF_HELP_TEXT =
 
 type Props = {
   activeProfileLabel: string;
+  /** 本番デプロイ確認用（Vercel が注入する Git SHA の先頭7桁） */
+  deployRevision?: string | null;
 };
 
-export function BookshelfPageHeader({ activeProfileLabel }: Props) {
+export function BookshelfPageHeader({ activeProfileLabel, deployRevision }: Props) {
   return (
     <div>
       <Link href="/orders" className="text-sm text-stone-600 hover:text-stone-900">
@@ -25,6 +27,11 @@ export function BookshelfPageHeader({ activeProfileLabel }: Props) {
         <InlineHelpButton ariaLabel="本棚の説明" panelZIndexClass="z-50">
           {BOOKSHELF_HELP_TEXT}
         </InlineHelpButton>
+        {deployRevision ? (
+          <span className="text-[10px] text-stone-400" title="デプロイ確認用">
+            反映 {deployRevision}
+          </span>
+        ) : null}
       </div>
     </div>
   );

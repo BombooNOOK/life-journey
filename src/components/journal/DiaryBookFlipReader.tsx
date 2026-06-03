@@ -104,6 +104,7 @@ export function DiaryBookFlipReader({
   const didSwipeRef = useRef(false);
   const tapHandledRef = useRef(false);
   const urlPageInitializedRef = useRef(false);
+  const pageIndexRef = useRef(0);
   /** router.replace 完了前に URL の p が古い値のまま effect で上書きされるのを防ぐ */
   const suppressUrlPageSyncUntilRef = useRef(0);
 
@@ -208,6 +209,11 @@ export function DiaryBookFlipReader({
   }, [totalPages]);
 
   useEffect(() => {
+    pageIndexRef.current = pageIndex;
+  }, [pageIndex]);
+
+  useEffect(() => {
+    if (fullscreenOpen) return;
     if (!urlPageInitializedRef.current || totalPages < 1) return;
     if (Date.now() < suppressUrlPageSyncUntilRef.current) return;
     if (pParam == null || !/^\d+$/.test(pParam)) return;
@@ -215,7 +221,14 @@ export function DiaryBookFlipReader({
     const urlIdx = Math.min(totalPages - 1, parseInt(pParam, 10) - 1);
     if (urlIdx < 0) return;
     setPageIndex((prev) => (prev === urlIdx ? prev : urlIdx));
-  }, [pParam, totalPages]);
+  }, [pParam, totalPages, fullscreenOpen]);
+
+  const closeFullscreen = useCallback(() => {
+    const idx = pageIndexRef.current;
+    suppressUrlPageSyncUntilRef.current = Date.now() + 800;
+    syncPageQuery(idx);
+    setFullscreenOpen(false);
+  }, [syncPageQuery]);
 
   const editReturnToParam = useMemo(() => {
     const qs = new URLSearchParams(searchParams.toString());
@@ -282,10 +295,13 @@ export function DiaryBookFlipReader({
   const goToPage = useCallback(
     (next: number) => {
       if (next < 0 || next >= totalPages) return;
-      suppressUrlPageSyncUntilRef.current = Date.now() + 600;
+      pageIndexRef.current = next;
       const apply = () => {
         setPageIndex(next);
-        syncPageQuery(next);
+        if (!fullscreenOpen) {
+          suppressUrlPageSyncUntilRef.current = Date.now() + 600;
+          syncPageQuery(next);
+        }
         setPanelVisible(true);
       };
       if (fullscreenOpen) {
@@ -324,7 +340,7 @@ export function DiaryBookFlipReader({
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape" && fullscreenOpen) {
         e.preventDefault();
-        setFullscreenOpen(false);
+        closeFullscreen();
         return;
       }
       if (!fullscreenOpen) return;
@@ -706,7 +722,7 @@ export function DiaryBookFlipReader({
             >
               <button
                 type="button"
-                onClick={() => setFullscreenOpen(false)}
+                onClick={closeFullscreen}
                 className="rounded-lg border border-stone-200 bg-white/95 px-3 py-2 text-sm font-medium text-stone-800 shadow-sm backdrop-blur-sm"
               >
                 通常表示に戻る
