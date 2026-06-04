@@ -33,18 +33,21 @@ export async function countDiaryBookSnapshotEntries(params: {
 
   const createdAt = journalEntryCreatedAtRangeForBookPeriod(range);
   const asOf = params.bookUpdatedAt;
+  const periodEndLte =
+    asOf.getTime() < createdAt.lte.getTime() ? asOf : createdAt.lte;
 
-  const rows = await prisma.journalEntry.findMany({
+  return prisma.journalEntry.count({
     where: {
       email: params.email,
       profileId: params.profileId,
-      createdAt,
+      createdAt: {
+        gte: createdAt.gte,
+        lte: periodEndLte,
+      },
+      updatedAt: { lte: asOf },
       includeInBook: true,
     },
-    select: { createdAt: true, updatedAt: true, includeInBook: true },
   });
-
-  return rows.filter((row) => entryVisibleInDiaryBookSnapshot(row, asOf)).length;
 }
 
 /** 期間内に、日記ブックの最終更新より新しい変更があるか */

@@ -9,6 +9,7 @@ import {
   parseDiaryBookDateRange,
 } from "@/lib/journal/diaryBookPeriod";
 import {
+  countDiaryBookSnapshotEntries,
   diaryBookNeedsContentRefresh,
   entryVisibleInDiaryBookSnapshot,
 } from "@/lib/journal/diaryBookSnapshot";
@@ -75,6 +76,54 @@ export type DiaryBookWithEntries = {
   entries: BoundDiaryEntry[];
 };
 
+export type DiaryBookMetaForViewer = {
+  book: DiaryBookDto;
+  profileId: string;
+};
+
+/** 閲覧ページ SSR 用（entries なし・件数と更新要否のみ） */
+export async function getDiaryBookMetaForViewer(params: {
+  bookId: string;
+  viewerEmail: string;
+}): Promise<DiaryBookMetaForViewer | null> {
+  const activeProfileId = await resolveActiveProfileId(params.viewerEmail);
+  if (!activeProfileId) return null;
+
+  const trimmedId = params.bookId.trim();
+  if (!trimmedId) return null;
+
+  const row = await prisma.diaryBook.findFirst({
+    where: {
+      id: trimmedId,
+      email: params.viewerEmail,
+      profileId: activeProfileId,
+    },
+  });
+  if (!row) return null;
+
+  const [entryCount, needsContentRefresh] = await Promise.all([
+    countDiaryBookSnapshotEntries({
+      email: row.email,
+      profileId: row.profileId,
+      startDate: row.startDate,
+      endDate: row.endDate,
+      bookUpdatedAt: row.updatedAt,
+    }),
+    diaryBookNeedsContentRefresh({
+      email: row.email,
+      profileId: row.profileId,
+      startDate: row.startDate,
+      endDate: row.endDate,
+      bookUpdatedAt: row.updatedAt,
+    }),
+  ]);
+
+  return {
+    book: serializeDiaryBook(row, entryCount, { needsContentRefresh }),
+    profileId: row.profileId,
+  };
+}
+
 /** 閲覧中プロフィールに紐づく DiaryBook のみ返す */
 export async function getDiaryBookWithEntriesForViewer(params: {
   bookId: string;
@@ -95,11 +144,18 @@ export async function getDiaryBookWithEntriesForViewer(params: {
   });
   if (!row) return null;
 
-  const [entries, needsContentRefresh] = await Promise.all([
+  const [entries, entryCount, needsContentRefresh] = await Promise.all([
     listJournalEntriesForDiaryBookRow({
       book: row,
       viewerEmail: params.viewerEmail,
       respectSnapshot: true,
+    }),
+    countDiaryBookSnapshotEntries({
+      email: row.email,
+      profileId: row.profileId,
+      startDate: row.startDate,
+      endDate: row.endDate,
+      bookUpdatedAt: row.updatedAt,
     }),
     diaryBookNeedsContentRefresh({
       email: row.email,
@@ -111,7 +167,7 @@ export async function getDiaryBookWithEntriesForViewer(params: {
   ]);
 
   return {
-    book: serializeDiaryBook(row, entries.length, { needsContentRefresh }),
+    book: serializeDiaryBook(row, entryCount, { needsContentRefresh }),
     profileId: row.profileId,
     entries,
   };

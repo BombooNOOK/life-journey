@@ -1,6 +1,8 @@
+import { Prisma } from "@prisma/client";
+
 import { prisma } from "@/lib/db";
 import {
-  journalEntryLayoutLengthFlag,
+  journalEntryContentLengthFlag,
   type JournalContentLengthFlag,
 } from "@/lib/journal/contentFontMode";
 import {
@@ -64,6 +66,18 @@ export function groupDiaryBookIncludePickerEntriesByMonth(
     }));
 }
 
+type IncludePickerRow = {
+  id: string;
+  createdAt: Date;
+  mood: string;
+  contentSnippet: string | null;
+  includeInBook: boolean;
+  contentFontMode: string;
+  contentCharLength: number | bigint;
+  hasPhoto: boolean;
+};
+
+/** 月別一覧用。photoDataUrl 本文・content 全文は Neon から読まない */
 export async function listJournalEntriesForDiaryBookIncludePicker(params: {
   email: string;
   profileId: string;
@@ -74,31 +88,35 @@ export async function listJournalEntriesForDiaryBookIncludePicker(params: {
   if (!range) return [];
 
   const createdAt = journalEntryCreatedAtRangeForBookPeriod(range);
-  const rows = await prisma.journalEntry.findMany({
-    where: {
-      email: params.email,
-      profileId: params.profileId,
-      createdAt,
-    },
-    orderBy: { createdAt: "asc" },
-    select: {
-      id: true,
-      createdAt: true,
-      mood: true,
-      content: true,
-      photoDataUrl: true,
-      includeInBook: true,
-      contentFontMode: true,
-    },
-  });
+  const rows = await prisma.$queryRaw<IncludePickerRow[]>(Prisma.sql`
+    SELECT
+      id,
+      "createdAt",
+      mood,
+      LEFT(TRIM(REGEXP_REPLACE(content, E'[[:space:]]+', ' ', 'g')), ${EXCERPT_MAX}) AS "contentSnippet",
+      "includeInBook",
+      "contentFontMode",
+      CHAR_LENGTH(content) AS "contentCharLength",
+      ("photoDataUrl" IS NOT NULL) AS "hasPhoto"
+    FROM "JournalEntry"
+    WHERE email = ${params.email}
+      AND "profileId" = ${params.profileId}
+      AND "createdAt" >= ${createdAt.gte}
+      AND "createdAt" <= ${createdAt.lte}
+    ORDER BY "createdAt" ASC
+  `);
 
-  return rows.map((row) => ({
-    id: row.id,
-    createdAt: row.createdAt.toISOString(),
-    mood: row.mood,
-    contentExcerpt: journalEntryContentExcerpt(row.content),
-    hasPhoto: Boolean(row.photoDataUrl?.trim()),
-    includeInBook: row.includeInBook !== false,
-    lengthFlag: journalEntryLayoutLengthFlag(row.contentFontMode, row.content),
-  }));
+  return rows.map((row) => {
+    const snippet = row.contentSnippet ?? "";
+    const charLength = Number(row.contentCharLength);
+    return {
+      id: row.id,
+      createdAt: row.createdAt.toISOString(),
+      mood: row.mood,
+      contentExcerpt: journalEntryContentExcerpt(snippet),
+      hasPhoto: row.hasPhoto === true,
+      includeInBook: row.includeInBook !== false,
+      lengthFlag: journalEntryContentLengthFlag(row.contentFontMode, charLength),
+    };
+  });
 }

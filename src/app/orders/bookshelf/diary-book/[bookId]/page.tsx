@@ -5,7 +5,7 @@ import { Suspense } from "react";
 import { BookshelfEditIncludesNavButton } from "@/components/orders/BookshelfEditIncludesNavButton";
 import { DiaryBookFlipReader } from "@/components/journal/DiaryBookFlipReader";
 import { getViewerEmailFromCookie } from "@/lib/auth/viewer";
-import { getDiaryBookWithEntriesForViewer } from "@/lib/journal/listDiaryBookEntries";
+import { getDiaryBookMetaForViewer } from "@/lib/journal/listDiaryBookEntries";
 
 type Props = { params: Promise<{ bookId: string }> };
 
@@ -16,7 +16,7 @@ export default async function DiaryBookReadPage({ params }: Props) {
   if (!viewerEmail) redirect("/login?returnTo=/orders/bookshelf");
 
   const { bookId } = await params;
-  const payload = await getDiaryBookWithEntriesForViewer({
+  const payload = await getDiaryBookMetaForViewer({
     bookId,
     viewerEmail,
   });
