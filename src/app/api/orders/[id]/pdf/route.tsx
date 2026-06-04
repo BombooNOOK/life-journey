@@ -156,6 +156,7 @@ export const dynamic = "force-dynamic";
 export const maxDuration = 300;
 
 export async function GET(req: Request, { params }: RouteParams) {
+  try {
   let pathForLog = "";
   try {
     pathForLog = new URL(req.url).pathname;
@@ -426,4 +427,15 @@ export async function GET(req: Request, { params }: RouteParams) {
     contentDisposition: shouldDownload ? "attachment" : "inline",
   });
   return response;
+  } catch (e) {
+    const message = e instanceof Error ? e.message : "PDF生成に失敗しました。";
+    console.error("[pdf-api] 未捕捉エラー", e);
+    return NextResponse.json(
+      { error: message },
+      {
+        status: 500,
+        headers: { "Content-Type": "application/json", ...PDF_API_CACHE_HEADERS },
+      },
+    );
+  }
 }
