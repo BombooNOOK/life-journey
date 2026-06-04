@@ -143,11 +143,8 @@ export function PdfDownloadButton({
           <span>{loadingLabel}</span>
         </p>
       ) : (
-        <p className="flex items-start gap-2 text-xs leading-relaxed text-stone-500">
-          <OwlSpinIndicator size="sm" />
-          <span>
-            タップするとダウンロードが始まります。フクロウが回っているあいだは画面を閉じずにお待ちください（完了すると保存ダイアログが開きます）。
-          </span>
+        <p className="text-xs leading-relaxed text-stone-500">
+          タップするとダウンロードが始まります。フクロウが回っているあいだは画面を閉じずにお待ちください（完了すると保存ダイアログが開きます）。
         </p>
       )}
       {error ? (
