@@ -183,7 +183,8 @@ export async function GET(req: Request, { params }: RouteParams) {
       { status: 404, headers: { ...PDF_API_CACHE_HEADERS } },
     );
   }
-  if (normalizeEmail(row.email) !== viewerEmail) {
+  const viewerIsAdmin = await isAdminEmail(viewerEmail);
+  if (!viewerIsAdmin && normalizeEmail(row.email) !== viewerEmail) {
     console.log("[pdf-api] 早期終了 403 メール不一致", { orderId: id });
     return NextResponse.json(
       { error: "この注文にはアクセスできません" },
@@ -201,8 +202,7 @@ export async function GET(req: Request, { params }: RouteParams) {
   const shouldDownload = downloadParam !== "0";
 
   if (quality === "high") {
-    const admin = await isAdminEmail(viewerEmail);
-    if (!admin) {
+    if (!viewerIsAdmin) {
       console.log("[pdf-api] 早期終了 403 高画質権限なし", { orderId: id });
       return NextResponse.json(
         {
@@ -232,7 +232,7 @@ export async function GET(req: Request, { params }: RouteParams) {
     process.env.NEXT_PUBLIC_BASE_BOOK_TRIAL_URL ??
     "https://thebase.com";
 
-  if (shouldDownload && downloadCount >= downloadLimit) {
+  if (shouldDownload && !viewerIsAdmin && downloadCount >= downloadLimit) {
     console.log("[pdf-api] 早期終了 429 ダウンロード上限", {
       orderId: id,
       downloadCount,
@@ -409,12 +409,14 @@ export async function GET(req: Request, { params }: RouteParams) {
       ...PDF_API_CACHE_HEADERS,
     },
   });
-  if (shouldDownload) {
+  if (shouldDownload && !viewerIsAdmin) {
     await prisma.order.update({
       where: { id: row.id },
       data: { pdfDownloadCount: { increment: 1 } },
     });
     console.log("[pdf-api] pdfDownloadCount increment 実行", pdfLogBase);
+  } else if (shouldDownload && viewerIsAdmin) {
+    console.log("[pdf-api] 管理者DLのため pdfDownloadCount は増やしません", pdfLogBase);
   }
   console.log("[pdf-api] Response返却直前", {
     ...pdfLogBase,

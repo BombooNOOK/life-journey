@@ -37,8 +37,26 @@ export function KanteiBookBindingPrintDownload({
     [checked],
   );
 
+  const previewHref = `/api/orders/${orderId}/pdf?download=0&quality=low`;
+
   return (
-    <div className="space-y-2 rounded-lg border border-amber-200 bg-amber-50/60 p-3">
+    <div className="space-y-3">
+      <div className="rounded-lg border border-stone-200 bg-stone-50/80 p-3">
+        <p className="text-[10px] font-medium text-stone-800">鑑定書PDF（確認用）</p>
+        <p className="mt-1 text-[10px] leading-relaxed text-stone-600">
+          ブラウザで内容を確認します。ユーザーのダウンロード回数は消費しません。
+        </p>
+        <a
+          href={previewHref}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="mt-2 inline-flex rounded-md border border-stone-300 bg-white px-3 py-1.5 text-xs font-medium text-stone-800 hover:bg-stone-50"
+        >
+          軽量版PDFを確認する
+        </a>
+      </div>
+
+      <div className="space-y-2 rounded-lg border border-amber-200 bg-amber-50/60 p-3">
       <p className="text-[10px] font-medium text-amber-950">製本用PDF（高画質）— ダウンロード前確認</p>
       <dl className="text-[10px] text-stone-700">
         <div>
@@ -85,14 +103,7 @@ export function KanteiBookBindingPrintDownload({
       ) : (
         <p className="text-[10px] text-stone-500">上記4項目すべてにチェックするとダウンロードできます。</p>
       )}
-      <a
-        href={`/api/orders/${orderId}/pdf?download=1&quality=low`}
-        className="inline-block text-[10px] text-stone-600 underline"
-        target="_blank"
-        rel="noopener noreferrer"
-      >
-        軽量版PDFを別タブで確認
-      </a>
+      </div>
     </div>
   );
 }

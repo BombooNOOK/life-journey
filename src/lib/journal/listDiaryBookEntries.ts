@@ -19,7 +19,7 @@ import {
   sanitizeJournalCommentForResponse,
 } from "@/lib/journal/kanteiCommentEligibility";
 import { normalizeDiaryDesignTheme } from "@/lib/journal/meta";
-import { resolveActiveProfileId } from "@/lib/profile/activeProfile";
+import { findDiaryBookRowForViewerOrAdmin } from "@/lib/journal/diaryBookAdminAccess";
 
 function isDesignThemeValidationError(error: unknown): boolean {
   if (!(error instanceof Prisma.PrismaClientValidationError)) return false;
@@ -102,19 +102,7 @@ export async function getDiaryBookMetaForViewer(params: {
   bookId: string;
   viewerEmail: string;
 }): Promise<DiaryBookMetaForViewer | null> {
-  const activeProfileId = await resolveActiveProfileId(params.viewerEmail);
-  if (!activeProfileId) return null;
-
-  const trimmedId = params.bookId.trim();
-  if (!trimmedId) return null;
-
-  const row = await prisma.diaryBook.findFirst({
-    where: {
-      id: trimmedId,
-      email: params.viewerEmail,
-      profileId: activeProfileId,
-    },
-  });
+  const row = await findDiaryBookRowForViewerOrAdmin(params);
   if (!row) return null;
 
   const [entryCount, needsContentRefresh] = await Promise.all([
@@ -145,25 +133,15 @@ export async function getDiaryBookWithEntriesForViewer(params: {
   bookId: string;
   viewerEmail: string;
 }): Promise<DiaryBookWithEntries | null> {
-  const activeProfileId = await resolveActiveProfileId(params.viewerEmail);
-  if (!activeProfileId) return null;
-
-  const trimmedId = params.bookId.trim();
-  if (!trimmedId) return null;
-
-  const row = await prisma.diaryBook.findFirst({
-    where: {
-      id: trimmedId,
-      email: params.viewerEmail,
-      profileId: activeProfileId,
-    },
-  });
+  const row = await findDiaryBookRowForViewerOrAdmin(params);
   if (!row) return null;
+
+  const ownerEmail = row.email;
 
   const [entries, entryCount, needsContentRefresh] = await Promise.all([
     listJournalEntriesForDiaryBookRow({
       book: row,
-      viewerEmail: params.viewerEmail,
+      viewerEmail: ownerEmail,
       respectSnapshot: true,
     }),
     countDiaryBookSnapshotEntries({

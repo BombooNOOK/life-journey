@@ -1,3 +1,4 @@
+import { isAdminEmail } from "@/lib/admin/access";
 import { prisma } from "@/lib/db";
 import { resolveActiveProfileId } from "@/lib/profile/activeProfile";
 
@@ -11,18 +12,26 @@ export async function getJournalEntryPhotoForViewer(params: {
   entryId: string;
   viewerEmail: string;
 }): Promise<JournalEntryPhotoForViewer | null> {
-  const activeProfileId = await resolveActiveProfileId(params.viewerEmail);
   const trimmedId = params.entryId.trim();
   if (!trimmedId) return null;
 
-  const row = await prisma.journalEntry.findFirst({
-    where: {
-      id: trimmedId,
-      email: params.viewerEmail,
-      profileId: activeProfileId,
-    },
-    select: { id: true, photoDataUrl: true },
-  });
+  const admin = await isAdminEmail(params.viewerEmail);
+  const row = admin
+    ? await prisma.journalEntry.findFirst({
+        where: { id: trimmedId },
+        select: { id: true, photoDataUrl: true },
+      })
+    : await (async () => {
+        const activeProfileId = await resolveActiveProfileId(params.viewerEmail);
+        return prisma.journalEntry.findFirst({
+          where: {
+            id: trimmedId,
+            email: params.viewerEmail,
+            profileId: activeProfileId,
+          },
+          select: { id: true, photoDataUrl: true },
+        });
+      })();
   if (!row) return null;
 
   const raw = row.photoDataUrl?.trim() ?? "";

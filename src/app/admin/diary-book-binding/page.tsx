@@ -187,6 +187,26 @@ export default async function AdminDiaryBookBindingPage({ searchParams }: Props)
                 </div>
               </dl>
 
+              {row.diaryBookId ? (
+                <div className="mt-3 rounded-lg border border-emerald-200/80 bg-emerald-50/40 px-3 py-2.5">
+                  <p className="text-[10px] font-medium text-emerald-950">製本内容の照合</p>
+                  <p className="mt-1 text-[10px] leading-relaxed text-stone-600">
+                    申込ユーザーの日記ブックを本棚と同じ画面で確認できます（管理者 read-only）。
+                    製本用PDFの自動出力は未対応のため、画面で写真・ページ構成を確認してください。
+                  </p>
+                  <a
+                    href={`/orders/bookshelf/diary-book/${encodeURIComponent(row.diaryBookId)}?returnTo=${encodeURIComponent("/admin/diary-book-binding")}`}
+                    className="mt-2 inline-flex text-xs font-medium text-emerald-900 underline-offset-2 hover:underline"
+                  >
+                    日記ブックを確認する
+                  </a>
+                </div>
+              ) : (
+                <p className="mt-3 text-[10px] text-stone-500">
+                  年本棚（旧）の申込のため、日記ブックIDがありません。該当年の本棚から確認してください。
+                </p>
+              )}
+
               <form
                 action={updateDiaryBookBindingRequest}
                 className="mt-4 space-y-3 border-t border-stone-100 pt-4"
