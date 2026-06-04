@@ -34,7 +34,7 @@ export type DiaryCalendarEntry = DiaryMonthCalendarEntry & {
   activity: string;
   designTheme?: string;
   contentFontMode?: string;
-  photoDataUrl?: string | null;
+  hasPhoto?: boolean;
   includeInBook?: boolean;
   updatedAt?: string;
 };
@@ -409,7 +409,7 @@ export function DiaryCalendarHome({
                               {mood.emoji} {mood.label} · {activity.label}
                             </p>
                             <div className="mt-1.5 flex flex-wrap gap-1.5">
-                              {entry.photoDataUrl ? (
+                              {entry.hasPhoto === true ? (
                                 <span className="rounded bg-stone-100 px-1.5 py-0.5 text-[10px] text-stone-600">
                                   写真あり
                                 </span>

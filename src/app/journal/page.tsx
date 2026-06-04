@@ -56,7 +56,9 @@ type Entry = {
   companionType: string;
   designTheme?: DiaryDesignId;
   contentFontMode?: string;
-  photoDataUrl: string | null;
+  /** 一覧 API では hasPhoto のみ。編集用 GET では photoDataUrl */
+  photoDataUrl?: string | null;
+  hasPhoto?: boolean;
   generatedComment: string | null;
   includeInBook: boolean;
   /** 単件 GET などで付与。編集時に URL の profile と揃えるために使う */
@@ -1001,12 +1003,8 @@ function JournalPageContent() {
                   伴走キャラ:{" "}
                   {getCompanionLabel(PHASE1_COMPANION_TYPE)}
                 </p>
-                {entry.photoDataUrl ? (
-                  <img
-                    src={entry.photoDataUrl}
-                    alt="日記に添付した写真"
-                    className="mt-2 aspect-square w-full rounded-lg border border-stone-200 bg-[#f7f4ee] object-contain"
-                  />
+                {entry.hasPhoto === true ? (
+                  <p className="mt-2 text-xs text-stone-500">写真あり（編集で表示）</p>
                 ) : null}
                 <p className="whitespace-pre-wrap leading-7 text-stone-800">{entry.content}</p>
                 {entry.generatedComment ? (

@@ -23,6 +23,7 @@ import {
   sanitizeJournalCommentForResponse,
 } from "@/lib/journal/kanteiCommentEligibility";
 import { resolveContentFontModeFromRequest } from "@/lib/journal/contentFontMode";
+import { loadJournalEntryHasPhotoFlags } from "@/lib/journal/journalEntryHasPhoto";
 import {
   isActivityId,
   isAllowedDiaryDesignThemeRaw,
@@ -105,8 +106,8 @@ export async function GET(req: Request) {
     const monthFilter = yearFilter ? null : parseMonth(url.searchParams.get("month"));
     const rangeFilter = yearFilter ?? monthFilter;
     const takeLimit = yearFilter ? 500 : monthFilter ? 400 : 120;
-    /** カレンダー・月一覧用（写真 base64・読み解き全文を返さない） */
-    const calendarView = url.searchParams.get("view") === "calendar" && Boolean(monthFilter);
+    /** 本棚年次フリップ（`?year=`）のみ photoDataUrl 本文を返す。一覧・カレンダーは hasPhoto のみ */
+    const includePhotoBodyInResponse = Boolean(yearFilter);
     const profileIds = journalProfileIdsForQuery(profileId, viewerEmail);
     const profileWhere =
       profileIds.length === 1 ? { profileId: profileIds[0]! } : { profileId: { in: profileIds } };
@@ -171,13 +172,30 @@ export async function GET(req: Request) {
       ...(rangeFilter ? { createdAt: { gte: rangeFilter.from, lt: rangeFilter.to } } : {}),
     };
 
+    const entrySelect = includePhotoBodyInResponse ? fullSelect : calendarSelect;
+    const entrySelectFallback = includePhotoBodyInResponse
+      ? {
+          id: true,
+          content: true,
+          createdAt: true,
+          updatedAt: true,
+          mood: true,
+          activity: true,
+          companionType: true,
+          contentFontMode: true,
+          photoDataUrl: true,
+          generatedComment: true,
+          includeInBook: true,
+        }
+      : calendarSelectFallback;
+
     let rows: JournalRow[] = [];
     try {
       rows = (await prisma.journalEntry.findMany({
         where: whereClause,
         orderBy: { createdAt: "desc" },
         take: takeLimit,
-        select: calendarView ? calendarSelect : fullSelect,
+        select: entrySelect,
       })) as JournalRow[];
     } catch (error) {
       if (!isDesignThemeValidationError(error)) throw error;
@@ -185,9 +203,16 @@ export async function GET(req: Request) {
         where: whereClause,
         orderBy: { createdAt: "desc" },
         take: takeLimit,
-        select: calendarView ? calendarSelectFallback : calendarSelectFallback,
+        select: entrySelectFallback,
       })) as JournalRow[];
     }
+
+    const hasPhotoById = includePhotoBodyInResponse
+      ? null
+      : await loadJournalEntryHasPhotoFlags({
+          email: viewerEmail,
+          entryIds: rows.map((row) => row.id),
+        });
     let lifePathNumber: number | null = null;
     let birthMonth: number | null = null;
     let birthDay: number | null = null;
@@ -230,7 +255,9 @@ export async function GET(req: Request) {
               : null;
           const base = {
             ...row,
-            photoDataUrl: row.photoDataUrl ?? null,
+            ...(includePhotoBodyInResponse
+              ? { photoDataUrl: row.photoDataUrl ?? null }
+              : { hasPhoto: hasPhotoById?.get(row.id) === true }),
             designTheme: normalizeDiaryDesignTheme(row.designTheme ?? "simple_plain"),
             generatedComment: normalizedComment,
           };
