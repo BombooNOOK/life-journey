@@ -90,13 +90,14 @@ function isValidDateInput(value: string): boolean {
   );
 }
 
+/** 日記写真はテンプレ上おおよそ5cm角の製本表示を想定し、720pxで十分な解像度を確保する */
 async function compressToSquareDataUrl(file: File, offsetPercent: number): Promise<string> {
   const imageBitmap = await createImageBitmap(file);
-  const targetSize = 760;
+  const targetSize = 720;
   const primaryMime = "image/webp";
-  const primaryQuality = 0.8;
+  const primaryQuality = 0.72;
   const fallbackMime = "image/jpeg";
-  const fallbackQuality = 0.8;
+  const fallbackQuality = 0.72;
   const offset = Math.max(0, Math.min(100, offsetPercent)) / 100;
 
   const canvas = document.createElement("canvas");
