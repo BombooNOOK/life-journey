@@ -508,13 +508,35 @@ function JournalPageContent() {
   }
 
   async function deleteEntry(id: string) {
+    const entryId = id.trim();
+    if (!entryId) return;
+
     const ok = window.confirm("この記録を本当に削除しますか？");
     if (!ok) return;
 
-    setDeletingId(id);
+    const editingThis = editingId === entryId;
+
+    setDeletingId(entryId);
     setError(null);
+
+    // 先頭＝最新記事は ?edit= と一致しやすい。URL とフォームを先に外して編集再取得との競合を防ぐ。
+    if (editingThis) {
+      const href = profileId
+        ? `/journal?profile=${encodeURIComponent(profileId)}`
+        : "/journal";
+      router.replace(href);
+      setContent("");
+      setPhotoDataUrl("");
+      setSelectedPhotoFile(null);
+      setMood("calm");
+      setActivity("record_anyway");
+      setContentFontMode(DEFAULT_CONTENT_FONT_MODE);
+      setEntryDate(toDateInputValue(new Date()));
+      setNumerologyDebug(null);
+    }
+
     try {
-      const res = await fetch(`/api/journal/${encodeURIComponent(id)}`, {
+      const res = await fetch(`/api/journal/${encodeURIComponent(entryId)}`, {
         method: "DELETE",
         credentials: "same-origin",
       });
@@ -523,15 +545,7 @@ function JournalPageContent() {
         setError(data.error ?? "削除に失敗しました。");
         return;
       }
-      if (editingId === id) {
-        setContent("");
-        setPhotoDataUrl("");
-        setSelectedPhotoFile(null);
-        setMood("calm");
-        setActivity("record_anyway");
-        setContentFontMode(DEFAULT_CONTENT_FONT_MODE);
-        router.replace("/journal");
-      }
+      setEntries((prev) => prev.filter((e) => e.id !== entryId));
       await loadEntries({ silent: true });
     } catch {
       setError("削除時の通信に失敗しました。");
@@ -933,11 +947,11 @@ function JournalPageContent() {
           <ul className="space-y-3">
             {entries.map((entry) => (
               <li key={entry.id} className="rounded-xl border border-stone-200 bg-white p-4 text-sm shadow-sm">
-                <div className="flex items-center justify-between gap-3">
-                  <p className="text-sm text-stone-700">
+                <div className="flex items-start justify-between gap-3">
+                  <p className="min-w-0 flex-1 text-sm text-stone-700">
                     {getMoodMeta(entry.mood).emoji} {getMoodMeta(entry.mood).label}
                   </p>
-                  <div className="flex items-center gap-3">
+                  <div className="relative z-10 flex shrink-0 flex-wrap items-center justify-end gap-x-3 gap-y-1">
                     <button
                       type="button"
                       className="text-xs text-stone-600 underline underline-offset-2 hover:text-stone-900"
@@ -961,7 +975,7 @@ function JournalPageContent() {
                     <button
                       type="button"
                       disabled={deletingId === entry.id}
-                      className="text-xs text-red-600 underline underline-offset-2 hover:text-red-700 disabled:opacity-50"
+                      className="shrink-0 px-0.5 py-1 text-xs text-red-600 underline underline-offset-2 hover:text-red-700 disabled:opacity-50"
                       onClick={() => void deleteEntry(entry.id)}
                     >
                       {deletingId === entry.id ? "削除中…" : "削除"}
