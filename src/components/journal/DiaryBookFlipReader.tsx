@@ -20,6 +20,7 @@ import { DiaryPreviewFixedPage } from "@/components/journal/DiaryPreviewFixedPag
 import { InlineHelpButton } from "@/components/ui/InlineHelpButton";
 import { OwlLoadingInline } from "@/components/ui/OwlLoadingInline";
 import { BookshelfEditIncludesNavButton } from "@/components/orders/BookshelfEditIncludesNavButton";
+import { useDiaryBookEntryPhotos } from "@/hooks/useDiaryBookEntryPhotos";
 import { useVisualViewportDock } from "@/hooks/useVisualViewportDock";
 import type { BoundDiaryEntry } from "@/components/journal/DiaryYearBoundPages";
 import { parseSafeJournalReturnTo } from "@/lib/journal/bookshelfReturnTo";
@@ -91,6 +92,9 @@ export function DiaryBookFlipReader({
   const pParam = searchParams.get("p");
   const displayYear = diaryBookDisplayYear(startDate);
 
+  const { getPhotoDataUrl, shouldShowPhotoLoading, prefetchEntryIds, resetCache } =
+    useDiaryBookEntryPhotos();
+
   const [entries, setEntries] = useState<BoundDiaryEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -132,6 +136,7 @@ export function DiaryBookFlipReader({
       const list = [...(data.entries ?? [])].sort(
         (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
       );
+      resetCache();
       setEntries(list);
       setNeedsContentRefresh(data.needsContentRefresh === true);
       setPanelVisible(true);
@@ -142,11 +147,29 @@ export function DiaryBookFlipReader({
     } finally {
       if (!silent) setLoading(false);
     }
-  }, [bookId]);
+  }, [bookId, resetCache]);
 
   useEffect(() => {
     void loadEntries();
   }, [loadEntries]);
+
+  const pages = useMemo(
+    () => buildBoundDiaryBookPages(entries, startDate, endDate),
+    [entries, startDate, endDate],
+  );
+  const totalPages = pages.length;
+
+  useEffect(() => {
+    const ids: string[] = [];
+    for (const idx of [pageIndex - 1, pageIndex, pageIndex + 1]) {
+      if (idx < 0 || idx >= totalPages) continue;
+      const page = pages[idx];
+      if (page?.kind === "entry" && page.entry.hasPhoto) {
+        ids.push(page.entry.id);
+      }
+    }
+    prefetchEntryIds(ids);
+  }, [pageIndex, pages, totalPages, prefetchEntryIds]);
 
   const refreshDiaryBookContent = useCallback(async () => {
     setRefreshing(true);
@@ -167,11 +190,6 @@ export function DiaryBookFlipReader({
     }
   }, [bookId, loadEntries]);
 
-  const pages = useMemo(
-    () => buildBoundDiaryBookPages(entries, startDate, endDate),
-    [entries, startDate, endDate],
-  );
-  const totalPages = pages.length;
   const entryTotal = filterEntriesForDiaryBook(entries).length;
 
   const backHref = useMemo(() => {
@@ -447,29 +465,35 @@ export function DiaryBookFlipReader({
         return <DiaryBookFreeWritingPage spreadSide={current.spreadSide} />;
       case "pre-back-cover-illustration":
         return <DiaryBookPreBackCoverIllustrationPage />;
-      case "entry":
+      case "entry": {
+        const entry = current.entry;
+        const resolvedPhoto = getPhotoDataUrl(entry.id);
+        const photoLoading =
+          shouldShowPhotoLoading(entry.id, entry.hasPhoto) && !resolvedPhoto;
         return (
           <DiaryPreviewFixedPage
             designTheme={entryTheme}
-            companionType={current.entry.companionType}
-            mood={current.entry.mood}
-            activity={current.entry.activity}
-            content={current.entry.content}
-            comment={current.entry.generatedComment}
-            photoDataUrl={current.entry.photoDataUrl}
-            previewDate={new Date(current.entry.createdAt)}
-            diaryNumbers={current.entry.diaryNumbers}
-            contentFontMode={normalizeContentFontMode(current.entry.contentFontMode)}
+            companionType={entry.companionType}
+            mood={entry.mood}
+            activity={entry.activity}
+            content={entry.content}
+            comment={entry.generatedComment}
+            photoDataUrl={resolvedPhoto}
+            photoLoading={photoLoading}
+            previewDate={new Date(entry.createdAt)}
+            diaryNumbers={entry.diaryNumbers}
+            contentFontMode={normalizeContentFontMode(entry.contentFontMode)}
             showGoldFrame={false}
-            templateSrc={diaryBookBodyTemplatePathForCompanion(current.entry.companionType)}
+            templateSrc={diaryBookBodyTemplatePathForCompanion(entry.companionType)}
           />
         );
+      }
       case "back":
         return <DiaryBookBackCoverPage />;
       default:
         return null;
     }
-  }, [current, coverTheme, endDate, entries, entryTheme, startDate, title]);
+  }, [current, coverTheme, endDate, entries, entryTheme, getPhotoDataUrl, shouldShowPhotoLoading, startDate, title]);
 
   if (loading && entries.length === 0) {
     return <p className="text-sm text-stone-500">日記ブックを読み込み中…</p>;

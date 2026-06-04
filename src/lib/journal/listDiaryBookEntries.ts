@@ -36,12 +36,11 @@ type JournalRow = {
   companionType: string;
   designTheme?: string;
   contentFontMode: string;
-  photoDataUrl?: string | null;
   generatedComment?: string | null;
   includeInBook: boolean;
 };
 
-  const entrySelect = {
+const entrySelect = {
   id: true,
   content: true,
   createdAt: true,
@@ -51,7 +50,6 @@ type JournalRow = {
   companionType: true,
   designTheme: true,
   contentFontMode: true,
-  photoDataUrl: true,
   generatedComment: true,
   includeInBook: true,
 } as const;
@@ -65,10 +63,28 @@ const entrySelectFallback = {
   activity: true,
   companionType: true,
   contentFontMode: true,
-  photoDataUrl: true,
   generatedComment: true,
   includeInBook: true,
 } as const;
+
+/** photoDataUrl 本文を Neon から読まず hasPhoto のみ取得 */
+async function loadJournalEntryHasPhotoFlags(where: {
+  email: string;
+  profileId: string;
+  createdAt: { gte: Date; lte: Date };
+}): Promise<Map<string, boolean>> {
+  const rows = await prisma.$queryRaw<Array<{ id: string; hasPhoto: boolean }>>(Prisma.sql`
+    SELECT
+      id,
+      ("photoDataUrl" IS NOT NULL AND btrim("photoDataUrl") <> '') AS "hasPhoto"
+    FROM "JournalEntry"
+    WHERE email = ${where.email}
+      AND "profileId" = ${where.profileId}
+      AND "createdAt" >= ${where.createdAt.gte}
+      AND "createdAt" <= ${where.createdAt.lte}
+  `);
+  return new Map(rows.map((row) => [row.id, row.hasPhoto === true]));
+}
 
 export type DiaryBookWithEntries = {
   book: DiaryBookDto;
@@ -190,23 +206,28 @@ export async function listJournalEntriesForDiaryBookRow(params: {
     createdAt,
   };
 
-  let rows: JournalRow[] = [];
-  try {
-    rows = (await prisma.journalEntry.findMany({
-      where,
-      orderBy: { createdAt: "asc" },
-      take: 500,
-      select: entrySelect,
-    })) as JournalRow[];
-  } catch (error) {
-    if (!isDesignThemeValidationError(error)) throw error;
-    rows = (await prisma.journalEntry.findMany({
-      where,
-      orderBy: { createdAt: "asc" },
-      take: 500,
-      select: entrySelectFallback,
-    })) as JournalRow[];
-  }
+  const [rowsResult, hasPhotoById] = await Promise.all([
+    (async (): Promise<JournalRow[]> => {
+      try {
+        return (await prisma.journalEntry.findMany({
+          where,
+          orderBy: { createdAt: "asc" },
+          take: 500,
+          select: entrySelect,
+        })) as JournalRow[];
+      } catch (error) {
+        if (!isDesignThemeValidationError(error)) throw error;
+        return (await prisma.journalEntry.findMany({
+          where,
+          orderBy: { createdAt: "asc" },
+          take: 500,
+          select: entrySelectFallback,
+        })) as JournalRow[];
+      }
+    })(),
+    loadJournalEntryHasPhotoFlags(where),
+  ]);
+  const rows = rowsResult;
 
   let lifePathNumber: number | null = null;
   let birthMonth: number | null = null;
@@ -259,7 +280,7 @@ export async function listJournalEntriesForDiaryBookRow(params: {
       companionType: row.companionType,
       designTheme: normalizeDiaryDesignTheme(row.designTheme ?? "simple_plain"),
       contentFontMode: row.contentFontMode,
-      photoDataUrl: row.photoDataUrl ?? null,
+      hasPhoto: hasPhotoById.get(row.id) === true,
       generatedComment: normalizedComment,
       includeInBook: row.includeInBook,
       diaryNumbers: buildDiaryNumbers({

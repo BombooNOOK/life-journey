@@ -17,7 +17,10 @@ export type BoundDiaryEntry = {
   activity: string;
   companionType: string;
   designTheme?: string;
-  photoDataUrl: string | null;
+  /** 一覧APIでは省略。閲覧時は写真APIで別途取得 */
+  photoDataUrl?: string | null;
+  /** photoDataUrl 本文を読まずに付与（日記ブック entries API 等） */
+  hasPhoto?: boolean;
   generatedComment: string | null;
   includeInBook?: boolean;
   contentFontMode?: string;

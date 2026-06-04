@@ -46,6 +46,7 @@ import {
   getFixedPreviewBodyTextStyle,
 } from "@/lib/journal/diaryPreviewFixedLayout";
 import type { DiaryPreviewRegionBox } from "@/lib/journal/diaryDesignPreviewTiers";
+import { OwlLoadingInline } from "@/components/ui/OwlLoadingInline";
 import { JOURNAL_OWL_COMMENT_KANTEI_REQUIRED_MESSAGE } from "@/lib/journal/kanteiCommentCopy";
 
 export type DiaryPreviewFixedPageProps = {
@@ -57,6 +58,8 @@ export type DiaryPreviewFixedPageProps = {
   content: string;
   comment?: string | null;
   photoDataUrl?: string | null;
+  /** hasPhoto だが photoDataUrl 未取得のとき */
+  photoLoading?: boolean;
   previewDate?: Date;
   diaryNumbers?: {
     today: number;
@@ -157,6 +160,7 @@ export function DiaryPreviewFixedPage({
   content,
   comment,
   photoDataUrl,
+  photoLoading = false,
   previewDate = new Date(),
   diaryNumbers,
   contentFontMode: contentFontModeProp,
@@ -365,7 +369,11 @@ export function DiaryPreviewFixedPage({
             width: layout.photoWidth,
           }}
         >
-          {photoDataUrl ? (
+          {photoLoading ? (
+            <div className="flex h-full w-full items-center justify-center bg-[#f8f4ea]/80">
+              <OwlLoadingInline label="写真を読み込み中" size="sm" />
+            </div>
+          ) : photoDataUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
               src={photoDataUrl}
