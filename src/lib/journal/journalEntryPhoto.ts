@@ -1,42 +1,43 @@
 import { isAdminEmail } from "@/lib/admin/access";
 import { prisma } from "@/lib/db";
 import { resolveActiveProfileId } from "@/lib/profile/activeProfile";
+import type { JournalEntryPhotoRow } from "@/lib/journal/journalEntryPhotoPersist";
 
-export type JournalEntryPhotoForViewer = {
-  entryId: string;
-  photoDataUrl: string | null;
-};
+const photoSelect = {
+  id: true,
+  photoDataUrl: true,
+  photoBlobUrl: true,
+  photoBlobPathname: true,
+  photoMimeType: true,
+  photoSizeBytes: true,
+  photoStorageProvider: true,
+} as const;
 
-/** 閲覧中プロフィールに紐づく日記の写真 data URL のみ返す */
-export async function getJournalEntryPhotoForViewer(params: {
+export type JournalEntryPhotoRecord = JournalEntryPhotoRow & { id: string };
+
+/** 閲覧権限のある日記行（写真フィールドのみ） */
+export async function getJournalEntryPhotoRecordForViewer(params: {
   entryId: string;
   viewerEmail: string;
-}): Promise<JournalEntryPhotoForViewer | null> {
+}): Promise<JournalEntryPhotoRecord | null> {
   const trimmedId = params.entryId.trim();
   if (!trimmedId) return null;
 
   const admin = await isAdminEmail(params.viewerEmail);
-  const row = admin
-    ? await prisma.journalEntry.findFirst({
-        where: { id: trimmedId },
-        select: { id: true, photoDataUrl: true },
-      })
-    : await (async () => {
-        const activeProfileId = await resolveActiveProfileId(params.viewerEmail);
-        return prisma.journalEntry.findFirst({
-          where: {
-            id: trimmedId,
-            email: params.viewerEmail,
-            profileId: activeProfileId,
-          },
-          select: { id: true, photoDataUrl: true },
-        });
-      })();
-  if (!row) return null;
+  if (admin) {
+    return prisma.journalEntry.findFirst({
+      where: { id: trimmedId },
+      select: photoSelect,
+    });
+  }
 
-  const raw = row.photoDataUrl?.trim() ?? "";
-  return {
-    entryId: row.id,
-    photoDataUrl: raw.length > 0 ? raw : null,
-  };
+  const activeProfileId = await resolveActiveProfileId(params.viewerEmail);
+  return prisma.journalEntry.findFirst({
+    where: {
+      id: trimmedId,
+      email: params.viewerEmail,
+      profileId: activeProfileId,
+    },
+    select: photoSelect,
+  });
 }

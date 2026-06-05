@@ -58,7 +58,9 @@ export type DiaryPreviewFixedPageProps = {
   content: string;
   comment?: string | null;
   photoDataUrl?: string | null;
-  /** hasPhoto だが photoDataUrl 未取得のとき */
+  /** Blob / legacy 共通の認証付き写真 URL */
+  photoSrc?: string | null;
+  /** hasPhoto だが写真 URL 未取得のとき */
   photoLoading?: boolean;
   previewDate?: Date;
   diaryNumbers?: {
@@ -160,6 +162,7 @@ export function DiaryPreviewFixedPage({
   content,
   comment,
   photoDataUrl,
+  photoSrc,
   photoLoading = false,
   previewDate = new Date(),
   diaryNumbers,
@@ -169,6 +172,7 @@ export function DiaryPreviewFixedPage({
   showGoldFrame = true,
   templateSrc: templateSrcProp,
 }: DiaryPreviewFixedPageProps) {
+  const photoDisplaySrc = photoDataUrl?.trim() || photoSrc?.trim() || "";
   const moodEmoji = getMoodMeta(mood).emoji;
   const activityLabel = getActivityMeta(activity).label;
   const trimmedBody = content.trim();
@@ -373,10 +377,10 @@ export function DiaryPreviewFixedPage({
             <div className="flex h-full w-full items-center justify-center bg-[#f8f4ea]/80">
               <OwlLoadingInline label="写真を読み込み中" size="sm" />
             </div>
-          ) : photoDataUrl ? (
+          ) : photoDisplaySrc ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
-              src={photoDataUrl}
+              src={photoDisplaySrc}
               alt="日記写真プレビュー"
               className="h-full w-full object-contain"
             />

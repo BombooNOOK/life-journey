@@ -23,7 +23,12 @@ import {
   sanitizeJournalCommentForResponse,
 } from "@/lib/journal/kanteiCommentEligibility";
 import { resolveContentFontModeFromRequest } from "@/lib/journal/contentFontMode";
+import { formatJournalEntryForApiResponse } from "@/lib/journal/journalEntryApiSerialize";
 import { loadJournalEntryHasPhotoFlags } from "@/lib/journal/journalEntryHasPhoto";
+import {
+  parsePhotoPatchFromRequestBody,
+  resolveJournalEntryPhotoDbFields,
+} from "@/lib/journal/journalEntryPhotoPersist";
 import {
   isActivityId,
   isAllowedDiaryDesignThemeRaw,
@@ -314,10 +319,8 @@ export async function POST(req: Request) {
     typeof json === "object" && json !== null && "activity" in json
       ? String((json as { activity: unknown }).activity)
       : "record_anyway";
-  const rawPhotoDataUrl =
-    typeof json === "object" && json !== null && "photoDataUrl" in json
-      ? String((json as { photoDataUrl: unknown }).photoDataUrl)
-      : "";
+  const photoPatch = parsePhotoPatchFromRequestBody(json);
+  const rawPhotoDataUrl = photoPatch.kind === "set" ? photoPatch.dataUrl : "";
   const rawDesignTheme =
     typeof json === "object" && json !== null && "designTheme" in json
       ? String((json as { designTheme: unknown }).designTheme)
@@ -394,17 +397,19 @@ export async function POST(req: Request) {
       { status: 400 },
     );
   }
-  if (photoDataUrl && !photoDataUrl.startsWith("data:image/")) {
-    return NextResponse.json(
-      { error: "写真データの形式が不正です。", code: "BAD_PHOTO" },
-      { status: 400 },
-    );
-  }
-  if (photoDataUrl.length > 2_000_000) {
-    return NextResponse.json(
-      { error: "写真サイズが大きすぎます。", code: "PHOTO_TOO_LARGE" },
-      { status: 400 },
-    );
+  if (photoPatch.kind === "set") {
+    if (!rawPhotoDataUrl.startsWith("data:image/")) {
+      return NextResponse.json(
+        { error: "写真データの形式が不正です。", code: "BAD_PHOTO" },
+        { status: 400 },
+      );
+    }
+    if (rawPhotoDataUrl.length > 2_000_000) {
+      return NextResponse.json(
+        { error: "写真サイズが大きすぎます。", code: "PHOTO_TOO_LARGE" },
+        { status: 400 },
+      );
+    }
   }
   if (!parsedEntryDate) {
     return NextResponse.json(
@@ -433,6 +438,15 @@ export async function POST(req: Request) {
       recentTemplateIds,
     });
 
+    const emptyPhoto = {
+      photoDataUrl: null,
+      photoBlobUrl: null,
+      photoBlobPathname: null,
+      photoMimeType: null,
+      photoSizeBytes: null,
+      photoStorageProvider: null,
+    };
+
     let entry:
       | {
           id: string;
@@ -444,6 +458,11 @@ export async function POST(req: Request) {
           designTheme?: string;
           contentFontMode: string;
           photoDataUrl: string | null;
+          photoBlobUrl: string | null;
+          photoBlobPathname: string | null;
+          photoMimeType: string | null;
+          photoSizeBytes: number | null;
+          photoStorageProvider: string | null;
           generatedComment: string | null;
           includeInBook: boolean;
         }
@@ -460,7 +479,7 @@ export async function POST(req: Request) {
           companionType,
           designTheme,
           contentFontMode,
-          photoDataUrl: photoDataUrl || null,
+          ...emptyPhoto,
           generatedComment,
           includeInBook,
         },
@@ -474,6 +493,11 @@ export async function POST(req: Request) {
           designTheme: true,
           contentFontMode: true,
           photoDataUrl: true,
+          photoBlobUrl: true,
+          photoBlobPathname: true,
+          photoMimeType: true,
+          photoSizeBytes: true,
+          photoStorageProvider: true,
           generatedComment: true,
           includeInBook: true,
         },
@@ -490,7 +514,7 @@ export async function POST(req: Request) {
           activity,
           companionType,
           contentFontMode,
-          photoDataUrl: photoDataUrl || null,
+          ...emptyPhoto,
           generatedComment,
           includeInBook,
         },
@@ -503,14 +527,51 @@ export async function POST(req: Request) {
           companionType: true,
           contentFontMode: true,
           photoDataUrl: true,
+          photoBlobUrl: true,
+          photoBlobPathname: true,
+          photoMimeType: true,
+          photoSizeBytes: true,
+          photoStorageProvider: true,
           generatedComment: true,
           includeInBook: true,
         },
       });
     }
+
+    if (entry && photoPatch.kind === "set") {
+      const photoDbFields = await resolveJournalEntryPhotoDbFields({
+        patch: photoPatch,
+        existing: null,
+        profileId,
+        entryId: entry.id,
+      });
+      entry = await prisma.journalEntry.update({
+        where: { id: entry.id },
+        data: photoDbFields,
+        select: {
+          id: true,
+          content: true,
+          createdAt: true,
+          mood: true,
+          activity: true,
+          companionType: true,
+          designTheme: true,
+          contentFontMode: true,
+          photoDataUrl: true,
+          photoBlobUrl: true,
+          photoBlobPathname: true,
+          photoMimeType: true,
+          photoSizeBytes: true,
+          photoStorageProvider: true,
+          generatedComment: true,
+          includeInBook: true,
+        },
+      });
+    }
+
     const kanteiOrderExists = await profileHasKanteiOrder(viewerEmail, profileId);
     return NextResponse.json({
-      entry,
+      entry: entry ? formatJournalEntryForApiResponse(entry) : null,
       kanteiOrderExists,
       code: "OK",
     });

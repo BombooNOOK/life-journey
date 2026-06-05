@@ -78,7 +78,14 @@ model JournalEntry {
   designTheme   String @default("simple")
   /// 今日の記録欄の文字サイズ: relaxed | standard | generous | compact
   contentFontMode String @default("standard")
+  /// 旧方式: base64 data URL（移行期間のみ。新規は Blob のみ）
   photoDataUrl  String?
+  /// 日記写真専用 Private Vercel Blob
+  photoBlobUrl       String?
+  photoBlobPathname  String?
+  photoMimeType      String?
+  photoSizeBytes     Int?
+  photoStorageProvider String?
   generatedComment String?
   includeInBook Boolean @default(true)
 

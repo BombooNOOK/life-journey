@@ -2,63 +2,39 @@
 
 import { useCallback, useRef, useState } from "react";
 
-type PhotoApiResponse = {
-  entryId?: string;
-  photoDataUrl?: string | null;
-  error?: string;
-};
+import { journalEntryPhotoApiPath } from "@/lib/journal/journalEntryPhotoPath";
 
 /**
- * 日記ブック閲覧用: entryId ごとに写真 data URL を遅延取得し、セッション内で再利用する。
+ * 日記ブック閲覧用: 写真は認証付き photo API の URL を img src に使う（Blob / legacy 両対応）。
  */
 export function useDiaryBookEntryPhotos() {
   const cacheRef = useRef<Map<string, string>>(new Map());
-  const inflightRef = useRef<Set<string>>(new Set());
   const noPhotoRef = useRef<Set<string>>(new Set());
   const [cacheTick, setCacheTick] = useState(0);
 
   const bump = useCallback(() => setCacheTick((n) => n + 1), []);
 
-  const fetchPhoto = useCallback(
-    async (entryId: string) => {
-      if (
-        cacheRef.current.has(entryId) ||
-        inflightRef.current.has(entryId) ||
-        noPhotoRef.current.has(entryId)
-      ) {
-        return;
+  const registerPhoto = useCallback(
+    (entryId: string, hasPhoto: boolean | undefined) => {
+      if (!hasPhoto) {
+        noPhotoRef.current.add(entryId);
+        cacheRef.current.delete(entryId);
+      } else {
+        noPhotoRef.current.delete(entryId);
+        cacheRef.current.set(entryId, journalEntryPhotoApiPath(entryId));
       }
-      inflightRef.current.add(entryId);
       bump();
-      try {
-        const res = await fetch(`/api/journal/entries/${encodeURIComponent(entryId)}/photo`, {
-          cache: "no-store",
-          credentials: "same-origin",
-        });
-        const data = (await res.json()) as PhotoApiResponse;
-        if (!res.ok) return;
-        const url = data.photoDataUrl?.trim() ?? "";
-        if (url.length > 0) {
-          cacheRef.current.set(entryId, url);
-        } else {
-          noPhotoRef.current.add(entryId);
-        }
-        bump();
-      } finally {
-        inflightRef.current.delete(entryId);
-        bump();
-      }
     },
     [bump],
   );
 
   const prefetchEntryIds = useCallback(
-    (entryIds: Iterable<string>) => {
-      for (const id of entryIds) {
-        void fetchPhoto(id);
+    (entries: Iterable<{ id: string; hasPhoto?: boolean }>) => {
+      for (const e of entries) {
+        registerPhoto(e.id, e.hasPhoto);
       }
     },
-    [fetchPhoto],
+    [registerPhoto],
   );
 
   const getPhotoDataUrl = useCallback(
@@ -70,11 +46,9 @@ export function useDiaryBookEntryPhotos() {
   );
 
   const isPhotoLoading = useCallback(
-    (entryId: string, hasPhoto: boolean | undefined): boolean => {
+    (_entryId: string, hasPhoto: boolean | undefined): boolean => {
       void cacheTick;
-      if (!hasPhoto) return false;
-      if (cacheRef.current.has(entryId) || noPhotoRef.current.has(entryId)) return false;
-      return inflightRef.current.has(entryId);
+      return hasPhoto === true && !cacheRef.current.has(_entryId) && !noPhotoRef.current.has(_entryId);
     },
     [cacheTick],
   );
@@ -83,15 +57,13 @@ export function useDiaryBookEntryPhotos() {
     (entryId: string, hasPhoto: boolean | undefined): boolean => {
       void cacheTick;
       if (!hasPhoto) return false;
-      if (cacheRef.current.has(entryId)) return false;
-      return !noPhotoRef.current.has(entryId);
+      return !cacheRef.current.has(entryId) && !noPhotoRef.current.has(entryId);
     },
     [cacheTick],
   );
 
   const resetCache = useCallback(() => {
     cacheRef.current.clear();
-    inflightRef.current.clear();
     noPhotoRef.current.clear();
     bump();
   }, [bump]);

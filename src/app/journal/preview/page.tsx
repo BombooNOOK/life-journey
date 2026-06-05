@@ -19,6 +19,8 @@ type PreviewEntry = {
   contentFontMode?: string;
   profileId?: string;
   photoDataUrl: string | null;
+  photoSrc?: string | null;
+  hasPhoto?: boolean;
   generatedComment: string | null;
   diaryNumbers?: {
     today: number;
@@ -166,6 +168,7 @@ function JournalPreviewPageContent() {
             content={entry.content}
             comment={entry.generatedComment}
             photoDataUrl={entry.photoDataUrl}
+            photoSrc={entry.photoSrc ?? null}
             previewDate={new Date(entry.createdAt)}
             diaryNumbers={entry.diaryNumbers}
             contentFontMode={entry.contentFontMode}

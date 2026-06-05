@@ -56,8 +56,9 @@ type Entry = {
   companionType: string;
   designTheme?: DiaryDesignId;
   contentFontMode?: string;
-  /** 一覧 API では hasPhoto のみ。編集用 GET では photoDataUrl */
+  /** 一覧 API では hasPhoto のみ。編集 GET では photoSrc（Blob/legacy 共通） */
   photoDataUrl?: string | null;
+  photoSrc?: string | null;
   hasPhoto?: boolean;
   generatedComment: string | null;
   includeInBook: boolean;
@@ -151,6 +152,8 @@ function JournalPageContent() {
   const [contentFontMode, setContentFontMode] = useState<ContentFontMode>(DEFAULT_CONTENT_FONT_MODE);
   const [entries, setEntries] = useState<Entry[]>([]);
   const [photoDataUrl, setPhotoDataUrl] = useState<string>("");
+  const [existingPhotoSrc, setExistingPhotoSrc] = useState<string>("");
+  const [photoDirty, setPhotoDirty] = useState(false);
   const [selectedPhotoFile, setSelectedPhotoFile] = useState<File | null>(null);
   const [cropOffset, setCropOffset] = useState(50);
   const [loading, setLoading] = useState(true);
@@ -334,6 +337,12 @@ function JournalPageContent() {
         setActivity(data.entry.activity ?? "record_anyway");
         setContentFontMode(normalizeContentFontMode(data.entry.contentFontMode));
         setPhotoDataUrl(data.entry.photoDataUrl ?? "");
+        setExistingPhotoSrc(
+          data.entry.photoSrc?.trim() ||
+            (data.entry.hasPhoto ? `/api/journal/entries/${encodeURIComponent(editingId)}/photo` : ""),
+        );
+        setPhotoDirty(false);
+        setSelectedPhotoFile(null);
         setEntryDate(
           toDateInputValueUtc(
             new Date(data.entry.createdAt != null ? data.entry.createdAt : Date.now()),
@@ -364,6 +373,8 @@ function JournalPageContent() {
     void compressToSquareDataUrl(selectedPhotoFile, cropOffset)
       .then((result) => {
         setPhotoDataUrl(result);
+        setPhotoDirty(true);
+        setExistingPhotoSrc("");
       })
       .catch(() => {
         setError("写真の圧縮に失敗しました。別の画像でお試しください。");
@@ -391,6 +402,15 @@ function JournalPageContent() {
       const endpoint = editingId
         ? `/api/journal/${encodeURIComponent(editingId)}`
         : "/api/journal";
+      const photoPayload = (() => {
+        if (photoDirty) {
+          if (photoDataUrl.trim()) return { photoDataUrl: photoDataUrl.trim() };
+          return { photoRemoved: true };
+        }
+        if (editingId) return { photoUnchanged: true };
+        return {};
+      })();
+
       const res = await fetch(endpoint, {
         method: editingId ? "PATCH" : "POST",
         credentials: "same-origin",
@@ -402,7 +422,7 @@ function JournalPageContent() {
           companionType: PHASE1_COMPANION_TYPE,
           designTheme,
           contentFontMode,
-          photoDataUrl,
+          ...photoPayload,
           entryDate,
           profileId,
         }),
@@ -426,6 +446,8 @@ function JournalPageContent() {
       }
       setContent("");
       setPhotoDataUrl("");
+      setExistingPhotoSrc("");
+      setPhotoDirty(false);
       setSelectedPhotoFile(null);
       setContentFontMode(DEFAULT_CONTENT_FONT_MODE);
       setEntryDate(toDateInputValue(new Date()));
@@ -474,7 +496,7 @@ function JournalPageContent() {
           companionType: PHASE1_COMPANION_TYPE,
           designTheme,
           contentFontMode,
-          photoDataUrl,
+          photoUnchanged: true,
           entryDate,
           profileId,
           regenerateOwlComment: true,
@@ -738,10 +760,13 @@ function JournalPageContent() {
               const file = e.target.files?.[0];
               if (!file) {
                 setPhotoDataUrl("");
+                setExistingPhotoSrc("");
+                setPhotoDirty(true);
                 setSelectedPhotoFile(null);
                 return;
               }
               setCropOffset(50);
+              setPhotoDirty(true);
               setSelectedPhotoFile(file);
             }}
           />
@@ -762,9 +787,9 @@ function JournalPageContent() {
           {processingPhoto ? (
             <p className="text-xs text-stone-500">写真を最適化しています…</p>
           ) : null}
-          {photoDataUrl ? (
+          {photoDataUrl || existingPhotoSrc ? (
             <img
-              src={photoDataUrl}
+              src={photoDataUrl || existingPhotoSrc}
               alt="選択した写真プレビュー"
               className="aspect-square w-full max-w-xs rounded-lg border border-stone-200 bg-[#f7f4ee] object-contain"
             />
@@ -916,6 +941,8 @@ function JournalPageContent() {
               onClick={() => {
                 setContent("");
                 setPhotoDataUrl("");
+                setExistingPhotoSrc("");
+                setPhotoDirty(false);
                 setSelectedPhotoFile(null);
                 setMood("calm");
                 setActivity("record_anyway");
@@ -934,6 +961,8 @@ function JournalPageContent() {
                 onClick={() => {
                   setContent("");
                   setPhotoDataUrl("");
+                  setExistingPhotoSrc("");
+                  setPhotoDirty(false);
                   setSelectedPhotoFile(null);
                   setMood("calm");
                   setActivity("record_anyway");

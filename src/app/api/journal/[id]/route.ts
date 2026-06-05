@@ -14,6 +14,12 @@ import { buildJournalNumerologyDebug } from "@/lib/journal/journalNumerologyDebu
 import { buildDiaryNumbers } from "@/lib/journal/numbers";
 import { shouldPreserveJournalGeneratedComment } from "@/lib/journal/preserveDiaryReading";
 import { resolveContentFontModeFromRequest } from "@/lib/journal/contentFontMode";
+import { formatJournalEntryForApiResponse } from "@/lib/journal/journalEntryApiSerialize";
+import {
+  parsePhotoPatchFromRequestBody,
+  resolveJournalEntryPhotoDbFields,
+} from "@/lib/journal/journalEntryPhotoPersist";
+import { deleteJournalEntryPhotoBlobBestEffort } from "@/lib/journal/journalEntryPhotoBlob";
 import {
   isActivityId,
   isAllowedDiaryDesignThemeRaw,
@@ -21,6 +27,47 @@ import {
   isMoodId,
   normalizeDiaryDesignTheme,
 } from "@/lib/journal/meta";
+
+const entrySelectWithPhoto = {
+  id: true,
+  profileId: true,
+  content: true,
+  mood: true,
+  activity: true,
+  companionType: true,
+  designTheme: true,
+  contentFontMode: true,
+  photoDataUrl: true,
+  photoBlobUrl: true,
+  photoBlobPathname: true,
+  photoMimeType: true,
+  photoSizeBytes: true,
+  photoStorageProvider: true,
+  generatedComment: true,
+  createdAt: true,
+  updatedAt: true,
+  includeInBook: true,
+} as const;
+
+const entrySelectWithPhotoFallback = {
+  id: true,
+  profileId: true,
+  content: true,
+  mood: true,
+  activity: true,
+  companionType: true,
+  contentFontMode: true,
+  photoDataUrl: true,
+  photoBlobUrl: true,
+  photoBlobPathname: true,
+  photoMimeType: true,
+  photoSizeBytes: true,
+  photoStorageProvider: true,
+  generatedComment: true,
+  createdAt: true,
+  updatedAt: true,
+  includeInBook: true,
+} as const;
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -64,57 +111,18 @@ export async function GET(req: Request, { params }: Params) {
   }
 
   const { id } = await params;
-  let row:
-    | {
-        id: string;
-        profileId: string;
-        content: string;
-        mood: string;
-        activity: string;
-        companionType: string;
-        designTheme?: string;
-        contentFontMode: string;
-        photoDataUrl: string | null;
-        generatedComment: string | null;
-        createdAt: Date;
-        includeInBook: boolean;
-      }
-    | null = null;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- select shape varies with designTheme fallback
+  let row: any = null;
   try {
     row = await prisma.journalEntry.findFirst({
       where: { id, email: viewerEmail },
-      select: {
-        id: true,
-        profileId: true,
-        content: true,
-        mood: true,
-        activity: true,
-        companionType: true,
-        designTheme: true,
-        contentFontMode: true,
-        photoDataUrl: true,
-        generatedComment: true,
-        createdAt: true,
-        includeInBook: true,
-      },
+      select: entrySelectWithPhoto,
     });
   } catch (error) {
     if (!isDesignThemeValidationError(error)) throw error;
     row = await prisma.journalEntry.findFirst({
       where: { id, email: viewerEmail },
-      select: {
-        id: true,
-        profileId: true,
-        content: true,
-        mood: true,
-        activity: true,
-        companionType: true,
-        contentFontMode: true,
-        photoDataUrl: true,
-        generatedComment: true,
-        createdAt: true,
-        includeInBook: true,
-      },
+      select: entrySelectWithPhotoFallback,
     });
   }
   if (!row) {
@@ -160,16 +168,25 @@ export async function GET(req: Request, { params }: Params) {
       })
     : undefined;
 
+  const r = row as NonNullable<typeof row> & {
+    id: string;
+    designTheme?: string;
+    generatedComment: string | null;
+    photoDataUrl?: string | null;
+    photoBlobUrl?: string | null;
+  };
+  const formatted = formatJournalEntryForApiResponse({
+    ...r,
+    designTheme: normalizeDiaryDesignTheme(r.designTheme ?? "simple_plain"),
+    diaryNumbers,
+    ...(numerologyDebug ? { numerologyDebug } : {}),
+    generatedComment: sanitizeJournalCommentForResponse(r.generatedComment, kanteiOrderExists),
+  });
+
   return NextResponse.json(
     {
       kanteiOrderExists,
-      entry: {
-        ...row,
-        designTheme: normalizeDiaryDesignTheme(row.designTheme ?? "simple_plain"),
-        diaryNumbers,
-        ...(numerologyDebug ? { numerologyDebug } : {}),
-        generatedComment: sanitizeJournalCommentForResponse(row.generatedComment, kanteiOrderExists),
-      },
+      entry: formatted,
       code: "OK",
     },
     JSON_NO_STORE,
@@ -197,6 +214,12 @@ export async function PATCH(req: Request, { params }: Params) {
       activity: true,
       companionType: true,
       generatedComment: true,
+      photoDataUrl: true,
+      photoBlobUrl: true,
+      photoBlobPathname: true,
+      photoMimeType: true,
+      photoSizeBytes: true,
+      photoStorageProvider: true,
     },
   });
   if (!exists) {
@@ -226,10 +249,8 @@ export async function PATCH(req: Request, { params }: Params) {
     typeof json === "object" && json !== null && "activity" in json
       ? String((json as { activity: unknown }).activity)
       : "record_anyway";
-  const rawPhotoDataUrl =
-    typeof json === "object" && json !== null && "photoDataUrl" in json
-      ? String((json as { photoDataUrl: unknown }).photoDataUrl)
-      : "";
+  const photoPatch = parsePhotoPatchFromRequestBody(json);
+  const rawPhotoDataUrl = photoPatch.kind === "set" ? photoPatch.dataUrl : "";
   const rawDesignTheme =
     typeof json === "object" && json !== null && "designTheme" in json
       ? String((json as { designTheme: unknown }).designTheme)
@@ -251,7 +272,6 @@ export async function PATCH(req: Request, { params }: Params) {
   const mood = rawMood.trim();
   const activity = rawActivity.trim();
   const companionType = rawCompanionType.trim();
-  const photoDataUrl = rawPhotoDataUrl.trim();
   const parsedEntryDate = parseEntryDate(rawEntryDate.trim());
   const includeInBook =
     typeof rawIncludeInBook === "boolean" ? rawIncludeInBook : exists.includeInBook;
@@ -297,17 +317,19 @@ export async function PATCH(req: Request, { params }: Params) {
       { status: 400 },
     );
   }
-  if (photoDataUrl && !photoDataUrl.startsWith("data:image/")) {
-    return NextResponse.json(
-      { error: "写真データの形式が不正です。", code: "BAD_PHOTO" },
-      { status: 400 },
-    );
-  }
-  if (photoDataUrl.length > 2_000_000) {
-    return NextResponse.json(
-      { error: "写真サイズが大きすぎます。", code: "PHOTO_TOO_LARGE" },
-      { status: 400 },
-    );
+  if (photoPatch.kind === "set") {
+    if (!rawPhotoDataUrl.startsWith("data:image/")) {
+      return NextResponse.json(
+        { error: "写真データの形式が不正です。", code: "BAD_PHOTO" },
+        { status: 400 },
+      );
+    }
+    if (rawPhotoDataUrl.length > 2_000_000) {
+      return NextResponse.json(
+        { error: "写真サイズが大きすぎます。", code: "PHOTO_TOO_LARGE" },
+        { status: 400 },
+      );
+    }
   }
   if (!parsedEntryDate) {
     return NextResponse.json(
@@ -349,22 +371,14 @@ export async function PATCH(req: Request, { params }: Params) {
 
   const kanteiOrderExists = await profileHasKanteiOrder(viewerEmail, exists.profileId);
 
-  let entry:
-    | {
-        id: string;
-        content: string;
-        mood: string;
-        activity: string;
-        companionType: string;
-        designTheme?: string;
-        contentFontMode: string;
-        photoDataUrl: string | null;
-        generatedComment: string | null;
-        createdAt: Date;
-        updatedAt: Date;
-        includeInBook: boolean;
-      }
-    | null = null;
+  const photoDbFields = await resolveJournalEntryPhotoDbFields({
+    patch: photoPatch,
+    existing: exists,
+    profileId: exists.profileId,
+    entryId: id,
+  });
+
+  let entry = null;
   try {
     entry = await prisma.journalEntry.update({
       where: { id },
@@ -376,24 +390,11 @@ export async function PATCH(req: Request, { params }: Params) {
         companionType,
         designTheme,
         contentFontMode,
-        photoDataUrl: photoDataUrl || null,
+        ...photoDbFields,
         generatedComment,
         includeInBook,
       },
-      select: {
-        id: true,
-        content: true,
-        mood: true,
-        activity: true,
-        companionType: true,
-        designTheme: true,
-        contentFontMode: true,
-        photoDataUrl: true,
-        generatedComment: true,
-        createdAt: true,
-        updatedAt: true,
-        includeInBook: true,
-      },
+      select: entrySelectWithPhoto,
     });
   } catch (error) {
     if (!isDesignThemeValidationError(error)) throw error;
@@ -406,26 +407,21 @@ export async function PATCH(req: Request, { params }: Params) {
         activity,
         companionType,
         contentFontMode,
-        photoDataUrl: photoDataUrl || null,
+        ...photoDbFields,
         generatedComment,
         includeInBook,
       },
-      select: {
-        id: true,
-        content: true,
-        mood: true,
-        activity: true,
-        companionType: true,
-        contentFontMode: true,
-        photoDataUrl: true,
-        generatedComment: true,
-        createdAt: true,
-        updatedAt: true,
-        includeInBook: true,
-      },
+      select: entrySelectWithPhotoFallback,
     });
   }
-  return NextResponse.json({ entry, kanteiOrderExists, code: "OK" }, JSON_NO_STORE);
+  return NextResponse.json(
+    {
+      entry: entry ? formatJournalEntryForApiResponse(entry) : null,
+      kanteiOrderExists,
+      code: "OK",
+    },
+    JSON_NO_STORE,
+  );
 }
 
 export async function DELETE(_: Request, { params }: Params) {
@@ -440,12 +436,17 @@ export async function DELETE(_: Request, { params }: Params) {
   const { id } = await params;
   const exists = await prisma.journalEntry.findFirst({
     where: { id, email: viewerEmail },
-    select: { id: true },
+    select: {
+      id: true,
+      photoBlobPathname: true,
+      photoBlobUrl: true,
+    },
   });
   if (!exists) {
     return NextResponse.json({ error: "対象の記録が見つかりません。", code: "NOT_FOUND" }, { status: 404 });
   }
 
   await prisma.journalEntry.delete({ where: { id } });
+  await deleteJournalEntryPhotoBlobBestEffort(exists.photoBlobPathname, exists.photoBlobUrl);
   return NextResponse.json({ code: "OK" });
 }

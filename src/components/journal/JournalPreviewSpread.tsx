@@ -15,6 +15,7 @@ type PreviewProps = {
   content: string;
   comment?: string | null;
   photoDataUrl?: string | null;
+  photoSrc?: string | null;
   previewDate: Date;
   diaryNumbers?: {
     today: number;

@@ -97,7 +97,10 @@ export async function listJournalEntriesForDiaryBookIncludePicker(params: {
       "includeInBook",
       "contentFontMode",
       CHAR_LENGTH(content) AS "contentCharLength",
-      ("photoDataUrl" IS NOT NULL) AS "hasPhoto"
+      (
+        ("photoBlobUrl" IS NOT NULL AND btrim("photoBlobUrl") <> '')
+        OR ("photoDataUrl" IS NOT NULL AND btrim("photoDataUrl") <> '')
+      ) AS "hasPhoto"
     FROM "JournalEntry"
     WHERE email = ${params.email}
       AND "profileId" = ${params.profileId}

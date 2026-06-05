@@ -76,7 +76,10 @@ async function loadJournalEntryHasPhotoFlags(where: {
   const rows = await prisma.$queryRaw<Array<{ id: string; hasPhoto: boolean }>>(Prisma.sql`
     SELECT
       id,
-      ("photoDataUrl" IS NOT NULL AND btrim("photoDataUrl") <> '') AS "hasPhoto"
+      (
+        ("photoBlobUrl" IS NOT NULL AND btrim("photoBlobUrl") <> '')
+        OR ("photoDataUrl" IS NOT NULL AND btrim("photoDataUrl") <> '')
+      ) AS "hasPhoto"
     FROM "JournalEntry"
     WHERE email = ${where.email}
       AND "profileId" = ${where.profileId}

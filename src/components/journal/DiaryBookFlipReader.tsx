@@ -160,15 +160,15 @@ export function DiaryBookFlipReader({
   const totalPages = pages.length;
 
   useEffect(() => {
-    const ids: string[] = [];
+    const toPrefetch: Array<{ id: string; hasPhoto?: boolean }> = [];
     for (const idx of [pageIndex - 1, pageIndex, pageIndex + 1]) {
       if (idx < 0 || idx >= totalPages) continue;
       const page = pages[idx];
       if (page?.kind === "entry" && page.entry.hasPhoto) {
-        ids.push(page.entry.id);
+        toPrefetch.push({ id: page.entry.id, hasPhoto: true });
       }
     }
-    prefetchEntryIds(ids);
+    prefetchEntryIds(toPrefetch);
   }, [pageIndex, pages, totalPages, prefetchEntryIds]);
 
   const refreshDiaryBookContent = useCallback(async () => {
