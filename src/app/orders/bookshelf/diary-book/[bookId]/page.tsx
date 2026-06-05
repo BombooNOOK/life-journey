@@ -2,8 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
 
-import { BookshelfEditIncludesNavButton } from "@/components/orders/BookshelfEditIncludesNavButton";
-import { DiaryBookFlipReader } from "@/components/journal/DiaryBookFlipReader";
+import { DiaryBookReadView } from "@/components/journal/DiaryBookReadView";
 import { isAdminEmail } from "@/lib/admin/access";
 import { getViewerEmailFromCookie, normalizeEmail } from "@/lib/auth/viewer";
 import { findDiaryBookRowForViewerOrAdmin } from "@/lib/journal/diaryBookAdminAccess";
@@ -77,33 +76,19 @@ export default async function DiaryBookReadPage({ params, searchParams }: Props)
           ← {backLabel}
         </Link>
         <h1 className="mt-2 text-2xl font-bold text-stone-900">{book.title}</h1>
-        <p className="mt-1 text-sm text-stone-600">
-          {rangeLabel} · {book.entryCount}件の日記
-          {book.needsContentRefresh ? (
-            <span className="ml-2 rounded bg-amber-100 px-1.5 py-0.5 text-xs font-medium text-amber-900">
-              更新が必要
-            </span>
-          ) : null}
-        </p>
-        {adminBrowse ? null : (
-          <p className="mt-2">
-            <BookshelfEditIncludesNavButton
-              bookId={book.id}
-              className="text-sm font-medium text-emerald-800 underline-offset-2 hover:underline"
-            />
-          </p>
-        )}
-      </div>
-      <Suspense fallback={<p className="text-sm text-stone-500">日記ブックを読み込み中…</p>}>
-        <DiaryBookFlipReader
+        <DiaryBookReadView
           bookId={book.id}
           title={book.title}
           startDate={book.startDate}
           endDate={book.endDate}
           coverTheme={book.coverTheme}
           profileId={profileId}
+          rangeLabel={rangeLabel}
+          entryCount={book.entryCount}
+          initialNeedsContentRefresh={book.needsContentRefresh === true}
+          showEditIncludes={!adminBrowse}
         />
-      </Suspense>
+      </div>
     </div>
   );
 }

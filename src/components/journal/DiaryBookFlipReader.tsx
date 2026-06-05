@@ -70,6 +70,9 @@ type Props = {
   endDate: string;
   coverTheme: string;
   profileId: string;
+  /** SSR 初期値。ヘッダーバッジと黄色カードで共有 */
+  initialNeedsContentRefresh?: boolean;
+  onNeedsContentRefreshChange?: (needsContentRefresh: boolean) => void;
 };
 
 function backLabelForHref(href: string): string {
@@ -86,6 +89,8 @@ export function DiaryBookFlipReader({
   endDate,
   coverTheme,
   profileId,
+  initialNeedsContentRefresh = false,
+  onNeedsContentRefreshChange,
 }: Props) {
   const pathname = usePathname();
   const router = useRouter();
@@ -99,7 +104,9 @@ export function DiaryBookFlipReader({
   const [entries, setEntries] = useState<BoundDiaryEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [needsContentRefresh, setNeedsContentRefresh] = useState(false);
+  const [needsContentRefresh, setNeedsContentRefresh] = useState(
+    () => initialNeedsContentRefresh === true,
+  );
   const [error, setError] = useState<string | null>(null);
   const [pageIndex, setPageIndex] = useState(0);
   const [panelVisible, setPanelVisible] = useState(true);
@@ -153,6 +160,10 @@ export function DiaryBookFlipReader({
   useEffect(() => {
     void loadEntries();
   }, [loadEntries]);
+
+  useEffect(() => {
+    onNeedsContentRefreshChange?.(needsContentRefresh);
+  }, [needsContentRefresh, onNeedsContentRefreshChange]);
 
   const pages = useMemo(
     () => buildBoundDiaryBookPages(entries, startDate, endDate),
