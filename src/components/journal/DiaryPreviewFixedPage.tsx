@@ -91,7 +91,7 @@ function DiaryPreviewPhotoFrame({
           <img
             src={diaryBookPhotoMemoryLoadingImagePath()}
             alt=""
-            className="max-h-[68%] max-w-[68%] object-contain"
+            className="max-h-[76%] max-w-[76%] object-contain opacity-80"
             draggable={false}
           />
           <p
