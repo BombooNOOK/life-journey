@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { BookBindingAdminFilterBar } from "@/components/admin/BookBindingAdminFilterBar";
+import { DiaryBookBindingPrintDownload } from "@/components/admin/DiaryBookBindingPrintDownload";
 import { updateDiaryBookBindingRequest } from "@/app/admin/diary-book-binding/actions";
 import { getViewerEmailFromCookie } from "@/lib/auth/viewer";
 import { isAdminEmail } from "@/lib/admin/access";
@@ -188,18 +189,28 @@ export default async function AdminDiaryBookBindingPage({ searchParams }: Props)
               </dl>
 
               {row.diaryBookId ? (
-                <div className="mt-3 rounded-lg border border-emerald-200/80 bg-emerald-50/40 px-3 py-2.5">
-                  <p className="text-[10px] font-medium text-emerald-950">製本内容の照合</p>
-                  <p className="mt-1 text-[10px] leading-relaxed text-stone-600">
-                    申込ユーザーの日記ブックを本棚と同じ画面で確認できます（管理者 read-only）。
-                    製本用PDFの自動出力は未対応のため、画面で写真・ページ構成を確認してください。
-                  </p>
-                  <a
-                    href={`/orders/bookshelf/diary-book/${encodeURIComponent(row.diaryBookId)}?returnTo=${encodeURIComponent("/admin/diary-book-binding")}`}
-                    className="mt-2 inline-flex text-xs font-medium text-emerald-900 underline-offset-2 hover:underline"
-                  >
-                    日記ブックを確認する
-                  </a>
+                <div className="mt-3 space-y-3">
+                  <div className="rounded-lg border border-emerald-200/80 bg-emerald-50/40 px-3 py-2.5">
+                    <p className="text-[10px] font-medium text-emerald-950">製本内容の照合</p>
+                    <p className="mt-1 text-[10px] leading-relaxed text-stone-600">
+                      申込ユーザーの日記ブックを本棚と同じ画面で確認できます（管理者 read-only）。
+                    </p>
+                    <a
+                      href={`/orders/bookshelf/diary-book/${encodeURIComponent(row.diaryBookId)}?returnTo=${encodeURIComponent("/admin/diary-book-binding")}`}
+                      className="mt-2 inline-flex text-xs font-medium text-emerald-900 underline-offset-2 hover:underline"
+                    >
+                      日記ブックを確認する
+                    </a>
+                  </div>
+                  <DiaryBookBindingPrintDownload
+                    requestId={row.id}
+                    bindingCode={row.diaryBindingCode}
+                    startDate={row.startDate}
+                    endDate={row.endDate}
+                    pageCount={row.pageCount}
+                    baseOrderNumber={row.baseOrderNumber}
+                    baseBuyerName={row.baseBuyerName}
+                  />
                 </div>
               ) : (
                 <p className="mt-3 text-[10px] text-stone-500">
