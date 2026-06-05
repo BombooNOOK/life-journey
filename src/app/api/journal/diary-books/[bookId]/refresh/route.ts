@@ -21,7 +21,19 @@ export async function POST(_: Request, { params }: RouteParams) {
   }
 
   const { bookId } = await params;
-  const result = await refreshDiaryBookContent({ bookId, viewerEmail });
+  let result;
+  try {
+    result = await refreshDiaryBookContent({ bookId, viewerEmail });
+  } catch (e) {
+    console.error("[diary-book-refresh] failed", { bookId, error: e });
+    return NextResponse.json(
+      {
+        error: "日記ブックの更新に失敗しました。時間をおいて再度お試しください。",
+        code: "REFRESH_FAILED",
+      },
+      { status: 500, ...JSON_NO_STORE },
+    );
+  }
   if (!result.ok) {
     return NextResponse.json(
       { error: result.error, code: result.code },

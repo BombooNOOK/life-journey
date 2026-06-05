@@ -93,10 +93,10 @@ export async function listJournalEntriesForDiaryBookIncludePicker(params: {
       id,
       "createdAt",
       mood,
-      LEFT(TRIM(REGEXP_REPLACE(content, E'[[:space:]]+', ' ', 'g')), ${EXCERPT_MAX}) AS "contentSnippet",
+      LEFT(TRIM(REGEXP_REPLACE(content, E'[[:space:]]+', ' ', 'g')), ${EXCERPT_MAX}::integer) AS "contentSnippet",
       "includeInBook",
       "contentFontMode",
-      CHAR_LENGTH(content) AS "contentCharLength",
+      CAST(CHAR_LENGTH(content) AS INTEGER) AS "contentCharLength",
       (
         ("photoBlobUrl" IS NOT NULL AND btrim("photoBlobUrl") <> '')
         OR ("photoDataUrl" IS NOT NULL AND btrim("photoDataUrl") <> '')
@@ -117,7 +117,7 @@ export async function listJournalEntriesForDiaryBookIncludePicker(params: {
       createdAt: row.createdAt.toISOString(),
       mood: row.mood,
       contentExcerpt: journalEntryContentExcerpt(snippet),
-      hasPhoto: row.hasPhoto === true,
+      hasPhoto: Boolean(row.hasPhoto),
       includeInBook: row.includeInBook !== false,
       lengthFlag: journalEntryContentLengthFlag(row.contentFontMode, charLength),
     };

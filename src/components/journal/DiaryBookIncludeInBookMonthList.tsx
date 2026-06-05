@@ -8,6 +8,7 @@ import {
   type DiaryBookIncludePickerEntryDto,
   diaryBookIncludePickerDateLabel,
 } from "@/lib/journal/diaryBookIncludePicker";
+import { parseFetchJsonResponse } from "@/lib/http/parseFetchJson";
 import { getMoodMeta } from "@/lib/journal/meta";
 
 type SavedPayload = {
@@ -127,8 +128,14 @@ export function DiaryBookIncludeInBookMonthList({
         );
       }
       const results = await Promise.all(requests);
-      if (results.some((res) => !res.ok)) {
-        throw new Error("failed");
+      for (const res of results) {
+        const data = await parseFetchJsonResponse<{ error?: string }>(
+          res,
+          "掲載設定の保存に失敗しました。",
+        );
+        if (!res.ok) {
+          throw new Error(data.error ?? "掲載設定の保存に失敗しました。");
+        }
       }
       const nextSnapshot = includeSnapshot(entries);
       setSavedSnapshot(nextSnapshot);
@@ -137,8 +144,12 @@ export function DiaryBookIncludeInBookMonthList({
         includedCount: entries.filter((e) => e.includeInBook).length,
         entries,
       });
-    } catch {
-      setError("保存に失敗しました。時間をおいて再度お試しください。");
+    } catch (e) {
+      setError(
+        e instanceof Error
+          ? e.message
+          : "保存に失敗しました。時間をおいて再度お試しください。",
+      );
     } finally {
       setSaving(false);
     }

@@ -46,12 +46,24 @@ export async function GET(_: Request, { params }: RouteParams) {
     );
   }
 
-  const entries = await listJournalEntriesForDiaryBookIncludePicker({
-    email: viewerEmail,
-    profileId: row.profileId,
-    startDate: row.startDate,
-    endDate: row.endDate,
-  });
+  let entries;
+  try {
+    entries = await listJournalEntriesForDiaryBookIncludePicker({
+      email: viewerEmail,
+      profileId: row.profileId,
+      startDate: row.startDate,
+      endDate: row.endDate,
+    });
+  } catch (e) {
+    console.error("[include-picker] list failed", { bookId: row.id, error: e });
+    return NextResponse.json(
+      {
+        error: "日記一覧の取得に失敗しました。時間をおいて再度お試しください。",
+        code: "LIST_FAILED",
+      },
+      { status: 500, ...JSON_NO_STORE },
+    );
+  }
 
   return NextResponse.json(
     {

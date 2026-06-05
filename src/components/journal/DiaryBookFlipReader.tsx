@@ -21,6 +21,7 @@ import { InlineHelpButton } from "@/components/ui/InlineHelpButton";
 import { OwlLoadingInline } from "@/components/ui/OwlLoadingInline";
 import { BookshelfEditIncludesNavButton } from "@/components/orders/BookshelfEditIncludesNavButton";
 import { useDiaryBookEntryPhotos } from "@/hooks/useDiaryBookEntryPhotos";
+import { parseFetchJsonResponse } from "@/lib/http/parseFetchJson";
 import { useVisualViewportDock } from "@/hooks/useVisualViewportDock";
 import type { BoundDiaryEntry } from "@/components/journal/DiaryYearBoundPages";
 import { parseSafeJournalReturnTo } from "@/lib/journal/bookshelfReturnTo";
@@ -127,11 +128,11 @@ export function DiaryBookFlipReader({
         `/api/journal/diary-books/${encodeURIComponent(bookId)}/entries?_=${Date.now()}`,
         { cache: "no-store", credentials: "same-origin" },
       );
-      const data = (await res.json()) as {
+      const data = await parseFetchJsonResponse<{
         entries?: BoundDiaryEntry[];
         needsContentRefresh?: boolean;
         error?: string;
-      };
+      }>(res, "記録の取得に失敗しました。");
       if (!res.ok) throw new Error(data.error ?? "記録の取得に失敗しました。");
       const list = [...(data.entries ?? [])].sort(
         (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
@@ -179,7 +180,10 @@ export function DiaryBookFlipReader({
         `/api/journal/diary-books/${encodeURIComponent(bookId)}/refresh`,
         { method: "POST", credentials: "same-origin" },
       );
-      const data = (await res.json()) as { error?: string };
+      const data = await parseFetchJsonResponse<{ error?: string }>(
+        res,
+        "日記ブックの更新に失敗しました。",
+      );
       if (!res.ok) throw new Error(data.error ?? "日記ブックの更新に失敗しました。");
       await loadEntries({ silent: true });
       setNeedsContentRefresh(false);

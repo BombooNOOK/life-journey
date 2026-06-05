@@ -6,6 +6,7 @@ import { useCallback, useEffect, useState } from "react";
 
 import { DiaryBookIncludeInBookMonthList } from "@/components/journal/DiaryBookIncludeInBookMonthList";
 import { OwlLoadingInline } from "@/components/ui/OwlLoadingInline";
+import { parseFetchJsonResponse } from "@/lib/http/parseFetchJson";
 import type { DiaryBookIncludePickerEntryDto } from "@/lib/journal/diaryBookIncludePicker";
 
 type Props = {
@@ -31,10 +32,10 @@ export function DiaryBookEditIncludesPanel({ bookId, bookTitle, rangeLabel }: Pr
         `/api/journal/diary-books/${encodeURIComponent(bookId)}/include-picker?_=${Date.now()}`,
         { cache: "no-store", credentials: "same-origin" },
       );
-      const data = (await res.json()) as {
+      const data = await parseFetchJsonResponse<{
         entries?: DiaryBookIncludePickerEntryDto[];
         error?: string;
-      };
+      }>(res, "一覧の取得に失敗しました。");
       if (!res.ok) throw new Error(data.error ?? "一覧の取得に失敗しました。");
       setEntries(data.entries ?? []);
       setIncludeDirty(false);
@@ -59,7 +60,10 @@ export function DiaryBookEditIncludesPanel({ bookId, bookTitle, rangeLabel }: Pr
         `/api/journal/diary-books/${encodeURIComponent(bookId)}/refresh`,
         { method: "POST", credentials: "same-origin" },
       );
-      const data = (await res.json()) as { error?: string; entryCount?: number };
+      const data = await parseFetchJsonResponse<{ error?: string; entryCount?: number }>(
+        res,
+        "日記ブックの更新に失敗しました。",
+      );
       if (!res.ok) throw new Error(data.error ?? "日記ブックの更新に失敗しました。");
       setRefreshNotice(
         `日記ブックを更新しました（${data.entryCount ?? 0}件の日記を反映）。`,
