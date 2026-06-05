@@ -10,7 +10,6 @@ import {
   DIARY_PREVIEW_ACTIVITY_ANSWER_SLOT_HEIGHT_PX,
   DIARY_PREVIEW_ACTIVITY_ANSWER_SLOT_TOP_PX,
   DIARY_PREVIEW_BODY_REGION,
-  DIARY_PREVIEW_COMMENT_INNER_PADDING,
   DIARY_PREVIEW_COMMENT_REGION,
   DIARY_PREVIEW_COMMENT_TEXT_STYLE,
   DIARY_PREVIEW_DATE_ROW_STYLE,
@@ -151,7 +150,7 @@ export function DiaryBookEntryPdfPage({
 
   const bodyRegion = regionBoxToPx(DIARY_PREVIEW_BODY_REGION);
   const commentRegion = regionBoxToPx(DIARY_PREVIEW_COMMENT_REGION);
-  const commentPadding = parsePadding(DIARY_PREVIEW_COMMENT_INNER_PADDING);
+  const commentPadding = parsePadding("5px 10px 9px 8px");
   const bodyClipHeight = diaryBookPdfPx(getDiaryPreviewBodySafeScrollHeightPx(), "y");
   const bodyWidth = diaryBookPdfPx(bodyRegion.width, "x");
 
@@ -171,7 +170,9 @@ export function DiaryBookEntryPdfPage({
   const bodyLineHeight = parseFloat(bodyTextStyle.lineHeight) || 1.575;
   const activityFontSize = diaryBookPdfPx(parseCssPx(activityTextStyle.fontSize), "x");
   const activityWidth = diaryBookPdfPct("64.8%", "x");
-  const commentFontSize = diaryBookPdfPx(parseCssPx(DIARY_PREVIEW_COMMENT_TEXT_STYLE.fontSize), "x");
+  const commentFontSize =
+    diaryBookPdfPx(parseCssPx(DIARY_PREVIEW_COMMENT_TEXT_STYLE.fontSize), "x") * 0.97;
+  const commentLineHeight = 1.58;
   const commentWidth = diaryBookPdfPx(commentRegion.width, "x");
   const numberFontSize = diaryBookPdfPx(parseCssPx(DIARY_PREVIEW_NUMBER_STYLE.fontSize), "x");
   const moodFontSize = diaryBookPdfPx(DIARY_PREVIEW_MOOD_EMOJI.fontSizePx, "x");
@@ -232,6 +233,7 @@ export function DiaryBookEntryPdfPage({
               height: diaryBookPdfPx(DIARY_PREVIEW_ACTIVITY_ANSWER_SLOT_HEIGHT_PX, "y"),
               fontSize: activityFontSize,
               lineHeight: 1.25,
+              justifyContent: "center",
             },
           ]}
         >
@@ -279,7 +281,7 @@ export function DiaryBookEntryPdfPage({
               paddingBottom: commentPadding.bottom,
               paddingLeft: commentPadding.left,
               fontSize: commentFontSize,
-              lineHeight: parseFloat(DIARY_PREVIEW_COMMENT_TEXT_STYLE.lineHeight) || 1.62,
+              lineHeight: commentLineHeight,
             },
           ]}
         >
@@ -289,7 +291,7 @@ export function DiaryBookEntryPdfPage({
               styles.commentText,
               {
                 fontSize: commentFontSize,
-                lineHeight: parseFloat(DIARY_PREVIEW_COMMENT_TEXT_STYLE.lineHeight) || 1.62,
+                lineHeight: commentLineHeight,
                 width: commentWidth - commentPadding.left - commentPadding.right,
               },
             ]}
