@@ -917,15 +917,6 @@ function JournalPageContent() {
           onChange={(e) => setEntryDate(e.target.value)}
           className="w-full rounded-lg border border-stone-300 px-3 py-2 text-sm text-stone-900 outline-none ring-stone-400 focus:ring-2"
         />
-        {editingId && !showNumerologyDebug ? (
-          <p className="text-[11px] leading-relaxed text-stone-500">
-            記録日まわりの数値（パーソナルデイ・暦など）を画面で確認するときは、URL に{" "}
-            <code className="rounded bg-stone-100 px-1 py-0.5 text-[10px] text-stone-800">
-              numerologyDebug=1
-            </code>{" "}
-            を付けて再読み込みしてください。
-          </p>
-        ) : null}
         {numerologyDebug ? (
           <details className="rounded-lg border border-stone-200 bg-stone-50 px-3 py-2 text-xs text-stone-800">
             <summary className="cursor-pointer select-none font-medium text-stone-700">
