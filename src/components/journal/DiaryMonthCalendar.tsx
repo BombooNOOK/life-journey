@@ -1,5 +1,6 @@
 "use client";
 
+import { OwlLoadingInline } from "@/components/ui/OwlLoadingInline";
 import { getCompanionStamp } from "@/lib/journal/meta";
 import {
   calendarDayKeyFromParts,
@@ -22,6 +23,7 @@ type Props = {
   entries: DiaryMonthCalendarEntry[];
   selectedDay: number | null;
   isFetching?: boolean;
+  loadingLabel?: string;
   onSelectDay: (day: number) => void;
   onPrevMonth: () => void;
   onNextMonth: () => void;
@@ -50,6 +52,7 @@ export function DiaryMonthCalendar({
   entries,
   selectedDay,
   isFetching = false,
+  loadingLabel = "フクロウ先生が日記の足跡を確認しています…",
   onSelectDay,
   onPrevMonth,
   onNextMonth,
@@ -77,28 +80,38 @@ export function DiaryMonthCalendar({
   }
 
   return (
-    <div className="rounded-2xl border border-emerald-100 bg-white p-2.5 shadow-sm sm:p-4">
+    <div
+      className="rounded-2xl border border-emerald-100 bg-white p-2.5 shadow-sm sm:p-4"
+      aria-busy={isFetching}
+    >
       <div className="flex items-center justify-between rounded-xl border border-stone-100 bg-stone-50/80 px-2 py-2">
         <button
           type="button"
           onClick={onPrevMonth}
           disabled={isFetching}
+          aria-busy={isFetching}
           className={monthNavButtonClass}
           aria-label="前の月"
         >
           ←
         </button>
-        <p
-          className={`text-sm font-semibold text-stone-800 transition-opacity duration-150 ease-out ${
-            isFetching ? "opacity-70" : "opacity-100"
-          }`}
-        >
-          {monthLabel(cursorMonth)}
-        </p>
+        <div className="flex min-w-0 flex-col items-center gap-1 px-1">
+          <p
+            className={`text-sm font-semibold text-stone-800 transition-opacity duration-150 ease-out ${
+              isFetching ? "opacity-70" : "opacity-100"
+            }`}
+          >
+            {monthLabel(cursorMonth)}
+          </p>
+          {isFetching ? (
+            <OwlLoadingInline label={loadingLabel} size="sm" className="text-xs text-stone-600" />
+          ) : null}
+        </div>
         <button
           type="button"
           onClick={onNextMonth}
           disabled={isFetching}
+          aria-busy={isFetching}
           className={monthNavButtonClass}
           aria-label="次の月"
         >
@@ -106,11 +119,11 @@ export function DiaryMonthCalendar({
         </button>
       </div>
 
+      <div className="relative mt-3">
       <div
-        className={`mt-3 transition-opacity duration-150 ease-out ${
-          isFetching ? "opacity-[0.72]" : "opacity-100"
+        className={`transition-opacity duration-150 ease-out ${
+          isFetching ? "opacity-[0.55]" : "opacity-100"
         }`}
-        aria-busy={isFetching}
       >
         <div className="grid grid-cols-7 gap-1 text-center text-xs text-stone-500">
           {["日", "月", "火", "水", "木", "金", "土"].map((w) => (
@@ -146,6 +159,7 @@ export function DiaryMonthCalendar({
               <button
                 key={`day-${day}`}
                 type="button"
+                disabled={isFetching}
                 onClick={() => onSelectDay(day)}
                 className={[
                   "relative flex min-h-[2.85rem] flex-col overflow-hidden rounded-lg border text-xs transition-colors duration-150 outline-none ring-0",
@@ -188,6 +202,17 @@ export function DiaryMonthCalendar({
             );
           })}
         </div>
+      </div>
+      {isFetching ? (
+        <div
+          className="pointer-events-auto absolute inset-0 z-10 flex items-center justify-center rounded-xl bg-white/45 backdrop-blur-[1px]"
+          aria-hidden
+        >
+          <div className="rounded-xl border border-emerald-100/90 bg-white/95 px-3 py-2.5 shadow-sm sm:px-4">
+            <OwlLoadingInline label={loadingLabel} size="sm" className="text-xs text-stone-700" />
+          </div>
+        </div>
+      ) : null}
       </div>
       <p className="mt-1.5 hidden min-h-[2.5rem] text-[11px] leading-relaxed text-stone-500 sm:block">
         記録がある日をタップすると、下に一覧が表示されます。「今日」と表示されている日が本日です。

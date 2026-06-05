@@ -125,6 +125,11 @@ export function DiaryCalendarHome({
   const fetchGenerationRef = useRef(0);
 
   const monthKey = useMemo(() => toMonthKey(viewMonth), [viewMonth]);
+  const calendarLoadingLabel = !hasLoadedOnce
+    ? "カレンダーを読み込み中です…"
+    : "フクロウ先生が日記の足跡を確認しています…";
+  const CALENDAR_FETCH_ERROR =
+    "日記の足跡を読み込めませんでした。時間をおいて再度お試しください。";
   const returnToBase = useMemo(() => {
     const qs = new URLSearchParams();
     if (selectedDay !== null) {
@@ -169,9 +174,9 @@ export function DiaryCalendarHome({
         setEntries(list);
         setHasLoadedOnce(true);
         if (opts?.clearSelection) setSelectedDay(null);
-      } catch (e) {
+      } catch {
         if (generation !== fetchGenerationRef.current) return;
-        setError(e instanceof Error ? e.message : "記録の取得に失敗しました。");
+        setError(CALENDAR_FETCH_ERROR);
       } finally {
         if (generation === fetchGenerationRef.current) {
           setIsFetching(false);
@@ -206,10 +211,12 @@ export function DiaryCalendarHome({
 
   const shiftMonth = useCallback(
     (delta: -1 | 1) => {
+      if (isFetching) return;
       const next = new Date(viewMonth.getFullYear(), viewMonth.getMonth() + delta, 1);
-      void loadMonthFor(next, { clearSelection: true });
+      setSelectedDay(null);
+      setViewMonth(next);
     },
-    [loadMonthFor, viewMonth],
+    [isFetching, viewMonth],
   );
 
   const selectedDayEntries = useMemo(() => {
@@ -331,7 +338,8 @@ export function DiaryCalendarHome({
             cursorMonth={viewMonth}
             entries={entries}
             selectedDay={selectedDay}
-            isFetching={isFetching || !hasLoadedOnce}
+            isFetching={isFetching}
+            loadingLabel={calendarLoadingLabel}
             onSelectDay={handleSelectDay}
             onPrevMonth={() => shiftMonth(-1)}
             onNextMonth={() => shiftMonth(1)}
@@ -340,9 +348,6 @@ export function DiaryCalendarHome({
             <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800">
               {error}
             </p>
-          ) : null}
-          {!hasLoadedOnce && isFetching ? (
-            <p className="sr-only">カレンダーを読み込み中</p>
           ) : null}
         </div>
 
