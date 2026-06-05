@@ -25,6 +25,8 @@ import {
   journalEditPath,
   journalNewEntryPath,
   journalPreviewPath,
+  monthAnchorFromMonthKey,
+  parseMonthKeyParam,
 } from "@/lib/journal/journalNav";
 import { getActivityMeta, getMoodMeta } from "@/lib/journal/meta";
 
@@ -108,8 +110,10 @@ export function DiaryCalendarHome({
   }, [profiles, effectiveProfileId, activeProfileNickname]);
 
   const initialDay = parseDayParam(searchParams.get("day"));
+  const initialMonthKey = parseMonthKeyParam(searchParams.get("month"));
   const [viewMonth, setViewMonth] = useState(() => {
     if (initialDay) return new Date(initialDay.year, initialDay.monthIndex, 1);
+    if (initialMonthKey) return monthAnchorFromMonthKey(initialMonthKey);
     return dayGridAnchor(new Date());
   });
   const [selectedDay, setSelectedDay] = useState<number | null>(initialDay?.day ?? null);

@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, Suspense, useCallback, useEffect, useMemo, useState } from "react";
+import { FormEvent, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useFirebaseAuth } from "@/components/auth/FirebaseAuthProvider";
@@ -19,6 +19,10 @@ import {
 import { JournalWritingComposer } from "@/components/journal/JournalWritingComposer";
 import { JournalContentLengthAlerts } from "@/components/journal/JournalContentLengthAlerts";
 import { parseSafeJournalReturnTo } from "@/lib/journal/bookshelfReturnTo";
+import {
+  journalCalendarPathForMonth,
+  resolveJournalEntryMonthKey,
+} from "@/lib/journal/journalNav";
 import {
   CONTENT_FONT_MODE_LABELS_JA,
   CONTENT_FONT_MODES,
@@ -172,6 +176,58 @@ function JournalPageContent() {
   const [navigatingToPreview, setNavigatingToPreview] = useState(false);
   const [kanteiOrderExists, setKanteiOrderExists] = useState<boolean | undefined>(undefined);
 
+  const photoInputRef = useRef<HTMLInputElement>(null);
+  const editLoadGenerationRef = useRef(0);
+
+  const resetJournalFormState = useCallback(() => {
+    setContent("");
+    setMood("calm");
+    setActivity("record_anyway");
+    setContentFontMode(DEFAULT_CONTENT_FONT_MODE);
+    setEntryDate(toDateInputValue(new Date()));
+    setPhotoDataUrl("");
+    setExistingPhotoSrc("");
+    setPhotoDirty(false);
+    setSelectedPhotoFile(null);
+    setCropOffset(50);
+    setProcessingPhoto(false);
+    setNumerologyDebug(null);
+    setLoadingEdit(false);
+    setOwlRegenLoading(false);
+    setNavigatingToPreview(false);
+    if (photoInputRef.current) {
+      photoInputRef.current.value = "";
+    }
+  }, []);
+
+  const monthKeyFromEditingContext = useCallback(
+    (entryId?: string | null): string | null => {
+      const id = entryId?.trim() || editingId?.trim() || "";
+      const target = id ? entries.find((e) => e.id === id) : undefined;
+      return resolveJournalEntryMonthKey({
+        createdAt: target?.createdAt,
+        entryDateYmd: entryDate,
+      });
+    },
+    [editingId, entries, entryDate],
+  );
+
+  const navigateToEntryMonthCalendar = useCallback(
+    (monthKey: string | null) => {
+      router.push(
+        monthKey ? journalCalendarPathForMonth(monthKey) : "/orders/calendar",
+      );
+    },
+    [router],
+  );
+
+  const cancelEditingAndReturnToCalendar = useCallback(() => {
+    const monthKey = monthKeyFromEditingContext();
+    editLoadGenerationRef.current += 1;
+    resetJournalFormState();
+    navigateToEntryMonthCalendar(monthKey);
+  }, [monthKeyFromEditingContext, navigateToEntryMonthCalendar, resetJournalFormState]);
+
   const loadEntries = useCallback(async (opts?: { silent?: boolean }) => {
     const silent = opts?.silent ?? false;
     if (!silent) {
@@ -313,6 +369,7 @@ function JournalPageContent() {
       setNumerologyDebug(null);
       return;
     }
+    const generation = ++editLoadGenerationRef.current;
     setLoadingEdit(true);
     setError(null);
     const qs = new URLSearchParams();
@@ -323,6 +380,7 @@ function JournalPageContent() {
       credentials: "same-origin",
     })
       .then(async (res) => {
+        if (generation !== editLoadGenerationRef.current) return;
         const data = (await res.json()) as {
           entry?: Entry;
           kanteiOrderExists?: boolean;
@@ -343,6 +401,8 @@ function JournalPageContent() {
         );
         setPhotoDirty(false);
         setSelectedPhotoFile(null);
+        setCropOffset(50);
+        if (photoInputRef.current) photoInputRef.current.value = "";
         setEntryDate(
           toDateInputValueUtc(
             new Date(data.entry.createdAt != null ? data.entry.createdAt : Date.now()),
@@ -359,12 +419,27 @@ function JournalPageContent() {
         }
       })
       .catch((e) => {
+        if (generation !== editLoadGenerationRef.current) return;
+        editLoadGenerationRef.current += 1;
+        resetJournalFormState();
+        const href = profileId
+          ? `/journal?profile=${encodeURIComponent(profileId)}`
+          : "/journal";
+        router.replace(href);
         setError(e instanceof Error ? e.message : "編集対象の読み込みに失敗しました。");
       })
       .finally(() => {
+        if (generation !== editLoadGenerationRef.current) return;
         setLoadingEdit(false);
       });
-  }, [editingId, router, searchParams, showNumerologyDebug]);
+  }, [
+    editingId,
+    profileId,
+    resetJournalFormState,
+    router,
+    searchParams,
+    showNumerologyDebug,
+  ]);
 
   useEffect(() => {
     if (!selectedPhotoFile) return;
@@ -444,13 +519,7 @@ function JournalPageContent() {
         router.push(`/journal/preview?${previewQs.toString()}`);
         return;
       }
-      setContent("");
-      setPhotoDataUrl("");
-      setExistingPhotoSrc("");
-      setPhotoDirty(false);
-      setSelectedPhotoFile(null);
-      setContentFontMode(DEFAULT_CONTENT_FONT_MODE);
-      setEntryDate(toDateInputValue(new Date()));
+      resetJournalFormState();
       await loadEntries({ silent: true });
       if (options?.redirectToOrders) {
         router.push("/orders");
@@ -538,26 +607,11 @@ function JournalPageContent() {
     const ok = window.confirm("この記録を本当に削除しますか？");
     if (!ok) return;
 
-    const editingThis = editingId === entryId;
+    const monthKey = monthKeyFromEditingContext(entryId);
 
     setDeletingId(entryId);
     setError(null);
-
-    // 先頭＝最新記事は ?edit= と一致しやすい。URL とフォームを先に外して編集再取得との競合を防ぐ。
-    if (editingThis) {
-      const href = profileId
-        ? `/journal?profile=${encodeURIComponent(profileId)}`
-        : "/journal";
-      router.replace(href);
-      setContent("");
-      setPhotoDataUrl("");
-      setSelectedPhotoFile(null);
-      setMood("calm");
-      setActivity("record_anyway");
-      setContentFontMode(DEFAULT_CONTENT_FONT_MODE);
-      setEntryDate(toDateInputValue(new Date()));
-      setNumerologyDebug(null);
-    }
+    editLoadGenerationRef.current += 1;
 
     try {
       const res = await fetch(`/api/journal/${encodeURIComponent(entryId)}`, {
@@ -569,8 +623,8 @@ function JournalPageContent() {
         setError(data.error ?? "削除に失敗しました。");
         return;
       }
-      setEntries((prev) => prev.filter((e) => e.id !== entryId));
-      await loadEntries({ silent: true });
+      resetJournalFormState();
+      navigateToEntryMonthCalendar(monthKey);
     } catch {
       setError("削除時の通信に失敗しました。");
     } finally {
@@ -752,6 +806,7 @@ function JournalPageContent() {
             この日の写真（任意）
           </label>
           <input
+            ref={photoInputRef}
             id="journal-photo"
             type="file"
             accept="image/*"
@@ -939,15 +994,7 @@ function JournalPageContent() {
               type="button"
               disabled={saving || processingPhoto}
               onClick={() => {
-                setContent("");
-                setPhotoDataUrl("");
-                setExistingPhotoSrc("");
-                setPhotoDirty(false);
-                setSelectedPhotoFile(null);
-                setMood("calm");
-                setActivity("record_anyway");
-                setContentFontMode(DEFAULT_CONTENT_FONT_MODE);
-                setEntryDate(toDateInputValue(new Date()));
+                resetJournalFormState();
                 setError(null);
               }}
               className="whitespace-nowrap rounded-lg border border-stone-300 bg-white px-4 py-2 text-sm font-medium text-stone-700 transition hover:bg-stone-50 disabled:opacity-60"
@@ -957,19 +1004,8 @@ function JournalPageContent() {
             {editingId ? (
               <button
                 type="button"
-                disabled={saving || processingPhoto}
-                onClick={() => {
-                  setContent("");
-                  setPhotoDataUrl("");
-                  setExistingPhotoSrc("");
-                  setPhotoDirty(false);
-                  setSelectedPhotoFile(null);
-                  setMood("calm");
-                  setActivity("record_anyway");
-                  setContentFontMode(DEFAULT_CONTENT_FONT_MODE);
-                  setEntryDate(toDateInputValue(new Date()));
-                  router.replace("/journal");
-                }}
+                disabled={saving || processingPhoto || deletingId === editingId}
+                onClick={cancelEditingAndReturnToCalendar}
                 className="whitespace-nowrap rounded-lg border border-stone-300 bg-white px-4 py-2 text-sm font-medium text-stone-700 transition hover:bg-stone-50 disabled:opacity-60"
               >
                 編集をやめる

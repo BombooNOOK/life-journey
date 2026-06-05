@@ -15,6 +15,52 @@ export function entryDayKeyInJapan(createdAt: string): string {
   return calendarDayKeyInJapan(new Date(createdAt));
 }
 
+/** `YYYY-MM`（カレンダー month クエリ用） */
+export function parseMonthKeyParam(value: string | null | undefined): string | null {
+  if (!value?.trim()) return null;
+  const m = /^(\d{4})-(\d{2})$/.exec(value.trim());
+  if (!m) return null;
+  const year = Number(m[1]);
+  const month = Number(m[2]);
+  if (!Number.isFinite(year) || month < 1 || month > 12) return null;
+  const probe = new Date(year, month - 1, 1);
+  if (probe.getFullYear() !== year || probe.getMonth() !== month - 1) return null;
+  return `${m[1]}-${m[2]}`;
+}
+
+export function monthAnchorFromMonthKey(monthKey: string): Date {
+  const parsed = parseMonthKeyParam(monthKey);
+  if (!parsed) return new Date();
+  const [y, m] = parsed.split("-").map(Number);
+  return new Date(y, m - 1, 1);
+}
+
+/** 記録日（日本時間）から `YYYY-MM` */
+export function entryMonthKeyFromCreatedAt(createdAt: string): string {
+  return entryDayKeyInJapan(createdAt).slice(0, 7);
+}
+
+export function journalCalendarPathForMonth(monthKey: string): string {
+  const parsed = parseMonthKeyParam(monthKey);
+  const key = parsed ?? monthKey.trim();
+  return `/orders/calendar?month=${encodeURIComponent(key)}`;
+}
+
+/** 記録の createdAt または YYYY-MM-DD からカレンダー month キーを得る */
+export function resolveJournalEntryMonthKey(params: {
+  createdAt?: string | null;
+  entryDateYmd?: string | null;
+}): string | null {
+  if (params.createdAt?.trim()) {
+    return entryMonthKeyFromCreatedAt(params.createdAt.trim());
+  }
+  const ymd = params.entryDateYmd?.trim() ?? "";
+  if (/^\d{4}-\d{2}-\d{2}$/.test(ymd)) {
+    return parseMonthKeyParam(ymd.slice(0, 7));
+  }
+  return null;
+}
+
 export function journalPreviewPath(
   entryId: string,
   designTheme: string | null | undefined,
