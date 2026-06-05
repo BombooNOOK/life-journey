@@ -5,6 +5,9 @@ import type { BoundDiaryEntry } from "@/components/journal/DiaryYearBoundPages";
 import { diaryBookEntriesInMonth } from "@/lib/journal/diaryBookPages";
 import { getMoodMeta } from "@/lib/journal/meta";
 import {
+  diaryBookPdfFullBleedImageStyle,
+  diaryBookPdfOverlayRootStyle,
+  diaryBookPdfPageStyle,
   diaryBookPdfPct,
   DIARY_BOOK_PDF_PAGE_WIDTH_PT,
 } from "@/lib/journal/diaryBookPrintPdfLayout";
@@ -13,13 +16,9 @@ const WEEKDAY_LABELS = ["日", "月", "火", "水", "木", "金", "土"] as cons
 const CALENDAR_ROWS = 6;
 
 const styles = StyleSheet.create({
-  page: {
-    padding: 0,
-  },
-  background: {
-    width: "100%",
-    height: "100%",
-    objectFit: "cover",
+  content: {
+    position: "absolute",
+    alignItems: "center",
   },
   titleYear: {
     fontFamily: "NotoSansJP",
@@ -50,6 +49,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     marginTop: 8,
     marginBottom: 4,
+    width: "100%",
   },
   weekdayCell: {
     flex: 1,
@@ -61,10 +61,11 @@ const styles = StyleSheet.create({
   calendarGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
+    width: "100%",
   },
   dayCell: {
     width: `${100 / 7}%`,
-    height: 22,
+    height: 20,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -80,19 +81,21 @@ const styles = StyleSheet.create({
     color: "#365314",
   },
   summaryBox: {
-    marginTop: 10,
-    paddingVertical: 8,
+    marginTop: 8,
+    paddingVertical: 6,
     paddingHorizontal: 10,
     borderWidth: 1,
     borderColor: "#c9d2bc",
     backgroundColor: "#f2f0e8",
     borderRadius: 4,
+    width: "100%",
   },
   summaryText: {
     fontFamily: "NotoSansJP",
     fontSize: 9,
     color: "#44403c",
     lineHeight: 1.45,
+    textAlign: "center",
   },
 });
 
@@ -159,52 +162,65 @@ export function DiaryBookMonthIndexPdfPage({
   const contentLeft = (DIARY_BOOK_PDF_PAGE_WIDTH_PT - contentWidth) / 2;
 
   return (
-    <Page size="A5" orientation="portrait" style={styles.page}>
-      <Image cache={false} src={backgroundSrc} style={styles.background} />
-      <View
-        style={{
-          position: "absolute",
-          top: contentTop,
-          left: contentLeft,
-          width: contentWidth,
-        }}
-      >
-        <View style={{ alignItems: "center" }}>
-          <View style={{ flexDirection: "row", alignItems: "baseline" }}>
-            <Text style={styles.titleYear}>{year}</Text>
-            <Text style={styles.titleYearSuffix}>年</Text>
-          </View>
-          <View style={{ flexDirection: "row", alignItems: "baseline", marginTop: 4 }}>
-            <Text style={styles.titleMonth}>{month}</Text>
-            <Text style={styles.titleMonthSuffix}>月</Text>
-          </View>
-        </View>
-
-        <View style={styles.weekdayRow}>
-          {WEEKDAY_LABELS.map((label) => (
-            <Text key={label} style={styles.weekdayCell}>
-              {label}
-            </Text>
-          ))}
-        </View>
-
-        <View style={styles.calendarGrid}>
-          {cells.map((cell, index) => (
-            <View key={index} style={styles.dayCell}>
-              {cell.day != null ? (
-                <Text style={cell.hasEntry ? styles.dayTextWithEntry : styles.dayText}>
-                  {cell.day}
-                </Text>
-              ) : null}
+    <Page size="A5" orientation="portrait" style={diaryBookPdfPageStyle} wrap={false}>
+      <Image cache={false} src={backgroundSrc} style={diaryBookPdfFullBleedImageStyle} />
+      <View style={diaryBookPdfOverlayRootStyle}>
+        <View
+          wrap={false}
+          style={[
+            styles.content,
+            {
+              top: contentTop,
+              left: contentLeft,
+              width: contentWidth,
+            },
+          ]}
+        >
+          <View wrap={false} style={{ alignItems: "center" }}>
+            <View style={{ flexDirection: "row", alignItems: "baseline" }}>
+              <Text style={styles.titleYear} wrap={false}>
+                {year}
+              </Text>
+              <Text style={styles.titleYearSuffix} wrap={false}>
+                年
+              </Text>
             </View>
-          ))}
-        </View>
+            <View style={{ flexDirection: "row", alignItems: "baseline", marginTop: 4 }}>
+              <Text style={styles.titleMonth} wrap={false}>
+                {month}
+              </Text>
+              <Text style={styles.titleMonthSuffix} wrap={false}>
+                月
+              </Text>
+            </View>
+          </View>
 
-        <View style={styles.summaryBox}>
-          <Text style={styles.summaryText}>
-            記録 {monthEntries.length} 件
-            {moodLabel ? ` · よくあった気分: ${moodLabel}` : ""}
-          </Text>
+          <View wrap={false} style={styles.weekdayRow}>
+            {WEEKDAY_LABELS.map((label) => (
+              <Text key={label} style={styles.weekdayCell} wrap={false}>
+                {label}
+              </Text>
+            ))}
+          </View>
+
+          <View wrap={false} style={styles.calendarGrid}>
+            {cells.map((cell, index) => (
+              <View key={index} style={styles.dayCell} wrap={false}>
+                {cell.day != null ? (
+                  <Text style={cell.hasEntry ? styles.dayTextWithEntry : styles.dayText} wrap={false}>
+                    {cell.day}
+                  </Text>
+                ) : null}
+              </View>
+            ))}
+          </View>
+
+          <View wrap={false} style={styles.summaryBox}>
+            <Text style={styles.summaryText} wrap={false}>
+              記録 {monthEntries.length} 件
+              {moodLabel ? ` · よくあった気分: ${moodLabel}` : ""}
+            </Text>
+          </View>
         </View>
       </View>
     </Page>

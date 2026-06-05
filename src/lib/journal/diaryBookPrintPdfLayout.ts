@@ -21,3 +21,27 @@ export function parseCssPx(value: string): number {
   const n = parseFloat(value);
   return Number.isFinite(n) ? n : 11;
 }
+
+/** 1ページ内に収める（PNG 実寸による自動改ページを防ぐ） */
+export const diaryBookPdfPageStyle = {
+  padding: 0,
+  width: DIARY_BOOK_PDF_PAGE_WIDTH_PT,
+  height: DIARY_BOOK_PDF_PAGE_HEIGHT_PT,
+} as const;
+
+export const diaryBookPdfFullBleedImageStyle = {
+  position: "absolute" as const,
+  left: 0,
+  top: 0,
+  width: DIARY_BOOK_PDF_PAGE_WIDTH_PT,
+  height: DIARY_BOOK_PDF_PAGE_HEIGHT_PT,
+  objectFit: "cover" as const,
+};
+
+export const diaryBookPdfOverlayRootStyle = {
+  position: "absolute" as const,
+  left: 0,
+  top: 0,
+  width: DIARY_BOOK_PDF_PAGE_WIDTH_PT,
+  height: DIARY_BOOK_PDF_PAGE_HEIGHT_PT,
+};

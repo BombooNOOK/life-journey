@@ -23,6 +23,9 @@ import {
 } from "@/lib/journal/diaryPreviewFixedLayout";
 import { getActivityMeta, getMoodMeta } from "@/lib/journal/meta";
 import {
+  diaryBookPdfFullBleedImageStyle,
+  diaryBookPdfOverlayRootStyle,
+  diaryBookPdfPageStyle,
   diaryBookPdfPct,
   diaryBookPdfPx,
   parseCssPx,
@@ -31,21 +34,6 @@ import {
 const WEEKDAY_LABELS = ["日", "月", "火", "水", "木", "金", "土"] as const;
 
 const styles = StyleSheet.create({
-  page: {
-    padding: 0,
-  },
-  background: {
-    width: "100%",
-    height: "100%",
-    objectFit: "cover",
-  },
-  overlay: {
-    position: "absolute",
-    left: 0,
-    top: 0,
-    right: 0,
-    bottom: 0,
-  },
   dateText: {
     position: "absolute",
     fontFamily: "NotoSansJP",
@@ -56,6 +44,12 @@ const styles = StyleSheet.create({
     position: "absolute",
     fontFamily: "NotoSansJP",
     color: "#44403c",
+    overflow: "hidden",
+  },
+  activityText: {
+    fontFamily: "NotoSansJP",
+    color: "#44403c",
+    width: "100%",
   },
   bodyBox: {
     position: "absolute",
@@ -66,12 +60,18 @@ const styles = StyleSheet.create({
   bodyLine: {
     fontFamily: "NotoSansJP",
     color: "rgba(68, 64, 60, 0.9)",
+    width: "100%",
   },
   commentBox: {
     position: "absolute",
     overflow: "hidden",
     fontFamily: "NotoSansJP",
     color: "rgba(68, 64, 60, 0.85)",
+  },
+  commentText: {
+    fontFamily: "NotoSansJP",
+    color: "rgba(68, 64, 60, 0.85)",
+    width: "100%",
   },
   numberSlot: {
     position: "absolute",
@@ -155,6 +155,7 @@ export function DiaryBookEntryPdfPage({
   const commentRegion = regionBoxToPx(DIARY_PREVIEW_COMMENT_REGION);
   const commentPadding = parsePadding(DIARY_PREVIEW_COMMENT_INNER_PADDING);
   const bodyClipHeight = diaryBookPdfPx(getDiaryPreviewBodySafeScrollHeightPx(), "y");
+  const bodyWidth = diaryBookPdfPx(bodyRegion.width, "x");
 
   const owlComment =
     entry.generatedComment?.trim() ||
@@ -171,13 +172,16 @@ export function DiaryBookEntryPdfPage({
   const bodyFontSize = diaryBookPdfPx(parseCssPx(bodyTextStyle.fontSize), "x");
   const bodyLineHeight = parseFloat(bodyTextStyle.lineHeight) || 1.575;
   const activityFontSize = diaryBookPdfPx(parseCssPx(activityTextStyle.fontSize), "x");
+  const activityWidth = diaryBookPdfPct("64.8%", "x");
   const commentFontSize = diaryBookPdfPx(parseCssPx(DIARY_PREVIEW_COMMENT_TEXT_STYLE.fontSize), "x");
+  const commentWidth = diaryBookPdfPx(commentRegion.width, "x");
   const numberFontSize = diaryBookPdfPx(parseCssPx(DIARY_PREVIEW_NUMBER_STYLE.fontSize), "x");
   const moodFontSize = diaryBookPdfPx(DIARY_PREVIEW_MOOD_EMOJI.fontSizePx, "x");
 
   const numberSlotWidth = diaryBookPdfPx(DIARY_PREVIEW_NUMBER_STYLE.slotWidthPx, "x");
   const numberSlotHeight = diaryBookPdfPx(DIARY_PREVIEW_NUMBER_STYLE.slotHeightPx, "y");
   const moodBoxSize = diaryBookPdfPx(DIARY_PREVIEW_MOOD_EMOJI.boxPx, "x");
+  const numberCenterX = diaryBookPdfPct(layout.numberLeft, "x");
 
   const photoWidth = diaryBookPdfPct(layout.photoWidth, "x");
   const photoLeft = diaryBookPdfPct(layout.photoLeft, "x");
@@ -199,12 +203,13 @@ export function DiaryBookEntryPdfPage({
   ] as const;
 
   return (
-    <Page size="A5" orientation="portrait" style={styles.page}>
-      <Image cache={false} src={templateSrc} style={styles.background} />
-      <View style={styles.overlay}>
+    <Page size="A5" orientation="portrait" style={diaryBookPdfPageStyle} wrap={false}>
+      <Image cache={false} src={templateSrc} style={diaryBookPdfFullBleedImageStyle} />
+      <View style={diaryBookPdfOverlayRootStyle}>
         {dateSlots.map((slot) => (
           <Text
             key={slot.left}
+            wrap={false}
             style={[
               styles.dateText,
               {
@@ -219,6 +224,7 @@ export function DiaryBookEntryPdfPage({
         ))}
 
         <View
+          wrap={false}
           style={[
             styles.activityBox,
             {
@@ -226,23 +232,26 @@ export function DiaryBookEntryPdfPage({
               top:
                 diaryBookPdfPx(DIARY_PREVIEW_ACTIVITY_ANSWER_SLOT_TOP_PX, "y") +
                 diaryBookPdfPx(DIARY_PREVIEW_ACTIVITY_ANSWER_NUDGE_Y_PX, "y"),
-              width: diaryBookPdfPct("64.8%", "x"),
+              width: activityWidth,
               height: diaryBookPdfPx(DIARY_PREVIEW_ACTIVITY_ANSWER_SLOT_HEIGHT_PX, "y"),
               fontSize: activityFontSize,
               lineHeight: 1.25,
             },
           ]}
         >
-          <Text>{trimmedActivity}</Text>
+          <Text wrap style={[styles.activityText, { fontSize: activityFontSize, lineHeight: 1.25 }]}>
+            {trimmedActivity}
+          </Text>
         </View>
 
         <View
+          wrap={false}
           style={[
             styles.bodyBox,
             {
               left: diaryBookPdfPx(bodyRegion.left, "x"),
               top: diaryBookPdfPx(bodyRegion.top, "y"),
-              width: diaryBookPdfPx(bodyRegion.width, "x"),
+              width: bodyWidth,
               height: bodyClipHeight,
               fontSize: bodyFontSize,
               lineHeight: bodyLineHeight,
@@ -250,19 +259,24 @@ export function DiaryBookEntryPdfPage({
           ]}
         >
           {bodyLines.map((line, index) => (
-            <Text key={index} style={styles.bodyLine}>
+            <Text
+              key={index}
+              wrap={false}
+              style={[styles.bodyLine, { fontSize: bodyFontSize, lineHeight: bodyLineHeight, width: bodyWidth }]}
+            >
               {line.length > 0 ? line : " "}
             </Text>
           ))}
         </View>
 
         <View
+          wrap={false}
           style={[
             styles.commentBox,
             {
               left: diaryBookPdfPx(commentRegion.left, "x"),
               top: diaryBookPdfPx(commentRegion.top, "y"),
-              width: diaryBookPdfPx(commentRegion.width, "x"),
+              width: commentWidth,
               height: diaryBookPdfPx(commentRegion.height, "y"),
               paddingTop: commentPadding.top,
               paddingRight: commentPadding.right,
@@ -273,47 +287,58 @@ export function DiaryBookEntryPdfPage({
             },
           ]}
         >
-          <Text>{owlComment}</Text>
+          <Text
+            wrap
+            style={[
+              styles.commentText,
+              {
+                fontSize: commentFontSize,
+                lineHeight: parseFloat(DIARY_PREVIEW_COMMENT_TEXT_STYLE.lineHeight) || 1.62,
+                width: commentWidth - commentPadding.left - commentPadding.right,
+              },
+            ]}
+          >
+            {owlComment}
+          </Text>
         </View>
 
         {numberSlots.map((slot) => (
           <View
             key={slot.top}
+            wrap={false}
             style={[
               styles.numberSlot,
               {
-                left: diaryBookPdfPct(layout.numberLeft, "x"),
-                top: diaryBookPdfPct(slot.top, "y"),
+                left: numberCenterX - numberSlotWidth / 2,
+                top: diaryBookPdfPct(slot.top, "y") - numberSlotHeight / 2,
                 width: numberSlotWidth,
                 height: numberSlotHeight,
-                marginLeft: -numberSlotWidth / 2,
-                marginTop: -numberSlotHeight / 2,
                 fontSize: numberFontSize,
               },
             ]}
           >
-            <Text>{slot.value}</Text>
+            <Text wrap={false}>{slot.value}</Text>
           </View>
         ))}
 
         <View
+          wrap={false}
           style={[
             styles.moodSlot,
             {
-              left: diaryBookPdfPct(layout.numberLeft, "x"),
-              top: diaryBookPdfPct(layout.numberCalmTop, "y"),
+              left: numberCenterX - moodBoxSize / 2,
+              top: diaryBookPdfPct(layout.numberCalmTop, "y") - moodBoxSize * 0.44,
               width: moodBoxSize,
               height: moodBoxSize,
-              marginLeft: -moodBoxSize / 2,
-              marginTop: -moodBoxSize * 0.44,
               fontSize: moodFontSize,
             },
           ]}
         >
-          <Text>{moodLabel}</Text>
+          <Text wrap={false}>{moodLabel}</Text>
         </View>
 
         <View
+          wrap={false}
           style={[
             styles.photoFrame,
             {
