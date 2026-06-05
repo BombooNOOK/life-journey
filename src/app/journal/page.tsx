@@ -459,6 +459,19 @@ function JournalPageContent() {
       });
   }, [selectedPhotoFile, cropOffset]);
 
+  function removePhoto() {
+    if (!photoDataUrl.trim() && !existingPhotoSrc.trim()) return;
+    if (!window.confirm("この写真を削除しますか？本文は残ります。")) return;
+    setPhotoDataUrl("");
+    setExistingPhotoSrc("");
+    setSelectedPhotoFile(null);
+    setPhotoDirty(true);
+    setCropOffset(50);
+    if (photoInputRef.current) {
+      photoInputRef.current.value = "";
+    }
+  }
+
   async function saveEntry(options?: { redirectToOrders?: boolean; redirectToPreview?: boolean }) {
     setError(null);
 
@@ -843,11 +856,21 @@ function JournalPageContent() {
             <p className="text-xs text-stone-500">写真を最適化しています…</p>
           ) : null}
           {photoDataUrl || existingPhotoSrc ? (
-            <img
-              src={photoDataUrl || existingPhotoSrc}
-              alt="選択した写真プレビュー"
-              className="aspect-square w-full max-w-xs rounded-lg border border-stone-200 bg-[#f7f4ee] object-contain"
-            />
+            <div className="space-y-2">
+              <img
+                src={photoDataUrl || existingPhotoSrc}
+                alt="選択した写真プレビュー"
+                className="aspect-square w-full max-w-xs rounded-lg border border-stone-200 bg-[#f7f4ee] object-contain"
+              />
+              <button
+                type="button"
+                onClick={removePhoto}
+                disabled={saving || loadingEdit || processingPhoto}
+                className="text-xs text-stone-600 underline underline-offset-2 hover:text-stone-800 disabled:opacity-50"
+              >
+                写真を削除する
+              </button>
+            </div>
           ) : null}
         </div>
 
