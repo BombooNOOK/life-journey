@@ -5,6 +5,25 @@ import {
   parseDiaryBookDateRange,
 } from "@/lib/journal/diaryBookPeriod";
 
+/** 記事の最終変更時刻（DB の updatedAt。createdAt は記録日 UTC 正午のため比較に使わない） */
+export function journalEntryLastChangedAt(entry: {
+  createdAt: Date | string;
+  updatedAt?: Date | string;
+}): Date {
+  return entry.updatedAt ? new Date(entry.updatedAt) : new Date(entry.createdAt);
+}
+
+/** 日記ブック更新後に、記事側に未反映の変更があるか */
+export function journalEntryChangedAfterDiaryBookRefresh(
+  entry: {
+    createdAt: Date | string;
+    updatedAt?: Date | string;
+  },
+  bookUpdatedAt: Date,
+): boolean {
+  return journalEntryLastChangedAt(entry).getTime() > bookUpdatedAt.getTime();
+}
+
 /** 日記ブックに反映済みの記事か（includeInBook ON かつ最終更新が book.updatedAt 以前） */
 export function entryVisibleInDiaryBookSnapshot(
   entry: {
@@ -15,10 +34,7 @@ export function entryVisibleInDiaryBookSnapshot(
   bookUpdatedAt: Date,
 ): boolean {
   if (!isEntryIncludedInDiaryBook(entry)) return false;
-  const created = new Date(entry.createdAt);
-  const updated = entry.updatedAt ? new Date(entry.updatedAt) : created;
-  const asOf = bookUpdatedAt.getTime();
-  return created.getTime() <= asOf && updated.getTime() <= asOf;
+  return !journalEntryChangedAfterDiaryBookRefresh(entry, bookUpdatedAt);
 }
 
 export async function countDiaryBookSnapshotEntries(params: {
@@ -69,7 +85,7 @@ export async function diaryBookNeedsContentRefresh(params: {
       email: params.email,
       profileId: params.profileId,
       createdAt,
-      OR: [{ createdAt: { gt: asOf } }, { updatedAt: { gt: asOf } }],
+      updatedAt: { gt: asOf },
     },
     select: { id: true },
   });
@@ -81,7 +97,7 @@ export async function refreshDiaryBookContent(params: {
   bookId: string;
   viewerEmail: string;
 }): Promise<
-  | { ok: true; entryCount: number; updatedAt: string }
+  | { ok: true; entryCount: number; updatedAt: string; needsContentRefresh: false }
   | { ok: false; status: number; error: string; code: string }
 > {
   const row = await prisma.diaryBook.findFirst({
@@ -108,5 +124,6 @@ export async function refreshDiaryBookContent(params: {
     ok: true,
     entryCount,
     updatedAt: updated.updatedAt.toISOString(),
+    needsContentRefresh: false,
   };
 }

@@ -45,6 +45,7 @@ export async function POST(_: Request, { params }: RouteParams) {
     {
       entryCount: result.entryCount,
       updatedAt: result.updatedAt,
+      needsContentRefresh: result.needsContentRefresh,
       code: "OK",
     },
     JSON_NO_STORE,

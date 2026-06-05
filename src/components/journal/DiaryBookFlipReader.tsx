@@ -180,13 +180,13 @@ export function DiaryBookFlipReader({
         `/api/journal/diary-books/${encodeURIComponent(bookId)}/refresh`,
         { method: "POST", credentials: "same-origin" },
       );
-      const data = await parseFetchJsonResponse<{ error?: string }>(
-        res,
-        "日記ブックの更新に失敗しました。",
-      );
+      const data = await parseFetchJsonResponse<{
+        error?: string;
+        needsContentRefresh?: boolean;
+      }>(res, "日記ブックの更新に失敗しました。");
       if (!res.ok) throw new Error(data.error ?? "日記ブックの更新に失敗しました。");
+      setNeedsContentRefresh(data.needsContentRefresh === true);
       await loadEntries({ silent: true });
-      setNeedsContentRefresh(false);
     } catch (e) {
       setError(e instanceof Error ? e.message : "日記ブックの更新に失敗しました。");
     } finally {
