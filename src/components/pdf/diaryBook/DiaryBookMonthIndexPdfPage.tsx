@@ -1,13 +1,11 @@
 import React from "react";
-import { Image, Page, StyleSheet, Text, View } from "@react-pdf/renderer";
+import { StyleSheet, Text, View } from "@react-pdf/renderer";
 
+import { DiaryBookPdfPageCanvas } from "@/components/pdf/diaryBook/DiaryBookPdfPageCanvas";
 import type { BoundDiaryEntry } from "@/components/journal/DiaryYearBoundPages";
 import { diaryBookEntriesInMonth } from "@/lib/journal/diaryBookPages";
 import { getMoodMeta } from "@/lib/journal/meta";
 import {
-  diaryBookPdfFullBleedImageStyle,
-  diaryBookPdfOverlayRootStyle,
-  diaryBookPdfPageStyle,
   diaryBookPdfPct,
   DIARY_BOOK_PDF_PAGE_WIDTH_PT,
 } from "@/lib/journal/diaryBookPrintPdfLayout";
@@ -162,67 +160,56 @@ export function DiaryBookMonthIndexPdfPage({
   const contentLeft = (DIARY_BOOK_PDF_PAGE_WIDTH_PT - contentWidth) / 2;
 
   return (
-    <Page size="A5" orientation="portrait" style={diaryBookPdfPageStyle} wrap={false}>
-      <Image cache={false} src={backgroundSrc} style={diaryBookPdfFullBleedImageStyle} />
-      <View style={diaryBookPdfOverlayRootStyle}>
-        <View
-          wrap={false}
-          style={[
-            styles.content,
-            {
-              top: contentTop,
-              left: contentLeft,
-              width: contentWidth,
-            },
-          ]}
-        >
-          <View wrap={false} style={{ alignItems: "center" }}>
-            <View style={{ flexDirection: "row", alignItems: "baseline" }}>
-              <Text style={styles.titleYear} wrap={false}>
-                {year}
-              </Text>
-              <Text style={styles.titleYearSuffix} wrap={false}>
-                年
-              </Text>
-            </View>
-            <View style={{ flexDirection: "row", alignItems: "baseline", marginTop: 4 }}>
-              <Text style={styles.titleMonth} wrap={false}>
-                {month}
-              </Text>
-              <Text style={styles.titleMonthSuffix} wrap={false}>
-                月
-              </Text>
-            </View>
+    <DiaryBookPdfPageCanvas backgroundSrc={backgroundSrc}>
+      <View
+        wrap={false}
+        style={[
+          styles.content,
+          {
+            top: contentTop,
+            left: contentLeft,
+            width: contentWidth,
+          },
+        ]}
+      >
+        <View wrap={false} style={{ alignItems: "center" }}>
+          <View style={{ flexDirection: "row", alignItems: "baseline" }}>
+            <Text style={styles.titleYear}>{year}</Text>
+            <Text style={styles.titleYearSuffix}>年</Text>
           </View>
-
-          <View wrap={false} style={styles.weekdayRow}>
-            {WEEKDAY_LABELS.map((label) => (
-              <Text key={label} style={styles.weekdayCell} wrap={false}>
-                {label}
-              </Text>
-            ))}
-          </View>
-
-          <View wrap={false} style={styles.calendarGrid}>
-            {cells.map((cell, index) => (
-              <View key={index} style={styles.dayCell} wrap={false}>
-                {cell.day != null ? (
-                  <Text style={cell.hasEntry ? styles.dayTextWithEntry : styles.dayText} wrap={false}>
-                    {cell.day}
-                  </Text>
-                ) : null}
-              </View>
-            ))}
-          </View>
-
-          <View wrap={false} style={styles.summaryBox}>
-            <Text style={styles.summaryText} wrap={false}>
-              記録 {monthEntries.length} 件
-              {moodLabel ? ` · よくあった気分: ${moodLabel}` : ""}
-            </Text>
+          <View style={{ flexDirection: "row", alignItems: "baseline", marginTop: 4 }}>
+            <Text style={styles.titleMonth}>{month}</Text>
+            <Text style={styles.titleMonthSuffix}>月</Text>
           </View>
         </View>
+
+        <View wrap={false} style={styles.weekdayRow}>
+          {WEEKDAY_LABELS.map((label) => (
+            <Text key={label} style={styles.weekdayCell}>
+              {label}
+            </Text>
+          ))}
+        </View>
+
+        <View wrap={false} style={styles.calendarGrid}>
+          {cells.map((cell, index) => (
+            <View key={index} style={styles.dayCell} wrap={false}>
+              {cell.day != null ? (
+                <Text style={cell.hasEntry ? styles.dayTextWithEntry : styles.dayText}>
+                  {cell.day}
+                </Text>
+              ) : null}
+            </View>
+          ))}
+        </View>
+
+        <View wrap={false} style={styles.summaryBox}>
+          <Text style={styles.summaryText}>
+            記録 {monthEntries.length} 件
+            {moodLabel ? ` · よくあった気分: ${moodLabel}` : ""}
+          </Text>
+        </View>
       </View>
-    </Page>
+    </DiaryBookPdfPageCanvas>
   );
 }

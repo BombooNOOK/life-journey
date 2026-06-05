@@ -1,13 +1,9 @@
 import React from "react";
-import { Image, Page, StyleSheet, Text, View } from "@react-pdf/renderer";
+import { StyleSheet, Text } from "@react-pdf/renderer";
 
+import { DiaryBookPdfPageCanvas } from "@/components/pdf/diaryBook/DiaryBookPdfPageCanvas";
 import { DIARY_BOOK_INSIDE_COVER_TEXT } from "@/lib/journal/diaryBookInsideCoverLayout";
-import {
-  diaryBookPdfFullBleedImageStyle,
-  diaryBookPdfOverlayRootStyle,
-  diaryBookPdfPageStyle,
-  diaryBookPdfPct,
-} from "@/lib/journal/diaryBookPrintPdfLayout";
+import { diaryBookPdfPct } from "@/lib/journal/diaryBookPrintPdfLayout";
 
 const styles = StyleSheet.create({
   title: {
@@ -55,16 +51,11 @@ export function DiaryBookInsideCoverPdfPage({
   const periodTop = diaryBookPdfPct(DIARY_BOOK_INSIDE_COVER_TEXT.periodTop, "y");
 
   return (
-    <Page size="A5" orientation="portrait" style={diaryBookPdfPageStyle} wrap={false}>
-      <Image cache={false} src={backgroundSrc} style={diaryBookPdfFullBleedImageStyle} />
-      <View style={diaryBookPdfOverlayRootStyle}>
-        <Text style={[styles.title, { top: titleTop }]} wrap={false}>
-          {title}
-        </Text>
-        <Text style={[styles.period, { top: periodTop }]} wrap={false}>
-          {formatPeriodLabel(startDate, endDate)}
-        </Text>
-      </View>
-    </Page>
+    <DiaryBookPdfPageCanvas backgroundSrc={backgroundSrc}>
+      <Text style={[styles.title, { top: titleTop }]}>{title}</Text>
+      <Text style={[styles.period, { top: periodTop }]}>
+        {formatPeriodLabel(startDate, endDate)}
+      </Text>
+    </DiaryBookPdfPageCanvas>
   );
 }

@@ -22,17 +22,26 @@ export function parseCssPx(value: string): number {
   return Number.isFinite(n) ? n : 11;
 }
 
-/** 1ページ内に収める（PNG 実寸による自動改ページを防ぐ） */
+/** Page 自体には寸法を付けない（CoverPage / PdfPageFrame と同様） */
 export const diaryBookPdfPageStyle = {
   padding: 0,
+  margin: 0,
+} as const;
+
+/**
+ * A5 1枚分のキャンバス。PNG 実寸による自動改ページを防ぎつつ、
+ * absolute 子要素の基準座標にする。
+ */
+export const diaryBookPdfPageCanvasStyle = {
+  position: "relative" as const,
   width: DIARY_BOOK_PDF_PAGE_WIDTH_PT,
   height: DIARY_BOOK_PDF_PAGE_HEIGHT_PT,
-} as const;
+};
 
 export const diaryBookPdfFullBleedImageStyle = {
   position: "absolute" as const,
-  left: 0,
   top: 0,
+  left: 0,
   width: DIARY_BOOK_PDF_PAGE_WIDTH_PT,
   height: DIARY_BOOK_PDF_PAGE_HEIGHT_PT,
   objectFit: "cover" as const,
@@ -40,8 +49,8 @@ export const diaryBookPdfFullBleedImageStyle = {
 
 export const diaryBookPdfOverlayRootStyle = {
   position: "absolute" as const,
-  left: 0,
   top: 0,
+  left: 0,
   width: DIARY_BOOK_PDF_PAGE_WIDTH_PT,
   height: DIARY_BOOK_PDF_PAGE_HEIGHT_PT,
 };

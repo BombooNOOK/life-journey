@@ -1,6 +1,7 @@
 import React from "react";
-import { Image, Page, StyleSheet, Text, View } from "@react-pdf/renderer";
+import { Image, StyleSheet, Text, View } from "@react-pdf/renderer";
 
+import { DiaryBookPdfPageCanvas } from "@/components/pdf/diaryBook/DiaryBookPdfPageCanvas";
 import type { BoundDiaryEntry } from "@/components/journal/DiaryYearBoundPages";
 import { normalizeContentFontMode } from "@/lib/journal/contentFontMode";
 import { getBodyLayoutLinesForBindingPreview } from "@/lib/journal/diaryPreviewBodyLineLimits";
@@ -23,9 +24,6 @@ import {
 } from "@/lib/journal/diaryPreviewFixedLayout";
 import { getActivityMeta, getMoodMeta } from "@/lib/journal/meta";
 import {
-  diaryBookPdfFullBleedImageStyle,
-  diaryBookPdfOverlayRootStyle,
-  diaryBookPdfPageStyle,
   diaryBookPdfPct,
   diaryBookPdfPx,
   parseCssPx,
@@ -203,9 +201,7 @@ export function DiaryBookEntryPdfPage({
   ] as const;
 
   return (
-    <Page size="A5" orientation="portrait" style={diaryBookPdfPageStyle} wrap={false}>
-      <Image cache={false} src={templateSrc} style={diaryBookPdfFullBleedImageStyle} />
-      <View style={diaryBookPdfOverlayRootStyle}>
+    <DiaryBookPdfPageCanvas backgroundSrc={templateSrc}>
         {dateSlots.map((slot) => (
           <Text
             key={slot.left}
@@ -353,7 +349,6 @@ export function DiaryBookEntryPdfPage({
             <Image cache={false} src={photoDataUri!} style={styles.photoImage} />
           ) : null}
         </View>
-      </View>
-    </Page>
+    </DiaryBookPdfPageCanvas>
   );
 }
