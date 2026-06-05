@@ -68,3 +68,8 @@ export function diaryBookBodyTemplatePathForCompanion(companionType: string): st
   const resolved = DIARY_BOOK_BODY_TEMPLATE_AVAILABLE.has(slug) ? slug : "drfukuro";
   return withCache(`/images/diary-book-body-plain-${resolved}.png`);
 }
+
+/** 日記ブック本文の写真枠・読み込み中プレースホルダー */
+export function diaryBookPhotoMemoryLoadingImagePath(): string {
+  return withCache("/images/memory-loading-owl.png");
+}

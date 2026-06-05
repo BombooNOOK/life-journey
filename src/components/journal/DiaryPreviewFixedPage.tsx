@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import type { CSSProperties, ReactNode } from "react";
 import { getActivityMeta, getMoodMeta, type DiaryDesignId } from "@/lib/journal/meta";
 import { DiaryPreviewFrameBackground } from "@/components/journal/DiaryPreviewFrameBackground";
@@ -46,8 +46,82 @@ import {
   getFixedPreviewBodyTextStyle,
 } from "@/lib/journal/diaryPreviewFixedLayout";
 import type { DiaryPreviewRegionBox } from "@/lib/journal/diaryDesignPreviewTiers";
-import { OwlLoadingInline } from "@/components/ui/OwlLoadingInline";
+import { diaryBookPhotoMemoryLoadingImagePath } from "@/lib/journal/diaryBookAssets";
 import { JOURNAL_OWL_COMMENT_KANTEI_REQUIRED_MESSAGE } from "@/lib/journal/kanteiCommentCopy";
+
+const DIARY_PHOTO_MEMORY_LOADING_LABEL = "思い出を開いています…";
+
+function DiaryPreviewPhotoFrame({
+  photoDisplaySrc,
+  photoLoading,
+}: {
+  photoDisplaySrc: string;
+  photoLoading: boolean;
+}) {
+  const [imageReady, setImageReady] = useState(false);
+  const imgRef = useRef<HTMLImageElement>(null);
+  const hasPhoto = photoLoading || Boolean(photoDisplaySrc);
+  const showPlaceholder = hasPhoto && (photoLoading || !imageReady);
+
+  useEffect(() => {
+    setImageReady(false);
+  }, [photoDisplaySrc]);
+
+  useLayoutEffect(() => {
+    const img = imgRef.current;
+    if (!photoDisplaySrc || !img) return;
+    if (img.complete && img.naturalHeight > 0) {
+      setImageReady(true);
+    }
+  }, [photoDisplaySrc]);
+
+  if (!hasPhoto) {
+    return <div className="h-full w-full bg-[#f8f4ea]/80" aria-hidden />;
+  }
+
+  return (
+    <div className="relative h-full w-full bg-[#f8f4ea]/80">
+      {showPlaceholder ? (
+        <div
+          className="absolute inset-0 z-[1] flex flex-col items-center justify-center gap-[6px] px-[8px] py-[6px] transition-opacity duration-300 ease-out"
+          role="status"
+          aria-live="polite"
+        >
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={diaryBookPhotoMemoryLoadingImagePath()}
+            alt=""
+            className="max-h-[68%] max-w-[68%] object-contain"
+            draggable={false}
+          />
+          <p
+            className="text-center leading-tight text-stone-600/90"
+            style={{
+              fontFamily: DIARY_PREVIEW_OVERLAY_FONT,
+              fontSize: "13px",
+            }}
+          >
+            {DIARY_PHOTO_MEMORY_LOADING_LABEL}
+          </p>
+        </div>
+      ) : null}
+      {photoDisplaySrc ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          ref={imgRef}
+          src={photoDisplaySrc}
+          alt="日記写真プレビュー"
+          onLoad={() => setImageReady(true)}
+          onError={() => setImageReady(true)}
+          className={[
+            "relative z-[2] h-full w-full object-contain transition-opacity duration-300 ease-out",
+            imageReady ? "opacity-100" : "opacity-0",
+          ].join(" ")}
+        />
+      ) : null}
+    </div>
+  );
+}
 
 export type DiaryPreviewFixedPageProps = {
   designTheme: DiaryDesignId;
@@ -373,20 +447,10 @@ export function DiaryPreviewFixedPage({
             width: layout.photoWidth,
           }}
         >
-          {photoLoading ? (
-            <div className="flex h-full w-full items-center justify-center bg-[#f8f4ea]/80">
-              <OwlLoadingInline label="写真を読み込み中" size="sm" />
-            </div>
-          ) : photoDisplaySrc ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={photoDisplaySrc}
-              alt="日記写真プレビュー"
-              className="h-full w-full object-contain"
-            />
-          ) : (
-            <div className="h-full w-full bg-[#f8f4ea]/80" aria-hidden />
-          )}
+          <DiaryPreviewPhotoFrame
+            photoDisplaySrc={photoDisplaySrc}
+            photoLoading={photoLoading}
+          />
         </div>
       </div>
     </div>
