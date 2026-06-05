@@ -1,14 +1,19 @@
-/** @react-pdf A5 portrait (pt) */
-export const DIARY_BOOK_PDF_PAGE_WIDTH_PT = 595.28;
-export const DIARY_BOOK_PDF_PAGE_HEIGHT_PT = 841.89;
+/** @react-pdf A5 portrait（148×210mm） */
+export const DIARY_BOOK_PDF_PAGE_WIDTH_PT = (148 / 25.4) * 72;
+export const DIARY_BOOK_PDF_PAGE_HEIGHT_PT = (210 / 25.4) * 72;
 
 export const DIARY_BOOK_DESIGN_WIDTH_PX = 724;
 export const DIARY_BOOK_DESIGN_HEIGHT_PX = 1024;
 
+/** 724×1024 テンプレ → A5 への軸別スケール（ほぼ同値） */
+export const DIARY_BOOK_PDF_SCALE_X =
+  DIARY_BOOK_PDF_PAGE_WIDTH_PT / DIARY_BOOK_DESIGN_WIDTH_PX;
+export const DIARY_BOOK_PDF_SCALE_Y =
+  DIARY_BOOK_PDF_PAGE_HEIGHT_PT / DIARY_BOOK_DESIGN_HEIGHT_PX;
+
 export function diaryBookPdfPx(pixels: number, axis: "x" | "y"): number {
-  const base = axis === "x" ? DIARY_BOOK_DESIGN_WIDTH_PX : DIARY_BOOK_DESIGN_HEIGHT_PX;
-  const page = axis === "x" ? DIARY_BOOK_PDF_PAGE_WIDTH_PT : DIARY_BOOK_PDF_PAGE_HEIGHT_PT;
-  return (pixels / base) * page;
+  const scale = axis === "x" ? DIARY_BOOK_PDF_SCALE_X : DIARY_BOOK_PDF_SCALE_Y;
+  return pixels * scale;
 }
 
 export function diaryBookPdfPct(pct: string, axis: "x" | "y"): number {
@@ -29,28 +34,29 @@ export const diaryBookPdfPageStyle = {
 } as const;
 
 /**
- * A5 1枚分のキャンバス。PNG 実寸による自動改ページを防ぎつつ、
- * absolute 子要素の基準座標にする。
+ * A5 1枚分のキャンバス（Page の 100% に一致）。
+ * 724×1024 テンプレ座標は diaryBookPdfPx / diaryBookPdfPct で A5 に縮小配置する。
  */
 export const diaryBookPdfPageCanvasStyle = {
   position: "relative" as const,
-  width: DIARY_BOOK_PDF_PAGE_WIDTH_PT,
-  height: DIARY_BOOK_PDF_PAGE_HEIGHT_PT,
+  width: "100%",
+  height: "100%",
 };
 
+/** 背景は切らず全体表示（contain） */
 export const diaryBookPdfFullBleedImageStyle = {
   position: "absolute" as const,
   top: 0,
   left: 0,
-  width: DIARY_BOOK_PDF_PAGE_WIDTH_PT,
-  height: DIARY_BOOK_PDF_PAGE_HEIGHT_PT,
-  objectFit: "cover" as const,
+  width: "100%",
+  height: "100%",
+  objectFit: "contain" as const,
 };
 
 export const diaryBookPdfOverlayRootStyle = {
   position: "absolute" as const,
   top: 0,
   left: 0,
-  width: DIARY_BOOK_PDF_PAGE_WIDTH_PT,
-  height: DIARY_BOOK_PDF_PAGE_HEIGHT_PT,
+  width: "100%",
+  height: "100%",
 };
