@@ -23,18 +23,11 @@ import {
   DIARY_BOOK_DESIGN_WIDTH_PX,
   diaryBookPdfPx,
 } from "@/lib/journal/diaryBookPrintPdfLayout";
-import { getCompanionStamp } from "@/lib/journal/meta";
+
+/** 724px 設計上の足跡アイコン幅 */
+const FOOTPRINT_ICON_WIDTH_PX = 15;
 
 const styles = StyleSheet.create({
-  moonLayer: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    width: "100%",
-    height: "100%",
-    objectFit: "contain",
-    objectPosition: "top center",
-  },
   titleYear: {
     fontFamily: "NotoSansJP",
     fontSize: 18,
@@ -79,11 +72,8 @@ const styles = StyleSheet.create({
     textAlign: "center",
     paddingTop: 4,
   },
-  dayStamp: {
-    fontFamily: "NotoSansJP",
-    fontSize: 12,
-    textAlign: "center",
-    color: "#44403c",
+  footprintImage: {
+    objectFit: "contain",
   },
   dayExtra: {
     fontFamily: "NotoSansJP",
@@ -129,18 +119,20 @@ function scaled(px: number, axis: "x" | "y" = "y"): number {
 
 export function DiaryBookMonthIndexPdfPage({
   backgroundSrc,
-  moonSrc,
+  footprintSrc,
   year,
   monthIndex,
   entries,
 }: {
   backgroundSrc: string;
-  moonSrc: string;
+  footprintSrc: string;
   year: number;
   monthIndex: number;
   entries: BoundDiaryEntry[];
 }) {
   const vm = buildDiaryBookMonthIndexViewModel(year, monthIndex, entries);
+  const footprintWidth = scaled(FOOTPRINT_ICON_WIDTH_PX, "x");
+  const footprintHeight = footprintWidth;
 
   const contentLeft = scaled(DIARY_BOOK_READER_HORIZONTAL_PADDING_PX, "x");
   const contentWidth =
@@ -162,8 +154,6 @@ export function DiaryBookMonthIndexPdfPage({
 
   return (
     <DiaryBookPdfPageCanvas backgroundSrc={backgroundSrc}>
-      <Image cache={false} src={moonSrc} style={styles.moonLayer} />
-
       {/* セル背景（ビューワー下層相当） */}
       <View
         wrap={false}
@@ -242,7 +232,7 @@ export function DiaryBookMonthIndexPdfPage({
         ))}
       </View>
 
-      {/* 日付・足跡・+N */}
+      {/* 日付・足跡PNG・+N */}
       <View
         wrap={false}
         style={{
@@ -257,10 +247,7 @@ export function DiaryBookMonthIndexPdfPage({
           if (cell.day === null) return null;
           const row = Math.floor(index / 7);
           const col = index % 7;
-          const stamp =
-            cell.hasEntry && cell.stampEntry
-              ? getCompanionStamp(cell.stampEntry.companionType)
-              : null;
+          const showFootprint = cell.hasEntry && cell.stampEntry != null;
 
           return (
             <View
@@ -273,10 +260,31 @@ export function DiaryBookMonthIndexPdfPage({
                 width: cellWidth,
                 height: cellHeight,
                 justifyContent: "space-between",
+                alignItems: "center",
               }}
             >
               <Text style={styles.dayNumber}>{cell.day}</Text>
-              <Text style={styles.dayStamp}>{stamp ?? " "}</Text>
+              <View
+                wrap={false}
+                style={{
+                  alignItems: "center",
+                  justifyContent: "center",
+                  height: footprintHeight,
+                }}
+              >
+                {showFootprint ? (
+                  <Image
+                    cache={false}
+                    src={footprintSrc}
+                    style={[
+                      styles.footprintImage,
+                      { width: footprintWidth, height: footprintHeight },
+                    ]}
+                  />
+                ) : (
+                  <View style={{ width: footprintWidth, height: footprintHeight }} />
+                )}
+              </View>
               <Text style={styles.dayExtra}>
                 {cell.extraEntryCount > 0 ? `+${cell.extraEntryCount}` : " "}
               </Text>
@@ -285,7 +293,7 @@ export function DiaryBookMonthIndexPdfPage({
         })}
       </View>
 
-      {/* 月まとめ */}
+      {/* 月まとめ（気分はラベルのみ。絵文字は NotoSansJP で文字化けするため省略） */}
       <View
         wrap={false}
         style={{
@@ -309,10 +317,7 @@ export function DiaryBookMonthIndexPdfPage({
           ) : null}
         </Text>
         <Text style={[styles.summaryLine, { marginTop: scaled(6, "y") }]}>
-          よく出た気分:{" "}
-          <Text style={styles.summaryStrong}>
-            {vm.topMoodEmoji} {vm.topMoodLabel}
-          </Text>
+          よく出た気分: <Text style={styles.summaryStrong}>{vm.topMoodLabel}</Text>
         </Text>
         <Text style={styles.summaryPhrase}>{vm.monthPhrase}</Text>
       </View>

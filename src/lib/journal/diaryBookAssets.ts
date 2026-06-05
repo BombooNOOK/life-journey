@@ -26,6 +26,11 @@ export function diaryBookMonthIndexMoonImagePath(): string {
   return withCache("/images/diary-book-month-index-moon.png");
 }
 
+/** 月索引カレンダー・記録日マーク（PDF用・小さな足跡） */
+export function diaryBookCalendarFootprintImagePath(): string {
+  return withCache("/images/diary-book-calendar-footprint.png");
+}
+
 /** 月索引の裏（全月共通・足跡・724×1024） */
 export function diaryBookMonthIllustrationImagePath(): string {
   return withCache("/images/diary-book-month-illustration.png");
