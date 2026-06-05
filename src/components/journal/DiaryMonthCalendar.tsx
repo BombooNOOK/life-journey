@@ -95,18 +95,13 @@ export function DiaryMonthCalendar({
         >
           ←
         </button>
-        <div className="flex min-w-0 flex-col items-center gap-1 px-1">
-          <p
-            className={`text-sm font-semibold text-stone-800 transition-opacity duration-150 ease-out ${
-              isFetching ? "opacity-70" : "opacity-100"
-            }`}
-          >
-            {monthLabel(cursorMonth)}
-          </p>
-          {isFetching ? (
-            <OwlLoadingInline label={loadingLabel} size="sm" className="text-xs text-stone-600" />
-          ) : null}
-        </div>
+        <p
+          className={`text-sm font-semibold text-stone-800 transition-opacity duration-150 ease-out ${
+            isFetching ? "opacity-70" : "opacity-100"
+          }`}
+        >
+          {monthLabel(cursorMonth)}
+        </p>
         <button
           type="button"
           onClick={onNextMonth}
