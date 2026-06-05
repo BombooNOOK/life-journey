@@ -1,6 +1,15 @@
 "use client";
 
-import { FormEvent, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  FormEvent,
+  Suspense,
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useFirebaseAuth } from "@/components/auth/FirebaseAuthProvider";
@@ -49,7 +58,10 @@ import {
   type DiaryDesignId,
   type MoodId,
 } from "@/lib/journal/meta";
+import { OwlLoadingInline } from "@/components/ui/OwlLoadingInline";
 import { JOURNAL_OWL_COMMENT_KANTEI_REQUIRED_MESSAGE } from "@/lib/journal/kanteiCommentCopy";
+
+const JOURNAL_EDIT_LOADING_LABEL = "フクロウ先生が記録を開いています…";
 
 type Entry = {
   id: string;
@@ -162,7 +174,7 @@ function JournalPageContent() {
   const [cropOffset, setCropOffset] = useState(50);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [loadingEdit, setLoadingEdit] = useState(false);
+  const [loadingEdit, setLoadingEdit] = useState(() => Boolean(editingId));
   const [processingPhoto, setProcessingPhoto] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [serverViewerEmail, setServerViewerEmail] = useState<string | null>(null);
@@ -363,6 +375,12 @@ function JournalPageContent() {
     }
     setEntryDate(dateFromQuery);
   }, [editingId, dateFromQuery]);
+
+  useLayoutEffect(() => {
+    if (editingId) {
+      setLoadingEdit(true);
+    }
+  }, [editingId]);
 
   useEffect(() => {
     if (!editingId) {
@@ -667,7 +685,10 @@ function JournalPageContent() {
   );
   const commentOverflows = false;
 
-  const recordPageTitle = formatJournalRecordPageTitle(entryDate);
+  const isEditEntryLoading = Boolean(editingId && loadingEdit);
+  const recordPageTitle = isEditEntryLoading
+    ? "記録を開いています"
+    : formatJournalRecordPageTitle(entryDate);
   const bodyInputHeading = journalBodyInputHeading(entryDate);
 
   return (
@@ -727,22 +748,31 @@ function JournalPageContent() {
         </p>
       </div>
 
+      {isEditEntryLoading ? (
+        <div
+          className="flex min-h-[12rem] flex-col items-center justify-center gap-3 rounded-xl border border-stone-200 bg-white px-4 py-10 shadow-sm sm:min-h-[14rem] sm:p-8"
+          aria-busy="true"
+          aria-live="polite"
+        >
+          <OwlLoadingInline
+            label={JOURNAL_EDIT_LOADING_LABEL}
+            size="md"
+            className="text-sm text-stone-600"
+          />
+        </div>
+      ) : (
       <form onSubmit={(e) => void onSubmit(e)} className="space-y-3 rounded-xl border border-stone-200 bg-white p-4 shadow-sm sm:p-5">
         {editingId ? (
           <div className="flex flex-col gap-2 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 sm:flex-row sm:items-center sm:justify-between">
-            <p className="text-xs text-amber-900">
-              {loadingEdit ? "記録を読み込み中…" : "編集モードです。内容を更新できます。"}
-            </p>
-            {!loadingEdit ? (
-              <button
-                type="button"
-                disabled={saving || processingPhoto || deletingId === editingId}
-                onClick={() => void deleteEntry(editingId)}
-                className="shrink-0 self-start text-xs font-medium text-red-700 underline underline-offset-2 hover:text-red-800 disabled:opacity-50 sm:self-center"
-              >
-                {deletingId === editingId ? "削除中…" : "この日記を削除する"}
-              </button>
-            ) : null}
+            <p className="text-xs text-amber-900">編集モードです。内容を更新できます。</p>
+            <button
+              type="button"
+              disabled={saving || processingPhoto || deletingId === editingId}
+              onClick={() => void deleteEntry(editingId)}
+              className="shrink-0 self-start text-xs font-medium text-red-700 underline underline-offset-2 hover:text-red-800 disabled:opacity-50 sm:self-center"
+            >
+              {deletingId === editingId ? "削除中…" : "この日記を削除する"}
+            </button>
           </div>
         ) : null}
 
@@ -1036,6 +1066,7 @@ function JournalPageContent() {
             ) : null}
         </div>
       </form>
+      )}
 
       {error ? <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-800">{error}</p> : null}
 
