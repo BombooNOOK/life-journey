@@ -2,7 +2,8 @@
 
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import type { CSSProperties, ReactNode } from "react";
-import { getActivityMeta, getMoodMeta, type DiaryDesignId } from "@/lib/journal/meta";
+import { MoodOwlIcon } from "@/components/journal/MoodOwlIcon";
+import { getActivityMeta, type DiaryDesignId } from "@/lib/journal/meta";
 import { DiaryPreviewFrameBackground } from "@/components/journal/DiaryPreviewFrameBackground";
 import { DiaryPreviewGoldFrameOverlay } from "@/components/journal/DiaryPreviewGoldFrameOverlay";
 import { DIARY_PREVIEW_GOLD_FRAME_PAGE_BG } from "@/lib/journal/diaryPreviewGoldFrame";
@@ -247,7 +248,6 @@ export function DiaryPreviewFixedPage({
   templateSrc: templateSrcProp,
 }: DiaryPreviewFixedPageProps) {
   const photoDisplaySrc = photoDataUrl?.trim() || photoSrc?.trim() || "";
-  const moodEmoji = getMoodMeta(mood).emoji;
   const activityLabel = getActivityMeta(activity).label;
   const trimmedBody = content.trim();
   const contentFontMode = normalizeContentFontMode(contentFontModeProp);
@@ -425,19 +425,17 @@ export function DiaryPreviewFixedPage({
           </div>
         ))}
         <div
-          className="absolute flex items-center justify-center text-stone-700"
+          className="absolute flex items-center justify-center"
           style={{
             left: layout.numberLeft,
             top: layout.numberCalmTop,
             width: DIARY_PREVIEW_MOOD_EMOJI.boxPx,
             height: DIARY_PREVIEW_MOOD_EMOJI.boxPx,
             transform: DIARY_PREVIEW_MOOD_EMOJI.transform,
-            fontSize: `${DIARY_PREVIEW_MOOD_EMOJI.fontSizePx}px`,
-            lineHeight: 1,
           }}
           aria-hidden
         >
-          <span className="block translate-y-[1px] leading-none">{moodEmoji}</span>
+          <MoodOwlIcon moodId={mood} sizePx={DIARY_PREVIEW_MOOD_EMOJI.boxPx} />
         </div>
         <div
           className="absolute aspect-square overflow-hidden rounded-sm relative"

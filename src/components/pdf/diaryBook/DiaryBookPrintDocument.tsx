@@ -14,7 +14,7 @@ import {
   diaryBookInsideCoverImagePath,
   diaryBookMonthBodyOddAdjustmentIllustrationImagePath,
   diaryBookMonthIllustrationImagePath,
-  diaryBookCalendarFootprintImagePath,
+  diaryBookCalendarPawprintImagePath,
   diaryBookMonthIndexImagePath,
   diaryBookPreBackCoverIllustrationImagePath,
 } from "@/lib/journal/diaryBookAssets";
@@ -68,7 +68,7 @@ export function DiaryBookPrintDocument({
               <DiaryBookMonthIndexPdfPage
                 key={`month-index-${page.calendarYear}-${page.monthIndex}-${index}`}
                 backgroundSrc={resolveImage(diaryBookMonthIndexImagePath())}
-                footprintSrc={resolveImage(diaryBookCalendarFootprintImagePath())}
+                pawprintSrc={resolveImage(diaryBookCalendarPawprintImagePath())}
                 year={page.calendarYear}
                 monthIndex={page.monthIndex}
                 entries={entries}

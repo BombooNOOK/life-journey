@@ -1,7 +1,9 @@
 "use client";
 
+import Image from "next/image";
+
 import { OwlLoadingInline } from "@/components/ui/OwlLoadingInline";
-import { getCompanionStamp } from "@/lib/journal/meta";
+import { diaryBookCalendarPawprintImagePath } from "@/lib/journal/diaryBookAssets";
 import {
   calendarDayKeyFromParts,
   calendarDayKeyInJapan,
@@ -64,8 +66,6 @@ export function DiaryMonthCalendar({
 
   const daysWithEntry = new Set<number>();
   const entryCountByDay = new Map<number, number>();
-  const stampByDay = new Map<number, string>();
-
   for (const entry of entries) {
     const key = entryDayKeyInJapan(entry.createdAt);
     const expectedPrefix = `${year}-${String(monthIndex + 1).padStart(2, "0")}-`;
@@ -74,9 +74,6 @@ export function DiaryMonthCalendar({
     if (!Number.isFinite(day)) continue;
     daysWithEntry.add(day);
     entryCountByDay.set(day, (entryCountByDay.get(day) ?? 0) + 1);
-    if (!stampByDay.has(day)) {
-      stampByDay.set(day, getCompanionStamp(entry.companionType));
-    }
   }
 
   return (
@@ -181,10 +178,17 @@ export function DiaryMonthCalendar({
                 >
                   <span className="font-medium leading-none text-stone-800">{day}</span>
                   {hasEntry ? (
-                    <span className="mt-0.5 text-[10px] leading-none text-emerald-800" aria-hidden>
-                      {stampByDay.get(day)}
+                    <span className="mt-0.5 flex items-center gap-0.5 leading-none" aria-hidden>
+                      <Image
+                        src={diaryBookCalendarPawprintImagePath()}
+                        alt=""
+                        width={14}
+                        height={14}
+                        className="object-contain opacity-85"
+                        unoptimized
+                      />
                       {count > 1 ? (
-                        <span className="ml-0.5 tabular-nums text-[9px] text-emerald-700/90">
+                        <span className="tabular-nums text-[9px] text-emerald-700/90">
                           +{count - 1}
                         </span>
                       ) : null}

@@ -2,11 +2,40 @@
 
 import Image from "next/image";
 
+import { MoodOwlIcon } from "@/components/journal/MoodOwlIcon";
 import { diaryCoverImagePath, normalizeDiaryCoverStyle } from "@/lib/journal/coverAssets";
-import { diaryBookMonthIndexMoonImagePath } from "@/lib/journal/diaryBookAssets";
+import {
+  diaryBookCalendarPawprintImagePath,
+  diaryBookMonthIndexMoonImagePath,
+} from "@/lib/journal/diaryBookAssets";
 import { phraseForMonth, phraseForYear } from "@/lib/journal/diaryPhrases";
 import { isEntryIncludedInDiaryBook } from "@/lib/journal/includeInBook";
-import { getCompanionStamp, getMoodMeta } from "@/lib/journal/meta";
+import { getMoodMeta } from "@/lib/journal/meta";
+
+const CALENDAR_PAWPRINT_SIZE_PX = 18;
+
+function DiaryCalendarPawprintMark({ sizePx = CALENDAR_PAWPRINT_SIZE_PX }: { sizePx?: number }) {
+  return (
+    <Image
+      src={diaryBookCalendarPawprintImagePath()}
+      alt=""
+      width={sizePx}
+      height={sizePx}
+      className="object-contain opacity-85"
+      unoptimized
+      aria-hidden
+    />
+  );
+}
+
+function MoodSummaryLabel({ moodId, label }: { moodId: string; label: string }) {
+  return (
+    <span className="inline-flex items-center gap-1.5 font-semibold">
+      <MoodOwlIcon moodId={moodId} sizePx={18} className="shrink-0" />
+      {label}
+    </span>
+  );
+}
 
 /** 本棚の年次めくりと共有する最小エントリ形 */
 export type BoundDiaryEntry = {
@@ -98,12 +127,10 @@ function DiaryBookReaderMonthDayCellBackground({
 function DiaryBookReaderMonthDayCellText({
   day,
   hasEntry,
-  stampEntry,
   extraEntryCount,
 }: {
   day: number | null;
   hasEntry: boolean;
-  stampEntry: BoundDiaryEntry | null;
   extraEntryCount: number;
 }) {
   if (day === null) {
@@ -115,12 +142,8 @@ function DiaryBookReaderMonthDayCellText({
       <span className="pt-1.5 text-center text-[15px] font-medium leading-none tabular-nums">
         {day}
       </span>
-      <div className="flex min-h-[1.1rem] items-center justify-center">
-        {hasEntry && stampEntry ? (
-          <span className="text-[17px] leading-none" title="記録あり">
-            {getCompanionStamp(stampEntry.companionType)}
-          </span>
-        ) : null}
+      <div className="flex min-h-[1.1rem] items-end justify-center pb-0.5">
+        {hasEntry ? <DiaryCalendarPawprintMark /> : null}
       </div>
       <span className="pb-1 text-center text-[10px] font-medium leading-none tabular-nums text-emerald-800/90 sm:text-[11px]">
         {extraEntryCount > 0 ? `+${extraEntryCount}` : "\u00a0"}
@@ -336,10 +359,7 @@ export function DiaryBoundMonthCalendarPage({
                     ) : null}
                   </p>
                   <p className="mt-1.5">
-                    よく出た気分:{" "}
-                    <span className="font-semibold">
-                      {topMood.emoji} {topMood.label}
-                    </span>
+                    よく出た気分: <MoodSummaryLabel moodId={topMoodId} label={topMood.label} />
                   </p>
                   <p className="mt-1.5">{phraseForMonth(monthEntries.length, topMoodId)}</p>
                 </div>
@@ -404,7 +424,6 @@ export function DiaryBoundMonthCalendarPage({
                           key={`br-txt-${idx}-${day ?? "x"}`}
                           day={day}
                           hasEntry={hasEntry}
-                          stampEntry={stampEntry}
                           extraEntryCount={extraEntryCount}
                         />
                       );
@@ -427,9 +446,7 @@ export function DiaryBoundMonthCalendarPage({
                   </p>
                   <p className="mt-2">
                     よく出た気分:{" "}
-                    <span className="font-semibold text-[#3f4538]">
-                      {topMood.emoji} {topMood.label}
-                    </span>
+                    <MoodSummaryLabel moodId={topMoodId} label={topMood.label} />
                   </p>
                   <p className="mt-2 text-[#5c554c]">
                     {phraseForMonth(monthEntries.length, topMoodId)}
@@ -467,12 +484,10 @@ export function DiaryBoundMonthCalendarPage({
                     isToday ? "ring-1 ring-amber-300" : "",
                   ].join(" ")}
                 >
-                  {day === null ? null : hasEntry && stampEntry ? (
+                  {day === null ? null : hasEntry ? (
                     <>
                       <span>{day}</span>
-                      <span className="text-[11px]" title="記録あり">
-                        {getCompanionStamp(stampEntry.companionType)}
-                      </span>
+                      <DiaryCalendarPawprintMark sizePx={14} />
                     </>
                   ) : (
                     <span className="text-stone-500">{day}</span>
@@ -490,9 +505,7 @@ export function DiaryBoundMonthCalendarPage({
           </p>
           <p className="mt-1">
             よく出た気分:{" "}
-            <span className="font-semibold text-stone-900">
-              {topMood.emoji} {topMood.label}
-            </span>
+            <MoodSummaryLabel moodId={topMoodId} label={topMood.label} />
           </p>
           <p className="mt-1 text-stone-600">{phraseForMonth(monthEntries.length, topMoodId)}</p>
         </div>
@@ -571,10 +584,7 @@ export function DiaryBoundReflectionPage({ year, entries }: { year: number; entr
             </p>
           ) : null}
           <p>
-            年間で多かった気分:{" "}
-            <span className="font-semibold text-stone-900">
-              {topMood.emoji} {topMood.label}
-            </span>
+            年間で多かった気分: <MoodSummaryLabel moodId={topMoodId} label={topMood.label} />
           </p>
         </div>
         <p className="text-xs leading-relaxed text-stone-600">{phraseForYear(inYear.length, distinctDays, year)}</p>

@@ -21,7 +21,9 @@ import {
   getFixedPreviewBodyTextStyle,
   regionBoxToPx,
 } from "@/lib/journal/diaryPreviewFixedLayout";
-import { getActivityMeta, getMoodMeta } from "@/lib/journal/meta";
+import { resolveDiaryBookPublicImagePath } from "@/lib/journal/diaryBookPrintPdfAssets";
+import { moodOwlIconImagePath } from "@/lib/journal/moodAssets";
+import { getActivityMeta } from "@/lib/journal/meta";
 import {
   diaryBookPdfPct,
   diaryBookPdfPx,
@@ -83,9 +85,9 @@ const styles = StyleSheet.create({
     position: "absolute",
     alignItems: "center",
     justifyContent: "center",
-    fontFamily: "NotoSansJP",
-    color: "#44403c",
-    textAlign: "center",
+  },
+  moodIconImage: {
+    objectFit: "contain",
   },
   photoFrame: {
     position: "absolute",
@@ -136,7 +138,7 @@ export function DiaryBookEntryPdfPage({
   const layout = DIARY_PREVIEW_TEMPLATE_LAYOUT;
   const previewDate = new Date(entry.createdAt);
   const weekdayLabel = WEEKDAY_LABELS[previewDate.getDay()] ?? "";
-  const moodLabel = getMoodMeta(entry.mood).label;
+  const moodIconSrc = resolveDiaryBookPublicImagePath(moodOwlIconImagePath(entry.mood));
   const activityLabel = getActivityMeta(entry.activity).label;
   const trimmedActivity =
     activityLabel.length > 62 ? `${activityLabel.slice(0, 62)}…` : activityLabel;
@@ -175,7 +177,6 @@ export function DiaryBookEntryPdfPage({
   const commentLineHeight = 1.58;
   const commentWidth = diaryBookPdfPx(commentRegion.width, "x");
   const numberFontSize = diaryBookPdfPx(parseCssPx(DIARY_PREVIEW_NUMBER_STYLE.fontSize), "x");
-  const moodFontSize = diaryBookPdfPx(DIARY_PREVIEW_MOOD_EMOJI.fontSizePx, "x");
 
   const numberSlotWidth = diaryBookPdfPx(DIARY_PREVIEW_NUMBER_STYLE.slotWidthPx, "x");
   const numberSlotHeight = diaryBookPdfPx(DIARY_PREVIEW_NUMBER_STYLE.slotHeightPx, "y");
@@ -328,11 +329,14 @@ export function DiaryBookEntryPdfPage({
               top: diaryBookPdfPct(layout.numberCalmTop, "y") - moodBoxSize * 0.44,
               width: moodBoxSize,
               height: moodBoxSize,
-              fontSize: moodFontSize,
             },
           ]}
         >
-          <Text wrap={false}>{moodLabel}</Text>
+          <Image
+            cache={false}
+            src={moodIconSrc}
+            style={[styles.moodIconImage, { width: moodBoxSize, height: moodBoxSize }]}
+          />
         </View>
 
         <View

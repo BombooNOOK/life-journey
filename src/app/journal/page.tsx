@@ -16,6 +16,7 @@ import { useFirebaseAuth } from "@/components/auth/FirebaseAuthProvider";
 import { formatDateTimeJa } from "@/lib/date/formatJa";
 
 import { JournalCompanionPicker } from "@/components/journal/JournalCompanionPicker";
+import { MoodOwlIcon } from "@/components/journal/MoodOwlIcon";
 import { FieldLabelWithHelp } from "@/components/ui/InlineHelpButton";
 import {
   JOURNAL_CONTENT_HELP,
@@ -978,21 +979,36 @@ function JournalPageContent() {
             </div>
           </details>
         ) : null}
-        <label className="block text-sm font-medium text-stone-700" htmlFor="journal-mood">
-          今日の気分
-        </label>
-        <select
-          id="journal-mood"
-          value={mood}
-          onChange={(e) => setMood(e.target.value as MoodId)}
-          className="w-full rounded-lg border border-stone-300 bg-white px-3 py-2 text-sm text-stone-900 outline-none ring-stone-400 focus:ring-2"
-        >
-          {moodOptions.map((option) => (
-            <option key={option.id} value={option.id}>
-              {option.emoji} {option.label}
-            </option>
-          ))}
-        </select>
+        <fieldset>
+          <legend className="mb-2 block text-sm font-medium text-stone-700">今日の気分</legend>
+          <div
+            className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-5"
+            role="radiogroup"
+            aria-label="今日の気分"
+          >
+            {moodOptions.map((option) => {
+              const selected = mood === option.id;
+              return (
+                <button
+                  key={option.id}
+                  type="button"
+                  role="radio"
+                  aria-checked={selected}
+                  onClick={() => setMood(option.id)}
+                  className={[
+                    "flex flex-col items-center gap-1.5 rounded-lg border px-2 py-2.5 text-center transition",
+                    selected
+                      ? "border-stone-500 bg-stone-50 ring-2 ring-stone-400"
+                      : "border-stone-200 bg-white hover:border-stone-300 hover:bg-stone-50",
+                  ].join(" ")}
+                >
+                  <MoodOwlIcon moodId={option.id} sizePx={44} />
+                  <span className="text-xs font-medium text-stone-800">{option.label}</span>
+                </button>
+              );
+            })}
+          </div>
+        </fieldset>
         <label className="block text-sm font-medium text-stone-700" htmlFor="journal-activity">
           今日はどんな一日でしたか？
         </label>
@@ -1072,8 +1088,9 @@ function JournalPageContent() {
             {entries.map((entry) => (
               <li key={entry.id} className="rounded-xl border border-stone-200 bg-white p-4 text-sm shadow-sm">
                 <div className="flex items-start justify-between gap-3">
-                  <p className="min-w-0 flex-1 text-sm text-stone-700">
-                    {getMoodMeta(entry.mood).emoji} {getMoodMeta(entry.mood).label}
+                  <p className="flex min-w-0 flex-1 items-center gap-2 text-sm text-stone-700">
+                    <MoodOwlIcon moodId={entry.mood} sizePx={22} className="shrink-0" />
+                    <span>{getMoodMeta(entry.mood).label}</span>
                   </p>
                   <div className="relative z-10 flex shrink-0 flex-wrap items-center justify-end gap-x-3 gap-y-1">
                     <button

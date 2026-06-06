@@ -6,7 +6,11 @@ import Link from "next/link";
 import { useEnsureServerAuthSession } from "@/hooks/useEnsureServerAuthSession";
 import { entryDayKeyInJapan } from "@/lib/journal/journalNav";
 import { phraseForMonth } from "@/lib/journal/diaryPhrases";
-import { getCompanionStamp, getMoodMeta } from "@/lib/journal/meta";
+import Image from "next/image";
+
+import { MoodOwlIcon } from "@/components/journal/MoodOwlIcon";
+import { diaryBookCalendarPawprintImagePath } from "@/lib/journal/diaryBookAssets";
+import { getMoodMeta } from "@/lib/journal/meta";
 
 type Entry = {
   id: string;
@@ -258,10 +262,18 @@ export function LifeJourneyDiaryCard() {
                     <span>{day}</span>
                     <Link
                       href={`/journal?edit=${encodeURIComponent(stampEntry.id)}`}
-                      className="text-[11px] hover:opacity-80"
+                      className="mt-0.5 hover:opacity-80"
                       title="この日の記録を編集"
                     >
-                      {getCompanionStamp(stampEntry.companionType)}
+                      <Image
+                        src={diaryBookCalendarPawprintImagePath()}
+                        alt=""
+                        width={14}
+                        height={14}
+                        className="object-contain opacity-85"
+                        unoptimized
+                        aria-hidden
+                      />
                     </Link>
                   </div>
                 ) : (
@@ -294,10 +306,11 @@ export function LifeJourneyDiaryCard() {
             <p>
               今月の記録: <span className="font-semibold text-stone-900">{entries.length}日</span>
             </p>
-            <p>
-              今月よく出た気分:{" "}
-              <span className="font-semibold text-stone-900">
-                {topMood.emoji} {topMood.label}
+            <p className="flex flex-wrap items-center gap-1.5">
+              <span>今月よく出た気分:</span>
+              <span className="inline-flex items-center gap-1.5 font-semibold text-stone-900">
+                <MoodOwlIcon moodId={topMood.id} sizePx={20} className="shrink-0" />
+                {topMood.label}
               </span>
             </p>
             <p>今月のひとこと: {phraseForMonth(entries.length, topMood.id)}</p>

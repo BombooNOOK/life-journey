@@ -9,6 +9,7 @@ import {
   diaryBookIncludePickerDateLabel,
 } from "@/lib/journal/diaryBookIncludePicker";
 import { parseFetchJsonResponse } from "@/lib/http/parseFetchJson";
+import { MoodOwlIcon } from "@/components/journal/MoodOwlIcon";
 import { getMoodMeta } from "@/lib/journal/meta";
 
 type SavedPayload = {
@@ -214,8 +215,9 @@ export function DiaryBookIncludeInBookMonthList({
                         <span className="font-medium text-stone-900">
                           {diaryBookIncludePickerDateLabel(entry.createdAt)}
                         </span>
-                        <span className="ml-1.5 text-stone-700">
-                          {mood.emoji} {mood.label}
+                        <span className="ml-1.5 inline-flex items-center gap-1.5 text-stone-700">
+                          <MoodOwlIcon moodId={entry.mood} sizePx={18} className="shrink-0" />
+                          {mood.label}
                         </span>
                         <span className="mt-0.5 block text-xs leading-relaxed text-stone-600">
                           {entry.contentExcerpt}

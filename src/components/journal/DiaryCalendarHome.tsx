@@ -28,6 +28,7 @@ import {
   monthAnchorFromMonthKey,
   parseMonthKeyParam,
 } from "@/lib/journal/journalNav";
+import { MoodOwlIcon } from "@/components/journal/MoodOwlIcon";
 import { getActivityMeta, getMoodMeta } from "@/lib/journal/meta";
 
 export type DiaryCalendarEntry = DiaryMonthCalendarEntry & {
@@ -414,8 +415,11 @@ export function DiaryCalendarHome({
                                 最終更新：{formatDateTimeJa(entry.updatedAt!)}
                               </p>
                             ) : null}
-                            <p className="mt-1 text-sm text-stone-700">
-                              {mood.emoji} {mood.label} · {activity.label}
+                            <p className="mt-1 flex items-center gap-1.5 text-sm text-stone-700">
+                              <MoodOwlIcon moodId={entry.mood} sizePx={20} className="shrink-0" />
+                              <span>
+                                {mood.label} · {activity.label}
+                              </span>
                             </p>
                             <div className="mt-1.5 flex flex-wrap gap-1.5">
                               {entry.hasPhoto === true ? (

@@ -26,9 +26,14 @@ export function diaryBookMonthIndexMoonImagePath(): string {
   return withCache("/images/diary-book-month-index-moon.png");
 }
 
-/** 月索引カレンダー・記録日マーク（PDF用・小さな足跡） */
+/** 月索引カレンダー・記録日マーク（肉球2つ・PDF/ビューワー共通） */
+export function diaryBookCalendarPawprintImagePath(): string {
+  return withCache("/images/diary-book-calendar-pawprint.png");
+}
+
+/** @deprecated `diaryBookCalendarPawprintImagePath` を使用 */
 export function diaryBookCalendarFootprintImagePath(): string {
-  return withCache("/images/diary-book-calendar-footprint.png");
+  return diaryBookCalendarPawprintImagePath();
 }
 
 /** 月索引の裏（全月共通・足跡・724×1024） */
