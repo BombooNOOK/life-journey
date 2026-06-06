@@ -25,7 +25,7 @@ import {
 } from "@/lib/journal/diaryBookPrintPdfLayout";
 
 /** 724px 設計上の肉球マーク幅（2つセット・正方形素材） */
-const PAWPRINT_ICON_WIDTH_PX = 20;
+const PAWPRINT_ICON_WIDTH_PX = 22;
 
 const styles = StyleSheet.create({
   titleYear: {
@@ -72,8 +72,9 @@ const styles = StyleSheet.create({
     textAlign: "center",
     paddingTop: 4,
   },
-  pawprintImage: {
-    objectFit: "contain",
+  pawprintSlot: {
+    alignItems: "center",
+    justifyContent: "center",
   },
   dayExtra: {
     fontFamily: "NotoSansJP",
@@ -260,27 +261,26 @@ export function DiaryBookMonthIndexPdfPage({
                 width: cellWidth,
                 height: cellHeight,
                 alignItems: "center",
+                justifyContent: "space-between",
               }}
             >
               <Text style={styles.dayNumber}>{cell.day}</Text>
               <View
                 wrap={false}
-                style={{
-                  flex: 1,
-                  width: "100%",
-                  alignItems: "center",
-                  justifyContent: "flex-end",
-                  paddingBottom: scaled(10, "y"),
-                }}
+                style={[
+                  styles.pawprintSlot,
+                  {
+                    width: cellWidth,
+                    height: pawprintHeight,
+                    marginTop: scaled(2, "y"),
+                  },
+                ]}
               >
                 {showPawprint ? (
                   <Image
                     cache={false}
                     src={pawprintSrc}
-                    style={[
-                      styles.pawprintImage,
-                      { width: pawprintWidth, height: pawprintHeight },
-                    ]}
+                    style={{ width: pawprintWidth, height: pawprintHeight }}
                   />
                 ) : null}
               </View>
