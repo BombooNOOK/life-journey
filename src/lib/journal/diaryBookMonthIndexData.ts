@@ -6,6 +6,7 @@ import { isEntryIncludedInDiaryBook } from "@/lib/journal/includeInBook";
 import { getMoodMeta } from "@/lib/journal/meta";
 
 /** DiaryBoundMonthCalendarPage（bookReader）と同一のレイアウト定数（724×1024 基準） */
+export const DIARY_BOOK_READER_PAGE_BG = "#fdfaf4";
 export const DIARY_BOOK_READER_WEEK_ROWS = 6;
 export const DIARY_BOOK_READER_INDEX_HEADER_HEIGHT_PX = 341;
 export const DIARY_BOOK_READER_PAGE_HEIGHT_PX = 1024;

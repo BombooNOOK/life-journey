@@ -11,6 +11,7 @@ import {
   DIARY_BOOK_READER_HORIZONTAL_PADDING_PX,
   DIARY_BOOK_READER_INDEX_HEADER_HEIGHT_PX,
   DIARY_BOOK_READER_INDEX_TITLE_PADDING_TOP_PX,
+  DIARY_BOOK_READER_PAGE_BG,
   DIARY_BOOK_READER_SUMMARY_BG,
   DIARY_BOOK_READER_SUMMARY_BORDER,
   DIARY_BOOK_READER_TITLE_TO_CALENDAR_GAP_PX,
@@ -20,12 +21,15 @@ import {
   diaryBookMonthIndexCellWidthPx,
 } from "@/lib/journal/diaryBookMonthIndexData";
 import {
+  DIARY_BOOK_DESIGN_HEIGHT_PX,
   DIARY_BOOK_DESIGN_WIDTH_PX,
   diaryBookPdfPx,
 } from "@/lib/journal/diaryBookPrintPdfLayout";
 
-/** 724px 設計上の肉球マーク幅（2つセット・正方形素材） */
-const PAWPRINT_ICON_WIDTH_PX = 22;
+/** 724px 設計上の肉球マーク幅（ビューワー CALENDAR_PAWPRINT_SIZE_PX=18 に合わせる） */
+const PAWPRINT_ICON_WIDTH_PX = 18;
+/** ビューワー opacity-85 相当 */
+const PAWPRINT_OPACITY = 0.85;
 
 const styles = StyleSheet.create({
   titleYear: {
@@ -70,11 +74,10 @@ const styles = StyleSheet.create({
     fontWeight: 500,
     color: "#44403c",
     textAlign: "center",
-    paddingTop: 4,
   },
   pawprintSlot: {
     alignItems: "center",
-    justifyContent: "center",
+    justifyContent: "flex-end",
   },
   dayExtra: {
     fontFamily: "NotoSansJP",
@@ -119,21 +122,19 @@ function scaled(px: number, axis: "x" | "y" = "y"): number {
 }
 
 export function DiaryBookMonthIndexPdfPage({
-  backgroundSrc,
+  moonSrc,
   pawprintSrc,
   year,
   monthIndex,
   entries,
 }: {
-  backgroundSrc: string;
+  moonSrc: string;
   pawprintSrc: string;
   year: number;
   monthIndex: number;
   entries: BoundDiaryEntry[];
 }) {
   const vm = buildDiaryBookMonthIndexViewModel(year, monthIndex, entries);
-  const pawprintWidth = scaled(PAWPRINT_ICON_WIDTH_PX, "x");
-  const pawprintHeight = pawprintWidth;
 
   const contentLeft = scaled(DIARY_BOOK_READER_HORIZONTAL_PADDING_PX, "x");
   const contentWidth =
@@ -144,6 +145,12 @@ export function DiaryBookMonthIndexPdfPage({
   const cellGapX = scaled(DIARY_BOOK_READER_CALENDAR_CELL_GAP_PX, "x");
   const cellGapY = scaled(DIARY_BOOK_READER_CALENDAR_CELL_GAP_PX, "y");
 
+  const pawprintWidth = scaled(PAWPRINT_ICON_WIDTH_PX, "x");
+  const pawprintHeight = pawprintWidth;
+  const dayRowHeight = scaled(16, "y");
+  const extraRowHeight = scaled(12, "y");
+  const pawRowHeight = cellHeight - dayRowHeight - extraRowHeight;
+
   const headerHeight = scaled(DIARY_BOOK_READER_INDEX_HEADER_HEIGHT_PX, "y");
   const titlePaddingTop = scaled(DIARY_BOOK_READER_INDEX_TITLE_PADDING_TOP_PX, "y");
   const titleToCalendarGap = scaled(DIARY_BOOK_READER_TITLE_TO_CALENDAR_GAP_PX, "y");
@@ -153,9 +160,36 @@ export function DiaryBookMonthIndexPdfPage({
   const calendarHeight = scaled(DIARY_BOOK_READER_CALENDAR_GRID_MIN_HEIGHT_PX, "y");
   const summaryTop = calendarTop + calendarHeight + scaled(DIARY_BOOK_READER_CALENDAR_SUMMARY_GAP_PX, "y");
 
+  const pageWidth = scaled(DIARY_BOOK_DESIGN_WIDTH_PX, "x");
+  const pageHeight = scaled(DIARY_BOOK_DESIGN_HEIGHT_PX, "y");
+
   return (
-    <DiaryBookPdfPageCanvas backgroundSrc={backgroundSrc}>
-      {/* セル背景（ビューワー下層相当） */}
+    <DiaryBookPdfPageCanvas>
+      {/* 下層: 生成り地（ビューワー bg-[#fdfaf4] 相当） */}
+      <View
+        wrap={false}
+        style={{
+          position: "absolute",
+          top: 0,
+          left: 0,
+          width: pageWidth,
+          height: pageHeight,
+          backgroundColor: DIARY_BOOK_READER_PAGE_BG,
+        }}
+      />
+      {/* 中層: 月シルエット（724×1024・幅100%・上寄せ） */}
+      <Image
+        cache={false}
+        src={moonSrc}
+        style={{
+          position: "absolute",
+          top: 0,
+          left: 0,
+          width: pageWidth,
+          height: pageHeight,
+        }}
+      />
+      {/* セル背景（白セル・gap で生成りが見える） */}
       <View
         wrap={false}
         style={{
@@ -261,18 +295,27 @@ export function DiaryBookMonthIndexPdfPage({
                 width: cellWidth,
                 height: cellHeight,
                 alignItems: "center",
-                justifyContent: "space-between",
               }}
             >
-              <Text style={styles.dayNumber}>{cell.day}</Text>
+              <View
+                wrap={false}
+                style={{
+                  height: dayRowHeight,
+                  width: cellWidth,
+                  justifyContent: "center",
+                  paddingTop: scaled(6, "y"),
+                }}
+              >
+                <Text style={styles.dayNumber}>{cell.day}</Text>
+              </View>
               <View
                 wrap={false}
                 style={[
                   styles.pawprintSlot,
                   {
                     width: cellWidth,
-                    height: pawprintHeight,
-                    marginTop: scaled(2, "y"),
+                    height: pawRowHeight,
+                    paddingBottom: scaled(2, "y"),
                   },
                 ]}
               >
@@ -280,13 +323,27 @@ export function DiaryBookMonthIndexPdfPage({
                   <Image
                     cache={false}
                     src={pawprintSrc}
-                    style={{ width: pawprintWidth, height: pawprintHeight }}
+                    style={{
+                      width: pawprintWidth,
+                      height: pawprintHeight,
+                      opacity: PAWPRINT_OPACITY,
+                    }}
                   />
                 ) : null}
               </View>
-              <Text style={styles.dayExtra}>
-                {cell.extraEntryCount > 0 ? `+${cell.extraEntryCount}` : " "}
-              </Text>
+              <View
+                wrap={false}
+                style={{
+                  height: extraRowHeight,
+                  width: cellWidth,
+                  justifyContent: "center",
+                  paddingBottom: scaled(4, "y"),
+                }}
+              >
+                <Text style={styles.dayExtra}>
+                  {cell.extraEntryCount > 0 ? `+${cell.extraEntryCount}` : " "}
+                </Text>
+              </View>
             </View>
           );
         })}
