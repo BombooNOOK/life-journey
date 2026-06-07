@@ -58,6 +58,7 @@ function BridgeGuideBleedBody({
   }
 
   const [upperBody, lowerBody] = parts;
+  const upperExpandWidth = 18;
 
   return (
     <>
@@ -67,14 +68,19 @@ function BridgeGuideBleedBody({
           { marginTop: bodyMarginTop, paddingRight: 0, marginRight: -72 },
         ]}
       >
-        <PdfLongFormBody text={upperBody} disableWrap {...bridgeGuideProseProps} expandWidth={18} />
+        <PdfLongFormBody
+          text={upperBody}
+          disableWrap
+          noWrapMinChars={0}
+          {...bridgeGuideProseProps}
+          expandWidth={upperExpandWidth}
+        />
       </View>
       <View style={[pdfStyles.numberGuideBleedBody, { paddingRight: 52 }]}>
         <PdfLongFormBody
           text={lowerBody}
-          disableWrap
           {...bridgeGuideProseProps}
-          expandWidth={12}
+          expandWidth={upperExpandWidth}
           firstParagraphMarginTop={bridgeGuideProseProps.paragraphGap}
         />
       </View>

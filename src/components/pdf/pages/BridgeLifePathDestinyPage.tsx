@@ -126,6 +126,8 @@ function BridgePdfBlockSection({
               text={block.article}
               marginTop={8}
               {...pdfLongFormProseProps}
+              fixedWidthCharsPerLine={33}
+              fixedWidthGroupBySentence
               bodyStyle={bodyStyle}
               expandWidth={bodyExpandWidth}
             />

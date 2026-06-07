@@ -94,7 +94,7 @@ function GuideBleedBody({
           text={lowerBody}
           disableWrap={compact}
           {...prose}
-          expandWidth={compact ? 10 : 0}
+          expandWidth={upperExpandWidth}
           firstParagraphMarginTop={lowerGap}
         />
       </View>

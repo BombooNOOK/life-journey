@@ -86,7 +86,8 @@ export function YearDetailPage({
       >
         <PdfLongFormBody
           text={row.article}
-          preserveManuscriptLineBreaks
+          fixedWidthCharsPerLine={34}
+          fixedWidthPreserveDoubleNewlineBlocks
           firstParagraphMarginTop={6}
           paragraphGap={10}
           majorBlockExtraGap={6}

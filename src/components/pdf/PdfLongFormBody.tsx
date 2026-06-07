@@ -2,6 +2,11 @@ import { Text as RawText, View } from "@react-pdf/renderer";
 import type { Style } from "@react-pdf/types";
 
 import { parseManuscriptLineMarkup } from "@/lib/pdf/pdfManuscriptMarkup";
+import {
+  splitFixedWidthJapaneseLines,
+  splitFixedWidthJapaneseLinesByDoubleNewlineBlocks,
+  splitFixedWidthJapaneseLinesBySentences,
+} from "@/lib/pdf/splitFixedWidthJapaneseLines";
 
 import { PDF_GUIDE_BODY_NO_WRAP_MIN_WIDTH_PT } from "./pdfGuideBleedLayout";
 import { PdfText as Text } from "./PdfText";
@@ -163,6 +168,14 @@ type Props = {
   disableWrap?: boolean;
   noWrapMinChars?: number;
   noWrapMinWidthPt?: number;
+  /**
+   * 指定時は固定文字数で行配列化し、各行 wrap={false} で描画（日記読み解き・PY・ブリッジ「持つあなたへ」向け）。
+   */
+  fixedWidthCharsPerLine?: number;
+  /** `fixedWidthCharsPerLine` 時に原稿の空行（\\n\\n）で大ブロックを維持する */
+  fixedWidthPreserveDoubleNewlineBlocks?: boolean;
+  /** `fixedWidthCharsPerLine` 時に「。」ごとに文ブロックを分け、文内折り返し行のあいだは余白を付けない */
+  fixedWidthGroupBySentence?: boolean;
 };
 
 const DEFAULT_SENTENCE_LINE_GAP = 3;
@@ -248,7 +261,89 @@ export function PdfLongFormBody({
   disableWrap = false,
   noWrapMinChars,
   noWrapMinWidthPt,
+  fixedWidthCharsPerLine,
+  fixedWidthPreserveDoubleNewlineBlocks = false,
+  fixedWidthGroupBySentence = false,
 }: Props) {
+  if (fixedWidthCharsPerLine != null && fixedWidthCharsPerLine > 0) {
+    const continuationSpacer =
+      continuationPageTopGap > 0 ? (
+        <View
+          render={(props: { subPageNumber?: number }) => {
+            const sn = props.subPageNumber ?? 1;
+            return <View style={{ height: sn > 1 ? continuationPageTopGap : 0 }} />;
+          }}
+        />
+      ) : null;
+
+    const lineStyleBase: Style[] = [
+      pdfStyles.sectionBody,
+      defaultJapaneseBodyFont,
+      leftAlignedBody,
+      ...(bodyStyle == null ? [] : Array.isArray(bodyStyle) ? bodyStyle : [bodyStyle]),
+    ];
+
+    if (fixedWidthGroupBySentence) {
+      const sentences = splitFixedWidthJapaneseLinesBySentences(text, fixedWidthCharsPerLine);
+      if (sentences.length === 0 || sentences.every((lines) => lines.length === 0)) {
+        return null;
+      }
+
+      return (
+        <View style={{ marginTop, marginHorizontal: expandWidth > 0 ? -expandWidth : 0 }}>
+          {continuationSpacer}
+          {sentences.map((lines, si) => (
+            <View
+              key={si}
+              style={{
+                marginTop: si === 0 ? firstParagraphMarginTop : sentenceLineGap,
+              }}
+            >
+              {lines.map((line, li) => (
+                <Text key={`${si}-${li}`} wrap={false} style={lineStyleBase}>
+                  {line.length > 0 ? line : " "}
+                </Text>
+              ))}
+            </View>
+          ))}
+        </View>
+      );
+    }
+
+    const majorBlocks = fixedWidthPreserveDoubleNewlineBlocks
+      ? splitFixedWidthJapaneseLinesByDoubleNewlineBlocks(text, fixedWidthCharsPerLine)
+      : [splitFixedWidthJapaneseLines(text, fixedWidthCharsPerLine)];
+
+    if (majorBlocks.length === 0 || majorBlocks.every((lines) => lines.length === 0)) {
+      return null;
+    }
+
+    return (
+      <View style={{ marginTop, marginHorizontal: expandWidth > 0 ? -expandWidth : 0 }}>
+        {continuationSpacer}
+        {majorBlocks.map((lines, bi) => (
+          <View
+            key={bi}
+            style={{
+              marginTop:
+                bi === 0 ? firstParagraphMarginTop : paragraphGap + majorBlockExtraGap,
+            }}
+          >
+            {lines.map((line, li) => (
+              <Text
+                key={`${bi}-${li}`}
+                wrap={false}
+                style={[...lineStyleBase, { marginTop: li === 0 ? 0 : sentenceLineGap }]}
+              >
+                {line.length > 0 ? line : " "}
+              </Text>
+            ))}
+          </View>
+        ))}
+      </View>
+    );
+  }
+
   if (preserveManuscriptLineBreaks) {
     const blankLineHeight = manuscriptBlankLineHeight ?? MANUSCRIPT_BLANK_LINE_HEIGHT;
     const nodes = splitBodyIntoManuscriptLineNodes(text);
