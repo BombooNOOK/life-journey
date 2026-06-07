@@ -42,6 +42,8 @@ export type BoundDiaryEntry = {
   id: string;
   content: string;
   createdAt: string;
+  /** 記録日（createdAt）が同じ日の記事を並べるときの実作成・更新時刻 */
+  updatedAt?: string;
   mood: string;
   activity: string;
   companionType: string;

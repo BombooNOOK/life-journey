@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import { isDiaryBookRightPage } from "./diaryBookBindingLayout";
 import {
   buildBoundDiaryBookPages,
+  compareBoundDiaryEntriesChronological,
   monthNeedsBodyOddAdjustment,
   monthsInDiaryBookPeriod,
 } from "./diaryBookPages";
@@ -36,7 +37,52 @@ describe("monthNeedsBodyOddAdjustment", () => {
   });
 });
 
+describe("compareBoundDiaryEntriesChronological", () => {
+  it("sorts same record day by updatedAt ascending", () => {
+    const sameDay = "2026-06-05T03:00:00.000Z";
+    const older = {
+      ...sampleEntry,
+      id: "e-older",
+      createdAt: sameDay,
+      updatedAt: "2026-06-05T04:00:00.000Z",
+    };
+    const newer = {
+      ...sampleEntry,
+      id: "e-newer",
+      createdAt: sameDay,
+      updatedAt: "2026-06-05T10:00:00.000Z",
+    };
+    expect(compareBoundDiaryEntriesChronological(older, newer)).toBeLessThan(0);
+    expect(compareBoundDiaryEntriesChronological(newer, older)).toBeGreaterThan(0);
+  });
+});
+
 describe("buildBoundDiaryBookPages", () => {
+  it("orders same-day entries oldest-first in body pages", () => {
+    const sameDay = "2026-06-05T03:00:00.000Z";
+    const pages = buildBoundDiaryBookPages(
+      [
+        {
+          ...sampleEntry,
+          id: "e-newer",
+          createdAt: sameDay,
+          updatedAt: "2026-06-05T10:00:00.000Z",
+        },
+        {
+          ...sampleEntry,
+          id: "e-older",
+          createdAt: sameDay,
+          updatedAt: "2026-06-05T04:00:00.000Z",
+        },
+      ],
+      "2026-06-01",
+      "2026-06-30",
+    );
+    const entryPages = pages.filter((p) => p.kind === "entry");
+    expect(entryPages).toHaveLength(2);
+    expect(entryPages[0]?.kind === "entry" && entryPages[0].entry.id).toBe("e-older");
+    expect(entryPages[1]?.kind === "entry" && entryPages[1].entry.id).toBe("e-newer");
+  });
   it("ends with free-writing spread, pre-back illustration, and back cover", () => {
     const pages = buildBoundDiaryBookPages([sampleEntry], "2025-10-01", "2025-10-31");
     const tail = pages.slice(-4).map((p) => p.kind);

@@ -256,6 +256,7 @@ export async function listJournalEntriesForDiaryBookRow(params: {
       id: row.id,
       content: row.content,
       createdAt: row.createdAt.toISOString(),
+      updatedAt: row.updatedAt.toISOString(),
       mood: row.mood,
       activity: row.activity,
       companionType: row.companionType,

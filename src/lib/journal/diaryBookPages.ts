@@ -59,6 +59,31 @@ export function diaryBookEntriesInMonth(
   });
 }
 
+function boundDiaryEntryChronologicalTimestamp(entry: BoundDiaryEntry): number {
+  if (entry.updatedAt) return new Date(entry.updatedAt).getTime();
+  return new Date(entry.createdAt).getTime();
+}
+
+/** 記録日昇順 → 同日内は updatedAt 昇順 → id */
+export function compareBoundDiaryEntriesChronological(
+  a: BoundDiaryEntry,
+  b: BoundDiaryEntry,
+): number {
+  const dayA = new Date(a.createdAt).getTime();
+  const dayB = new Date(b.createdAt).getTime();
+  if (dayA !== dayB) return dayA - dayB;
+  const tsA = boundDiaryEntryChronologicalTimestamp(a);
+  const tsB = boundDiaryEntryChronologicalTimestamp(b);
+  if (tsA !== tsB) return tsA - tsB;
+  return a.id.localeCompare(b.id);
+}
+
+export function sortBoundDiaryEntriesChronological(
+  entries: BoundDiaryEntry[],
+): BoundDiaryEntry[] {
+  return [...entries].sort(compareBoundDiaryEntriesChronological);
+}
+
 function isSameMonth(a: DiaryBookMonthKey, b: DiaryBookMonthKey): boolean {
   return a.year === b.year && a.monthIndex === b.monthIndex;
 }
@@ -88,7 +113,7 @@ export function buildBoundDiaryBookPages(
   startDate: string,
   endDate: string,
 ): DiaryBookPageKind[] {
-  const bookEntries = filterEntriesForDiaryBook(entries);
+  const bookEntries = sortBoundDiaryEntriesChronological(filterEntriesForDiaryBook(entries));
   const months = monthsInDiaryBookPeriod(startDate, endDate);
   const lastMonth = months[months.length - 1];
 

@@ -30,6 +30,7 @@ import { filterEntriesForDiaryBook } from "@/lib/journal/includeInBook";
 import {
   boundDiaryBookPageLabel,
   buildBoundDiaryBookPages,
+  sortBoundDiaryEntriesChronological,
   diaryBookDisplayYear,
 } from "@/lib/journal/diaryBookPages";
 import { normalizeContentFontMode } from "@/lib/journal/contentFontMode";
@@ -141,9 +142,7 @@ export function DiaryBookFlipReader({
         error?: string;
       }>(res, "記録の取得に失敗しました。");
       if (!res.ok) throw new Error(data.error ?? "記録の取得に失敗しました。");
-      const list = [...(data.entries ?? [])].sort(
-        (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
-      );
+      const list = sortBoundDiaryEntriesChronological(data.entries ?? []);
       resetCache();
       setEntries(list);
       setNeedsContentRefresh(data.needsContentRefresh === true);
