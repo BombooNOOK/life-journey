@@ -26,32 +26,18 @@ import {
   diaryBookPdfPx,
 } from "@/lib/journal/diaryBookPrintPdfLayout";
 
-/** 724px 設計上の肉球マーク幅 */
-const PAWPRINT_ICON_WIDTH_PX = 17;
-/** +N ありの日は肉球を少し小さくして下端の +N と重ならないようにする */
-const PAWPRINT_ICON_WIDTH_WITH_EXTRA_PX = 14;
+/** 724px 設計上の肉球マーク幅（記録日は常に同一位置・同一サイズ） */
+const PAWPRINT_ICON_WIDTH_PX = 19;
 /** PDFセル内の見た目優先。実寸55×53より縦を少し抑えて横広に見せる */
 const PAWPRINT_DISPLAY_HEIGHT_RATIO = 0.85;
 /** ビューワー opacity-85 相当 */
 const PAWPRINT_OPACITY = 0.85;
-/** セル内の日付・肉球・+N 位置（724 設計 px） */
+/** セル内の日付・肉球位置（724 設計 px） */
 const DAY_NUMBER_TOP_PX = 4;
-const PAWPRINT_TOP_PX = 28;
-const PAWPRINT_TOP_WITH_EXTRA_PX = 22;
+const PAWPRINT_TOP_PX = 32;
+/** 同日複数件の +N は白セル右下に小さく表示 */
+const EXTRA_COUNT_RIGHT_PX = 3;
 const EXTRA_COUNT_BOTTOM_PX = 3;
-
-function pawprintLayoutForCell(extraEntryCount: number): {
-  widthPx: number;
-  topPx: number;
-} {
-  if (extraEntryCount > 0) {
-    return {
-      widthPx: PAWPRINT_ICON_WIDTH_WITH_EXTRA_PX,
-      topPx: PAWPRINT_TOP_WITH_EXTRA_PX,
-    };
-  }
-  return { widthPx: PAWPRINT_ICON_WIDTH_PX, topPx: PAWPRINT_TOP_PX };
-}
 
 const styles = StyleSheet.create({
   titleYear: {
@@ -99,9 +85,9 @@ const styles = StyleSheet.create({
   },
   dayExtra: {
     fontFamily: "NotoSansJP",
-    fontSize: 8,
+    fontSize: 6,
     fontWeight: 500,
-    textAlign: "center",
+    textAlign: "right",
     color: "#166534",
   },
   summaryLine: {
@@ -294,8 +280,7 @@ export function DiaryBookMonthIndexPdfPage({
           const row = Math.floor(index / 7);
           const col = index % 7;
           const showPawprint = cell.hasEntry;
-          const pawLayout = pawprintLayoutForCell(cell.extraEntryCount);
-          const pawprintWidth = scaled(pawLayout.widthPx, "x");
+          const pawprintWidth = scaled(PAWPRINT_ICON_WIDTH_PX, "x");
           const pawprintHeight = pawprintWidth * PAWPRINT_DISPLAY_HEIGHT_RATIO;
 
           return (
@@ -329,7 +314,7 @@ export function DiaryBookMonthIndexPdfPage({
                   src={pawprintSrc}
                   style={{
                     position: "absolute",
-                    top: scaled(pawLayout.topPx, "y"),
+                    top: scaled(PAWPRINT_TOP_PX, "y"),
                     left: (cellWidth - pawprintWidth) / 2,
                     width: pawprintWidth,
                     height: pawprintHeight,
@@ -343,9 +328,8 @@ export function DiaryBookMonthIndexPdfPage({
                     styles.dayExtra,
                     {
                       position: "absolute",
+                      right: scaled(EXTRA_COUNT_RIGHT_PX, "x"),
                       bottom: scaled(EXTRA_COUNT_BOTTOM_PX, "y"),
-                      left: 0,
-                      width: cellWidth,
                     },
                   ]}
                 >
