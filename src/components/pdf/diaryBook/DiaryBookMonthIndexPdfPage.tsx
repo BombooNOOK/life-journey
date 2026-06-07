@@ -30,9 +30,8 @@ import {
 const PAWPRINT_ICON_WIDTH_PX = 17;
 /** +N ありの日は肉球を少し小さくして下端の +N と重ならないようにする */
 const PAWPRINT_ICON_WIDTH_WITH_EXTRA_PX = 14;
-/** 透過PNG素材の実寸（build-diary-book-calendar-pawprint.mjs） */
-const PAWPRINT_ASSET_WIDTH_PX = 55;
-const PAWPRINT_ASSET_HEIGHT_PX = 53;
+/** PDFセル内の見た目優先。実寸55×53より縦を少し抑えて横広に見せる */
+const PAWPRINT_DISPLAY_HEIGHT_RATIO = 0.85;
 /** ビューワー opacity-85 相当 */
 const PAWPRINT_OPACITY = 0.85;
 /** セル内の日付・肉球・+N 位置（724 設計 px） */
@@ -297,8 +296,7 @@ export function DiaryBookMonthIndexPdfPage({
           const showPawprint = cell.hasEntry;
           const pawLayout = pawprintLayoutForCell(cell.extraEntryCount);
           const pawprintWidth = scaled(pawLayout.widthPx, "x");
-          const pawprintHeight =
-            pawprintWidth * (PAWPRINT_ASSET_HEIGHT_PX / PAWPRINT_ASSET_WIDTH_PX);
+          const pawprintHeight = pawprintWidth * PAWPRINT_DISPLAY_HEIGHT_RATIO;
 
           return (
             <View
