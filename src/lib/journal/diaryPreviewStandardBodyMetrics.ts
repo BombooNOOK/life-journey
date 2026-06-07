@@ -1,9 +1,8 @@
 import type { ContentFontMode } from "@/lib/journal/contentFontMode";
 import { DIARY_BODY_CHARS_PER_LINE_BY_MODE } from "@/lib/journal/diaryPreviewBodyLineLimits";
 import {
-  DIARY_PREVIEW_BODY_REGION,
+  getDiaryPreviewBodyContentWidthPx,
   getFixedPreviewBodyTextStyle,
-  regionBoxToPx,
 } from "@/lib/journal/diaryPreviewFixedLayout";
 
 /** 全角1字 ≒ fontSize の目安幅（Noto Sans JP・製本プレビュー724px座標） */
@@ -17,7 +16,7 @@ export function estimateBodyLineWidthPx(
 }
 
 export function getDiaryPreviewBodyRegionWidthPx(): number {
-  return regionBoxToPx(DIARY_PREVIEW_BODY_REGION).width;
+  return getDiaryPreviewBodyContentWidthPx();
 }
 
 /** 右端クリップが起きるかの理論目安（実機は ?bodyLinesDebug=1 で確認） */

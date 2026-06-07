@@ -3,15 +3,17 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import type { CSSProperties, ReactNode } from "react";
 import { MoodOwlIcon } from "@/components/journal/MoodOwlIcon";
-import { getActivityMeta, type DiaryDesignId } from "@/lib/journal/meta";
+import {
+  getActivityMeta,
+  getCompanionReadingHeading,
+  normalizeCompanionType,
+  type DiaryDesignId,
+} from "@/lib/journal/meta";
 import { DiaryPreviewFrameBackground } from "@/components/journal/DiaryPreviewFrameBackground";
 import { DiaryPreviewGoldFrameOverlay } from "@/components/journal/DiaryPreviewGoldFrameOverlay";
 import { DIARY_PREVIEW_GOLD_FRAME_PAGE_BG } from "@/lib/journal/diaryPreviewGoldFrame";
 import { diaryTemplatePathForCompanion } from "@/lib/journal/templateAssets";
-import {
-  DEFAULT_CONTENT_FONT_MODE,
-  normalizeContentFontMode,
-} from "@/lib/journal/contentFontMode";
+import { normalizeContentFontMode } from "@/lib/journal/contentFontMode";
 import {
   countBodyLayoutLinesBeyondBindingPreview,
   getBodyLayoutLines,
@@ -21,28 +23,62 @@ import {
 } from "@/lib/journal/diaryPreviewBodyLineLimits";
 import { DIARY_PREVIEW_BODY_FONT_FAMILY } from "@/lib/journal/diaryPreviewBodyFont";
 import {
+  DIARY_PREVIEW_BODY_LINE_BASE_STYLE,
   DIARY_PREVIEW_BODY_LINES_CONTAINER_STYLE,
   getDiaryPreviewBodyLineStyle,
 } from "@/lib/journal/diaryPreviewBodyLineDisplay";
+import { getDiaryCommentPdfLinesForBinding } from "@/lib/journal/diaryCommentPdfWrap";
 import {
-  DIARY_PREVIEW_BODY_REGION,
-  DIARY_PREVIEW_COMMENT_REGION,
+  DIARY_PREVIEW_BODY_LABEL_STYLE,
+  DIARY_PREVIEW_BODY_LABEL_TEXT,
+  getDiaryPreviewBodyContentRegionBox,
+  DIARY_PREVIEW_BODY_TEXT_COLOR,
+  getDiaryPreviewBodyLabelCenterYPct,
+  getDiaryPreviewBodyLabelLeftPct,
   DIARY_PREVIEW_COMMENT_INNER_PADDING,
+  DIARY_PREVIEW_COMMENT_LABEL_STYLE,
   DIARY_PREVIEW_COMMENT_TEXT_STYLE,
-  DIARY_PREVIEW_DATE_ROW_NUDGE,
+  getDiaryPreviewCommentContentRegionBox,
+  getDiaryPreviewCommentLabelCenterYPct,
+  getDiaryPreviewCommentLabelLeftPct,
   DIARY_PREVIEW_DATE_ROW_STYLE,
-  DIARY_PREVIEW_ACTIVITY_ANSWER_NUDGE_Y_PX,
+  getDiaryPreviewDateRowSegments,
+  getDiaryPreviewDateRowTextStyle,
+  getDiaryPreviewDateRowTopPct,
   DIARY_PREVIEW_ACTIVITY_ANSWER_SLOT_HEIGHT_PX,
-  DIARY_PREVIEW_ACTIVITY_ANSWER_SLOT_TOP_PX,
+  DIARY_PREVIEW_ACTIVITY_ANSWER_TEXT_NUDGE_Y_PX,
+  getDiaryPreviewActivityAnswerSlotTopPx,
+  DIARY_PREVIEW_ACTIVITY_LABEL_STYLE,
+  DIARY_PREVIEW_ACTIVITY_QUESTION_TEXT,
+  getDiaryPreviewActivityAnswerLeftPct,
+  getDiaryPreviewActivityAnswerWidthPct,
+  getDiaryPreviewActivityQuestionCenterYPct,
+  getDiaryPreviewActivityQuestionLabelLeftPct,
   getFixedPreviewActivityTextStyle,
   DIARY_PREVIEW_MOOD_EMOJI,
   DIARY_PREVIEW_NUMBER_STYLE,
+  DIARY_PREVIEW_NUMBER_MOOD_LABEL_STYLE,
+  DIARY_PREVIEW_NUMBER_MOOD_ROWS,
+  getDiaryPreviewMoodSlotCenterYPct,
+  getDiaryPreviewNumberMoodLabelLeftPct,
+  getDiaryPreviewNumberMoodRowCenterYPct,
+  getDiaryPreviewNumberMoodValueCenterXPct,
+  getDiaryPreviewNumberTextStyle,
+  DIARY_PREVIEW_PHOTO_LABEL_STYLE,
+  DIARY_PREVIEW_PHOTO_LABEL_TEXT,
+  getDiaryPreviewPhotoLabelCenterXPct,
+  getDiaryPreviewPhotoLabelCenterYPct,
+  getDiaryPreviewPhotoLeftPct,
+  getDiaryPreviewPhotoTopPct,
+  getDiaryPreviewPhotoWidthPct,
   DIARY_PREVIEW_OVERLAY_FONT,
   DIARY_PREVIEW_PAGE_HEIGHT,
   DIARY_PREVIEW_PAGE_WIDTH,
   DIARY_PREVIEW_BODY_LINES_CLIP_INNER_CLASS,
   DIARY_PREVIEW_SCROLL_INNER_CLASS,
-  DIARY_PREVIEW_TEMPLATE_LAYOUT,
+  DIARY_PREVIEW_TITLE_REGION,
+  DIARY_PREVIEW_TITLE_STYLE,
+  DIARY_PREVIEW_TITLE_TEXT,
   getDiaryPreviewBodySafeScrollHeightPx,
   getFixedPreviewBodyTextStyle,
 } from "@/lib/journal/diaryPreviewFixedLayout";
@@ -287,17 +323,18 @@ export function DiaryPreviewFixedPage({
     hiddenLineCount,
     bindingBodyOverflow,
   ]);
+  const resolvedCompanionType = normalizeCompanionType(companionType);
+  const commentHeading = getCompanionReadingHeading(resolvedCompanionType);
   const owlComment =
     comment?.trim() ||
     (kanteiOrderExists === false
       ? JOURNAL_OWL_COMMENT_KANTEI_REQUIRED_MESSAGE
-      : "保存後に「フクロウ先生の読み解き」がここに入ります。");
-  const layout = DIARY_PREVIEW_TEMPLATE_LAYOUT;
-  const weekdayLabel = ["日", "月", "火", "水", "木", "金", "土"][previewDate.getDay()];
+      : `保存後に「${commentHeading}」がここに入ります。`);
+  const commentLines = getDiaryCommentPdfLinesForBinding(owlComment);
   const displayedNumbers = diaryNumbers ?? { today: "-", month: "-", year: "-", calmness: "-" };
-  const bodyTextStyle = getFixedPreviewBodyTextStyle(
-    contentFontModeProp ?? DEFAULT_CONTENT_FONT_MODE,
-  );
+  const bodyTextStyle = getFixedPreviewBodyTextStyle(contentFontMode);
+  const dateTextStyle = getDiaryPreviewDateRowTextStyle(contentFontMode);
+  const numberTextStyle = getDiaryPreviewNumberTextStyle(contentFontMode);
   const activityTextStyle = getFixedPreviewActivityTextStyle();
 
   const templateSrc =
@@ -318,54 +355,97 @@ export function DiaryPreviewFixedPage({
         className="absolute inset-0 z-10 antialiased"
         style={{ fontFamily: DIARY_PREVIEW_OVERLAY_FONT }}
       >
-        {(
-          [
-            { left: layout.dateYearLeft, text: String(previewDate.getFullYear()) },
-            { left: layout.dateMonthLeft, text: String(previewDate.getMonth() + 1) },
-            { left: layout.dateDayLeft, text: String(previewDate.getDate()) },
-            { left: layout.dateWeekLeft, text: weekdayLabel, week: true },
-          ] as const
-        ).map((slot) => (
-          <p
-            key={slot.left}
-            className="absolute whitespace-nowrap text-stone-700 [font-variant-numeric:tabular-nums]"
-            style={{
-              left: slot.left,
-              top: layout.dateTop,
-              fontSize: DIARY_PREVIEW_DATE_ROW_STYLE.fontSize,
-              lineHeight: DIARY_PREVIEW_DATE_ROW_STYLE.lineHeight,
-              letterSpacing:
-                "week" in slot && slot.week
-                  ? DIARY_PREVIEW_DATE_ROW_STYLE.weekLetterSpacing
-                  : DIARY_PREVIEW_DATE_ROW_STYLE.letterSpacing,
-              transform: DIARY_PREVIEW_DATE_ROW_NUDGE,
-            }}
-          >
-            {slot.text}
-          </p>
-        ))}
         <div
-          className="absolute box-border flex w-[64.8%] items-center justify-start text-stone-700"
+          className="absolute flex items-center justify-center"
           style={{
-            left: layout.activityLeft,
-            top: DIARY_PREVIEW_ACTIVITY_ANSWER_SLOT_TOP_PX,
+            left: DIARY_PREVIEW_TITLE_REGION.left,
+            top: DIARY_PREVIEW_TITLE_REGION.top,
+            width: DIARY_PREVIEW_TITLE_REGION.width,
+            height: DIARY_PREVIEW_TITLE_REGION.heightPct,
+            color: DIARY_PREVIEW_TITLE_STYLE.color,
+            fontFamily: DIARY_PREVIEW_TITLE_STYLE.fontFamily,
+            fontSize: DIARY_PREVIEW_TITLE_STYLE.fontSize,
+            lineHeight: DIARY_PREVIEW_TITLE_STYLE.lineHeight,
+            letterSpacing: DIARY_PREVIEW_TITLE_STYLE.letterSpacing,
+          }}
+          aria-hidden
+        >
+          <p className="m-0 text-center">{DIARY_PREVIEW_TITLE_TEXT}</p>
+        </div>
+        <div
+          className="absolute left-0 flex w-full items-center justify-center whitespace-nowrap font-bold [font-variant-numeric:tabular-nums]"
+          style={{
+            top: getDiaryPreviewDateRowTopPct(contentFontMode),
+            color: DIARY_PREVIEW_DATE_ROW_STYLE.color,
+            fontSize: dateTextStyle.fontSize,
+            lineHeight: dateTextStyle.lineHeight,
+            letterSpacing: DIARY_PREVIEW_DATE_ROW_STYLE.letterSpacing,
+            gap: `${DIARY_PREVIEW_DATE_ROW_STYLE.segmentGapPx}px`,
+          }}
+        >
+          {getDiaryPreviewDateRowSegments(previewDate).map((segment) => (
+            <span key={segment.key}>{segment.text}</span>
+          ))}
+        </div>
+        <div
+          className="absolute flex items-center whitespace-nowrap"
+          style={{
+            left: getDiaryPreviewActivityQuestionLabelLeftPct(),
+            top: getDiaryPreviewActivityQuestionCenterYPct(),
+            height: DIARY_PREVIEW_NUMBER_STYLE.slotHeightPx,
+            transform: "translateY(-50%)",
+            color: DIARY_PREVIEW_ACTIVITY_LABEL_STYLE.color,
+            fontSize: DIARY_PREVIEW_ACTIVITY_LABEL_STYLE.fontSize,
+            lineHeight: 1,
+            fontWeight: DIARY_PREVIEW_ACTIVITY_LABEL_STYLE.fontWeight,
+            letterSpacing: DIARY_PREVIEW_ACTIVITY_LABEL_STYLE.letterSpacing,
+          }}
+        >
+          {DIARY_PREVIEW_ACTIVITY_QUESTION_TEXT}
+        </div>
+        <div
+          className="absolute box-border flex items-center justify-start"
+          style={{
+            left: getDiaryPreviewActivityAnswerLeftPct(),
+            top: getDiaryPreviewActivityAnswerSlotTopPx(),
+            width: getDiaryPreviewActivityAnswerWidthPct(),
             height: DIARY_PREVIEW_ACTIVITY_ANSWER_SLOT_HEIGHT_PX,
-            transform: `translateY(${DIARY_PREVIEW_ACTIVITY_ANSWER_NUDGE_Y_PX}px)`,
+            color: DIARY_PREVIEW_BODY_TEXT_COLOR,
             fontSize: activityTextStyle.fontSize,
             lineHeight: activityTextStyle.lineHeight,
           }}
         >
-          <p className="m-0 w-full whitespace-pre-wrap break-words leading-[inherit]">
+          <p
+            className="m-0 w-full whitespace-pre-wrap break-words leading-[inherit]"
+            style={{ transform: `translateY(${DIARY_PREVIEW_ACTIVITY_ANSWER_TEXT_NUDGE_Y_PX}px)` }}
+          >
             {activityLabel.length > 62 ? `${activityLabel.slice(0, 62)}…` : activityLabel}
           </p>
         </div>
+        <div
+          className="absolute flex items-center whitespace-nowrap"
+          style={{
+            left: getDiaryPreviewBodyLabelLeftPct(),
+            top: getDiaryPreviewBodyLabelCenterYPct(),
+            height: DIARY_PREVIEW_NUMBER_STYLE.slotHeightPx,
+            transform: "translateY(-50%)",
+            color: DIARY_PREVIEW_BODY_LABEL_STYLE.color,
+            fontSize: DIARY_PREVIEW_BODY_LABEL_STYLE.fontSize,
+            lineHeight: 1,
+            fontWeight: DIARY_PREVIEW_BODY_LABEL_STYLE.fontWeight,
+            letterSpacing: DIARY_PREVIEW_BODY_LABEL_STYLE.letterSpacing,
+          }}
+        >
+          {DIARY_PREVIEW_BODY_LABEL_TEXT}
+        </div>
         <BodyPreviewClipRegion
-          region={DIARY_PREVIEW_BODY_REGION}
-          textClassName="text-stone-700/90"
+          region={getDiaryPreviewBodyContentRegionBox()}
+          textClassName=""
           textStyle={{
             ...bodyTextStyle,
             ...DIARY_PREVIEW_BODY_LINES_CONTAINER_STYLE,
             fontFamily: DIARY_PREVIEW_BODY_FONT_FAMILY,
+            color: DIARY_PREVIEW_BODY_TEXT_COLOR,
           }}
         >
           <div
@@ -391,33 +471,96 @@ export function DiaryPreviewFixedPage({
             ))}
           </div>
         </BodyPreviewClipRegion>
-        <PreviewScrollRegion
-          region={DIARY_PREVIEW_COMMENT_REGION}
-          textClassName="text-stone-700/85"
-          textStyle={{
-            ...DIARY_PREVIEW_COMMENT_TEXT_STYLE,
-            padding: DIARY_PREVIEW_COMMENT_INNER_PADDING,
+        <div
+          className="absolute flex items-center whitespace-nowrap"
+          style={{
+            left: getDiaryPreviewCommentLabelLeftPct(),
+            top: getDiaryPreviewCommentLabelCenterYPct(),
+            height: DIARY_PREVIEW_NUMBER_STYLE.slotHeightPx,
+            transform: "translateY(-50%)",
+            color: DIARY_PREVIEW_COMMENT_LABEL_STYLE.color,
+            fontSize: DIARY_PREVIEW_COMMENT_LABEL_STYLE.fontSize,
+            lineHeight: 1,
+            fontWeight: DIARY_PREVIEW_COMMENT_LABEL_STYLE.fontWeight,
+            letterSpacing: DIARY_PREVIEW_COMMENT_LABEL_STYLE.letterSpacing,
           }}
         >
-          {owlComment}
-        </PreviewScrollRegion>
+          {commentHeading}
+        </div>
+        <div
+          className="absolute overflow-hidden"
+          style={{
+            left: getDiaryPreviewCommentContentRegionBox().left,
+            top: getDiaryPreviewCommentContentRegionBox().top,
+            width: getDiaryPreviewCommentContentRegionBox().width,
+            height: getDiaryPreviewCommentContentRegionBox().heightPct,
+          }}
+        >
+          <div
+            className={DIARY_PREVIEW_BODY_LINES_CLIP_INNER_CLASS}
+            style={{
+              ...DIARY_PREVIEW_COMMENT_TEXT_STYLE,
+              ...DIARY_PREVIEW_BODY_LINES_CONTAINER_STYLE,
+              padding: DIARY_PREVIEW_COMMENT_INNER_PADDING,
+              height: "100%",
+              maxHeight: "100%",
+            }}
+          >
+            {commentLines.map((line, index) => (
+              <div
+                key={`comment-line-${index}`}
+                role="presentation"
+                style={{
+                  ...DIARY_PREVIEW_BODY_LINE_BASE_STYLE,
+                  fontSize: DIARY_PREVIEW_COMMENT_TEXT_STYLE.fontSize,
+                  lineHeight: DIARY_PREVIEW_COMMENT_TEXT_STYLE.lineHeight,
+                  letterSpacing: DIARY_PREVIEW_COMMENT_TEXT_STYLE.letterSpacing,
+                  color: DIARY_PREVIEW_COMMENT_TEXT_STYLE.color,
+                }}
+              >
+                {line.length > 0 ? line : "\u00a0"}
+              </div>
+            ))}
+          </div>
+        </div>
+        {DIARY_PREVIEW_NUMBER_MOOD_ROWS.map((row) => (
+          <div
+            key={`${row.key}-label`}
+            className="absolute flex items-center"
+            style={{
+              left: getDiaryPreviewNumberMoodLabelLeftPct(),
+              top: getDiaryPreviewNumberMoodRowCenterYPct(row.key),
+              height: DIARY_PREVIEW_NUMBER_STYLE.slotHeightPx,
+              transform: "translateY(-50%)",
+              color: DIARY_PREVIEW_NUMBER_MOOD_LABEL_STYLE.color,
+              fontSize: DIARY_PREVIEW_NUMBER_MOOD_LABEL_STYLE.fontSize,
+              lineHeight: 1,
+              fontWeight: DIARY_PREVIEW_NUMBER_MOOD_LABEL_STYLE.fontWeight,
+              letterSpacing: DIARY_PREVIEW_NUMBER_MOOD_LABEL_STYLE.letterSpacing,
+              whiteSpace: "nowrap",
+            }}
+          >
+            {row.label}
+          </div>
+        ))}
         {(
           [
-            { top: layout.numberTodayTop, value: displayedNumbers.today },
-            { top: layout.numberMonthTop, value: displayedNumbers.month },
-            { top: layout.numberYearTop, value: displayedNumbers.year },
+            { key: "today" as const, value: displayedNumbers.today },
+            { key: "month" as const, value: displayedNumbers.month },
+            { key: "year" as const, value: displayedNumbers.year },
           ] as const
         ).map((slot) => (
           <div
-            key={slot.top}
-            className="absolute flex items-center justify-center font-semibold text-stone-700 [font-variant-numeric:tabular-nums]"
+            key={slot.key}
+            className="absolute flex items-center justify-center font-bold [font-variant-numeric:tabular-nums]"
             style={{
-              left: layout.numberLeft,
-              top: slot.top,
+              left: getDiaryPreviewNumberMoodValueCenterXPct(),
+              top: getDiaryPreviewNumberMoodRowCenterYPct(slot.key),
               width: DIARY_PREVIEW_NUMBER_STYLE.slotWidthPx,
               height: DIARY_PREVIEW_NUMBER_STYLE.slotHeightPx,
               transform: "translate(-50%, -50%)",
-              fontSize: DIARY_PREVIEW_NUMBER_STYLE.fontSize,
+              color: DIARY_PREVIEW_NUMBER_STYLE.color,
+              fontSize: numberTextStyle.fontSize,
               lineHeight: 1,
             }}
           >
@@ -427,11 +570,11 @@ export function DiaryPreviewFixedPage({
         <div
           className="absolute flex items-center justify-center"
           style={{
-            left: layout.numberLeft,
-            top: layout.numberCalmTop,
+            left: getDiaryPreviewNumberMoodValueCenterXPct(),
+            top: getDiaryPreviewMoodSlotCenterYPct(),
             width: DIARY_PREVIEW_MOOD_EMOJI.boxPx,
             height: DIARY_PREVIEW_MOOD_EMOJI.boxPx,
-            transform: DIARY_PREVIEW_MOOD_EMOJI.transform,
+            transform: "translate(-50%, -50%)",
           }}
           aria-hidden
         >
@@ -440,15 +583,30 @@ export function DiaryPreviewFixedPage({
         <div
           className="absolute aspect-square overflow-hidden rounded-sm relative"
           style={{
-            left: layout.photoLeft,
-            top: layout.photoTop,
-            width: layout.photoWidth,
+            left: getDiaryPreviewPhotoLeftPct(),
+            top: getDiaryPreviewPhotoTopPct(),
+            width: getDiaryPreviewPhotoWidthPct(),
           }}
         >
           <DiaryPreviewPhotoFrame
             photoDisplaySrc={photoDisplaySrc}
             photoLoading={photoLoading}
           />
+        </div>
+        <div
+          className="absolute z-[3] flex items-center justify-center whitespace-nowrap"
+          style={{
+            left: getDiaryPreviewPhotoLabelCenterXPct(),
+            top: getDiaryPreviewPhotoLabelCenterYPct(),
+            transform: "translate(-50%, -50%)",
+            color: DIARY_PREVIEW_PHOTO_LABEL_STYLE.color,
+            fontSize: DIARY_PREVIEW_PHOTO_LABEL_STYLE.fontSize,
+            lineHeight: 1,
+            fontWeight: DIARY_PREVIEW_PHOTO_LABEL_STYLE.fontWeight,
+            letterSpacing: DIARY_PREVIEW_PHOTO_LABEL_STYLE.letterSpacing,
+          }}
+        >
+          {DIARY_PREVIEW_PHOTO_LABEL_TEXT}
         </div>
       </div>
     </div>

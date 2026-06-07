@@ -41,9 +41,8 @@ function buildCycleNumbers(params: {
   return { py, pm, pd };
 }
 
-export function normalizeJournalCommentText(text: string): string {
-  const normalized = text
-    // 不自然になりやすい先頭句を除去
+function normalizeJournalCommentSegment(text: string): string {
+  return text
     .replace(/^今日はどちらかというと、\s*/g, "")
     .replace(/^今日はどちらかというと\s*/g, "")
     .replace(/^今日の記録を読むと、\s*/g, "")
@@ -52,14 +51,25 @@ export function normalizeJournalCommentText(text: string): string {
     .replace(/^記録を読むと\s*/g, "")
     .replace(/^今日は、\s*/g, "")
     .replace(/^今日は\s*/g, "")
-    // 句読点の重複を軽く補正
     .replace(/、、+/g, "、")
     .replace(/。。+/g, "。")
     .replace(/、。/g, "。")
-    .replace(/\s{2,}/g, " ")
+    .replace(/\u00A0/g, " ")
+    .replace(/\u200B/g, "")
+    .replace(/\s+/g, " ")
     .trim();
+}
 
-  return normalized;
+/** base + accent 境界の \\n のみ保持（最大2ブロック） */
+export function normalizeJournalCommentText(text: string): string {
+  const parts = text
+    .replace(/\r\n/g, "\n")
+    .split("\n")
+    .map((segment) => normalizeJournalCommentSegment(segment))
+    .filter(Boolean);
+  if (parts.length === 0) return "";
+  if (parts.length === 1) return parts[0];
+  return `${parts[0]}\n${parts.slice(1).join(" ")}`;
 }
 
 function buildActionLine(

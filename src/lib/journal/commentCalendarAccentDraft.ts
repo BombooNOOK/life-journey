@@ -2,6 +2,9 @@
  * フクロウ先生（伴走キャラ owl）用の読み解き末尾アクセントドラフト（No.163–261 相当）。
  * calendarAccents.ts 経由で generateDiaryReading の pickAccent に渡される。
  *
+ * 原稿ルール: commentTextRules.ts の DIARY_READING_COMMENT_OUTPUT_RULES を参照。
+ * 各行は改行なしのひと続きの文字列で書くこと。
+ *
  * 将来: companionType ごとにアクセント文を分離する想定。現状は owl 文言のみ。
  */
 export type SingleDigit = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9;

@@ -1,6 +1,6 @@
 import { companionTypeToTemplateSlug } from "@/lib/journal/coverAssets";
 
-const DIARY_BOOK_IMAGE_CACHE_VERSION = "9";
+const DIARY_BOOK_IMAGE_CACHE_VERSION = "12";
 
 function withCache(path: string): string {
   return `${path}?v=${DIARY_BOOK_IMAGE_CACHE_VERSION}`;
@@ -71,7 +71,13 @@ export function diaryBookPreBackCoverIllustrationImagePath(): string {
  * 未配置キャラはフクロウ（drfukuro）にフォールバック。
  */
 /** `public/images/diary-book-body-plain-*.png` が置いてある slug */
-const DIARY_BOOK_BODY_TEMPLATE_AVAILABLE = new Set(["drfukuro"]);
+const DIARY_BOOK_BODY_TEMPLATE_AVAILABLE = new Set([
+  "drfukuro",
+  "harinezumi",
+  "namakemono",
+  "risu",
+  "kerosion",
+]);
 
 export function diaryBookBodyTemplatePathForCompanion(companionType: string): string {
   const slug = companionTypeToTemplateSlug(companionType);

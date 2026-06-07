@@ -2,6 +2,9 @@
  * フクロウ先生（伴走キャラ owl）用の読み解きベース本文ドラフト（No.001–162 相当）。
  * generateDiaryReading の baseComments はここから生成される。
  *
+ * 原稿ルール: commentTextRules.ts の DIARY_READING_COMMENT_OUTPUT_RULES を参照。
+ * 各行は改行なしのひと続きの文字列で書くこと。
+ *
  * 将来: companionType（owl / hedgehog / sloth 等）ごとに別ファイルまたは
  * Record<CompanionVoice, …> へ分離し、buildDiaryReadingFromJournalInput から voice を渡す想定。
  * 現状 companionType は再生成トリガーのみで、文体切り替えには未使用。

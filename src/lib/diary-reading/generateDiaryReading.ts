@@ -7,6 +7,7 @@ import {
   personalDayCalendarMonthOverlapAccents,
   specialOverlapAccents,
 } from "./calendarAccents";
+import { joinDiaryReadingCommentParts } from "./commentTextRules";
 import { reduceToSingleDigit } from "./numerology";
 import type { AccentTemplate, DiaryReadingInput } from "./types";
 
@@ -122,7 +123,7 @@ export function generateDiaryReading(input: DiaryReadingInput): {
   });
 
   return {
-    text: [base.text, accent?.text].filter(Boolean).join("\n\n"),
+    text: joinDiaryReadingCommentParts(base.text, accent?.text),
     usedTemplateIds: [base.id, ...(accent ? [accent.id] : [])],
   };
 }

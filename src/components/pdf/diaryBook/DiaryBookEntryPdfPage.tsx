@@ -5,71 +5,130 @@ import { DiaryBookPdfPageCanvas } from "@/components/pdf/diaryBook/DiaryBookPdfP
 import type { BoundDiaryEntry } from "@/components/journal/DiaryYearBoundPages";
 import { normalizeContentFontMode } from "@/lib/journal/contentFontMode";
 import { getBodyLayoutLinesForBindingPreview } from "@/lib/journal/diaryPreviewBodyLineLimits";
+import { resolveDiaryCommentPdfRenderLayout } from "@/lib/journal/diaryCommentPdfWrap";
 import {
-  DIARY_PREVIEW_ACTIVITY_ANSWER_NUDGE_Y_PX,
   DIARY_PREVIEW_ACTIVITY_ANSWER_SLOT_HEIGHT_PX,
-  DIARY_PREVIEW_ACTIVITY_ANSWER_SLOT_TOP_PX,
-  DIARY_PREVIEW_BODY_REGION,
-  DIARY_PREVIEW_COMMENT_REGION,
+  DIARY_PREVIEW_ACTIVITY_ANSWER_TEXT_NUDGE_Y_PX,
+  getDiaryPreviewActivityAnswerSlotTopPx,
+  getDiaryPreviewActivityQuestionCenterYPx,
+  DIARY_PREVIEW_ACTIVITY_LABEL_STYLE,
+  DIARY_PREVIEW_ACTIVITY_QUESTION_TEXT,
+  DIARY_PREVIEW_BODY_TEXT_COLOR,
+  getDiaryPreviewActivityAnswerLeftPct,
+  getDiaryPreviewActivityAnswerWidthPct,
+  getDiaryPreviewActivityQuestionLabelLeftPx,
+  DIARY_PREVIEW_BODY_LABEL_STYLE,
+  DIARY_PREVIEW_BODY_LABEL_TEXT,
+  getDiaryPreviewBodyLabelCenterYPx,
+  getDiaryPreviewBodyLabelLeftPx,
+  DIARY_PREVIEW_COMMENT_LABEL_STYLE,
   DIARY_PREVIEW_COMMENT_TEXT_STYLE,
+  getDiaryPreviewCommentLabelCenterYPx,
+  getDiaryPreviewCommentLabelLeftPx,
+  getFixedPreviewCommentBoxPx,
   DIARY_PREVIEW_DATE_ROW_STYLE,
+  getDiaryPreviewDateRowSegments,
+  getDiaryPreviewDateRowTextStyle,
+  getDiaryPreviewDateRowTopPx,
   DIARY_PREVIEW_MOOD_EMOJI,
   DIARY_PREVIEW_NUMBER_STYLE,
-  DIARY_PREVIEW_TEMPLATE_LAYOUT,
+  DIARY_PREVIEW_NUMBER_MOOD_LABEL_STYLE,
+  DIARY_PREVIEW_NUMBER_MOOD_ROWS,
+  getDiaryPreviewMoodSlotCenterYPx,
+  getDiaryPreviewNumberMoodLabelLeftPx,
+  getDiaryPreviewNumberMoodValueCenterXPx,
+  getDiaryPreviewNumberSlotCenterYPx,
+  getDiaryPreviewNumberTextStyle,
+  DIARY_PREVIEW_TITLE_PDF_FONT,
+  DIARY_PREVIEW_TITLE_REGION,
+  DIARY_PREVIEW_TITLE_STYLE,
+  DIARY_PREVIEW_TITLE_TEXT,
+  DIARY_PREVIEW_PHOTO_LABEL_STYLE,
+  DIARY_PREVIEW_PHOTO_LABEL_TEXT,
+  DIARY_PREVIEW_PHOTO_REGION,
   getDiaryPreviewBodySafeScrollHeightPx,
   getFixedPreviewActivityTextStyle,
+  getFixedPreviewBodyBoxPx,
   getFixedPreviewBodyTextStyle,
   regionBoxToPx,
 } from "@/lib/journal/diaryPreviewFixedLayout";
 import { resolveDiaryBookPublicImagePath } from "@/lib/journal/diaryBookPrintPdfAssets";
 import { moodOwlIconImagePath } from "@/lib/journal/moodAssets";
-import { getActivityMeta } from "@/lib/journal/meta";
+import { getActivityMeta, getCompanionReadingHeading, normalizeCompanionType } from "@/lib/journal/meta";
 import {
   diaryBookPdfPct,
   diaryBookPdfPx,
   parseCssPx,
 } from "@/lib/journal/diaryBookPrintPdfLayout";
 
-const WEEKDAY_LABELS = ["日", "月", "火", "水", "木", "金", "土"] as const;
-
 const styles = StyleSheet.create({
-  dateText: {
+  dateRow: {
     position: "absolute",
+    left: 0,
+    width: "100%",
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  dateText: {
     fontFamily: "NotoSansJP",
-    color: "#44403c",
+    color: DIARY_PREVIEW_DATE_ROW_STYLE.color,
     lineHeight: 1,
+    fontWeight: DIARY_PREVIEW_DATE_ROW_STYLE.fontWeight,
+  },
+  activityQuestionLabel: {
+    position: "absolute",
+    justifyContent: "center",
+    fontFamily: "NotoSansJP",
+    color: DIARY_PREVIEW_ACTIVITY_LABEL_STYLE.color,
+    fontWeight: DIARY_PREVIEW_ACTIVITY_LABEL_STYLE.fontWeight,
   },
   activityBox: {
     position: "absolute",
     fontFamily: "NotoSansJP",
-    color: "#44403c",
+    color: DIARY_PREVIEW_BODY_TEXT_COLOR,
     overflow: "hidden",
   },
   activityText: {
     fontFamily: "NotoSansJP",
-    color: "#44403c",
+    color: DIARY_PREVIEW_BODY_TEXT_COLOR,
     width: "100%",
+  },
+  bodyQuestionLabel: {
+    position: "absolute",
+    justifyContent: "center",
+    fontFamily: "NotoSansJP",
+    color: DIARY_PREVIEW_BODY_LABEL_STYLE.color,
+    fontWeight: DIARY_PREVIEW_BODY_LABEL_STYLE.fontWeight,
   },
   bodyBox: {
     position: "absolute",
     overflow: "hidden",
     fontFamily: "NotoSansJP",
-    color: "rgba(68, 64, 60, 0.9)",
+    color: DIARY_PREVIEW_BODY_TEXT_COLOR,
   },
   bodyLine: {
     fontFamily: "NotoSansJP",
-    color: "rgba(68, 64, 60, 0.9)",
+    color: DIARY_PREVIEW_BODY_TEXT_COLOR,
     width: "100%",
+  },
+  commentLabel: {
+    position: "absolute",
+    justifyContent: "center",
+    fontFamily: "NotoSansJP",
+    color: DIARY_PREVIEW_COMMENT_LABEL_STYLE.color,
+    fontWeight: DIARY_PREVIEW_COMMENT_LABEL_STYLE.fontWeight,
   },
   commentBox: {
     position: "absolute",
     overflow: "hidden",
+    flexDirection: "column",
     fontFamily: "NotoSansJP",
-    color: "rgba(68, 64, 60, 0.85)",
+    color: DIARY_PREVIEW_BODY_TEXT_COLOR,
   },
   commentText: {
     fontFamily: "NotoSansJP",
-    color: "rgba(68, 64, 60, 0.85)",
+    color: DIARY_PREVIEW_BODY_TEXT_COLOR,
     width: "100%",
   },
   numberSlot: {
@@ -77,9 +136,16 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     fontFamily: "NotoSansJP",
-    fontWeight: 700,
-    color: "#44403c",
+    fontWeight: DIARY_PREVIEW_NUMBER_STYLE.fontWeight,
+    color: DIARY_PREVIEW_NUMBER_STYLE.color,
     textAlign: "center",
+  },
+  numberLabel: {
+    position: "absolute",
+    justifyContent: "center",
+    fontFamily: "NotoSansJP",
+    color: DIARY_PREVIEW_NUMBER_MOOD_LABEL_STYLE.color,
+    fontWeight: DIARY_PREVIEW_NUMBER_MOOD_LABEL_STYLE.fontWeight,
   },
   moodSlot: {
     position: "absolute",
@@ -88,6 +154,15 @@ const styles = StyleSheet.create({
   },
   moodIconImage: {
     objectFit: "contain",
+  },
+  photoLabel: {
+    position: "absolute",
+    alignItems: "center",
+    justifyContent: "center",
+    fontFamily: "NotoSansJP",
+    color: DIARY_PREVIEW_PHOTO_LABEL_STYLE.color,
+    fontWeight: DIARY_PREVIEW_PHOTO_LABEL_STYLE.fontWeight,
+    textAlign: "center",
   },
   photoFrame: {
     position: "absolute",
@@ -98,6 +173,16 @@ const styles = StyleSheet.create({
     width: "100%",
     height: "100%",
     objectFit: "contain",
+  },
+  titleBox: {
+    position: "absolute",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  titleText: {
+    fontFamily: DIARY_PREVIEW_TITLE_PDF_FONT,
+    color: "#574129",
+    textAlign: "center",
   },
 });
 
@@ -135,9 +220,8 @@ export function DiaryBookEntryPdfPage({
   entry: BoundDiaryEntry;
   photoDataUri?: string | null;
 }) {
-  const layout = DIARY_PREVIEW_TEMPLATE_LAYOUT;
   const previewDate = new Date(entry.createdAt);
-  const weekdayLabel = WEEKDAY_LABELS[previewDate.getDay()] ?? "";
+  const dateRowSegments = getDiaryPreviewDateRowSegments(previewDate);
   const moodIconSrc = resolveDiaryBookPublicImagePath(moodOwlIconImagePath(entry.mood));
   const activityLabel = getActivityMeta(entry.activity).label;
   const trimmedActivity =
@@ -150,16 +234,23 @@ export function DiaryBookEntryPdfPage({
     ? getBodyLayoutLinesForBindingPreview(entry.content, contentFontMode)
     : [];
 
-  const bodyRegion = regionBoxToPx(DIARY_PREVIEW_BODY_REGION);
-  const commentRegion = regionBoxToPx(DIARY_PREVIEW_COMMENT_REGION);
-  const commentPadding = parsePadding("5px 10px 9px 8px");
-  const bodyClipHeight = diaryBookPdfPx(getDiaryPreviewBodySafeScrollHeightPx(), "y");
+  const bodyRegion = getFixedPreviewBodyBoxPx();
+  const commentRegion = getFixedPreviewCommentBoxPx();
+  const commentPadding = parsePadding("0");
+  const bodyClipHeight = diaryBookPdfPx(bodyRegion.height, "y");
   const bodyWidth = diaryBookPdfPx(bodyRegion.width, "x");
+  const bodyLabelLeft = diaryBookPdfPx(getDiaryPreviewBodyLabelLeftPx(), "x");
+  const bodyLabelFontSize = diaryBookPdfPx(
+    parseCssPx(DIARY_PREVIEW_BODY_LABEL_STYLE.fontSize),
+    "x",
+  );
+  const bodyLabelCenterY = diaryBookPdfPx(getDiaryPreviewBodyLabelCenterYPx(), "y");
+  const bodyLabelRowHeight = diaryBookPdfPx(DIARY_PREVIEW_NUMBER_STYLE.slotHeightPx, "y");
 
+  const commentHeading = getCompanionReadingHeading(normalizeCompanionType(entry.companionType));
   const owlComment =
     entry.generatedComment?.trim() ||
-    "保存後に「フクロウ先生の読み解き」がここに入ります。";
-
+    `保存後に「${commentHeading}」がここに入ります。`;
   const numbers = entry.diaryNumbers ?? {
     today: "-",
     month: "-",
@@ -167,69 +258,159 @@ export function DiaryBookEntryPdfPage({
     calmness: "-",
   };
 
-  const dateFontSize = diaryBookPdfPx(parseCssPx(DIARY_PREVIEW_DATE_ROW_STYLE.fontSize), "x");
+  const dateTextStyle = getDiaryPreviewDateRowTextStyle(contentFontMode);
+  const dateFontSize = diaryBookPdfPx(parseCssPx(dateTextStyle.fontSize), "x");
   const bodyFontSize = diaryBookPdfPx(parseCssPx(bodyTextStyle.fontSize), "x");
   const bodyLineHeight = parseFloat(bodyTextStyle.lineHeight) || 1.575;
   const activityFontSize = diaryBookPdfPx(parseCssPx(activityTextStyle.fontSize), "x");
-  const activityWidth = diaryBookPdfPct("64.8%", "x");
-  const commentFontSize =
-    diaryBookPdfPx(parseCssPx(DIARY_PREVIEW_COMMENT_TEXT_STYLE.fontSize), "x") * 0.97;
-  const commentLineHeight = 1.58;
+  const activityWidth = diaryBookPdfPct(getDiaryPreviewActivityAnswerWidthPct(), "x");
+  const activityQuestionLabelLeft = diaryBookPdfPx(
+    getDiaryPreviewActivityQuestionLabelLeftPx(),
+    "x",
+  );
+  const activityQuestionLabelFontSize = diaryBookPdfPx(
+    parseCssPx(DIARY_PREVIEW_ACTIVITY_LABEL_STYLE.fontSize),
+    "x",
+  );
+  const activityQuestionCenterY = diaryBookPdfPx(
+    getDiaryPreviewActivityQuestionCenterYPx(),
+    "y",
+  );
+  const commentBaseFontSize = diaryBookPdfPx(
+    parseCssPx(DIARY_PREVIEW_COMMENT_TEXT_STYLE.fontSize),
+    "x",
+  );
+  const commentRegionHeight = diaryBookPdfPx(commentRegion.height, "y");
+  const commentLayout = resolveDiaryCommentPdfRenderLayout(owlComment, {
+    baseFontSizePx: commentBaseFontSize,
+    regionHeightPx: commentRegionHeight,
+  });
+  const commentLines = commentLayout.lines;
+  const commentFontSize = commentBaseFontSize * commentLayout.fontScale;
+  const commentLineHeight = commentLayout.lineHeight;
   const commentWidth = diaryBookPdfPx(commentRegion.width, "x");
-  const numberFontSize = diaryBookPdfPx(parseCssPx(DIARY_PREVIEW_NUMBER_STYLE.fontSize), "x");
+  const commentLabelLeft = diaryBookPdfPx(getDiaryPreviewCommentLabelLeftPx(), "x");
+  const commentLabelFontSize = diaryBookPdfPx(
+    parseCssPx(DIARY_PREVIEW_COMMENT_LABEL_STYLE.fontSize),
+    "x",
+  );
+  const commentLabelCenterY = diaryBookPdfPx(getDiaryPreviewCommentLabelCenterYPx(), "y");
+  const commentLabelRowHeight = diaryBookPdfPx(DIARY_PREVIEW_NUMBER_STYLE.slotHeightPx, "y");
+  const numberTextStyle = getDiaryPreviewNumberTextStyle(contentFontMode);
+  const numberFontSize = diaryBookPdfPx(parseCssPx(numberTextStyle.fontSize), "x");
+
+  const titleRegion = regionBoxToPx(DIARY_PREVIEW_TITLE_REGION);
+  const titleFontSize = diaryBookPdfPx(parseCssPx(DIARY_PREVIEW_TITLE_STYLE.fontSize), "x");
 
   const numberSlotWidth = diaryBookPdfPx(DIARY_PREVIEW_NUMBER_STYLE.slotWidthPx, "x");
   const numberSlotHeight = diaryBookPdfPx(DIARY_PREVIEW_NUMBER_STYLE.slotHeightPx, "y");
   const moodBoxSize = diaryBookPdfPx(DIARY_PREVIEW_MOOD_EMOJI.boxPx, "x");
-  const numberCenterX = diaryBookPdfPct(layout.numberLeft, "x");
+  const numberCenterX = diaryBookPdfPx(getDiaryPreviewNumberMoodValueCenterXPx(), "x");
+  const numberLabelLeft = diaryBookPdfPx(getDiaryPreviewNumberMoodLabelLeftPx(), "x");
+  const numberLabelFontSize = diaryBookPdfPx(
+    parseCssPx(DIARY_PREVIEW_NUMBER_MOOD_LABEL_STYLE.fontSize),
+    "x",
+  );
+  const numberLabelRowHeight = diaryBookPdfPx(DIARY_PREVIEW_NUMBER_STYLE.slotHeightPx, "y");
 
-  const photoWidth = diaryBookPdfPct(layout.photoWidth, "x");
-  const photoLeft = diaryBookPdfPct(layout.photoLeft, "x");
-  const photoTop = diaryBookPdfPct(layout.photoTop, "y");
+  const photoSize = diaryBookPdfPx(DIARY_PREVIEW_PHOTO_REGION.sizePx, "x");
+  const photoLeft = diaryBookPdfPx(DIARY_PREVIEW_PHOTO_REGION.leftPx, "x");
+  const photoTop = diaryBookPdfPx(DIARY_PREVIEW_PHOTO_REGION.topPx, "y");
+  const photoLabelFontSize = diaryBookPdfPx(
+    parseCssPx(DIARY_PREVIEW_PHOTO_LABEL_STYLE.fontSize),
+    "x",
+  );
+  const photoLabelRowHeight = diaryBookPdfPx(DIARY_PREVIEW_NUMBER_STYLE.slotHeightPx, "y");
+  const photoLabelCenterX = diaryBookPdfPx(DIARY_PREVIEW_PHOTO_REGION.labelCenterXPx, "x");
+  const photoLabelCenterY = diaryBookPdfPx(DIARY_PREVIEW_PHOTO_REGION.labelCenterYPx, "y");
 
   const hasPhoto = entry.hasPhoto === true && Boolean(photoDataUri?.trim());
 
-  const dateSlots = [
-    { left: layout.dateYearLeft, text: String(previewDate.getFullYear()) },
-    { left: layout.dateMonthLeft, text: String(previewDate.getMonth() + 1) },
-    { left: layout.dateDayLeft, text: String(previewDate.getDate()) },
-    { left: layout.dateWeekLeft, text: weekdayLabel },
-  ] as const;
+  const dateSegmentGap = diaryBookPdfPx(DIARY_PREVIEW_DATE_ROW_STYLE.segmentGapPx, "x");
+  const dateRowTop = diaryBookPdfPx(getDiaryPreviewDateRowTopPx(contentFontMode), "y");
 
   const numberSlots = [
-    { top: layout.numberTodayTop, value: String(numbers.today) },
-    { top: layout.numberMonthTop, value: String(numbers.month) },
-    { top: layout.numberYearTop, value: String(numbers.year) },
+    { key: "today" as const, value: String(numbers.today) },
+    { key: "month" as const, value: String(numbers.month) },
+    { key: "year" as const, value: String(numbers.year) },
   ] as const;
 
   return (
     <DiaryBookPdfPageCanvas backgroundSrc={templateSrc}>
-        {dateSlots.map((slot) => (
+        <View
+          wrap={false}
+          style={[
+            styles.titleBox,
+            {
+              left: diaryBookPdfPx(titleRegion.left, "x"),
+              top: diaryBookPdfPx(titleRegion.top, "y"),
+              width: diaryBookPdfPx(titleRegion.width, "x"),
+              height: diaryBookPdfPx(titleRegion.height, "y"),
+            },
+          ]}
+        >
           <Text
-            key={slot.left}
             wrap={false}
             style={[
-              styles.dateText,
+              styles.titleText,
               {
-                left: diaryBookPdfPct(slot.left, "x"),
-                top: diaryBookPdfPct(layout.dateTop, "y"),
-                fontSize: dateFontSize,
+                fontSize: titleFontSize,
+                letterSpacing: parseFloat(DIARY_PREVIEW_TITLE_STYLE.letterSpacing) * titleFontSize,
               },
             ]}
           >
-            {slot.text}
+            {DIARY_PREVIEW_TITLE_TEXT}
           </Text>
-        ))}
+        </View>
+
+        <View wrap={false} style={[styles.dateRow, { top: dateRowTop }]}>
+          {dateRowSegments.map((segment, index) => (
+            <Text
+              key={segment.key}
+              wrap={false}
+              style={[
+                styles.dateText,
+                {
+                  fontSize: dateFontSize,
+                  marginLeft: index === 0 ? 0 : dateSegmentGap,
+                  letterSpacing:
+                    parseFloat(DIARY_PREVIEW_DATE_ROW_STYLE.letterSpacing) * dateFontSize,
+                },
+              ]}
+            >
+              {segment.text}
+            </Text>
+          ))}
+        </View>
+
+        <View
+          wrap={false}
+          style={[
+            styles.activityQuestionLabel,
+            {
+              left: activityQuestionLabelLeft,
+              top: activityQuestionCenterY,
+              height: diaryBookPdfPx(DIARY_PREVIEW_NUMBER_STYLE.slotHeightPx, "y"),
+              marginTop: -(diaryBookPdfPx(DIARY_PREVIEW_NUMBER_STYLE.slotHeightPx, "y") / 2),
+              fontSize: activityQuestionLabelFontSize,
+              letterSpacing:
+                parseFloat(DIARY_PREVIEW_ACTIVITY_LABEL_STYLE.letterSpacing) *
+                activityQuestionLabelFontSize,
+            },
+          ]}
+        >
+          <Text wrap={false} style={{ fontSize: activityQuestionLabelFontSize, lineHeight: 1 }}>
+            {DIARY_PREVIEW_ACTIVITY_QUESTION_TEXT}
+          </Text>
+        </View>
 
         <View
           wrap={false}
           style={[
             styles.activityBox,
             {
-              left: diaryBookPdfPct(layout.activityLeft, "x"),
-              top:
-                diaryBookPdfPx(DIARY_PREVIEW_ACTIVITY_ANSWER_SLOT_TOP_PX, "y") +
-                diaryBookPdfPx(DIARY_PREVIEW_ACTIVITY_ANSWER_NUDGE_Y_PX, "y"),
+              left: diaryBookPdfPct(getDiaryPreviewActivityAnswerLeftPct(), "x"),
+              top: diaryBookPdfPx(getDiaryPreviewActivityAnswerSlotTopPx(), "y"),
               width: activityWidth,
               height: diaryBookPdfPx(DIARY_PREVIEW_ACTIVITY_ANSWER_SLOT_HEIGHT_PX, "y"),
               fontSize: activityFontSize,
@@ -238,8 +419,45 @@ export function DiaryBookEntryPdfPage({
             },
           ]}
         >
-          <Text wrap style={[styles.activityText, { fontSize: activityFontSize, lineHeight: 1.25 }]}>
+          <Text
+            wrap
+            style={[
+              styles.activityText,
+              {
+                fontSize: activityFontSize,
+                lineHeight: 1.25,
+                marginTop: diaryBookPdfPx(DIARY_PREVIEW_ACTIVITY_ANSWER_TEXT_NUDGE_Y_PX, "y"),
+              },
+            ]}
+          >
             {trimmedActivity}
+          </Text>
+        </View>
+
+        <View
+          wrap={false}
+          style={[
+            styles.bodyQuestionLabel,
+            {
+              left: bodyLabelLeft,
+              top: bodyLabelCenterY,
+              height: bodyLabelRowHeight,
+              marginTop: -bodyLabelRowHeight / 2,
+              fontSize: bodyLabelFontSize,
+              letterSpacing:
+                parseFloat(DIARY_PREVIEW_BODY_LABEL_STYLE.letterSpacing) * bodyLabelFontSize,
+            },
+          ]}
+        >
+          <Text
+            wrap={false}
+            style={{
+              fontSize: bodyLabelFontSize,
+              lineHeight: 1,
+              fontWeight: DIARY_PREVIEW_BODY_LABEL_STYLE.fontWeight,
+            }}
+          >
+            {DIARY_PREVIEW_BODY_LABEL_TEXT}
           </Text>
         </View>
 
@@ -271,6 +489,34 @@ export function DiaryBookEntryPdfPage({
         <View
           wrap={false}
           style={[
+            styles.commentLabel,
+            {
+              left: commentLabelLeft,
+              top: commentLabelCenterY,
+              height: commentLabelRowHeight,
+              marginTop: -commentLabelRowHeight / 2,
+              fontSize: commentLabelFontSize,
+              letterSpacing:
+                parseFloat(DIARY_PREVIEW_COMMENT_LABEL_STYLE.letterSpacing) *
+                commentLabelFontSize,
+            },
+          ]}
+        >
+          <Text
+            wrap={false}
+            style={{
+              fontSize: commentLabelFontSize,
+              lineHeight: 1,
+              fontWeight: DIARY_PREVIEW_COMMENT_LABEL_STYLE.fontWeight,
+            }}
+          >
+            {commentHeading}
+          </Text>
+        </View>
+
+        <View
+          wrap={false}
+          style={[
             styles.commentBox,
             {
               left: diaryBookPdfPx(commentRegion.left, "x"),
@@ -286,30 +532,63 @@ export function DiaryBookEntryPdfPage({
             },
           ]}
         >
-          <Text
-            wrap
+          {commentLines.map((line, index) => (
+            <Text
+              key={`comment-line-${index}`}
+              wrap={false}
+              style={[
+                styles.commentText,
+                {
+                  fontSize: commentFontSize,
+                  lineHeight: commentLineHeight,
+                  width: commentWidth,
+                },
+              ]}
+            >
+              {line.length > 0 ? line : " "}
+            </Text>
+          ))}
+        </View>
+
+        {DIARY_PREVIEW_NUMBER_MOOD_ROWS.map((row) => (
+          <View
+            key={`${row.key}-label`}
+            wrap={false}
             style={[
-              styles.commentText,
+              styles.numberLabel,
               {
-                fontSize: commentFontSize,
-                lineHeight: commentLineHeight,
-                width: commentWidth - commentPadding.left - commentPadding.right,
+                left: numberLabelLeft,
+                top: diaryBookPdfPx(row.centerYPx, "y") - numberLabelRowHeight / 2,
+                height: numberLabelRowHeight,
               },
             ]}
           >
-            {owlComment}
-          </Text>
-        </View>
+            <Text
+              wrap={false}
+              style={{
+                fontSize: numberLabelFontSize,
+                lineHeight: 1,
+                letterSpacing:
+                  parseFloat(DIARY_PREVIEW_NUMBER_MOOD_LABEL_STYLE.letterSpacing) *
+                  numberLabelFontSize,
+              }}
+            >
+              {row.label}
+            </Text>
+          </View>
+        ))}
 
         {numberSlots.map((slot) => (
           <View
-            key={slot.top}
+            key={slot.key}
             wrap={false}
             style={[
               styles.numberSlot,
               {
                 left: numberCenterX - numberSlotWidth / 2,
-                top: diaryBookPdfPct(slot.top, "y") - numberSlotHeight / 2,
+                top:
+                  diaryBookPdfPx(getDiaryPreviewNumberSlotCenterYPx(slot.key), "y") -
+                  numberSlotHeight / 2,
                 width: numberSlotWidth,
                 height: numberSlotHeight,
                 fontSize: numberFontSize,
@@ -326,7 +605,7 @@ export function DiaryBookEntryPdfPage({
             styles.moodSlot,
             {
               left: numberCenterX - moodBoxSize / 2,
-              top: diaryBookPdfPct(layout.numberCalmTop, "y") - moodBoxSize * 0.44,
+              top: diaryBookPdfPx(getDiaryPreviewMoodSlotCenterYPx(), "y") - moodBoxSize / 2,
               width: moodBoxSize,
               height: moodBoxSize,
             },
@@ -346,14 +625,40 @@ export function DiaryBookEntryPdfPage({
             {
               left: photoLeft,
               top: photoTop,
-              width: photoWidth,
-              height: photoWidth,
+              width: photoSize,
+              height: photoSize,
             },
           ]}
         >
           {hasPhoto ? (
             <Image cache={false} src={photoDataUri!} style={styles.photoImage} />
           ) : null}
+        </View>
+
+        <View
+          wrap={false}
+          style={[
+            styles.photoLabel,
+            {
+              left: photoLabelCenterX - photoSize / 2,
+              top: photoLabelCenterY - photoLabelRowHeight / 2,
+              width: photoSize,
+              height: photoLabelRowHeight,
+            },
+          ]}
+        >
+          <Text
+            wrap={false}
+            style={{
+              fontSize: photoLabelFontSize,
+              lineHeight: 1,
+              fontWeight: DIARY_PREVIEW_PHOTO_LABEL_STYLE.fontWeight,
+              letterSpacing:
+                parseFloat(DIARY_PREVIEW_PHOTO_LABEL_STYLE.letterSpacing) * photoLabelFontSize,
+            }}
+          >
+            {DIARY_PREVIEW_PHOTO_LABEL_TEXT}
+          </Text>
         </View>
     </DiaryBookPdfPageCanvas>
   );

@@ -4,7 +4,7 @@ import { companionTypeToTemplateSlug } from "@/lib/journal/coverAssets";
 
 /** 日記ページ背景（罫線なしのみ）。キャラ別 PNG。 */
 const TEMPLATE_BASENAME = "diary-template-simple-plain";
-const TEMPLATE_CACHE_VERSION = "4";
+const TEMPLATE_CACHE_VERSION = "5";
 
 function templatePath(slug: string): string {
   return `/images/${TEMPLATE_BASENAME}-${slug}.png?v=${TEMPLATE_CACHE_VERSION}`;

@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { Suspense } from "react";
 
 import { DiaryBookReadView } from "@/components/journal/DiaryBookReadView";
 import { isAdminEmail } from "@/lib/admin/access";

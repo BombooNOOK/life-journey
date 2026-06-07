@@ -2,10 +2,8 @@ import type { CSSProperties } from "react";
 
 import type { DiaryPreviewRegionBox } from "@/lib/journal/diaryDesignPreviewTiers";
 import { isDiaryBodyOverLineLimit } from "@/lib/journal/diaryPreviewBodyLineLimits";
+import { isDiaryCommentOverPdfLineLimit } from "@/lib/journal/diaryCommentPdfWrap";
 import {
-  DIARY_PREVIEW_COMMENT_INNER_PADDING,
-  DIARY_PREVIEW_COMMENT_REGION,
-  DIARY_PREVIEW_COMMENT_TEXT_STYLE,
   DIARY_PREVIEW_OVERLAY_FONT,
   DIARY_PREVIEW_PAGE_HEIGHT,
   DIARY_PREVIEW_PAGE_WIDTH,
@@ -22,7 +20,7 @@ export function measureDiaryPreviewRegionOverflow(
   content: string,
   region: DiaryPreviewRegionBox,
   textStyle: CSSProperties,
-  textClassName = "text-stone-700/90",
+  innerClassName: string = DIARY_PREVIEW_SCROLL_INNER_CLASS,
 ): boolean {
   if (typeof document === "undefined") return false;
   const text = content.trim();
@@ -52,7 +50,7 @@ export function measureDiaryPreviewRegionOverflow(
   ].join(";");
 
   const inner = document.createElement("div");
-  inner.className = [DIARY_PREVIEW_SCROLL_INNER_CLASS, textClassName].join(" ");
+  inner.className = innerClassName;
   Object.assign(inner.style, textStyle);
   inner.textContent = text;
 
@@ -75,16 +73,7 @@ export function measureDiaryBodyOverflows(
 }
 
 export function measureDiaryCommentOverflows(comment: string | null | undefined): boolean {
-  const text = (comment ?? "").trim();
-  if (!text) return false;
-  return measureDiaryPreviewRegionOverflow(
-    text,
-    DIARY_PREVIEW_COMMENT_REGION,
-    {
-      ...DIARY_PREVIEW_COMMENT_TEXT_STYLE,
-      padding: DIARY_PREVIEW_COMMENT_INNER_PADDING,
-    },
-  );
+  return isDiaryCommentOverPdfLineLimit(comment ?? "");
 }
 
 /** 本文またはフクロウ欄のいずれかがはみ出す */
