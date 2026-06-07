@@ -22,15 +22,17 @@ function splitBodyForOwlMargin(body: string, splitMarker: string): [string, stri
 }
 
 const messageBodyProseProps = {
-  bodyStyle: pdfStyles.numberGuideBleedBodyText,
+  bodyStyle: { ...pdfStyles.numberGuideBleedBodyText, lineHeight: 1.58 },
   preserveManuscriptLineBreaks: true as const,
-  manuscriptBlankLineHeight: 9,
+  manuscriptBlankLineHeight: 5,
   expandWidth: 0,
   ...pdfGuideBleedBodyProseProps,
+  paragraphGap: 4,
 } as const;
 
 /**
  * ブリッジ章後・フクロウ先生メッセージ（`bridge-after-message-bg.png` + 生成テキスト）。
+ * 上段・下段を1ページに収める（`wrap={false}`）。2ページ目に割れると背景なしの白紙になるため。
  */
 export function BridgeAfterMessageBleedPage() {
   const copy = getBridgeAfterMessageCopy();
@@ -51,18 +53,23 @@ export function BridgeAfterMessageBleedPage() {
       linkDestinationId={PDF_TOC_LINK_DESTINATION.fukuroChapter3}
     >
       <View
+        wrap={false}
         style={[
           pdfStyles.numberGuideBleedContent,
           { paddingLeft: bridgeAfterMessageBodyPaddingLeftPt(), paddingRight: 0 },
         ]}
       >
         {!parts ? (
-          <View style={[pdfStyles.numberGuideBleedBody, bodyBoxStyle, { paddingRight: 52 }]}>
+          <View
+            wrap={false}
+            style={[pdfStyles.numberGuideBleedBody, bodyBoxStyle, { paddingRight: 52 }]}
+          >
             <PdfLongFormBody text={copy.body} {...messageBodyProseProps} />
           </View>
         ) : (
           <>
             <View
+              wrap={false}
               style={[
                 pdfStyles.numberGuideBleedBody,
                 bodyBoxStyle,
@@ -71,7 +78,10 @@ export function BridgeAfterMessageBleedPage() {
             >
               <PdfLongFormBody text={parts[0]} disableWrap {...messageBodyProseProps} expandWidth={18} />
             </View>
-            <View style={[pdfStyles.numberGuideBleedBody, bodyBoxStyle, { paddingRight: 52 }]}>
+            <View
+              wrap={false}
+              style={[pdfStyles.numberGuideBleedBody, bodyBoxStyle, { paddingRight: 52 }]}
+            >
               <PdfLongFormBody
                 text={parts[1]}
                 {...messageBodyProseProps}

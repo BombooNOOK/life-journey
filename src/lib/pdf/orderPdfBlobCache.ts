@@ -17,8 +17,8 @@ export function orderPdfBlobWriteEnabled(): boolean {
  * PDF 結合ロジックや挿入アセット解決を変えたときに上げる（Blob の古いキャッシュを捨てる）。
  * 例: 本番で章挿入・裏表紙 PDF のパスが ENOENT になっていた修正後。
  */
-/** 鑑定書カギカッコ禁則・改行ルール追加後は Blob 再生成用 */
-const ORDER_FULL_PDF_BLOB_CACHE_REVISION = "58";
+/** ブリッジ章後フクロウ白紙1枚除去後は Blob 再生成用 */
+const ORDER_FULL_PDF_BLOB_CACHE_REVISION = "59";
 
 /**
  * 鑑定 PDF の入力が同じなら同じ指紋（画質は `pdfPreview*` / `pdfPrint*` の URL で分けるため指紋に含めない）。
