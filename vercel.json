@@ -4,6 +4,9 @@
   "functions": {
     "src/app/api/orders/*/pdf/route.ts": {
       "maxDuration": 300
+    },
+    "src/app/api/journal/backup/route.ts": {
+      "maxDuration": 300
     }
   }
 }

@@ -143,6 +143,7 @@ export default async function OrdersListPage() {
             ? accountInfo.createdAt.toLocaleDateString("ja-JP")
             : "登録日を確認できません"
         }
+        activeProfileNickname={activeProfile?.nickname ?? null}
       />
 
       {viewerIsAdmin ? (

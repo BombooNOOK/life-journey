@@ -7,6 +7,7 @@ import { sendPasswordResetEmail } from "firebase/auth";
 import { useFirebaseAuth } from "@/components/auth/FirebaseAuthProvider";
 import { getFirebaseAuth } from "@/lib/firebase/client";
 
+import { JournalBackupDownloadButton } from "@/components/orders/JournalBackupDownloadButton";
 import { deriveSubscriptionPlanLabel } from "@/lib/stripe/plans";
 
 type Props = {
@@ -14,6 +15,7 @@ type Props = {
   subscriptionPlan: string | null;
   profileLimit: number;
   registeredAtLabel: string;
+  activeProfileNickname?: string | null;
 };
 
 function usesGoogleSignInOnly(user: ReturnType<typeof useFirebaseAuth>["user"]): boolean {
@@ -33,6 +35,7 @@ export function MyPageAccountSection({
   subscriptionPlan,
   profileLimit,
   registeredAtLabel,
+  activeProfileNickname,
 }: Props) {
   const { user, loading: authLoading } = useFirebaseAuth();
   const [resetBusy, setResetBusy] = useState(false);
@@ -163,11 +166,18 @@ export function MyPageAccountSection({
         </Link>
       </div>
 
-      <div className="border-t border-stone-100 pt-4">
-        <h3 className="text-sm font-semibold text-stone-900">バックアップ</h3>
-        <p className="mt-2 text-sm leading-relaxed text-stone-700">
-          大切な日記を守るため、バックアップ機能を準備中です。
+      <div className="space-y-3 border-t border-stone-100 pt-4">
+        <h3 className="text-sm font-semibold text-stone-900">大切な日記をバックアップする</h3>
+        {activeProfileNickname ? (
+          <p className="text-xs text-stone-600">
+            現在選択中のプロフィール「{activeProfileNickname}」の日記を書き出します。
+          </p>
+        ) : null}
+        <p className="text-sm leading-relaxed text-stone-700">
+          日記本文・写真・気分・製本に使う情報をZIPファイルとして保存できます。
+          バックアップファイルには個人的な内容が含まれるため、安全な場所に保管してください。
         </p>
+        <JournalBackupDownloadButton />
       </div>
     </section>
   );
