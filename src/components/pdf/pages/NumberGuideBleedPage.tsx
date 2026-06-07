@@ -82,7 +82,13 @@ function GuideBleedBody({
           { marginTop: bodyMarginTop, paddingRight: 0, marginRight: owlMarginRight },
         ]}
       >
-        <PdfLongFormBody text={upperBody} disableWrap {...prose} expandWidth={upperExpandWidth} />
+        <PdfLongFormBody
+          text={upperBody}
+          disableWrap
+          noWrapMinChars={0}
+          {...prose}
+          expandWidth={upperExpandWidth}
+        />
       </View>
       <View
         style={[

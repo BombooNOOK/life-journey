@@ -75,9 +75,8 @@ export function PersonalYearMessageBleedPage() {
             <View style={[pdfStyles.numberGuideBleedBody, bodyBoxStyle, { paddingRight: 52 }]}>
               <PdfLongFormBody
                 text={parts[1]}
-                disableWrap
                 {...messageBodyProseProps}
-                expandWidth={12}
+                expandWidth={18}
                 firstParagraphMarginTop={messageBodyProseProps.paragraphGap}
               />
             </View>

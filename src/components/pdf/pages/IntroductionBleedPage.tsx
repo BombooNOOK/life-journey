@@ -95,6 +95,7 @@ function IntroductionBleedBody({
         <PdfLongFormBody
           text={lowerBody}
           {...introBodyProseProps}
+          expandWidth={18}
           firstParagraphMarginTop={pdfGuideBleedBodyProseProps.paragraphGap}
         />
       </View>
