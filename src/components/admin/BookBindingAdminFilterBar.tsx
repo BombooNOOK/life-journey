@@ -8,6 +8,8 @@ import {
   type BookBindingStatusCountRow,
 } from "@/lib/commerce/bookBindingAdminFilter";
 
+type FilterOption = { value: string; label: string };
+
 type Props = {
   basePath: string;
   statusFilter: string;
@@ -15,6 +17,10 @@ type Props = {
   statusCounts: BookBindingStatusCountRow[];
   openTotal: number;
   searchPlaceholder: string;
+  filterOptions?: ReadonlyArray<FilterOption>;
+  getFilterHref?: typeof bookBindingAdminFilterHref;
+  getStatusFilterLabel?: typeof bookBindingStatusFilterLabel;
+  isStatusFilterActive?: typeof isBookBindingStatusFilterActive;
 };
 
 function countBadgeClass(active: boolean, variant: "open" | "shipped" | "cancelled" | "default") {
@@ -42,8 +48,12 @@ export function BookBindingAdminFilterBar({
   statusCounts,
   openTotal,
   searchPlaceholder,
+  filterOptions = BOOK_BINDING_ADMIN_FILTER_OPTIONS,
+  getFilterHref = bookBindingAdminFilterHref,
+  getStatusFilterLabel = bookBindingStatusFilterLabel,
+  isStatusFilterActive = isBookBindingStatusFilterActive,
 }: Props) {
-  const activeLabel = bookBindingStatusFilterLabel(statusFilter);
+  const activeLabel = getStatusFilterLabel(statusFilter);
 
   return (
     <>
@@ -53,7 +63,7 @@ export function BookBindingAdminFilterBar({
         </p>
         <ul className="mt-2 flex flex-wrap gap-2">
           {statusCounts.map((row) => {
-            const active = isBookBindingStatusFilterActive(statusFilter, row.status);
+            const active = isStatusFilterActive(statusFilter, row.status);
             const variant =
               row.status === "shipped"
                 ? "shipped"
@@ -63,7 +73,7 @@ export function BookBindingAdminFilterBar({
             return (
               <li key={row.status}>
                 <Link
-                  href={bookBindingAdminFilterHref(basePath, {
+                  href={getFilterHref(basePath, {
                     status: row.status,
                     q: keyword,
                   })}
@@ -78,10 +88,10 @@ export function BookBindingAdminFilterBar({
           })}
           <li>
             <Link
-              href={bookBindingAdminFilterHref(basePath, { status: "open", q: keyword })}
-              aria-current={isBookBindingStatusFilterActive(statusFilter, "open") ? "true" : undefined}
+              href={getFilterHref(basePath, { status: "open", q: keyword })}
+              aria-current={isStatusFilterActive(statusFilter, "open") ? "true" : undefined}
               className={countBadgeClass(
-                isBookBindingStatusFilterActive(statusFilter, "open"),
+                isStatusFilterActive(statusFilter, "open"),
                 "open",
               )}
             >
@@ -108,7 +118,7 @@ export function BookBindingAdminFilterBar({
             defaultValue={statusFilter || "all"}
             className="mt-1 block rounded-md border border-stone-300 px-3 py-2 text-sm"
           >
-            {BOOK_BINDING_ADMIN_FILTER_OPTIONS.map((opt) => (
+            {filterOptions.map((opt) => (
               <option key={opt.value} value={opt.value}>
                 {opt.label}
               </option>
@@ -123,7 +133,7 @@ export function BookBindingAdminFilterBar({
         </button>
         {statusFilter && statusFilter !== "all" ? (
           <Link
-            href={bookBindingAdminFilterHref(basePath, { status: "all", q: keyword })}
+            href={getFilterHref(basePath, { status: "all", q: keyword })}
             className="text-sm text-stone-600 underline-offset-2 hover:text-stone-900 hover:underline"
           >
             絞り込みを解除

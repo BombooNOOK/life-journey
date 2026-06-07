@@ -1,5 +1,9 @@
 import { Prisma } from "@prisma/client";
 
+import {
+  expireStaleUnpaidPendingForScope,
+  resolveActivePendingRequest,
+} from "@/lib/commerce/diaryBookBindingPendingLifecycle";
 import { prisma } from "@/lib/db";
 import { journalEntryInBookshelfPeriod } from "@/lib/journal/bookshelfPeriod";
 import { buildDiaryBindingCode } from "@/lib/order/diaryBindingCode";
@@ -147,15 +151,20 @@ export async function getPendingDiaryBookBindingForYear(
     return { ok: true, pending: null, contentUpdated: false };
   }
 
-  const existing = await prisma.diaryBookBindingRequest.findFirst({
-    where: {
-      email: input.viewerEmail,
-      profileId: input.profileId,
-      year: input.year,
-      status: "pending",
-    },
-    orderBy: { createdAt: "desc" },
-  });
+  const scope = {
+    email: input.viewerEmail,
+    profileId: input.profileId,
+    year: input.year,
+    diaryBookId: null,
+  };
+  await expireStaleUnpaidPendingForScope(scope);
+
+  const existing = await resolveActivePendingRequest(
+    await prisma.diaryBookBindingRequest.findFirst({
+      where: { ...scope, status: "pending" },
+      orderBy: { createdAt: "desc" },
+    }),
+  );
 
   if (!existing) {
     return { ok: true, pending: null, contentUpdated: false };
@@ -192,15 +201,20 @@ export async function createOrReusePendingDiaryBookBindingRequest(
     };
   }
 
-  const existing = await prisma.diaryBookBindingRequest.findFirst({
-    where: {
-      email: input.viewerEmail,
-      profileId: input.profileId,
-      year: input.year,
-      status: "pending",
-    },
-    orderBy: { createdAt: "desc" },
-  });
+  const scope = {
+    email: input.viewerEmail,
+    profileId: input.profileId,
+    year: input.year,
+    diaryBookId: null,
+  };
+  await expireStaleUnpaidPendingForScope(scope);
+
+  const existing = await resolveActivePendingRequest(
+    await prisma.diaryBookBindingRequest.findFirst({
+      where: { ...scope, status: "pending" },
+      orderBy: { createdAt: "desc" },
+    }),
+  );
 
   if (existing) {
     const { contentUpdated } = await syncPendingRow(existing.id, snapshot, existing);

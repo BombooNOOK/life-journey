@@ -204,6 +204,11 @@ model DiaryBookBindingRequest {
   baseOrderNumber String?
   baseBuyerName   String?
 
+  cancelledAt  DateTime?
+  cancelledBy  String?
+  cancelReason String?
+  expiredAt    DateTime?
+
   @@index([status, createdAt])
   @@index([email, profileId, year])
   @@index([email, profileId, diaryBookId])

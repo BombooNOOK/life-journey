@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 
 import { isAdminEmail } from "@/lib/admin/access";
+import { canAdminWithdrawPending } from "@/lib/commerce/diaryBookBindingPendingLifecycle";
 import { isDiaryBookBindingStatus } from "@/lib/commerce/diaryBookBindingStatus";
 import { getViewerEmailFromCookie } from "@/lib/auth/viewer";
 import { prisma } from "@/lib/db";
@@ -12,6 +13,7 @@ async function requireAdmin() {
   if (!(await isAdminEmail(viewer))) {
     throw new Error("管理者権限が必要です。");
   }
+  return viewer;
 }
 
 export async function updateDiaryBookBindingRequest(formData: FormData) {
@@ -40,6 +42,31 @@ export async function updateDiaryBookBindingRequest(formData: FormData) {
   await prisma.diaryBookBindingRequest.update({
     where: { id },
     data,
+  });
+
+  revalidatePath("/admin/diary-book-binding");
+}
+
+export async function withdrawDiaryBookBindingRequest(formData: FormData) {
+  const viewer = await requireAdmin();
+
+  const id = formData.get("id")?.toString() ?? "";
+  if (!id) throw new Error("ID が不正です。");
+
+  const row = await prisma.diaryBookBindingRequest.findUnique({ where: { id } });
+  if (!row) throw new Error("申込予定が見つかりません。");
+  if (!canAdminWithdrawPending(row)) {
+    throw new Error("BASE注文番号が入っている、または pending 以外の申込は取り下げできません。");
+  }
+
+  await prisma.diaryBookBindingRequest.update({
+    where: { id },
+    data: {
+      status: "cancelled",
+      cancelledAt: new Date(),
+      cancelledBy: viewer ?? "admin",
+      cancelReason: "管理者による取り下げ",
+    },
   });
 
   revalidatePath("/admin/diary-book-binding");

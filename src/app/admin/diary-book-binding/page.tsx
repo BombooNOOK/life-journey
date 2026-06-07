@@ -3,14 +3,25 @@ import { notFound } from "next/navigation";
 
 import { BookBindingAdminFilterBar } from "@/components/admin/BookBindingAdminFilterBar";
 import { DiaryBookBindingPrintDownload } from "@/components/admin/DiaryBookBindingPrintDownload";
-import { updateDiaryBookBindingRequest } from "@/app/admin/diary-book-binding/actions";
+import {
+  updateDiaryBookBindingRequest,
+  withdrawDiaryBookBindingRequest,
+} from "@/app/admin/diary-book-binding/actions";
 import { getViewerEmailFromCookie } from "@/lib/auth/viewer";
 import { isAdminEmail } from "@/lib/admin/access";
 import {
-  bookBindingStatusWhereClause,
-  mapStatusCounts,
-  openStatusTotal,
-} from "@/lib/commerce/bookBindingAdminFilter";
+  diaryBookBindingStatusWhereClause,
+  mapDiaryBookBindingStatusCounts,
+  diaryBookBindingOpenStatusTotal,
+  DIARY_BOOK_BINDING_ADMIN_FILTER_OPTIONS,
+  diaryBookBindingAdminFilterHref,
+  diaryBookBindingStatusFilterLabel,
+  isDiaryBookBindingStatusFilterActive,
+} from "@/lib/commerce/diaryBookBindingAdminFilter";
+import {
+  canAdminWithdrawPending,
+  expireStaleUnpaidPendingRequests,
+} from "@/lib/commerce/diaryBookBindingPendingLifecycle";
 import {
   DIARY_BOOK_BINDING_STATUSES,
   DIARY_BOOK_BINDING_STATUS_LABELS,
@@ -38,10 +49,12 @@ export default async function AdminDiaryBookBindingPage({ searchParams }: Props)
   const { q = "", status: statusFilter = "" } = await searchParams;
   const keyword = q.trim();
 
-  const statusClause = bookBindingStatusWhereClause(statusFilter);
+  await expireStaleUnpaidPendingRequests();
+
+  const statusClause = diaryBookBindingStatusWhereClause(statusFilter);
 
   const where: {
-    status?: string | { in: string[] };
+    AND?: Array<Record<string, unknown>>;
     OR?: Array<
       | { email: { contains: string; mode: "insensitive" } }
       | { diaryBindingCode: { contains: string; mode: "insensitive" } }
@@ -49,16 +62,18 @@ export default async function AdminDiaryBookBindingPage({ searchParams }: Props)
       | { displayTitle: { contains: string; mode: "insensitive" } }
       | { baseOrderNumber: { contains: string; mode: "insensitive" } }
     >;
-  } = { ...statusClause };
+  } = { AND: [statusClause] };
 
   if (keyword) {
-    where.OR = [
-      { email: { contains: keyword, mode: "insensitive" } },
-      { diaryBindingCode: { contains: keyword, mode: "insensitive" } },
-      { diaryBookId: { contains: keyword, mode: "insensitive" } },
-      { displayTitle: { contains: keyword, mode: "insensitive" } },
-      { baseOrderNumber: { contains: keyword, mode: "insensitive" } },
-    ];
+    where.AND?.push({
+      OR: [
+        { email: { contains: keyword, mode: "insensitive" } },
+        { diaryBindingCode: { contains: keyword, mode: "insensitive" } },
+        { diaryBookId: { contains: keyword, mode: "insensitive" } },
+        { displayTitle: { contains: keyword, mode: "insensitive" } },
+        { baseOrderNumber: { contains: keyword, mode: "insensitive" } },
+      ],
+    });
   }
 
   const [rows, statusGroups] = await Promise.all([
@@ -73,8 +88,8 @@ export default async function AdminDiaryBookBindingPage({ searchParams }: Props)
     }),
   ]);
 
-  const statusCounts = mapStatusCounts(statusGroups);
-  const openTotal = openStatusTotal(statusCounts);
+  const statusCounts = mapDiaryBookBindingStatusCounts(statusGroups);
+  const openTotal = diaryBookBindingOpenStatusTotal(statusCounts);
 
   return (
     <div className="space-y-6">
@@ -85,6 +100,7 @@ export default async function AdminDiaryBookBindingPage({ searchParams }: Props)
         <h1 className="mt-2 text-2xl font-bold text-stone-900">日記 製本申込予定</h1>
         <p className="mt-1 text-sm text-stone-600">
           日記ブック本棚または年本棚から発行された製本申込予定です。BASEの「製本申込コード」と照合し、ステータスを更新してください。
+          BASE未決済の申込予定は7日経過で通常一覧から外れます（ステータス「期限切れ」で確認できます）。
         </p>
       </div>
 
@@ -95,6 +111,10 @@ export default async function AdminDiaryBookBindingPage({ searchParams }: Props)
         statusCounts={statusCounts}
         openTotal={openTotal}
         searchPlaceholder="検索（製本コード・メール・表示名・日記ブックID・BASE注文番号）"
+        filterOptions={DIARY_BOOK_BINDING_ADMIN_FILTER_OPTIONS}
+        getFilterHref={diaryBookBindingAdminFilterHref}
+        getStatusFilterLabel={diaryBookBindingStatusFilterLabel}
+        isStatusFilterActive={isDiaryBookBindingStatusFilterActive}
       />
 
       {rows.length === 0 ? (
@@ -217,6 +237,21 @@ export default async function AdminDiaryBookBindingPage({ searchParams }: Props)
                   年本棚（旧）の申込のため、日記ブックIDがありません。該当年の本棚から確認してください。
                 </p>
               )}
+
+              {canAdminWithdrawPending(row) ? (
+                <form action={withdrawDiaryBookBindingRequest} className="mt-4 border-t border-stone-100 pt-4">
+                  <input type="hidden" name="id" value={row.id} />
+                  <p className="text-xs text-stone-600">
+                    BASE決済が確認できない申込予定は、一覧から取り下げできます（DB上はキャンセル扱いで保持します）。
+                  </p>
+                  <button
+                    type="submit"
+                    className="mt-2 rounded-md border border-rose-200 bg-rose-50 px-3 py-1.5 text-xs font-medium text-rose-900 hover:bg-rose-100"
+                  >
+                    申込予定を取り下げる
+                  </button>
+                </form>
+              ) : null}
 
               <form
                 action={updateDiaryBookBindingRequest}
