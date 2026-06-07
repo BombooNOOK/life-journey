@@ -33,6 +33,27 @@ describe("splitFixedWidthJapaneseLines", () => {
     expect(
       sentences.every((lines) => lines.every((line) => line.length <= 33 && line.length > 0)),
     ).toBe(true);
-    expect(sentences.flat().some((line) => /^[、。っゃゅょぁー]/.test(line))).toBe(false);
+    expect(sentences.flat().some((line) => /^[、。っゃゅょぁー」』]/.test(line))).toBe(false);
+  });
+
+  it("does not split inside corner quotes for bridge 00", () => {
+    const article = bridgeProfiles["00"].article;
+    const lines = splitFixedWidthJapaneseLinesBySentences(article, 33).flat();
+    for (const line of lines) {
+      const opens = (line.match(/[「『]/g) ?? []).length;
+      const closes = (line.match(/[」』]/g) ?? []).length;
+      expect(opens).toBe(closes);
+    }
+    expect(lines.some((line) => line.includes("『どちらを選べばよいのだろう』"))).toBe(true);
+    expect(lines.some((line) => line.includes("『今のやり方だけで見ようとしていないだろうか』"))).toBe(
+      true,
+    );
+  });
+
+  it("keeps short corner quotes on one line when they fit", () => {
+    const text = `${"あ".repeat(20)}『短い』${"い".repeat(5)}。`;
+    const lines = splitFixedWidthJapaneseLines(text, 33);
+    expect(lines.join("")).toBe(text);
+    expect(lines.some((line) => line.includes("『短い』"))).toBe(true);
   });
 });
