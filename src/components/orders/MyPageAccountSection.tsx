@@ -177,6 +177,11 @@ export function MyPageAccountSection({
           日記本文・写真・気分・製本に使う情報をZIPファイルとして保存できます。
           バックアップファイルには個人的な内容が含まれるため、安全な場所に保管してください。
         </p>
+        <p className="text-xs leading-relaxed text-stone-600">
+          バックアップファイルからの復元は、現在、運営確認のうえ個別に対応しています。
+          復元時は、既存の日記を上書きせず、新しいプロフィールとして復元します。
+          復元をご希望の場合は、お問い合わせください。
+        </p>
         <JournalBackupDownloadButton />
       </div>
     </section>

@@ -108,10 +108,11 @@ export type JournalEntryPhotoBlobMeta = {
   photoStorageProvider: string;
 };
 
-export async function putJournalEntryPhotoToBlob(params: {
+export async function putJournalEntryPhotoBufferToBlob(params: {
   profileId: string;
   entryId: string;
-  dataUrl: string;
+  buffer: Buffer;
+  mimeType: string;
 }): Promise<JournalEntryPhotoBlobMeta> {
   const auth = resolveJournalPhotoBlobAuth();
   if (!auth) {
@@ -120,29 +121,43 @@ export async function putJournalEntryPhotoToBlob(params: {
     );
   }
 
+  const mimeType = params.mimeType.trim() || "image/webp";
+  if (params.buffer.byteLength <= 0) {
+    throw new Error("写真データが空です。");
+  }
+
+  const pathname = journalEntryPhotoBlobPathname(params.profileId, params.entryId, mimeType);
+  const result = await put(pathname, params.buffer, {
+    ...blobAccessOptions(auth),
+    addRandomSuffix: false,
+    allowOverwrite: true,
+    contentType: mimeType,
+  });
+  return {
+    photoBlobUrl: result.url,
+    photoBlobPathname: result.pathname,
+    photoMimeType: mimeType,
+    photoSizeBytes: params.buffer.byteLength,
+    photoStorageProvider: JOURNAL_PHOTO_STORAGE_PROVIDER,
+  };
+}
+
+export async function putJournalEntryPhotoToBlob(params: {
+  profileId: string;
+  entryId: string;
+  dataUrl: string;
+}): Promise<JournalEntryPhotoBlobMeta> {
   const parsed = parseJournalPhotoDataUrl(params.dataUrl);
   if (!parsed) {
     throw new Error("写真データの形式が不正です。");
   }
 
-  const pathname = journalEntryPhotoBlobPathname(
-    params.profileId,
-    params.entryId,
-    parsed.mimeType,
-  );
-  const result = await put(pathname, parsed.buffer, {
-    ...blobAccessOptions(auth),
-    addRandomSuffix: false,
-    allowOverwrite: true,
-    contentType: parsed.mimeType,
+  return putJournalEntryPhotoBufferToBlob({
+    profileId: params.profileId,
+    entryId: params.entryId,
+    buffer: parsed.buffer,
+    mimeType: parsed.mimeType,
   });
-  return {
-    photoBlobUrl: result.url,
-    photoBlobPathname: result.pathname,
-    photoMimeType: parsed.mimeType,
-    photoSizeBytes: parsed.buffer.byteLength,
-    photoStorageProvider: JOURNAL_PHOTO_STORAGE_PROVIDER,
-  };
 }
 
 export async function fetchJournalEntryPhotoBytesFromBlob(
