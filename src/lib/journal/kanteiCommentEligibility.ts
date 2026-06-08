@@ -62,9 +62,8 @@ export async function buildJournalGeneratedComment(
 
 export function sanitizeJournalCommentForResponse(
   generatedComment: string | null | undefined,
-  kanteiOrderExists: boolean,
+  _kanteiOrderExists: boolean,
 ): string | null {
-  if (!kanteiOrderExists) return null;
   if (generatedComment == null || generatedComment === "") return null;
   return normalizeJournalCommentText(generatedComment);
 }

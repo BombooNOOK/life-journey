@@ -1,6 +1,5 @@
 import { isAdminEmail } from "@/lib/admin/access";
 import { prisma } from "@/lib/db";
-import { resolveActiveProfileId } from "@/lib/profile/activeProfile";
 import type { JournalEntryPhotoRow } from "@/lib/journal/journalEntryPhotoPersist";
 
 const photoSelect = {
@@ -31,12 +30,11 @@ export async function getJournalEntryPhotoRecordForViewer(params: {
     });
   }
 
-  const activeProfileId = await resolveActiveProfileId(params.viewerEmail);
+  // 日記ブック閲覧など、アクティブプロフィール以外の記事写真も email 一致で許可する
   return prisma.journalEntry.findFirst({
     where: {
       id: trimmedId,
       email: params.viewerEmail,
-      profileId: activeProfileId,
     },
     select: photoSelect,
   });
