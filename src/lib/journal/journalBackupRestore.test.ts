@@ -122,7 +122,10 @@ describe("journalBackupRestore", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.mocked(prisma.profile.findMany).mockResolvedValue([]);
-    vi.mocked(prisma.accountSettings.findUnique).mockResolvedValue({ profileLimit: 3 });
+    vi.mocked(prisma.accountSettings.findUnique).mockResolvedValue({
+      profileLimit: 3,
+      isMonitor: false,
+    });
     vi.mocked(prisma.profile.count).mockResolvedValue(1);
     vi.mocked(journalPhotoBlobWriteEnabled).mockReturnValue(true);
     vi.mocked(putJournalEntryPhotoBufferToBlob).mockResolvedValue({
@@ -202,6 +205,26 @@ describe("journalBackupRestore", () => {
         extracted: extractedFrom(baseDoc),
       }),
     ).rejects.toMatchObject({ code: "PROFILE_LIMIT" });
+  });
+
+  it("allows restore for monitor users with stored limit 1 when count is below effective limit 3", async () => {
+    vi.mocked(prisma.accountSettings.findUnique).mockResolvedValue({
+      profileLimit: 1,
+      isMonitor: true,
+    });
+    vi.mocked(prisma.profile.count).mockResolvedValue(2);
+    vi.mocked(prisma.profile.create).mockResolvedValue({
+      id: "new-profile",
+      nickname: "もぐ（復元）",
+    } as never);
+
+    const result = await restoreJournalBackupToNewProfile({
+      viewerEmail: "user@example.com",
+      extracted: extractedFrom(baseDoc),
+      dryRun: true,
+    });
+
+    expect(result.entryCount).toBe(2);
   });
 
   it("supports dry-run without writes", async () => {

@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 
 import {
   toggleAdminRole,
+  toggleMonitorRole,
   toggleSubscriberPdfAccess,
   updatePdfDownloadLimitPerOrder,
   updateProfileLimit,
@@ -11,6 +12,7 @@ import {
 import { getViewerEmailFromCookie, normalizeEmail } from "@/lib/auth/viewer";
 import { isAdminEmail } from "@/lib/admin/access";
 import { prisma } from "@/lib/db";
+import { formatAdminEffectiveProfileLimitLabel } from "@/lib/profile/effectiveProfileLimit";
 
 type Props = {
   searchParams: Promise<{ q?: string; saved?: string; err?: string }>;
@@ -26,6 +28,7 @@ type UserRow = {
   accountSettingsCreatedAt: Date | null;
   firstAppraisalAt: Date | null;
   isAdmin: boolean;
+  isMonitor: boolean;
   profileLimit: number;
   /** 鑑定PDFの無料ダウンロード上限（鑑定1件あたり） */
   pdfDownloadLimitPerOrder: number;
@@ -197,6 +200,7 @@ async function loadRowsPostgres(
             email: true,
             createdAt: true,
             isAdmin: true,
+            isMonitor: true,
             profileLimit: true,
             updatedAt: true,
             pdfDownloadLimitPerOrder: true,
@@ -237,6 +241,7 @@ async function loadRowsPostgres(
         accountSettingsCreatedAt: setting?.createdAt ?? null,
         firstAppraisalAt: firstPurchaseAtByEmail.get(email) ?? null,
         isAdmin: setting?.isAdmin ?? false,
+        isMonitor: setting?.isMonitor ?? false,
         profileLimit: setting?.profileLimit ?? 1,
         pdfDownloadLimitPerOrder: Math.max(fromAccount, fromOrders),
         subscriberPdfAccess: setting?.subscriberPdfAccess ?? false,
@@ -251,6 +256,7 @@ type AccountSettingsAdminRow = {
   email: string;
   createdAt: Date;
   isAdmin: boolean;
+  isMonitor?: boolean | null;
   profileLimit: number;
   updatedAt: Date;
   pdfDownloadLimitPerOrder?: number | null;
@@ -262,6 +268,7 @@ type CollapsedAccountSettings = {
   email: string;
   createdAt: Date;
   isAdmin: boolean;
+  isMonitor: boolean;
   profileLimit: number;
   pdfDownloadLimitPerOrder: number;
   subscriberPdfAccess: boolean;
@@ -296,6 +303,7 @@ function collapseAccountSettingsByNormalizedEmail(
     );
     const subscriberPdfAccess = arr.some((s) => s.subscriberPdfAccess === true);
     const isAdmin = arr.some((s) => s.isAdmin === true);
+    const isMonitor = arr.some((s) => s.isMonitor === true);
     const profileLimit = Math.max(...arr.map((s) => s.profileLimit));
 
     out.set(key, {
@@ -303,6 +311,7 @@ function collapseAccountSettingsByNormalizedEmail(
       email: latest.email,
       createdAt: earliestCreatedAt,
       isAdmin,
+      isMonitor,
       profileLimit,
       pdfDownloadLimitPerOrder,
       subscriberPdfAccess,
@@ -347,9 +356,14 @@ async function fetchAccountSettingsForAdminList(keyword: string): Promise<Accoun
 
     try {
       const extras = await prisma.$queryRaw<
-        Array<{ id: string; pdfDownloadLimitPerOrder: number | null; subscriberPdfAccess: boolean | null }>
+        Array<{
+          id: string;
+          pdfDownloadLimitPerOrder: number | null;
+          subscriberPdfAccess: boolean | null;
+          isMonitor: boolean | null;
+        }>
       >`
-        SELECT "id", "pdfDownloadLimitPerOrder", "subscriberPdfAccess"
+        SELECT "id", "pdfDownloadLimitPerOrder", "subscriberPdfAccess", "isMonitor"
         FROM "AccountSettings"
         WHERE "id" IN (${Prisma.join(ids)})
       `;
@@ -360,6 +374,7 @@ async function fetchAccountSettingsForAdminList(keyword: string): Promise<Accoun
           ...row,
           pdfDownloadLimitPerOrder: x?.pdfDownloadLimitPerOrder ?? null,
           subscriberPdfAccess: x?.subscriberPdfAccess ?? null,
+          isMonitor: x?.isMonitor ?? null,
         };
       });
     } catch {
@@ -367,6 +382,7 @@ async function fetchAccountSettingsForAdminList(keyword: string): Promise<Accoun
         ...row,
         pdfDownloadLimitPerOrder: null,
         subscriberPdfAccess: null,
+        isMonitor: null,
       }));
     }
   }
@@ -380,6 +396,7 @@ async function fetchAccountSettingsForAdminList(keyword: string): Promise<Accoun
         email: true,
         createdAt: true,
         isAdmin: true,
+        isMonitor: true,
         profileLimit: true,
         pdfDownloadLimitPerOrder: true,
         subscriberPdfAccess: true,
@@ -396,6 +413,7 @@ async function fetchAccountSettingsForAdminList(keyword: string): Promise<Accoun
         email: true,
         createdAt: true,
         isAdmin: true,
+        isMonitor: true,
         profileLimit: true,
         updatedAt: true,
       },
@@ -509,6 +527,7 @@ async function loadRowsWithEmailMode(
           email: true,
           createdAt: true,
           isAdmin: true,
+          isMonitor: true,
           profileLimit: true,
           updatedAt: true,
           pdfDownloadLimitPerOrder: true,
@@ -546,6 +565,7 @@ async function loadRowsWithEmailMode(
         accountSettingsCreatedAt: setting?.createdAt ?? null,
         firstAppraisalAt: null,
         isAdmin: setting?.isAdmin ?? false,
+        isMonitor: setting?.isMonitor ?? false,
         profileLimit: setting?.profileLimit ?? 1,
         pdfDownloadLimitPerOrder: Math.max(fromAccount, fromOrders),
         subscriberPdfAccess: setting?.subscriberPdfAccess ?? false,
@@ -701,6 +721,7 @@ export default async function AdminPage({ searchParams }: Props) {
               <th className="px-4 py-3 font-medium">プロフィール上限</th>
               <th className="px-4 py-3 font-medium">PDF無料回数</th>
               <th className="px-4 py-3 font-medium">鑑定書 高画質PDF</th>
+              <th className="px-4 py-3 font-medium">モニター</th>
               <th className="px-4 py-3 font-medium">管理者</th>
               <th className="px-4 py-3 font-medium">操作</th>
             </tr>
@@ -731,23 +752,35 @@ export default async function AdminPage({ searchParams }: Props) {
                 <td className="px-4 py-3 text-stone-600">{row.sourceOrderCount}</td>
                 <td className="px-4 py-3 text-stone-600">{row.sourceJournalCount}</td>
                 <td className="px-4 py-3">
-                  <form action={updateProfileLimit} className="flex items-center gap-2">
-                    <input type="hidden" name="email" value={row.email} />
-                    <select
-                      name="profileLimit"
-                      defaultValue={String(row.profileLimit)}
-                      className="rounded-md border border-stone-300 px-2 py-1"
-                    >
-                      <option value="1">1</option>
-                      <option value="3">3</option>
-                    </select>
-                    <button
-                      type="submit"
-                      className="rounded-md border border-stone-300 px-2 py-1 text-xs hover:bg-stone-50"
-                    >
-                      上限更新
-                    </button>
-                  </form>
+                  {row.isMonitor ? (
+                    <div className="space-y-1 text-xs text-stone-700">
+                      <p className="font-medium text-amber-900">
+                        {formatAdminEffectiveProfileLimitLabel({
+                          isMonitor: true,
+                          profileLimit: row.profileLimit,
+                        })}
+                      </p>
+                      <p className="text-stone-500">保存値: {row.profileLimit}</p>
+                    </div>
+                  ) : (
+                    <form action={updateProfileLimit} className="flex items-center gap-2">
+                      <input type="hidden" name="email" value={row.email} />
+                      <select
+                        name="profileLimit"
+                        defaultValue={String(row.profileLimit)}
+                        className="rounded-md border border-stone-300 px-2 py-1"
+                      >
+                        <option value="1">1</option>
+                        <option value="3">3</option>
+                      </select>
+                      <button
+                        type="submit"
+                        className="rounded-md border border-stone-300 px-2 py-1 text-xs hover:bg-stone-50"
+                      >
+                        上限更新
+                      </button>
+                    </form>
+                  )}
                 </td>
                 <td className="px-4 py-3">
                   <form action={updatePdfDownloadLimitPerOrder} className="flex flex-wrap items-center gap-2">
@@ -789,6 +822,21 @@ export default async function AdminPage({ searchParams }: Props) {
                       title="鑑定書の高画質PDFダウンロード権限（プレビュー版は全員）"
                     >
                       切替
+                    </button>
+                  </form>
+                </td>
+                <td className="px-4 py-3">
+                  <form action={toggleMonitorRole} className="flex flex-col gap-1">
+                    <input type="hidden" name="email" value={row.email} />
+                    <input type="hidden" name="isMonitor" value={row.isMonitor ? "0" : "1"} />
+                    <span className={row.isMonitor ? "text-amber-800" : "text-stone-500"}>
+                      {row.isMonitor ? "モニター利用中" : "—"}
+                    </span>
+                    <button
+                      type="submit"
+                      className="w-fit rounded-md border border-stone-300 px-2 py-1 text-xs hover:bg-stone-50"
+                    >
+                      {row.isMonitor ? "OFF" : "ON"}
                     </button>
                   </form>
                 </td>

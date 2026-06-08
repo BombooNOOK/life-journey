@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { getViewerEmailFromCookie, normalizeEmail } from "@/lib/auth/viewer";
 import { prisma } from "@/lib/db";
 import { listProfilesAndActiveProfileId } from "@/lib/profile/activeProfile";
+import { effectiveProfileLimit } from "@/lib/profile/effectiveProfileLimit";
 
 export async function GET() {
   const viewerEmail = await getViewerEmailFromCookie();
@@ -40,9 +41,9 @@ export async function POST(req: Request) {
   const email = normalizeEmail(viewerEmail);
   const settings = await prisma.accountSettings.findUnique({
     where: { email },
-    select: { profileLimit: true },
+    select: { profileLimit: true, isMonitor: true },
   });
-  const limit = settings?.profileLimit ?? 1;
+  const limit = effectiveProfileLimit(settings);
   const currentCount = await prisma.profile.count({ where: { email, isArchived: false } });
   if (currentCount >= limit) {
     return NextResponse.json(

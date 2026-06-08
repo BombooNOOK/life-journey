@@ -231,6 +231,16 @@ async function syncDuplicateAccountRowsForNormalizedEmail(
           `;
         });
       }
+      if (data.isMonitor !== undefined) {
+        await run(async () => {
+          await prisma.$executeRaw`
+            UPDATE "AccountSettings"
+            SET "isMonitor" = ${data.isMonitor}
+            WHERE "id" <> ${mergedId}
+              AND LOWER(TRIM("email")) = LOWER(TRIM(${normalizedEmail}))
+          `;
+        });
+      }
       if (data.pdfDownloadLimitPerOrder !== undefined) {
         await run(async () => {
           await prisma.$executeRaw`
@@ -347,6 +357,41 @@ export async function toggleAdminRole(formData: FormData) {
     redirect("/admin?err=admin");
   }
   redirect("/admin?saved=admin");
+}
+
+export async function toggleMonitorRole(formData: FormData) {
+  await requireAdminOrRedirect();
+  const email = normalizeEmail(formData.get("email")?.toString());
+  if (!email) redirect("/admin");
+
+  const isMonitorRaw = formData.get("isMonitor")?.toString();
+  const isMonitor = isMonitorRaw === "1";
+
+  let merged: { id: string };
+  try {
+    merged = await prisma.accountSettings.upsert({
+      where: { email },
+      create: {
+        email,
+        profileLimit: 1,
+        isAdmin: false,
+        isMonitor,
+      },
+      update: { isMonitor },
+    });
+  } catch (e) {
+    console.error("[admin] toggleMonitorRole", e);
+    redirect("/admin?err=monitor");
+  }
+
+  try {
+    await syncDuplicateAccountRowsForNormalizedEmail(merged.id, email, { isMonitor });
+    revalidatePath("/admin");
+  } catch (e) {
+    console.error("[admin] toggleMonitorRole sync", e);
+    redirect("/admin?err=monitor");
+  }
+  redirect("/admin?saved=monitor");
 }
 
 /** SQLite 等。PostgreSQL は常に Raw のみ（Prisma upsert が未マイグレーション列を参照するため）。 */

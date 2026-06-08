@@ -42,6 +42,8 @@ export type AdminRestorePreview = {
   warnings: AdminRestorePreviewIssue[];
   profileLimitOk: boolean;
   profileLimit: number;
+  storedProfileLimit: number;
+  isMonitor: boolean;
   profileCount: number;
   hasKanteiHints: boolean;
   plan: AdminRestorePreviewPlan;

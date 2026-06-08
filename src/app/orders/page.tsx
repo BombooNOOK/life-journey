@@ -13,6 +13,7 @@ import { prisma } from "@/lib/db";
 import { withPrismaConnectionRetry } from "@/lib/db/prismaRetry";
 import { profileHasKanteiOrder } from "@/lib/journal/kanteiCommentEligibility";
 import { listProfilesAndActiveProfileId } from "@/lib/profile/activeProfile";
+import { effectiveProfileLimit } from "@/lib/profile/effectiveProfileLimit";
 
 export const dynamic = "force-dynamic";
 
@@ -37,10 +38,12 @@ export default async function OrdersListPage() {
   let accountInfo: {
     createdAt: Date | null;
     profileLimit: number;
+    isMonitor: boolean;
     subscriptionPlan: string | null;
   } = {
     createdAt: null,
     profileLimit: 1,
+    isMonitor: false,
     subscriptionPlan: null,
   };
   let fetchError: string | null = null;
@@ -63,6 +66,7 @@ export default async function OrdersListPage() {
           select: {
             createdAt: true,
             profileLimit: true,
+            isMonitor: true,
             subscriptionPlan: true,
           },
         }),
@@ -75,7 +79,8 @@ export default async function OrdersListPage() {
     );
     accountInfo = {
       createdAt: settings?.createdAt ?? oldestProfile?.createdAt ?? null,
-      profileLimit: settings?.profileLimit ?? 1,
+      profileLimit: effectiveProfileLimit(settings),
+      isMonitor: settings?.isMonitor === true,
       subscriptionPlan: settings?.subscriptionPlan ?? null,
     };
   } catch (e) {
@@ -151,6 +156,7 @@ export default async function OrdersListPage() {
         viewerEmail={viewerEmail}
         subscriptionPlan={accountInfo.subscriptionPlan}
         profileLimit={accountInfo.profileLimit}
+        isMonitor={accountInfo.isMonitor}
         registeredAtLabel={
           accountInfo.createdAt
             ? accountInfo.createdAt.toLocaleDateString("ja-JP")

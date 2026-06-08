@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { requireAdminApi } from "@/lib/admin/requireAdminApi";
+import { loadAdminAccountProfileSummary } from "@/lib/profile/adminAccountProfileSummary";
 import {
   AdminProfileDeleteError,
   listAdminProfilesForEmail,
@@ -34,15 +35,19 @@ export async function POST(request: Request) {
 
   try {
     const targetEmail = parseAdminProfileDeleteTargetEmail(body.targetEmail);
-    const profiles = await listAdminProfilesForEmail(targetEmail);
+    const [profiles, accountSummary] = await Promise.all([
+      listAdminProfilesForEmail(targetEmail),
+      loadAdminAccountProfileSummary(targetEmail),
+    ]);
 
     console.info("[admin-profile-delete-list] ok", {
       adminEmail: admin.adminEmail,
       targetEmail,
       profileCount: profiles.length,
+      isMonitor: accountSummary.isMonitor,
     });
 
-    return NextResponse.json({ ok: true, profiles }, JSON_NO_STORE);
+    return NextResponse.json({ ok: true, profiles, accountSummary }, JSON_NO_STORE);
   } catch (error) {
     if (error instanceof AdminProfileDeleteError) {
       return NextResponse.json(

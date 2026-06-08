@@ -315,8 +315,14 @@ export function JournalBackupRestoreClient() {
               <dt className="text-stone-500">プロフィール上限</dt>
               <dd className={preview.profileLimitOk ? "text-emerald-800" : "text-red-800"}>
                 {preview.profileCount} / {preview.profileLimit}
+                {preview.isMonitor ? "（モニター・実効上限）" : ""}
                 {preview.profileLimitOk ? "（復元可能）" : "（上限到達）"}
               </dd>
+              {preview.isMonitor ? (
+                <dd className="mt-0.5 text-xs text-stone-500">
+                  保存値: {preview.storedProfileLimit}（モニター解除後に適用）
+                </dd>
+              ) : null}
             </div>
             <div>
               <dt className="text-stone-500">バックアップ内の鑑定ヒント</dt>

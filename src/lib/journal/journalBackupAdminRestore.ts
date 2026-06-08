@@ -115,6 +115,8 @@ export async function buildAdminRestorePreview(params: {
     warnings: validation.issues,
     profileLimitOk: profileLimit.ok,
     profileLimit: profileLimit.limit,
+    storedProfileLimit: profileLimit.storedLimit,
+    isMonitor: profileLimit.isMonitor,
     profileCount: profileLimit.currentCount,
     hasKanteiHints: hasKanteiHintsInBackupProfile(params.extracted.document.profile),
     plan,

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useMemo, useState } from "react";
 
+import type { AdminAccountProfileSummary } from "@/lib/profile/adminAccountProfileSummary";
 import {
   ADMIN_PROFILE_DELETE_CONFIRMATION_WORD,
   requiredAdminProfileDeleteConfirmationKeys,
@@ -12,6 +13,7 @@ import {
   type AdminProfileDeleteResult,
   type AdminProfileListItem,
 } from "@/lib/profile/adminProfileDeleteTypes";
+import { formatAdminEffectiveProfileLimitLabel } from "@/lib/profile/effectiveProfileLimit";
 
 const CONFIRMATION_LABELS: Record<AdminProfileDeleteConfirmationKey, string> = {
   profileReviewed: "削除対象プロフィールを確認しました",
@@ -107,6 +109,7 @@ function BlockDetailCard({ detail }: { detail: AdminProfileDeleteBindingBlockDet
 export function ProfileManagementClient() {
   const [targetEmail, setTargetEmail] = useState("");
   const [profiles, setProfiles] = useState<AdminProfileListItem[]>([]);
+  const [accountSummary, setAccountSummary] = useState<AdminAccountProfileSummary | null>(null);
   const [selectedProfileId, setSelectedProfileId] = useState<string | null>(null);
   const [loadingProfiles, setLoadingProfiles] = useState(false);
   const [previewing, setPreviewing] = useState(false);
@@ -264,6 +267,7 @@ export function ProfileManagementClient() {
               onChange={(e) => {
                 setTargetEmail(e.target.value);
                 setProfiles([]);
+                setAccountSummary(null);
                 setSelectedProfileId(null);
                 resetDeleteState();
               }}
@@ -285,6 +289,20 @@ export function ProfileManagementClient() {
       {profiles.length > 0 ? (
         <section className="rounded-xl border border-stone-200 bg-white p-4 space-y-4">
           <h2 className="text-lg font-semibold text-stone-900">2. 削除対象プロフィール</h2>
+          {accountSummary ? (
+            <div className="rounded-lg border border-stone-200 bg-stone-50 px-3 py-2 text-sm text-stone-700">
+              <p>
+                プロフィール数: {accountSummary.profileCount} /{" "}
+                {formatAdminEffectiveProfileLimitLabel({
+                  isMonitor: accountSummary.isMonitor,
+                  profileLimit: accountSummary.storedProfileLimit,
+                })}
+              </p>
+              {accountSummary.isMonitor ? (
+                <p className="mt-1 text-xs text-amber-900">モニター利用中（実効上限は最上位プラン相当）</p>
+              ) : null}
+            </div>
+          ) : null}
           <div className="space-y-2">
             {profiles.map((profile) => (
               <label

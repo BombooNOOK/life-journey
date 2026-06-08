@@ -13,6 +13,7 @@ import {
   validateJournalBackupDocument,
 } from "@/lib/journal/journalBackupValidate";
 import { prisma } from "@/lib/db";
+import { effectiveProfileLimit } from "@/lib/profile/effectiveProfileLimit";
 
 const PHOTO_UPLOAD_CONCURRENCY = 6;
 const PROFILE_NICKNAME_MAX = 40;
@@ -55,7 +56,11 @@ export type RestoreStage =
 
 export type ProfileLimitCheckResult = {
   ok: boolean;
+  /** 実効上限（モニター時は最上位プラン相当） */
   limit: number;
+  /** DB保存値（モニター解除後に戻る上限） */
+  storedLimit: number;
+  isMonitor: boolean;
   currentCount: number;
 };
 
@@ -151,13 +156,17 @@ async function rollbackRestore(state: RestoreRollbackState): Promise<boolean> {
 export async function checkProfileLimitForRestore(email: string): Promise<ProfileLimitCheckResult> {
   const settings = await prisma.accountSettings.findUnique({
     where: { email },
-    select: { profileLimit: true },
+    select: { profileLimit: true, isMonitor: true },
   });
-  const limit = settings?.profileLimit ?? 1;
+  const storedLimit = settings?.profileLimit ?? 1;
+  const isMonitor = settings?.isMonitor === true;
+  const limit = effectiveProfileLimit(settings);
   const currentCount = await prisma.profile.count({ where: { email, isArchived: false } });
   return {
     ok: currentCount < limit,
     limit,
+    storedLimit,
+    isMonitor,
     currentCount,
   };
 }

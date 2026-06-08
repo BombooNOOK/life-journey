@@ -8,12 +8,14 @@ import { useFirebaseAuth } from "@/components/auth/FirebaseAuthProvider";
 import { getFirebaseAuth } from "@/lib/firebase/client";
 
 import { JournalBackupDownloadButton } from "@/components/orders/JournalBackupDownloadButton";
+import { formatMyPageProfileLimitLabel } from "@/lib/profile/effectiveProfileLimit";
 import { deriveSubscriptionPlanLabel } from "@/lib/stripe/plans";
 
 type Props = {
   viewerEmail: string;
   subscriptionPlan: string | null;
   profileLimit: number;
+  isMonitor?: boolean;
   registeredAtLabel: string;
   activeProfileNickname?: string | null;
 };
@@ -34,6 +36,7 @@ export function MyPageAccountSection({
   viewerEmail,
   subscriptionPlan,
   profileLimit,
+  isMonitor = false,
   registeredAtLabel,
   activeProfileNickname,
 }: Props) {
@@ -80,7 +83,9 @@ export function MyPageAccountSection({
         <dd className="text-stone-900">{planLabel}</dd>
 
         <dt className="text-stone-500">プロフィール上限</dt>
-        <dd className="text-stone-900">{profileLimit} プロフィール</dd>
+        <dd className="text-stone-900">
+          {formatMyPageProfileLimitLabel({ isMonitor, profileLimit })}
+        </dd>
 
         <dt className="text-stone-500">登録日</dt>
         <dd className="text-stone-900">{registeredAtLabel}</dd>
