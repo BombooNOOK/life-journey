@@ -31,6 +31,23 @@ type CreateResponse = {
 const DEFAULT_NO_ENTRIES_MESSAGE =
   "この期間には日記がありません。\n期間を変更するか、日記を書いてから日記ブックを作成してください。";
 
+/** 作成ボタンが無効なときに表示する理由（優先順位順） */
+export function diaryBookCreateDisabledReason(params: {
+  title: string;
+  startDate: string;
+  endDate: string;
+  periodChecked: boolean;
+  canCreate: boolean;
+  creating: boolean;
+}): string | null {
+  if (params.creating) return "作成中です";
+  if (!params.title.trim()) return "日記ブック名を入力してください";
+  if (!params.startDate || !params.endDate) return "開始日と終了日を設定してください";
+  if (!params.periodChecked) return "掲載する日記を確認してください";
+  if (!params.canCreate) return "本に入れる日記がありません";
+  return null;
+}
+
 export function DiaryBookCreateForm() {
   const router = useRouter();
   const today = useMemo(() => new Date().toISOString().slice(0, 10), []);
@@ -55,7 +72,14 @@ export function DiaryBookCreateForm() {
 
   const canPreview = Boolean(startDate && endDate);
   const canSubmit = Boolean(title.trim()) && canPreview && canCreate && !creating;
-  const showCreateHint = !canSubmit && !creating && entryCount == null;
+  const createDisabledReason = diaryBookCreateDisabledReason({
+    title,
+    startDate,
+    endDate,
+    periodChecked,
+    canCreate,
+    creating,
+  });
 
   async function checkPreview() {
     if (!canPreview) return;
@@ -324,10 +348,8 @@ export function DiaryBookCreateForm() {
                 {creating ? "作成中…" : "日記ブックを作成"}
               </button>
             </div>
-            {showCreateHint ? (
-              <p className="mt-2 text-xs text-red-600">
-                日記ブック名・開始日・終了日を入力し、「この期間の日記を確認」で掲載する日記を選んでから作成してください。
-              </p>
+            {createDisabledReason ? (
+              <p className="mt-2 text-sm font-medium text-red-600">{createDisabledReason}</p>
             ) : null}
           </div>
         </div>

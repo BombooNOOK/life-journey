@@ -170,7 +170,10 @@ export function DiaryBookIncludeInBookMonthList({
       </div>
 
       <div className="space-y-4">
-        {monthlyBuckets.map((bucket) => (
+        {monthlyBuckets.map((bucket) => {
+          const monthAllIncluded = bucket.entries.every((entry) => entry.includeInBook);
+          const monthAllExcluded = bucket.entries.every((entry) => !entry.includeInBook);
+          return (
           <div key={bucket.key}>
             <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
               <h4 className="text-sm font-semibold text-stone-900">{bucket.label}</h4>
@@ -178,7 +181,7 @@ export function DiaryBookIncludeInBookMonthList({
                 <button
                   type="button"
                   className="rounded-md border border-emerald-300 bg-emerald-50 px-2 py-1 text-xs text-emerald-900 hover:bg-emerald-100 disabled:opacity-50"
-                  disabled={saving}
+                  disabled={saving || monthAllIncluded}
                   onClick={() => setMonthInclude(bucket.entries.map((e) => e.id), true)}
                 >
                   この月をすべて入れる
@@ -186,13 +189,18 @@ export function DiaryBookIncludeInBookMonthList({
                 <button
                   type="button"
                   className="rounded-md border border-stone-300 bg-white px-2 py-1 text-xs text-stone-700 hover:bg-stone-50 disabled:opacity-50"
-                  disabled={saving}
+                  disabled={saving || monthAllExcluded}
                   onClick={() => setMonthInclude(bucket.entries.map((e) => e.id), false)}
                 >
                   この月をすべて外す
                 </button>
               </div>
             </div>
+            {monthAllIncluded ? (
+              <p className="mb-2 text-xs text-stone-500">
+                この月の日記はすでにすべて選択されています。
+              </p>
+            ) : null}
             <ul className="space-y-2">
               {bucket.entries.map((entry) => {
                 const mood = getMoodMeta(entry.mood);
@@ -243,7 +251,8 @@ export function DiaryBookIncludeInBookMonthList({
               })}
             </ul>
           </div>
-        ))}
+          );
+        })}
       </div>
 
       <p className="text-xs text-stone-500">
@@ -263,19 +272,26 @@ export function DiaryBookIncludeInBookMonthList({
         </p>
       ) : null}
 
-      <button
-        type="button"
-        disabled={!dirty || saving}
-        aria-busy={saving}
-        onClick={() => void saveChanges()}
-        className="w-full rounded-lg border border-emerald-700 bg-emerald-50 px-3 py-2.5 text-sm font-medium text-emerald-900 hover:bg-emerald-100 disabled:opacity-50 sm:w-auto"
-      >
-        {saving ? (
-          <OwlLoadingInline label="選択を保存しています…" size="sm" />
-        ) : (
-          "選択を保存する"
-        )}
-      </button>
+      <div className="space-y-2">
+        <button
+          type="button"
+          disabled={!dirty || saving}
+          aria-busy={saving}
+          onClick={() => void saveChanges()}
+          className="w-full rounded-lg border border-emerald-700 bg-emerald-50 px-3 py-2.5 text-sm font-medium text-emerald-900 hover:bg-emerald-100 disabled:opacity-50 sm:w-auto"
+        >
+          {saving ? (
+            <OwlLoadingInline label="選択を保存しています…" size="sm" />
+          ) : (
+            "選択を保存する"
+          )}
+        </button>
+        {!dirty && !saving ? (
+          <p className="text-xs text-stone-600">
+            変更はありません。現在の選択内容は保存済みです。
+          </p>
+        ) : null}
+      </div>
     </section>
   );
 }
