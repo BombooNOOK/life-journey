@@ -144,6 +144,8 @@ describe("evaluateProfileDeleteEligibility", () => {
       kanteiBindings: [],
     });
     expect(block?.code).toBe("ORDER_EXISTS");
+    expect(block?.message).toContain("鑑定作成データ（Order）");
+    expect(block?.message).toContain("製本申込");
   });
 
   it("allows delete when cancelled diary binding exists", () => {

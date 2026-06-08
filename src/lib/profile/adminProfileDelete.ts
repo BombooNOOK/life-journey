@@ -17,6 +17,7 @@ import {
   type AdminProfileDeleteConfirmations,
   type AdminProfileDeleteDiaryBindingSummary,
   type AdminProfileDeleteKanteiBindingSummary,
+  type AdminProfileDeleteOrderSummary,
   type AdminProfileDeletePreview,
   type AdminProfileDeleteResult,
   type AdminProfileListItem,
@@ -330,7 +331,7 @@ export function evaluateProfileDeleteEligibility(params: {
   if (params.orderCount > 0) {
     return {
       code: "ORDER_EXISTS",
-      message: `このプロフィールには鑑定書（Order）が ${params.orderCount} 件あるため、削除できません。`,
+      message: `このプロフィールには鑑定作成データ（Order）が ${params.orderCount} 件あります。鑑定書そのものに紐づくデータが残っているため、現在は削除できません。※鑑定書の製本申込（KanteiBookBindingRequest）とは別のデータです。`,
       orderCount: params.orderCount,
       blockingDiaryBinding: null,
       blockingKanteiBinding: null,
@@ -426,6 +427,36 @@ function mapDiaryBindingSummary(row: ProfileDeleteDiaryBindingRow): AdminProfile
   };
 }
 
+function mapOrderSummary(row: {
+  id: string;
+  kanteiCode: string | null;
+  profileId: string;
+  email: string;
+  fullNameDisplay: string;
+  birthDate: string;
+  status: string;
+  createdAt: Date;
+  updatedAt: Date;
+  pdfPreviewBlobUrl: string | null;
+  pdfPrintBlobUrl: string | null;
+  numerologyJson: string;
+}): AdminProfileDeleteOrderSummary {
+  return {
+    id: row.id,
+    kanteiCode: row.kanteiCode,
+    profileId: row.profileId,
+    email: row.email,
+    fullNameDisplay: row.fullNameDisplay,
+    birthDate: row.birthDate,
+    status: row.status,
+    createdAt: row.createdAt.toISOString(),
+    updatedAt: row.updatedAt.toISOString(),
+    hasPdfPreviewBlob: Boolean(row.pdfPreviewBlobUrl?.trim()),
+    hasPdfPrintBlob: Boolean(row.pdfPrintBlobUrl?.trim()),
+    hasNumerologyJson: Boolean(row.numerologyJson?.trim()),
+  };
+}
+
 function mapKanteiBindingSummary(row: ProfileDeleteKanteiBindingRow): AdminProfileDeleteKanteiBindingSummary {
   return {
     id: row.id,
@@ -446,7 +477,7 @@ async function loadProfileDeleteCounts(email: string, profileId: string) {
     photoCount,
     diaryBookCount,
     bookshelfBookCount,
-    orderCount,
+    orders,
     diaryBindings,
     kanteiBindings,
   ] = await Promise.all([
@@ -459,7 +490,24 @@ async function loadProfileDeleteCounts(email: string, profileId: string) {
     }),
     prisma.diaryBook.count({ where: scope }),
     prisma.diaryBookshelfBook.count({ where: scope }),
-    prisma.order.count({ where: scope }),
+    prisma.order.findMany({
+      where: scope,
+      select: {
+        id: true,
+        kanteiCode: true,
+        profileId: true,
+        email: true,
+        fullNameDisplay: true,
+        birthDate: true,
+        status: true,
+        createdAt: true,
+        updatedAt: true,
+        pdfPreviewBlobUrl: true,
+        pdfPrintBlobUrl: true,
+        numerologyJson: true,
+      },
+      orderBy: { createdAt: "desc" },
+    }),
     loadDiaryBindingsForProfileDelete(email, profileId),
     prisma.kanteiBookBindingRequest.findMany({
       where: scope,
@@ -486,7 +534,8 @@ async function loadProfileDeleteCounts(email: string, profileId: string) {
     photoCount,
     diaryBookCount,
     bookshelfBookCount,
-    orderCount,
+    orders,
+    orderCount: orders.length,
     diaryBindingCount: diaryBindings.length,
     kanteiBindingCount: kanteiBindings.length,
     hasBaseOrderNumber: hasAnyBaseOrderNumber,
@@ -504,7 +553,7 @@ export async function buildAdminProfileDeletePreview(params: {
 
   const profile = await prisma.profile.findFirst({
     where: { id: profileId, email, isArchived: false },
-    select: { id: true, nickname: true },
+    select: { id: true, nickname: true, createdAt: true, updatedAt: true },
   });
   if (!profile) {
     throw new AdminProfileDeleteError("指定プロフィールが見つかりません。", "PROFILE_NOT_FOUND");
@@ -523,6 +572,8 @@ export async function buildAdminProfileDeletePreview(params: {
     targetEmail: email,
     profileId: profile.id,
     profileNickname: profile.nickname,
+    profileCreatedAt: profile.createdAt.toISOString(),
+    profileUpdatedAt: profile.updatedAt.toISOString(),
     journalEntryCount: counts.journalEntryCount,
     photoCount: counts.photoCount,
     diaryBookCount: counts.diaryBookCount,
@@ -536,6 +587,7 @@ export async function buildAdminProfileDeletePreview(params: {
     blockMessage: block?.message ?? null,
     blockingDiaryBinding: block?.blockingDiaryBinding ?? null,
     blockingKanteiBinding: block?.blockingKanteiBinding ?? null,
+    orders: counts.orders.map(mapOrderSummary),
     diaryBindings: counts.diaryBindings.map(mapDiaryBindingSummary),
     kanteiBindings: counts.kanteiBindings.map(mapKanteiBindingSummary),
   };

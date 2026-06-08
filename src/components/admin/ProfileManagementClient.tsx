@@ -332,6 +332,14 @@ export function ProfileManagementClient() {
               <dd className="text-stone-900">{preview.profileNickname}</dd>
             </div>
             <div>
+              <dt className="text-stone-500">プロフィール作成日時</dt>
+              <dd className="text-stone-900">{formatDate(preview.profileCreatedAt)}</dd>
+            </div>
+            <div>
+              <dt className="text-stone-500">プロフィール更新日時</dt>
+              <dd className="text-stone-900">{formatDate(preview.profileUpdatedAt)}</dd>
+            </div>
+            <div>
               <dt className="text-stone-500">日記件数</dt>
               <dd className="text-stone-900">{preview.journalEntryCount}</dd>
             </div>
@@ -348,7 +356,7 @@ export function ProfileManagementClient() {
               <dd className="text-stone-900">{preview.bookshelfBookCount}</dd>
             </div>
             <div>
-              <dt className="text-stone-500">Order件数</dt>
+              <dt className="text-stone-500">鑑定作成データ（Order）件数</dt>
               <dd className="text-stone-900">{preview.orderCount}</dd>
             </div>
             <div>
@@ -382,7 +390,67 @@ export function ProfileManagementClient() {
               {preview.blockCode === "ORDER_EXISTS" ? (
                 <div className="rounded-lg border border-red-300 bg-red-50 p-4 text-sm text-red-950">
                   <p className="font-medium">削除できません。</p>
-                  <p className="mt-2">このプロフィールには鑑定書（Order）が残っているため、削除できません。</p>
+                  <p className="mt-2">
+                    このプロフィールには鑑定作成データ（Order）が {preview.orderCount}{" "}
+                    件あります。鑑定書そのものに紐づくデータが残っているため、現在は削除できません。
+                  </p>
+                  <p className="mt-2 text-xs">
+                    ※鑑定書の製本申込（KanteiBookBindingRequest）とは別のデータです。製本申込が0件でも、再鑑定などで
+                    Order が作成されている場合は削除できません。
+                  </p>
+                  {preview.orders.length > 0 ? (
+                    <dl className="mt-3 grid gap-1 text-xs sm:grid-cols-2">
+                      {preview.orders.map((order) => (
+                        <div key={order.id} className="sm:col-span-2 rounded border border-red-200 bg-white p-3">
+                          <div className="grid gap-1 sm:grid-cols-2">
+                            <div>
+                              <dt className="text-red-700">Order ID</dt>
+                              <dd className="font-mono">{order.id}</dd>
+                            </div>
+                            <div>
+                              <dt className="text-red-700">鑑定コード</dt>
+                              <dd className="font-mono">{order.kanteiCode ?? "—"}</dd>
+                            </div>
+                            <div>
+                              <dt className="text-red-700">氏名</dt>
+                              <dd>{order.fullNameDisplay}</dd>
+                            </div>
+                            <div>
+                              <dt className="text-red-700">生年月日</dt>
+                              <dd>{order.birthDate}</dd>
+                            </div>
+                            <div>
+                              <dt className="text-red-700">status</dt>
+                              <dd>{order.status}</dd>
+                            </div>
+                            <div>
+                              <dt className="text-red-700">Order.profileId</dt>
+                              <dd className="font-mono">{order.profileId || "（空）"}</dd>
+                            </div>
+                            <div>
+                              <dt className="text-red-700">作成日時</dt>
+                              <dd>{formatDate(order.createdAt)}</dd>
+                            </div>
+                            <div>
+                              <dt className="text-red-700">更新日時</dt>
+                              <dd>{formatDate(order.updatedAt)}</dd>
+                            </div>
+                            <div>
+                              <dt className="text-red-700">PDF Blob</dt>
+                              <dd>
+                                preview: {order.hasPdfPreviewBlob ? "あり" : "なし"} / print:{" "}
+                                {order.hasPdfPrintBlob ? "あり" : "なし"}
+                              </dd>
+                            </div>
+                            <div>
+                              <dt className="text-red-700">numerologyJson</dt>
+                              <dd>{order.hasNumerologyJson ? "あり" : "なし"}</dd>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </dl>
+                  ) : null}
                 </div>
               ) : null}
               {preview.blockingDiaryBinding ? (
@@ -580,7 +648,7 @@ export function ProfileManagementClient() {
       <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-xs leading-6 text-amber-900">
         <p className="font-medium">安全上の注意</p>
         <ul className="mt-2 list-disc pl-5">
-          <li>Order（鑑定書）が1件でもあるプロフィールは削除できません。</li>
+          <li>鑑定作成データ（Order）が1件でもあるプロフィールは削除できません（製本申込とは別）。</li>
           <li>有効な製本申込があるプロフィールも削除できません。</li>
           <li>レガシーの profileId=&quot;&quot; データはこの画面からは削除されません（明示的な profileId のみ）。</li>
           <li>鑑定書PDF Blob・AccountSettings・Stripe・BASE注文データは削除しません。</li>

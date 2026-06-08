@@ -42,6 +42,21 @@ export type AdminProfileDeleteKanteiBindingSummary = {
   updatedAt: string;
 };
 
+export type AdminProfileDeleteOrderSummary = {
+  id: string;
+  kanteiCode: string | null;
+  profileId: string;
+  email: string;
+  fullNameDisplay: string;
+  birthDate: string;
+  status: string;
+  createdAt: string;
+  updatedAt: string;
+  hasPdfPreviewBlob: boolean;
+  hasPdfPrintBlob: boolean;
+  hasNumerologyJson: boolean;
+};
+
 export type AdminProfileDeleteBindingBlockDetail = {
   kind: "diary" | "kantei";
   requestId: string;
@@ -66,6 +81,8 @@ export type AdminProfileDeletePreview = {
   targetEmail: string;
   profileId: string;
   profileNickname: string;
+  profileCreatedAt: string;
+  profileUpdatedAt: string;
   journalEntryCount: number;
   photoCount: number;
   diaryBookCount: number;
@@ -79,6 +96,7 @@ export type AdminProfileDeletePreview = {
   blockMessage: string | null;
   blockingDiaryBinding: AdminProfileDeleteBindingBlockDetail | null;
   blockingKanteiBinding: AdminProfileDeleteBindingBlockDetail | null;
+  orders: AdminProfileDeleteOrderSummary[];
   diaryBindings: AdminProfileDeleteDiaryBindingSummary[];
   kanteiBindings: AdminProfileDeleteKanteiBindingSummary[];
 };
