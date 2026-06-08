@@ -1,6 +1,7 @@
 import type { BoundDiaryEntry } from "@/components/journal/DiaryYearBoundPages";
 import { prisma } from "@/lib/db";
 import { buildBoundDiaryBookPages, type DiaryBookPageKind } from "@/lib/journal/diaryBookPages";
+import { journalEntryPhotoPayloadToDataUriForPdf } from "@/lib/journal/journalEntryPhotoForPdf";
 import { loadJournalEntryPhotoPayload } from "@/lib/journal/journalEntryPhotoResolve";
 import { diaryBookPrintPdfFilename } from "@/lib/journal/diaryBookPrintPdfFilename";
 import { listJournalEntriesForDiaryBookRow } from "@/lib/journal/listDiaryBookEntries";
@@ -60,10 +61,7 @@ async function resolveEntryPhotoDataUri(entry: BoundDiaryEntry): Promise<string>
     );
   }
 
-  if (payload.kind === "bytes") {
-    return `data:${payload.mimeType};base64,${payload.buffer.toString("base64")}`;
-  }
-  return payload.photoDataUrl;
+  return journalEntryPhotoPayloadToDataUriForPdf(payload);
 }
 
 export async function loadDiaryBookPrintPdfPayload(
