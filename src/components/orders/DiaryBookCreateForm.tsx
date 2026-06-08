@@ -24,8 +24,14 @@ type PreviewResponse = {
 };
 
 type CreateResponse = {
+  book?: { id: string; title: string };
   error?: string;
   code?: string;
+};
+
+type CreatedBookSummary = {
+  id: string;
+  title: string;
 };
 
 const DEFAULT_NO_ENTRIES_MESSAGE =
@@ -68,7 +74,7 @@ export function DiaryBookCreateForm() {
 
   const [creating, setCreating] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [notice, setNotice] = useState<string | null>(null);
+  const [createdBook, setCreatedBook] = useState<CreatedBookSummary | null>(null);
 
   const canPreview = Boolean(startDate && endDate);
   const canSubmit = Boolean(title.trim()) && canPreview && canCreate && !creating;
@@ -85,7 +91,6 @@ export function DiaryBookCreateForm() {
     if (!canPreview) return;
     setChecking(true);
     setError(null);
-    setNotice(null);
     setPreviewMessage(null);
     setPickerEntries(null);
     setPeriodChecked(false);
@@ -129,11 +134,35 @@ export function DiaryBookCreateForm() {
     }
   }
 
+  function resetCreateForm() {
+    setTitle("");
+    setStartDate("");
+    setEndDate(today);
+    setCoverTheme("casual");
+    setEntryCount(null);
+    setCanCreate(false);
+    setPreviewMessage(null);
+    setPickerEntries(null);
+    setPeriodChecked(false);
+    setError(null);
+  }
+
+  function scrollToCreatedBookInBookshelf(bookId: string) {
+    const card = document.getElementById(`diary-book-${bookId}`);
+    const list = document.getElementById("bookshelf-diary-books");
+    (card ?? list)?.scrollIntoView({ behavior: "smooth", block: "center" });
+  }
+
+  function startAnotherBook() {
+    setCreatedBook(null);
+    resetCreateForm();
+    setOpen(true);
+  }
+
   async function createDiaryBook() {
     if (!canSubmit) return;
     setCreating(true);
     setError(null);
-    setNotice(null);
     try {
       const res = await fetch("/api/journal/diary-books", {
         method: "POST",
@@ -151,16 +180,14 @@ export function DiaryBookCreateForm() {
         setError(data.error ?? "日記ブックの作成に失敗しました。");
         return;
       }
-      setNotice("日記ブックを作成しました。本棚を更新します。");
-      setTitle("");
-      setStartDate("");
-      setEndDate(today);
-      setCoverTheme("casual");
-      setEntryCount(null);
-      setCanCreate(false);
-      setPreviewMessage(null);
-      setPickerEntries(null);
-      setPeriodChecked(false);
+      const createdId = data.book?.id?.trim();
+      const createdTitle = data.book?.title?.trim() || title.trim();
+      if (!createdId) {
+        setError("日記ブックの作成に失敗しました。");
+        return;
+      }
+      setCreatedBook({ id: createdId, title: createdTitle });
+      setOpen(true);
       router.refresh();
     } catch {
       setError("日記ブックの作成に失敗しました。");
@@ -175,7 +202,31 @@ export function DiaryBookCreateForm() {
       <p className="mt-1 text-sm leading-relaxed text-stone-600">
         日記をまとめて、1冊の本にします。
       </p>
-      {!open ? (
+      {createdBook ? (
+        <div className="mt-4 rounded-lg border border-emerald-200 bg-emerald-50/80 px-4 py-4">
+          <p className="text-sm font-semibold text-emerald-950">日記ブックを作成しました。</p>
+          <p className="mt-2 text-sm leading-relaxed text-emerald-900/90">
+            作成した日記ブック「{createdBook.title}」を本棚に追加しました。
+            下の一覧から「読む」または「製本版を注文する」を選べます。
+          </p>
+          <div className="mt-4 flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={() => scrollToCreatedBookInBookshelf(createdBook.id)}
+              className="rounded-lg bg-emerald-800 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-900"
+            >
+              本棚を見る
+            </button>
+            <button
+              type="button"
+              onClick={startAnotherBook}
+              className="rounded-lg border border-emerald-300 bg-white px-4 py-2 text-sm font-medium text-emerald-900 hover:bg-emerald-50"
+            >
+              もう1冊作る
+            </button>
+          </div>
+        </div>
+      ) : !open ? (
         <button
           type="button"
           onClick={() => setOpen(true)}
@@ -193,7 +244,7 @@ export function DiaryBookCreateForm() {
         </button>
       )}
 
-      {open ? (
+      {open && !createdBook ? (
         <div className="mt-4 space-y-3">
           <label className="block text-sm">
             <span className="mb-1 block text-stone-700">日記ブック名</span>
@@ -323,12 +374,6 @@ export function DiaryBookCreateForm() {
               {error}
             </p>
           ) : null}
-          {notice ? (
-            <p className="rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-900">
-              {notice}
-            </p>
-          ) : null}
-
           <div>
             <div className="flex flex-wrap gap-2">
               <button

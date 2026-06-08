@@ -193,7 +193,10 @@ export default async function BookshelfPage() {
             </p>
           </div>
         ) : (
-          <ul className="grid list-none gap-4 p-0 sm:grid-cols-2 lg:grid-cols-3">
+          <ul
+            id="bookshelf-diary-books"
+            className="grid list-none gap-4 p-0 sm:grid-cols-2 lg:grid-cols-3"
+          >
             {books.map((book) => (
               <BookshelfBookCard key={book.id} {...book} />
             ))}
