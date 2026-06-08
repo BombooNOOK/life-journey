@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import { SupportInquiryReplyActions } from "@/components/admin/SupportInquiryReplyActions";
 import { SupportInquiryResolveButton } from "@/components/admin/SupportInquiryResolveButton";
 import { getViewerEmailFromCookie } from "@/lib/auth/viewer";
 import { isAdminEmail } from "@/lib/admin/access";
@@ -50,6 +51,8 @@ export default async function AdminSupportInquiryDetailPage({ params }: Props) {
 
   const category = inquiry.category as SupportInquiryCategory;
   const status = inquiry.status as SupportInquiryStatus;
+  const categoryLabel = SUPPORT_INQUIRY_CATEGORY_LABELS[category] ?? inquiry.category;
+  const createdAtLabel = inquiry.createdAt.toLocaleString("ja-JP");
 
   return (
     <div className="space-y-6">
@@ -70,9 +73,7 @@ export default async function AdminSupportInquiryDetailPage({ params }: Props) {
           <dd className="break-all text-stone-900">{inquiry.email}</dd>
 
           <dt className="text-stone-500">お問い合わせ種別</dt>
-          <dd className="text-stone-900">
-            {SUPPORT_INQUIRY_CATEGORY_LABELS[category] ?? inquiry.category}
-          </dd>
+          <dd className="text-stone-900">{categoryLabel}</dd>
 
           <dt className="text-stone-500">プロフィールID</dt>
           <dd className="font-mono text-xs text-stone-900">
@@ -97,6 +98,17 @@ export default async function AdminSupportInquiryDetailPage({ params }: Props) {
           <div className="mt-3 whitespace-pre-wrap break-words rounded-lg border border-stone-200 bg-stone-50/80 px-4 py-3 text-sm leading-relaxed text-stone-800">
             {inquiry.message}
           </div>
+        </div>
+
+        <div className="mt-6 border-t border-stone-100 pt-5">
+          <SupportInquiryReplyActions
+            replyContext={{
+              userEmail: inquiry.email,
+              categoryLabel,
+              createdAtLabel,
+              activeProfileName: inquiry.activeProfileName,
+            }}
+          />
         </div>
 
         <div className="mt-6 flex flex-wrap items-center gap-3 border-t border-stone-100 pt-5">
