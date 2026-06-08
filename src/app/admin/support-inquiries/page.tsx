@@ -194,8 +194,16 @@ export default async function AdminSupportInquiriesPage({ searchParams }: Props)
                     <td className="px-4 py-3 text-stone-700">
                       {SUPPORT_INQUIRY_STATUS_LABELS[status] ?? row.status}
                     </td>
-                    <td className="px-4 py-3 max-w-md text-xs leading-relaxed text-stone-700">
-                      <span title={row.message}>{truncateSupportInquiryMessagePreview(row.message)}</span>
+                    <td className="px-4 py-3 max-w-xs">
+                      <p className="line-clamp-2 text-xs leading-relaxed text-stone-700">
+                        {truncateSupportInquiryMessagePreview(row.message)}
+                      </p>
+                      <Link
+                        href={`/admin/support-inquiries/${encodeURIComponent(row.id)}`}
+                        className="mt-1.5 inline-flex text-xs font-medium text-sky-900 underline-offset-2 hover:underline"
+                      >
+                        詳細を見る
+                      </Link>
                     </td>
                     <td className="px-4 py-3">
                       <SupportInquiryResolveButton inquiryId={row.id} currentStatus={row.status} />
