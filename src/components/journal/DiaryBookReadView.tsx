@@ -4,6 +4,7 @@ import { Suspense, useState } from "react";
 
 import { DiaryBookFlipReader } from "@/components/journal/DiaryBookFlipReader";
 import { BookshelfEditIncludesNavButton } from "@/components/orders/BookshelfEditIncludesNavButton";
+import { DiaryBookDeleteButton } from "@/components/orders/DiaryBookDeleteButton";
 
 type Props = {
   bookId: string;
@@ -43,12 +44,13 @@ export function DiaryBookReadView({
         ) : null}
       </p>
       {showEditIncludes ? (
-        <p className="mt-2">
+        <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-2">
           <BookshelfEditIncludesNavButton
             bookId={bookId}
             className="text-sm font-medium text-emerald-800 underline-offset-2 hover:underline"
           />
-        </p>
+          <DiaryBookDeleteButton bookId={bookId} bookTitle={title} />
+        </div>
       ) : null}
       <Suspense fallback={<p className="text-sm text-stone-500">日記ブックを読み込み中…</p>}>
         <DiaryBookFlipReader

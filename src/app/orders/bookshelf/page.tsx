@@ -5,6 +5,7 @@ import { BookshelfBookCard, type BookshelfBookDetailRow } from "@/components/ord
 import { BookshelfEditIncludesNavButton } from "@/components/orders/BookshelfEditIncludesNavButton";
 import { BookshelfPageHeader } from "@/components/orders/BookshelfPageHeader";
 import { DiaryBookCreateForm } from "@/components/orders/DiaryBookCreateForm";
+import { DiaryBookDeleteButton } from "@/components/orders/DiaryBookDeleteButton";
 import { isAdminEmail } from "@/lib/admin/access";
 import { PdfDownloadButton } from "@/components/orders/PdfDownloadButton";
 import { getViewerEmailFromCookie } from "@/lib/auth/viewer";
@@ -82,14 +83,19 @@ export default async function BookshelfPage() {
         bindingLabel: "製本版を注文する",
         bindingHref: `/orders/bookshelf/diary-book/${book.id}/book-binding`,
         overviewExtra: (
-          <BookshelfEditIncludesNavButton bookId={book.id}>
-            <span className="block">本に入れる日記を編集する</span>
-            {book.needsContentRefresh ? (
-              <span className="mt-1 block text-[10px] font-normal text-amber-800">
-                日記の変更を本に反映できます
-              </span>
-            ) : null}
-          </BookshelfEditIncludesNavButton>
+          <>
+            <BookshelfEditIncludesNavButton bookId={book.id}>
+              <span className="block">本に入れる日記を編集する</span>
+              {book.needsContentRefresh ? (
+                <span className="mt-1 block text-[10px] font-normal text-amber-800">
+                  日記の変更を本に反映できます
+                </span>
+              ) : null}
+            </BookshelfEditIncludesNavButton>
+            <div className="pt-1">
+              <DiaryBookDeleteButton bookId={book.id} bookTitle={book.title} />
+            </div>
+          </>
         ),
       };
     });
