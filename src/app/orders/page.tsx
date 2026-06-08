@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import { KanteiMissingBanner } from "@/components/orders/KanteiMissingBanner";
 import { MyPageAccountSection } from "@/components/orders/MyPageAccountSection";
 import { MyPageHeaderIllustration } from "@/components/orders/MyPageHeaderIllustration";
 import { MyPageMainActions } from "@/components/orders/MyPageMainActions";
@@ -9,6 +10,7 @@ import { isAdminEmail } from "@/lib/admin/access";
 import { getViewerEmailFromCookie } from "@/lib/auth/viewer";
 import { prisma } from "@/lib/db";
 import { withPrismaConnectionRetry } from "@/lib/db/prismaRetry";
+import { profileHasKanteiOrder } from "@/lib/journal/kanteiCommentEligibility";
 import { listProfilesAndActiveProfileId } from "@/lib/profile/activeProfile";
 
 export const dynamic = "force-dynamic";
@@ -41,12 +43,18 @@ export default async function OrdersListPage() {
     subscriptionPlan: null,
   };
   let fetchError: string | null = null;
+  let hasKanteiOrder = true;
   try {
     const loaded = await withPrismaConnectionRetry(() =>
       listProfilesAndActiveProfileId(viewerEmail),
     );
     profiles = loaded.profiles;
     activeProfileId = loaded.activeProfileId;
+    if (activeProfileId) {
+      hasKanteiOrder = await withPrismaConnectionRetry(() =>
+        profileHasKanteiOrder(viewerEmail, activeProfileId),
+      );
+    }
     const [settings, oldestProfile] = await withPrismaConnectionRetry(() =>
       Promise.all([
         prisma.accountSettings.findUnique({
@@ -119,6 +127,10 @@ export default async function OrdersListPage() {
       </div>
 
       <MyPageProfileList profiles={profiles} activeProfileId={activeProfileId} />
+
+      {activeProfile && !hasKanteiOrder ? (
+        <KanteiMissingBanner profileId={activeProfile.id} />
+      ) : null}
 
       {activeProfile ? (
         <MyPageMainActions

@@ -6,11 +6,13 @@ import { BookshelfEditIncludesNavButton } from "@/components/orders/BookshelfEdi
 import { BookshelfPageHeader } from "@/components/orders/BookshelfPageHeader";
 import { DiaryBookCreateForm } from "@/components/orders/DiaryBookCreateForm";
 import { DiaryBookDeleteButton } from "@/components/orders/DiaryBookDeleteButton";
+import { KanteiMissingBanner } from "@/components/orders/KanteiMissingBanner";
 import { isAdminEmail } from "@/lib/admin/access";
 import { PdfDownloadButton } from "@/components/orders/PdfDownloadButton";
 import { getViewerEmailFromCookie } from "@/lib/auth/viewer";
 import { prisma } from "@/lib/db";
 import { withPrismaConnectionRetry } from "@/lib/db/prismaRetry";
+import { profileHasKanteiOrder } from "@/lib/journal/kanteiCommentEligibility";
 import { listDiaryBooksForViewer } from "@/lib/journal/listDiaryBooks";
 import { diaryCoverImagePath, getDiaryCoverStyleLabel } from "@/lib/journal/coverAssets";
 import { listProfilesAndActiveProfileId } from "@/lib/profile/activeProfile";
@@ -33,7 +35,7 @@ export default async function BookshelfPage() {
     const showPrintQualityPdf = viewerIsAdmin;
     const accountPdfCap = await fetchAccountPdfDownloadLimitOrNull(viewerEmail);
 
-    const [orders, diaryBookRows] = await Promise.all([
+    const [orders, diaryBookRows, hasKanteiOrder] = await Promise.all([
       prisma.order.findMany({
         where: { email: viewerEmail, profileId: activeProfileId },
         orderBy: { createdAt: "desc" },
@@ -52,6 +54,7 @@ export default async function BookshelfPage() {
         email: viewerEmail,
         profileId: activeProfileId,
       }),
+      profileHasKanteiOrder(viewerEmail, activeProfileId),
     ]);
 
     const diaryBookCards = diaryBookRows.map((book) => {
@@ -184,6 +187,10 @@ export default async function BookshelfPage() {
         />
 
         <DiaryBookCreateForm />
+
+        {!hasKanteiOrder && activeProfileId ? (
+          <KanteiMissingBanner profileId={activeProfileId} />
+        ) : null}
 
         {diaryBookCards.length === 0 ? (
           <p className="text-xs text-stone-500">
