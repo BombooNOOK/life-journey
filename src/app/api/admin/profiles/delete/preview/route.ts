@@ -47,7 +47,7 @@ export async function POST(request: Request) {
       targetEmail: preview.targetEmail,
       profileId: preview.profileId,
       canDelete: preview.canDelete,
-      orderCount: preview.orderCount,
+      kanteiCreationDataCount: preview.kanteiCreationDataCount,
     });
 
     return NextResponse.json({ ok: true, preview }, JSON_NO_STORE);

@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
 
-import { get, put } from "@vercel/blob";
+import { del, get, put } from "@vercel/blob";
 
 import type { BodyTuneStep, FocusPage, PdfRenderQuality } from "@/components/pdf/pdfRenderConfig";
 
@@ -107,4 +107,23 @@ export async function putOrderFullPdfToBlob(
     token,
   });
   return result.url;
+}
+
+/** プロフィール削除など、結果を UI に返す必要があるとき用 */
+export async function deleteOrderPdfBlobWithResult(
+  blobUrl: string | null | undefined,
+): Promise<{ ok: true } | { ok: false; warning: string }> {
+  const token = process.env.BLOB_READ_WRITE_TOKEN?.trim();
+  if (!token) return { ok: true };
+
+  const target = blobUrl?.trim();
+  if (!target) return { ok: true };
+
+  try {
+    await del(target, { token });
+    return { ok: true };
+  } catch (e) {
+    console.warn("[order-pdf-blob] del failed", { blobUrl: target, error: e });
+    return { ok: false, warning: `鑑定書PDF Blob削除失敗: ${target}` };
+  }
 }

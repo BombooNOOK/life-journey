@@ -1,16 +1,34 @@
-export const ADMIN_PROFILE_DELETE_CONFIRMATION_KEYS = [
+export const ADMIN_PROFILE_DELETE_BASE_CONFIRMATION_KEYS = [
   "profileReviewed",
   "backupReviewed",
   "journalDataReviewed",
   "noOrderBindingReviewed",
 ] as const;
 
+export const ADMIN_PROFILE_DELETE_KANTEI_DATA_CONFIRMATION_KEY = "kanteiDataReviewed" as const;
+
+export type AdminProfileDeleteBaseConfirmationKey =
+  (typeof ADMIN_PROFILE_DELETE_BASE_CONFIRMATION_KEYS)[number];
+
 export type AdminProfileDeleteConfirmationKey =
-  (typeof ADMIN_PROFILE_DELETE_CONFIRMATION_KEYS)[number];
+  | AdminProfileDeleteBaseConfirmationKey
+  | typeof ADMIN_PROFILE_DELETE_KANTEI_DATA_CONFIRMATION_KEY;
+
+/** @deprecated 鑑定作成データなし時の必須キー一覧（後方互換） */
+export const ADMIN_PROFILE_DELETE_CONFIRMATION_KEYS = ADMIN_PROFILE_DELETE_BASE_CONFIRMATION_KEYS;
 
 export type AdminProfileDeleteConfirmations = Record<AdminProfileDeleteConfirmationKey, boolean>;
 
 export const ADMIN_PROFILE_DELETE_CONFIRMATION_WORD = "削除する";
+
+export function requiredAdminProfileDeleteConfirmationKeys(
+  hasKanteiCreationData: boolean,
+): AdminProfileDeleteConfirmationKey[] {
+  if (hasKanteiCreationData) {
+    return [...ADMIN_PROFILE_DELETE_BASE_CONFIRMATION_KEYS, ADMIN_PROFILE_DELETE_KANTEI_DATA_CONFIRMATION_KEY];
+  }
+  return [...ADMIN_PROFILE_DELETE_BASE_CONFIRMATION_KEYS];
+}
 
 export type AdminProfileListItem = {
   id: string;
@@ -42,7 +60,7 @@ export type AdminProfileDeleteKanteiBindingSummary = {
   updatedAt: string;
 };
 
-export type AdminProfileDeleteOrderSummary = {
+export type AdminProfileDeleteKanteiCreationDataSummary = {
   id: string;
   kanteiCode: string | null;
   profileId: string;
@@ -57,6 +75,9 @@ export type AdminProfileDeleteOrderSummary = {
   hasNumerologyJson: boolean;
 };
 
+/** @deprecated AdminProfileDeleteKanteiCreationDataSummary を使用 */
+export type AdminProfileDeleteOrderSummary = AdminProfileDeleteKanteiCreationDataSummary;
+
 export type AdminProfileDeleteBindingBlockDetail = {
   kind: "diary" | "kantei";
   requestId: string;
@@ -66,7 +87,7 @@ export type AdminProfileDeleteBindingBlockDetail = {
   baseOrderNumber: string | null;
   hasBaseOrderNumber: boolean;
   diaryBookId?: string | null;
-  orderId?: string | null;
+  kanteiCreationDataId?: string | null;
   bindingProfileId: string;
   cancelledAt: string | null;
   expiredAt: string | null;
@@ -87,16 +108,18 @@ export type AdminProfileDeletePreview = {
   photoCount: number;
   diaryBookCount: number;
   bookshelfBookCount: number;
-  orderCount: number;
+  kanteiCreationDataCount: number;
   diaryBindingCount: number;
   kanteiBindingCount: number;
   hasBaseOrderNumber: boolean;
+  requiresKanteiDataConfirmation: boolean;
+  willDeleteKanteiData: boolean;
   canDelete: boolean;
   blockCode: string | null;
   blockMessage: string | null;
   blockingDiaryBinding: AdminProfileDeleteBindingBlockDetail | null;
   blockingKanteiBinding: AdminProfileDeleteBindingBlockDetail | null;
-  orders: AdminProfileDeleteOrderSummary[];
+  kanteiCreationDataList: AdminProfileDeleteKanteiCreationDataSummary[];
   diaryBindings: AdminProfileDeleteDiaryBindingSummary[];
   kanteiBindings: AdminProfileDeleteKanteiBindingSummary[];
 };
@@ -112,5 +135,9 @@ export type AdminProfileDeleteResult = {
   deletedBookshelfBookCount: number;
   deletedDiaryBindingCount: number;
   deletedKanteiBindingCount: number;
+  deletedKanteiCreationDataCount: number;
+  deletedKanteiPdfBlobCount: number;
+  failedKanteiPdfBlobCount: number;
   photoBlobWarnings: string[];
+  kanteiPdfBlobWarnings: string[];
 };

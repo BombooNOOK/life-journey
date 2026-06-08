@@ -5,8 +5,6 @@ import {
   AdminProfileDeleteError,
   assertDeletableProfileId,
   deleteAdminProfileForUser,
-  parseAdminProfileDeleteConfirmationWord,
-  parseAdminProfileDeleteConfirmations,
   parseAdminProfileDeleteTargetEmail,
 } from "@/lib/profile/adminProfileDelete";
 
@@ -44,13 +42,16 @@ export async function POST(request: Request) {
       : {};
 
   try {
-    parseAdminProfileDeleteConfirmations(body.confirmations);
-    parseAdminProfileDeleteConfirmationWord(body.confirmationWord);
     const targetEmail = parseAdminProfileDeleteTargetEmail(body.targetEmail);
     const profileId = assertDeletableProfileId(
       typeof body.profileId === "string" ? body.profileId : "",
     );
-    const result = await deleteAdminProfileForUser({ targetEmail, profileId });
+    const result = await deleteAdminProfileForUser({
+      targetEmail,
+      profileId,
+      confirmations: body.confirmations,
+      confirmationWord: body.confirmationWord,
+    });
 
     console.info("[admin-profile-delete] ok", {
       adminEmail: admin.adminEmail,

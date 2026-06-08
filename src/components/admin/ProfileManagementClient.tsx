@@ -4,8 +4,8 @@ import Link from "next/link";
 import { useMemo, useState } from "react";
 
 import {
-  ADMIN_PROFILE_DELETE_CONFIRMATION_KEYS,
   ADMIN_PROFILE_DELETE_CONFIRMATION_WORD,
+  requiredAdminProfileDeleteConfirmationKeys,
   type AdminProfileDeleteBindingBlockDetail,
   type AdminProfileDeleteConfirmationKey,
   type AdminProfileDeletePreview,
@@ -18,6 +18,7 @@ const CONFIRMATION_LABELS: Record<AdminProfileDeleteConfirmationKey, string> = {
   backupReviewed: "必要なバックアップが取得済みであることを確認しました",
   journalDataReviewed: "日記本文・写真が削除されることを確認しました",
   noOrderBindingReviewed: "実注文・製本申込に関わるデータがないことを確認しました",
+  kanteiDataReviewed: "鑑定書データと鑑定書PDFも削除されることを確認しました",
 };
 
 function emptyConfirmations(): Record<AdminProfileDeleteConfirmationKey, boolean> {
@@ -26,6 +27,7 @@ function emptyConfirmations(): Record<AdminProfileDeleteConfirmationKey, boolean
     backupReviewed: false,
     journalDataReviewed: false,
     noOrderBindingReviewed: false,
+    kanteiDataReviewed: false,
   };
 }
 
@@ -71,10 +73,10 @@ function BlockDetailCard({ detail }: { detail: AdminProfileDeleteBindingBlockDet
             <dd className="font-mono">{detail.diaryBookId}</dd>
           </div>
         ) : null}
-        {detail.orderId ? (
+        {detail.kanteiCreationDataId ? (
           <div>
-            <dt className="text-red-700">Order ID</dt>
-            <dd className="font-mono">{detail.orderId}</dd>
+            <dt className="text-red-700">鑑定作成データID</dt>
+            <dd className="font-mono">{detail.kanteiCreationDataId}</dd>
           </div>
         ) : null}
         <div>
@@ -115,9 +117,17 @@ export function ProfileManagementClient() {
   const [confirmationWord, setConfirmationWord] = useState("");
   const [deleteResult, setDeleteResult] = useState<AdminProfileDeleteResult | null>(null);
 
+  const requiredConfirmationKeys = useMemo(
+    () =>
+      preview
+        ? requiredAdminProfileDeleteConfirmationKeys(preview.requiresKanteiDataConfirmation)
+        : requiredAdminProfileDeleteConfirmationKeys(false),
+    [preview],
+  );
+
   const allConfirmed = useMemo(
-    () => ADMIN_PROFILE_DELETE_CONFIRMATION_KEYS.every((key) => confirmations[key]),
-    [confirmations],
+    () => requiredConfirmationKeys.every((key) => confirmations[key]),
+    [confirmations, requiredConfirmationKeys],
   );
 
   const canLoadProfiles = targetEmail.trim().length > 0 && !loadingProfiles;
@@ -356,8 +366,8 @@ export function ProfileManagementClient() {
               <dd className="text-stone-900">{preview.bookshelfBookCount}</dd>
             </div>
             <div>
-              <dt className="text-stone-500">鑑定作成データ（Order）件数</dt>
-              <dd className="text-stone-900">{preview.orderCount}</dd>
+              <dt className="text-stone-500">鑑定作成データ件数</dt>
+              <dd className="text-stone-900">{preview.kanteiCreationDataCount}</dd>
             </div>
             <div>
               <dt className="text-stone-500">日記製本申込件数</dt>
@@ -385,72 +395,60 @@ export function ProfileManagementClient() {
             ) : null}
           </dl>
 
+          {preview.canDelete && preview.willDeleteKanteiData ? (
+            <div className="rounded-lg border border-amber-300 bg-amber-50 p-4 text-sm text-amber-950">
+              <p className="font-medium">
+                このプロフィールには鑑定作成データが {preview.kanteiCreationDataCount} 件あります。
+              </p>
+              <p className="mt-2">
+                プロフィール削除時に、鑑定書データと鑑定書PDFも削除されます。
+              </p>
+            </div>
+          ) : null}
+
+          {preview.kanteiCreationDataList.length > 0 ? (
+            <div className="space-y-2 border-t border-stone-100 pt-4">
+              <h3 className="text-sm font-semibold text-stone-900">鑑定作成データ一覧</h3>
+              {preview.kanteiCreationDataList.map((row) => (
+                <div key={row.id} className="rounded border border-stone-200 bg-stone-50 p-3 text-xs">
+                  <div className="grid gap-1 sm:grid-cols-2">
+                    <div>
+                      <span className="text-stone-500">鑑定コード: </span>
+                      <span className="font-mono">{row.kanteiCode ?? "—"}</span>
+                    </div>
+                    <div>
+                      <span className="text-stone-500">氏名: </span>
+                      {row.fullNameDisplay}
+                    </div>
+                    <div>
+                      <span className="text-stone-500">作成日時: </span>
+                      {formatDate(row.createdAt)}
+                    </div>
+                    <div>
+                      <span className="text-stone-500">鑑定書PDF: </span>
+                      preview {row.hasPdfPreviewBlob ? "あり" : "なし"} / print{" "}
+                      {row.hasPdfPrintBlob ? "あり" : "なし"}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : null}
+
           {!preview.canDelete ? (
             <div className="space-y-3">
-              {preview.blockCode === "ORDER_EXISTS" ? (
+              {preview.blockCode === "BASE_ORDER_NUMBER_EXISTS" ? (
+                <div className="rounded-lg border border-red-300 bg-red-50 p-4 text-sm text-red-950">
+                  <p className="font-medium">削除できません。</p>
+                  <p className="mt-2">BASE注文番号があるため、このプロフィールは削除できません。</p>
+                </div>
+              ) : preview.blockCode === "DIARY_BINDING_BLOCKED" || preview.blockCode === "KANTEI_BINDING_BLOCKED" ? (
                 <div className="rounded-lg border border-red-300 bg-red-50 p-4 text-sm text-red-950">
                   <p className="font-medium">削除できません。</p>
                   <p className="mt-2">
-                    このプロフィールには鑑定作成データ（Order）が {preview.orderCount}{" "}
-                    件あります。鑑定書そのものに紐づくデータが残っているため、現在は削除できません。
+                    このプロフィールには製本申込またはBASE注文に関わるデータがあります。
+                    実注文・製本処理に関わる可能性があるため、削除できません。
                   </p>
-                  <p className="mt-2 text-xs">
-                    ※鑑定書の製本申込（KanteiBookBindingRequest）とは別のデータです。製本申込が0件でも、再鑑定などで
-                    Order が作成されている場合は削除できません。
-                  </p>
-                  {preview.orders.length > 0 ? (
-                    <dl className="mt-3 grid gap-1 text-xs sm:grid-cols-2">
-                      {preview.orders.map((order) => (
-                        <div key={order.id} className="sm:col-span-2 rounded border border-red-200 bg-white p-3">
-                          <div className="grid gap-1 sm:grid-cols-2">
-                            <div>
-                              <dt className="text-red-700">Order ID</dt>
-                              <dd className="font-mono">{order.id}</dd>
-                            </div>
-                            <div>
-                              <dt className="text-red-700">鑑定コード</dt>
-                              <dd className="font-mono">{order.kanteiCode ?? "—"}</dd>
-                            </div>
-                            <div>
-                              <dt className="text-red-700">氏名</dt>
-                              <dd>{order.fullNameDisplay}</dd>
-                            </div>
-                            <div>
-                              <dt className="text-red-700">生年月日</dt>
-                              <dd>{order.birthDate}</dd>
-                            </div>
-                            <div>
-                              <dt className="text-red-700">status</dt>
-                              <dd>{order.status}</dd>
-                            </div>
-                            <div>
-                              <dt className="text-red-700">Order.profileId</dt>
-                              <dd className="font-mono">{order.profileId || "（空）"}</dd>
-                            </div>
-                            <div>
-                              <dt className="text-red-700">作成日時</dt>
-                              <dd>{formatDate(order.createdAt)}</dd>
-                            </div>
-                            <div>
-                              <dt className="text-red-700">更新日時</dt>
-                              <dd>{formatDate(order.updatedAt)}</dd>
-                            </div>
-                            <div>
-                              <dt className="text-red-700">PDF Blob</dt>
-                              <dd>
-                                preview: {order.hasPdfPreviewBlob ? "あり" : "なし"} / print:{" "}
-                                {order.hasPdfPrintBlob ? "あり" : "なし"}
-                              </dd>
-                            </div>
-                            <div>
-                              <dt className="text-red-700">numerologyJson</dt>
-                              <dd>{order.hasNumerologyJson ? "あり" : "なし"}</dd>
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </dl>
-                  ) : null}
                 </div>
               ) : null}
               {preview.blockingDiaryBinding ? (
@@ -528,8 +526,9 @@ export function ProfileManagementClient() {
           <div className="rounded-lg border border-red-300 bg-white p-4 text-sm leading-relaxed text-red-950">
             <p className="font-medium">このプロフィールを削除します。</p>
             <p className="mt-2">
-              この操作により、このプロフィールに紐づく日記本文・写真・日記ブックが削除されます。
-              この操作は元に戻せません。
+              この操作により、このプロフィールに紐づく日記本文・写真・日記ブック
+              {preview.willDeleteKanteiData ? "・鑑定書データ・鑑定書PDF" : ""}
+              が削除されます。この操作は元に戻せません。
             </p>
             <p className="mt-2">
               削除前に、必要なバックアップが取得済みであることを確認してください。
@@ -537,7 +536,7 @@ export function ProfileManagementClient() {
           </div>
 
           <div className="space-y-2">
-            {ADMIN_PROFILE_DELETE_CONFIRMATION_KEYS.map((key) => (
+            {requiredConfirmationKeys.map((key) => (
               <label key={key} className="flex items-start gap-2 text-sm text-red-950">
                 <input
                   type="checkbox"
@@ -616,6 +615,14 @@ export function ProfileManagementClient() {
               <dt className="text-emerald-700">鑑定書製本申込</dt>
               <dd>{deleteResult.deletedKanteiBindingCount} 件</dd>
             </div>
+            <div>
+              <dt className="text-emerald-700">鑑定作成データ</dt>
+              <dd>{deleteResult.deletedKanteiCreationDataCount} 件</dd>
+            </div>
+            <div>
+              <dt className="text-emerald-700">鑑定書PDF Blob</dt>
+              <dd>{deleteResult.deletedKanteiPdfBlobCount} 件</dd>
+            </div>
           </dl>
           {deleteResult.failedPhotoBlobCount > 0 ? (
             <div className="rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-950">
@@ -648,10 +655,11 @@ export function ProfileManagementClient() {
       <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-xs leading-6 text-amber-900">
         <p className="font-medium">安全上の注意</p>
         <ul className="mt-2 list-disc pl-5">
-          <li>鑑定作成データ（Order）が1件でもあるプロフィールは削除できません（製本申込とは別）。</li>
-          <li>有効な製本申込があるプロフィールも削除できません。</li>
+          <li>BASE注文番号がある製本申込があるプロフィールは削除できません。</li>
+          <li>有効な製本申込（ordered / in_production / shipped 等）があるプロフィールも削除できません。</li>
+          <li>鑑定作成データがある場合は、確認チェックのうえ削除対象に含まれます（鑑定書PDF Blob含む）。</li>
           <li>レガシーの profileId=&quot;&quot; データはこの画面からは削除されません（明示的な profileId のみ）。</li>
-          <li>鑑定書PDF Blob・AccountSettings・Stripe・BASE注文データは削除しません。</li>
+          <li>AccountSettings・Stripe・BASE API連携データは削除しません。</li>
         </ul>
       </div>
     </div>

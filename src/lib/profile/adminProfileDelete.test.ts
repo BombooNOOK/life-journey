@@ -6,6 +6,7 @@ import {
   findProfileDeleteBlockingDiaryBinding,
   findProfileDeleteBlockingKanteiBinding,
 } from "./adminProfileDelete";
+import { requiredAdminProfileDeleteConfirmationKeys } from "./adminProfileDeleteTypes";
 
 const now = new Date("2026-06-10T12:00:00.000Z");
 
@@ -58,6 +59,13 @@ function kanteiRow(
   };
 }
 
+describe("requiredAdminProfileDeleteConfirmationKeys", () => {
+  it("requires kantei data confirmation only when creation data exists", () => {
+    expect(requiredAdminProfileDeleteConfirmationKeys(false)).not.toContain("kanteiDataReviewed");
+    expect(requiredAdminProfileDeleteConfirmationKeys(true)).toContain("kanteiDataReviewed");
+  });
+});
+
 describe("assertDeletableProfileId", () => {
   it("rejects empty profile id", () => {
     expect(() => assertDeletableProfileId("")).toThrow("プロフィールIDが空です。");
@@ -79,14 +87,6 @@ describe("findProfileDeleteBlockingDiaryBinding", () => {
     ).toBeNull();
   });
 
-  it("allows cancelled binding without base order number", () => {
-    expect(
-      findProfileDeleteBlockingDiaryBinding([
-        diaryRow({ status: "cancelled", cancelledAt: now }),
-      ]),
-    ).toBeNull();
-  });
-
   it("blocks cancelled binding with base order number", () => {
     const block = findProfileDeleteBlockingDiaryBinding([
       diaryRow({ status: "cancelled", baseOrderNumber: "BASE-1", cancelledAt: now }),
@@ -97,14 +97,6 @@ describe("findProfileDeleteBlockingDiaryBinding", () => {
   it("blocks active pending binding", () => {
     const block = findProfileDeleteBlockingDiaryBinding([diaryRow()], now);
     expect(block?.blockSubCode).toBe("BINDING_PENDING_ACTIVE");
-  });
-
-  it("blocks pending with base order number", () => {
-    const block = findProfileDeleteBlockingDiaryBinding(
-      [diaryRow({ baseOrderNumber: "BASE-123" })],
-      now,
-    );
-    expect(block?.blockSubCode).toBe("BINDING_PENDING_WITH_BASE_ORDER");
   });
 
   it("ignores stale unpaid pending", () => {
@@ -123,13 +115,6 @@ describe("findProfileDeleteBlockingKanteiBinding", () => {
     ).toBeNull();
   });
 
-  it("blocks cancelled binding with base order number", () => {
-    const block = findProfileDeleteBlockingKanteiBinding([
-      kanteiRow({ status: "cancelled", baseOrderNumber: "BASE-1" }),
-    ]);
-    expect(block?.blockSubCode).toBe("BINDING_CANCELLED_WITH_BASE_ORDER");
-  });
-
   it("blocks active pending binding", () => {
     const block = findProfileDeleteBlockingKanteiBinding([kanteiRow()]);
     expect(block?.blockSubCode).toBe("BINDING_PENDING_ACTIVE");
@@ -137,21 +122,28 @@ describe("findProfileDeleteBlockingKanteiBinding", () => {
 });
 
 describe("evaluateProfileDeleteEligibility", () => {
-  it("blocks when order exists", () => {
-    const block = evaluateProfileDeleteEligibility({
-      orderCount: 1,
-      diaryBindings: [],
-      kanteiBindings: [],
-    });
-    expect(block?.code).toBe("ORDER_EXISTS");
-    expect(block?.message).toContain("鑑定作成データ（Order）");
-    expect(block?.message).toContain("製本申込");
-  });
-
-  it("allows delete when cancelled diary binding exists", () => {
+  it("allows delete when only kantei creation data would exist (no binding blocks)", () => {
     expect(
       evaluateProfileDeleteEligibility({
-        orderCount: 0,
+        diaryBindings: [],
+        kanteiBindings: [],
+      }),
+    ).toBeNull();
+  });
+
+  it("blocks when base order number exists regardless of status", () => {
+    const block = evaluateProfileDeleteEligibility({
+      diaryBindings: [diaryRow({ status: "cancelled", baseOrderNumber: "BASE-1", cancelledAt: now })],
+      kanteiBindings: [],
+      now,
+    });
+    expect(block?.code).toBe("BASE_ORDER_NUMBER_EXISTS");
+    expect(block?.message).toContain("BASE注文番号");
+  });
+
+  it("allows delete when cancelled diary binding exists without base order", () => {
+    expect(
+      evaluateProfileDeleteEligibility({
         diaryBindings: [diaryRow({ status: "cancelled", cancelledAt: now })],
         kanteiBindings: [],
         now,
@@ -159,20 +151,19 @@ describe("evaluateProfileDeleteEligibility", () => {
     ).toBeNull();
   });
 
-  it("blocks active diary binding", () => {
+  it("blocks active diary binding with commerce message", () => {
     const block = evaluateProfileDeleteEligibility({
-      orderCount: 0,
       diaryBindings: [diaryRow()],
       kanteiBindings: [],
       now,
     });
     expect(block?.code).toBe("DIARY_BINDING_BLOCKED");
+    expect(block?.message).toContain("製本申込");
     expect(block?.blockingDiaryBinding?.requestId).toBe("d1");
   });
 
   it("blocks kantei binding when diary bindings are clear", () => {
     const block = evaluateProfileDeleteEligibility({
-      orderCount: 0,
       diaryBindings: [],
       kanteiBindings: [kanteiRow()],
     });

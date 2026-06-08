@@ -10,18 +10,23 @@ import { DIARY_BOOK_BINDING_STATUS_LABELS } from "@/lib/commerce/diaryBookBindin
 import { KANTEI_BOOK_BINDING_STATUS_LABELS } from "@/lib/commerce/kanteiBookBindingStatus";
 import { prisma } from "@/lib/db";
 import { deleteJournalEntryPhotoBlobWithResult } from "@/lib/journal/journalEntryPhotoBlob";
+import { deleteOrderPdfBlobWithResult } from "@/lib/pdf/orderPdfBlobCache";
 import {
-  ADMIN_PROFILE_DELETE_CONFIRMATION_KEYS,
   ADMIN_PROFILE_DELETE_CONFIRMATION_WORD,
+  requiredAdminProfileDeleteConfirmationKeys,
   type AdminProfileDeleteBindingBlockDetail,
   type AdminProfileDeleteConfirmations,
   type AdminProfileDeleteDiaryBindingSummary,
   type AdminProfileDeleteKanteiBindingSummary,
-  type AdminProfileDeleteOrderSummary,
+  type AdminProfileDeleteKanteiCreationDataSummary,
   type AdminProfileDeletePreview,
   type AdminProfileDeleteResult,
   type AdminProfileListItem,
 } from "@/lib/profile/adminProfileDeleteTypes";
+
+const BASE_ORDER_BLOCK_MESSAGE = "BASE注文番号があるため、このプロフィールは削除できません。";
+const COMMERCE_DATA_BLOCK_MESSAGE =
+  "このプロフィールには製本申込またはBASE注文に関わるデータがあります。実注文・製本処理に関わる可能性があるため、削除できません。";
 
 export class AdminProfileDeleteError extends Error {
   constructor(
@@ -93,16 +98,23 @@ export function parseAdminProfileDeleteTargetEmail(raw: unknown): string {
   return email;
 }
 
-export function parseAdminProfileDeleteConfirmations(raw: unknown): AdminProfileDeleteConfirmations {
+export function parseAdminProfileDeleteConfirmations(
+  raw: unknown,
+  hasKanteiCreationData: boolean,
+): AdminProfileDeleteConfirmations {
   if (typeof raw !== "object" || raw === null) {
     throw new AdminProfileDeleteError("確認チェックが不正です。", "INVALID_CONFIRMATIONS");
   }
   const obj = raw as Record<string, unknown>;
-  const confirmations = {} as AdminProfileDeleteConfirmations;
-  for (const key of ADMIN_PROFILE_DELETE_CONFIRMATION_KEYS) {
-    confirmations[key] = obj[key] === true;
-  }
-  const missing = ADMIN_PROFILE_DELETE_CONFIRMATION_KEYS.filter((key) => !confirmations[key]);
+  const requiredKeys = requiredAdminProfileDeleteConfirmationKeys(hasKanteiCreationData);
+  const confirmations = {
+    profileReviewed: obj.profileReviewed === true,
+    backupReviewed: obj.backupReviewed === true,
+    journalDataReviewed: obj.journalDataReviewed === true,
+    noOrderBindingReviewed: obj.noOrderBindingReviewed === true,
+    kanteiDataReviewed: obj.kanteiDataReviewed === true,
+  } satisfies AdminProfileDeleteConfirmations;
+  const missing = requiredKeys.filter((key) => !confirmations[key]);
   if (missing.length > 0) {
     throw new AdminProfileDeleteError("削除前の確認チェックをすべて入れてください。", "CONFIRMATIONS_REQUIRED");
   }
@@ -174,7 +186,7 @@ function buildKanteiBlockDetail(
     statusLabel: kanteiStatusLabel(row.status),
     baseOrderNumber: row.baseOrderNumber,
     hasBaseOrderNumber: hasBaseOrderNumber(row.baseOrderNumber),
-    orderId: row.orderId,
+    kanteiCreationDataId: row.orderId,
     bindingProfileId: row.profileId,
     cancelledAt: null,
     expiredAt: null,
@@ -322,27 +334,54 @@ export function findBlockingKanteiBookBindingRequest(
   return { code: "KANTEI_BINDING_BLOCKED", message: block.blockMessage };
 }
 
+function findBaseOrderNumberBlock(
+  diaryBindings: ProfileDeleteDiaryBindingRow[],
+  kanteiBindings: ProfileDeleteKanteiBindingRow[],
+): ProfileDeleteBlockReason | null {
+  for (const row of diaryBindings) {
+    if (!hasBaseOrderNumber(row.baseOrderNumber)) continue;
+    return {
+      code: "BASE_ORDER_NUMBER_EXISTS",
+      message: BASE_ORDER_BLOCK_MESSAGE,
+      blockingDiaryBinding: buildDiaryBlockDetail(
+        row,
+        "BASE_ORDER_NUMBER",
+        BASE_ORDER_BLOCK_MESSAGE,
+        "BASE注文番号が登録された製本申込は削除できません。",
+      ),
+      blockingKanteiBinding: null,
+    };
+  }
+  for (const row of kanteiBindings) {
+    if (!hasBaseOrderNumber(row.baseOrderNumber)) continue;
+    return {
+      code: "BASE_ORDER_NUMBER_EXISTS",
+      message: BASE_ORDER_BLOCK_MESSAGE,
+      blockingDiaryBinding: null,
+      blockingKanteiBinding: buildKanteiBlockDetail(
+        row,
+        "BASE_ORDER_NUMBER",
+        BASE_ORDER_BLOCK_MESSAGE,
+        "BASE注文番号が登録された製本申込は削除できません。",
+      ),
+    };
+  }
+  return null;
+}
+
 export function evaluateProfileDeleteEligibility(params: {
-  orderCount: number;
   diaryBindings: ProfileDeleteDiaryBindingRow[];
   kanteiBindings: ProfileDeleteKanteiBindingRow[];
   now?: Date;
 }): ProfileDeleteBlockReason | null {
-  if (params.orderCount > 0) {
-    return {
-      code: "ORDER_EXISTS",
-      message: `このプロフィールには鑑定作成データ（Order）が ${params.orderCount} 件あります。鑑定書そのものに紐づくデータが残っているため、現在は削除できません。※鑑定書の製本申込（KanteiBookBindingRequest）とは別のデータです。`,
-      orderCount: params.orderCount,
-      blockingDiaryBinding: null,
-      blockingKanteiBinding: null,
-    };
-  }
+  const baseBlock = findBaseOrderNumberBlock(params.diaryBindings, params.kanteiBindings);
+  if (baseBlock) return baseBlock;
 
   const blockingDiaryBinding = findProfileDeleteBlockingDiaryBinding(params.diaryBindings, params.now);
   if (blockingDiaryBinding) {
     return {
       code: "DIARY_BINDING_BLOCKED",
-      message: blockingDiaryBinding.blockMessage,
+      message: COMMERCE_DATA_BLOCK_MESSAGE,
       blockingDiaryBinding,
       blockingKanteiBinding: null,
     };
@@ -352,7 +391,7 @@ export function evaluateProfileDeleteEligibility(params: {
   if (blockingKanteiBinding) {
     return {
       code: "KANTEI_BINDING_BLOCKED",
-      message: blockingKanteiBinding.blockMessage,
+      message: COMMERCE_DATA_BLOCK_MESSAGE,
       blockingDiaryBinding: null,
       blockingKanteiBinding,
     };
@@ -427,7 +466,7 @@ function mapDiaryBindingSummary(row: ProfileDeleteDiaryBindingRow): AdminProfile
   };
 }
 
-function mapOrderSummary(row: {
+function mapKanteiCreationDataSummary(row: {
   id: string;
   kanteiCode: string | null;
   profileId: string;
@@ -440,7 +479,7 @@ function mapOrderSummary(row: {
   pdfPreviewBlobUrl: string | null;
   pdfPrintBlobUrl: string | null;
   numerologyJson: string;
-}): AdminProfileDeleteOrderSummary {
+}): AdminProfileDeleteKanteiCreationDataSummary {
   return {
     id: row.id,
     kanteiCode: row.kanteiCode,
@@ -534,8 +573,8 @@ async function loadProfileDeleteCounts(email: string, profileId: string) {
     photoCount,
     diaryBookCount,
     bookshelfBookCount,
-    orders,
-    orderCount: orders.length,
+    kanteiCreationDataList: orders,
+    kanteiCreationDataCount: orders.length,
     diaryBindingCount: diaryBindings.length,
     kanteiBindingCount: kanteiBindings.length,
     hasBaseOrderNumber: hasAnyBaseOrderNumber,
@@ -563,10 +602,10 @@ export async function buildAdminProfileDeletePreview(params: {
   await expireStaleUnpaidPendingForScope(diaryBindingScopeWhere(email, profileId, diaryBookIds));
   const counts = await loadProfileDeleteCounts(email, profileId);
   const block = evaluateProfileDeleteEligibility({
-    orderCount: counts.orderCount,
     diaryBindings: counts.diaryBindings,
     kanteiBindings: counts.kanteiBindings,
   });
+  const canDelete = block == null;
 
   return {
     targetEmail: email,
@@ -578,44 +617,28 @@ export async function buildAdminProfileDeletePreview(params: {
     photoCount: counts.photoCount,
     diaryBookCount: counts.diaryBookCount,
     bookshelfBookCount: counts.bookshelfBookCount,
-    orderCount: counts.orderCount,
+    kanteiCreationDataCount: counts.kanteiCreationDataCount,
     diaryBindingCount: counts.diaryBindingCount,
     kanteiBindingCount: counts.kanteiBindingCount,
     hasBaseOrderNumber: counts.hasBaseOrderNumber,
-    canDelete: block == null,
+    requiresKanteiDataConfirmation: counts.kanteiCreationDataCount > 0,
+    willDeleteKanteiData: canDelete && counts.kanteiCreationDataCount > 0,
+    canDelete,
     blockCode: block?.code ?? null,
     blockMessage: block?.message ?? null,
     blockingDiaryBinding: block?.blockingDiaryBinding ?? null,
     blockingKanteiBinding: block?.blockingKanteiBinding ?? null,
-    orders: counts.orders.map(mapOrderSummary),
+    kanteiCreationDataList: counts.kanteiCreationDataList.map(mapKanteiCreationDataSummary),
     diaryBindings: counts.diaryBindings.map(mapDiaryBindingSummary),
     kanteiBindings: counts.kanteiBindings.map(mapKanteiBindingSummary),
   };
 }
 
-function deletableDiaryBindingIds(rows: ProfileDeleteDiaryBindingRow[], now = new Date()): string[] {
-  return rows
-    .filter((row) => {
-      if (row.status === "cancelled" || row.status === "expired") {
-        return !hasBaseOrderNumber(row.baseOrderNumber);
-      }
-      if (row.status === "pending" && isStaleUnpaidPending(row, now) && !hasBaseOrderNumber(row.baseOrderNumber)) {
-        return true;
-      }
-      return false;
-    })
-    .map((row) => row.id);
-}
-
-function deletableKanteiBindingIds(rows: ProfileDeleteKanteiBindingRow[]): string[] {
-  return rows
-    .filter((row) => row.status === "cancelled" && !hasBaseOrderNumber(row.baseOrderNumber))
-    .map((row) => row.id);
-}
-
 export async function deleteAdminProfileForUser(params: {
   targetEmail: string;
   profileId: string;
+  confirmations?: unknown;
+  confirmationWord?: unknown;
 }): Promise<AdminProfileDeleteResult> {
   const preview = await buildAdminProfileDeletePreview(params);
   if (!preview.canDelete) {
@@ -625,41 +648,37 @@ export async function deleteAdminProfileForUser(params: {
     );
   }
 
+  parseAdminProfileDeleteConfirmations(
+    params.confirmations,
+    preview.kanteiCreationDataCount > 0,
+  );
+  parseAdminProfileDeleteConfirmationWord(params.confirmationWord);
+
   const email = preview.targetEmail;
   const profileId = preview.profileId;
   const scope = profileScopeWhere(email, profileId);
+  const diaryBookIds = await loadDiaryBookIdsForProfile(email, profileId);
+  const diaryBindingScope = diaryBindingScopeWhere(email, profileId, diaryBookIds);
 
-  const [entries, diaryBindings, kanteiBindings] = await Promise.all([
+  const [entries, kanteiCreationDataRows] = await Promise.all([
     prisma.journalEntry.findMany({
       where: scope,
       select: { photoBlobPathname: true, photoBlobUrl: true },
     }),
-    loadDiaryBindingsForProfileDelete(email, profileId),
-    prisma.kanteiBookBindingRequest.findMany({
+    prisma.order.findMany({
       where: scope,
-      select: {
-        id: true,
-        orderId: true,
-        profileId: true,
-        status: true,
-        baseOrderNumber: true,
-        createdAt: true,
-        updatedAt: true,
-        kanteiCode: true,
-      },
+      select: { pdfPreviewBlobUrl: true, pdfPrintBlobUrl: true },
     }),
   ]);
 
-  const diaryBindingIds = deletableDiaryBindingIds(diaryBindings);
-  const kanteiBindingIds = deletableKanteiBindingIds(kanteiBindings);
-
   const deleted = await prisma.$transaction(async (tx) => {
     const deletedDiaryBindings = await tx.diaryBookBindingRequest.deleteMany({
-      where: { id: { in: diaryBindingIds } },
+      where: diaryBindingScope,
     });
     const deletedKanteiBindings = await tx.kanteiBookBindingRequest.deleteMany({
-      where: { id: { in: kanteiBindingIds } },
+      where: scope,
     });
+    const deletedKanteiCreationData = await tx.order.deleteMany({ where: scope });
     const deletedDiaryBooks = await tx.diaryBook.deleteMany({ where: scope });
     const deletedBookshelfBooks = await tx.diaryBookshelfBook.deleteMany({ where: scope });
     const deletedJournalEntries = await tx.journalEntry.deleteMany({ where: scope });
@@ -668,6 +687,7 @@ export async function deleteAdminProfileForUser(params: {
     return {
       deletedDiaryBindings: deletedDiaryBindings.count,
       deletedKanteiBindings: deletedKanteiBindings.count,
+      deletedKanteiCreationData: deletedKanteiCreationData.count,
       deletedDiaryBooks: deletedDiaryBooks.count,
       deletedBookshelfBooks: deletedBookshelfBooks.count,
       deletedJournalEntries: deletedJournalEntries.count,
@@ -692,12 +712,32 @@ export async function deleteAdminProfileForUser(params: {
     }
   }
 
+  let deletedKanteiPdfBlobCount = 0;
+  let failedKanteiPdfBlobCount = 0;
+  const kanteiPdfBlobWarnings: string[] = [];
+
+  for (const row of kanteiCreationDataRows) {
+    for (const blobUrl of [row.pdfPreviewBlobUrl, row.pdfPrintBlobUrl]) {
+      const result = await deleteOrderPdfBlobWithResult(blobUrl);
+      if (!blobUrl?.trim()) continue;
+      if (result.ok) {
+        deletedKanteiPdfBlobCount += 1;
+      } else {
+        failedKanteiPdfBlobCount += 1;
+        kanteiPdfBlobWarnings.push(result.warning);
+      }
+    }
+  }
+
   console.info("[admin-profile-delete] ok", {
     targetEmail: email,
     profileId,
     deletedJournalEntryCount: deleted.deletedJournalEntries,
+    deletedKanteiCreationDataCount: deleted.deletedKanteiCreationData,
     deletedPhotoBlobCount,
     failedPhotoBlobCount,
+    deletedKanteiPdfBlobCount,
+    failedKanteiPdfBlobCount,
   });
 
   return {
@@ -711,6 +751,10 @@ export async function deleteAdminProfileForUser(params: {
     deletedBookshelfBookCount: deleted.deletedBookshelfBooks,
     deletedDiaryBindingCount: deleted.deletedDiaryBindings,
     deletedKanteiBindingCount: deleted.deletedKanteiBindings,
+    deletedKanteiCreationDataCount: deleted.deletedKanteiCreationData,
+    deletedKanteiPdfBlobCount,
+    failedKanteiPdfBlobCount,
     photoBlobWarnings,
+    kanteiPdfBlobWarnings,
   };
 }
