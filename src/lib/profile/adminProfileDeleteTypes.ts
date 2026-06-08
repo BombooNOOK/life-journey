@@ -18,6 +18,50 @@ export type AdminProfileListItem = {
   createdAt: string;
 };
 
+export type AdminProfileDeleteDiaryBindingSummary = {
+  id: string;
+  diaryBookId: string | null;
+  bindingProfileId: string;
+  diaryBindingCode: string;
+  status: string;
+  baseOrderNumber: string | null;
+  cancelledAt: string | null;
+  expiredAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type AdminProfileDeleteKanteiBindingSummary = {
+  id: string;
+  orderId: string;
+  bindingProfileId: string;
+  kanteiCode: string;
+  status: string;
+  baseOrderNumber: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type AdminProfileDeleteBindingBlockDetail = {
+  kind: "diary" | "kantei";
+  requestId: string;
+  code: string;
+  status: string;
+  statusLabel: string;
+  baseOrderNumber: string | null;
+  hasBaseOrderNumber: boolean;
+  diaryBookId?: string | null;
+  orderId?: string | null;
+  bindingProfileId: string;
+  cancelledAt: string | null;
+  expiredAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+  blockSubCode: string;
+  blockMessage: string;
+  actionHint: string;
+};
+
 export type AdminProfileDeletePreview = {
   targetEmail: string;
   profileId: string;
@@ -33,6 +77,10 @@ export type AdminProfileDeletePreview = {
   canDelete: boolean;
   blockCode: string | null;
   blockMessage: string | null;
+  blockingDiaryBinding: AdminProfileDeleteBindingBlockDetail | null;
+  blockingKanteiBinding: AdminProfileDeleteBindingBlockDetail | null;
+  diaryBindings: AdminProfileDeleteDiaryBindingSummary[];
+  kanteiBindings: AdminProfileDeleteKanteiBindingSummary[];
 };
 
 export type AdminProfileDeleteResult = {

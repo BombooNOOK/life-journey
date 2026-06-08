@@ -6,6 +6,7 @@ import { useMemo, useState } from "react";
 import {
   ADMIN_PROFILE_DELETE_CONFIRMATION_KEYS,
   ADMIN_PROFILE_DELETE_CONFIRMATION_WORD,
+  type AdminProfileDeleteBindingBlockDetail,
   type AdminProfileDeleteConfirmationKey,
   type AdminProfileDeletePreview,
   type AdminProfileDeleteResult,
@@ -30,6 +31,75 @@ function emptyConfirmations(): Record<AdminProfileDeleteConfirmationKey, boolean
 
 function formatDate(iso: string): string {
   return new Date(iso).toLocaleString("ja-JP");
+}
+
+function BlockDetailCard({ detail }: { detail: AdminProfileDeleteBindingBlockDetail }) {
+  const kindLabel = detail.kind === "diary" ? "日記ブック製本申込" : "鑑定書製本申込";
+  return (
+    <div className="rounded-lg border border-red-300 bg-red-50 p-4 text-sm text-red-950">
+      <p className="font-medium">削除できません。</p>
+      <p className="mt-2">
+        <span className="font-medium">理由：</span>
+        {detail.blockMessage}
+      </p>
+      <dl className="mt-3 grid gap-1 text-xs sm:grid-cols-2">
+        <div>
+          <dt className="text-red-700">種別</dt>
+          <dd>{kindLabel}</dd>
+        </div>
+        <div>
+          <dt className="text-red-700">申込ID</dt>
+          <dd className="font-mono">{detail.requestId}</dd>
+        </div>
+        <div>
+          <dt className="text-red-700">コード</dt>
+          <dd className="font-mono">{detail.code}</dd>
+        </div>
+        <div>
+          <dt className="text-red-700">ステータス</dt>
+          <dd>
+            {detail.status}（{detail.statusLabel}）
+          </dd>
+        </div>
+        <div>
+          <dt className="text-red-700">BASE注文番号</dt>
+          <dd>{detail.hasBaseOrderNumber ? detail.baseOrderNumber : "なし"}</dd>
+        </div>
+        {detail.diaryBookId ? (
+          <div>
+            <dt className="text-red-700">日記ブックID</dt>
+            <dd className="font-mono">{detail.diaryBookId}</dd>
+          </div>
+        ) : null}
+        {detail.orderId ? (
+          <div>
+            <dt className="text-red-700">Order ID</dt>
+            <dd className="font-mono">{detail.orderId}</dd>
+          </div>
+        ) : null}
+        <div>
+          <dt className="text-red-700">申込の profileId</dt>
+          <dd className="font-mono">{detail.bindingProfileId || "（空）"}</dd>
+        </div>
+        {detail.cancelledAt ? (
+          <div>
+            <dt className="text-red-700">取り下げ日時</dt>
+            <dd>{formatDate(detail.cancelledAt)}</dd>
+          </div>
+        ) : null}
+        {detail.expiredAt ? (
+          <div>
+            <dt className="text-red-700">期限切れ日時</dt>
+            <dd>{formatDate(detail.expiredAt)}</dd>
+          </div>
+        ) : null}
+      </dl>
+      <p className="mt-3 text-xs">
+        <span className="font-medium">対応：</span>
+        {detail.actionHint}
+      </p>
+    </div>
+  );
 }
 
 export function ProfileManagementClient() {
@@ -306,6 +376,81 @@ export function ProfileManagementClient() {
               </div>
             ) : null}
           </dl>
+
+          {!preview.canDelete ? (
+            <div className="space-y-3">
+              {preview.blockCode === "ORDER_EXISTS" ? (
+                <div className="rounded-lg border border-red-300 bg-red-50 p-4 text-sm text-red-950">
+                  <p className="font-medium">削除できません。</p>
+                  <p className="mt-2">このプロフィールには鑑定書（Order）が残っているため、削除できません。</p>
+                </div>
+              ) : null}
+              {preview.blockingDiaryBinding ? (
+                <BlockDetailCard detail={preview.blockingDiaryBinding} />
+              ) : null}
+              {preview.blockingKanteiBinding ? (
+                <BlockDetailCard detail={preview.blockingKanteiBinding} />
+              ) : null}
+            </div>
+          ) : null}
+
+          {(preview.diaryBindings.length > 0 || preview.kanteiBindings.length > 0) ? (
+            <div className="space-y-3 border-t border-stone-100 pt-4">
+              <h3 className="text-sm font-semibold text-stone-900">紐づく製本申込一覧</h3>
+              {preview.diaryBindings.length > 0 ? (
+                <div className="overflow-x-auto">
+                  <table className="min-w-full text-xs">
+                    <thead className="text-left text-stone-500">
+                      <tr>
+                        <th className="px-2 py-1">日記製本</th>
+                        <th className="px-2 py-1">status</th>
+                        <th className="px-2 py-1">BASE</th>
+                        <th className="px-2 py-1">diaryBookId</th>
+                        <th className="px-2 py-1">profileId</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {preview.diaryBindings.map((row) => (
+                        <tr key={row.id} className="border-t border-stone-100">
+                          <td className="px-2 py-1 font-mono">{row.diaryBindingCode}</td>
+                          <td className="px-2 py-1">{row.status}</td>
+                          <td className="px-2 py-1">{row.baseOrderNumber ?? "なし"}</td>
+                          <td className="px-2 py-1 font-mono">{row.diaryBookId ?? "—"}</td>
+                          <td className="px-2 py-1 font-mono">{row.bindingProfileId || "（空）"}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : null}
+              {preview.kanteiBindings.length > 0 ? (
+                <div className="overflow-x-auto">
+                  <table className="min-w-full text-xs">
+                    <thead className="text-left text-stone-500">
+                      <tr>
+                        <th className="px-2 py-1">鑑定製本</th>
+                        <th className="px-2 py-1">status</th>
+                        <th className="px-2 py-1">BASE</th>
+                        <th className="px-2 py-1">orderId</th>
+                        <th className="px-2 py-1">profileId</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {preview.kanteiBindings.map((row) => (
+                        <tr key={row.id} className="border-t border-stone-100">
+                          <td className="px-2 py-1 font-mono">{row.kanteiCode}</td>
+                          <td className="px-2 py-1">{row.status}</td>
+                          <td className="px-2 py-1">{row.baseOrderNumber ?? "なし"}</td>
+                          <td className="px-2 py-1 font-mono">{row.orderId}</td>
+                          <td className="px-2 py-1 font-mono">{row.bindingProfileId || "（空）"}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : null}
+            </div>
+          ) : null}
         </section>
       ) : null}
 

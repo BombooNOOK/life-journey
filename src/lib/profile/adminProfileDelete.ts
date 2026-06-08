@@ -1,20 +1,22 @@
+import type { Prisma } from "@prisma/client";
+
 import { normalizeEmail } from "@/lib/auth/viewer";
-import { hasBaseOrderNumber } from "@/lib/commerce/diaryBookBindingPendingLifecycle";
-import { KANTEI_BOOK_BINDING_STATUS_LABELS } from "@/lib/commerce/kanteiBookBindingStatus";
-import { prisma } from "@/lib/db";
 import {
   expireStaleUnpaidPendingForScope,
+  hasBaseOrderNumber,
   isStaleUnpaidPending,
 } from "@/lib/commerce/diaryBookBindingPendingLifecycle";
-import {
-  findBlockingDiaryBookBindingRequest,
-  type DiaryBookBindingBlockRow,
-} from "@/lib/journal/deleteDiaryBook";
+import { DIARY_BOOK_BINDING_STATUS_LABELS } from "@/lib/commerce/diaryBookBindingStatus";
+import { KANTEI_BOOK_BINDING_STATUS_LABELS } from "@/lib/commerce/kanteiBookBindingStatus";
+import { prisma } from "@/lib/db";
 import { deleteJournalEntryPhotoBlobWithResult } from "@/lib/journal/journalEntryPhotoBlob";
 import {
   ADMIN_PROFILE_DELETE_CONFIRMATION_KEYS,
   ADMIN_PROFILE_DELETE_CONFIRMATION_WORD,
+  type AdminProfileDeleteBindingBlockDetail,
   type AdminProfileDeleteConfirmations,
+  type AdminProfileDeleteDiaryBindingSummary,
+  type AdminProfileDeleteKanteiBindingSummary,
   type AdminProfileDeletePreview,
   type AdminProfileDeleteResult,
   type AdminProfileListItem,
@@ -30,17 +32,49 @@ export class AdminProfileDeleteError extends Error {
   }
 }
 
-export type KanteiBindingBlockRow = {
+export type ProfileDeleteDiaryBindingRow = {
   id: string;
+  diaryBookId: string | null;
+  profileId: string;
   status: string;
   baseOrderNumber: string | null;
+  cancelledAt: Date | null;
+  expiredAt: Date | null;
+  createdAt: Date;
+  updatedAt: Date;
+  diaryBindingCode: string;
+};
+
+export type ProfileDeleteKanteiBindingRow = {
+  id: string;
+  orderId: string;
+  profileId: string;
+  status: string;
+  baseOrderNumber: string | null;
+  createdAt: Date;
+  updatedAt: Date;
   kanteiCode: string;
 };
 
-export type ProfileDeleteBlockReason =
-  | { code: "ORDER_EXISTS"; message: string; orderCount: number }
-  | { code: "DIARY_BINDING_BLOCKED"; message: string }
-  | { code: "KANTEI_BINDING_BLOCKED"; message: string };
+export type ProfileDeleteBlockReason = {
+  code: string;
+  message: string;
+  orderCount?: number;
+  blockingDiaryBinding: AdminProfileDeleteBindingBlockDetail | null;
+  blockingKanteiBinding: AdminProfileDeleteBindingBlockDetail | null;
+};
+
+function diaryStatusLabel(status: string): string {
+  return DIARY_BOOK_BINDING_STATUS_LABELS[status as keyof typeof DIARY_BOOK_BINDING_STATUS_LABELS] ?? status;
+}
+
+function kanteiStatusLabel(status: string): string {
+  return KANTEI_BOOK_BINDING_STATUS_LABELS[status as keyof typeof KANTEI_BOOK_BINDING_STATUS_LABELS] ?? status;
+}
+
+function toIso(value: Date | null | undefined): string | null {
+  return value ? value.toISOString() : null;
+}
 
 export function assertDeletableProfileId(profileId: string): string {
   const trimmed = profileId.trim();
@@ -88,39 +122,209 @@ function profileScopeWhere(email: string, profileId: string) {
   return { email, profileId };
 }
 
-export function findBlockingKanteiBookBindingRequest(
-  rows: KanteiBindingBlockRow[],
-): { code: string; message: string } | null {
+function diaryBindingScopeWhere(
+  email: string,
+  profileId: string,
+  diaryBookIds: string[],
+): Prisma.DiaryBookBindingRequestWhereInput {
+  return {
+    email,
+    OR: [{ profileId }, ...(diaryBookIds.length > 0 ? [{ diaryBookId: { in: diaryBookIds } }] : [])],
+  };
+}
+
+function buildDiaryBlockDetail(
+  row: ProfileDeleteDiaryBindingRow,
+  blockSubCode: string,
+  blockMessage: string,
+  actionHint: string,
+): AdminProfileDeleteBindingBlockDetail {
+  return {
+    kind: "diary",
+    requestId: row.id,
+    code: row.diaryBindingCode,
+    status: row.status,
+    statusLabel: diaryStatusLabel(row.status),
+    baseOrderNumber: row.baseOrderNumber,
+    hasBaseOrderNumber: hasBaseOrderNumber(row.baseOrderNumber),
+    diaryBookId: row.diaryBookId,
+    bindingProfileId: row.profileId,
+    cancelledAt: toIso(row.cancelledAt),
+    expiredAt: toIso(row.expiredAt),
+    createdAt: row.createdAt.toISOString(),
+    updatedAt: row.updatedAt.toISOString(),
+    blockSubCode,
+    blockMessage,
+    actionHint,
+  };
+}
+
+function buildKanteiBlockDetail(
+  row: ProfileDeleteKanteiBindingRow,
+  blockSubCode: string,
+  blockMessage: string,
+  actionHint: string,
+): AdminProfileDeleteBindingBlockDetail {
+  return {
+    kind: "kantei",
+    requestId: row.id,
+    code: row.kanteiCode,
+    status: row.status,
+    statusLabel: kanteiStatusLabel(row.status),
+    baseOrderNumber: row.baseOrderNumber,
+    hasBaseOrderNumber: hasBaseOrderNumber(row.baseOrderNumber),
+    orderId: row.orderId,
+    bindingProfileId: row.profileId,
+    cancelledAt: null,
+    expiredAt: null,
+    createdAt: row.createdAt.toISOString(),
+    updatedAt: row.updatedAt.toISOString(),
+    blockSubCode,
+    blockMessage,
+    actionHint,
+  };
+}
+
+/** プロフィール削除専用の日記製本ブロック判定（cancelled/expired は原則ブロックしない） */
+export function findProfileDeleteBlockingDiaryBinding(
+  rows: ProfileDeleteDiaryBindingRow[],
+  now = new Date(),
+): AdminProfileDeleteBindingBlockDetail | null {
   for (const row of rows) {
+    const code = row.diaryBindingCode;
+    const base = row.baseOrderNumber;
+
     if (row.status === "ordered" || row.status === "in_production" || row.status === "shipped") {
-      const statusLabel =
-        KANTEI_BOOK_BINDING_STATUS_LABELS[
-          row.status as keyof typeof KANTEI_BOOK_BINDING_STATUS_LABELS
-        ] ?? row.status;
-      return {
-        code: "KANTEI_BINDING_BLOCKED",
-        message: `鑑定書製本申込（${row.kanteiCode}）は${statusLabel}のため、このプロフィールは削除できません。`,
-      };
+      const statusLabel = diaryStatusLabel(row.status);
+      return buildDiaryBlockDetail(
+        row,
+        row.status === "ordered" ? "BINDING_ORDERED" : "BINDING_IN_PROGRESS",
+        `日記ブック製本申込（${code}）は${statusLabel}のため、このプロフィールは削除できません。`,
+        "実注文・製本処理中の申込は削除できません。",
+      );
     }
+
+    if (row.status === "cancelled") {
+      if (hasBaseOrderNumber(base)) {
+        return buildDiaryBlockDetail(
+          row,
+          "BINDING_CANCELLED_WITH_BASE_ORDER",
+          `日記ブック製本申込（${code}）は取り下げ済みですが、BASE注文番号があるため削除できません。`,
+          "BASE注文番号を確認し、実注文に関わらないことを確認してください。",
+        );
+      }
+      continue;
+    }
+
+    if (row.status === "expired") {
+      if (hasBaseOrderNumber(base)) {
+        return buildDiaryBlockDetail(
+          row,
+          "BINDING_EXPIRED_WITH_BASE_ORDER",
+          `日記ブック製本申込（${code}）は期限切れですが、BASE注文番号があるため削除できません。`,
+          "BASE注文番号を確認し、実注文に関わらないことを確認してください。",
+        );
+      }
+      continue;
+    }
+
     if (row.status !== "pending") continue;
-    if (hasBaseOrderNumber(row.baseOrderNumber)) {
-      return {
-        code: "KANTEI_BINDING_BLOCKED",
-        message: `鑑定書製本申込（${row.kanteiCode}）は決済情報が登録済みのため、このプロフィールは削除できません。`,
-      };
+
+    if (hasBaseOrderNumber(base)) {
+      return buildDiaryBlockDetail(
+        row,
+        "BINDING_PENDING_WITH_BASE_ORDER",
+        `有効な日記ブック製本申込（${code}）があります。BASE注文番号が登録済みです。`,
+        "管理者の日記製本申込画面で状況を確認してください。",
+      );
     }
-    return {
-      code: "KANTEI_BINDING_BLOCKED",
-      message: `鑑定書製本申込予定（${row.kanteiCode}）が有効です。先に取り下げてください。`,
-    };
+
+    if (!isStaleUnpaidPending(row, now)) {
+      return buildDiaryBlockDetail(
+        row,
+        "BINDING_PENDING_ACTIVE",
+        `有効な日記ブック製本申込（${code}）があります。`,
+        "管理者の日記製本申込画面（/admin/diary-book-binding）で取り下げてください。",
+      );
+    }
   }
+
   return null;
+}
+
+/** プロフィール削除専用の鑑定書製本ブロック判定 */
+export function findProfileDeleteBlockingKanteiBinding(
+  rows: ProfileDeleteKanteiBindingRow[],
+): AdminProfileDeleteBindingBlockDetail | null {
+  for (const row of rows) {
+    const code = row.kanteiCode;
+    const base = row.baseOrderNumber;
+
+    if (row.status === "ordered" || row.status === "in_production" || row.status === "shipped") {
+      const statusLabel = kanteiStatusLabel(row.status);
+      return buildKanteiBlockDetail(
+        row,
+        row.status === "ordered" ? "BINDING_ORDERED" : "BINDING_IN_PROGRESS",
+        `鑑定書製本申込（${code}）は${statusLabel}のため、このプロフィールは削除できません。`,
+        "実注文・製本処理中の申込は削除できません。",
+      );
+    }
+
+    if (row.status === "cancelled") {
+      if (hasBaseOrderNumber(base)) {
+        return buildKanteiBlockDetail(
+          row,
+          "BINDING_CANCELLED_WITH_BASE_ORDER",
+          `鑑定書製本申込（${code}）は取り下げ済みですが、BASE注文番号があるため削除できません。`,
+          "BASE注文番号を確認し、実注文に関わらないことを確認してください。",
+        );
+      }
+      continue;
+    }
+
+    if (row.status !== "pending") continue;
+
+    if (hasBaseOrderNumber(base)) {
+      return buildKanteiBlockDetail(
+        row,
+        "BINDING_PENDING_WITH_BASE_ORDER",
+        `有効な鑑定書製本申込（${code}）があります。BASE注文番号が登録済みです。`,
+        "管理者の鑑定書製本申込画面で状況を確認してください。",
+      );
+    }
+
+    return buildKanteiBlockDetail(
+      row,
+      "BINDING_PENDING_ACTIVE",
+      `有効な鑑定書製本申込（${code}）があります。`,
+      "鑑定書製本申込のステータスを確認してください。",
+    );
+  }
+
+  return null;
+}
+
+/** @deprecated テスト互換の薄いラッパー */
+export function findBlockingKanteiBookBindingRequest(
+  rows: Array<{ id: string; status: string; baseOrderNumber: string | null; kanteiCode: string }>,
+): { code: string; message: string } | null {
+  const block = findProfileDeleteBlockingKanteiBinding(
+    rows.map((row) => ({
+      ...row,
+      orderId: "",
+      profileId: "",
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    })),
+  );
+  if (!block) return null;
+  return { code: "KANTEI_BINDING_BLOCKED", message: block.blockMessage };
 }
 
 export function evaluateProfileDeleteEligibility(params: {
   orderCount: number;
-  diaryBindings: DiaryBookBindingBlockRow[];
-  kanteiBindings: KanteiBindingBlockRow[];
+  diaryBindings: ProfileDeleteDiaryBindingRow[];
+  kanteiBindings: ProfileDeleteKanteiBindingRow[];
   now?: Date;
 }): ProfileDeleteBlockReason | null {
   if (params.orderCount > 0) {
@@ -128,22 +332,28 @@ export function evaluateProfileDeleteEligibility(params: {
       code: "ORDER_EXISTS",
       message: `このプロフィールには鑑定書（Order）が ${params.orderCount} 件あるため、削除できません。`,
       orderCount: params.orderCount,
+      blockingDiaryBinding: null,
+      blockingKanteiBinding: null,
     };
   }
 
-  const diaryBlock = findBlockingDiaryBookBindingRequest(params.diaryBindings, params.now);
-  if (diaryBlock) {
+  const blockingDiaryBinding = findProfileDeleteBlockingDiaryBinding(params.diaryBindings, params.now);
+  if (blockingDiaryBinding) {
     return {
       code: "DIARY_BINDING_BLOCKED",
-      message: diaryBlock.message,
+      message: blockingDiaryBinding.blockMessage,
+      blockingDiaryBinding,
+      blockingKanteiBinding: null,
     };
   }
 
-  const kanteiBlock = findBlockingKanteiBookBindingRequest(params.kanteiBindings);
-  if (kanteiBlock) {
+  const blockingKanteiBinding = findProfileDeleteBlockingKanteiBinding(params.kanteiBindings);
+  if (blockingKanteiBinding) {
     return {
       code: "KANTEI_BINDING_BLOCKED",
-      message: kanteiBlock.message,
+      message: blockingKanteiBinding.blockMessage,
+      blockingDiaryBinding: null,
+      blockingKanteiBinding,
     };
   }
 
@@ -161,6 +371,72 @@ export async function listAdminProfilesForEmail(email: string): Promise<AdminPro
     nickname: row.nickname,
     createdAt: row.createdAt.toISOString(),
   }));
+}
+
+async function loadDiaryBookIdsForProfile(email: string, profileId: string): Promise<string[]> {
+  const diaryBooks = await prisma.diaryBook.findMany({
+    where: profileScopeWhere(email, profileId),
+    select: { id: true },
+  });
+  return diaryBooks.map((row) => row.id);
+}
+
+async function loadDiaryBindingsForProfileDelete(
+  email: string,
+  profileId: string,
+): Promise<ProfileDeleteDiaryBindingRow[]> {
+  const diaryBookIds = await loadDiaryBookIdsForProfile(email, profileId);
+  const rows = await prisma.diaryBookBindingRequest.findMany({
+    where: diaryBindingScopeWhere(email, profileId, diaryBookIds),
+    select: {
+      id: true,
+      diaryBookId: true,
+      profileId: true,
+      status: true,
+      baseOrderNumber: true,
+      cancelledAt: true,
+      expiredAt: true,
+      createdAt: true,
+      updatedAt: true,
+      diaryBindingCode: true,
+    },
+    orderBy: { createdAt: "desc" },
+  });
+
+  const seen = new Set<string>();
+  return rows.filter((row) => {
+    if (seen.has(row.id)) return false;
+    seen.add(row.id);
+    return true;
+  });
+}
+
+function mapDiaryBindingSummary(row: ProfileDeleteDiaryBindingRow): AdminProfileDeleteDiaryBindingSummary {
+  return {
+    id: row.id,
+    diaryBookId: row.diaryBookId,
+    bindingProfileId: row.profileId,
+    diaryBindingCode: row.diaryBindingCode,
+    status: row.status,
+    baseOrderNumber: row.baseOrderNumber,
+    cancelledAt: toIso(row.cancelledAt),
+    expiredAt: toIso(row.expiredAt),
+    createdAt: row.createdAt.toISOString(),
+    updatedAt: row.updatedAt.toISOString(),
+  };
+}
+
+function mapKanteiBindingSummary(row: ProfileDeleteKanteiBindingRow): AdminProfileDeleteKanteiBindingSummary {
+  return {
+    id: row.id,
+    orderId: row.orderId,
+    bindingProfileId: row.profileId,
+    kanteiCode: row.kanteiCode,
+    status: row.status,
+    baseOrderNumber: row.baseOrderNumber,
+    createdAt: row.createdAt.toISOString(),
+    updatedAt: row.updatedAt.toISOString(),
+  };
 }
 
 async function loadProfileDeleteCounts(email: string, profileId: string) {
@@ -184,23 +460,17 @@ async function loadProfileDeleteCounts(email: string, profileId: string) {
     prisma.diaryBook.count({ where: scope }),
     prisma.diaryBookshelfBook.count({ where: scope }),
     prisma.order.count({ where: scope }),
-    prisma.diaryBookBindingRequest.findMany({
-      where: scope,
-      select: {
-        id: true,
-        status: true,
-        baseOrderNumber: true,
-        createdAt: true,
-        diaryBindingCode: true,
-      },
-      orderBy: { createdAt: "desc" },
-    }),
+    loadDiaryBindingsForProfileDelete(email, profileId),
     prisma.kanteiBookBindingRequest.findMany({
       where: scope,
       select: {
         id: true,
+        orderId: true,
+        profileId: true,
         status: true,
         baseOrderNumber: true,
+        createdAt: true,
+        updatedAt: true,
         kanteiCode: true,
       },
       orderBy: { createdAt: "desc" },
@@ -240,7 +510,8 @@ export async function buildAdminProfileDeletePreview(params: {
     throw new AdminProfileDeleteError("指定プロフィールが見つかりません。", "PROFILE_NOT_FOUND");
   }
 
-  await expireStaleUnpaidPendingForScope(profileScopeWhere(email, profileId));
+  const diaryBookIds = await loadDiaryBookIdsForProfile(email, profileId);
+  await expireStaleUnpaidPendingForScope(diaryBindingScopeWhere(email, profileId, diaryBookIds));
   const counts = await loadProfileDeleteCounts(email, profileId);
   const block = evaluateProfileDeleteEligibility({
     orderCount: counts.orderCount,
@@ -263,13 +534,19 @@ export async function buildAdminProfileDeletePreview(params: {
     canDelete: block == null,
     blockCode: block?.code ?? null,
     blockMessage: block?.message ?? null,
+    blockingDiaryBinding: block?.blockingDiaryBinding ?? null,
+    blockingKanteiBinding: block?.blockingKanteiBinding ?? null,
+    diaryBindings: counts.diaryBindings.map(mapDiaryBindingSummary),
+    kanteiBindings: counts.kanteiBindings.map(mapKanteiBindingSummary),
   };
 }
 
-function deletableDiaryBindingIds(rows: DiaryBookBindingBlockRow[], now = new Date()): string[] {
+function deletableDiaryBindingIds(rows: ProfileDeleteDiaryBindingRow[], now = new Date()): string[] {
   return rows
     .filter((row) => {
-      if (row.status === "cancelled" || row.status === "expired") return true;
+      if (row.status === "cancelled" || row.status === "expired") {
+        return !hasBaseOrderNumber(row.baseOrderNumber);
+      }
       if (row.status === "pending" && isStaleUnpaidPending(row, now) && !hasBaseOrderNumber(row.baseOrderNumber)) {
         return true;
       }
@@ -278,8 +555,10 @@ function deletableDiaryBindingIds(rows: DiaryBookBindingBlockRow[], now = new Da
     .map((row) => row.id);
 }
 
-function deletableKanteiBindingIds(rows: KanteiBindingBlockRow[]): string[] {
-  return rows.filter((row) => row.status === "cancelled").map((row) => row.id);
+function deletableKanteiBindingIds(rows: ProfileDeleteKanteiBindingRow[]): string[] {
+  return rows
+    .filter((row) => row.status === "cancelled" && !hasBaseOrderNumber(row.baseOrderNumber))
+    .map((row) => row.id);
 }
 
 export async function deleteAdminProfileForUser(params: {
@@ -303,19 +582,19 @@ export async function deleteAdminProfileForUser(params: {
       where: scope,
       select: { photoBlobPathname: true, photoBlobUrl: true },
     }),
-    prisma.diaryBookBindingRequest.findMany({
+    loadDiaryBindingsForProfileDelete(email, profileId),
+    prisma.kanteiBookBindingRequest.findMany({
       where: scope,
       select: {
         id: true,
+        orderId: true,
+        profileId: true,
         status: true,
         baseOrderNumber: true,
         createdAt: true,
-        diaryBindingCode: true,
+        updatedAt: true,
+        kanteiCode: true,
       },
-    }),
-    prisma.kanteiBookBindingRequest.findMany({
-      where: scope,
-      select: { id: true, status: true, baseOrderNumber: true, kanteiCode: true },
     }),
   ]);
 
@@ -383,4 +662,3 @@ export async function deleteAdminProfileForUser(params: {
     photoBlobWarnings,
   };
 }
-
