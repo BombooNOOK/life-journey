@@ -628,6 +628,12 @@ export default async function AdminPage({ searchParams }: Props) {
           >
             日記 製本申込予定一覧 →
           </Link>
+          <Link
+            href="/admin/journal-backup-restore"
+            className="text-sm font-medium text-amber-900 underline-offset-2 hover:underline"
+          >
+            日記バックアップ復元 →
+          </Link>
         </p>
       </div>
 

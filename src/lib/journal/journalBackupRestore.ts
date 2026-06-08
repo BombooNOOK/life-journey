@@ -45,6 +45,33 @@ export type JournalBackupRestoreResult = {
   sourceProfileNickname: string;
 };
 
+export type RestoreStage =
+  | "validation"
+  | "profile_limit"
+  | "blob_write"
+  | "profile"
+  | "entries"
+  | "photos";
+
+export type ProfileLimitCheckResult = {
+  ok: boolean;
+  limit: number;
+  currentCount: number;
+};
+
+export class JournalBackupRestoreFailure extends JournalBackupRestoreError {
+  constructor(
+    message: string,
+    code: string,
+    readonly stage: RestoreStage,
+    readonly rollbackOk: boolean,
+    readonly retryable: boolean,
+  ) {
+    super(message, code);
+    this.name = "JournalBackupRestoreFailure";
+  }
+}
+
 type RestoreRollbackState = {
   profileId: string | null;
   entryIds: string[];
@@ -97,31 +124,82 @@ async function mapWithConcurrency<T, R>(
   return results;
 }
 
-async function rollbackRestore(state: RestoreRollbackState): Promise<void> {
-  if (state.entryIds.length > 0) {
-    await prisma.journalEntry.deleteMany({ where: { id: { in: state.entryIds } } });
+async function rollbackRestore(state: RestoreRollbackState): Promise<boolean> {
+  let ok = true;
+  try {
+    if (state.entryIds.length > 0) {
+      await prisma.journalEntry.deleteMany({ where: { id: { in: state.entryIds } } });
+    }
+    if (state.profileId) {
+      await prisma.profile.delete({ where: { id: state.profileId } }).catch(() => undefined);
+    }
+    await Promise.all(
+      state.blobPathnames.map((pathname) => deleteJournalEntryPhotoBlobBestEffort(pathname)),
+    );
+  } catch (e) {
+    ok = false;
+    console.warn("[journal-backup-restore] rollback failed", {
+      profileId: state.profileId,
+      entryCount: state.entryIds.length,
+      blobCount: state.blobPathnames.length,
+      error: e instanceof Error ? e.message : String(e),
+    });
   }
-  if (state.profileId) {
-    await prisma.profile.delete({ where: { id: state.profileId } }).catch(() => undefined);
-  }
-  await Promise.all(
-    state.blobPathnames.map((pathname) => deleteJournalEntryPhotoBlobBestEffort(pathname)),
-  );
+  return ok;
 }
 
-async function assertProfileLimit(email: string): Promise<void> {
+export async function checkProfileLimitForRestore(email: string): Promise<ProfileLimitCheckResult> {
   const settings = await prisma.accountSettings.findUnique({
     where: { email },
     select: { profileLimit: true },
   });
   const limit = settings?.profileLimit ?? 1;
   const currentCount = await prisma.profile.count({ where: { email, isArchived: false } });
-  if (currentCount >= limit) {
-    throw new JournalBackupRestoreError(
-      `プロフィール上限（${limit}）に達しているため、新規プロフィールとして復元できません。`,
+  return {
+    ok: currentCount < limit,
+    limit,
+    currentCount,
+  };
+}
+
+async function assertProfileLimit(email: string): Promise<void> {
+  const check = await checkProfileLimitForRestore(email);
+  if (!check.ok) {
+    throw new JournalBackupRestoreFailure(
+      `プロフィール上限（${check.limit}）に達しているため、新規プロフィールとして復元できません。`,
       "PROFILE_LIMIT",
+      "profile_limit",
+      true,
+      true,
     );
   }
+}
+
+function asRestoreFailure(
+  error: unknown,
+  stage: RestoreStage,
+  rollbackOk: boolean,
+): JournalBackupRestoreFailure {
+  if (error instanceof JournalBackupRestoreFailure) {
+    return error;
+  }
+  if (error instanceof JournalBackupRestoreError) {
+    return new JournalBackupRestoreFailure(
+      error.message,
+      error.code,
+      stage,
+      rollbackOk,
+      error.code !== "PROFILE_LIMIT",
+    );
+  }
+  const message = error instanceof Error ? error.message : String(error);
+  return new JournalBackupRestoreFailure(
+    `復元に失敗しました: ${message}`,
+    "RESTORE_FAILED",
+    stage,
+    rollbackOk,
+    true,
+  );
 }
 
 function countPhotos(document: JournalBackupDocument): number {
@@ -192,19 +270,25 @@ export async function restoreJournalBackupToNewProfile(params: {
   extracted: ExtractedJournalBackup;
   dryRun?: boolean;
 }): Promise<JournalBackupRestoreResult | JournalBackupRestorePlan> {
+  let stage: RestoreStage = "validation";
   const plan = await planJournalBackupRestore(params);
   if (params.dryRun) {
     return plan;
   }
 
   const photoCount = plan.photoCount;
+  stage = "blob_write";
   if (photoCount > 0 && !journalPhotoBlobWriteEnabled()) {
-    throw new JournalBackupRestoreError(
+    throw new JournalBackupRestoreFailure(
       "写真付きバックアップの復元には Blob 書き込み設定が必要です（JOURNAL_PHOTO_BLOB_STORE_ID + VERCEL_OIDC_TOKEN または JOURNAL_PHOTO_BLOB_READ_WRITE_TOKEN）。",
       "BLOB_WRITE_DISABLED",
+      stage,
+      true,
+      true,
     );
   }
 
+  stage = "profile_limit";
   await assertProfileLimit(plan.viewerEmail);
 
   const rollback: RestoreRollbackState = {
@@ -214,6 +298,7 @@ export async function restoreJournalBackupToNewProfile(params: {
   };
 
   try {
+    stage = "profile";
     const profile = await prisma.profile.create({
       data: {
         email: plan.viewerEmail,
@@ -224,6 +309,7 @@ export async function restoreJournalBackupToNewProfile(params: {
     rollback.profileId = profile.id;
 
     const entries = params.extracted.document.entries;
+    stage = "entries";
     const entryIds = await mapWithConcurrency(entries, PHOTO_UPLOAD_CONCURRENCY, async (backupEntry) => {
       const created = await prisma.journalEntry.create({
         data: {
@@ -247,6 +333,7 @@ export async function restoreJournalBackupToNewProfile(params: {
     });
 
     let restoredPhotoCount = 0;
+    stage = "photos";
     await mapWithConcurrency(entryIds, PHOTO_UPLOAD_CONCURRENCY, async ({ backupEntry, entryId }) => {
       const photoMeta = await restoreEntryPhoto({
         profileId: profile.id,
@@ -278,12 +365,8 @@ export async function restoreJournalBackupToNewProfile(params: {
       sourceProfileNickname: plan.sourceProfileNickname,
     };
   } catch (error) {
-    await rollbackRestore(rollback);
-    if (error instanceof JournalBackupRestoreError) {
-      throw error;
-    }
-    const message = error instanceof Error ? error.message : String(error);
-    throw new JournalBackupRestoreError(`復元に失敗しました: ${message}`, "RESTORE_FAILED");
+    const rollbackOk = await rollbackRestore(rollback);
+    throw asRestoreFailure(error, stage, rollbackOk);
   }
 }
 

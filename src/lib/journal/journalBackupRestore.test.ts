@@ -51,6 +51,7 @@ function extractedFrom(doc: JournalBackupDocument): ExtractedJournalBackup {
     zipEntryNames: ["backup.json", ...doc.entries.flatMap((e) => e.photos.map((p) => p.filename))],
     zipPath: "tmp/sample.zip",
     workDir: "tmp/work",
+    zipSizeBytes: 1024,
     readFileBytes: () => Buffer.from("webp"),
   };
 }

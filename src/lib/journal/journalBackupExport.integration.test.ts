@@ -1,4 +1,3 @@
-import { execSync } from "node:child_process";
 import { existsSync, mkdirSync, readFileSync, rmSync } from "node:fs";
 import path from "node:path";
 
@@ -9,6 +8,8 @@ import {
   buildJournalBackupData,
   writeJournalBackupZipToPath,
 } from "./journalBackupExport";
+import { extractJournalBackupFromBuffer } from "./journalBackupValidate";
+import { listZipEntryNamesFromBuffer } from "./journalBackupZipExtract";
 
 const viewerEmail = "verify-user@example.com";
 const profileA = "profile-a-test";
@@ -225,20 +226,16 @@ describe("journalBackupExport integration", () => {
     expect(filename).toMatch(/^life-journey-diary-backup_profilea_\d{8}\.zip$/);
     expect(existsSync(outZip)).toBe(true);
 
-    const names = execSync(`unzip -Z1 ${JSON.stringify(outZip)}`, { encoding: "utf8" })
-      .split("\n")
-      .map((s) => s.trim())
-      .filter(Boolean);
+    const zipBuffer = readFileSync(outZip);
+    const names = listZipEntryNamesFromBuffer(zipBuffer);
 
     expect(names).toContain("backup.json");
     expect(names).toContain("photos/entry_entry-blob.webp");
     expect(names).toContain("photos/entry_entry-legacy.webp");
     expect(names).not.toContain("photos/entry_entry-none.webp");
 
-    execSync(`unzip -oq ${JSON.stringify(outZip)} -d ${JSON.stringify(workDir)}`);
-    const doc = JSON.parse(
-      readFileSync(path.join(workDir, "backup.json"), "utf8"),
-    ) as JournalBackupDocument;
+    const extracted = extractJournalBackupFromBuffer(zipBuffer);
+    const doc = extracted.document;
 
     expect(doc.photoPolicy.exportedPhotoType).toBe("processed");
     expect(doc.entries.find((e) => e.id === "entry-none")?.photos).toEqual([]);

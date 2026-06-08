@@ -1,6 +1,4 @@
-import { execSync } from "node:child_process";
-import { existsSync, readFileSync, statSync } from "node:fs";
-import path from "node:path";
+import { readFileSync } from "node:fs";
 
 import {
   JOURNAL_BACKUP_FORMAT,
@@ -8,10 +6,12 @@ import {
   type JournalBackupDocument,
   type JournalBackupEntry,
 } from "@/lib/journal/journalBackupExport";
+import { listZipEntryNamesFromBuffer, unzipBufferToFileMap } from "@/lib/journal/journalBackupZipExtract";
 import { isActivityId, isCompanionType, isMoodId, normalizeDiaryDesignTheme } from "@/lib/journal/meta";
 
 export const JOURNAL_BACKUP_MAX_ZIP_BYTES = 100 * 1024 * 1024;
 export const JOURNAL_BACKUP_MAX_ENTRIES = 2000;
+export const JOURNAL_BACKUP_MAX_PHOTOS = 2000;
 export const JOURNAL_BACKUP_MAX_CONTENT_LENGTH = 2000;
 
 export class JournalBackupValidationError extends Error {
@@ -41,6 +41,7 @@ export type ExtractedJournalBackup = {
   zipEntryNames: string[];
   zipPath: string;
   workDir: string;
+  zipSizeBytes: number;
   readFileBytes: (innerPath: string) => Buffer;
 };
 
@@ -89,6 +90,10 @@ export function validateBackupJsonDoesNotEmbedPhotos(raw: string): void {
       "EMBEDDED_DATA_IMAGE",
     );
   }
+}
+
+function countPhotosInDocument(document: JournalBackupDocument): number {
+  return document.entries.reduce((sum, entry) => sum + (entry.photos?.length ?? 0), 0);
 }
 
 function validateEntry(entry: JournalBackupEntry, index: number, issues: JournalBackupValidationIssue[]) {
@@ -157,6 +162,14 @@ export function validateJournalBackupDocument(
     });
   }
 
+  const photoCount = countPhotosInDocument(document);
+  if (photoCount > JOURNAL_BACKUP_MAX_PHOTOS) {
+    issues.push({
+      code: "PHOTOS_TOO_MANY",
+      message: `写真が多すぎます（上限 ${JOURNAL_BACKUP_MAX_PHOTOS}）。`,
+    });
+  }
+
   for (let i = 0; i < document.entries.length; i++) {
     validateEntry(document.entries[i]!, i, issues);
     const entry = document.entries[i]!;
@@ -178,76 +191,123 @@ export function validateJournalBackupDocument(
   };
 }
 
-export function listZipEntries(zipPath: string): string[] {
-  const out = execSync(`unzip -Z1 ${JSON.stringify(zipPath)}`, { encoding: "utf8" });
-  return out
-    .split("\n")
-    .map((line) => line.trim())
-    .filter(Boolean);
-}
-
-export function validateJournalBackupZipFile(zipPath: string): JournalBackupValidationResult {
-  if (!existsSync(zipPath)) {
-    throw new JournalBackupValidationError("ZIP ファイルが見つかりません。", "ZIP_NOT_FOUND");
-  }
-
-  const size = statSync(zipPath).size;
-  if (size <= 0) {
-    throw new JournalBackupValidationError("ZIP ファイルが空です。", "ZIP_EMPTY");
-  }
-  if (size > JOURNAL_BACKUP_MAX_ZIP_BYTES) {
-    throw new JournalBackupValidationError(
-      `ZIP が大きすぎます（上限 ${JOURNAL_BACKUP_MAX_ZIP_BYTES} bytes）。`,
-      "ZIP_TOO_LARGE",
-    );
-  }
-
-  const zipEntryNames = listZipEntries(zipPath);
-  if (!zipEntryNames.includes("backup.json")) {
+function buildExtractedJournalBackupFromFileMap(params: {
+  fileMap: Map<string, Buffer>;
+  zipPath?: string;
+  workDir?: string;
+  zipSizeBytes?: number;
+}): ExtractedJournalBackup {
+  const zipEntryNames = [...params.fileMap.keys()].sort();
+  const backupBytes = params.fileMap.get("backup.json");
+  if (!backupBytes) {
     throw new JournalBackupValidationError("ZIP 内に backup.json がありません。", "BACKUP_JSON_MISSING");
   }
 
-  execSync(
-    `unzip -p ${JSON.stringify(zipPath)} ${JSON.stringify("backup.json")}`,
-    { encoding: "utf8", maxBuffer: 32 * 1024 * 1024 },
-  );
-  const raw = execSync(`unzip -p ${JSON.stringify(zipPath)} backup.json`, {
-    encoding: "utf8",
-    maxBuffer: 32 * 1024 * 1024,
-  });
-
+  const raw = backupBytes.toString("utf8");
   validateBackupJsonDoesNotEmbedPhotos(raw);
   const document = parseJournalBackupDocument(raw);
-  return validateJournalBackupDocument(document, zipEntryNames);
-}
-
-export function extractJournalBackupZip(zipPath: string, workDir: string): ExtractedJournalBackup {
-  const validation = validateJournalBackupZipFile(zipPath);
+  const validation = validateJournalBackupDocument(document, zipEntryNames);
   if (!validation.ok) {
     const summary = validation.issues.map((i) => i.message).join(" ");
     throw new JournalBackupValidationError(summary, "VALIDATION_FAILED");
   }
 
-  execSync(`unzip -oq ${JSON.stringify(zipPath)} -d ${JSON.stringify(workDir)}`, {
-    encoding: "utf8",
-  });
-
   return {
     document: validation.document,
-    zipEntryNames: validation.zipEntryNames,
-    zipPath,
-    workDir,
+    zipEntryNames,
+    zipPath: params.zipPath ?? "",
+    workDir: params.workDir ?? "",
+    zipSizeBytes: params.zipSizeBytes ?? 0,
     readFileBytes(innerPath: string) {
-      const fullPath = path.join(workDir, innerPath);
-      if (!existsSync(fullPath)) {
+      const file = params.fileMap.get(innerPath);
+      if (!file) {
         throw new JournalBackupValidationError(
           `ZIP 内ファイルが見つかりません: ${innerPath}`,
           "PHOTO_FILE_MISSING",
         );
       }
-      return readFileSync(fullPath);
+      return file;
     },
   };
+}
+
+export function extractJournalBackupFromBuffer(
+  buffer: Buffer,
+  options?: { zipPath?: string; workDir?: string; zipSizeBytes?: number },
+): ExtractedJournalBackup {
+  if (buffer.byteLength > JOURNAL_BACKUP_MAX_ZIP_BYTES) {
+    throw new JournalBackupValidationError(
+      `ZIP が大きすぎます（上限 ${JOURNAL_BACKUP_MAX_ZIP_BYTES} bytes）。`,
+      "ZIP_TOO_LARGE",
+    );
+  }
+  const fileMap = unzipBufferToFileMap(buffer);
+  return buildExtractedJournalBackupFromFileMap({
+    fileMap,
+    zipPath: options?.zipPath,
+    workDir: options?.workDir,
+    zipSizeBytes: options?.zipSizeBytes ?? buffer.byteLength,
+  });
+}
+
+export function validateJournalBackupZipBuffer(
+  buffer: Buffer,
+  zipSizeBytes?: number,
+): JournalBackupValidationResult {
+  if (buffer.byteLength <= 0) {
+    throw new JournalBackupValidationError("ZIP ファイルが空です。", "ZIP_EMPTY");
+  }
+
+  const zipEntryNames = listZipEntryNamesFromBuffer(buffer);
+  const fileMap = unzipBufferToFileMap(buffer);
+  const backupBytes = fileMap.get("backup.json");
+  if (!backupBytes) {
+    throw new JournalBackupValidationError("ZIP 内に backup.json がありません。", "BACKUP_JSON_MISSING");
+  }
+
+  const raw = backupBytes.toString("utf8");
+  validateBackupJsonDoesNotEmbedPhotos(raw);
+  const document = parseJournalBackupDocument(raw);
+  const validation = validateJournalBackupDocument(document, zipEntryNames);
+  return { ...validation, document, zipEntryNames };
+}
+
+export function validateJournalBackupZipBufferWithSizeLimit(buffer: Buffer): JournalBackupValidationResult {
+  if (buffer.byteLength > JOURNAL_BACKUP_MAX_ZIP_BYTES) {
+    throw new JournalBackupValidationError(
+      `ZIP が大きすぎます（上限 ${JOURNAL_BACKUP_MAX_ZIP_BYTES} bytes）。`,
+      "ZIP_TOO_LARGE",
+    );
+  }
+  return validateJournalBackupZipBuffer(buffer, buffer.byteLength);
+}
+
+function readZipFileBuffer(zipPath: string): Buffer {
+  const buffer = readFileSync(zipPath);
+  if (buffer.byteLength <= 0) {
+    throw new JournalBackupValidationError("ZIP ファイルが空です。", "ZIP_EMPTY");
+  }
+  if (buffer.byteLength > JOURNAL_BACKUP_MAX_ZIP_BYTES) {
+    throw new JournalBackupValidationError(
+      `ZIP が大きすぎます（上限 ${JOURNAL_BACKUP_MAX_ZIP_BYTES} bytes）。`,
+      "ZIP_TOO_LARGE",
+    );
+  }
+  return buffer;
+}
+
+export function validateJournalBackupZipFile(zipPath: string): JournalBackupValidationResult {
+  const buffer = readZipFileBuffer(zipPath);
+  return validateJournalBackupZipBuffer(buffer, buffer.byteLength);
+}
+
+export function extractJournalBackupZip(zipPath: string, workDir: string): ExtractedJournalBackup {
+  const buffer = readZipFileBuffer(zipPath);
+  return extractJournalBackupFromBuffer(buffer, {
+    zipPath,
+    workDir,
+    zipSizeBytes: buffer.byteLength,
+  });
 }
 
 /** 復元用に entry フィールドを正規化 */
@@ -256,4 +316,14 @@ export function normalizeBackupEntryForRestore(entry: JournalBackupEntry) {
     ...entry,
     designTheme: normalizeDiaryDesignTheme(entry.designTheme ?? "simple_plain"),
   };
+}
+
+export function assertAdminRestoreBlobPathname(pathname: string): void {
+  const normalized = pathname.trim().replace(/^\/+/, "");
+  if (!normalized.startsWith("admin-restore-temp/")) {
+    throw new JournalBackupValidationError("一時ZIPの保存先が不正です。", "INVALID_TEMP_BLOB_PATH");
+  }
+  if (!normalized.endsWith(".zip")) {
+    throw new JournalBackupValidationError("一時ZIPの拡張子が不正です。", "INVALID_TEMP_BLOB_EXT");
+  }
 }
