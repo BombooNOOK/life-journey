@@ -216,6 +216,26 @@ model DiaryBookBindingRequest {
   @@index([diaryBindingCode])
 }
 
+/// マイページからの運営お問い合わせ（プロフィール削除依頼など）
+model SupportInquiry {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  email             String
+  activeProfileId   String?
+  activeProfileName String?
+
+  category String
+  message  String @db.Text
+
+  status String @default("pending")
+
+  @@index([status, createdAt])
+  @@index([email, createdAt])
+  @@index([category, createdAt])
+}
+
 /// 1アカウント配下のプロフィール（ニックネーム表示用）
 model Profile {
   id        String   @id @default(cuid())

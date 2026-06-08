@@ -640,6 +640,12 @@ export default async function AdminPage({ searchParams }: Props) {
           >
             プロフィール管理 →
           </Link>
+          <Link
+            href="/admin/support-inquiries"
+            className="text-sm font-medium text-sky-900 underline-offset-2 hover:underline"
+          >
+            お問い合わせ一覧 →
+          </Link>
         </p>
       </div>
 

@@ -108,6 +108,17 @@ export function ProfileAddCard({ profileCount, profileLimit, subscriptionPlan }:
           {error ? <p className="mt-2 text-xs text-red-700">{error}</p> : null}
         </>
       )}
+
+      <div className="mt-4 border-t border-stone-100 pt-3 text-xs leading-relaxed text-stone-500">
+        <p>プロフィールの削除は、誤削除防止のため運営側で対応しています。</p>
+        <p className="mt-1">
+          削除をご希望の場合は、
+          <a href="#contact-form" className="font-medium text-stone-700 underline-offset-2 hover:underline">
+            下のお問い合わせフォーム
+          </a>
+          からご連絡ください。
+        </p>
+      </div>
     </section>
   );
 }
