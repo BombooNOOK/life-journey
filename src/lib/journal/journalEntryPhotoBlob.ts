@@ -25,10 +25,12 @@ type JournalPhotoBlobTokenAuth = {
 
 export type JournalPhotoBlobAuth = JournalPhotoBlobOidcAuth | JournalPhotoBlobTokenAuth;
 
-/** 日記写真 Store ID（プロジェクト既定の BLOB_STORE_ID は使わない） */
+/** 日記写真 Store ID。未設定時は Vercel 既定の BLOB_STORE_ID にフォールバックする。 */
 export function journalPhotoBlobStoreId(): string | null {
-  const id = process.env.JOURNAL_PHOTO_BLOB_STORE_ID?.trim();
-  return id || null;
+  const dedicated = process.env.JOURNAL_PHOTO_BLOB_STORE_ID?.trim();
+  if (dedicated) return dedicated;
+  const fallback = process.env.BLOB_STORE_ID?.trim();
+  return fallback || null;
 }
 
 function journalPhotoBlobOidcToken(): string | null {
@@ -36,12 +38,14 @@ function journalPhotoBlobOidcToken(): string | null {
 }
 
 function journalPhotoBlobReadWriteToken(): string | null {
-  return process.env.JOURNAL_PHOTO_BLOB_READ_WRITE_TOKEN?.trim() || null;
+  const dedicated = process.env.JOURNAL_PHOTO_BLOB_READ_WRITE_TOKEN?.trim();
+  if (dedicated) return dedicated;
+  return process.env.BLOB_READ_WRITE_TOKEN?.trim() || null;
 }
 
 /**
- * 認証: (1) JOURNAL_PHOTO_BLOB_STORE_ID + VERCEL_OIDC_TOKEN
- *       (2) JOURNAL_PHOTO_BLOB_READ_WRITE_TOKEN
+ * 認証: (1) storeId + VERCEL_OIDC_TOKEN（storeId は JOURNAL_PHOTO_BLOB_STORE_ID → BLOB_STORE_ID）
+ *       (2) JOURNAL_PHOTO_BLOB_READ_WRITE_TOKEN → BLOB_READ_WRITE_TOKEN
  */
 export function resolveJournalPhotoBlobAuth(): JournalPhotoBlobAuth | null {
   const storeId = journalPhotoBlobStoreId();
@@ -160,23 +164,44 @@ export async function putJournalEntryPhotoToBlob(params: {
   });
 }
 
+async function readBlobBytesWithAuth(
+  blobUrl: string,
+  auth: JournalPhotoBlobAuth,
+): Promise<{ buffer: Buffer; mimeType: string } | null> {
+  const result = await get(blobUrl, blobAccessOptions(auth));
+  if (result?.statusCode === 200 && result.stream) {
+    const buffer = Buffer.from(await new Response(result.stream).arrayBuffer());
+    if (buffer.byteLength > 0) {
+      const mimeType = result.blob.contentType?.trim() || "image/webp";
+      return { buffer, mimeType };
+    }
+  }
+  return null;
+}
+
 export async function fetchJournalEntryPhotoBytesFromBlob(
   blobUrl: string,
 ): Promise<{ buffer: Buffer; mimeType: string } | null> {
-  const auth = resolveJournalPhotoBlobAuth();
-  if (!auth) return null;
+  const storeId = journalPhotoBlobStoreId();
+  const oidcToken = journalPhotoBlobOidcToken();
+  const token = journalPhotoBlobReadWriteToken();
 
-  try {
-    const result = await get(blobUrl, blobAccessOptions(auth));
-    if (result?.statusCode === 200 && result.stream) {
-      const buffer = Buffer.from(await new Response(result.stream).arrayBuffer());
-      if (buffer.byteLength > 0) {
-        const mimeType = result.blob.contentType?.trim() || "image/webp";
-        return { buffer, mimeType };
-      }
+  const attempts: JournalPhotoBlobAuth[] = [];
+  if (storeId && oidcToken) {
+    attempts.push({ mode: "oidc", storeId, oidcToken });
+  }
+  if (token) {
+    attempts.push({ mode: "token", token });
+  }
+  if (attempts.length === 0) return null;
+
+  for (const auth of attempts) {
+    try {
+      const payload = await readBlobBytesWithAuth(blobUrl, auth);
+      if (payload) return payload;
+    } catch (e) {
+      console.warn("[journal-photo-blob] private get failed", { mode: auth.mode, error: e });
     }
-  } catch (e) {
-    console.warn("[journal-photo-blob] private get failed", { mode: auth.mode, error: e });
   }
   return null;
 }
