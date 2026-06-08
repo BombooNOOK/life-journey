@@ -634,6 +634,12 @@ export default async function AdminPage({ searchParams }: Props) {
           >
             日記バックアップ復元 →
           </Link>
+          <Link
+            href="/admin/profile-management"
+            className="text-sm font-medium text-red-900 underline-offset-2 hover:underline"
+          >
+            プロフィール管理 →
+          </Link>
         </p>
       </div>
 

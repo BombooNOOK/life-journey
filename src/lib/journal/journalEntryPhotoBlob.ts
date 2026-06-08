@@ -211,14 +211,23 @@ export async function deleteJournalEntryPhotoBlobBestEffort(
   pathname: string | null | undefined,
   blobUrl?: string | null,
 ): Promise<void> {
+  await deleteJournalEntryPhotoBlobWithResult(pathname, blobUrl);
+}
+
+/** 管理者削除など、結果を UI に返す必要があるとき用 */
+export async function deleteJournalEntryPhotoBlobWithResult(
+  pathname: string | null | undefined,
+  blobUrl?: string | null,
+): Promise<{ ok: true } | { ok: false; warning: string }> {
   const auth = resolveJournalPhotoBlobAuth();
-  if (!auth) return;
+  if (!auth) return { ok: true };
 
   const target = pathname?.trim() || blobUrl?.trim();
-  if (!target) return;
+  if (!target) return { ok: true };
 
   try {
     await del(target, blobAccessOptions(auth));
+    return { ok: true };
   } catch (e) {
     console.warn("[journal-photo-blob] del failed", {
       mode: auth.mode,
@@ -226,5 +235,7 @@ export async function deleteJournalEntryPhotoBlobBestEffort(
       blobUrl,
       error: e,
     });
+    const label = pathname?.trim() || "blob";
+    return { ok: false, warning: `Blob削除失敗: ${label}` };
   }
 }
