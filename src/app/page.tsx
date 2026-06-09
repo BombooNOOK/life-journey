@@ -16,16 +16,10 @@ export default function HomePage() {
       <section className="relative overflow-hidden rounded-3xl border border-emerald-100 bg-[#f6f4ef] p-4 pb-16 shadow-sm sm:p-6 sm:pb-14 md:min-h-[480px] md:p-8 md:pb-12 lg:min-h-[520px]">
         <div aria-hidden className="pointer-events-none absolute inset-x-0 bottom-0 md:hidden">
           <div className="relative mx-auto w-[74%]">
-            {/* 背面のぼかしで周囲を柔らかくにじませる */}
             <img
               src="/images/mainhaikei-smartphone.png"
               alt=""
-              className="w-full scale-[1.07] opacity-35 blur-2xl"
-            />
-            <img
-              src="/images/mainhaikei-smartphone.png"
-              alt=""
-              className="absolute left-0 top-0 w-full [mask-image:radial-gradient(ellipse_90%_78%_at_50%_100%,#000_50%,transparent_100%)] [-webkit-mask-image:radial-gradient(ellipse_90%_78%_at_50%_100%,#000_50%,transparent_100%)]"
+              className="block w-full [mask-image:linear-gradient(to_right,transparent_0%,#000_20%,#000_80%,transparent_100%)] [-webkit-mask-image:linear-gradient(to_right,transparent_0%,#000_20%,#000_80%,transparent_100%)]"
             />
           </div>
         </div>
