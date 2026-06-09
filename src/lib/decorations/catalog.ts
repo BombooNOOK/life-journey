@@ -45,6 +45,18 @@ export const decorationAssets = {
     width: 48,
     height: 24,
   },
+  "risu-kun-sm": {
+    src: "/decorations/risu-kun-sm.webp",
+    placeholderSrc: "/decorations/risu-kun-sm.png",
+    width: 44,
+    height: 44,
+  },
+  "acorn-sm": {
+    src: "/decorations/acorn-sm.webp",
+    placeholderSrc: "/decorations/acorn-sm.png",
+    width: 14,
+    height: 16,
+  },
 } as const satisfies Record<string, DecorationAssetEntry>;
 
 export type DecorationName = keyof typeof decorationAssets;

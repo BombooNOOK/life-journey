@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 import { HomeMyPageNavButton } from "@/components/home/HomeMyPageNavButton";
+import { HomeRecommendedForSection } from "@/components/home/HomeRecommendedForSection";
 import {
   heroCtaMicrocopyClass,
   heroCtaMicrocopyDetailClass,
@@ -83,6 +84,8 @@ export default function HomePage() {
           </div>
         </div>
       </section>
+
+      <HomeRecommendedForSection />
 
       <section className="rounded-2xl border border-stone-200/75 bg-[#faf8f5] p-4 sm:p-5">
         <h2 className="text-base font-semibold leading-snug text-stone-900">
