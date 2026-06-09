@@ -2,6 +2,13 @@ import { NextResponse } from "next/server";
 import { Prisma } from "@prisma/client";
 
 import { getViewerEmailFromCookie } from "@/lib/auth/viewer";
+import { loadEntitlementContext } from "@/lib/entitlement/accountSettingsForEntitlement";
+import {
+  canCreateJournalEntry,
+  continuedFeaturesDeniedMessage,
+  resolveUserEntitlement,
+} from "@/lib/entitlement/resolveUserEntitlement";
+import { markFreeTrialStartedIfFirstJournal } from "@/lib/entitlement/startFreeTrialOnFirstJournal";
 
 /** Browsers and intermediaries must not cache per-user diary payloads. */
 const JSON_NO_STORE = {
@@ -296,6 +303,19 @@ export async function POST(req: Request) {
     );
   }
 
+  const entitlementCtx = await loadEntitlementContext(viewerEmail);
+  const wasFirstJournal = entitlementCtx.journalEntryCount === 0;
+  if (!canCreateJournalEntry(entitlementCtx)) {
+    const entitlement = resolveUserEntitlement(entitlementCtx);
+    return NextResponse.json(
+      {
+        error: continuedFeaturesDeniedMessage(entitlement),
+        code: entitlement.denialCode ?? "FREE_TRIAL_EXPIRED",
+      },
+      { status: 403 },
+    );
+  }
+
   let json: unknown;
   try {
     json = await req.json();
@@ -567,6 +587,10 @@ export async function POST(req: Request) {
           includeInBook: true,
         },
       });
+    }
+
+    if (entry && wasFirstJournal) {
+      await markFreeTrialStartedIfFirstJournal({ email: viewerEmail, wasFirstJournal: true });
     }
 
     const kanteiOrderExists = await profileHasKanteiOrder(viewerEmail, profileId);

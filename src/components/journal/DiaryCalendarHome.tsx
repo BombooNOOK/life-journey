@@ -30,6 +30,8 @@ import {
 } from "@/lib/journal/journalNav";
 import { MoodOwlIcon } from "@/components/journal/MoodOwlIcon";
 import { getActivityMeta, getMoodMeta } from "@/lib/journal/meta";
+import { TrialStatusBanner } from "@/components/entitlement/TrialStatusBanner";
+import type { SerializedUserEntitlement } from "@/lib/entitlement/resolveUserEntitlement";
 
 export type DiaryCalendarEntry = DiaryMonthCalendarEntry & {
   content: string;
@@ -48,6 +50,7 @@ type Props = {
   profiles: ProfileOption[];
   activeProfileId: string;
   activeProfileNickname: string;
+  entitlement: SerializedUserEntitlement;
 };
 
 function toMonthKey(date: Date): string {
@@ -95,7 +98,11 @@ export function DiaryCalendarHome({
   profiles,
   activeProfileId,
   activeProfileNickname,
+  entitlement,
 }: Props) {
+  const canWriteJournal =
+    entitlement.canUseContinuedFeatures || entitlement.canCreateFirstJournal;
+  const canEditJournal = entitlement.canUseContinuedFeatures;
   const router = useRouter();
   const searchParams = useSearchParams();
   const listRef = useRef<HTMLDivElement>(null);
@@ -324,6 +331,8 @@ export function DiaryCalendarHome({
           </p>
         ) : null}
 
+        <TrialStatusBanner entitlement={entitlement} />
+
         {showSyncDebug ? (
           <DiarySyncDebugPanel
             monthKey={monthKey}
@@ -447,12 +456,18 @@ export function DiaryCalendarHome({
                           >
                             プレビュー
                           </Link>
-                          <Link
-                            href={journalEditPath(entry.id, returnToBase, effectiveProfileId)}
-                            className="inline-flex min-h-[44px] flex-1 items-center justify-center rounded-lg border border-stone-200 bg-white px-3 py-2 text-sm font-medium text-stone-800 hover:bg-stone-50 sm:flex-none sm:px-4"
-                          >
-                            編集
-                          </Link>
+                          {canEditJournal ? (
+                            <Link
+                              href={journalEditPath(entry.id, returnToBase, effectiveProfileId)}
+                              className="inline-flex min-h-[44px] flex-1 items-center justify-center rounded-lg border border-stone-200 bg-white px-3 py-2 text-sm font-medium text-stone-800 hover:bg-stone-50 sm:flex-none sm:px-4"
+                            >
+                              編集
+                            </Link>
+                          ) : (
+                            <span className="inline-flex min-h-[44px] flex-1 items-center justify-center rounded-lg border border-stone-200 bg-stone-50 px-3 py-2 text-sm text-stone-400 sm:flex-none sm:px-4">
+                              編集不可
+                            </span>
+                          )}
                         </div>
                       </li>
                     );
@@ -464,7 +479,10 @@ export function DiaryCalendarHome({
         </div>
       </div>
 
-      <DiaryHomeBottomNav journalWriteHref={journalTodayHref} />
+      <DiaryHomeBottomNav
+        journalWriteHref={canWriteJournal ? journalTodayHref : "/plans"}
+        journalWriteLabel={canWriteJournal ? undefined : "プランを見る"}
+      />
     </div>
   );
 }

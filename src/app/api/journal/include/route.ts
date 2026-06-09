@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 
 import { getViewerEmailFromCookie } from "@/lib/auth/viewer";
 import { prisma } from "@/lib/db";
+import { assertFullAccessForApi } from "@/lib/entitlement/requireFullAccess";
 
 export async function PATCH(req: Request) {
   const viewerEmail = await getViewerEmailFromCookie();
@@ -11,6 +12,9 @@ export async function PATCH(req: Request) {
       { status: 401 },
     );
   }
+
+  const denied = await assertFullAccessForApi(viewerEmail);
+  if (denied) return denied;
 
   let json: unknown;
   try {

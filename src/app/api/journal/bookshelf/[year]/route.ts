@@ -3,6 +3,7 @@ import { revalidatePath } from "next/cache";
 
 import { getViewerEmailFromCookie } from "@/lib/auth/viewer";
 import { prisma } from "@/lib/db";
+import { assertFullAccessForApi } from "@/lib/entitlement/requireFullAccess";
 import { clampMonthOrder } from "@/lib/journal/bookshelfPeriod";
 import { isDiaryCoverStyleRawAllowed, normalizeDiaryCoverStyle } from "@/lib/journal/coverAssets";
 import { resolveActiveProfileId } from "@/lib/profile/activeProfile";
@@ -92,6 +93,10 @@ export async function PATCH(req: Request, { params }: RouteParams) {
   if (!viewerEmail) {
     return NextResponse.json({ error: "ログイン情報を確認できませんでした。", code: "AUTH_REQUIRED" }, { status: 401 });
   }
+
+  const denied = await assertFullAccessForApi(viewerEmail);
+  if (denied) return denied;
+
   const activeProfileId = await resolveActiveProfileId(viewerEmail);
 
   const { year: ys } = await params;

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { getViewerEmailFromCookie } from "@/lib/auth/viewer";
+import { assertFullAccessForApi } from "@/lib/entitlement/requireFullAccess";
 import { refreshDiaryBookContent } from "@/lib/journal/diaryBookSnapshot";
 
 const JSON_NO_STORE = {
@@ -19,6 +20,9 @@ export async function POST(_: Request, { params }: RouteParams) {
       { status: 401, ...JSON_NO_STORE },
     );
   }
+
+  const denied = await assertFullAccessForApi(viewerEmail);
+  if (denied) return denied;
 
   const { bookId } = await params;
   let result;

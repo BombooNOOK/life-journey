@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 
 import { getViewerEmailFromCookie } from "@/lib/auth/viewer";
 import { prisma } from "@/lib/db";
+import { assertFullAccessForApi } from "@/lib/entitlement/requireFullAccess";
 import { parseDiaryBookCreateFields } from "@/lib/journal/diaryBookForm";
 import {
   countJournalEntriesInDiaryBookPeriod,
@@ -54,6 +55,9 @@ export async function POST(req: Request) {
       { status: 401, ...JSON_NO_STORE },
     );
   }
+
+  const denied = await assertFullAccessForApi(viewerEmail);
+  if (denied) return denied;
 
   let json: unknown;
   try {

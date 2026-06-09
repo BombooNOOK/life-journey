@@ -34,6 +34,10 @@ type CreatedBookSummary = {
   title: string;
 };
 
+type Props = {
+  blockContinuedFeatures?: boolean;
+};
+
 const DEFAULT_NO_ENTRIES_MESSAGE =
   "この期間には日記がありません。\n期間を変更するか、日記を書いてから日記ブックを作成してください。";
 
@@ -54,7 +58,7 @@ export function diaryBookCreateDisabledReason(params: {
   return null;
 }
 
-export function DiaryBookCreateForm() {
+export function DiaryBookCreateForm({ blockContinuedFeatures = false }: Props) {
   const router = useRouter();
   const today = useMemo(() => new Date().toISOString().slice(0, 10), []);
   const [open, setOpen] = useState(false);
@@ -194,6 +198,17 @@ export function DiaryBookCreateForm() {
     } finally {
       setCreating(false);
     }
+  }
+
+  if (blockContinuedFeatures) {
+    return (
+      <section className="rounded-xl border border-stone-200 bg-stone-50/80 px-4 py-3.5 shadow-sm">
+        <h2 className="text-base font-semibold text-stone-900">日記ブックを作る</h2>
+        <p className="mt-2 text-sm leading-relaxed text-stone-700">
+          日記ブックの新規作成は、日記の無料お試し開始後、またはサブスクリプション加入後にご利用いただけます。
+        </p>
+      </section>
+    );
   }
 
   return (

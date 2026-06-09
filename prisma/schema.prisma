@@ -149,6 +149,9 @@ model AccountSettings {
   stripeSubscriptionId String? @unique
   subscriptionPlan     String? /// "light" | "standard" | null
   subscriptionStatus   String? /// active | canceled | past_due 等
+
+  /// LJD 14日無料トライアル開始日時（初回日記作成のサーバー時刻）
+  freeTrialStartedAt DateTime?
 }
 
 /// 鑑定書製本版（BASE単発）の申込予定・製本進捗（決済前は pending）

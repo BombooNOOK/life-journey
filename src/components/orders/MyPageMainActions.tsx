@@ -1,18 +1,32 @@
 "use client";
 
+import Link from "next/link";
+
 import { ProfileSelectNavButton } from "@/components/profile/ProfileSelectNavButton";
+import type { SerializedUserEntitlement } from "@/lib/entitlement/resolveUserEntitlement";
 
 type Props = {
   profileId: string;
   profileNickname: string;
   isActive: boolean;
+  entitlement: SerializedUserEntitlement;
 };
 
 const mainNavButtonClass =
-  "flex min-h-[52px] w-full items-center justify-center rounded-xl border px-4 py-3.5 text-center text-sm font-semibold shadow-sm transition hover:shadow disabled:opacity-60";
+  "flex min-h-[52px] w-full items-center justify-center rounded-xl border px-4 py-3.5 text-center text-sm font-semibold shadow-sm transition hover:shadow disabled:cursor-not-allowed disabled:opacity-60";
 
 /** マイページトップ：選択中プロフィール向けの主導線 */
-export function MyPageMainActions({ profileId, profileNickname, isActive }: Props) {
+export function MyPageMainActions({
+  profileId,
+  profileNickname,
+  isActive,
+  entitlement,
+}: Props) {
+  const canWriteJournal =
+    entitlement.canUseContinuedFeatures || entitlement.canCreateFirstJournal;
+  const journalEmphasis = entitlement.tier === "trial_not_started";
+  const journalBlocked = !canWriteJournal;
+
   return (
     <section id="main-actions" className="space-y-3">
       <div>
@@ -31,15 +45,37 @@ export function MyPageMainActions({ profileId, profileNickname, isActive }: Prop
           <span className="ml-2 text-sm font-normal text-stone-600">さんの記録</span>
         </h2>
         <div className="mt-4 grid w-full max-w-[17.5rem] grid-cols-1 gap-3 sm:max-w-2xl sm:grid-cols-2">
-          <ProfileSelectNavButton
-            profileId={profileId}
-            href="/orders/calendar"
-            directNav={isActive}
-            loadingLabel="日記を開いています…"
-            className={`${mainNavButtonClass} border-emerald-200/90 bg-gradient-to-br from-emerald-50 to-white text-emerald-900 hover:border-emerald-300 hover:bg-emerald-50`}
-          >
-            日記を書く・編集する
-          </ProfileSelectNavButton>
+          {journalBlocked ? (
+            <div className="space-y-2">
+              <button
+                type="button"
+                disabled
+                className={`${mainNavButtonClass} border-emerald-200/90 bg-gradient-to-br from-emerald-50 to-white text-emerald-900`}
+              >
+                日記を書く・編集する
+              </button>
+              <Link
+                href="/plans"
+                className="block text-center text-xs font-medium text-violet-800 underline-offset-2 hover:underline"
+              >
+                サブスクリプションのご案内
+              </Link>
+            </div>
+          ) : (
+            <ProfileSelectNavButton
+              profileId={profileId}
+              href="/orders/calendar"
+              directNav={isActive}
+              loadingLabel="日記を開いています…"
+              className={`${mainNavButtonClass} ${
+                journalEmphasis
+                  ? "border-emerald-400 bg-gradient-to-br from-emerald-100 to-white text-emerald-950 ring-2 ring-emerald-200/80"
+                  : "border-emerald-200/90 bg-gradient-to-br from-emerald-50 to-white text-emerald-900 hover:border-emerald-300 hover:bg-emerald-50"
+              }`}
+            >
+              {journalEmphasis ? "はじめての日記を書く" : "日記を書く・編集する"}
+            </ProfileSelectNavButton>
+          )}
           <ProfileSelectNavButton
             profileId={profileId}
             href="/orders/bookshelf"

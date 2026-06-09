@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 
 import { getViewerEmailFromCookie, normalizeEmail } from "@/lib/auth/viewer";
 import { prisma } from "@/lib/db";
+import { assertFullAccessForApi } from "@/lib/entitlement/requireFullAccess";
 import { buildOrderPayload } from "@/lib/order/buildSnapshot";
 import { toIsoDateString } from "@/lib/order/birthDate";
 import type { CustomerFormValues } from "@/lib/order/types";
@@ -28,6 +29,9 @@ export async function PATCH(req: Request, { params }: RouteParams) {
       { status: 401 },
     );
   }
+
+  const denied = await assertFullAccessForApi(viewerEmail);
+  if (denied) return denied;
 
   let json: unknown;
   try {

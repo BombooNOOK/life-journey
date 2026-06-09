@@ -5,16 +5,17 @@ import { usePathname } from "next/navigation";
 
 type Props = {
   journalWriteHref: string;
+  journalWriteLabel?: string;
 };
 
 /** 試作の日記ホーム専用・下部ナビ */
-export function DiaryHomeBottomNav({ journalWriteHref }: Props) {
+export function DiaryHomeBottomNav({ journalWriteHref, journalWriteLabel }: Props) {
   const pathname = usePathname();
   const journalActive = pathname === "/journal" || pathname.startsWith("/journal/");
 
   const items = [
     { href: "/orders/calendar", label: "カレンダー", active: pathname === "/orders/calendar" },
-    { href: journalWriteHref, label: "今日書く", active: journalActive },
+    { href: journalWriteHref, label: journalWriteLabel ?? "今日書く", active: journalActive },
     {
       href: "/orders/bookshelf",
       label: "本棚",

@@ -6,6 +6,11 @@ import { DiaryCalendarHome } from "@/components/journal/DiaryCalendarHome";
 import { getViewerEmailFromCookie } from "@/lib/auth/viewer";
 import { withPrismaConnectionRetry } from "@/lib/db/prismaRetry";
 import { listProfilesAndActiveProfileId } from "@/lib/profile/activeProfile";
+import { loadEntitlementContext } from "@/lib/entitlement/accountSettingsForEntitlement";
+import {
+  resolveUserEntitlement,
+  serializeUserEntitlement,
+} from "@/lib/entitlement/resolveUserEntitlement";
 
 export const dynamic = "force-dynamic";
 
@@ -55,12 +60,18 @@ export default async function OrdersCalendarPage() {
   const activeProfileNickname =
     profiles.find((p) => p.id === activeProfileId)?.nickname ?? "メイン";
 
+  const entitlementCtx = await withPrismaConnectionRetry(() =>
+    loadEntitlementContext(viewerEmail),
+  );
+  const entitlement = serializeUserEntitlement(resolveUserEntitlement(entitlementCtx));
+
   return (
     <Suspense fallback={<CalendarFallback />}>
       <DiaryCalendarHome
         profiles={profiles}
         activeProfileId={activeProfileId}
         activeProfileNickname={activeProfileNickname}
+        entitlement={entitlement}
       />
     </Suspense>
   );

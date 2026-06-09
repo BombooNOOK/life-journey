@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { BASE_KANTEI_BOOK_URL } from "@/lib/commerce/baseUrls";
 import { createOrReusePendingKanteiBookBindingRequest } from "@/lib/commerce/createKanteiBookBindingRequest";
 import { getViewerEmailFromCookie, normalizeEmail } from "@/lib/auth/viewer";
+import { assertFullAccessForApi } from "@/lib/entitlement/requireFullAccess";
 
 export async function POST(
   _req: Request,
@@ -12,6 +13,9 @@ export async function POST(
   if (!viewerEmail) {
     return NextResponse.json({ error: "ログインが必要です。" }, { status: 401 });
   }
+
+  const denied = await assertFullAccessForApi(viewerEmail);
+  if (denied) return denied;
 
   const { id } = await context.params;
   const result = await createOrReusePendingKanteiBookBindingRequest({

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 
 import { getViewerEmailFromCookie } from "@/lib/auth/viewer";
 import { prisma } from "@/lib/db";
+import { assertFullAccessForApi } from "@/lib/entitlement/requireFullAccess";
 import { profileByIdForViewer } from "@/lib/profile/activeProfile";
 import { parseProfileIdFromRouteParam } from "@/lib/profile/parseProfileIdFromRouteParam";
 
@@ -12,6 +13,9 @@ export async function PATCH(req: Request, { params }: Params) {
   if (!viewerEmail) {
     return NextResponse.json({ error: "ログインが必要です", code: "AUTH_REQUIRED" }, { status: 401 });
   }
+
+  const denied = await assertFullAccessForApi(viewerEmail);
+  if (denied) return denied;
 
   const { profileId: profileIdRaw } = await params;
   const profileId = parseProfileIdFromRouteParam(profileIdRaw);

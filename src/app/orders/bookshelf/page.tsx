@@ -18,6 +18,12 @@ import { diaryCoverImagePath, getDiaryCoverStyleLabel } from "@/lib/journal/cove
 import { listProfilesAndActiveProfileId } from "@/lib/profile/activeProfile";
 import { combinePdfDownloadLimit, fetchAccountPdfDownloadLimitOrNull } from "@/lib/order/effectivePdfDownloadLimit";
 import { resolveKanteiPdfDownloadFilename } from "@/lib/order/kanteiCode";
+import { loadEntitlementContext } from "@/lib/entitlement/accountSettingsForEntitlement";
+import {
+  resolveUserEntitlement,
+  serializeUserEntitlement,
+} from "@/lib/entitlement/resolveUserEntitlement";
+import { TrialStatusBanner } from "@/components/entitlement/TrialStatusBanner";
 
 export const dynamic = "force-dynamic";
 
@@ -34,6 +40,9 @@ export default async function BookshelfPage() {
     const viewerIsAdmin = await isAdminEmail(viewerEmail);
     const showPrintQualityPdf = viewerIsAdmin;
     const accountPdfCap = await fetchAccountPdfDownloadLimitOrNull(viewerEmail);
+    const entitlementCtx = await loadEntitlementContext(viewerEmail);
+    const entitlement = serializeUserEntitlement(resolveUserEntitlement(entitlementCtx));
+    const canUseContinuedFeatures = entitlement.canUseContinuedFeatures;
 
     const [orders, diaryBookRows, hasKanteiOrder] = await Promise.all([
       prisma.order.findMany({
@@ -83,8 +92,10 @@ export default async function BookshelfPage() {
         coverImageSrc: diaryCoverImagePath(book.coverTheme, "owl"),
         coverAlt: `${book.title}の表紙`,
         details,
-        bindingLabel: "製本版を注文する",
-        bindingHref: `/orders/bookshelf/diary-book/${book.id}/book-binding`,
+        bindingLabel: canUseContinuedFeatures ? "製本版を注文する" : "製本版を注文する（要サブスク）",
+        bindingHref: canUseContinuedFeatures
+          ? `/orders/bookshelf/diary-book/${book.id}/book-binding`
+          : "/plans",
         overviewExtra: (
           <>
             <BookshelfEditIncludesNavButton bookId={book.id}>
@@ -138,12 +149,14 @@ export default async function BookshelfPage() {
             />
           ) : null}
           <div className="flex flex-wrap gap-x-3 gap-y-1">
-            <Link
-              href={`/orders/${order.id}/manage`}
-              className="text-xs font-medium text-amber-900 underline-offset-2 hover:underline"
-            >
-              入力内容を修正する
-            </Link>
+            {canUseContinuedFeatures ? (
+              <Link
+                href={`/orders/${order.id}/manage`}
+                className="text-xs font-medium text-amber-900 underline-offset-2 hover:underline"
+              >
+                入力内容を修正する
+              </Link>
+            ) : null}
             <Link
               href="/help/pdf-download"
               className="text-xs text-stone-600 underline-offset-2 hover:underline"
@@ -186,7 +199,9 @@ export default async function BookshelfPage() {
           deployRevision={process.env.VERCEL_GIT_COMMIT_SHA?.slice(0, 7) ?? null}
         />
 
-        <DiaryBookCreateForm />
+        <TrialStatusBanner entitlement={entitlement} />
+
+        <DiaryBookCreateForm blockContinuedFeatures={!canUseContinuedFeatures} />
 
         {!hasKanteiOrder && activeProfileId ? (
           <KanteiMissingBanner profileId={activeProfileId} />

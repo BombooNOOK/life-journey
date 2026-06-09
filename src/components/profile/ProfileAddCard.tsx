@@ -8,9 +8,15 @@ type Props = {
   profileCount: number;
   profileLimit: number;
   subscriptionPlan: string | null;
+  blockContinuedFeatures?: boolean;
 };
 
-export function ProfileAddCard({ profileCount, profileLimit, subscriptionPlan }: Props) {
+export function ProfileAddCard({
+  profileCount,
+  profileLimit,
+  subscriptionPlan,
+  blockContinuedFeatures = false,
+}: Props) {
   const router = useRouter();
   const [nickname, setNickname] = useState("");
   const [busy, setBusy] = useState(false);
@@ -63,7 +69,12 @@ export function ProfileAddCard({ profileCount, profileLimit, subscriptionPlan }:
   return (
     <section className="rounded-xl border border-stone-200 bg-white p-4 shadow-sm">
       <h2 className="text-lg font-semibold text-stone-900">プロフィールを追加</h2>
-      {atLimit ? (
+      {blockContinuedFeatures && !atLimit ? (
+        <div className="mt-3 space-y-2 text-sm leading-relaxed text-stone-700">
+          <p>新規プロフィールの追加は、日記の無料お試し開始後にご利用いただけます。</p>
+          <p>まずは日記の記録からお試しください。</p>
+        </div>
+      ) : atLimit ? (
         isStandardPlanAtLimit ? (
           <div className="mt-3 space-y-3 text-sm leading-relaxed text-stone-700">
             <p>現在、1つのアカウントで作成できるプロフィールは最大3件までです。</p>

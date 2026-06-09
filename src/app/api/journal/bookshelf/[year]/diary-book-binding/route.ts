@@ -5,6 +5,7 @@ import {
   getPendingDiaryBookBindingForYear,
 } from "@/lib/commerce/createDiaryBookBindingRequest";
 import { getViewerEmailFromCookie, normalizeEmail } from "@/lib/auth/viewer";
+import { assertFullAccessForApi } from "@/lib/entitlement/requireFullAccess";
 import { resolveActiveProfileId } from "@/lib/profile/activeProfile";
 
 type RouteParams = { params: Promise<{ year: string }> };
@@ -50,6 +51,9 @@ export async function POST(_req: Request, { params }: RouteParams) {
   if (!viewerEmail) {
     return NextResponse.json({ error: "ログインが必要です。" }, { status: 401 });
   }
+
+  const denied = await assertFullAccessForApi(viewerEmail);
+  if (denied) return denied;
 
   const { year: ys } = await params;
   const year = parseYearParam(ys);

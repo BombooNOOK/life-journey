@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { Prisma } from "@prisma/client";
 
 import { getViewerEmailFromCookie } from "@/lib/auth/viewer";
+import { assertFullAccessForApi } from "@/lib/entitlement/requireFullAccess";
 import { prisma } from "@/lib/db";
 import { collectTemplateIdsFromReadingText } from "@/lib/diary-reading/generateDiaryReading";
 import {
@@ -201,6 +202,9 @@ export async function PATCH(req: Request, { params }: Params) {
       { status: 401, ...JSON_NO_STORE },
     );
   }
+
+  const denied = await assertFullAccessForApi(viewerEmail);
+  if (denied) return denied;
 
   const { id } = await params;
   const exists = await prisma.journalEntry.findFirst({

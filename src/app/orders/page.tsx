@@ -14,6 +14,13 @@ import { withPrismaConnectionRetry } from "@/lib/db/prismaRetry";
 import { profileHasKanteiOrder } from "@/lib/journal/kanteiCommentEligibility";
 import { listProfilesAndActiveProfileId } from "@/lib/profile/activeProfile";
 import { effectiveProfileLimit } from "@/lib/profile/effectiveProfileLimit";
+import { loadEntitlementContext } from "@/lib/entitlement/accountSettingsForEntitlement";
+import {
+  resolveUserEntitlement,
+  serializeUserEntitlement,
+  type SerializedUserEntitlement,
+} from "@/lib/entitlement/resolveUserEntitlement";
+import { TrialStatusBanner } from "@/components/entitlement/TrialStatusBanner";
 
 export const dynamic = "force-dynamic";
 
@@ -48,6 +55,15 @@ export default async function OrdersListPage() {
   };
   let fetchError: string | null = null;
   let hasKanteiOrder = true;
+  let entitlement: SerializedUserEntitlement = {
+    tier: "trial_not_started",
+    showTrialBanner: false,
+    bannerVariant: "none",
+    canUseContinuedFeatures: false,
+    canCreateFirstJournal: true,
+    trialDaysRemaining: null,
+    trialDayIndex: null,
+  };
   try {
     const loaded = await withPrismaConnectionRetry(() =>
       listProfilesAndActiveProfileId(viewerEmail),
@@ -83,6 +99,10 @@ export default async function OrdersListPage() {
       isMonitor: settings?.isMonitor === true,
       subscriptionPlan: settings?.subscriptionPlan ?? null,
     };
+    const entitlementCtx = await withPrismaConnectionRetry(() =>
+      loadEntitlementContext(viewerEmail),
+    );
+    entitlement = serializeUserEntitlement(resolveUserEntitlement(entitlementCtx));
   } catch (e) {
     fetchError = e instanceof Error ? e.message : "一覧を取得できませんでした。";
   }
@@ -134,8 +154,13 @@ export default async function OrdersListPage() {
 
       <MyPageProfileList profiles={profiles} activeProfileId={activeProfileId} />
 
+      <TrialStatusBanner entitlement={entitlement} />
+
       {activeProfile && !hasKanteiOrder ? (
-        <KanteiMissingBanner profileId={activeProfile.id} />
+        <KanteiMissingBanner
+          profileId={activeProfile.id}
+          blockNewKantei={!entitlement.canUseContinuedFeatures}
+        />
       ) : null}
 
       {activeProfile ? (
@@ -143,6 +168,7 @@ export default async function OrdersListPage() {
           profileId={activeProfile.id}
           profileNickname={activeProfile.nickname}
           isActive
+          entitlement={entitlement}
         />
       ) : null}
 
@@ -150,6 +176,7 @@ export default async function OrdersListPage() {
         profileCount={profiles.length}
         profileLimit={accountInfo.profileLimit}
         subscriptionPlan={accountInfo.subscriptionPlan}
+        blockContinuedFeatures={!entitlement.canUseContinuedFeatures}
       />
 
       <MyPageAccountSection

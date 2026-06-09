@@ -61,6 +61,8 @@ import {
 } from "@/lib/journal/meta";
 import { OwlLoadingInline } from "@/components/ui/OwlLoadingInline";
 import { JOURNAL_OWL_COMMENT_KANTEI_REQUIRED_MESSAGE } from "@/lib/journal/kanteiCommentCopy";
+import { TrialStatusBanner } from "@/components/entitlement/TrialStatusBanner";
+import { useEntitlement } from "@/components/entitlement/useEntitlement";
 
 const JOURNAL_EDIT_LOADING_LABEL = "フクロウ先生が記録を開いています…";
 
@@ -147,6 +149,10 @@ function JournalPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { user, loading: authLoading } = useFirebaseAuth();
+  const { entitlement } = useEntitlement();
+  const canWriteJournal =
+    entitlement?.canUseContinuedFeatures || entitlement?.canCreateFirstJournal;
+  const canEditJournal = entitlement?.canUseContinuedFeatures ?? true;
   const editingId = searchParams.get("edit");
   const profileId = (searchParams.get("profile") ?? "").trim();
   const dateFromQuery = searchParams.get("date");
@@ -494,6 +500,15 @@ function JournalPageContent() {
   async function saveEntry(options?: { redirectToOrders?: boolean; redirectToPreview?: boolean }) {
     setError(null);
 
+    if (editingId && !canEditJournal) {
+      setError("無料お試し期間が終了したため、記録の編集はできません。");
+      return;
+    }
+    if (!editingId && !canWriteJournal) {
+      setError("無料お試し期間が終了したため、新しい記録の作成はできません。");
+      return;
+    }
+
     const text = content.trim();
     if (!text) {
       setError("本文を入力してください。");
@@ -748,6 +763,8 @@ function JournalPageContent() {
           ) : null}
         </p>
       </div>
+
+      {entitlement ? <TrialStatusBanner entitlement={entitlement} /> : null}
 
       {isEditEntryLoading ? (
         <div
