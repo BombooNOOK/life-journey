@@ -79,6 +79,7 @@ import {
   DIARY_PREVIEW_PAGE_HEIGHT,
   DIARY_PREVIEW_PAGE_WIDTH,
   DIARY_PREVIEW_BODY_LINES_CLIP_INNER_CLASS,
+  DIARY_PREVIEW_COMMENT_LINES_INNER_CLASS,
   DIARY_PREVIEW_SCROLL_INNER_CLASS,
   DIARY_PREVIEW_TITLE_REGION,
   DIARY_PREVIEW_TITLE_STYLE,
@@ -504,7 +505,7 @@ export function DiaryPreviewFixedPage({
           {commentHeading}
         </div>
         <div
-          className="absolute overflow-hidden"
+          className="absolute overflow-x-visible overflow-y-hidden"
           style={{
             left: getDiaryPreviewCommentContentRegionBox().left,
             top: getDiaryPreviewCommentContentRegionBox().top,
@@ -513,7 +514,7 @@ export function DiaryPreviewFixedPage({
           }}
         >
           <div
-            className={DIARY_PREVIEW_BODY_LINES_CLIP_INNER_CLASS}
+            className={DIARY_PREVIEW_COMMENT_LINES_INNER_CLASS}
             style={{
               ...DIARY_PREVIEW_COMMENT_TEXT_STYLE,
               ...DIARY_PREVIEW_BODY_LINES_CONTAINER_STYLE,

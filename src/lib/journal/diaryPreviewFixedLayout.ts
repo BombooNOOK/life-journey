@@ -94,6 +94,13 @@ export const DIARY_PREVIEW_SCROLL_INNER_CLASS =
     "[scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden",
   ].join(" ");
 
+/** 読み解き欄：行配列描画用（横クリップなし・行末1文字欠け防止） */
+export const DIARY_PREVIEW_COMMENT_LINES_INNER_CLASS =
+  [
+    "m-0 box-border block w-full max-w-full",
+    "whitespace-normal [overflow-wrap:normal] [word-break:normal]",
+  ].join(" ");
+
 /** 本文のみ：行配列描画用（製本プレビュー・スクロールなし・二次折り返しなし） */
 export const DIARY_PREVIEW_BODY_LINES_CLIP_INNER_CLASS =
   [
@@ -165,7 +172,8 @@ export const DIARY_PREVIEW_COMMENT_CONTENT_REGION = {
   labelCenterYPx: 778,
   contentLeftPx: 121,
   contentTopPx: 805,
-  contentWidthPx: 360,
+  /** 360→368：フクロウ画像手前まで数px広げ、15px×24字+letter-spacing の行末欠けを防ぐ */
+  contentWidthPx: 368,
   contentHeightPx: 173,
 } as const;
 
@@ -364,18 +372,18 @@ export const DIARY_PREVIEW_TITLE_STYLE = {
 /** 読み解き本文（ゆったり行間・やや小さめで枠内に収めやすく） */
 export const DIARY_PREVIEW_COMMENT_TEXT_STYLE = {
   color: DIARY_PREVIEW_BODY_TEXT_COLOR,
-  fontSize: `${clampCqwCqh(12, 2.0, 1.6, 14, true)}px`,
-  lineHeight: "1.66",
+  fontSize: `${clampCqwCqh(12, 2.12, 1.68, 15, true)}px`,
+  lineHeight: "1.62",
   letterSpacing: "0.03em",
 } as const;
 
-/** 読み解き本文スロット内余白（右・下に最小余白で行末クリップを防ぐ） */
-export const DIARY_PREVIEW_COMMENT_INNER_PADDING = "0 6px 6px 0";
+/** 読み解き本文スロット内余白（右・下に数pxだけ逃げ。overflow:hidden は使わない） */
+export const DIARY_PREVIEW_COMMENT_INNER_PADDING = "0 4px 4px 0";
 
 export const DIARY_PREVIEW_COMMENT_INNER_PADDING_PX = {
   top: 0,
-  right: 6,
-  bottom: 6,
+  right: 4,
+  bottom: 4,
   left: 0,
 } as const;
 
