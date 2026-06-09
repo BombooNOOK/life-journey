@@ -3,8 +3,8 @@ import {
   splitFixedWidthJapaneseLines,
 } from "@/lib/pdf/splitFixedWidthJapaneseLines";
 
-/** 読み解き欄の1行最大文字数（実測・724×1024 テンプレ準拠） */
-export const DIARY_COMMENT_PDF_CHARS_PER_LINE = 24;
+/** 読み解き欄の1行最大文字数（letter-spacing 込みで 360px 枠に収める余裕） */
+export const DIARY_COMMENT_PDF_CHARS_PER_LINE = 22;
 
 /** 本文スロット高さ 173px・lineHeight≈1.58 の近似 */
 export const DIARY_COMMENT_PDF_MAX_LINES = 8;

@@ -21,6 +21,7 @@ import {
   DIARY_PREVIEW_BODY_LABEL_TEXT,
   getDiaryPreviewBodyLabelCenterYPx,
   getDiaryPreviewBodyLabelLeftPx,
+  DIARY_PREVIEW_COMMENT_INNER_PADDING,
   DIARY_PREVIEW_COMMENT_LABEL_STYLE,
   DIARY_PREVIEW_COMMENT_TEXT_STYLE,
   getDiaryPreviewCommentLabelCenterYPx,
@@ -236,7 +237,7 @@ export function DiaryBookEntryPdfPage({
 
   const bodyRegion = getFixedPreviewBodyBoxPx();
   const commentRegion = getFixedPreviewCommentBoxPx();
-  const commentPadding = parsePadding("0");
+  const commentPadding = parsePadding(DIARY_PREVIEW_COMMENT_INNER_PADDING);
   const bodyClipHeight = diaryBookPdfPx(bodyRegion.height, "y");
   const bodyWidth = diaryBookPdfPx(bodyRegion.width, "x");
   const bodyLabelLeft = diaryBookPdfPx(getDiaryPreviewBodyLabelLeftPx(), "x");
@@ -281,14 +282,19 @@ export function DiaryBookEntryPdfPage({
     "x",
   );
   const commentRegionHeight = diaryBookPdfPx(commentRegion.height, "y");
+  const commentInnerHeight =
+    commentRegionHeight - commentPadding.top - commentPadding.bottom;
   const commentLayout = resolveDiaryCommentPdfRenderLayout(owlComment, {
     baseFontSizePx: commentBaseFontSize,
-    regionHeightPx: commentRegionHeight,
+    regionHeightPx: commentInnerHeight,
   });
   const commentLines = commentLayout.lines;
   const commentFontSize = commentBaseFontSize * commentLayout.fontScale;
   const commentLineHeight = commentLayout.lineHeight;
-  const commentWidth = diaryBookPdfPx(commentRegion.width, "x");
+  const commentWidth =
+    diaryBookPdfPx(commentRegion.width, "x") -
+    commentPadding.left -
+    commentPadding.right;
   const commentLabelLeft = diaryBookPdfPx(getDiaryPreviewCommentLabelLeftPx(), "x");
   const commentLabelFontSize = diaryBookPdfPx(
     parseCssPx(DIARY_PREVIEW_COMMENT_LABEL_STYLE.fontSize),

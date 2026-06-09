@@ -34,6 +34,34 @@ export const DIARY_PREVIEW_BODY_LINE_BASE_STYLE: CSSProperties = {
   textSizeAdjust: "100%",
 };
 
+/** 読み解き1行：行末の1文字が横クリップされないよう overflow を付けない */
+export const DIARY_PREVIEW_COMMENT_LINE_BASE_STYLE: CSSProperties = {
+  display: "block",
+  width: "100%",
+  maxWidth: "100%",
+  margin: 0,
+  padding: 0,
+  boxSizing: "border-box",
+  whiteSpace: "pre",
+  wordBreak: "normal",
+  overflowWrap: "normal",
+  WebkitHyphens: "none",
+  hyphens: "none",
+  flexShrink: 0,
+  WebkitTextSizeAdjust: "100%",
+  textSizeAdjust: "100%",
+};
+
+export function getDiaryPreviewCommentLineStyle(
+  commentTextStyle: { fontSize: string; lineHeight: string },
+): CSSProperties {
+  return {
+    ...DIARY_PREVIEW_COMMENT_LINE_BASE_STYLE,
+    fontSize: commentTextStyle.fontSize,
+    lineHeight: commentTextStyle.lineHeight,
+  };
+}
+
 export function getDiaryPreviewBodyLineStyle(
   bodyTextStyle: { fontSize: string; lineHeight: string },
   options?: { debugVisual?: boolean; lineIndex?: number },

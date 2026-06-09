@@ -23,11 +23,14 @@ import {
 } from "@/lib/journal/diaryPreviewBodyLineLimits";
 import { DIARY_PREVIEW_BODY_FONT_FAMILY } from "@/lib/journal/diaryPreviewBodyFont";
 import {
-  DIARY_PREVIEW_BODY_LINE_BASE_STYLE,
   DIARY_PREVIEW_BODY_LINES_CONTAINER_STYLE,
   getDiaryPreviewBodyLineStyle,
+  getDiaryPreviewCommentLineStyle,
 } from "@/lib/journal/diaryPreviewBodyLineDisplay";
-import { getDiaryCommentPdfLinesForBinding } from "@/lib/journal/diaryCommentPdfWrap";
+import {
+  DIARY_COMMENT_PDF_REGION_HEIGHT_PX,
+  resolveDiaryCommentPdfRenderLayout,
+} from "@/lib/journal/diaryCommentPdfWrap";
 import {
   DIARY_PREVIEW_BODY_LABEL_STYLE,
   DIARY_PREVIEW_BODY_LABEL_TEXT,
@@ -36,6 +39,7 @@ import {
   getDiaryPreviewBodyLabelCenterYPct,
   getDiaryPreviewBodyLabelLeftPct,
   DIARY_PREVIEW_COMMENT_INNER_PADDING,
+  DIARY_PREVIEW_COMMENT_INNER_PADDING_PX,
   DIARY_PREVIEW_COMMENT_LABEL_STYLE,
   DIARY_PREVIEW_COMMENT_TEXT_STYLE,
   getDiaryPreviewCommentContentRegionBox,
@@ -330,7 +334,19 @@ export function DiaryPreviewFixedPage({
     (kanteiOrderExists === false
       ? JOURNAL_OWL_COMMENT_KANTEI_REQUIRED_MESSAGE
       : `保存後に「${commentHeading}」がここに入ります。`);
-  const commentLines = getDiaryCommentPdfLinesForBinding(owlComment);
+  const commentBaseFontPx = parseFloat(DIARY_PREVIEW_COMMENT_TEXT_STYLE.fontSize);
+  const commentLayout = resolveDiaryCommentPdfRenderLayout(owlComment, {
+    baseFontSizePx: Number.isFinite(commentBaseFontPx) ? commentBaseFontPx : 12,
+    regionHeightPx:
+      DIARY_COMMENT_PDF_REGION_HEIGHT_PX -
+      DIARY_PREVIEW_COMMENT_INNER_PADDING_PX.top -
+      DIARY_PREVIEW_COMMENT_INNER_PADDING_PX.bottom,
+  });
+  const commentLines = commentLayout.lines;
+  const commentTextStyle = {
+    fontSize: `${commentBaseFontPx * commentLayout.fontScale}px`,
+    lineHeight: String(commentLayout.lineHeight),
+  };
   const displayedNumbers = diaryNumbers ?? { today: "-", month: "-", year: "-", calmness: "-" };
   const bodyTextStyle = getFixedPreviewBodyTextStyle(contentFontMode);
   const dateTextStyle = getDiaryPreviewDateRowTextStyle(contentFontMode);
@@ -511,9 +527,7 @@ export function DiaryPreviewFixedPage({
                 key={`comment-line-${index}`}
                 role="presentation"
                 style={{
-                  ...DIARY_PREVIEW_BODY_LINE_BASE_STYLE,
-                  fontSize: DIARY_PREVIEW_COMMENT_TEXT_STYLE.fontSize,
-                  lineHeight: DIARY_PREVIEW_COMMENT_TEXT_STYLE.lineHeight,
+                  ...getDiaryPreviewCommentLineStyle(commentTextStyle),
                   letterSpacing: DIARY_PREVIEW_COMMENT_TEXT_STYLE.letterSpacing,
                   color: DIARY_PREVIEW_COMMENT_TEXT_STYLE.color,
                 }}

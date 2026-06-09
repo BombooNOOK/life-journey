@@ -364,13 +364,20 @@ export const DIARY_PREVIEW_TITLE_STYLE = {
 /** 読み解き本文（ゆったり行間・やや小さめで枠内に収めやすく） */
 export const DIARY_PREVIEW_COMMENT_TEXT_STYLE = {
   color: DIARY_PREVIEW_BODY_TEXT_COLOR,
-  fontSize: `${clampCqwCqh(12, 2.12, 1.68, 15, true)}px`,
-  lineHeight: "1.62",
+  fontSize: `${clampCqwCqh(12, 2.0, 1.6, 14, true)}px`,
+  lineHeight: "1.68",
   letterSpacing: "0.03em",
 } as const;
 
-/** 読み解き本文スロット内余白（座標は CONTENT_REGION で固定） */
-export const DIARY_PREVIEW_COMMENT_INNER_PADDING = "0";
+/** 読み解き本文スロット内余白（右・下に余白を足して行末クリップを防ぐ） */
+export const DIARY_PREVIEW_COMMENT_INNER_PADDING = "0 8px 6px 0";
+
+export const DIARY_PREVIEW_COMMENT_INNER_PADDING_PX = {
+  top: 0,
+  right: 8,
+  bottom: 6,
+  left: 0,
+} as const;
 
 /**
  * 日付行（プレーンテンプレ・参考画像準拠）。
