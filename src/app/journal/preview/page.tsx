@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { JournalPreviewSpread } from "@/components/journal/JournalPreviewSpread";
 import { useEnsureServerAuthSession } from "@/hooks/useEnsureServerAuthSession";
+import { useEntitlement } from "@/components/entitlement/useEntitlement";
 import { journalEditPath } from "@/lib/journal/journalNav";
 import { getDiaryDesignLabel, normalizeDiaryDesignTheme, type DiaryDesignId } from "@/lib/journal/meta";
 
@@ -45,6 +46,8 @@ function JournalPreviewPageContent() {
   const [error, setError] = useState<string | null>(null);
   const [spread, setSpread] = useState<"cover" | "body">("body");
   const authSession = useEnsureServerAuthSession();
+  const { entitlement } = useEntitlement();
+  const canEditJournal = entitlement?.canUseContinuedFeatures ?? true;
 
   useEffect(() => {
     if (!entryId) {
@@ -190,30 +193,41 @@ function JournalPreviewPageContent() {
             {returnTo.startsWith("/orders/calendar") ? "日記ホームに戻る" : "一覧に戻る"}
           </Link>
         ) : null}
-        <button
-          type="button"
-          onClick={() => {
-            if (!entry?.id) return;
-            router.push(
-              journalEditPath(
-                entry.id,
-                returnTo ?? "/journal",
-                entry.profileId,
-              ),
-            );
-          }}
-          className="rounded-lg border border-stone-300 bg-white px-4 py-2 text-sm text-stone-700 hover:bg-stone-50"
-        >
-          この記録を編集する
-        </button>
+        {canEditJournal ? (
+          <button
+            type="button"
+            onClick={() => {
+              if (!entry?.id) return;
+              router.push(
+                journalEditPath(
+                  entry.id,
+                  returnTo ?? "/journal",
+                  entry.profileId,
+                ),
+              );
+            }}
+            className="rounded-lg border border-stone-300 bg-white px-4 py-2 text-sm text-stone-700 hover:bg-stone-50"
+          >
+            この記録を編集する
+          </button>
+        ) : null}
         {!returnTo ? (
           <>
-            <Link
-              href="/journal"
-              className="rounded-lg border border-stone-300 bg-white px-4 py-2 text-sm text-stone-700 hover:bg-stone-50"
-            >
-              入力ページへ戻る
-            </Link>
+            {canEditJournal ? (
+              <Link
+                href="/journal"
+                className="rounded-lg border border-stone-300 bg-white px-4 py-2 text-sm text-stone-700 hover:bg-stone-50"
+              >
+                入力ページへ戻る
+              </Link>
+            ) : (
+              <Link
+                href="/orders/calendar"
+                className="rounded-lg border border-stone-300 bg-white px-4 py-2 text-sm text-stone-700 hover:bg-stone-50"
+              >
+                日記ホームへ
+              </Link>
+            )}
             <Link
               href="/orders/bookshelf"
               className="rounded-lg border border-amber-300 bg-amber-50 px-4 py-2 text-sm text-amber-900 hover:bg-amber-100"

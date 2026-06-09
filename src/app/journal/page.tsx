@@ -149,11 +149,14 @@ function JournalPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { user, loading: authLoading } = useFirebaseAuth();
-  const { entitlement } = useEntitlement();
+  const { entitlement, loading: entitlementLoading } = useEntitlement();
+  const editingId = searchParams.get("edit");
   const canWriteJournal =
     entitlement?.canUseContinuedFeatures || entitlement?.canCreateFirstJournal;
   const canEditJournal = entitlement?.canUseContinuedFeatures ?? true;
-  const editingId = searchParams.get("edit");
+  const showJournalForm =
+    entitlementLoading ||
+    (editingId ? canEditJournal : canWriteJournal);
   const profileId = (searchParams.get("profile") ?? "").trim();
   const dateFromQuery = searchParams.get("date");
   const showNumerologyDebug = searchParams.get("numerologyDebug") === "1";
@@ -388,6 +391,18 @@ function JournalPageContent() {
       setLoadingEdit(true);
     }
   }, [editingId]);
+
+  useEffect(() => {
+    if (entitlementLoading || !entitlement || !editingId) return;
+    if (entitlement.canUseContinuedFeatures) return;
+    const qs = new URLSearchParams({
+      entry: editingId,
+      theme: designTheme,
+      pv: "3",
+    });
+    if (safeReturnTo) qs.set("returnTo", safeReturnTo);
+    router.replace(`/journal/preview?${qs.toString()}`);
+  }, [entitlementLoading, entitlement, editingId, safeReturnTo, router, designTheme]);
 
   useEffect(() => {
     if (!editingId) {
@@ -778,6 +793,15 @@ function JournalPageContent() {
             className="text-sm text-stone-600"
           />
         </div>
+      ) : !showJournalForm ? (
+        <div className="rounded-xl border border-violet-200 bg-violet-50/70 px-4 py-5 text-sm leading-relaxed text-violet-950">
+          <p>無料お試し期間が終了したため、新しい記録の作成はできません。</p>
+          <p className="mt-2">
+            <Link href="/orders/calendar" className="font-medium underline-offset-2 hover:underline">
+              日記ホームで過去の記録を見る
+            </Link>
+          </p>
+        </div>
       ) : (
       <form onSubmit={(e) => void onSubmit(e)} className="space-y-3 rounded-xl border border-stone-200 bg-white p-4 shadow-sm sm:p-5">
         {editingId ? (
@@ -1110,15 +1134,17 @@ function JournalPageContent() {
                     <span>{getMoodMeta(entry.mood).label}</span>
                   </p>
                   <div className="relative z-10 flex shrink-0 flex-wrap items-center justify-end gap-x-3 gap-y-1">
-                    <button
-                      type="button"
-                      className="text-xs text-stone-600 underline underline-offset-2 hover:text-stone-900"
-                      onClick={() => {
-                        router.push(`/journal?edit=${encodeURIComponent(entry.id)}`);
-                      }}
-                    >
-                      編集する
-                    </button>
+                    {canEditJournal ? (
+                      <button
+                        type="button"
+                        className="text-xs text-stone-600 underline underline-offset-2 hover:text-stone-900"
+                        onClick={() => {
+                          router.push(`/journal?edit=${encodeURIComponent(entry.id)}`);
+                        }}
+                      >
+                        編集する
+                      </button>
+                    ) : null}
                     <button
                       type="button"
                       className="text-xs text-violet-700 underline underline-offset-2 hover:text-violet-900"
@@ -1128,16 +1154,18 @@ function JournalPageContent() {
                         );
                       }}
                     >
-                      プレビュー
+                      読む
                     </button>
-                    <button
-                      type="button"
-                      disabled={deletingId === entry.id}
-                      className="shrink-0 px-0.5 py-1 text-xs text-red-600 underline underline-offset-2 hover:text-red-700 disabled:opacity-50"
-                      onClick={() => void deleteEntry(entry.id)}
-                    >
-                      {deletingId === entry.id ? "削除中…" : "削除"}
-                    </button>
+                    {canEditJournal ? (
+                      <button
+                        type="button"
+                        disabled={deletingId === entry.id}
+                        className="shrink-0 px-0.5 py-1 text-xs text-red-600 underline underline-offset-2 hover:text-red-700 disabled:opacity-50"
+                        onClick={() => void deleteEntry(entry.id)}
+                      >
+                        {deletingId === entry.id ? "削除中…" : "削除"}
+                      </button>
+                    ) : null}
                   </div>
                 </div>
                 <p className="mt-1 text-xs text-stone-500">

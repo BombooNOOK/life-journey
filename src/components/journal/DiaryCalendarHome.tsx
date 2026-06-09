@@ -362,16 +362,22 @@ export function DiaryCalendarHome({
         </div>
 
         <div className="py-1 sm:py-2">
-          <div className="flex flex-col items-center gap-2 sm:flex-row sm:flex-wrap sm:justify-center sm:gap-3">
-            <Link href={journalTodayHref} className={writeTodayButtonClass}>
-              今日の記録を書く
-            </Link>
-            {showSelectedDayWriteButton && journalSelectedHref ? (
-              <Link href={journalSelectedHref} className={writeSelectedDayButtonClass}>
-                選択した日の記録を書く
+          {canWriteJournal ? (
+            <div className="flex flex-col items-center gap-2 sm:flex-row sm:flex-wrap sm:justify-center sm:gap-3">
+              <Link href={journalTodayHref} className={writeTodayButtonClass}>
+                {entitlement.tier === "trial_not_started" ? "はじめての記録を書く" : "今日の記録を書く"}
               </Link>
-            ) : null}
-          </div>
+              {showSelectedDayWriteButton && journalSelectedHref ? (
+                <Link href={journalSelectedHref} className={writeSelectedDayButtonClass}>
+                  選択した日の記録を書く
+                </Link>
+              ) : null}
+            </div>
+          ) : (
+            <p className="rounded-lg border border-violet-200 bg-violet-50/70 px-3 py-2 text-center text-sm text-violet-950">
+              無料お試し期間が終了したため、新しい記録の作成はできません。下の一覧から過去の記録を読むことができます。
+            </p>
+          )}
         </div>
 
         <div ref={listRef} className="scroll-mt-4 space-y-3">
@@ -454,7 +460,7 @@ export function DiaryCalendarHome({
                             href={journalPreviewPath(entry.id, entry.designTheme, returnToBase)}
                             className="inline-flex min-h-[44px] flex-1 items-center justify-center rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm font-medium text-emerald-950 hover:bg-emerald-100/80 sm:flex-none sm:px-4"
                           >
-                            プレビュー
+                            {canEditJournal ? "プレビュー" : "読む"}
                           </Link>
                           {canEditJournal ? (
                             <Link
@@ -480,8 +486,9 @@ export function DiaryCalendarHome({
       </div>
 
       <DiaryHomeBottomNav
-        journalWriteHref={canWriteJournal ? journalTodayHref : "/plans"}
-        journalWriteLabel={canWriteJournal ? undefined : "プランを見る"}
+        journalWriteHref={canWriteJournal ? journalTodayHref : "/orders/calendar"}
+        journalWriteLabel={canWriteJournal ? undefined : "記録を見る"}
+        journalWriteDisabled={!canWriteJournal}
       />
     </div>
   );

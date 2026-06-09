@@ -25,7 +25,7 @@ export function MyPageMainActions({
   const canWriteJournal =
     entitlement.canUseContinuedFeatures || entitlement.canCreateFirstJournal;
   const journalEmphasis = entitlement.tier === "trial_not_started";
-  const journalBlocked = !canWriteJournal;
+  const journalExpired = entitlement.tier === "trial_expired";
 
   return (
     <section id="main-actions" className="space-y-3">
@@ -45,7 +45,25 @@ export function MyPageMainActions({
           <span className="ml-2 text-sm font-normal text-stone-600">さんの記録</span>
         </h2>
         <div className="mt-4 grid w-full max-w-[17.5rem] grid-cols-1 gap-3 sm:max-w-2xl sm:grid-cols-2">
-          {journalBlocked ? (
+          {journalExpired ? (
+            <div className="space-y-2">
+              <ProfileSelectNavButton
+                profileId={profileId}
+                href="/orders/calendar"
+                directNav={isActive}
+                loadingLabel="日記を開いています…"
+                className={`${mainNavButtonClass} border-emerald-200/90 bg-gradient-to-br from-emerald-50 to-white text-emerald-900 hover:border-emerald-300 hover:bg-emerald-50`}
+              >
+                過去の日記を見る
+              </ProfileSelectNavButton>
+              <Link
+                href="/plans"
+                className="block text-center text-xs font-medium text-violet-800 underline-offset-2 hover:underline"
+              >
+                サブスクリプションのご案内
+              </Link>
+            </div>
+          ) : !canWriteJournal ? (
             <div className="space-y-2">
               <button
                 type="button"
