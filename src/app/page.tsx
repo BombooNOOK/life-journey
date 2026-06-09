@@ -6,6 +6,7 @@ import {
   heroCtaMicrocopyDetailClass,
   heroCtaMicrocopyLeadClass,
   heroCtaPrimaryClass,
+  heroCtaSecondaryHintClass,
   heroCtaStackClass,
 } from "@/components/home/heroCtaStyles";
 
@@ -15,8 +16,15 @@ export default function HomePage() {
       <section className="relative overflow-hidden rounded-3xl border border-emerald-100 bg-[#f6f4ef] p-4 pb-16 shadow-sm sm:p-6 sm:pb-14 md:min-h-[480px] md:p-8 md:pb-12 lg:min-h-[520px]">
         <div
           aria-hidden
-          className="pointer-events-none absolute inset-0 bg-[url('/images/mainhaikei-smartphone.png')] bg-no-repeat bg-[length:min(68vw,264px)_auto] bg-[position:112%_97%] md:hidden"
-        />
+          className="pointer-events-none absolute bottom-0 right-0 h-[min(46%,400px)] w-[min(62vw,268px)] md:hidden"
+        >
+          {/* スマホは右下に独立配置し、左端の不自然な切れを防ぐ */}
+          <img
+            src="/images/mainhaikei-smartphone.png"
+            alt=""
+            className="h-full w-full object-contain object-right-bottom"
+          />
+        </div>
         <div aria-hidden className="pointer-events-none absolute inset-0 hidden md:block">
           <div className="absolute inset-0 bg-[#f6f4ef]" />
           <div className="absolute inset-0 bg-[url('/images/mainhaikei-smartphone.png')] bg-no-repeat bg-[length:auto_min(88%,480px)] bg-[position:100%_100%] lg:bg-[length:auto_min(90%,520px)]" />
@@ -41,7 +49,10 @@ export default function HomePage() {
               BAMBOONOOK / LIFE JOURNEY
             </p>
             <h1 className="mt-2 font-extrabold leading-[1.12] tracking-tight text-stone-900 text-[clamp(1.5rem,0.9rem+4vw,2.375rem)] sm:text-3xl md:text-4xl md:leading-[1.12] lg:text-[2.75rem]">
-              <span className="inline md:hidden">数字で紡ぐ、人生の旅</span>
+              <span className="flex flex-col md:hidden">
+                <span className="block">数字で紡ぐ、</span>
+                <span className="block">人生の旅</span>
+              </span>
               <span className="hidden md:flex md:flex-col md:gap-0.5">
                 <span className="block">数字で紡ぐ、</span>
                 <span className="block">人生の旅</span>
@@ -65,7 +76,8 @@ export default function HomePage() {
               <p className={heroCtaMicrocopyLeadClass}>登録不要</p>
               <p className={heroCtaMicrocopyDetailClass}>お名前と生年月日だけで鑑定できます</p>
             </div>
-            <div className="pb-1 sm:pb-0">
+            <div className="space-y-1 pb-1 sm:pb-0">
+              <p className={heroCtaSecondaryHintClass}>日記や本棚の確認はこちら</p>
               <HomeMyPageNavButton />
             </div>
           </div>
