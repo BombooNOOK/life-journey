@@ -34,16 +34,20 @@ export default function HomePage() {
             <p className="text-[11px] tracking-[0.2em] text-emerald-800 sm:text-xs">
               BAMBOONOOK / LIFE JOURNEY
             </p>
-            <h1 className="mt-2 font-extrabold leading-tight tracking-tight text-stone-900 text-[clamp(1.375rem,0.8rem+3.6vw,2.125rem)] sm:text-3xl md:text-4xl md:leading-[1.15] lg:text-5xl">
-              <span className="inline whitespace-nowrap md:hidden">数字で紡ぐ、人生の旅</span>
+            <h1 className="mt-2 font-extrabold leading-[1.12] tracking-tight text-stone-900 text-[clamp(1.5rem,0.9rem+4vw,2.375rem)] sm:text-3xl md:text-4xl md:leading-[1.12] lg:text-[2.75rem]">
+              <span className="inline md:hidden">数字で紡ぐ、人生の旅</span>
               <span className="hidden md:flex md:flex-col md:gap-0.5">
-                <span className="block whitespace-nowrap">数字で紡ぐ、</span>
-                <span className="block whitespace-nowrap">人生の旅</span>
+                <span className="block">数字で紡ぐ、</span>
+                <span className="block">人生の旅</span>
               </span>
             </h1>
-            <p className="mt-3 whitespace-pre-line text-sm leading-6 text-stone-700 sm:text-base sm:leading-7">
-              どうぶつ鑑定士たちのことばに導かれながら、
-              {"\n"}あなたの「今日」に届く数字を、そっとひらいていきます。
+            <p className="mt-3 whitespace-pre-line text-[15px] font-semibold leading-7 text-emerald-900 sm:mt-3.5 sm:text-lg sm:leading-8 md:text-xl md:leading-8">
+              数秘鑑定からはじまる、{"\n"}あなただけの人生記録ノート。
+            </p>
+            <p className="mt-2.5 whitespace-pre-line text-sm leading-6 text-stone-500 sm:mt-3 sm:text-[15px] sm:leading-7">
+              無料鑑定で自分の数字を知り、{"\n"}
+              日々の気づきや写真を残しながら、{"\n"}
+              あとから本のように読み返せる日記サービスです。
             </p>
           </div>
 
