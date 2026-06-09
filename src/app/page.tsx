@@ -19,7 +19,7 @@ export default function HomePage() {
           <img
             src="/images/mainhaikei-smartphone.png"
             alt=""
-            className="h-full w-full object-cover object-[center_88%]"
+            className="absolute bottom-0 left-1/2 h-[92%] w-[88%] max-w-none -translate-x-1/2 object-cover object-[center_92%]"
           />
         </div>
         <div aria-hidden className="pointer-events-none absolute inset-0 hidden md:block">
@@ -74,8 +74,8 @@ export default function HomePage() {
               <p className={heroCtaMicrocopyDetailClass}>お名前と生年月日だけで鑑定できます</p>
             </div>
             <div className="space-y-1 pb-1 sm:pb-0">
-              <p className={heroCtaSecondaryHintClass}>日記や本棚の確認はこちら</p>
               <HomeMyPageNavButton />
+              <p className={heroCtaSecondaryHintClass}>日記や本棚の確認はこちら</p>
             </div>
           </div>
         </div>
