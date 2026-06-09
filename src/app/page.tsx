@@ -46,7 +46,7 @@ export default function HomePage() {
               </span>
             </h1>
             <p className="mt-3 whitespace-pre-line text-[15px] font-semibold leading-7 text-emerald-900 sm:mt-3.5 sm:text-lg sm:leading-8 md:text-xl md:leading-8">
-              数秘鑑定からはじまる、{"\n"}あなただけの人生記録ノート。
+              数秘術鑑定からはじまる、{"\n"}あなただけの人生記録ノート。
             </p>
             <p className="mt-2.5 whitespace-pre-line text-sm leading-6 text-stone-500 sm:mt-3 sm:text-[15px] sm:leading-7">
               無料鑑定で自分の数字を知り、{"\n"}
