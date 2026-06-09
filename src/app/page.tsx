@@ -1,7 +1,11 @@
 import Link from "next/link";
 
 import { HomeMyPageNavButton } from "@/components/home/HomeMyPageNavButton";
-import { heroCtaPrimaryClass, heroCtaStackClass } from "@/components/home/heroCtaStyles";
+import {
+  heroCtaMicrocopyClass,
+  heroCtaPrimaryClass,
+  heroCtaStackClass,
+} from "@/components/home/heroCtaStyles";
 
 export default function HomePage() {
   return (
@@ -52,9 +56,14 @@ export default function HomePage() {
           </div>
 
           <div className={heroCtaStackClass}>
-            <Link href="/order" className={heroCtaPrimaryClass}>
-              無料鑑定をはじめる
-            </Link>
+            <div className="space-y-2">
+              <p className={heroCtaMicrocopyClass}>
+                登録不要。お名前と生年月日だけで、まずは無料鑑定をお試しいただけます。
+              </p>
+              <Link href="/order" className={heroCtaPrimaryClass}>
+                無料鑑定をはじめる
+              </Link>
+            </div>
             <HomeMyPageNavButton />
           </div>
         </div>
