@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 
 import { FirebaseAuthProvider } from "@/components/auth/FirebaseAuthProvider";
+import { SiteFooter } from "@/components/layout/SiteFooter";
 import { SiteHeader } from "@/components/layout/SiteHeader";
 import {
   APP_DESCRIPTION,
@@ -53,10 +54,11 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="ja">
-      <body className="min-h-screen antialiased">
+      <body className="flex min-h-screen flex-col antialiased">
         <FirebaseAuthProvider>
           <SiteHeader />
-          <main className="mx-auto max-w-3xl px-4 py-8">{children}</main>
+          <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-8">{children}</main>
+          <SiteFooter />
         </FirebaseAuthProvider>
       </body>
     </html>

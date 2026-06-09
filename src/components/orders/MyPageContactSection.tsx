@@ -1,6 +1,9 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
+
+import { PRIVACY_POLICY_LABEL, PRIVACY_POLICY_PATH } from "@/lib/legal/legalDocumentLinks";
 
 import {
   SUPPORT_INQUIRY_CATEGORIES,
@@ -57,6 +60,16 @@ export function MyPageContactSection({ viewerEmail }: Props) {
         </p>
         <p className="mt-2 text-xs text-stone-500">
           ログイン中のアカウント（{viewerEmail}）として送信します。
+        </p>
+        <p className="mt-2 text-xs leading-relaxed text-stone-500">
+          個人情報の取扱いについては
+          <Link
+            href={PRIVACY_POLICY_PATH}
+            className="mx-1 text-stone-700 underline-offset-2 hover:underline"
+          >
+            {PRIVACY_POLICY_LABEL}
+          </Link>
+          をご確認ください。
         </p>
       </div>
 

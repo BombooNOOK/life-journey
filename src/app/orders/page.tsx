@@ -2,6 +2,7 @@ import Link from "next/link";
 
 import { KanteiMissingBanner } from "@/components/orders/KanteiMissingBanner";
 import { MyPageAccountSection } from "@/components/orders/MyPageAccountSection";
+import { LegalFooterLinks } from "@/components/legal/LegalFooterLinks";
 import { MyPageContactSection } from "@/components/orders/MyPageContactSection";
 import { MyPageHeaderIllustration } from "@/components/orders/MyPageHeaderIllustration";
 import { MyPageMainActions } from "@/components/orders/MyPageMainActions";
@@ -193,6 +194,10 @@ export default async function OrdersListPage() {
       />
 
       <MyPageContactSection viewerEmail={viewerEmail} />
+
+      <div className="border-t border-stone-200 pt-6">
+        <LegalFooterLinks />
+      </div>
 
       {viewerIsAdmin ? (
         <div className="border-t border-stone-200 pt-6">
