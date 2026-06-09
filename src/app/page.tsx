@@ -3,6 +3,8 @@ import Link from "next/link";
 import { HomeMyPageNavButton } from "@/components/home/HomeMyPageNavButton";
 import {
   heroCtaMicrocopyClass,
+  heroCtaMicrocopyDetailClass,
+  heroCtaMicrocopyLeadClass,
   heroCtaPrimaryClass,
   heroCtaStackClass,
 } from "@/components/home/heroCtaStyles";
@@ -10,10 +12,10 @@ import {
 export default function HomePage() {
   return (
     <div className="space-y-4 sm:space-y-5">
-      <section className="relative overflow-hidden rounded-3xl border border-emerald-100 bg-[#f6f4ef] p-4 pb-14 shadow-sm sm:p-6 sm:pb-14 md:min-h-[480px] md:p-8 md:pb-12 lg:min-h-[520px]">
+      <section className="relative overflow-hidden rounded-3xl border border-emerald-100 bg-[#f6f4ef] p-4 pb-16 shadow-sm sm:p-6 sm:pb-14 md:min-h-[480px] md:p-8 md:pb-12 lg:min-h-[520px]">
         <div
           aria-hidden
-          className="pointer-events-none absolute inset-0 bg-[url('/images/mainhaikei-smartphone.png')] bg-cover bg-no-repeat bg-[position:100%_80%] md:hidden"
+          className="pointer-events-none absolute inset-0 bg-[url('/images/mainhaikei-smartphone.png')] bg-no-repeat bg-[length:min(68vw,264px)_auto] bg-[position:112%_97%] md:hidden"
         />
         <div aria-hidden className="pointer-events-none absolute inset-0 hidden md:block">
           <div className="absolute inset-0 bg-[#f6f4ef]" />
@@ -56,15 +58,16 @@ export default function HomePage() {
           </div>
 
           <div className={heroCtaStackClass}>
-            <div className="space-y-2">
-              <p className={heroCtaMicrocopyClass}>
-                登録不要。お名前と生年月日だけで、まずは無料鑑定をお試しいただけます。
-              </p>
-              <Link href="/order" className={heroCtaPrimaryClass}>
-                無料鑑定をはじめる
-              </Link>
+            <Link href="/order" className={heroCtaPrimaryClass}>
+              無料鑑定をはじめる
+            </Link>
+            <div className={heroCtaMicrocopyClass}>
+              <p className={heroCtaMicrocopyLeadClass}>登録不要</p>
+              <p className={heroCtaMicrocopyDetailClass}>お名前と生年月日だけで鑑定できます</p>
             </div>
-            <HomeMyPageNavButton />
+            <div className="pb-1 sm:pb-0">
+              <HomeMyPageNavButton />
+            </div>
           </div>
         </div>
       </section>
