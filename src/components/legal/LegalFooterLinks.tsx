@@ -16,8 +16,6 @@ import {
 
 type Props = {
   className?: string;
-  /** 利用規約リンクを将来有効化するまで false */
-  showTermsLink?: boolean;
 };
 
 const linkClass =
@@ -32,7 +30,7 @@ function FooterSeparator() {
 }
 
 /** フッター・マイページ下部などで共通利用する法務・お問い合わせリンク */
-export function LegalFooterLinks({ className = "", showTermsLink = false }: Props) {
+export function LegalFooterLinks({ className = "" }: Props) {
   const { user } = useFirebaseAuth();
   const cookieLoggedIn = isLjLoggedInOnClient();
   const isLoggedIn = Boolean(user) || cookieLoggedIn;
@@ -47,15 +45,9 @@ export function LegalFooterLinks({ className = "", showTermsLink = false }: Prop
         {PRIVACY_POLICY_LABEL}
       </Link>
       <FooterSeparator />
-      {showTermsLink ? (
-        <Link href={TERMS_OF_SERVICE_PATH} className={linkClass}>
-          {TERMS_OF_SERVICE_LABEL}
-        </Link>
-      ) : (
-        <span className="text-stone-400">
-          {TERMS_OF_SERVICE_LABEL}（準備中）
-        </span>
-      )}
+      <Link href={TERMS_OF_SERVICE_PATH} className={linkClass}>
+        {TERMS_OF_SERVICE_LABEL}
+      </Link>
       <FooterSeparator />
       <Link href={contactHref} className={linkClass}>
         {MYPAGE_CONTACT_FORM_LABEL}

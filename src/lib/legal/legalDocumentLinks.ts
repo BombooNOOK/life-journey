@@ -1,7 +1,7 @@
 /** 法務ページのパス（フッター・マイページ等で共通利用） */
 export const PRIVACY_POLICY_PATH = "/privacy" as const;
 
-/** 将来の利用規約ページ用（ページ未実装） */
+/** 利用規約ページ */
 export const TERMS_OF_SERVICE_PATH = "/terms" as const;
 
 export const PRIVACY_POLICY_LABEL = "プライバシーポリシー" as const;
