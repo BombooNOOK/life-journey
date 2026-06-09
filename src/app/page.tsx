@@ -67,16 +67,18 @@ export default function HomePage() {
           </div>
 
           <div className={heroCtaStackClass}>
-            <Link href="/order" className={heroCtaPrimaryClass}>
-              無料鑑定をはじめる
-            </Link>
-            <div className={heroCtaMicrocopyClass}>
-              <p className={heroCtaMicrocopyLeadClass}>登録不要</p>
-              <p className={heroCtaMicrocopyDetailClass}>お名前と生年月日だけで鑑定できます</p>
+            <div className="space-y-2">
+              <div className={heroCtaMicrocopyClass}>
+                <p className={heroCtaMicrocopyLeadClass}>登録不要</p>
+                <p className={heroCtaMicrocopyDetailClass}>お名前と生年月日だけで鑑定できます</p>
+              </div>
+              <Link href="/order" className={heroCtaPrimaryClass}>
+                無料鑑定をはじめる
+              </Link>
             </div>
             <div className="space-y-1 pb-1 sm:pb-0">
-              <HomeMyPageNavButton />
               <p className={heroCtaSecondaryHintClass}>日記や本棚の確認はこちら</p>
+              <HomeMyPageNavButton />
             </div>
           </div>
         </div>
