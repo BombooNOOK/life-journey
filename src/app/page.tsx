@@ -14,15 +14,12 @@ export default function HomePage() {
   return (
     <div className="space-y-4 sm:space-y-5">
       <section className="relative overflow-hidden rounded-3xl border border-emerald-100 bg-[#f6f4ef] p-4 pb-16 shadow-sm sm:p-6 sm:pb-14 md:min-h-[480px] md:p-8 md:pb-12 lg:min-h-[520px]">
-        <div
-          aria-hidden
-          className="pointer-events-none absolute bottom-0 right-0 h-[min(46%,400px)] w-[min(62vw,268px)] md:hidden"
-        >
-          {/* スマホは右下に独立配置し、左端の不自然な切れを防ぐ */}
+        <div aria-hidden className="pointer-events-none absolute inset-0 md:hidden">
+          {/* スマホはカード全体に敷き、左右の植物まで見せる（中央下基準で左右均等に収める） */}
           <img
             src="/images/mainhaikei-smartphone.png"
             alt=""
-            className="h-full w-full object-contain object-right-bottom"
+            className="h-full w-full object-cover object-[center_88%]"
           />
         </div>
         <div aria-hidden className="pointer-events-none absolute inset-0 hidden md:block">

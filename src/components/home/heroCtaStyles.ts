@@ -1,6 +1,6 @@
 /** トップヒーロー内CTA（主導線＝広め、サブ導線＝コンパクト・中央寄せ） */
 export const heroCtaStackClass =
-  "w-full space-y-2.5 rounded-2xl p-3 sm:space-y-3 sm:p-4 md:max-w-xs";
+  "w-full max-w-[17.75rem] space-y-2.5 rounded-2xl p-3 sm:max-w-none sm:space-y-3 sm:p-4 md:max-w-xs";
 
 export const heroCtaSecondaryHintClass =
   "text-center text-[10px] leading-4 text-stone-500 sm:text-[11px] sm:leading-4";
