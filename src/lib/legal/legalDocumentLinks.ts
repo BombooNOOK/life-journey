@@ -6,3 +6,9 @@ export const TERMS_OF_SERVICE_PATH = "/terms" as const;
 
 export const PRIVACY_POLICY_LABEL = "プライバシーポリシー" as const;
 export const TERMS_OF_SERVICE_LABEL = "利用規約" as const;
+
+/** マイページ内お問い合わせフォーム（`MyPageContactSection` の id と対応） */
+export const MYPAGE_CONTACT_FORM_PATH = "/orders#contact-form" as const;
+export const MYPAGE_CONTACT_FORM_LOGIN_PATH =
+  "/login?returnTo=%2Forders%23contact-form" as const;
+export const MYPAGE_CONTACT_FORM_LABEL = "お問い合わせ" as const;
