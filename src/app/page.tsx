@@ -1,4 +1,3 @@
-import Image from "next/image";
 import Link from "next/link";
 
 import { HomeMyPageNavButton } from "@/components/home/HomeMyPageNavButton";
@@ -58,13 +57,14 @@ export default function HomePage() {
                   <span className="block">人生の旅</span>
                 </span>
               </h1>
-              <Image
+              <img
                 src="/decorations/ljd-logo-sm.png"
                 alt=""
                 aria-hidden
                 width={132}
                 height={132}
-                className="pointer-events-none absolute -right-1 top-0 z-0 h-[8.25rem] w-[8.25rem] object-contain object-top opacity-[0.15] sm:right-0 sm:h-36 sm:w-36 lg:-right-1 lg:h-[9.75rem] lg:w-[9.75rem]"
+                style={{ opacity: 0.15 }}
+                className="pointer-events-none absolute -right-1 top-0 z-0 h-[8.25rem] w-[8.25rem] object-contain object-top mix-blend-multiply sm:right-0 sm:h-36 sm:w-36 lg:-right-1 lg:h-[9.75rem] lg:w-[9.75rem]"
               />
             </div>
             <p className="mt-3 whitespace-pre-line text-[15px] font-semibold leading-[1.45] text-emerald-900 sm:mt-3.5 sm:text-lg sm:leading-8 md:text-xl md:leading-8">
