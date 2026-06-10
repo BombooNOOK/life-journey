@@ -3,7 +3,7 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { flushSync } from "react-dom";
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import {
   GoogleAuthProvider,
   type UserCredential,
@@ -25,22 +25,7 @@ import {
 } from "@/lib/auth/clientCookies";
 import { getFirebaseAuth, waitForFirebaseAuthPersistence } from "@/lib/firebase/client";
 
-function resolveSafeReturnTo(raw: string | null): string {
-  if (!raw) return "/orders";
-  if (!raw.startsWith("/")) return "/orders";
-  if (raw.startsWith("//")) return "/orders";
-  return raw;
-}
-
-/** はじめての方（無料鑑定）か、既存会員のログインか */
-function resolveLoginFlow(returnTo: string): "register" | "login" {
-  if (returnTo === "/order" || returnTo.startsWith("/order/")) return "register";
-  return "login";
-}
-
-function buildLoginHref(returnTo: string): string {
-  return `/login?returnTo=${encodeURIComponent(returnTo)}`;
-}
+import { buildLoginHref, resolveLoginFlow, resolveSafeReturnTo } from "./loginFlow";
 
 /**
  * Mac／Windows のデスクトップ Chrome（Chromium 系）。ポップアップ後の `router.push` で
@@ -147,9 +132,8 @@ function pickErrorMessage(e: unknown, fallback: string): string {
   return raw.trim() || fallback;
 }
 
-export function LoginClient() {
+export function LoginClient({ returnToRaw }: { returnToRaw: string | null }) {
   const router = useRouter();
-  const searchParams = useSearchParams();
   const { user, loading: authLoading } = useFirebaseAuth();
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
@@ -166,7 +150,7 @@ export function LoginClient() {
   /** 連打で途中状態が重なり「3回押すと入る」になるのを防ぐ */
   const googleSignInLock = useRef(false);
 
-  const returnTo = resolveSafeReturnTo(searchParams.get("returnTo"));
+  const returnTo = resolveSafeReturnTo(returnToRaw);
   const loginFlow = resolveLoginFlow(returnTo);
   const isRegisterFlow = loginFlow === "register";
 
