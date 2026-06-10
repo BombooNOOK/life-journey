@@ -63,7 +63,7 @@ export default function HomePage() {
                 aria-hidden
                 width={132}
                 height={132}
-                style={{ opacity: 0.3 }}
+                style={{ opacity: 0.5 }}
                 className="pointer-events-none absolute -right-1 top-0 z-0 h-[8.25rem] w-[8.25rem] object-contain object-top sm:right-0 sm:h-36 sm:w-36 lg:-right-1 lg:h-[9.75rem] lg:w-[9.75rem]"
               />
             </div>
