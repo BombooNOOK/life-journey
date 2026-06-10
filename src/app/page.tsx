@@ -93,7 +93,7 @@ export default function HomePage() {
             <div className="space-y-1.5 sm:space-y-2">
               <div className={heroCtaMicrocopyClass}>
                 <p className={heroCtaMicrocopyLeadClass}>クレジットカード登録なしで2週間お試し</p>
-                <p className={heroCtaMicrocopyDetailClass}>自動課金はありません</p>
+                <p className={heroCtaMicrocopyDetailClass}>まずはお名前と生年月日だけで無料鑑定へ</p>
               </div>
               <Link href="/order" className={heroCtaPrimaryClass}>
                 無料鑑定をはじめる
