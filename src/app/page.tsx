@@ -1,11 +1,11 @@
 import Link from "next/link";
 
-import { HomeMyPageNavButton } from "@/components/home/HomeMyPageNavButton";
 import { HomeRecommendedForSection } from "@/components/home/HomeRecommendedForSection";
 import {
   heroCtaMicrocopyClass,
   heroCtaMicrocopyDetailClass,
   heroCtaMicrocopyLeadClass,
+  heroCtaMyPageLinkClass,
   heroCtaPrimaryClass,
   heroCtaStackClass,
 } from "@/components/home/heroCtaStyles";
@@ -90,7 +90,7 @@ export default function HomePage() {
           </div>
 
           <div className={heroCtaStackClass}>
-            <div className="space-y-1.5 sm:space-y-2">
+            <div className="space-y-1 sm:space-y-1.5">
               <div className={heroCtaMicrocopyClass}>
                 <p className={heroCtaMicrocopyLeadClass}>
                   まずは、お名前と生年月日だけで無料鑑定へ
@@ -102,9 +102,11 @@ export default function HomePage() {
               <Link href="/order" className={heroCtaPrimaryClass}>
                 はじめての方はこちら
               </Link>
-            </div>
-            <div className="pb-1 sm:pb-0">
-              <HomeMyPageNavButton />
+              <p className="pt-0.5 text-center sm:pt-1">
+                <Link href="/login?returnTo=%2Forders" className={heroCtaMyPageLinkClass}>
+                  ログイン・マイページはこちら
+                </Link>
+              </p>
             </div>
           </div>
         </div>

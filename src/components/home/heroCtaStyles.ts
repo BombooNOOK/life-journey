@@ -1,17 +1,21 @@
-/** トップヒーロー内CTA（主導線＝広め、サブ導線＝コンパクト・中央寄せ） */
+/** トップヒーロー内CTA（主導線＝広め、サブ導線＝テキストリンク） */
 export const heroCtaStackClass =
-  "w-full max-w-[17.75rem] space-y-2 rounded-2xl p-1.5 sm:max-w-none sm:space-y-3 sm:p-4 md:max-w-xs";
+  "w-full max-w-[17.75rem] rounded-2xl p-1.5 sm:max-w-none sm:p-4 md:max-w-xs";
 
 export const heroCtaSecondaryHintClass =
   "text-center text-[10px] leading-4 text-stone-500 sm:text-[11px] sm:leading-4";
 
-export const heroCtaMicrocopyClass = "mx-auto w-fit max-w-[17rem] space-y-1 text-center sm:max-w-none";
+export const heroCtaMicrocopyClass =
+  "mx-auto w-fit max-w-[17rem] space-y-0.5 text-center sm:max-w-none sm:space-y-1";
 
 export const heroCtaMicrocopyLeadClass =
-  "text-[9px] font-medium leading-[1.45] tracking-wide text-stone-600 sm:text-[10px] sm:leading-[1.5]";
+  "text-[8px] font-medium leading-[1.4] tracking-wide text-stone-600 sm:text-[10px] sm:leading-[1.5]";
 
 export const heroCtaMicrocopyDetailClass =
-  "text-[8px] leading-[1.45] text-stone-500 sm:text-[9px] sm:leading-[1.5]";
+  "text-[7.5px] leading-[1.4] text-stone-500 sm:text-[9px] sm:leading-[1.5]";
+
+export const heroCtaMyPageLinkClass =
+  "inline-flex min-h-[44px] items-center justify-center px-2 py-1 text-[11px] leading-snug text-stone-600 underline-offset-[3px] transition hover:text-stone-800 hover:underline sm:text-xs sm:leading-5";
 
 export const heroCtaPrimaryClass = [
   "flex min-h-[48px] w-full items-center justify-center rounded-xl border border-emerald-900/60 bg-emerald-800 px-4 py-3.5 text-center text-sm font-semibold leading-snug text-white shadow-[0_3px_10px_rgba(6,78,59,0.28)] transition hover:border-emerald-950/75 hover:bg-emerald-900 hover:shadow-[0_4px_14px_rgba(6,78,59,0.34)] active:scale-[0.98] active:opacity-95 disabled:cursor-not-allowed disabled:border-stone-300 disabled:bg-stone-400 disabled:text-white/85 disabled:shadow-none sm:min-h-[52px] sm:text-base",
