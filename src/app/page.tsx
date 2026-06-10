@@ -82,7 +82,7 @@ export default function HomePage() {
               <p>
                 デジタルで残した日々を、手元に残る
                 <br />
-                <span className="font-semibold text-stone-600">世界に一冊の「日記ブック」</span>へ
+                <span className="font-semibold text-stone-600">世界に一冊の「日記ブック」</span>へと
                 <br className="block md:hidden" />
                 育てていくサービスです。
               </p>
@@ -92,8 +92,8 @@ export default function HomePage() {
           <div className={heroCtaStackClass}>
             <div className="space-y-1.5 sm:space-y-2">
               <div className={heroCtaMicrocopyClass}>
-                <p className={heroCtaMicrocopyLeadClass}>登録不要</p>
-                <p className={heroCtaMicrocopyDetailClass}>お名前と生年月日だけで鑑定できます</p>
+                <p className={heroCtaMicrocopyLeadClass}>クレジットカード登録なしで2週間お試し</p>
+                <p className={heroCtaMicrocopyDetailClass}>自動課金はありません</p>
               </div>
               <Link href="/order" className={heroCtaPrimaryClass}>
                 無料鑑定をはじめる
