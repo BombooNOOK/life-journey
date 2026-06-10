@@ -48,8 +48,8 @@ export default function HomePage() {
               BAMBOONOOK / LIFE JOURNEY
             </p>
             <div className="relative mt-2 md:mt-2">
-              <h1 className="relative z-[1] font-extrabold leading-[1.12] tracking-tight text-stone-900 text-[clamp(1.5rem,0.9rem+4vw,2.375rem)] sm:text-3xl md:text-4xl md:leading-[1.12] lg:text-[2.75rem]">
-                <span className="flex flex-col md:hidden">
+              <h1 className="relative z-[1] font-extrabold leading-none tracking-tight text-stone-900 text-[clamp(1.5rem,0.9rem+4vw,2.375rem)] sm:text-3xl md:text-4xl md:leading-[1.12] lg:text-[2.75rem]">
+                <span className="flex flex-col gap-[0.14em] md:hidden">
                   <span className="block whitespace-nowrap">数字で紡ぐ、</span>
                   <span className="block">人生の旅</span>
                 </span>
@@ -64,7 +64,7 @@ export default function HomePage() {
                 aria-hidden
                 width={132}
                 height={132}
-                className="pointer-events-none absolute -right-1 top-0 z-0 h-[8.25rem] w-[8.25rem] object-contain opacity-75 sm:right-0 sm:h-36 sm:w-36 md:opacity-80 lg:-right-1 lg:h-[9.75rem] lg:w-[9.75rem]"
+                className="pointer-events-none absolute -right-1 top-0 z-0 h-[8.25rem] w-[8.25rem] object-contain object-top opacity-75 sm:right-0 sm:h-36 sm:w-36 md:top-0 md:opacity-80 lg:-right-1 lg:h-[9.75rem] lg:w-[9.75rem]"
               />
             </div>
             <p className="mt-3 whitespace-pre-line text-[15px] font-semibold leading-[1.45] text-emerald-900 sm:mt-3.5 sm:text-lg sm:leading-8 md:text-xl md:leading-8">
