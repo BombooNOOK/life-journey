@@ -26,8 +26,8 @@ export function HomeRecommendedForSection() {
       <div className="mt-3 flex items-end gap-2.5 sm:mt-3.5 sm:gap-3">
         <DecorationImage
           name="risu-kun-sm"
-          size="sm"
-          className="mb-0.5 opacity-90"
+          size="md"
+          className="mb-0.5 shrink-0 opacity-90"
           fallback={
             <span
               aria-hidden

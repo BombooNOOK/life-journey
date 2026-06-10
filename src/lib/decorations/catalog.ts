@@ -48,8 +48,8 @@ export const decorationAssets = {
   "risu-kun-sm": {
     src: "/decorations/risu-kun-sm.webp",
     placeholderSrc: "/decorations/risu-kun-sm.png",
-    width: 36,
-    height: 44,
+    width: 44,
+    height: 54,
   },
   "acorn-sm": {
     src: "/decorations/acorn-sm.webp",
