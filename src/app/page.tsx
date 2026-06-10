@@ -93,14 +93,14 @@ export default function HomePage() {
             <div className="space-y-1.5 sm:space-y-2">
               <div className={heroCtaMicrocopyClass}>
                 <p className={heroCtaMicrocopyLeadClass}>
-                  まずは、お名前と生年月日だけで30秒の無料鑑定へ
+                  まずは、お名前と生年月日だけで無料鑑定へ
                 </p>
                 <p className={heroCtaMicrocopyDetailClass}>
-                  クレジットカード登録なしで2週間日記をお試し
+                  クレジットカード登録なしで、2週間日記をお試しいただけます
                 </p>
               </div>
               <Link href="/order" className={heroCtaPrimaryClass}>
-                無料鑑定をはじめる
+                はじめての方はこちら
               </Link>
             </div>
             <div className="pb-1 sm:pb-0">
