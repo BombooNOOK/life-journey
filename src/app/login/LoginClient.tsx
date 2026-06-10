@@ -456,23 +456,30 @@ export function LoginClient({ returnToRaw }: { returnToRaw: string | null }) {
   return (
     <div className="mx-auto max-w-md space-y-6 rounded-xl border border-stone-200 bg-white p-6 shadow-sm">
       <div>
-        <h1 className="text-2xl font-bold text-stone-900">
-          {isRegisterFlow ? "アカウント作成" : "ログイン"}
-        </h1>
+        <div className="flex items-center gap-2">
+          <h1 className="text-2xl font-bold text-stone-900">
+            {isRegisterFlow ? "アカウント作成" : "ログイン"}
+          </h1>
+          <InlineHelpButton
+            ariaLabel={isRegisterFlow ? "アカウント作成の説明" : "ログインの説明"}
+          >
+            {isRegisterFlow ? (
+              <>
+                <p>ログイン後は、無料鑑定の入力画面へ進みます。</p>
+                {LOGIN_BROWSER_HELP}
+              </>
+            ) : (
+              <>
+                <p>ログイン後は、マイページ（またはアクセスしようとしていたページ）へ移動します。</p>
+                {LOGIN_BROWSER_HELP}
+              </>
+            )}
+          </InlineHelpButton>
+        </div>
         <p className="mt-1 text-sm text-stone-600">
           {isRegisterFlow
             ? "無料鑑定へ進むために、アカウントを作成します。作成後はお名前と生年月日の入力画面へ進みます。"
             : "登録済みの方は、メールアドレスとパスワードでログインしてください。"}
-        </p>
-        <p className="mt-1 text-xs text-stone-500">
-          {isRegisterFlow
-            ? "ログイン後は、無料鑑定の入力画面へ進みます。"
-            : "ログイン後は、マイページ（またはアクセスしようとしていたページ）へ移動します。"}
-        </p>
-        <p className="mt-1 text-xs text-stone-500">
-          スマホで安定して使うには、Safari または Chrome で URL を直接開いてください（LINE 等のアプリ内ブラウザは不安定なことがあります）。iPhone
-          ではまずポップアップで Google が開き、うまくいかないときだけ Google へ移動する方式になります。Mac の
-          Chrome でも小さなウィンドウ（ポップアップ）で Google が開きます。ポップアップをブロックしている場合は許可してください。
         </p>
       </div>
 
