@@ -15,6 +15,7 @@ import {
 } from "firebase/auth";
 
 import { useFirebaseAuth } from "@/components/auth/FirebaseAuthProvider";
+import { InlineHelpButton } from "@/components/ui/InlineHelpButton";
 import {
   clearGoogleOAuthRedirectFlow,
   isGoogleOAuthFlowCookieActive,
@@ -26,6 +27,15 @@ import {
 import { getFirebaseAuth, waitForFirebaseAuthPersistence } from "@/lib/firebase/client";
 
 import { buildLoginHref, resolveLoginFlow, resolveSafeReturnTo } from "./loginFlow";
+
+const LOGIN_BROWSER_HELP = (
+  <p className="mt-1.5">
+    スマホで安心して使うには、Safari または Chrome で URL を直接開いてください（LINE
+    等のアプリ内ブラウザは不安定なことがあります）。iPhone ではまずポップアップで Google
+    が開き、うまくいかないときだけ Google へ移動する方式になります。Mac の Chrome
+    でも小さなウィンドウ（ポップアップ）で Google が開きます。ポップアップをブロックしている場合は許可してください。
+  </p>
+);
 
 /**
  * Mac／Windows のデスクトップ Chrome（Chromium 系）。ポップアップ後の `router.push` で
