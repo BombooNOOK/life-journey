@@ -61,15 +61,22 @@ export default function HomePage() {
               数秘術鑑定からはじまる、{"\n"}あなただけの人生記録ノート。
             </p>
             <div className="mt-1.5 space-y-1 text-[13px] leading-[1.45] text-stone-500 sm:mt-3 sm:space-y-2 sm:text-[15px] sm:leading-7">
-              <p className="whitespace-pre-line">
-                森のどうぶつ鑑定士たちと{"\n"}
-                日々のきもちをやさしくひも解き、{"\n"}
+              <p>
+                森のどうぶつ鑑定士たちと
+                <br className="block md:hidden" />
+                日々のきもちをやさしくひも解き、
+                <br className="block md:hidden" />
                 あなたのことばや写真とともに記録する。
               </p>
-              <p className="whitespace-pre-line">
-                デジタルで残した日々を、いつか手元に残る{"\n"}
+              <p>
+                デジタルで残した日々を、
+                <br className="block md:hidden" />
+                いつか手元に残る
+                <br className="block md:hidden" />
                 <span className="font-semibold text-stone-600">世界に一冊の「日記ブック」</span>
-                へ育てていくサービスです。
+                へ
+                <br className="block md:hidden" />
+                育てていくサービスです。
               </p>
             </div>
           </div>
