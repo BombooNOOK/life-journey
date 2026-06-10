@@ -5,13 +5,13 @@ export const heroCtaStackClass =
 export const heroCtaSecondaryHintClass =
   "text-center text-[10px] leading-4 text-stone-500 sm:text-[11px] sm:leading-4";
 
-export const heroCtaMicrocopyClass = "mx-auto w-fit max-w-[17rem] space-y-0.5 text-center sm:max-w-none";
+export const heroCtaMicrocopyClass = "mx-auto w-fit max-w-[17rem] space-y-1 text-center sm:max-w-none";
 
 export const heroCtaMicrocopyLeadClass =
-  "text-[10px] font-medium leading-[1.35] tracking-wide text-stone-600 sm:text-[11px] sm:leading-4";
+  "text-[9px] font-medium leading-[1.45] tracking-wide text-stone-600 sm:text-[10px] sm:leading-[1.5]";
 
 export const heroCtaMicrocopyDetailClass =
-  "text-[9px] leading-[1.35] text-stone-500 sm:text-[10px] sm:leading-4";
+  "text-[8px] leading-[1.45] text-stone-500 sm:text-[9px] sm:leading-[1.5]";
 
 export const heroCtaPrimaryClass = [
   "flex min-h-[48px] w-full items-center justify-center rounded-xl border border-emerald-900/60 bg-emerald-800 px-4 py-3.5 text-center text-sm font-semibold leading-snug text-white shadow-[0_3px_10px_rgba(6,78,59,0.28)] transition hover:border-emerald-950/75 hover:bg-emerald-900 hover:shadow-[0_4px_14px_rgba(6,78,59,0.34)] active:scale-[0.98] active:opacity-95 disabled:cursor-not-allowed disabled:border-stone-300 disabled:bg-stone-400 disabled:text-white/85 disabled:shadow-none sm:min-h-[52px] sm:text-base",
