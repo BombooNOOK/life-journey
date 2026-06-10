@@ -65,14 +65,14 @@ export default function HomePage() {
                 森のどうぶつ鑑定士たちと
                 <br className="block md:hidden" />
                 日々のきもちをやさしくひも解き、
-                <br className="block md:hidden" />
-                あなたのことばや写真とともに記録する。
+                <br />
+                あなたのことばや写真とともに記録
               </p>
               <p>
                 デジタルで残した日々を、
                 <br className="block md:hidden" />
-                いつか手元に残る
-                <br className="block md:hidden" />
+                手元に残る
+                <br />
                 <span className="font-semibold text-stone-600">世界に一冊の「日記ブック」</span>
                 へ
                 <br className="block md:hidden" />
