@@ -5,7 +5,7 @@ export const heroCtaStackClass =
 export const heroCtaSecondaryHintClass =
   "text-center text-[10px] leading-4 text-stone-500 sm:text-[11px] sm:leading-4";
 
-export const heroCtaMicrocopyClass = "mx-auto w-fit max-w-[13rem] space-y-0.5 text-center sm:max-w-none";
+export const heroCtaMicrocopyClass = "mx-auto w-fit max-w-[15.5rem] space-y-0.5 text-center sm:max-w-none";
 
 export const heroCtaMicrocopyLeadClass =
   "text-[10px] leading-4 tracking-wide text-stone-500 sm:text-[11px] sm:leading-4";

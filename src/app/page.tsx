@@ -14,7 +14,7 @@ import {
 
 export default function HomePage() {
   return (
-    <div className="space-y-4 sm:space-y-5">
+    <div className="-mt-2 space-y-4 sm:mt-0 sm:space-y-5">
       <section className="relative overflow-hidden rounded-3xl border border-emerald-100 bg-[#f6f4ef] p-3 pb-14 shadow-sm sm:p-6 sm:pb-14 md:min-h-[480px] md:p-8 md:pb-12 lg:min-h-[520px]">
         <div aria-hidden className="pointer-events-none absolute inset-x-0 bottom-0 md:hidden">
           <div className="relative mx-auto w-[74%]">
@@ -48,7 +48,7 @@ export default function HomePage() {
             <p className="whitespace-nowrap text-[clamp(8.5px,2.3vw,11px)] leading-none tracking-[0.1em] text-emerald-800 md:text-xs md:tracking-[0.2em]">
               BAMBOONOOK / LIFE JOURNEY
             </p>
-            <div className="mt-2 flex items-center gap-2 sm:gap-3 md:mt-2">
+            <div className="mt-2 flex items-start gap-1.5 sm:items-center sm:gap-3 md:mt-2">
               <h1 className="min-w-0 flex-1 font-extrabold leading-[1.12] tracking-tight text-stone-900 text-[clamp(1.5rem,0.9rem+4vw,2.375rem)] sm:text-3xl md:text-4xl md:leading-[1.12] lg:text-[2.75rem]">
                 <span className="flex flex-col md:hidden">
                   <span className="block">数字で紡ぐ、</span>
@@ -63,9 +63,9 @@ export default function HomePage() {
                 src="/decorations/ljd-logo-sm.png"
                 alt=""
                 aria-hidden
-                width={72}
-                height={72}
-                className="h-[2.65rem] w-[2.65rem] shrink-0 object-contain sm:h-[3.25rem] sm:w-[3.25rem] md:h-16 md:w-16 lg:h-[4.5rem] lg:w-[4.5rem]"
+                width={88}
+                height={88}
+                className="-mt-0.5 h-[4.25rem] w-[4.25rem] shrink-0 object-contain sm:mt-0 sm:h-[4.5rem] sm:w-[4.5rem] md:h-[5.25rem] md:w-[5.25rem] lg:h-24 lg:w-24"
               />
             </div>
             <p className="mt-3 whitespace-pre-line text-[15px] font-semibold leading-[1.45] text-emerald-900 sm:mt-3.5 sm:text-lg sm:leading-8 md:text-xl md:leading-8">
@@ -92,8 +92,8 @@ export default function HomePage() {
           <div className={heroCtaStackClass}>
             <div className="space-y-1.5 sm:space-y-2">
               <div className={heroCtaMicrocopyClass}>
-                <p className={heroCtaMicrocopyLeadClass}>登録不要</p>
-                <p className={heroCtaMicrocopyDetailClass}>お名前と生年月日だけで鑑定できます</p>
+                <p className={heroCtaMicrocopyLeadClass}>お名前と生年月日だけで鑑定できます</p>
+                <p className={heroCtaMicrocopyDetailClass}>登録不要！鑑定だけでも大丈夫です</p>
               </div>
               <Link href="/order" className={heroCtaPrimaryClass}>
                 無料鑑定をはじめる
