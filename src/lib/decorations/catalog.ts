@@ -54,8 +54,8 @@ export const decorationAssets = {
   "acorn-sm": {
     src: "/decorations/acorn-sm.webp",
     placeholderSrc: "/decorations/acorn-sm.png",
-    width: 14,
-    height: 16,
+    width: 22,
+    height: 24,
   },
 } as const satisfies Record<string, DecorationAssetEntry>;
 

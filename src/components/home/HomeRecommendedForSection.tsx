@@ -45,8 +45,8 @@ export function HomeRecommendedForSection() {
           <li key={item} className="flex items-start gap-2.5">
             <DecorationImage
               name="acorn-sm"
-              size="sm"
-              className="mt-[0.38rem] opacity-80"
+              size="md"
+              className="mt-1 opacity-90"
               fallback={<AcornBulletFallback />}
             />
             <span className="min-w-0 flex-1 text-sm leading-6 text-stone-700 sm:text-[15px] sm:leading-7">
