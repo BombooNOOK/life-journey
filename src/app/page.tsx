@@ -47,8 +47,8 @@ export default function HomePage() {
             <p className="whitespace-nowrap text-[clamp(8.5px,2.3vw,11px)] leading-none tracking-[0.1em] text-emerald-800 md:text-xs md:tracking-[0.2em]">
               BAMBOONOOK / LIFE JOURNEY
             </p>
-            <div className="mt-2 flex items-start gap-1.5 sm:items-center sm:gap-3 md:mt-2">
-              <h1 className="min-w-0 flex-1 font-extrabold leading-[1.12] tracking-tight text-stone-900 text-[clamp(1.5rem,0.9rem+4vw,2.375rem)] sm:text-3xl md:text-4xl md:leading-[1.12] lg:text-[2.75rem]">
+            <div className="relative mt-2 md:mt-2">
+              <h1 className="relative z-[1] pr-[4.75rem] font-extrabold leading-[1.12] tracking-tight text-stone-900 text-[clamp(1.5rem,0.9rem+4vw,2.375rem)] sm:pr-20 sm:text-3xl md:pr-24 md:text-4xl md:leading-[1.12] lg:pr-28 lg:text-[2.75rem]">
                 <span className="flex flex-col md:hidden">
                   <span className="block">数字で紡ぐ、</span>
                   <span className="block">人生の旅</span>
@@ -62,9 +62,9 @@ export default function HomePage() {
                 src="/decorations/ljd-logo-sm.png"
                 alt=""
                 aria-hidden
-                width={88}
-                height={88}
-                className="-mt-0.5 h-[4.25rem] w-[4.25rem] shrink-0 object-contain sm:mt-0 sm:h-[4.5rem] sm:w-[4.5rem] md:h-[5.25rem] md:w-[5.25rem] lg:h-24 lg:w-24"
+                width={96}
+                height={96}
+                className="pointer-events-none absolute right-3 top-10 z-0 h-[5.5rem] w-[5.5rem] object-contain opacity-75 sm:right-4 sm:top-11 sm:h-24 sm:w-24 md:top-12 md:opacity-80 lg:right-5 lg:top-14 lg:h-[6.5rem] lg:w-[6.5rem]"
               />
             </div>
             <p className="mt-3 whitespace-pre-line text-[15px] font-semibold leading-[1.45] text-emerald-900 sm:mt-3.5 sm:text-lg sm:leading-8 md:text-xl md:leading-8">
