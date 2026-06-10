@@ -8,7 +8,6 @@ import {
   heroCtaMicrocopyDetailClass,
   heroCtaMicrocopyLeadClass,
   heroCtaPrimaryClass,
-  heroCtaSecondaryHintClass,
   heroCtaStackClass,
 } from "@/components/home/heroCtaStyles";
 
@@ -92,15 +91,14 @@ export default function HomePage() {
           <div className={heroCtaStackClass}>
             <div className="space-y-1.5 sm:space-y-2">
               <div className={heroCtaMicrocopyClass}>
-                <p className={heroCtaMicrocopyLeadClass}>お名前と生年月日だけで鑑定できます</p>
-                <p className={heroCtaMicrocopyDetailClass}>登録不要！鑑定だけでも大丈夫です</p>
+                <p className={heroCtaMicrocopyLeadClass}>登録不要</p>
+                <p className={heroCtaMicrocopyDetailClass}>お名前と生年月日だけで鑑定できます</p>
               </div>
               <Link href="/order" className={heroCtaPrimaryClass}>
                 無料鑑定をはじめる
               </Link>
             </div>
-            <div className="space-y-1 pb-1 sm:pb-0">
-              <p className={heroCtaSecondaryHintClass}>日記や本棚の確認はこちら</p>
+            <div className="pb-1 sm:pb-0">
               <HomeMyPageNavButton />
             </div>
           </div>
