@@ -50,7 +50,7 @@ export function AuthNav() {
     return (
       <>
         <AuthSeparator />
-        <Link href="/login" className={authActionClass}>
+        <Link href="/login?returnTo=%2Forders" className={authActionClass}>
           ログイン
         </Link>
       </>
