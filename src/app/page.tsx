@@ -14,14 +14,15 @@ export default function HomePage() {
   return (
     <div className="-mt-2 space-y-4 sm:mt-0 sm:space-y-5">
       <section className="relative overflow-hidden rounded-3xl border border-emerald-100 bg-[#f6f4ef] p-3 pb-14 shadow-sm sm:p-6 sm:pb-14 md:min-h-[480px] md:p-8 md:pb-12 lg:min-h-[520px]">
-        <div aria-hidden className="pointer-events-none absolute inset-x-0 bottom-0 md:hidden">
-          <div className="relative mx-auto w-[74%]">
-            <img
-              src="/images/mainhaikei-smartphone.png"
-              alt=""
-              className="block w-full [mask-image:linear-gradient(to_right,transparent_0%,#000_20%,#000_80%,transparent_100%)] [-webkit-mask-image:linear-gradient(to_right,transparent_0%,#000_20%,#000_80%,transparent_100%)]"
-            />
-          </div>
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-x-0 bottom-0 h-[min(44vw,14rem)] sm:h-[min(40vw,15rem)] md:hidden"
+        >
+          <img
+            src="/images/mainhaikei-smartphone.png"
+            alt=""
+            className="block h-full w-full object-cover object-right-bottom [mask-image:linear-gradient(to_right,transparent_0%,#000_32%,#000_90%,transparent_100%)] [-webkit-mask-image:linear-gradient(to_right,transparent_0%,#000_32%,#000_90%,transparent_100%)]"
+          />
         </div>
         <div aria-hidden className="pointer-events-none absolute inset-0 hidden md:block">
           <div className="absolute inset-0 bg-[#f6f4ef]" />
