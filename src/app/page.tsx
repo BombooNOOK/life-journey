@@ -77,7 +77,7 @@ export default function HomePage() {
                 <br className="block md:hidden" />
                 日々のきもちをやさしくひも解き、
                 <br />
-                あなたのことばや写真とともに記録
+                あなたのことばや写真とともに記録。
               </p>
               <p>
                 デジタルで残した日々を、手元に残る
