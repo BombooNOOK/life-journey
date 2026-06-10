@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 
 import { HomeMyPageNavButton } from "@/components/home/HomeMyPageNavButton";
@@ -47,16 +48,26 @@ export default function HomePage() {
             <p className="whitespace-nowrap text-[clamp(8.5px,2.3vw,11px)] leading-none tracking-[0.1em] text-emerald-800 md:text-xs md:tracking-[0.2em]">
               BAMBOONOOK / LIFE JOURNEY
             </p>
-            <h1 className="mt-2 font-extrabold leading-[1.12] tracking-tight text-stone-900 text-[clamp(1.5rem,0.9rem+4vw,2.375rem)] md:mt-2 sm:text-3xl md:text-4xl md:leading-[1.12] lg:text-[2.75rem]">
-              <span className="flex flex-col md:hidden">
-                <span className="block">数字で紡ぐ、</span>
-                <span className="block">人生の旅</span>
-              </span>
-              <span className="hidden md:flex md:flex-col md:gap-0.5">
-                <span className="block">数字で紡ぐ、</span>
-                <span className="block">人生の旅</span>
-              </span>
-            </h1>
+            <div className="mt-2 flex items-center gap-2 sm:gap-3 md:mt-2">
+              <h1 className="min-w-0 flex-1 font-extrabold leading-[1.12] tracking-tight text-stone-900 text-[clamp(1.5rem,0.9rem+4vw,2.375rem)] sm:text-3xl md:text-4xl md:leading-[1.12] lg:text-[2.75rem]">
+                <span className="flex flex-col md:hidden">
+                  <span className="block">数字で紡ぐ、</span>
+                  <span className="block">人生の旅</span>
+                </span>
+                <span className="hidden md:flex md:flex-col md:gap-0.5">
+                  <span className="block">数字で紡ぐ、</span>
+                  <span className="block">人生の旅</span>
+                </span>
+              </h1>
+              <Image
+                src="/decorations/ljd-logo-sm.png"
+                alt=""
+                aria-hidden
+                width={72}
+                height={72}
+                className="h-[2.65rem] w-[2.65rem] shrink-0 object-contain sm:h-[3.25rem] sm:w-[3.25rem] md:h-16 md:w-16 lg:h-[4.5rem] lg:w-[4.5rem]"
+              />
+            </div>
             <p className="mt-3 whitespace-pre-line text-[15px] font-semibold leading-[1.45] text-emerald-900 sm:mt-3.5 sm:text-lg sm:leading-8 md:text-xl md:leading-8">
               数秘術鑑定からはじまる、{"\n"}あなただけの人生記録ノート。
             </p>
