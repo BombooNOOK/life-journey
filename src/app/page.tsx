@@ -69,12 +69,9 @@ export default function HomePage() {
                 あなたのことばや写真とともに記録
               </p>
               <p>
-                デジタルで残した日々を、
-                <br className="block md:hidden" />
-                手元に残る
+                デジタルで残した日々を、手元に残る
                 <br />
-                <span className="font-semibold text-stone-600">世界に一冊の「日記ブック」</span>
-                へ
+                <span className="font-semibold text-stone-600">世界に一冊の「日記ブック」</span>へ
                 <br className="block md:hidden" />
                 育てていくサービスです。
               </p>
