@@ -16,7 +16,7 @@ const CLOSING_MESSAGE =
 const WORRY_TEXT_CLASS =
   "text-sm font-semibold leading-6 text-stone-700 sm:text-[15px] sm:leading-7";
 const REPLY_TEXT_CLASS =
-  "text-sm leading-6 text-[#6B5A4A] sm:text-[15px] sm:leading-7";
+  "text-sm leading-5 text-[#6B5A4A] sm:text-[15px] sm:leading-6";
 const NARRATION_TEXT_CLASS =
   "min-w-0 flex-1 whitespace-pre-line text-[13px] leading-[1.55] text-stone-600 sm:text-sm sm:leading-6";
 
