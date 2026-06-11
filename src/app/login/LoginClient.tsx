@@ -23,6 +23,7 @@ import {
   readOAuthReturnPendingAgeMs,
   stashOAuthReturnTo,
   syncLjAuthClientCookies,
+  isLjLoggedInOnClient,
 } from "@/lib/auth/clientCookies";
 import { getFirebaseAuth, waitForFirebaseAuthPersistence } from "@/lib/firebase/client";
 
@@ -79,19 +80,38 @@ function readLoginOAuthReturnLikely(): boolean {
   return isGoogleOAuthFlowCookieActive() || readOAuthReturnPendingAgeMs() != null;
 }
 
-function PostLoginTransitionOverlay() {
+function PostLoginTransitionOverlay({
+  variant = "oauth-return",
+}: {
+  variant?: "oauth-return" | "already-signed-in";
+}) {
+  const isAlreadySignedIn = variant === "already-signed-in";
   return (
     <div
-      className="fixed inset-0 z-[200] flex items-center justify-center bg-stone-900/35 px-4 backdrop-blur-[2px]"
+      className={
+        isAlreadySignedIn
+          ? "mx-auto max-w-md space-y-3 rounded-xl border border-stone-200 bg-white p-8 text-center shadow-sm"
+          : "fixed inset-0 z-[200] flex items-center justify-center bg-stone-900/35 px-4 backdrop-blur-[2px]"
+      }
       role="status"
       aria-live="polite"
       aria-busy="true"
     >
-      <div className="mx-auto max-w-md space-y-3 rounded-xl border border-stone-200 bg-white p-8 text-center shadow-lg">
+      <div
+        className={
+          isAlreadySignedIn
+            ? undefined
+            : "mx-auto max-w-md space-y-3 rounded-xl border border-stone-200 bg-white p-8 text-center shadow-lg"
+        }
+      >
         <p className="text-base font-semibold text-stone-900">マイページへ移動しています…</p>
-        <p className="text-sm leading-relaxed text-stone-600">
-          Google でのサインインから戻ってきたあと、一度この画面を経由します。ログインが取り込め次第、自動で次の画面へ進みます。このまま少しお待ちください。
-        </p>
+        {isAlreadySignedIn ? (
+          <p className="text-sm leading-relaxed text-stone-600">ログイン済みのため、自動で次の画面へ進みます。</p>
+        ) : (
+          <p className="text-sm leading-relaxed text-stone-600">
+            Google でのサインインから戻ってきたあと、一度この画面を経由します。ログインが取り込め次第、自動で次の画面へ進みます。このまま少しお待ちください。
+          </p>
+        )}
         <p className="text-xs text-stone-500" aria-hidden>
           移動中
         </p>
@@ -163,6 +183,8 @@ export function LoginClient({ returnToRaw }: { returnToRaw: string | null }) {
   const returnTo = resolveSafeReturnTo(returnToRaw);
   const loginFlow = resolveLoginFlow(returnTo);
   const isRegisterFlow = loginFlow === "register";
+  const cookieLoggedIn = isLjLoggedInOnClient();
+  const shouldLeaveLoginPage = (Boolean(user) || cookieLoggedIn) && !oauthReturnHandoffUi;
 
   const showGoogleReturnBanner =
     !authLoading &&
@@ -226,6 +248,13 @@ export function LoginClient({ returnToRaw }: { returnToRaw: string | null }) {
     }, 15000);
     return () => window.clearTimeout(id);
   }, [authLoading, user, oauthReturnSurface]);
+
+  useEffect(() => {
+    if (authLoading) return;
+    if (oauthReturnHandoffUi && !user) return;
+    if (!user && !isLjLoggedInOnClient()) return;
+    router.replace(returnTo);
+  }, [authLoading, user, returnTo, router, oauthReturnHandoffUi]);
 
   const auth = () => {
     try {
@@ -436,7 +465,11 @@ export function LoginClient({ returnToRaw }: { returnToRaw: string | null }) {
     fullPagePostLoginPending || oauthReturnHandoffUi || (authLoading && Boolean(user));
 
   if (showFullTransitionOverlay) {
-    return <PostLoginTransitionOverlay />;
+    return <PostLoginTransitionOverlay variant="oauth-return" />;
+  }
+
+  if (shouldLeaveLoginPage) {
+    return <PostLoginTransitionOverlay variant="already-signed-in" />;
   }
 
   if (authLoading) {
