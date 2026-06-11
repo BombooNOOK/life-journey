@@ -4,9 +4,11 @@ import Link from "next/link";
 
 import { AuthNav } from "@/components/auth/AuthNav";
 import { useFirebaseAuth } from "@/components/auth/FirebaseAuthProvider";
+import { OwlNavButton } from "@/components/ui/OwlNavButton";
 import { isLjLoggedInOnClient } from "@/lib/auth/clientCookies";
 
 const navLinkClass = "shrink-0 whitespace-nowrap hover:text-stone-900";
+const navNavButtonClass = `${navLinkClass} cursor-pointer border-0 bg-transparent p-0 text-inherit font-inherit`;
 const navSepClass = "mx-1 shrink-0 select-none px-0.5 text-stone-300 sm:mx-1.5";
 
 /**
@@ -54,9 +56,13 @@ export function SiteHeader() {
               </span>
             </>
           ) : null}
-          <Link href="/orders" className={navLinkClass}>
+          <OwlNavButton
+            href="/orders"
+            loadingLabel="マイページを開いています…"
+            className={navNavButtonClass}
+          >
             マイページ
-          </Link>
+          </OwlNavButton>
           <span className={navSepClass} aria-hidden>
             |
           </span>
