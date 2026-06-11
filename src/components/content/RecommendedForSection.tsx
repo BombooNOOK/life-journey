@@ -17,10 +17,20 @@ function AcornBulletFallback() {
   );
 }
 
+type Props = {
+  /** card＝トップ用の独立カード、plain＝歩き方ページなど本文に溶け込む表示 */
+  variant?: "card" | "plain";
+};
+
 /** 「こんな方におすすめ」（リスくん＋どんぐり箇条書き） */
-export function RecommendedForSection() {
+export function RecommendedForSection({ variant = "card" }: Props) {
+  const sectionClass =
+    variant === "card"
+      ? "rounded-2xl border border-stone-200/75 bg-[#fdfaf4] p-4 shadow-sm sm:p-5"
+      : "space-y-3";
+
   return (
-    <section className="rounded-2xl border border-stone-200/75 bg-[#fdfaf4] p-4 shadow-sm sm:p-5">
+    <section className={sectionClass}>
       <h2 className="text-base font-semibold leading-snug text-stone-900">こんな方におすすめ</h2>
 
       <div className="mt-3 flex items-end gap-2.5 sm:mt-3.5 sm:gap-3">

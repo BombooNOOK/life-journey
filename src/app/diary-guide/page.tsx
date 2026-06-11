@@ -208,7 +208,7 @@ export default function DiaryGuidePage() {
 
         <SoftSectionDivider variant="leaf" />
 
-        <RecommendedForSection />
+        <RecommendedForSection variant="plain" />
 
         <SoftSectionDivider variant="moon" />
 
