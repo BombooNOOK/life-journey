@@ -70,7 +70,7 @@ function FullCharacterIcon({
 
 function ConversationDivider() {
   return (
-    <div className="my-3 flex items-center sm:my-3.5" aria-hidden>
+    <div className="my-4 flex items-center sm:my-5" aria-hidden>
       <div className="h-px w-full bg-emerald-900/10" />
     </div>
   );
