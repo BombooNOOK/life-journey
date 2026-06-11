@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 import { HomeHeroSubNavLink } from "@/components/home/HomeHeroSubNavLink";
+import { HomeProductMockSection } from "@/components/home/HomeProductMockSection";
 import { HomeRecommendedForSection } from "@/components/home/HomeRecommendedForSection";
 import {
   heroCtaMicrocopyAboveButtonClass,
@@ -106,6 +107,8 @@ export default function HomePage() {
       </section>
 
       <HomeRecommendedForSection />
+
+      <HomeProductMockSection />
 
       <section className="rounded-2xl border border-stone-200/75 bg-[#faf8f5] p-4 sm:p-5">
         <h2 className="text-base font-semibold leading-snug text-stone-900">
