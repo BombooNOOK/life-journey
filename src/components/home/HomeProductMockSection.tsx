@@ -82,7 +82,7 @@ export function HomeProductMockSection() {
     <section className="rounded-2xl border border-stone-200/75 bg-[#fdfaf4] p-4 shadow-sm sm:p-5">
       <div className="mx-auto max-w-2xl text-center md:text-left">
         <h2 className="text-base font-semibold leading-snug text-stone-900">
-          記録はこんなふうに育っていきます。
+          記録はこんなふうに育っていきます
         </h2>
         <p className="mt-1 text-[10px] text-amber-700/55" aria-hidden>
           ✦
