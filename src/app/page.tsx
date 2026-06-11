@@ -4,7 +4,9 @@ import { HomeRecommendedForSection } from "@/components/home/HomeRecommendedForS
 import {
   heroCtaMicrocopyAboveButtonClass,
   heroCtaMicrocopyBelowButtonClass,
+  heroCtaMyPageLinkActionClass,
   heroCtaMyPageLinkClass,
+  heroCtaMyPageLinkLeadClass,
   heroCtaPrimaryClass,
   heroCtaStackClass,
 } from "@/components/home/heroCtaStyles";
@@ -41,7 +43,7 @@ export default function HomePage() {
           aria-hidden
           className="pointer-events-none absolute -bottom-12 -left-10 h-36 w-36 rounded-full bg-amber-200/30 blur-2xl md:hidden"
         />
-        <div className="relative z-10 grid gap-1.5 p-1.5 sm:gap-3 sm:p-3 md:max-w-xl md:gap-5 lg:max-w-2xl">
+        <div className="relative z-10 grid gap-3 p-1.5 sm:gap-3 sm:p-3 md:max-w-xl md:gap-5 lg:max-w-2xl">
           <div className="min-w-0 rounded-2xl bg-[#fffdf9]/72 p-2.5 backdrop-blur-[1px] sm:p-4 md:bg-[#fffdf9]/78">
             <div className="relative">
               <p className="relative z-[1] whitespace-nowrap text-[clamp(8.5px,2.3vw,11px)] leading-none tracking-[0.1em] text-emerald-800 md:text-xs md:tracking-[0.2em]">
