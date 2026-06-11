@@ -11,7 +11,8 @@ const OPENING_MESSAGE = "なんでもない日も、あとから見ると大切�
 
 const CLOSING_MESSAGE = "鑑定で見つけたことを、日々の記録の中で少しずつ育てていこうね。";
 
-const WORRY_TEXT_CLASS = "text-sm leading-6 text-stone-700 sm:text-[15px] sm:leading-7";
+const WORRY_TEXT_CLASS =
+  "text-sm font-semibold leading-6 text-stone-700 sm:text-[15px] sm:leading-7";
 const REPLY_TEXT_CLASS =
   "text-sm leading-6 text-[#6B5A4A] sm:text-[15px] sm:leading-7";
 
