@@ -6,7 +6,7 @@
  * 推奨サイズ（目安）：
  * - mock-journal-entry：幅 750〜1170px、縦長（スマホスクショ 9:19 前後）
  * - mock-bookshelf：同上
- * - mock-diary-book-placeholder：幅 600〜900px、表紙比率 3:4 前後（実物写真着次第差し替え）
+ * - mock-diary-book-placeholder：表紙正面・冊子感（背表紙の厚い本に見せない・3:4 前後）
  */
 export const HOME_PRODUCT_MOCK_IMAGES = {
   journalEntry: "/images/home-mock/mock-journal-entry.png",
@@ -14,14 +14,15 @@ export const HOME_PRODUCT_MOCK_IMAGES = {
   diaryBookPlaceholder: "/images/home-mock/mock-diary-book-placeholder.png",
 } as const;
 
+export type HomeProductMockFrame = "phone" | "booklet";
+
 export type HomeProductMockStep = {
   stepLabel: string;
   title: string;
   description: string;
   imageSrc: string;
   imageAlt: string;
-  /** phone＝縦長スクショ、book＝表紙っぽい比率 */
-  frame: "phone" | "book";
+  frame: HomeProductMockFrame;
 };
 
 export const HOME_PRODUCT_MOCK_STEPS: HomeProductMockStep[] = [
@@ -30,7 +31,7 @@ export const HOME_PRODUCT_MOCK_STEPS: HomeProductMockStep[] = [
     title: "今日のきもちを残す",
     description: "写真やことば、その日のきもちを、無理なく1日ずつ記録できます。",
     imageSrc: HOME_PRODUCT_MOCK_IMAGES.journalEntry,
-    imageAlt: "日記入力画面のイメージ（差し替え予定）",
+    imageAlt: "日記入力画面のイメージ",
     frame: "phone",
   },
   {
@@ -38,7 +39,7 @@ export const HOME_PRODUCT_MOCK_STEPS: HomeProductMockStep[] = [
     title: "あとから読み返す",
     description: "書いた日記や鑑定書は、本棚のように並び、あとからやさしく読み返せます。",
     imageSrc: HOME_PRODUCT_MOCK_IMAGES.bookshelf,
-    imageAlt: "本棚画面のイメージ（差し替え予定）",
+    imageAlt: "本棚画面のイメージ",
     frame: "phone",
   },
   {
@@ -46,7 +47,7 @@ export const HOME_PRODUCT_MOCK_STEPS: HomeProductMockStep[] = [
     title: "手元に残る一冊へ",
     description: "デジタルで残した日々が、いつか手元に残る「日記ブック」へ育っていきます。",
     imageSrc: HOME_PRODUCT_MOCK_IMAGES.diaryBookPlaceholder,
-    imageAlt: "日記ブックの表紙イメージ（実物写真差し替え予定）",
-    frame: "book",
+    imageAlt: "日記ブック表紙のイメージ（実物写真差し替え予定）",
+    frame: "booklet",
   },
 ];
