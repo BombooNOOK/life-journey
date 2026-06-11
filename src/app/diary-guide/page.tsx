@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 import { LinkToOperationGuide } from "@/components/guide/GuideCrossLinks";
+import { AcornBulletList } from "@/components/content/AcornBulletList";
+import { RecommendedForSection } from "@/components/content/RecommendedForSection";
 import { PageTitleWithAccent } from "@/components/ui/PageTitleWithAccent";
 import { SoftIllustrationAccent } from "@/components/ui/SoftIllustrationAccent";
 import { SoftSectionDivider } from "@/components/ui/SoftSectionDivider";
@@ -29,33 +31,13 @@ function ProseSection({
   );
 }
 
-function BulletList({ items }: { items: string[] }) {
-  return (
-    <ul className="list-inside list-disc space-y-1.5 text-stone-700">
-      {items.map((item) => (
-        <li key={item}>{item}</li>
-      ))}
-    </ul>
-  );
-}
-
 const CAN_DO_ITEMS = [
   "その日の気分を選ぶ",
   "今日の出来事や気持ちを書く",
   "1日1枚、写真を一緒に残す",
   "記録した日をカレンダーや月別一覧で確認する",
   "日記や鑑定書を本棚に保存し、いつでも読み返す",
-];
-
-const RECOMMENDED_FOR_ITEMS = [
-  "毎日の気持ちを少しだけ残しておきたい方",
-  "日記を始めたいけれど、長く書くのは苦手な方",
-  "自分の流れやリズムを知りたい方",
-  "鑑定書を日々の暮らしに活かしたい方",
-  "子どもの成長や家族の記録を残したい方",
-  "なんでもない日にも意味を見つけたい方",
-  "未来の自分へ、今の気持ちを残しておきたい方",
-];
+] as const;
 
 export default function DiaryGuidePage() {
   return (
@@ -94,7 +76,7 @@ export default function DiaryGuidePage() {
       <div className="space-y-2 rounded-2xl border border-emerald-100/80 bg-[#fdfaf4]/80 p-5 sm:space-y-0 sm:p-6">
         <ProseSection title="できること">
           <p>日々の記録をつけながら、あなたの歩みを少しずつ残していくことができます。</p>
-          <BulletList items={CAN_DO_ITEMS} />
+          <AcornBulletList items={CAN_DO_ITEMS} />
           <p>
             長い文章を書かなくても大丈夫です。一言だけでも、短いメモでも。その日の自分が残した言葉には、あとから意味が宿ることがあります。
           </p>
@@ -226,9 +208,7 @@ export default function DiaryGuidePage() {
 
         <SoftSectionDivider variant="leaf" />
 
-        <ProseSection title="こんな方におすすめです">
-          <BulletList items={RECOMMENDED_FOR_ITEMS} />
-        </ProseSection>
+        <RecommendedForSection />
 
         <SoftSectionDivider variant="moon" />
 
