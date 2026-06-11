@@ -5,14 +5,13 @@ export const heroCtaStackClass =
 export const heroCtaSecondaryHintClass =
   "text-center text-[10px] leading-4 text-stone-500 sm:text-[11px] sm:leading-4";
 
-export const heroCtaMicrocopyClass =
-  "mx-auto w-fit max-w-[17rem] space-y-0.5 text-center sm:max-w-none sm:space-y-1";
+/** 主CTAの直上：お試し案内 */
+export const heroCtaMicrocopyAboveButtonClass =
+  "mx-auto w-fit max-w-[17rem] text-center text-[8px] font-medium leading-[1.4] tracking-wide text-stone-600 sm:max-w-none sm:text-[10px] sm:leading-[1.5]";
 
-export const heroCtaMicrocopyLeadClass =
-  "text-[8px] font-medium leading-[1.4] tracking-wide text-stone-600 sm:text-[10px] sm:leading-[1.5]";
-
-export const heroCtaMicrocopyDetailClass =
-  "text-[7.5px] leading-[1.4] text-stone-500 sm:text-[9px] sm:leading-[1.5]";
+/** 主CTAの直下：補足（※） */
+export const heroCtaMicrocopyBelowButtonClass =
+  "mx-auto w-fit max-w-[17rem] text-center text-[7px] leading-[1.45] text-stone-600/80 sm:max-w-none sm:text-[8.5px] sm:leading-[1.5]";
 
 export const heroCtaMyPageLinkClass =
   "inline-flex min-h-[44px] items-center justify-center px-2 py-1 text-[11px] leading-snug text-stone-600 underline-offset-[3px] transition hover:text-stone-800 hover:underline sm:text-xs sm:leading-5";
