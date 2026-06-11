@@ -45,14 +45,6 @@ function MockImageFrame({ step }: { step: HomeProductMockStep }) {
   );
 }
 
-function StepNumberBadge({ label }: { label: string }) {
-  return (
-    <span className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-800 text-[10px] font-semibold leading-none text-white">
-      {label}
-    </span>
-  );
-}
-
 function StepFlowArrow() {
   return (
     <div
@@ -71,12 +63,9 @@ function StepFlowArrow() {
 function MockStepCard({ step }: { step: HomeProductMockStep }) {
   return (
     <article className="flex min-w-0 flex-1 flex-col">
-      <div className="flex items-center gap-1.5">
-        <StepNumberBadge label={step.stepLabel} />
-        <h3 className="text-sm font-semibold leading-snug text-stone-900 sm:text-[15px]">
-          {step.title}
-        </h3>
-      </div>
+      <h3 className="text-sm font-semibold leading-snug text-emerald-800 sm:text-[15px]">
+        {step.stepLabel} {step.title}
+      </h3>
       <p className="mt-1.5 text-xs leading-5 text-stone-600 sm:text-[13px] sm:leading-6">
         {step.description}
       </p>
@@ -93,7 +82,7 @@ export function HomeProductMockSection() {
     <section className="rounded-2xl border border-stone-200/75 bg-[#fdfaf4] p-4 shadow-sm sm:p-5">
       <div className="mx-auto max-w-2xl text-center md:text-left">
         <h2 className="text-base font-semibold leading-snug text-stone-900">
-          記録は、こんなふうに育っていきます
+          記録はこんなふうに育っていきます。
         </h2>
         <p className="mt-1 text-[10px] text-amber-700/55" aria-hidden>
           ✦
