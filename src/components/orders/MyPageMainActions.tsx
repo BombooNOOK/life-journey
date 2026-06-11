@@ -31,9 +31,6 @@ export function MyPageMainActions({
     <section id="main-actions" className="space-y-3">
       <div>
         <p className="text-lg font-semibold text-stone-900">② つぎに進む</p>
-        <p className="mt-1 text-sm text-stone-600">
-          日記の記入と、鑑定書・日記ブックの本棚はこちらから。
-        </p>
       </div>
 
       <div

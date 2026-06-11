@@ -51,10 +51,15 @@ export function MyPageProfileList({ profiles, activeProfileId }: Props) {
             <>
               <p>プロフィールごとに、日記・鑑定書・本棚が分かれます。</p>
               <p className="mt-1.5">家族やペット、テーマごとに記録を分けたいときに使います。</p>
+              <p className="mt-1.5">
+                {multiple
+                  ? "使うプロフィールを選んでから、下の「日記を書く」「本棚を見る」へ進んでください。"
+                  : "このプロフィールで、下の「日記を書く」「本棚を見る」が使えます。"}
+              </p>
             </>
           }
         />
-        <p className="mt-1 text-sm text-stone-600">
+        <p className="mt-1 hidden text-sm text-stone-600 sm:block">
           {multiple
             ? "使うプロフィールを選んでから、下の「日記を書く」「本棚を見る」へ進んでください。"
             : "このプロフィールで、下の「日記を書く」「本棚を見る」が使えます。"}
@@ -74,36 +79,37 @@ export function MyPageProfileList({ profiles, activeProfileId }: Props) {
             const isBusy = busyId === profile.id;
             const profileDetailHref = `/orders/profile/${encodeURIComponent(profile.id)}`;
             return (
-              <li key={profile.id}>
+              <li key={profile.id} className={isActive ? "pt-2.5" : undefined}>
                 <div
                   className={[
-                    "rounded-xl border bg-white shadow-sm transition",
-                    isActive
-                      ? "border-emerald-300 ring-1 ring-emerald-100"
-                      : "border-stone-200",
+                    "relative rounded-xl border bg-white shadow-sm transition",
+                    isActive ? "border-2 border-emerald-400" : "border-stone-200",
                   ].join(" ")}
                 >
+                  {isActive ? (
+                    <span className="absolute -top-2.5 left-3 rounded bg-white px-1.5 py-0.5 text-[10px] font-semibold leading-none text-emerald-800 ring-1 ring-emerald-400">
+                      選択中
+                    </span>
+                  ) : null}
                   <button
                     type="button"
                     disabled={busyId !== null}
                     aria-busy={isBusy}
+                    aria-current={isActive ? "true" : undefined}
                     onClick={() => void selectProfile(profile.id)}
                     className={[
                       "block w-full rounded-t-xl px-4 py-4 text-left text-sm transition hover:bg-stone-50/80 disabled:opacity-60",
                       isBusy ? "scale-[0.98] opacity-80" : "active:scale-[0.98]",
                     ].join(" ")}
                   >
-                    <div className="flex flex-wrap items-center gap-2">
-                      <p className="font-medium text-stone-900">{profile.nickname}</p>
-                      {isActive ? (
-                        <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-medium text-emerald-900">
-                          選択中
-                        </span>
-                      ) : null}
-                    </div>
-                    <p className="mt-2 text-xs font-medium text-emerald-900">
-                      {isBusy ? "切り替え中…" : isActive ? "このプロフィールで続ける" : "このプロフィールを選ぶ"}
-                    </p>
+                    <p className="font-medium text-stone-900">{profile.nickname}</p>
+                    {!isActive ? (
+                      <p className="mt-2 text-xs font-medium text-emerald-900">
+                        {isBusy ? "切り替え中…" : "このプロフィールを選ぶ"}
+                      </p>
+                    ) : isBusy ? (
+                      <p className="mt-2 text-xs font-medium text-emerald-900">切り替え中…</p>
+                    ) : null}
                   </button>
                   <div className="border-t border-stone-100 px-4 py-2.5">
                     <Link
