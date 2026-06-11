@@ -83,6 +83,32 @@ export const decorationAssets = {
     width: 40,
     height: 48,
   },
+  /** 会話用顔アイコン（丸背景コンポーネント内で object-fit 調整） */
+  "character-owl-face": {
+    src: "/decorations/characters/owl-face.png",
+    width: 96,
+    height: 96,
+  },
+  "character-sloth-face": {
+    src: "/decorations/characters/sloth-face.png",
+    width: 96,
+    height: 96,
+  },
+  "character-squirrel-face": {
+    src: "/decorations/characters/squirrel-face.png",
+    width: 96,
+    height: 96,
+  },
+  "character-hedgehog-face": {
+    src: "/decorations/characters/hedgehog-face.png",
+    width: 96,
+    height: 96,
+  },
+  "character-kerosion-face": {
+    src: "/decorations/characters/kero-face.png",
+    width: 96,
+    height: 96,
+  },
 } as const satisfies Record<string, DecorationAssetEntry>;
 
 export type DecorationName = keyof typeof decorationAssets;
