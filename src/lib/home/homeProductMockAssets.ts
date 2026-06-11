@@ -31,7 +31,7 @@ export const HOME_PRODUCT_MOCK_STEPS: HomeProductMockStep[] = [
     title: "今日のきもちを残す",
     description: "写真やことば、その日のきもちを、無理なく1日ずつ記録できます。",
     imageSrc: HOME_PRODUCT_MOCK_IMAGES.journalEntry,
-    imageAlt: "日記入力画面のイメージ",
+    imageAlt: "日記入力画面",
     frame: "phone",
   },
   {
@@ -39,7 +39,7 @@ export const HOME_PRODUCT_MOCK_STEPS: HomeProductMockStep[] = [
     title: "あとから読み返す",
     description: "書いた日記や鑑定書は、本棚のように並び、あとからやさしく読み返せます。",
     imageSrc: HOME_PRODUCT_MOCK_IMAGES.bookshelf,
-    imageAlt: "本棚画面のイメージ",
+    imageAlt: "本棚画面",
     frame: "phone",
   },
   {
