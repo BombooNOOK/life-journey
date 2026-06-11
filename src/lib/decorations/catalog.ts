@@ -57,6 +57,32 @@ export const decorationAssets = {
     width: 22,
     height: 24,
   },
+  /** トップ「こんな方におすすめ」会話形式（全身イラスト・表示は sm スケール想定） */
+  "character-owl-gentle": {
+    src: "/decorations/characters/character-owl-gentle.png",
+    width: 40,
+    height: 48,
+  },
+  "character-sloth-worried": {
+    src: "/decorations/characters/character-sloth-worried.png",
+    width: 40,
+    height: 48,
+  },
+  "character-squirrel-thinking": {
+    src: "/decorations/characters/character-squirrel-thinking.png",
+    width: 40,
+    height: 48,
+  },
+  "character-hedgehog-worried": {
+    src: "/decorations/characters/character-hedgehog-worried.png",
+    width: 40,
+    height: 48,
+  },
+  "character-kerosion-mystic": {
+    src: "/decorations/characters/character-kerosion-mystic.png",
+    width: 40,
+    height: 48,
+  },
 } as const satisfies Record<string, DecorationAssetEntry>;
 
 export type DecorationName = keyof typeof decorationAssets;
