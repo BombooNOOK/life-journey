@@ -93,7 +93,7 @@ export default function HomePage() {
           <div className={heroCtaStackClass}>
             <div className="space-y-1.5 sm:space-y-2">
               <p className={heroCtaMicrocopyAboveButtonClass}>
-                クレジットカード登録なしで、2週間日記をお試しいただけます
+                クレジットカード登録なしで、2週間無料お試し
               </p>
               <Link href="/order" className={heroCtaPrimaryClass}>
                 はじめての方はこちら
