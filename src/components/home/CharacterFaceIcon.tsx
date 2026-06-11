@@ -26,7 +26,7 @@ const FACE_TUNING: Record<CharacterFaceIconName, FaceTuning> = {
   "character-owl-face": { objectPosition: "50% 48%", scale: 1.08 },
   "character-sloth-face": { objectPosition: "50% 44%", scale: 1.14 },
   "character-squirrel-face": { objectPosition: "50% 36%", scale: 1.1 },
-  "character-hedgehog-face": { objectPosition: "50% 32%", scale: 1.42 },
+  "character-hedgehog-face": { objectPosition: "50% 42%", scale: 1.02 },
   "character-kerosion-face": { objectPosition: "50% 40%", scale: 1.12 },
 };
 
