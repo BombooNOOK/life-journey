@@ -14,7 +14,7 @@ export const heroCtaMicrocopyBelowButtonClass =
   "mx-auto w-fit max-w-[17rem] text-center text-[8.5px] leading-[1.45] text-stone-600 sm:max-w-none sm:text-[9.5px] sm:leading-[1.5]";
 
 export const heroCtaMyPageLinkClass =
-  "inline-flex min-h-[44px] items-center justify-center px-2 py-0.5 text-[11px] leading-[1.35] sm:text-xs sm:leading-[1.4]";
+  "inline-flex min-h-[44px] flex-col items-center justify-center gap-0 px-2 py-0.5 text-[11px] leading-[1.35] sm:text-xs sm:leading-[1.4]";
 
 export const heroCtaMyPageLinkLeadClass = "text-stone-600";
 

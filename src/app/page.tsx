@@ -103,8 +103,8 @@ export default function HomePage() {
               </p>
               <p className="pt-0.5 text-center sm:pt-1">
                 <Link href="/login?returnTo=%2Forders" className={heroCtaMyPageLinkClass}>
-                  <span className={heroCtaMyPageLinkLeadClass}>ログイン・マイページ は</span>
-                  <span className={heroCtaMyPageLinkActionClass}>こちら</span>
+                  <span className={heroCtaMyPageLinkLeadClass}>すでにアカウントをお持ちの方</span>
+                  <span className={heroCtaMyPageLinkActionClass}>ログイン</span>
                 </Link>
               </p>
             </div>
