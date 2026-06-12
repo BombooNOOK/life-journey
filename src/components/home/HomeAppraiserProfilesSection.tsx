@@ -6,44 +6,46 @@ import {
 } from "@/lib/home/homeAppraiserProfileCards";
 
 const PROFILE_NAME_CLASS =
-  "text-[clamp(15px,4.1vw,17px)] font-semibold leading-tight tracking-wide text-[#5c4a3a]";
+  "w-full text-[clamp(15px,4.1vw,17px)] font-semibold leading-tight tracking-wide text-[#5c4a3a]";
 const PROFILE_CATCHPHRASE_CLASS =
-  "mt-1.5 text-[clamp(10px,2.75vw,12px)] leading-snug text-[#6b5a4a]";
+  "mt-1.5 w-full text-[clamp(10px,2.75vw,12px)] leading-snug text-[#6b5a4a]";
 const PROFILE_DESCRIPTION_CLASS =
-  "text-[clamp(10px,2.65vw,12px)] leading-[1.7] text-[#5c4a3a]/92";
+  "w-full text-[clamp(10px,2.65vw,12px)] leading-[1.75] text-[#5c4a3a]/92";
 
 function AppraiserProfileCard({ card }: { card: HomeAppraiserProfileCard }) {
   return (
-    <article className="w-full max-w-[20rem]">
-      <div className="relative aspect-[682/1024] w-full">
+    <article className="mx-auto w-full max-w-[20rem]">
+      <div className="relative aspect-[2/3] w-full overflow-hidden">
         <Image
           src={card.imageSrc}
           alt=""
           aria-hidden
           fill
           sizes="(max-width: 640px) 88vw, (max-width: 1024px) 44vw, 20rem"
-          className="object-cover object-center"
+          className="z-0 object-cover object-center"
         />
 
-        <div className="absolute inset-x-0 top-[11%] flex flex-col items-center px-[11%] text-center">
+        <div className="absolute left-[8%] right-[8%] top-[7%] z-10 text-center">
           <h3 className={PROFILE_NAME_CLASS}>{card.name}</h3>
           <p className={PROFILE_CATCHPHRASE_CLASS}>{card.catchphrase}</p>
         </div>
 
-        <div className="absolute inset-x-0 bottom-[9%] flex flex-col items-center px-[10%] text-center">
+        <div className="absolute bottom-[8%] left-[9%] right-[9%] z-10 text-center">
           <p className={PROFILE_DESCRIPTION_CLASS}>{card.description}</p>
         </div>
-
-        <span className="sr-only">
-          {card.imageAlt}。{card.name}。{card.catchphrase}。{card.description}
-        </span>
       </div>
+
+      <p className="sr-only">
+        {card.imageAlt}。{card.name}。{card.catchphrase}。{card.description}
+      </p>
     </article>
   );
 }
 
 /** トップ：森のどうぶつ鑑定士プロフィールカード */
 export function HomeAppraiserProfilesSection() {
+  const lastIndex = HOME_APPRAISER_PROFILE_CARDS.length - 1;
+
   return (
     <section className="rounded-2xl border border-stone-200/75 bg-[#fdfaf4] p-4 shadow-sm sm:p-5">
       <div className="mx-auto max-w-2xl text-center md:text-left">
@@ -60,14 +62,12 @@ export function HomeAppraiserProfilesSection() {
         </p>
       </div>
 
-      <div className="mx-auto mt-6 grid max-w-3xl grid-cols-1 justify-items-center gap-8 sm:mt-7 md:grid-cols-2 md:gap-x-6 md:gap-y-9">
+      <div className="mx-auto mt-6 grid w-full max-w-3xl grid-cols-1 gap-8 sm:mt-7 md:grid-cols-2 md:gap-x-6 md:gap-y-9">
         {HOME_APPRAISER_PROFILE_CARDS.map((card, index) => (
           <div
             key={card.id}
             className={
-              index === HOME_APPRAISER_PROFILE_CARDS.length - 1
-                ? "md:col-span-2 md:flex md:justify-center"
-                : undefined
+              index === lastIndex ? "w-full md:col-span-2 md:flex md:justify-center" : "w-full"
             }
           >
             <AppraiserProfileCard card={card} />
