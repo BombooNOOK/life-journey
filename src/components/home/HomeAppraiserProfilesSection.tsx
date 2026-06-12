@@ -8,7 +8,7 @@ import {
 const PROFILE_NAME_CLASS =
   "w-full text-[clamp(15px,4.1vw,17px)] font-semibold leading-tight tracking-wide text-[#5c4a3a]";
 const PROFILE_CATCHPHRASE_CLASS =
-  "mt-1.5 w-full text-[clamp(10px,2.75vw,12px)] leading-snug text-[#6b5a4a]";
+  "mt-2.5 w-full text-[clamp(10px,2.75vw,12px)] leading-snug text-[#6b5a4a] sm:mt-3";
 const PROFILE_DESCRIPTION_CLASS =
   "w-full text-[clamp(10px,2.65vw,12px)] leading-[1.75] text-[#5c4a3a]/92";
 
