@@ -1,5 +1,5 @@
 import Image from "next/image";
-import { Fragment, type ReactNode } from "react";
+import { Fragment } from "react";
 
 import {
   HOME_PRODUCT_MOCK_STEPS,
@@ -9,11 +9,14 @@ import {
 const PHONE_MOCK_OUTER_CLASS =
   "overflow-hidden rounded-[1.35rem] border border-stone-300/55 bg-gradient-to-b from-[#f3ead8] to-[#ebe2d0] p-1 shadow-[0_3px_14px_rgba(107,90,74,0.1)]";
 
-const PHONE_MOCK_SCREEN_CLASS =
-  "relative aspect-[9/19.5] w-full overflow-hidden rounded-[1.1rem] bg-white";
+/** 9:19.5 の画面比率（内側スクロール領域の高さ確保用） */
+const PHONE_MOCK_SCREEN_ASPECT_PERCENT = `${(19.5 / 9) * 100}%`;
+
+const PHONE_MOCK_SCREEN_SURFACE_CLASS =
+  "overflow-hidden rounded-[1.1rem] bg-white";
 
 const PHONE_MOCK_SCROLL_CLASS = [
-  "h-full overflow-y-auto overscroll-contain",
+  "absolute inset-0 overflow-y-auto overscroll-contain",
   "[scrollbar-width:thin]",
   "[scrollbar-color:rgb(214_211_209/0.65)_transparent]",
   "[&::-webkit-scrollbar]:w-1",
@@ -22,7 +25,7 @@ const PHONE_MOCK_SCROLL_CLASS = [
   "[&::-webkit-scrollbar-track]:bg-transparent",
 ].join(" ");
 
-function PhoneMockShell({ children }: { children: ReactNode }) {
+function PhoneMockShell({ children }: { children: React.ReactNode }) {
   return (
     <div className="mx-auto w-full max-w-[11rem] sm:max-w-[12rem]">
       <div className={PHONE_MOCK_OUTER_CLASS}>{children}</div>
@@ -32,7 +35,7 @@ function PhoneMockShell({ children }: { children: ReactNode }) {
 
 function PhoneMockScrollHint() {
   return (
-    <p className="mt-1.5 hidden text-center text-[10px] leading-4 text-stone-500/80 md:block">
+    <p className="mt-1.5 text-center text-[10px] leading-4 text-stone-500/80">
       上下にスクロールして全体を見られます
     </p>
   );
@@ -48,15 +51,15 @@ function PhoneMockScreenshot({
   draggable?: boolean;
 }) {
   return (
-    <Image
+    // 静的スクショは public 直配信の方がモバイル Safari で安定する
+    <img
       src={step.imageSrc}
       alt={step.imageAlt}
       width={step.imageWidth}
       height={step.imageHeight}
-      sizes="(max-width: 640px) 192px, 192px"
-      quality={100}
-      unoptimized
       className={className}
+      loading="lazy"
+      decoding="async"
       draggable={draggable}
     />
   );
@@ -64,33 +67,45 @@ function PhoneMockScreenshot({
 
 function PhoneMockFrame({ step }: { step: HomeProductMockStep }) {
   return (
-    <div>
-      <PhoneMockShell>
-        {/* スマホ：従来どおりの枠構造で上部を静止表示 */}
-        <div className={`${PHONE_MOCK_SCREEN_CLASS} md:hidden`}>
-          <Image
-            src={step.imageSrc}
-            alt={step.imageAlt}
-            fill
-            sizes="(max-width: 640px) 192px"
-            unoptimized
-            className="object-cover object-top"
-          />
-        </div>
-
-        {/* PC：画面部分だけ縦スクロール */}
-        <div className={`${PHONE_MOCK_SCREEN_CLASS} hidden md:block`}>
-          <div className={PHONE_MOCK_SCROLL_CLASS}>
+    <>
+      {/* スマホ：従来どおり静止表示（二重スクロール回避） */}
+      <div className="md:hidden">
+        <PhoneMockShell>
+          <div className={`relative w-full ${PHONE_MOCK_SCREEN_SURFACE_CLASS}`}>
+            <div
+              className="w-full"
+              style={{ paddingTop: PHONE_MOCK_SCREEN_ASPECT_PERCENT }}
+              aria-hidden
+            />
             <PhoneMockScreenshot
               step={step}
-              className="block h-auto w-full max-w-none"
-              draggable={false}
+              className="absolute inset-0 h-full w-full object-cover object-top"
             />
           </div>
-        </div>
-      </PhoneMockShell>
-      <PhoneMockScrollHint />
-    </div>
+        </PhoneMockShell>
+      </div>
+
+      {/* PC：画面部分だけ縦スクロール */}
+      <div className="hidden md:block">
+        <PhoneMockShell>
+          <div className={`relative w-full ${PHONE_MOCK_SCREEN_SURFACE_CLASS}`}>
+            <div
+              className="w-full"
+              style={{ paddingTop: PHONE_MOCK_SCREEN_ASPECT_PERCENT }}
+              aria-hidden
+            />
+            <div className={PHONE_MOCK_SCROLL_CLASS}>
+              <PhoneMockScreenshot
+                step={step}
+                className="block h-auto w-full max-w-none"
+                draggable={false}
+              />
+            </div>
+          </div>
+        </PhoneMockShell>
+        <PhoneMockScrollHint />
+      </div>
+    </>
   );
 }
 
