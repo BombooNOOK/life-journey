@@ -41,7 +41,8 @@
     "pdf:preview-assets": "node scripts/build-pdf-preview-assets.mjs",
     "pdf:preview-assets:legacy": "PREVIEW_MAX_EDGE=900 PREVIEW_JPEG_QUALITY=80 node scripts/build-pdf-preview-assets.mjs",
     "pdf:preview-assets:strong": "PREVIEW_MAX_EDGE=600 PREVIEW_JPEG_QUALITY=50 node scripts/build-pdf-preview-assets.mjs",
-    "pdf:preview-assets:soft": "PREVIEW_MAX_EDGE=800 PREVIEW_JPEG_QUALITY=65 node scripts/build-pdf-preview-assets.mjs"
+    "pdf:preview-assets:soft": "PREVIEW_MAX_EDGE=800 PREVIEW_JPEG_QUALITY=65 node scripts/build-pdf-preview-assets.mjs",
+    "capture:home-mock": "npx tsx scripts/capture-home-mock-screenshot.ts"
   },
   "dependencies": {
     "@fontsource/noto-sans-jp": "^5.2.5",
@@ -72,6 +73,7 @@
     "eslint-config-next": "^15.2.0",
     "patch-package": "^8.0.1",
     "pdf-parse": "^1.1.1",
+    "playwright": "^1.60.0",
     "prisma": "^6.6.0",
     "sharp": "^0.33.5",
     "tailwindcss": "^4.0.0",
