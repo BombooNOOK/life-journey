@@ -6,14 +6,16 @@
  *
  * 推奨サイズ（目安）：
  * - mock-journal-entry / mock-bookshelf：
- *   幅 750〜1170px の縦長フルページスクショ（PNG 推奨）
- *   ※ 幅 200px 未満だとモック拡大時にボケやすい
+ *   幅 **390px 前後以上**（iPhone 12 Pro の論理幅）の縦長フルページスクショ（PNG 推奨）
+ *   ※ 幅 200〜300px だとモック表示時にボケやすい
  * - mock-diary-book-placeholder：表紙正面・冊子感（背表紙の厚い本に見せない・3:4 前後）
  *
  * 高画質スクショの撮り方（Mac + Chrome 推奨）：
- * 1. DevTools を開く → デバイスモード（iPhone 14 Pro など）
- * 2. 対象ページを表示 → Cmd+Shift+P → "Capture full size screenshot"
- * 3. 保存した PNG をそのまま `public/images/home-mock/` に上書き
+ * 1. DevTools を開く → デバイスモード ON（iPhone 12 Pro）
+ * 2. 上部バーで **Dimensions: 390 × 844**、**Zoom: 100%** を確認
+ * 3. DevTools は画面右または下に寄せ、ページ表示域を狭めすぎない
+ * 4. 対象ページを表示 → Cmd+Shift+P → "Capture full size screenshot"
+ * 5. 保存後、画像の幅が 390px 前後か確認してから上書き
  */
 export const HOME_PRODUCT_MOCK_IMAGES = {
   journalEntry: "/images/home-mock/mock-journal-entry.png",

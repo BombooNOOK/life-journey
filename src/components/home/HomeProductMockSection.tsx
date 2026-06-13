@@ -15,7 +15,8 @@ const PHONE_MOCK_SCREEN_CLASS =
   "relative aspect-[9/19.5] overflow-hidden rounded-[1.1rem] bg-white";
 
 const PHONE_MOCK_SCROLL_CLASS = [
-  "absolute inset-0 overflow-y-auto overscroll-contain",
+  "absolute inset-0 overflow-y-auto overscroll-contain touch-pan-y",
+  "[-webkit-overflow-scrolling:touch]",
   "[scrollbar-width:thin]",
   "[scrollbar-color:rgb(214_211_209/0.65)_transparent]",
   "[&::-webkit-scrollbar]:w-1",
@@ -50,20 +51,7 @@ function PhoneMockScreenshot({
 function PhoneMockFrame({ step }: { step: HomeProductMockStep }) {
   return (
     <div className="w-full">
-      {/* スマホ：従来どおり静止表示（二重スクロール回避） */}
-      <div className={`${PHONE_MOCK_WIDTH_CLASS} md:hidden`}>
-        <div className={PHONE_MOCK_OUTER_CLASS}>
-          <div className={PHONE_MOCK_SCREEN_CLASS}>
-            <PhoneMockScreenshot
-              step={step}
-              className="absolute inset-0 h-full w-full object-cover object-top"
-            />
-          </div>
-        </div>
-      </div>
-
-      {/* PC：画面部分だけ縦スクロール */}
-      <div className={`${PHONE_MOCK_WIDTH_CLASS} hidden md:block`}>
+      <div className={PHONE_MOCK_WIDTH_CLASS}>
         <div className={PHONE_MOCK_OUTER_CLASS}>
           <div className={PHONE_MOCK_SCREEN_CLASS}>
             <div className={PHONE_MOCK_SCROLL_CLASS}>
@@ -75,10 +63,10 @@ function PhoneMockFrame({ step }: { step: HomeProductMockStep }) {
             </div>
           </div>
         </div>
-        <p className="mt-1.5 text-center text-[10px] leading-4 text-stone-500/80">
-          上下にスクロールして全体を見られます
-        </p>
       </div>
+      <p className="mt-1.5 text-center text-[10px] leading-4 text-stone-500/80">
+        枠内を上下にスクロールして全体を見られます
+      </p>
     </div>
   );
 }
