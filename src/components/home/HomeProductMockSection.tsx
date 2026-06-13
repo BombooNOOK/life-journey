@@ -6,14 +6,13 @@ import {
   type HomeProductMockStep,
 } from "@/lib/home/homeProductMockAssets";
 
+const PHONE_MOCK_WIDTH_CLASS = "mx-auto w-[11rem] shrink-0 sm:w-[12rem]";
+
 const PHONE_MOCK_OUTER_CLASS =
   "overflow-hidden rounded-[1.35rem] border border-stone-300/55 bg-gradient-to-b from-[#f3ead8] to-[#ebe2d0] p-1 shadow-[0_3px_14px_rgba(107,90,74,0.1)]";
 
-/** 9:19.5 の画面比率（内側スクロール領域の高さ確保用） */
-const PHONE_MOCK_SCREEN_ASPECT_PERCENT = `${(19.5 / 9) * 100}%`;
-
-const PHONE_MOCK_SCREEN_SURFACE_CLASS =
-  "overflow-hidden rounded-[1.1rem] bg-white";
+const PHONE_MOCK_SCREEN_CLASS =
+  "relative aspect-[9/19.5] overflow-hidden rounded-[1.1rem] bg-white";
 
 const PHONE_MOCK_SCROLL_CLASS = [
   "absolute inset-0 overflow-y-auto overscroll-contain",
@@ -25,22 +24,6 @@ const PHONE_MOCK_SCROLL_CLASS = [
   "[&::-webkit-scrollbar-track]:bg-transparent",
 ].join(" ");
 
-function PhoneMockShell({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="mx-auto w-full max-w-[11rem] sm:max-w-[12rem]">
-      <div className={PHONE_MOCK_OUTER_CLASS}>{children}</div>
-    </div>
-  );
-}
-
-function PhoneMockScrollHint() {
-  return (
-    <p className="mt-1.5 text-center text-[10px] leading-4 text-stone-500/80">
-      上下にスクロールして全体を見られます
-    </p>
-  );
-}
-
 function PhoneMockScreenshot({
   step,
   className,
@@ -51,7 +34,6 @@ function PhoneMockScreenshot({
   draggable?: boolean;
 }) {
   return (
-    // 静的スクショは public 直配信の方がモバイル Safari で安定する
     <img
       src={step.imageSrc}
       alt={step.imageAlt}
@@ -67,33 +49,23 @@ function PhoneMockScreenshot({
 
 function PhoneMockFrame({ step }: { step: HomeProductMockStep }) {
   return (
-    <>
+    <div className="w-full">
       {/* スマホ：従来どおり静止表示（二重スクロール回避） */}
-      <div className="md:hidden">
-        <PhoneMockShell>
-          <div className={`relative w-full ${PHONE_MOCK_SCREEN_SURFACE_CLASS}`}>
-            <div
-              className="w-full"
-              style={{ paddingTop: PHONE_MOCK_SCREEN_ASPECT_PERCENT }}
-              aria-hidden
-            />
+      <div className={`${PHONE_MOCK_WIDTH_CLASS} md:hidden`}>
+        <div className={PHONE_MOCK_OUTER_CLASS}>
+          <div className={PHONE_MOCK_SCREEN_CLASS}>
             <PhoneMockScreenshot
               step={step}
               className="absolute inset-0 h-full w-full object-cover object-top"
             />
           </div>
-        </PhoneMockShell>
+        </div>
       </div>
 
       {/* PC：画面部分だけ縦スクロール */}
-      <div className="hidden md:block">
-        <PhoneMockShell>
-          <div className={`relative w-full ${PHONE_MOCK_SCREEN_SURFACE_CLASS}`}>
-            <div
-              className="w-full"
-              style={{ paddingTop: PHONE_MOCK_SCREEN_ASPECT_PERCENT }}
-              aria-hidden
-            />
+      <div className={`${PHONE_MOCK_WIDTH_CLASS} hidden md:block`}>
+        <div className={PHONE_MOCK_OUTER_CLASS}>
+          <div className={PHONE_MOCK_SCREEN_CLASS}>
             <div className={PHONE_MOCK_SCROLL_CLASS}>
               <PhoneMockScreenshot
                 step={step}
@@ -102,10 +74,12 @@ function PhoneMockFrame({ step }: { step: HomeProductMockStep }) {
               />
             </div>
           </div>
-        </PhoneMockShell>
-        <PhoneMockScrollHint />
+        </div>
+        <p className="mt-1.5 text-center text-[10px] leading-4 text-stone-500/80">
+          上下にスクロールして全体を見られます
+        </p>
       </div>
-    </>
+    </div>
   );
 }
 
@@ -156,7 +130,7 @@ function MockStepCard({ step }: { step: HomeProductMockStep }) {
       <p className="mt-1.5 text-xs leading-5 text-stone-600 sm:text-[13px] sm:leading-6">
         {step.description}
       </p>
-      <div className="mt-3 flex flex-1 items-end justify-center sm:mt-4">
+      <div className="mt-3 flex w-full flex-1 justify-center sm:mt-4">
         <MockImageFrame step={step} />
       </div>
     </article>
