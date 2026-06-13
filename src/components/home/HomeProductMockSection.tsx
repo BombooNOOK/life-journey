@@ -6,10 +6,6 @@ import {
   type HomeProductMockStep,
 } from "@/lib/home/homeProductMockAssets";
 
-/** スマホ実機では少し大きめに表示して文字を読みやすく、PCは従来サイズを維持 */
-const PHONE_MOCK_WIDTH_CLASS =
-  "mx-auto w-[min(76vw,15.5rem)] shrink-0 md:w-[12rem]";
-
 const PHONE_MOCK_OUTER_CLASS =
   "overflow-hidden rounded-[1.35rem] border border-stone-300/55 bg-gradient-to-b from-[#f3ead8] to-[#ebe2d0] p-1 shadow-[0_3px_14px_rgba(107,90,74,0.1)]";
 
@@ -51,9 +47,15 @@ function PhoneMockScreenshot({
 }
 
 function PhoneMockFrame({ step }: { step: HomeProductMockStep }) {
+  const mockWidthMobile = `min(76vw, ${step.imageWidth}px)`;
+  const mockWidthDesktop = `min(12rem, ${step.imageWidth}px)`;
+
   return (
     <div className="w-full">
-      <div className={PHONE_MOCK_WIDTH_CLASS}>
+      <div
+        className="mx-auto shrink-0 md:hidden"
+        style={{ width: mockWidthMobile }}
+      >
         <div className={PHONE_MOCK_OUTER_CLASS}>
           <div className={PHONE_MOCK_SCREEN_CLASS}>
             <div className={PHONE_MOCK_SCROLL_CLASS}>
@@ -66,7 +68,28 @@ function PhoneMockFrame({ step }: { step: HomeProductMockStep }) {
           </div>
         </div>
       </div>
-      <p className="mt-1.5 text-center text-[10px] leading-4 text-stone-500/80">
+
+      <div
+        className="mx-auto hidden shrink-0 md:block"
+        style={{ width: mockWidthDesktop }}
+      >
+        <div className={PHONE_MOCK_OUTER_CLASS}>
+          <div className={PHONE_MOCK_SCREEN_CLASS}>
+            <div className={PHONE_MOCK_SCROLL_CLASS}>
+              <PhoneMockScreenshot
+                step={step}
+                className="block h-auto w-full max-w-none"
+                draggable={false}
+              />
+            </div>
+          </div>
+        </div>
+        <p className="mt-1.5 text-center text-[10px] leading-4 text-stone-500/80">
+          枠内を上下にスクロールして全体を見られます
+        </p>
+      </div>
+
+      <p className="mt-1.5 text-center text-[10px] leading-4 text-stone-500/80 md:hidden">
         枠内を上下にスクロールして全体を見られます
       </p>
     </div>
