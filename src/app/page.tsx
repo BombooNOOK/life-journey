@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 import { HomeAppraiserProfilesSection } from "@/components/home/HomeAppraiserProfilesSection";
+import { HomeClosingSection } from "@/components/home/HomeClosingSection";
 import { HomeHeroSubNavLink } from "@/components/home/HomeHeroSubNavLink";
 import { HomeProductMockSection } from "@/components/home/HomeProductMockSection";
 import { HomeRecommendedForSection } from "@/components/home/HomeRecommendedForSection";
@@ -127,6 +128,8 @@ export default function HomePage() {
           Life Journey Diary の歩き方を読む →
         </Link>
       </section>
+
+      <HomeClosingSection />
     </div>
   );
 }
