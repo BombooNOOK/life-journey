@@ -1,0 +1,55 @@
+import { BookshelfBookCard } from "@/components/orders/BookshelfBookCard";
+import { BookshelfPageHeader } from "@/components/orders/BookshelfPageHeader";
+import { diaryCoverImagePath } from "@/lib/journal/coverAssets";
+
+export function HomeMockBookshelfCapture() {
+  return (
+    <div className="space-y-5">
+      <BookshelfPageHeader activeProfileLabel="メイン" />
+
+      <div className="space-y-4">
+        <BookshelfBookCard
+          id="home-mock-diary-book"
+          kind="diary-book"
+          title="2026年の日記ブック"
+          periodLabel="2026/01/01 〜 2026/12/31"
+          href="/orders/bookshelf/diary-book/demo"
+          tone="emerald"
+          coverImageSrc={diaryCoverImagePath("kireime", "owl")}
+          coverAlt="2026年の日記ブックの表紙"
+          details={[
+            { label: "期間", value: "2026/01/01 〜 2026/12/31" },
+            { label: "記録数", value: "24件" },
+            { label: "表紙", value: "きれいめ" },
+            { label: "作成日", value: "2026/6/1" },
+            { label: "製本対象", value: "24件の記録（プランは概要で確認）" },
+          ]}
+          bindingHref="/plans"
+          bindingLabel="製本版を注文する"
+        />
+
+        <BookshelfBookCard
+          id="home-mock-report"
+          kind="report"
+          title="鑑定書（Risa Kimura）"
+          href="/orders/demo"
+          tone="amber"
+          coverImageSrc="/images/kantei-cover.png?v=1"
+          coverAlt="鑑定書の表紙"
+          readButtonLabel="PDFで読む"
+          quickPreviewHref="/orders/demo"
+          quickPreviewLabel="鑑定結果を見る"
+          quickPreviewHelpText="目次リンクつき。気になる章へすぐ移動できます。"
+          bindingHref="/orders/demo/book-binding"
+          bindingLabel="製本版を注文する"
+          details={[
+            { label: "お名前", value: "木村 理沙" },
+            { label: "作成日", value: "2026/4/21" },
+            { label: "PDF形式", value: "目次リンクつき軽量PDF（ブラウザ表示対応）" },
+            { label: "ダウンロード", value: "ダウンロード残り 3 / 3 回" },
+          ]}
+        />
+      </div>
+    </div>
+  );
+}

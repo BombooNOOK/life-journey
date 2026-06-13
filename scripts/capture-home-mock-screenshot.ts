@@ -1,22 +1,18 @@
 /**
  * トップページ用モックスクショを 390px 幅で撮る。
  *
- * Chrome DevTools の Capture full size screenshot は、ウィンドウ幅の都合で
- * 203px など細い画像になることがある。Playwright なら幅を固定できる。
+ * ## 自動モード（ログイン不要・Cursor / CI 向け）
+ *   npm run capture:home-mock:auto journal
+ *   npm run capture:home-mock:auto bookshelf
+ *   npm run capture:home-mock:auto all
  *
- * 使い方:
- *   1. 別ターミナルで npm run dev を起動したままにする
- *   2. npx playwright install chromium   （初回だけ。うまくいかないときも再実行）
- *   3. npm run capture:home-mock journal
- *      または npm run capture:home-mock bookshelf
- *   4. 開いたブラウザで /login からログイン → 対象画面へ移動
- *   5. ターミナルで Enter → 撮影 → public/images/home-mock/ に保存
+ * `/home-mock-preview/*` の公開プレビューページを headless で撮影します。
  *
- * 文字だけ表示されるとき:
- *   - npm run dev が動いているか確認
- *   - 下記は通常の Google Chrome を使う（Firebase ログイン向け）
+ * ## 手動モード（本番画面をそのまま撮りたいとき）
+ *   npm run capture:home-mock journal
+ *   → ブラウザでログイン後 Enter
  */
-import { mkdirSync } from "node:fs";
+import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import readline from "node:readline";
 
@@ -26,16 +22,24 @@ import sharp from "sharp";
 const VIEWPORT_WIDTH = 390;
 const VIEWPORT_HEIGHT = 844;
 
+const CHROME_ARGS = ["--disable-features=MacAppCodeSignClone"];
+
 const TARGETS = {
   journal: {
     path: "/journal",
+    previewPath: "/home-mock-preview/journal",
     outputFile: "mock-journal-entry.png",
     label: "日記入力画面",
+    assetsKey: "journalEntry" as const,
+    stepIndex: 0,
   },
   bookshelf: {
     path: "/orders/bookshelf",
+    previewPath: "/home-mock-preview/bookshelf",
     outputFile: "mock-bookshelf.png",
     label: "本棚画面",
+    assetsKey: "bookshelf" as const,
+    stepIndex: 1,
   },
 } as const;
 
@@ -55,9 +59,10 @@ function waitForEnter(prompt: string): Promise<void> {
   });
 }
 
-async function assertDevServer(baseUrl: string): Promise<void> {
+async function assertDevServer(baseUrl: string, previewPath?: string): Promise<void> {
+  const checkPath = previewPath ?? "/login";
   try {
-    const res = await fetch(`${baseUrl}/login`, { signal: AbortSignal.timeout(8000) });
+    const res = await fetch(`${baseUrl}${checkPath}`, { signal: AbortSignal.timeout(8000) });
     if (!res.ok) {
       throw new Error(`HTTP ${res.status}`);
     }
@@ -68,12 +73,10 @@ async function assertDevServer(baseUrl: string): Promise<void> {
   } catch (error) {
     console.error("");
     console.error("開発サーバーに接続できませんでした。");
-    console.error(`確認URL: ${baseUrl}/login`);
+    console.error(`確認URL: ${baseUrl}${checkPath}`);
     console.error("");
     console.error("先に別ターミナルで、プロジェクトフォルダ内から次を実行してください:");
     console.error("  npm run dev");
-    console.error("");
-    console.error("「Ready」と表示されてから、もう一度 capture コマンドを実行してください。");
     console.error("");
     if (error instanceof Error) {
       console.error(`詳細: ${error.message}`);
@@ -82,15 +85,23 @@ async function assertDevServer(baseUrl: string): Promise<void> {
   }
 }
 
-async function launchBrowser(): Promise<Browser> {
-  const preferChrome = process.env.MOCK_CAPTURE_BROWSER?.trim() !== "chromium";
+async function launchBrowser(auto: boolean): Promise<Browser> {
+  if (auto) {
+    console.log("自動モード: Playwright Chromium（headless）");
+    return chromium.launch({
+      headless: true,
+      args: CHROME_ARGS,
+    });
+  }
 
+  const preferChrome = process.env.MOCK_CAPTURE_BROWSER?.trim() !== "chromium";
   if (preferChrome) {
     try {
       console.log("通常の Google Chrome で開きます（ログインしやすい設定）");
       return await chromium.launch({
         headless: false,
         channel: "chrome",
+        args: CHROME_ARGS,
       });
     } catch {
       console.warn("Google Chrome が見つからないため、Playwright 付属ブラウザを使います。");
@@ -98,8 +109,7 @@ async function launchBrowser(): Promise<Browser> {
   }
 
   console.log("Playwright 付属ブラウザで開きます");
-  console.log("初回や表示がおかしいときは: npx playwright install chromium");
-  return chromium.launch({ headless: false });
+  return chromium.launch({ headless: false, args: CHROME_ARGS });
 }
 
 async function assertStylesLoaded(page: import("playwright").Page): Promise<void> {
@@ -109,9 +119,6 @@ async function assertStylesLoaded(page: import("playwright").Page): Promise<void
   if (stylesheetCount === 0) {
     console.warn("");
     console.warn("⚠ スタイルシートが読み込まれていません（文字だけの画面になっている可能性）");
-    console.warn("  1. npm run dev が動いているか確認");
-    console.warn("  2. ブラウザのアドレスが http://127.0.0.1:3000 か確認");
-    console.warn("  3. うまくいかないときは npx playwright install chromium を再実行");
     console.warn("");
     return;
   }
@@ -119,52 +126,48 @@ async function assertStylesLoaded(page: import("playwright").Page): Promise<void
   console.log(`スタイル読み込みOK（stylesheet: ${stylesheetCount}, body背景: ${bodyBg}）`);
 }
 
-async function main() {
-  const arg = (process.argv[2] ?? "journal") as TargetKey;
-  const target = TARGETS[arg];
+function updateHomeProductMockAssets(target: (typeof TARGETS)[TargetKey], width: number, height: number) {
+  const assetsPath = join(process.cwd(), "src/lib/home/homeProductMockAssets.ts");
+  const content = readFileSync(assetsPath, "utf8");
+  const imageSrc = `HOME_PRODUCT_MOCK_IMAGES.${target.assetsKey}`;
+  const pattern = new RegExp(
+    `(imageSrc: ${imageSrc.replace(".", "\\.")},[\\s\\S]*?imageWidth: )\\d+([\\s\\S]*?imageHeight: )\\d+`,
+  );
 
-  if (!target) {
-    console.error("使い方: npm run capture:home-mock [journal|bookshelf]");
-    process.exit(1);
+  if (!pattern.test(content)) {
+    console.warn(`⚠ ${assetsPath} の imageWidth / imageHeight を自動更新できませんでした`);
+    return;
   }
 
-  const baseUrl = process.env.MOCK_CAPTURE_BASE_URL?.trim() || "http://127.0.0.1:3000";
+  const next = content.replace(pattern, `$1${width}$2${height}`);
+  writeFileSync(assetsPath, next, "utf8");
+  console.log(`更新しました: ${assetsPath} (${target.assetsKey} → ${width} x ${height})`);
+}
+
+async function captureTarget(
+  page: import("playwright").Page,
+  baseUrl: string,
+  target: (typeof TARGETS)[TargetKey],
+  auto: boolean,
+): Promise<{ width: number; height: number; outputPath: string }> {
   const outputPath = join(process.cwd(), "public/images/home-mock", target.outputFile);
   mkdirSync(dirname(outputPath), { recursive: true });
 
-  console.log(`対象: ${target.label}`);
-  console.log(`ログイン後に開くページ: ${baseUrl}${target.path}`);
-  console.log(`保存先: ${outputPath}`);
-  console.log(`ビューポート: ${VIEWPORT_WIDTH} x ${VIEWPORT_HEIGHT}`);
-  console.log("");
+  const url = auto ? `${baseUrl}${target.previewPath}` : `${baseUrl}${target.path}`;
 
-  await assertDevServer(baseUrl);
-
-  const browser = await launchBrowser();
-  const context = await browser.newContext({
-    viewport: { width: VIEWPORT_WIDTH, height: VIEWPORT_HEIGHT },
-    deviceScaleFactor: 1,
-  });
-  const page = await context.newPage();
-
-  console.log("まずログイン画面を開きます…");
-  await page.goto(`${baseUrl}/login`, {
-    waitUntil: "domcontentloaded",
-    timeout: 60_000,
-  });
-  await page.waitForLoadState("networkidle", { timeout: 60_000 }).catch(() => undefined);
-  await assertStylesLoaded(page);
-
-  console.log("");
-  console.log("次の操作をブラウザで行ってください:");
-  console.log(`  1. ログインする（Google または メール）`);
-  console.log(`  2. ${target.path} を開く（例: アドレスバーに ${baseUrl}${target.path}）`);
-  console.log("  3. 画面がきちんと表示されたら、このターミナルに戻る");
-  console.log("");
-
-  await waitForEnter(
-    "準備できたら Enter を押してください（今見えている画面を撮影します）… ",
-  );
+  if (!auto) {
+    console.log("");
+    console.log("次の操作をブラウザで行ってください:");
+    console.log(`  1. ログインする`);
+    console.log(`  2. ${target.path} を開く`);
+    console.log("");
+    await waitForEnter("準備できたら Enter を押してください（今見えている画面を撮影します）… ");
+  } else {
+    console.log(`撮影URL: ${url}`);
+    await page.goto(url, { waitUntil: "domcontentloaded", timeout: 60_000 });
+    await page.waitForLoadState("networkidle", { timeout: 60_000 }).catch(() => undefined);
+    await page.waitForTimeout(800);
+  }
 
   await assertStylesLoaded(page);
 
@@ -175,21 +178,72 @@ async function main() {
   });
 
   const meta = await sharp(outputPath).metadata();
-  await browser.close();
+  const width = meta.width ?? 0;
+  const height = meta.height ?? 0;
 
-  console.log("");
-  console.log(`保存しました: ${outputPath}`);
-  console.log(`画像サイズ: ${meta.width} x ${meta.height}px`);
+  if (width < 350) {
+    throw new Error(`幅が 350px 未満です (${width}px)。撮影に失敗した可能性があります。`);
+  }
 
-  if (!meta.width || meta.width < 350) {
-    console.warn("⚠ 幅が 350px 未満です。表示が崩れている可能性があります。");
+  updateHomeProductMockAssets(target, width, height);
+  return { width, height, outputPath };
+}
+
+async function main() {
+  const args = process.argv.slice(2);
+  const auto = args.includes("--auto");
+  const targetArg = (args.find((a) => a !== "--auto") ?? "journal") as TargetKey | "all";
+
+  if (targetArg !== "all" && !TARGETS[targetArg]) {
+    console.error("使い方:");
+    console.error("  npm run capture:home-mock [journal|bookshelf]");
+    console.error("  npm run capture:home-mock:auto [journal|bookshelf|all]");
     process.exit(1);
   }
 
+  const baseUrl = process.env.MOCK_CAPTURE_BASE_URL?.trim() || "http://127.0.0.1:3000";
+  const keys: TargetKey[] =
+    targetArg === "all" ? (["journal", "bookshelf"] as TargetKey[]) : [targetArg];
+
+  console.log(`モード: ${auto ? "自動（ログイン不要）" : "手動（ログイン必要）"}`);
+  console.log(`ベースURL: ${baseUrl}`);
+  console.log(`ビューポート: ${VIEWPORT_WIDTH} x ${VIEWPORT_HEIGHT}`);
   console.log("");
-  console.log("次の作業:");
-  console.log(`  src/lib/home/homeProductMockAssets.ts の imageWidth / imageHeight を`);
-  console.log(`  width=${meta.width}, height=${meta.height} に更新してください。`);
+
+  await assertDevServer(baseUrl, auto ? TARGETS[keys[0]!].previewPath : undefined);
+
+  const browser = await launchBrowser(auto);
+  const context = await browser.newContext({
+    viewport: { width: VIEWPORT_WIDTH, height: VIEWPORT_HEIGHT },
+    deviceScaleFactor: 1,
+  });
+  const page = await context.newPage();
+
+  if (!auto) {
+    console.log("まずログイン画面を開きます…");
+    await page.goto(`${baseUrl}/login`, {
+      waitUntil: "domcontentloaded",
+      timeout: 60_000,
+    });
+    await page.waitForLoadState("networkidle", { timeout: 60_000 }).catch(() => undefined);
+    await assertStylesLoaded(page);
+  }
+
+  try {
+    for (const key of keys) {
+      const target = TARGETS[key];
+      console.log("");
+      console.log(`--- ${target.label} ---`);
+      const result = await captureTarget(page, baseUrl, target, auto);
+      console.log(`保存: ${result.outputPath}`);
+      console.log(`サイズ: ${result.width} x ${result.height}px`);
+    }
+  } finally {
+    await browser.close();
+  }
+
+  console.log("");
+  console.log("完了しました。トップページのモック画像を確認してください。");
 }
 
 main().catch((error) => {

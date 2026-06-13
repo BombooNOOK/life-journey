@@ -1,6 +1,7 @@
 import Image from "next/image";
 import { Fragment } from "react";
 
+import { PhoneMockScrollViewport } from "@/components/home/PhoneMockScrollViewport";
 import {
   HOME_PRODUCT_MOCK_STEPS,
   type HomeProductMockStep,
@@ -12,16 +13,13 @@ const PHONE_MOCK_OUTER_CLASS =
 const PHONE_MOCK_SCREEN_CLASS =
   "relative aspect-[9/19.5] overflow-hidden rounded-[1.1rem] bg-white";
 
-const PHONE_MOCK_SCROLL_CLASS = [
-  "absolute inset-0 overflow-y-auto overscroll-contain touch-pan-y",
-  "[-webkit-overflow-scrolling:touch]",
-  "[scrollbar-width:thin]",
-  "[scrollbar-color:rgb(214_211_209/0.65)_transparent]",
-  "[&::-webkit-scrollbar]:w-1",
-  "[&::-webkit-scrollbar-thumb]:rounded-full",
-  "[&::-webkit-scrollbar-thumb]:bg-stone-300/65",
-  "[&::-webkit-scrollbar-track]:bg-transparent",
-].join(" ");
+function PhoneMockScrollHint() {
+  return (
+    <p className="mt-1.5 text-center text-[10px] leading-4 text-stone-500/80">
+      枠内をクリックして、上下にスクロールして全体を見られます
+    </p>
+  );
+}
 
 function PhoneMockScreenshot({
   step,
@@ -58,13 +56,13 @@ function PhoneMockFrame({ step }: { step: HomeProductMockStep }) {
       >
         <div className={PHONE_MOCK_OUTER_CLASS}>
           <div className={PHONE_MOCK_SCREEN_CLASS}>
-            <div className={PHONE_MOCK_SCROLL_CLASS}>
+            <PhoneMockScrollViewport label={`${step.imageAlt}のプレビュー`}>
               <PhoneMockScreenshot
                 step={step}
                 className="block h-auto w-full max-w-none"
                 draggable={false}
               />
-            </div>
+            </PhoneMockScrollViewport>
           </div>
         </div>
       </div>
@@ -75,23 +73,21 @@ function PhoneMockFrame({ step }: { step: HomeProductMockStep }) {
       >
         <div className={PHONE_MOCK_OUTER_CLASS}>
           <div className={PHONE_MOCK_SCREEN_CLASS}>
-            <div className={PHONE_MOCK_SCROLL_CLASS}>
+            <PhoneMockScrollViewport label={`${step.imageAlt}のプレビュー`}>
               <PhoneMockScreenshot
                 step={step}
                 className="block h-auto w-full max-w-none"
                 draggable={false}
               />
-            </div>
+            </PhoneMockScrollViewport>
           </div>
         </div>
-        <p className="mt-1.5 text-center text-[10px] leading-4 text-stone-500/80">
-          枠内を上下にスクロールして全体を見られます
-        </p>
+        <PhoneMockScrollHint />
       </div>
 
-      <p className="mt-1.5 text-center text-[10px] leading-4 text-stone-500/80 md:hidden">
-        枠内を上下にスクロールして全体を見られます
-      </p>
+      <div className="md:hidden">
+        <PhoneMockScrollHint />
+      </div>
     </div>
   );
 }

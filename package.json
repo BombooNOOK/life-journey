@@ -42,7 +42,8 @@
     "pdf:preview-assets:legacy": "PREVIEW_MAX_EDGE=900 PREVIEW_JPEG_QUALITY=80 node scripts/build-pdf-preview-assets.mjs",
     "pdf:preview-assets:strong": "PREVIEW_MAX_EDGE=600 PREVIEW_JPEG_QUALITY=50 node scripts/build-pdf-preview-assets.mjs",
     "pdf:preview-assets:soft": "PREVIEW_MAX_EDGE=800 PREVIEW_JPEG_QUALITY=65 node scripts/build-pdf-preview-assets.mjs",
-    "capture:home-mock": "npx tsx scripts/capture-home-mock-screenshot.ts"
+    "capture:home-mock": "npx tsx scripts/capture-home-mock-screenshot.ts",
+    "capture:home-mock:auto": "npx tsx scripts/capture-home-mock-screenshot.ts --auto"
   },
   "dependencies": {
     "@fontsource/noto-sans-jp": "^5.2.5",
