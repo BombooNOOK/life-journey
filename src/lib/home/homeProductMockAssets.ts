@@ -2,11 +2,18 @@
  * トップ「記録はこんなふうに育っていきます」セクション用アセット。
  *
  * 差し替え手順：`public/images/home-mock/` 内の同名ファイルを上書きするだけでOK。
+ * `imageWidth` / `imageHeight` も実ファイルのピクセル数に合わせて更新すること。
  *
  * 推奨サイズ（目安）：
- * - mock-journal-entry：幅 750〜1170px、縦長（スマホスクショ 9:19 前後）
- * - mock-bookshelf：同上
+ * - mock-journal-entry / mock-bookshelf：
+ *   幅 750〜1170px の縦長フルページスクショ（PNG 推奨）
+ *   ※ 幅 200px 未満だとモック拡大時にボケやすい
  * - mock-diary-book-placeholder：表紙正面・冊子感（背表紙の厚い本に見せない・3:4 前後）
+ *
+ * 高画質スクショの撮り方（Mac + Chrome 推奨）：
+ * 1. DevTools を開く → デバイスモード（iPhone 14 Pro など）
+ * 2. 対象ページを表示 → Cmd+Shift+P → "Capture full size screenshot"
+ * 3. 保存した PNG をそのまま `public/images/home-mock/` に上書き
  */
 export const HOME_PRODUCT_MOCK_IMAGES = {
   journalEntry: "/images/home-mock/mock-journal-entry.png",

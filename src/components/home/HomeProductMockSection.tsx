@@ -10,10 +10,10 @@ const PHONE_MOCK_OUTER_CLASS =
   "overflow-hidden rounded-[1.35rem] border border-stone-300/55 bg-gradient-to-b from-[#f3ead8] to-[#ebe2d0] p-1 shadow-[0_3px_14px_rgba(107,90,74,0.1)]";
 
 const PHONE_MOCK_SCREEN_CLASS =
-  "relative aspect-[9/19.5] overflow-hidden rounded-[1.1rem] bg-white";
+  "relative aspect-[9/19.5] w-full overflow-hidden rounded-[1.1rem] bg-white";
 
 const PHONE_MOCK_SCROLL_CLASS = [
-  "overflow-y-auto overscroll-contain",
+  "h-full overflow-y-auto overscroll-contain",
   "[scrollbar-width:thin]",
   "[scrollbar-color:rgb(214_211_209/0.65)_transparent]",
   "[&::-webkit-scrollbar]:w-1",
@@ -38,30 +38,51 @@ function PhoneMockScrollHint() {
   );
 }
 
+function PhoneMockScreenshot({
+  step,
+  className,
+  draggable = false,
+}: {
+  step: HomeProductMockStep;
+  className?: string;
+  draggable?: boolean;
+}) {
+  return (
+    <Image
+      src={step.imageSrc}
+      alt={step.imageAlt}
+      width={step.imageWidth}
+      height={step.imageHeight}
+      sizes="(max-width: 640px) 192px, 192px"
+      quality={100}
+      unoptimized
+      className={className}
+      draggable={draggable}
+    />
+  );
+}
+
 function PhoneMockFrame({ step }: { step: HomeProductMockStep }) {
   return (
     <div>
       <PhoneMockShell>
-        <div className={PHONE_MOCK_SCREEN_CLASS}>
-          {/* スマホ：二重スクロールを避けるため、上部を静止表示 */}
-          <div className="absolute inset-0 md:hidden">
-            <Image
-              src={step.imageSrc}
-              alt={step.imageAlt}
-              fill
-              sizes="(max-width: 640px) 176px, 192px"
-              className="object-cover object-top"
-            />
-          </div>
+        {/* スマホ：従来どおりの枠構造で上部を静止表示 */}
+        <div className={`${PHONE_MOCK_SCREEN_CLASS} md:hidden`}>
+          <Image
+            src={step.imageSrc}
+            alt={step.imageAlt}
+            fill
+            sizes="(max-width: 640px) 192px"
+            unoptimized
+            className="object-cover object-top"
+          />
+        </div>
 
-          {/* PC：画面部分だけ縦スクロール */}
-          <div className={`absolute inset-0 hidden md:block ${PHONE_MOCK_SCROLL_CLASS}`}>
-            <Image
-              src={step.imageSrc}
-              alt={step.imageAlt}
-              width={step.imageWidth}
-              height={step.imageHeight}
-              sizes="192px"
+        {/* PC：画面部分だけ縦スクロール */}
+        <div className={`${PHONE_MOCK_SCREEN_CLASS} hidden md:block`}>
+          <div className={PHONE_MOCK_SCROLL_CLASS}>
+            <PhoneMockScreenshot
+              step={step}
               className="block h-auto w-full max-w-none"
               draggable={false}
             />
