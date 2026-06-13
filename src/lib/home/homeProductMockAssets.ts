@@ -22,6 +22,8 @@ export type HomeProductMockStep = {
   description: string;
   imageSrc: string;
   imageAlt: string;
+  imageWidth: number;
+  imageHeight: number;
   frame: HomeProductMockFrame;
 };
 
@@ -32,6 +34,8 @@ export const HOME_PRODUCT_MOCK_STEPS: HomeProductMockStep[] = [
     description: "写真やことば、その日のきもちを、無理なく1日ずつ記録できます。",
     imageSrc: HOME_PRODUCT_MOCK_IMAGES.journalEntry,
     imageAlt: "日記入力画面",
+    imageWidth: 472,
+    imageHeight: 1024,
     frame: "phone",
   },
   {
@@ -40,6 +44,8 @@ export const HOME_PRODUCT_MOCK_STEPS: HomeProductMockStep[] = [
     description: "書いた日記や鑑定書は、本棚のように並び、あとからやさしく読み返せます。",
     imageSrc: HOME_PRODUCT_MOCK_IMAGES.bookshelf,
     imageAlt: "本棚画面",
+    imageWidth: 472,
+    imageHeight: 1024,
     frame: "phone",
   },
   {
@@ -48,6 +54,8 @@ export const HOME_PRODUCT_MOCK_STEPS: HomeProductMockStep[] = [
     description: "デジタルで残した日々が、いつか手元に残る「日記ブック」へ育っていきます。",
     imageSrc: HOME_PRODUCT_MOCK_IMAGES.diaryBookPlaceholder,
     imageAlt: "日記ブック表紙のイメージ（実物写真差し替え予定）",
+    imageWidth: 200,
+    imageHeight: 300,
     frame: "booklet",
   },
 ];

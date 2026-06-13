@@ -1,30 +1,81 @@
 import Image from "next/image";
-import { Fragment } from "react";
+import { Fragment, type ReactNode } from "react";
 
 import {
   HOME_PRODUCT_MOCK_STEPS,
   type HomeProductMockStep,
 } from "@/lib/home/homeProductMockAssets";
 
-function MockImageFrame({ step }: { step: HomeProductMockStep }) {
-  const isPhone = step.frame === "phone";
+const PHONE_MOCK_OUTER_CLASS =
+  "overflow-hidden rounded-[1.35rem] border border-stone-300/55 bg-gradient-to-b from-[#f3ead8] to-[#ebe2d0] p-1 shadow-[0_3px_14px_rgba(107,90,74,0.1)]";
 
-  if (isPhone) {
-    return (
-      <div className="mx-auto w-full max-w-[11rem] sm:max-w-[12rem]">
-        <div className="overflow-hidden rounded-[1.35rem] border border-stone-300/55 bg-gradient-to-b from-[#f3ead8] to-[#ebe2d0] p-1 shadow-[0_3px_14px_rgba(107,90,74,0.1)]">
-          <div className="relative aspect-[9/19.5] overflow-hidden rounded-[1.1rem] bg-white">
+const PHONE_MOCK_SCREEN_CLASS =
+  "relative aspect-[9/19.5] overflow-hidden rounded-[1.1rem] bg-white";
+
+const PHONE_MOCK_SCROLL_CLASS = [
+  "h-full overflow-y-auto overscroll-contain",
+  "[scrollbar-width:thin]",
+  "[scrollbar-color:rgb(214_211_209/0.65)_transparent]",
+  "[&::-webkit-scrollbar]:w-1",
+  "[&::-webkit-scrollbar-thumb]:rounded-full",
+  "[&::-webkit-scrollbar-thumb]:bg-stone-300/65",
+  "[&::-webkit-scrollbar-track]:bg-transparent",
+].join(" ");
+
+function PhoneMockShell({ children }: { children: ReactNode }) {
+  return (
+    <div className="mx-auto w-full max-w-[11rem] sm:max-w-[12rem]">
+      <div className={PHONE_MOCK_OUTER_CLASS}>{children}</div>
+    </div>
+  );
+}
+
+function PhoneMockScrollHint() {
+  return (
+    <p className="mt-1.5 hidden text-center text-[10px] leading-4 text-stone-500/80 md:block">
+      上下にスクロールして全体を見られます
+    </p>
+  );
+}
+
+function PhoneMockFrame({ step }: { step: HomeProductMockStep }) {
+  return (
+    <div>
+      <PhoneMockShell>
+        {/* スマホ：二重スクロールを避けるため、従来どおり静止表示 */}
+        <div className={`${PHONE_MOCK_SCREEN_CLASS} md:hidden`}>
+          <Image
+            src={step.imageSrc}
+            alt={step.imageAlt}
+            fill
+            sizes="(max-width: 640px) 176px, 192px"
+            className="object-cover object-top"
+          />
+        </div>
+
+        {/* PC：画面部分だけ縦スクロール */}
+        <div className={`${PHONE_MOCK_SCREEN_CLASS} hidden md:block`}>
+          <div className={PHONE_MOCK_SCROLL_CLASS}>
             <Image
               src={step.imageSrc}
               alt={step.imageAlt}
-              fill
-              sizes="(max-width: 640px) 176px, 192px"
-              className="object-cover object-top"
+              width={step.imageWidth}
+              height={step.imageHeight}
+              sizes="192px"
+              className="block h-auto w-full"
+              draggable={false}
             />
           </div>
         </div>
-      </div>
-    );
+      </PhoneMockShell>
+      <PhoneMockScrollHint />
+    </div>
+  );
+}
+
+function MockImageFrame({ step }: { step: HomeProductMockStep }) {
+  if (step.frame === "phone") {
+    return <PhoneMockFrame step={step} />;
   }
 
   /** 表紙正面の冊子イメージ（背表紙の厚い本に見せない） */
