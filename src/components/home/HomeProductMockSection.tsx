@@ -6,7 +6,9 @@ import {
   type HomeProductMockStep,
 } from "@/lib/home/homeProductMockAssets";
 
-const PHONE_MOCK_WIDTH_CLASS = "mx-auto w-[11rem] shrink-0 sm:w-[12rem]";
+/** スマホ実機では少し大きめに表示して文字を読みやすく、PCは従来サイズを維持 */
+const PHONE_MOCK_WIDTH_CLASS =
+  "mx-auto w-[min(76vw,15.5rem)] shrink-0 md:w-[12rem]";
 
 const PHONE_MOCK_OUTER_CLASS =
   "overflow-hidden rounded-[1.35rem] border border-stone-300/55 bg-gradient-to-b from-[#f3ead8] to-[#ebe2d0] p-1 shadow-[0_3px_14px_rgba(107,90,74,0.1)]";
@@ -40,7 +42,7 @@ function PhoneMockScreenshot({
       alt={step.imageAlt}
       width={step.imageWidth}
       height={step.imageHeight}
-      className={className}
+      className={["[image-rendering:auto]", className].filter(Boolean).join(" ")}
       loading="lazy"
       decoding="async"
       draggable={draggable}
