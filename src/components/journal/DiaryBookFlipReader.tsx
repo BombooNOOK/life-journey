@@ -16,7 +16,7 @@ import {
   DiaryBookPreBackCoverIllustrationPage,
 } from "@/components/journal/DiaryBookBoundPages";
 import { DiaryBookPageViewport } from "@/components/journal/DiaryBookPageViewport";
-import { DiaryPreviewFixedPage } from "@/components/journal/DiaryPreviewFixedPage";
+import { DiaryBookEntryV2PreviewPage } from "@/components/journal/DiaryBookEntryV2PreviewPage";
 import { InlineHelpButton } from "@/components/ui/InlineHelpButton";
 import { OwlLoadingInline } from "@/components/ui/OwlLoadingInline";
 import { BookshelfEditIncludesNavButton } from "@/components/orders/BookshelfEditIncludesNavButton";
@@ -25,7 +25,6 @@ import { parseFetchJsonResponse } from "@/lib/http/parseFetchJson";
 import { useVisualViewportDock } from "@/hooks/useVisualViewportDock";
 import type { BoundDiaryEntry } from "@/components/journal/DiaryYearBoundPages";
 import { parseSafeJournalReturnTo } from "@/lib/journal/bookshelfReturnTo";
-import { diaryBookBodyTemplatePathForCompanion } from "@/lib/journal/diaryBookAssets";
 import { filterEntriesForDiaryBook } from "@/lib/journal/includeInBook";
 import {
   boundDiaryBookPageLabel,
@@ -34,7 +33,6 @@ import {
   diaryBookDisplayYear,
 } from "@/lib/journal/diaryBookPages";
 import { normalizeContentFontMode } from "@/lib/journal/contentFontMode";
-import { normalizeDiaryDesignTheme, type DiaryDesignId } from "@/lib/journal/meta";
 
 const READER_HELP_TEXT =
   "表紙・中表紙のあと、期間内の月カレンダーと日記本文が続きます。PCはキーボードの左右矢印、スマホはスワイプでもめくれます。";
@@ -319,13 +317,6 @@ export function DiaryBookFlipReader({
 
   const current = pages[pageIndex];
 
-  const entryTheme: DiaryDesignId = useMemo(() => {
-    if (current?.kind !== "entry") return "simple_plain";
-    const t = current.entry.designTheme;
-    if (!t) return "simple_plain";
-    return normalizeDiaryDesignTheme(t);
-  }, [current]);
-
   const goToPage = useCallback(
     (next: number) => {
       if (next < 0 || next >= totalPages) return;
@@ -485,8 +476,7 @@ export function DiaryBookFlipReader({
         const photoLoading =
           shouldShowPhotoLoading(entry.id, entry.hasPhoto) && !resolvedPhoto;
         return (
-          <DiaryPreviewFixedPage
-            designTheme={entryTheme}
+          <DiaryBookEntryV2PreviewPage
             companionType={entry.companionType}
             mood={entry.mood}
             activity={entry.activity}
@@ -497,8 +487,6 @@ export function DiaryBookFlipReader({
             previewDate={new Date(entry.createdAt)}
             diaryNumbers={entry.diaryNumbers}
             contentFontMode={normalizeContentFontMode(entry.contentFontMode)}
-            showGoldFrame={false}
-            templateSrc={diaryBookBodyTemplatePathForCompanion(entry.companionType)}
           />
         );
       }
@@ -507,7 +495,7 @@ export function DiaryBookFlipReader({
       default:
         return null;
     }
-  }, [current, coverTheme, endDate, entries, entryTheme, getPhotoDataUrl, shouldShowPhotoLoading, startDate, title]);
+  }, [current, coverTheme, endDate, entries, getPhotoDataUrl, shouldShowPhotoLoading, startDate, title]);
 
   if (loading && entries.length === 0) {
     return <p className="text-sm text-stone-500">日記ブックを読み込み中…</p>;

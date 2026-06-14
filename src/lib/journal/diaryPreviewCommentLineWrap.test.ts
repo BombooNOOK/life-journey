@@ -86,7 +86,7 @@ describe("getDiaryCommentPdfLinesForBinding", () => {
       "あなたの今日と、今月の流れが「5」で重なっています。いつもと少し違う選択が、次の景色につながりやすい日です。";
     const text = `${base}\n\n${accent}`;
     const lines = getDiaryCommentPdfLinesForBinding(text);
-    expect(lines.length).toBeLessThanOrEqual(8);
+    expect(lines.length).toBeLessThanOrEqual(5);
     expect(isDiaryCommentOverPdfLineLimit(text)).toBe(false);
     expect(lines.some((line) => line.startsWith("づき"))).toBe(false);
     expect(lines.some((line) => line.startsWith("なっています"))).toBe(false);

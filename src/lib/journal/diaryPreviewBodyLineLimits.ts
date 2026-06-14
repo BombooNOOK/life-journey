@@ -2,38 +2,43 @@ import {
   normalizeContentFontMode,
   type ContentFontMode,
 } from "@/lib/journal/contentFontMode";
+import {
+  getDiaryBookEntryV2BodyLayoutLines,
+  getDiaryBookEntryV2BodyLayoutLinesAll,
+} from "@/lib/journal/diaryBookEntryBodyWrap";
+import { getDiaryBookEntryV2BodyFontLayout } from "@/lib/journal/diaryBookEntryBodyFontLayout";
 
 /**
- * 製本固定本文枠（724×1024・DIARY_PREVIEW_BODY_REGION）に対する行数判定。
- * 枠の位置・高さは変更しない（モード別の行数・chars/行のみ調整）。
+ * 日記ブック本文 v2（724×1024）に対する行数判定。
+ * PDF・本棚プレビュー・入力画面の製本警告で共通。
  */
 
-/** 1行あたりの想定文字数（全角主体・折り返し判定・プレビュー表示折り返し） */
-export const DIARY_BODY_CHARS_PER_LINE_BY_MODE: Record<ContentFontMode, number> = {
-  /** 短文・一言向け（大きめ表示・28×4。標準32×6と差別化） */
-  relaxed: 28,
-  /** 日常用（724px 本文枠・端末差に余裕を持たせる・32×6） */
-  standard: 32,
-  /** やや長め（724px 本文枠・標準より多く・40×7） */
-  generous: 40,
-  /** 長文向け（読める範囲で多め・44×8） */
-  compact: 44,
-};
+const MODES = ["relaxed", "standard", "generous", "compact"] as const satisfies readonly ContentFontMode[];
+
+function buildCharsPerLineByMode(): Record<ContentFontMode, number> {
+  return Object.fromEntries(
+    MODES.map((mode) => [mode, getDiaryBookEntryV2BodyFontLayout(mode).maxCharsPerLine]),
+  ) as Record<ContentFontMode, number>;
+}
+
+function buildMaxLinesByMode(): Record<ContentFontMode, number> {
+  return Object.fromEntries(
+    MODES.map((mode) => [mode, getDiaryBookEntryV2BodyFontLayout(mode).maxLines]),
+  ) as Record<ContentFontMode, number>;
+}
+
+/** 1行あたりの想定文字数（全角主体・v2 折り返し） */
+export const DIARY_BODY_CHARS_PER_LINE_BY_MODE = buildCharsPerLineByMode();
 
 /** 本文枠に収まる最大行数（手動改行・折り返し行の合計） */
-export const DIARY_BODY_MAX_LINES_BY_MODE: Record<ContentFontMode, number> = {
-  relaxed: 4,
-  standard: 6,
-  generous: 7,
-  compact: 8,
-};
+export const DIARY_BODY_MAX_LINES_BY_MODE = buildMaxLinesByMode();
 
 /** 推奨行数（警告は maxLines 超のみ。UI 目安用） */
 export const DIARY_BODY_RECOMMENDED_MAX_LINES_BY_MODE: Record<ContentFontMode, number> = {
-  relaxed: 3,
-  standard: 4,
-  generous: 5,
-  compact: 6,
+  relaxed: 5,
+  standard: 7,
+  generous: 9,
+  compact: 9,
 };
 
 /** 入力欄・ステータス用（短いラベル） */
@@ -71,9 +76,7 @@ export function getBodyLayoutLinesForBindingPreview(
   content: string,
   contentFontMode: string | null | undefined,
 ): string[] {
-  const lines = getBodyLayoutLines(content, contentFontMode);
-  const { maxLines } = getDiaryBodyLineLimit(contentFontMode);
-  return lines.slice(0, maxLines);
+  return getDiaryBookEntryV2BodyLayoutLines(content, contentFontMode);
 }
 
 export function countBodyLayoutLinesBeyondBindingPreview(
@@ -91,30 +94,13 @@ export function normalizeJournalContentNewlines(content: string): string {
 
 /**
  * 表示・行数判定用の行配列（保存データ・textarea は変更しない）。
- * 手動改行を尊重し、超過分はモード別 charsPerLine で分割する。
+ * 手動改行を尊重し、超過分はモード別 chars/行で分割する（v2 製本ルール）。
  */
 export function getBodyLayoutLines(
   content: string,
   contentFontMode: string | null | undefined,
 ): string[] {
-  const normalized = normalizeJournalContentNewlines(content);
-  if (!normalized.trim()) return [];
-
-  const mode = normalizeContentFontMode(contentFontMode);
-  const charsPerLine = DIARY_BODY_CHARS_PER_LINE_BY_MODE[mode];
-  const visualLines: string[] = [];
-
-  for (const segment of normalized.split("\n")) {
-    if (segment.length === 0) {
-      visualLines.push("");
-      continue;
-    }
-    for (let i = 0; i < segment.length; i += charsPerLine) {
-      visualLines.push(segment.slice(i, i + charsPerLine));
-    }
-  }
-
-  return visualLines;
+  return getDiaryBookEntryV2BodyLayoutLinesAll(content, contentFontMode);
 }
 
 /**
@@ -134,7 +120,7 @@ export function formatRelaxedBodyForPreviewDisplay(content: string): string {
 }
 
 /**
- * 製本枠上の想定行数。手動改行は1行、超過分は ceil(len/charsPerLine) で折り返し行を加算。
+ * 製本枠上の想定行数。手動改行は1行、超過分は折り返し行を加算。
  */
 export function countBodyLayoutLines(
   content: string,
@@ -147,10 +133,10 @@ export function getDiaryBodyLineLimit(contentFontMode: string | null | undefined
   charsPerLine: number;
   maxLines: number;
 } {
-  const mode = normalizeContentFontMode(contentFontMode);
+  const layout = getDiaryBookEntryV2BodyFontLayout(contentFontMode);
   return {
-    charsPerLine: DIARY_BODY_CHARS_PER_LINE_BY_MODE[mode],
-    maxLines: DIARY_BODY_MAX_LINES_BY_MODE[mode],
+    charsPerLine: layout.maxCharsPerLine,
+    maxLines: layout.maxLines,
   };
 }
 

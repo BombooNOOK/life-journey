@@ -1,15 +1,18 @@
+import { DIARY_BOOK_ENTRY_V2_COMMENT } from "./diaryBookEntryPrintLayout";
 import {
-  collapsePdfBodyFlowText,
-  splitFixedWidthJapaneseLines,
-} from "@/lib/pdf/splitFixedWidthJapaneseLines";
+  DIARY_COMMENT_MAX_LINES,
+  getDiaryCommentLinesForBindingAtWidth,
+} from "./diaryPreviewCommentLineWrap";
 
-/** 読み解き欄の1行最大文字数（15px・366px枠・overflow非クリップ前提で24文字） */
-export const DIARY_COMMENT_PDF_CHARS_PER_LINE = 24;
+/** 読み解き欄の1行最大文字数（日記ブック v2 レイアウトと同期） */
+export const DIARY_COMMENT_PDF_CHARS_PER_LINE =
+  DIARY_BOOK_ENTRY_V2_COMMENT.contentMaxCharsPerLine;
 
-/** 本文スロット高さ 173px・lineHeight≈1.58 の近似 */
-export const DIARY_COMMENT_PDF_MAX_LINES = 8;
+/** 読み解き欄スロット高さ（日記ブック v2 レイアウトと同期） */
+export const DIARY_COMMENT_PDF_REGION_HEIGHT_PX =
+  DIARY_BOOK_ENTRY_V2_COMMENT.contentHeightPx;
 
-export const DIARY_COMMENT_PDF_REGION_HEIGHT_PX = 173;
+export const DIARY_COMMENT_PDF_MAX_LINES = DIARY_COMMENT_MAX_LINES;
 
 const COMMENT_LAYOUT_TIERS = [
   { fontScale: 0.97, lineHeight: 1.58 },
@@ -17,16 +20,12 @@ const COMMENT_LAYOUT_TIERS = [
   { fontScale: 0.88, lineHeight: 1.44 },
 ] as const;
 
-/** PDF：段落・改行・不可視文字を潰して1文として流す */
-export const normalizeDiaryCommentForPdfFlow = collapsePdfBodyFlowText;
-
-export const splitDiaryCommentPdfFixedWidthLines = (
-  text: string,
-  maxChars: number = DIARY_COMMENT_PDF_CHARS_PER_LINE,
-): string[] => splitFixedWidthJapaneseLines(text, maxChars);
+export { normalizeDiaryCommentForPdfFlow } from "./diaryPreviewCommentLineWrap";
 
 export function getDiaryCommentPdfLinesForBinding(text: string): string[] {
-  return splitDiaryCommentPdfFixedWidthLines(text);
+  return getDiaryCommentLinesForBindingAtWidth(text, DIARY_COMMENT_PDF_CHARS_PER_LINE, {
+    maxLines: DIARY_COMMENT_PDF_MAX_LINES,
+  });
 }
 
 export type DiaryCommentPdfRenderLayout = {
@@ -41,9 +40,12 @@ export function resolveDiaryCommentPdfRenderLayout(
   options?: {
     baseFontSizePx?: number;
     regionHeightPx?: number;
+    maxCharsPerLine?: number;
   },
 ): DiaryCommentPdfRenderLayout {
-  const lines = getDiaryCommentPdfLinesForBinding(text);
+  const maxCharsPerLine =
+    options?.maxCharsPerLine ?? DIARY_COMMENT_PDF_CHARS_PER_LINE;
+  const lines = getDiaryCommentLinesForBindingAtWidth(text, maxCharsPerLine);
   const baseFontSizePx = options?.baseFontSizePx ?? 12;
   const regionHeightPx = options?.regionHeightPx ?? DIARY_COMMENT_PDF_REGION_HEIGHT_PX;
 

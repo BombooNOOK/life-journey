@@ -1,3 +1,12 @@
+import {
+  findJapaneseQuoteAwareBreak,
+  splitFixedWidthJapaneseLines,
+} from "@/lib/pdf/splitFixedWidthJapaneseLines";
+import {
+  adjustJapaneseBreakForKinsoku,
+  isValidJapaneseLineBreakAt,
+} from "@/lib/pdf/japaneseLineBreakKinsoku";
+
 /**
  * 製本読み解き欄の行分割（724×1024・contentWidthPx 360 前提）。
  * プレビューは段落あり。PDF は normalizeDiaryCommentForPdfFlow でぶっ通しに近い1文表示。
@@ -15,8 +24,8 @@ const PDF_MIN_NEXT_LINE_CHARS = 4;
 /** 行末を少し超えても孤立行を避ける（PDF・全角文字数） */
 const PDF_SOFT_LINE_OVERFLOW_CHARS = 5;
 
-/** 本文スロット高さ 173px・lineHeight≈1.58 の近似 */
-export const DIARY_COMMENT_MAX_LINES = 8;
+/** 読み解き欄の最大行数（日記ブック v2：5行以内） */
+export const DIARY_COMMENT_MAX_LINES = 5;
 
 /** 段落（\n\n）間の追加余白（724×1024 基準 px） */
 export const DIARY_COMMENT_PARAGRAPH_GAP_PX = 6;
@@ -24,43 +33,11 @@ export const DIARY_COMMENT_PARAGRAPH_GAP_PX = 6;
 /** 段落区切りを 0.5 行分として枠高さに換算 */
 export const DIARY_COMMENT_PARAGRAPH_GAP_LINE_UNITS = 0.5;
 
-const LINE_START_PROHIBITED = new Set(
-  "、。，．）』」〕】》〉ぁぃぅぇぉっゃゅょゎァィゥェォッャュョヮゝゞー",
-);
-
-const LINE_END_PROHIBITED = new Set("「『（【〔《〈");
-
 /** 行末で切ってよい句読点（この直後で改行を優先） */
 const PREFERRED_BREAK_AFTER_CHARS = ["。", "、"] as const;
 
-/** 行の最低埋め率（これより手前では句読点優先改行しない） */
+/** 行の最低埋め率（プレビュー用 wrap：これより手前では句読点優先改行しない） */
 const MIN_LINE_FILL_RATIO = 0.5;
-
-/** 行頭に来ると不自然になりやすい助動詞・接続の先頭（簡易） */
-const AUXILIARY_HEAD_PATTERNS = [
-  "かもしれ",
-  "かも",
-  "では",
-  "には",
-  "てい",
-  "でき",
-  "なる",
-  "する",
-  "った",
-  "って",
-  "から",
-  "まで",
-  "より",
-  "ので",
-  "のに",
-  "ため",
-  "よう",
-  "とい",
-  "とは",
-  "なってい",
-  "ています",
-  "でしょう",
-] as const;
 
 export type DiaryCommentLayoutItem =
   | { kind: "text"; text: string }
@@ -70,70 +47,12 @@ export type WrapJapaneseTextForDiaryCommentOptions = {
   maxCharsPerLine?: number;
 };
 
-function isKanji(char: string): boolean {
-  const code = char.codePointAt(0) ?? 0;
-  return (
-    (code >= 0x4e00 && code <= 0x9fff) ||
-    (code >= 0x3400 && code <= 0x4dbf) ||
-    (code >= 0xf900 && code <= 0xfaff)
-  );
-}
-
-function isHiragana(char: string): boolean {
-  const code = char.codePointAt(0) ?? 0;
-  return code >= 0x3040 && code <= 0x309f;
-}
-
-function isKatakana(char: string): boolean {
-  const code = char.codePointAt(0) ?? 0;
-  return code >= 0x30a0 && code <= 0x30ff;
-}
-
-/** 送り仮名・複合語・助動詞の途中で切らない（簡易） */
-function canBreakBetween(
-  prev: string,
-  next: string,
-  text?: string,
-  breakAt?: number,
-): boolean {
-  if (!prev || !next) return true;
-  if (LINE_END_PROHIBITED.has(prev)) return false;
-  if (LINE_START_PROHIBITED.has(next)) return false;
-  if (isKanji(prev) && (isHiragana(next) || isKatakana(next))) return false;
-  if (isHiragana(prev) && isHiragana(next) && "ぁぃぅぇぉっゃゅょゎ".includes(next)) {
-    return false;
-  }
-  if (text != null && breakAt != null && isHiragana(prev) && isHiragana(next)) {
-    const head = text.slice(breakAt, breakAt + 10);
-    if (AUXILIARY_HEAD_PATTERNS.some((pattern) => head.startsWith(pattern))) {
-      return false;
-    }
-    if (
-      /^(た)?かもしれ|たかも|なってい|ています|でしょう|につながり|になりそう|ていきます|できました|でした|しました|ました|ません/.test(
-        head,
-      )
-    ) {
-      return false;
-    }
-  }
-  return true;
-}
-
 function isValidBreakAt(text: string, breakAt: number, start: number): boolean {
-  if (breakAt <= start || breakAt > text.length) return false;
-  if (
-    breakAt < text.length &&
-    !canBreakBetween(text[breakAt - 1]!, text[breakAt]!, text, breakAt)
-  ) {
-    return false;
-  }
-  if (breakAt > start && LINE_END_PROHIBITED.has(text[breakAt - 1]!)) {
-    return false;
-  }
-  if (breakAt < text.length && LINE_START_PROHIBITED.has(text[breakAt]!)) {
-    return false;
-  }
-  return true;
+  return isValidJapaneseLineBreakAt(text, breakAt, start);
+}
+
+function findKinsokuBreak(text: string, start: number, idealEnd: number): number {
+  return adjustJapaneseBreakForKinsoku(text, start, idealEnd);
 }
 
 function findPreferredPunctuationBreak(
@@ -158,30 +77,16 @@ function findPreferredPunctuationBreak(
   return null;
 }
 
-function findKinsokuBreak(text: string, start: number, idealEnd: number): number {
-  let breakAt = idealEnd;
-
-  while (
-    breakAt > start &&
-    !canBreakBetween(text[breakAt - 1]!, text[breakAt]!, text, breakAt)
-  ) {
-    breakAt -= 1;
-  }
-
-  while (breakAt > start && LINE_END_PROHIBITED.has(text[breakAt - 1]!)) {
-    breakAt -= 1;
-  }
-
-  while (breakAt < text.length && LINE_START_PROHIBITED.has(text[breakAt]!)) {
-    breakAt -= 1;
-  }
-
-  return breakAt;
-}
-
 function findLineBreakIndex(text: string, start: number, maxCharsPerLine: number): number {
   const idealEnd = Math.min(start + maxCharsPerLine, text.length);
   if (idealEnd >= text.length) return text.length;
+
+  const quoteBreak = findJapaneseQuoteAwareBreak(text, start, idealEnd, maxCharsPerLine);
+  if (quoteBreak != null && quoteBreak > start && isValidBreakAt(text, quoteBreak, start)) {
+    const remaining = text.length - quoteBreak;
+    if (remaining <= 2) return text.length;
+    return quoteBreak;
+  }
 
   const punctuationBreak = findPreferredPunctuationBreak(text, start, idealEnd, maxCharsPerLine);
   if (punctuationBreak != null) {
@@ -233,51 +138,37 @@ export function normalizeDiaryCommentForPdfFlow(text: string): string {
     .trim();
 }
 
-function mergeOrphanCommentLines(lines: string[]): string[] {
-  if (lines.length === 0) return [];
+/** PDF 製本用：段落なしの行配列（字数上限＋括弧引き戻し） */
+export function getDiaryCommentLinesForBindingAtWidth(
+  text: string,
+  maxCharsPerLine: number,
+  options?: { maxLines?: number },
+): string[] {
+  const normalized = normalizeDiaryCommentForPdfFlow(text);
+  if (!normalized) return [];
 
-  const merged: string[] = [];
-  for (const line of lines) {
-    const prev = merged[merged.length - 1];
-    if (prev != null && shouldMergeOrphanLine(line)) {
-      merged[merged.length - 1] = prev + line;
-    } else {
-      merged.push(line);
-    }
+  const lines = splitFixedWidthJapaneseLines(normalized, maxCharsPerLine)
+    .map((line) => line.trim())
+    .filter(Boolean);
+  if (options?.maxLines != null) {
+    return lines.slice(0, options.maxLines);
   }
-  return merged;
-}
-
-function shouldMergeOrphanLine(line: string): boolean {
-  const trimmed = line.trim();
-  if (!trimmed) return true;
-  if (trimmed.length <= PDF_MIN_NEXT_LINE_CHARS) return true;
-  return isAwkwardLineStart(trimmed);
+  return lines;
 }
 
 /** PDF 製本用：段落なし・孤立行マージ後の行配列 */
 export function getDiaryCommentPdfLinesForBinding(text: string): string[] {
-  const normalized = normalizeDiaryCommentForPdfFlow(text);
-  if (!normalized) return [];
-
-  const wrapped = wrapJapaneseTextForDiaryComment(normalized, {
-    maxCharsPerLine: DIARY_COMMENT_PDF_CHARS_PER_LINE,
+  return getDiaryCommentLinesForBindingAtWidth(text, DIARY_COMMENT_PDF_CHARS_PER_LINE, {
+    maxLines: DIARY_COMMENT_MAX_LINES,
   });
-  return mergeOrphanCommentLines(wrapped)
-    .map((line) => line.trim())
-    .filter(Boolean)
-    .slice(0, DIARY_COMMENT_MAX_LINES);
 }
 
 export function isDiaryCommentOverPdfLineLimit(text: string): boolean {
   const normalized = normalizeDiaryCommentForPdfFlow(text);
   if (!normalized) return false;
 
-  const wrapped = wrapJapaneseTextForDiaryComment(normalized, {
-    maxCharsPerLine: DIARY_COMMENT_PDF_CHARS_PER_LINE,
-  });
-  const merged = mergeOrphanCommentLines(wrapped);
-  return merged.length > DIARY_COMMENT_MAX_LINES;
+  const lines = splitFixedWidthJapaneseLines(normalized, DIARY_COMMENT_PDF_CHARS_PER_LINE);
+  return lines.length > DIARY_COMMENT_MAX_LINES;
 }
 
 export function wrapJapaneseTextForDiaryComment(

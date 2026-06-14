@@ -25,9 +25,9 @@ function minHeadChars(maxChars: number): number {
 
 /**
  * 機械分割点がカギカッコの途中なら、開き括弧の直前か閉じ括弧の直後へずらす。
- * 1文字引き戻しだけでは直らない『…』「…」の分割向け。
+ * 日記読み解きの wrapJapaneseTextForDiaryComment からも利用。
  */
-function findQuoteAwareBreak(
+export function findJapaneseQuoteAwareBreak(
   text: string,
   start: number,
   initialBreak: number,
@@ -90,7 +90,7 @@ function findNextFixedWidthBreakIndex(text: string, start: number, maxChars: num
   let breakAt = Math.min(start + maxChars, text.length);
   if (breakAt >= text.length) return breakAt;
 
-  const quoteBreak = findQuoteAwareBreak(text, start, breakAt, maxChars);
+  const quoteBreak = findJapaneseQuoteAwareBreak(text, start, breakAt, maxChars);
   if (quoteBreak != null && quoteBreak > start) {
     breakAt = quoteBreak;
   }
@@ -111,7 +111,7 @@ function findNextFixedWidthBreakIndex(text: string, start: number, maxChars: num
 }
 
 /**
- * ① maxChars 文字で機械分割（単語途中でも切る）
+ * ① maxChars 文字を上限に機械分割（字数優先・残り数文字の前行吸収なし）
  * ② カギカッコ（『』「」）の途中では、開き直前か閉じ直後へずらす
  * ③ 次行先頭が句読点・閉じ括弧・小書き仮名・伸ばし棒のとき、または行末が開き括弧のとき1文字手前へ
  */

@@ -7,7 +7,6 @@ import { DiaryBookInsideCoverPdfPage } from "@/components/pdf/diaryBook/DiaryBoo
 import { DiaryBookMonthIndexPdfPage } from "@/components/pdf/diaryBook/DiaryBookMonthIndexPdfPage";
 import {
   diaryBookBackCoverImagePath,
-  diaryBookBodyTemplatePathForCompanion,
   diaryBookFreeWritingLeftImagePath,
   diaryBookFreeWritingRightImagePath,
   diaryBookInsideCoverBackIllustrationImagePath,
@@ -92,9 +91,6 @@ export function DiaryBookPrintDocument({
             return (
               <DiaryBookEntryPdfPage
                 key={`entry-${page.entry.id}-${index}`}
-                templateSrc={resolveImage(
-                  diaryBookBodyTemplatePathForCompanion(page.entry.companionType),
-                )}
                 entry={page.entry}
                 photoDataUri={photoDataUriByEntryId[page.entry.id] ?? null}
               />

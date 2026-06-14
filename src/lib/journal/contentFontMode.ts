@@ -7,26 +7,22 @@ export type ContentFontMode = (typeof CONTENT_FONT_MODES)[number];
 
 export const DEFAULT_CONTENT_FONT_MODE: ContentFontMode = "standard";
 
-/**
- * モード別の「目安を超えたら注意」（文字数 > この値でソフト警告）。
- * 製本に必ず収まる保証ではなく、読みやすさの目安（後から調整可能）。
- */
+/** 製本1ページ目安（chars/行 × 最大行・案D行間） */
 export const JOURNAL_CONTENT_SOFT_MAX_BY_MODE: Record<ContentFontMode, number> = {
-  relaxed: 112,
-  standard: 192,
-  generous: 280,
-  compact: 352,
+  relaxed: 150,
+  standard: 203,
+  generous: 360,
+  compact: 429,
 };
 
 /**
- * さらに長い場合の警告しきい値（文字数 > この値でストロング警告）。
- * ソフト上限より大きくすること（後から調整可能）。
+ * さらに長い場合の警告しきい値（ソフト上限の約1.34倍）。
  */
 export const JOURNAL_CONTENT_STRONG_MAX_BY_MODE: Record<ContentFontMode, number> = {
-  relaxed: 160,
-  standard: 300,
-  generous: 400,
-  compact: 472,
+  relaxed: 200,
+  standard: 272,
+  generous: 482,
+  compact: 575,
 };
 
 export const CONTENT_FONT_MODE_LABELS_JA: Record<ContentFontMode, string> = {

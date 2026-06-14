@@ -56,4 +56,15 @@ describe("splitFixedWidthJapaneseLines", () => {
     expect(lines.join("")).toBe(text);
     expect(lines.some((line) => line.includes("『短い』"))).toBe(true);
   });
+
+  it("does not merge a short remainder into the previous line (no soft overflow)", () => {
+    const text = "公園のベンチで少し休みながら、木漏れ日を眺めていました。";
+    expect(text.length).toBe(28);
+    const lines = splitFixedWidthJapaneseLines(text, 25);
+    expect(lines).toEqual([
+      "公園のベンチで少し休みながら、木漏れ日を眺めていま",
+      "した。",
+    ]);
+    expect(lines.every((line) => line.length <= 25)).toBe(true);
+  });
 });
