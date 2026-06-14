@@ -2,6 +2,7 @@ import Link from "next/link";
 
 import { HomeAppraiserProfilesSection } from "@/components/home/HomeAppraiserProfilesSection";
 import { HomeClosingSection } from "@/components/home/HomeClosingSection";
+import { HomeFaqSection } from "@/components/home/HomeFaqSection";
 import { HomeHeroSubNavLink } from "@/components/home/HomeHeroSubNavLink";
 import { HomeProductMockSection } from "@/components/home/HomeProductMockSection";
 import { HomeRecommendedForSection } from "@/components/home/HomeRecommendedForSection";
@@ -112,8 +113,6 @@ export default function HomePage() {
 
       <HomeProductMockSection />
 
-      <HomeAppraiserProfilesSection />
-
       <section className="rounded-2xl border border-stone-200/75 bg-[#faf8f5] p-4 sm:p-5">
         <h2 className="text-base font-semibold leading-snug text-stone-900">
           Life Journey Diary の歩き方
@@ -128,6 +127,10 @@ export default function HomePage() {
           Life Journey Diary の歩き方を読む →
         </Link>
       </section>
+
+      <HomeAppraiserProfilesSection />
+
+      <HomeFaqSection />
 
       <HomeClosingSection />
     </div>
