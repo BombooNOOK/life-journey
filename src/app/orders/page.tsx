@@ -4,6 +4,7 @@ import { KanteiMissingBanner } from "@/components/orders/KanteiMissingBanner";
 import { MyPageAccountSection } from "@/components/orders/MyPageAccountSection";
 import { LegalFooterLinks } from "@/components/legal/LegalFooterLinks";
 import { MyPageContactSection } from "@/components/orders/MyPageContactSection";
+import { MyPageHomeScreenTip } from "@/components/orders/MyPageHomeScreenTip";
 import { MyPageHeaderIllustration } from "@/components/orders/MyPageHeaderIllustration";
 import { MyPageMainActions } from "@/components/orders/MyPageMainActions";
 import { MyPageProfileList } from "@/components/orders/MyPageProfileList";
@@ -179,6 +180,8 @@ export default async function OrdersListPage() {
         subscriptionPlan={accountInfo.subscriptionPlan}
         blockContinuedFeatures={!entitlement.canUseContinuedFeatures}
       />
+
+      <MyPageHomeScreenTip />
 
       <MyPageAccountSection
         viewerEmail={viewerEmail}
