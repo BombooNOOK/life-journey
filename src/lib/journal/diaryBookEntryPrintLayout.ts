@@ -180,23 +180,29 @@ export const DIARY_BOOK_ENTRY_V2_COMMENT = {
   contentLeftPx: 64,
   /** 見出し下に余白（labelTop 794 + 12px 見出し + 20px） */
   contentTopPx: 826,
-  /** フクロウイラスト手前まで（724 - 18 - 160 - 64 - 4） */
-  contentWidthPx: 478,
+  /** フクロウ表示枠手前まで（724 − 18 − 142 − 64 − 2） */
+  contentWidthPx: 498,
+  /** テキスト右端とフクロウ枠の隙間 */
+  contentGapToCompanionPx: 2,
   /** 5行分（15px × 1.62 × 5 ≒ 122px）＋わずかな余白 */
   contentHeightPx: 125,
   contentFontSizePx: 15,
   contentLineHeight: 1.62,
   /**
-   * 1行あたりの文字数（478px ÷ 15px ≒ 31字。字数優先・括弧引き戻しのみ）。
+   * 1行あたりの文字数（498px ÷ 15px ≒ 33字。字数優先・括弧引き戻しのみ）。
    * PDF・本棚プレビュー共通。
    */
-  contentMaxCharsPerLine: 31,
-  companionWidthPx: 160,
-  companionHeightPx: 170,
-  /** ページ右端からの余白 */
+  contentMaxCharsPerLine: 33,
+  /** 将来キャラ枠の上限（フクロウより大きくしない） */
+  companionMaxWidthPx: 160,
+  companionMaxHeightPx: 170,
+  /** 現行フクロウの表示枠（object-fit: contain・左下基準） */
+  companionWidthPx: 142,
+  companionHeightPx: 151,
+  /** ページ右端からの余白（旧レイアウトと同じ 18px） */
   companionRightPx: 18,
-  /** フッター直上（978 - 170 - 28） */
-  companionTopPx: 780,
+  /** パネル下端に足元を揃える（780 + 170 − 151） */
+  companionTopPx: 799,
 } as const;
 
 export const DIARY_BOOK_ENTRY_V2_FOOTER = {

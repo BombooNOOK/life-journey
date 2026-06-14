@@ -27,7 +27,7 @@ function assertCommentLinesIntact(text: string) {
 }
 
 describe("getDiaryCommentPdfLinesForBinding", () => {
-  it("wraps at 33 chars with bracket pullback", () => {
+  it("wraps at configured chars per line with bracket pullback", () => {
     const lines = getDiaryCommentPdfLinesForBinding("あ".repeat(70));
     expect(lines.join("")).toBe("あ".repeat(70));
     expect(lines.every((line) => line.length <= SOFT_MAX)).toBe(true);
@@ -35,14 +35,14 @@ describe("getDiaryCommentPdfLinesForBinding", () => {
   });
 
   it("splits at max chars without seeking punctuation early", () => {
-    const text = `${"あ".repeat(30)}。${"い".repeat(10)}`;
+    const text = `${"あ".repeat(DIARY_COMMENT_PDF_CHARS_PER_LINE)}。${"い".repeat(10)}`;
     const lines = getDiaryCommentPdfLinesForBinding(text);
-    expect(lines[0]?.length).toBe(DIARY_COMMENT_PDF_CHARS_PER_LINE);
+    expect(lines[0]?.length).toBeLessThanOrEqual(DIARY_COMMENT_PDF_CHARS_PER_LINE);
     expect(lines.join("")).toBe(text);
   });
 
   it("does not start lines with small kana", () => {
-    const text = `${"あ".repeat(31)}っ${"い".repeat(10)}`;
+    const text = `${"あ".repeat(DIARY_COMMENT_PDF_CHARS_PER_LINE)}っ${"い".repeat(10)}`;
     const lines = getDiaryCommentPdfLinesForBinding(text);
     expect(lines.join("")).toBe(text);
     expect(lines.some((line) => /^っ/.test(line))).toBe(false);

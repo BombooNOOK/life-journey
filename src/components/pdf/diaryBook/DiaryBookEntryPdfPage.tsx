@@ -68,6 +68,11 @@ const styles = StyleSheet.create({
     position: "absolute",
     objectFit: "contain",
   },
+  companionImage: {
+    position: "absolute",
+    objectFit: "contain",
+    objectPosition: "left bottom",
+  },
   roundedBox: {
     position: "absolute",
     borderStyle: "solid",
@@ -784,7 +789,7 @@ export function DiaryBookEntryPdfPage({
         cache={false}
         src={companionSrc}
         style={[
-          styles.decoImage,
+          styles.companionImage,
           {
             left: px(companionLeft, "x"),
             top: px(commentCfg.companionTopPx, "y"),

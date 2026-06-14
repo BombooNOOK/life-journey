@@ -1,3 +1,4 @@
+import { DIARY_BOOK_ENTRY_V2_COMMENT } from "./diaryBookEntryPrintLayout";
 import {
   findJapaneseQuoteAwareBreak,
   splitFixedWidthJapaneseLines,
@@ -8,15 +9,15 @@ import {
 } from "@/lib/pdf/japaneseLineBreakKinsoku";
 
 /**
- * 製本読み解き欄の行分割（724×1024・contentWidthPx 360 前提）。
+ * 製本読み解き欄の行分割（724×1024・v2 contentWidthPx 498 前提）。
  * プレビューは段落あり。PDF は normalizeDiaryCommentForPdfFlow でぶっ通しに近い1文表示。
  */
 
 /** 360px 枠・12px×0.97 系フォントの近似（全角主体） */
 export const DIARY_COMMENT_CHARS_PER_LINE = 30;
 
-/** PDF 用：段落なしのとき少し長めに許容 */
-export const DIARY_COMMENT_PDF_CHARS_PER_LINE = 31;
+/** PDF 用：段落なしのとき少し長めに許容（v2 レイアウトと同期） */
+export const DIARY_COMMENT_PDF_CHARS_PER_LINE = DIARY_BOOK_ENTRY_V2_COMMENT.contentMaxCharsPerLine;
 
 /** 次行がこれ以下なら前行に吸収（PDF） */
 const PDF_MIN_NEXT_LINE_CHARS = 4;

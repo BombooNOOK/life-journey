@@ -649,7 +649,7 @@ export function DiaryBookEntryV2PreviewPage({
       <img
         alt=""
         src={diaryBookEntryCompanionImagePath(companionType ?? "owl")}
-        className="absolute object-contain"
+        className="absolute object-contain object-left object-bottom"
         style={absBox(
           companionLeft,
           commentCfg.companionTopPx,
