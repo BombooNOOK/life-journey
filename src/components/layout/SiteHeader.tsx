@@ -3,24 +3,15 @@
 import Link from "next/link";
 
 import { AuthNav } from "@/components/auth/AuthNav";
-import { useFirebaseAuth } from "@/components/auth/FirebaseAuthProvider";
 import { OwlNavButton } from "@/components/ui/OwlNavButton";
-import { isLjLoggedInOnClient } from "@/lib/auth/clientCookies";
+import { useClientAuthNavState } from "@/hooks/useClientAuthNavState";
 
 const navLinkClass = "shrink-0 whitespace-nowrap hover:text-stone-900";
 const navNavButtonClass = `${navLinkClass} cursor-pointer border-0 bg-transparent p-0 text-inherit font-inherit`;
 const navSepClass = "mx-1 shrink-0 select-none px-0.5 text-stone-300 sm:mx-1.5";
 
-/**
- * ログイン状態は Firebase と `lj_logged_in` の両方で判定（AuthNav と同じ）。
- * サーバー Cookie だけだと LAN / セッション同期前に「はじめての方」が残ることがある。
- */
 export function SiteHeader() {
-  const { user, loading } = useFirebaseAuth();
-  const cookieLoggedIn = isLjLoggedInOnClient();
-  const showLogout = Boolean(user) || (loading && cookieLoggedIn);
-  const isLoggedIn = showLogout || cookieLoggedIn;
-  const showGuestLink = !showLogout && (!loading || !cookieLoggedIn);
+  const { isLoggedIn, showGuestNav, showAuthenticatedNav } = useClientAuthNavState();
 
   return (
     <header className="overflow-visible border-b border-stone-200 bg-white/80 backdrop-blur">
@@ -46,26 +37,30 @@ export function SiteHeader() {
           }`}
           aria-label="メインメニュー"
         >
-          {showGuestLink ? (
+          {showGuestNav ? (
             <>
               <Link href="/order" className={navLinkClass}>
-                はじめての方
+                はじめての方へ
               </Link>
               <span className={navSepClass} aria-hidden>
                 |
               </span>
             </>
           ) : null}
-          <OwlNavButton
-            href="/orders"
-            loadingLabel="マイページを開いています…"
-            className={navNavButtonClass}
-          >
-            マイページ
-          </OwlNavButton>
-          <span className={navSepClass} aria-hidden>
-            |
-          </span>
+          {showAuthenticatedNav ? (
+            <>
+              <OwlNavButton
+                href="/orders"
+                loadingLabel="マイページを開いています…"
+                className={navNavButtonClass}
+              >
+                マイページ
+              </OwlNavButton>
+              <span className={navSepClass} aria-hidden>
+                |
+              </span>
+            </>
+          ) : null}
           <Link href="/guide" className={navLinkClass}>
             使い方
           </Link>

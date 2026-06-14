@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 
 import { useFirebaseAuth } from "@/components/auth/FirebaseAuthProvider";
-import { isLjLoggedInOnClient } from "@/lib/auth/clientCookies";
+import { useClientAuthNavState } from "@/hooks/useClientAuthNavState";
 
 function AuthSeparator() {
   return (
@@ -19,13 +19,10 @@ const authActionClass =
 
 export function AuthNav() {
   const router = useRouter();
-  const { user, loading, signOutUser } = useFirebaseAuth();
-  const cookieLoggedIn = isLjLoggedInOnClient();
+  const { signOutUser } = useFirebaseAuth();
+  const { showGuestNav, showAuthenticatedNav } = useClientAuthNavState();
 
-  const showLogout = Boolean(user) || (loading && cookieLoggedIn);
-  const showLogin = !showLogout && (!loading || !cookieLoggedIn);
-
-  if (showLogout) {
+  if (showAuthenticatedNav) {
     return (
       <>
         <AuthSeparator />
@@ -46,7 +43,7 @@ export function AuthNav() {
     );
   }
 
-  if (showLogin) {
+  if (showGuestNav) {
     return (
       <>
         <AuthSeparator />
