@@ -773,7 +773,7 @@ function JournalPageContent() {
               href={safeReturnTo}
               className="text-emerald-800 underline-offset-2 hover:underline"
             >
-              {returnToIsCalendar ? "日記ホームへ" : "本の確認へ"}
+              {returnToIsCalendar ? "カレンダーへ戻る" : "本の確認へ"}
             </Link>
           ) : null}
         </p>
@@ -798,7 +798,7 @@ function JournalPageContent() {
           <p>無料お試し期間が終了したため、新しい記録の作成はできません。</p>
           <p className="mt-2">
             <Link href="/orders/calendar" className="font-medium underline-offset-2 hover:underline">
-              日記ホームで過去の記録を見る
+              カレンダーで過去の記録を見る
             </Link>
           </p>
         </div>

@@ -15,7 +15,7 @@ import {
 export const dynamic = "force-dynamic";
 
 function CalendarFallback() {
-  return <p className="text-sm text-stone-500">日記ホームを読み込み中…</p>;
+  return <p className="text-sm text-stone-500">カレンダーを読み込み中…</p>;
 }
 
 export default async function OrdersCalendarPage() {

@@ -178,7 +178,7 @@ function JournalPreviewPageContent() {
             kanteiOrderExists={kanteiOrderExists}
             returnTo={returnTo}
             returnHomeLabel={
-              returnTo?.startsWith("/orders/calendar") ? "日記ホームに戻る" : "一覧に戻る"
+              returnTo?.startsWith("/orders/calendar") ? "カレンダーへ戻る" : "一覧に戻る"
             }
           />
         )}
@@ -190,7 +190,7 @@ function JournalPreviewPageContent() {
             href={returnTo}
             className="relative z-[1] min-h-[44px] rounded-lg border border-emerald-300 bg-emerald-50 px-4 py-2.5 text-sm font-medium text-emerald-900 hover:bg-emerald-100 active:bg-emerald-100/90"
           >
-            {returnTo.startsWith("/orders/calendar") ? "日記ホームに戻る" : "一覧に戻る"}
+            {returnTo.startsWith("/orders/calendar") ? "カレンダーへ戻る" : "一覧に戻る"}
           </Link>
         ) : null}
         {canEditJournal ? (
@@ -225,7 +225,7 @@ function JournalPreviewPageContent() {
                 href="/orders/calendar"
                 className="rounded-lg border border-stone-300 bg-white px-4 py-2 text-sm text-stone-700 hover:bg-stone-50"
               >
-                日記ホームへ
+                カレンダーへ戻る
               </Link>
             )}
             <Link
