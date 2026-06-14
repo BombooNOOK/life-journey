@@ -579,7 +579,7 @@ export function DiaryBookEntryV2PreviewPage({
                   style={getDiaryPreviewBodyLineStyle(
                     {
                       fontSize: `${bodyFontLayout.fontSizePx}px`,
-                      lineHeight: bodyFontLayout.lineHeight,
+                      lineHeight: String(bodyFontLayout.lineHeight),
                     },
                     { debugVisual: true, lineIndex: index },
                   )}
