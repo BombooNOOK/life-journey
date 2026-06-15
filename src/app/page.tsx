@@ -3,6 +3,7 @@ import Link from "next/link";
 import { HomeAppraiserProfilesSection } from "@/components/home/HomeAppraiserProfilesSection";
 import { HomeClosingSection } from "@/components/home/HomeClosingSection";
 import { HomeFaqSection } from "@/components/home/HomeFaqSection";
+import { HomeHomeScreenSection } from "@/components/home/HomeHomeScreenSection";
 import { HomeHeroSubNavLink } from "@/components/home/HomeHeroSubNavLink";
 import { HomeProductMockSection } from "@/components/home/HomeProductMockSection";
 import { HomeRecommendedForSection } from "@/components/home/HomeRecommendedForSection";
@@ -113,20 +114,7 @@ export default function HomePage() {
 
       <HomeProductMockSection />
 
-      <section className="rounded-2xl border border-stone-200/75 bg-[#faf8f5] p-4 sm:p-5">
-        <h2 className="text-base font-semibold leading-snug text-stone-900">
-          Life Journey Diary の歩き方
-        </h2>
-        <p className="mt-2.5 text-sm leading-relaxed text-stone-600">
-          Life Journey Diary の考え方や、鑑定書と日記のつながりを知りたい方へ。
-        </p>
-        <Link
-          href="/diary-guide"
-          className="mt-4 inline-flex min-h-[44px] items-center text-sm font-medium text-emerald-900 underline-offset-2 transition hover:text-emerald-950 hover:underline"
-        >
-          Life Journey Diary の歩き方を読む →
-        </Link>
-      </section>
+      <HomeHomeScreenSection />
 
       <HomeAppraiserProfilesSection />
 
