@@ -16,77 +16,72 @@ export function SiteHeader() {
 
   return (
     <header className="overflow-visible border-b border-stone-200 bg-white/80 backdrop-blur">
-      <div
-        className={`mx-auto flex max-w-3xl flex-wrap items-center justify-between gap-x-2 gap-y-1.5 overflow-visible px-4 sm:gap-x-3 sm:gap-y-2 ${
-          isLoggedIn ? "py-2 sm:py-4" : "py-3 sm:py-4"
-        }`}
-      >
-        {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
-        <a
-          href="/"
-          className={`shrink-0 font-semibold text-stone-800 no-underline hover:text-stone-900 ${
-            isLoggedIn
-              ? "basis-auto text-sm sm:text-lg"
-              : "basis-full text-base sm:basis-auto sm:text-lg"
-          }`}
-        >
-          Life Journey Diary
-        </a>
-        <nav
-          className={`flex min-w-0 flex-wrap items-center justify-end gap-x-1.5 gap-y-1 overflow-visible text-xs text-stone-600 sm:gap-x-2 sm:text-sm ${
-            isLoggedIn ? "basis-auto flex-1" : "basis-full sm:basis-auto sm:flex-1"
-          }`}
-          aria-label="メインメニュー"
-        >
-          {showGuestNav ? (
-            <>
-              <Link href="/order" className={navLinkClass}>
-                はじめての方へ
-              </Link>
-              <span className={navSepClass} aria-hidden>
-                |
-              </span>
-            </>
-          ) : null}
-          {showAuthenticatedNav ? (
-            <>
-              <OwlNavButton
-                href="/orders"
-                loadingLabel="マイページを開いています…"
-                className={navNavButtonClass}
-              >
-                マイページ
-              </OwlNavButton>
-              <span className={navSepClass} aria-hidden>
-                |
-              </span>
-            </>
-          ) : null}
-          <Link href="/guide" className={navLinkClass}>
-            使い方
-          </Link>
-          <span className={navSepClass} aria-hidden>
-            |
-          </span>
-          <Link href="/plans" className={navLinkClass}>
-            プラン
-          </Link>
-          {showAuthenticatedNav ? (
-            <>
-              <span className={navSepClass} aria-hidden>
-                |
-              </span>
-              <LoggedInStatusBadge />
-            </>
-          ) : null}
-          <div
-            className={`flex shrink-0 items-center justify-end overflow-visible sm:w-auto sm:basis-auto ${
-              isLoggedIn ? "w-auto basis-auto" : "w-full basis-full max-sm:pt-0.5"
+      <div className="mx-auto max-w-3xl space-y-1 overflow-visible px-4 py-3 sm:space-y-1.5 sm:py-4">
+        <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-1.5">
+          {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
+          <a
+            href="/"
+            className={`shrink-0 font-semibold text-stone-800 no-underline hover:text-stone-900 ${
+              isLoggedIn
+                ? "basis-auto text-base sm:text-lg"
+                : "basis-full text-base sm:basis-auto sm:text-lg"
             }`}
           >
-            <AuthNav />
+            Life Journey Diary
+          </a>
+          <nav
+            className={`flex min-w-0 flex-wrap items-center justify-end gap-x-1.5 gap-y-1 overflow-visible text-sm text-stone-600 sm:gap-x-2 sm:text-base ${
+              isLoggedIn ? "basis-auto flex-1" : "basis-full sm:basis-auto sm:flex-1"
+            }`}
+            aria-label="メインメニュー"
+          >
+            {showGuestNav ? (
+              <>
+                <Link href="/order" className={navLinkClass}>
+                  はじめての方へ
+                </Link>
+                <span className={navSepClass} aria-hidden>
+                  |
+                </span>
+              </>
+            ) : null}
+            {showAuthenticatedNav ? (
+              <>
+                <OwlNavButton
+                  href="/orders"
+                  loadingLabel="マイページを開いています…"
+                  className={navNavButtonClass}
+                >
+                  マイページ
+                </OwlNavButton>
+                <span className={navSepClass} aria-hidden>
+                  |
+                </span>
+              </>
+            ) : null}
+            <Link href="/guide" className={navLinkClass}>
+              使い方
+            </Link>
+            <span className={navSepClass} aria-hidden>
+              |
+            </span>
+            <Link href="/plans" className={navLinkClass}>
+              プラン
+            </Link>
+            <div
+              className={`flex shrink-0 items-center justify-end overflow-visible sm:w-auto sm:basis-auto ${
+                isLoggedIn ? "w-auto basis-auto" : "w-full basis-full max-sm:pt-0.5"
+              }`}
+            >
+              <AuthNav />
+            </div>
+          </nav>
+        </div>
+        {showAuthenticatedNav ? (
+          <div className="flex justify-end">
+            <LoggedInStatusBadge />
           </div>
-        </nav>
+        ) : null}
       </div>
     </header>
   );

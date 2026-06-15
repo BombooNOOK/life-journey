@@ -2,12 +2,11 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { sendPasswordResetEmail } from "firebase/auth";
 
 import { useFirebaseAuth } from "@/components/auth/FirebaseAuthProvider";
 import { getFirebaseAuth } from "@/lib/firebase/client";
-import { getPasswordResetActionCodeSettings } from "@/lib/auth/passwordResetActionCode";
 import { PASSWORD_RESET_SENT_NOTICE } from "@/lib/auth/passwordResetCopy";
+import { sendLjPasswordResetEmail } from "@/lib/auth/sendPasswordResetEmailSafe";
 import { mobileReadable } from "@/lib/auth/mobileReadableStyles";
 
 import { JournalBackupDownloadButton } from "@/components/orders/JournalBackupDownloadButton";
@@ -63,11 +62,25 @@ export function MyPageAccountSection({
     setResetBusy(true);
     try {
       const auth = getFirebaseAuth();
-      const actionCodeSettings = getPasswordResetActionCodeSettings();
-      await sendPasswordResetEmail(auth, email, actionCodeSettings);
+      await sendLjPasswordResetEmail(auth, email);
       setResetNotice(PASSWORD_RESET_SENT_NOTICE);
-    } catch {
-      setResetNotice(PASSWORD_RESET_SENT_NOTICE);
+    } catch (e) {
+      console.error("[mypage:password-reset]", e);
+      const raw =
+        e instanceof Error
+          ? e.message
+          : typeof e === "object" && e !== null && "message" in e
+            ? String((e as { message: unknown }).message)
+            : "";
+      if (
+        raw.includes("auth/user-not-found") ||
+        raw.includes("auth/invalid-email") ||
+        raw.includes("auth/invalid-login-credentials")
+      ) {
+        setResetNotice(PASSWORD_RESET_SENT_NOTICE);
+      } else {
+        setResetError("パスワード再設定メールの送信に失敗しました。時間をおいて再度お試しください。");
+      }
     } finally {
       setResetBusy(false);
     }
@@ -134,14 +147,14 @@ export function MyPageAccountSection({
                 {resetBusy ? "送信中…" : "パスワード再設定メールを送る"}
               </button>
               {resetNotice ? (
-                <p className="mt-2 text-sm leading-[1.6] text-emerald-800 whitespace-pre-line" role="status">
+                <div className={`mt-3 ${mobileReadable.notice}`} role="status" aria-live="polite">
                   {resetNotice}
-                </p>
+                </div>
               ) : null}
               {resetError ? (
-                <p className="mt-2 text-xs text-red-700" role="alert">
+                <div className={`mt-3 ${mobileReadable.error}`} role="alert">
                   {resetError}
-                </p>
+                </div>
               ) : null}
             </>
           ) : (

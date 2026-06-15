@@ -8,7 +8,6 @@ import {
   GoogleAuthProvider,
   type UserCredential,
   createUserWithEmailAndPassword,
-  sendPasswordResetEmail,
   signInWithEmailAndPassword,
   signInWithPopup,
   signInWithRedirect,
@@ -21,8 +20,8 @@ import {
 } from "@/components/auth/AuthSessionPanels";
 import { InlineHelpButton } from "@/components/ui/InlineHelpButton";
 import { mobileReadable } from "@/lib/auth/mobileReadableStyles";
-import { getPasswordResetActionCodeSettings } from "@/lib/auth/passwordResetActionCode";
 import { PASSWORD_RESET_SENT_NOTICE } from "@/lib/auth/passwordResetCopy";
+import { sendLjPasswordResetEmail } from "@/lib/auth/sendPasswordResetEmailSafe";
 import {
   clearGoogleOAuthRedirectFlow,
   isGoogleOAuthFlowCookieActive,
@@ -189,6 +188,8 @@ export function LoginClient({ returnToRaw }: { returnToRaw: string | null }) {
   const [oauthReturnSurface, setOauthReturnSurface] = useState(0);
   /** 連打で途中状態が重なり「3回押すと入る」になるのを防ぐ */
   const googleSignInLock = useRef(false);
+  const emailInputRef = useRef<HTMLInputElement>(null);
+  const feedbackRef = useRef<HTMLDivElement>(null);
 
   const returnTo = resolveSafeReturnTo(returnToRaw);
   const loginFlow = resolveLoginFlow(returnTo);
@@ -449,20 +450,23 @@ export function LoginClient({ returnToRaw }: { returnToRaw: string | null }) {
     }
   };
 
-  const handlePasswordReset = async (formData: FormData) => {
+  const handlePasswordReset = async () => {
     setError(null);
     setNotice(null);
-    const email = String(formData.get("email") ?? "").trim();
+    const email = (emailInputRef.current?.value ?? "").trim();
     if (!email) {
       setError("先にメールアドレスを入力してください。");
+      emailInputRef.current?.focus();
       return;
     }
     const a = auth();
-    if (!a) return;
+    if (!a) {
+      setError("ログイン機能の準備ができていません。ページを再読み込みしてからお試しください。");
+      return;
+    }
     setBusyReset(true);
     try {
-      const actionCodeSettings = getPasswordResetActionCodeSettings();
-      await sendPasswordResetEmail(a, email, actionCodeSettings);
+      await sendLjPasswordResetEmail(a, email);
       setNotice(PASSWORD_RESET_SENT_NOTICE);
     } catch (e) {
       console.error("[login:password-reset]", e);
@@ -483,6 +487,9 @@ export function LoginClient({ returnToRaw }: { returnToRaw: string | null }) {
       }
     } finally {
       setBusyReset(false);
+      requestAnimationFrame(() => {
+        feedbackRef.current?.scrollIntoView({ block: "nearest", behavior: "smooth" });
+      });
     }
   };
 
@@ -572,27 +579,29 @@ export function LoginClient({ returnToRaw }: { returnToRaw: string | null }) {
         </div>
       ) : null}
 
-      {error ? (
-        <div className="space-y-2">
-          <div className={mobileReadable.error}>
-            {error}
-          </div>
-          <button
-            type="button"
-            className={`${mobileReadable.link} font-medium`}
-            onClick={() => {
-              setError(null);
-              setOauthReturnHandoffUi(false);
-              clearGoogleOAuthRedirectFlow();
-            }}
-          >
-            メッセージを閉じる
-          </button>
-        </div>
-      ) : null}
-      {notice ? (
-        <div className={mobileReadable.notice} role="status">
-          {notice}
+      {(error || notice) ? (
+        <div ref={feedbackRef} className="space-y-2">
+          {error ? (
+            <>
+              <div className={mobileReadable.error}>{error}</div>
+              <button
+                type="button"
+                className={`${mobileReadable.link} font-medium`}
+                onClick={() => {
+                  setError(null);
+                  setOauthReturnHandoffUi(false);
+                  clearGoogleOAuthRedirectFlow();
+                }}
+              >
+                メッセージを閉じる
+              </button>
+            </>
+          ) : null}
+          {notice ? (
+            <div className={mobileReadable.notice} role="status" aria-live="polite">
+              {notice}
+            </div>
+          ) : null}
         </div>
       ) : null}
 
@@ -631,6 +640,7 @@ export function LoginClient({ returnToRaw }: { returnToRaw: string | null }) {
         <label className={`block ${mobileReadable.label}`}>
           メールアドレス
           <input
+            ref={emailInputRef}
             name="email"
             type="email"
             inputMode="email"
@@ -687,28 +697,22 @@ export function LoginClient({ returnToRaw }: { returnToRaw: string | null }) {
         <p className={mobileReadable.helperMuted}>
           Enterキーで送信した場合は「{isRegisterFlow ? "新規登録" : "ログイン"}」として処理されます。
         </p>
-        {!isRegisterFlow ? (
-          <button
-            type="button"
-            disabled={busyReset}
-            className={`${mobileReadable.link} text-left disabled:opacity-50`}
-            onClick={(e) => {
-              const form = e.currentTarget.form;
-              if (!form) return;
-              void handlePasswordReset(new FormData(form));
-            }}
-          >
-            {busyReset ? "再設定メールを送信中…" : "パスワードを忘れた場合（再設定メールを送る）"}
-          </button>
-        ) : null}
         <p className={`text-center ${mobileReadable.helper}`}>
           {isRegisterFlow ? (
-            <Link
-              href={buildLoginHref("/orders")}
-              className={mobileReadable.link}
-            >
-              すでにアカウントをお持ちの方はログイン
-            </Link>
+            <>
+              <Link
+                href={buildLoginHref("/orders")}
+                className={mobileReadable.link}
+              >
+                すでにアカウントをお持ちの方はログイン
+              </Link>
+              <span className="mx-2 text-stone-300" aria-hidden>
+                |
+              </span>
+              <Link href={buildLoginHref("/orders")} className={mobileReadable.link}>
+                パスワードを忘れた方
+              </Link>
+            </>
           ) : (
             <Link
               href={buildLoginHref("/order")}
@@ -719,6 +723,22 @@ export function LoginClient({ returnToRaw }: { returnToRaw: string | null }) {
           )}
         </p>
       </form>
+
+      {!isRegisterFlow ? (
+        <div className="space-y-2 border-t border-stone-100 pt-4">
+          <button
+            type="button"
+            disabled={busyReset || busyEmail}
+            className={mobileReadable.buttonSecondary}
+            onClick={() => void handlePasswordReset()}
+          >
+            {busyReset ? "再設定メールを送信中…" : "パスワード再設定メールを送る"}
+          </button>
+          <p className={mobileReadable.helperMuted}>
+            上のメールアドレス宛に、パスワード再設定用のリンクを送ります。
+          </p>
+        </div>
+      ) : null}
 
       <p className={`text-center ${mobileReadable.bodyMuted}`}>
         <Link href="/" className={mobileReadable.link}>

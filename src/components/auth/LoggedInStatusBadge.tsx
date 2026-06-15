@@ -27,7 +27,7 @@ export function LoggedInStatusBadge({ className = "" }: Props) {
 
   return (
     <span
-      className={`max-w-[6.5rem] truncate text-xs leading-snug text-emerald-800 sm:max-w-[11rem] sm:text-sm ${className}`.trim()}
+      className={`max-w-full truncate text-sm leading-snug text-emerald-800 sm:max-w-[20rem] sm:text-base ${className}`.trim()}
       title={viewerEmail ?? undefined}
       role="status"
     >
