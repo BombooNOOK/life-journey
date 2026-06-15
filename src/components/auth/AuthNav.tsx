@@ -15,7 +15,7 @@ function AuthSeparator() {
 }
 
 const authActionClass =
-  "shrink-0 whitespace-nowrap text-xs text-stone-600 underline-offset-2 hover:text-stone-900 hover:underline sm:text-sm";
+  "inline-flex min-h-[44px] shrink-0 items-center whitespace-nowrap text-sm text-stone-600 underline-offset-2 hover:text-stone-900 hover:underline sm:text-base";
 
 export function AuthNav() {
   const router = useRouter();

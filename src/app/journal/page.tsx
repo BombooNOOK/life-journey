@@ -737,7 +737,7 @@ function JournalPageContent() {
       ) : null}
       <div className="space-y-1">
         <div className="flex flex-wrap items-center gap-2">
-          <h1 className="text-xl font-bold leading-tight text-stone-900 sm:text-2xl">
+          <h1 className="text-[1.375rem] font-bold leading-tight text-stone-900 sm:text-[1.75rem]">
             {recordPageTitle}
           </h1>
           {diaryTargetLabel !== null ? (
@@ -751,7 +751,7 @@ function JournalPageContent() {
             <span className="text-[11px] text-stone-400">読み込み中…</span>
           ) : null}
         </div>
-        <p className="text-xs leading-relaxed text-stone-500">
+        <p className="text-sm leading-[1.6] text-stone-600">
           こんな日だった。こんなことを思った。
           <br />
           そのままの言葉で残してみましょう。
@@ -764,7 +764,7 @@ function JournalPageContent() {
               : ""}
           </p>
         ) : null}
-        <p className="flex flex-wrap items-center gap-x-3 text-[11px] text-stone-400">
+        <p className="flex flex-wrap items-center gap-x-3 text-sm text-stone-500">
           <Link href="/orders" className="underline-offset-2 hover:text-stone-600 hover:underline">
             マイページ
           </Link>
@@ -887,7 +887,7 @@ function JournalPageContent() {
         />
 
         <div className="space-y-2 rounded-lg border border-dashed border-stone-200/90 bg-[#faf8f5]/50 px-3 py-3">
-          <label className="block text-sm font-medium text-stone-700" htmlFor="journal-photo">
+          <label className="block text-base font-medium text-stone-700" htmlFor="journal-photo">
             この日の写真（任意）
           </label>
           <input
@@ -895,7 +895,7 @@ function JournalPageContent() {
             id="journal-photo"
             type="file"
             accept="image/*"
-            className="w-full rounded-lg border border-stone-300 bg-white px-3 py-2 text-sm text-stone-700 file:mr-3 file:rounded file:border-0 file:bg-stone-100 file:px-3 file:py-1.5 file:text-sm file:text-stone-700"
+            className="w-full rounded-lg border border-stone-300 bg-white px-3 py-2.5 text-base text-stone-700 file:mr-3 file:rounded file:border-0 file:bg-stone-100 file:px-3 file:py-1.5 file:text-base file:text-stone-700"
             onChange={(e) => {
               const file = e.target.files?.[0];
               if (!file) {
@@ -949,7 +949,7 @@ function JournalPageContent() {
         <div className="space-y-3 border-t border-stone-100 pt-3">
           <JournalCompanionPicker disabled={saving || loadingEdit || processingPhoto} />
 
-        <label className="block text-sm font-medium text-stone-700" htmlFor="journal-entry-date">
+        <label className="block text-base font-medium text-stone-700" htmlFor="journal-entry-date">
           記録日
         </label>
         <input
@@ -957,7 +957,7 @@ function JournalPageContent() {
           type="date"
           value={entryDate}
           onChange={(e) => setEntryDate(e.target.value)}
-          className="w-full rounded-lg border border-stone-300 px-3 py-2 text-sm text-stone-900 outline-none ring-stone-400 focus:ring-2"
+            className="w-full rounded-lg border border-stone-300 px-3 py-2.5 text-base text-stone-900 outline-none ring-stone-400 focus:ring-2"
         />
         {numerologyDebug ? (
           <details className="rounded-lg border border-stone-200 bg-stone-50 px-3 py-2 text-xs text-stone-800">
@@ -1021,7 +1021,7 @@ function JournalPageContent() {
           </details>
         ) : null}
         <fieldset>
-          <legend className="mb-2 block text-sm font-medium text-stone-700">今日の気分</legend>
+          <legend className="mb-2 block text-base font-medium text-stone-700">今日の気分</legend>
           <div
             className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-5"
             role="radiogroup"
@@ -1050,7 +1050,7 @@ function JournalPageContent() {
             })}
           </div>
         </fieldset>
-        <label className="block text-sm font-medium text-stone-700" htmlFor="journal-activity">
+        <label className="block text-base font-medium text-stone-700" htmlFor="journal-activity">
           今日はどんな一日でしたか？
         </label>
         <select
@@ -1071,7 +1071,7 @@ function JournalPageContent() {
             <button
               type="submit"
               disabled={saving || processingPhoto}
-              className="whitespace-nowrap rounded-lg bg-stone-800 px-4 py-2 text-sm font-medium text-white transition hover:bg-stone-700 disabled:opacity-60"
+              className="whitespace-nowrap rounded-lg bg-stone-800 px-4 py-2.5 text-base font-medium text-white transition hover:bg-stone-700 disabled:opacity-60 min-h-[44px]"
             >
               {saving ? "保存中…" : editingId ? "更新する" : "保存する"}
             </button>
@@ -1079,7 +1079,7 @@ function JournalPageContent() {
               type="button"
               disabled={saving || processingPhoto}
               onClick={() => void saveEntry({ redirectToPreview: true })}
-              className="whitespace-nowrap rounded-lg border border-violet-300 bg-violet-50 px-4 py-2 text-sm font-medium text-violet-900 transition hover:bg-violet-100 disabled:opacity-60"
+              className="whitespace-nowrap rounded-lg border border-violet-300 bg-violet-50 px-4 py-2.5 text-base font-medium text-violet-900 transition hover:bg-violet-100 disabled:opacity-60 min-h-[44px]"
             >
               保存してプレビュー
             </button>
@@ -1087,7 +1087,7 @@ function JournalPageContent() {
               type="button"
               disabled={saving || processingPhoto}
               onClick={() => void saveEntry({ redirectToOrders: true })}
-              className="whitespace-nowrap rounded-lg border border-stone-300 bg-white px-4 py-2 text-sm font-medium text-stone-700 transition hover:bg-stone-50 disabled:opacity-60"
+              className="whitespace-nowrap rounded-lg border border-stone-300 bg-white px-4 py-2.5 text-base font-medium text-stone-700 transition hover:bg-stone-50 disabled:opacity-60 min-h-[44px]"
             >
               保存してマイページへ
             </button>
@@ -1098,7 +1098,7 @@ function JournalPageContent() {
                 resetJournalFormState();
                 setError(null);
               }}
-              className="whitespace-nowrap rounded-lg border border-stone-300 bg-white px-4 py-2 text-sm font-medium text-stone-700 transition hover:bg-stone-50 disabled:opacity-60"
+              className="whitespace-nowrap rounded-lg border border-stone-300 bg-white px-4 py-2.5 text-base font-medium text-stone-700 transition hover:bg-stone-50 disabled:opacity-60 min-h-[44px]"
             >
               入力をクリア
             </button>
@@ -1107,7 +1107,7 @@ function JournalPageContent() {
                 type="button"
                 disabled={saving || processingPhoto || deletingId === editingId}
                 onClick={cancelEditingAndReturnToCalendar}
-                className="whitespace-nowrap rounded-lg border border-stone-300 bg-white px-4 py-2 text-sm font-medium text-stone-700 transition hover:bg-stone-50 disabled:opacity-60"
+                className="whitespace-nowrap rounded-lg border border-stone-300 bg-white px-4 py-2.5 text-base font-medium text-stone-700 transition hover:bg-stone-50 disabled:opacity-60 min-h-[44px]"
               >
                 編集をやめる
               </button>

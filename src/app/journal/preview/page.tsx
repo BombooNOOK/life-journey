@@ -101,8 +101,8 @@ function JournalPreviewPageContent() {
     <div className="space-y-5">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
-          <h1 className="text-2xl font-bold text-stone-900">日記プレビュー</h1>
-          <p className="mt-1 text-sm text-stone-600">
+          <h1 className="text-[1.375rem] font-bold text-stone-900 sm:text-[1.75rem]">日記プレビュー</h1>
+          <p className="mt-1 text-base leading-[1.6] text-stone-600">
             製本時の見え方イメージを、ページをめくるように確認できます。
           </p>
         </div>
@@ -111,7 +111,7 @@ function JournalPreviewPageContent() {
             type="button"
             onClick={() => setSpread("cover")}
             className={[
-              "rounded-md border px-3 py-1.5 text-sm",
+              "min-h-[44px] rounded-md border px-3 py-2 text-base",
               spread === "cover"
                 ? "border-stone-700 bg-stone-800 text-white"
                 : "border-stone-300 bg-white text-stone-700 hover:bg-stone-50",
@@ -123,7 +123,7 @@ function JournalPreviewPageContent() {
             type="button"
             onClick={() => setSpread("body")}
             className={[
-              "rounded-md border px-3 py-1.5 text-sm",
+              "min-h-[44px] rounded-md border px-3 py-2 text-base",
               spread === "body"
                 ? "border-stone-700 bg-stone-800 text-white"
                 : "border-stone-300 bg-white text-stone-700 hover:bg-stone-50",
@@ -142,22 +142,22 @@ function JournalPreviewPageContent() {
         }
       >
         {loading ? (
-          <p className="text-sm text-stone-500">プレビューを読み込み中…</p>
+          <p className="text-base text-stone-500">プレビューを読み込み中…</p>
         ) : error ? (
-          <p className="text-sm text-red-700">{error}</p>
+          <p className="text-base text-red-700">{error}</p>
         ) : !entry ? (
-          <p className="text-sm text-stone-500">表示する記録がありません。</p>
+          <p className="text-base text-stone-500">表示する記録がありません。</p>
         ) : spread === "cover" ? (
           <div className="mx-auto max-w-2xl">
             <div className="rounded-xl border border-stone-200 bg-gradient-to-br from-[#f8f3ea] to-[#efe6d8] p-8 text-center shadow-inner">
-              <p className="text-xs tracking-[0.2em] text-stone-500">LIFE JOURNEY DIARY</p>
-              <h2 className="mt-3 text-2xl font-semibold text-stone-900">
+              <p className="text-sm tracking-[0.2em] text-stone-500">LIFE JOURNEY DIARY</p>
+              <h2 className="mt-3 text-[1.375rem] font-semibold text-stone-900 sm:text-2xl">
                 {new Date(entry.createdAt).getFullYear()}年 日記
               </h2>
-              <p className="mt-3 text-sm text-stone-600">
+              <p className="mt-3 text-base text-stone-600">
                 デザイン: {getDiaryDesignLabel(designTheme)}
               </p>
-              <p className="mt-8 text-sm text-stone-700">
+              <p className="mt-8 text-base leading-[1.6] text-stone-700">
                 ※ 表紙は次段で本デザインに合わせて正式連動します（今回先行は本文優先）。
               </p>
             </div>
@@ -188,7 +188,7 @@ function JournalPreviewPageContent() {
         {returnTo ? (
           <Link
             href={returnTo}
-            className="relative z-[1] min-h-[44px] rounded-lg border border-emerald-300 bg-emerald-50 px-4 py-2.5 text-sm font-medium text-emerald-900 hover:bg-emerald-100 active:bg-emerald-100/90"
+            className="relative z-[1] min-h-[44px] rounded-lg border border-emerald-300 bg-emerald-50 px-4 py-2.5 text-base font-medium text-emerald-900 hover:bg-emerald-100 active:bg-emerald-100/90"
           >
             {returnTo.startsWith("/orders/calendar") ? "カレンダーへ戻る" : "一覧に戻る"}
           </Link>
@@ -206,7 +206,7 @@ function JournalPreviewPageContent() {
                 ),
               );
             }}
-            className="rounded-lg border border-stone-300 bg-white px-4 py-2 text-sm text-stone-700 hover:bg-stone-50"
+            className="min-h-[44px] rounded-lg border border-stone-300 bg-white px-4 py-2.5 text-base text-stone-700 hover:bg-stone-50"
           >
             この記録を編集する
           </button>
@@ -216,14 +216,14 @@ function JournalPreviewPageContent() {
             {canEditJournal ? (
               <Link
                 href="/journal"
-                className="rounded-lg border border-stone-300 bg-white px-4 py-2 text-sm text-stone-700 hover:bg-stone-50"
+                className="min-h-[44px] rounded-lg border border-stone-300 bg-white px-4 py-2.5 text-base text-stone-700 hover:bg-stone-50"
               >
                 入力ページへ戻る
               </Link>
             ) : (
               <Link
                 href="/orders/calendar"
-                className="rounded-lg border border-stone-300 bg-white px-4 py-2 text-sm text-stone-700 hover:bg-stone-50"
+                className="min-h-[44px] rounded-lg border border-stone-300 bg-white px-4 py-2.5 text-base text-stone-700 hover:bg-stone-50"
               >
                 カレンダーへ戻る
               </Link>

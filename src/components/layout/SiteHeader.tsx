@@ -3,6 +3,7 @@
 import Link from "next/link";
 
 import { AuthNav } from "@/components/auth/AuthNav";
+import { LoggedInStatusBadge } from "@/components/auth/LoggedInStatusBadge";
 import { OwlNavButton } from "@/components/ui/OwlNavButton";
 import { useClientAuthNavState } from "@/hooks/useClientAuthNavState";
 
@@ -70,6 +71,14 @@ export function SiteHeader() {
           <Link href="/plans" className={navLinkClass}>
             プラン
           </Link>
+          {showAuthenticatedNav ? (
+            <>
+              <span className={navSepClass} aria-hidden>
+                |
+              </span>
+              <LoggedInStatusBadge />
+            </>
+          ) : null}
           <div
             className={`flex shrink-0 items-center justify-end overflow-visible sm:w-auto sm:basis-auto ${
               isLoggedIn ? "w-auto basis-auto" : "w-full basis-full max-sm:pt-0.5"

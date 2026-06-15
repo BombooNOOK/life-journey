@@ -15,7 +15,14 @@ import {
 } from "firebase/auth";
 
 import { useFirebaseAuth } from "@/components/auth/FirebaseAuthProvider";
+import {
+  AlreadyLoggedInPanel,
+  RegistrationCompletePanel,
+} from "@/components/auth/AuthSessionPanels";
 import { InlineHelpButton } from "@/components/ui/InlineHelpButton";
+import { mobileReadable } from "@/lib/auth/mobileReadableStyles";
+import { getPasswordResetActionCodeSettings } from "@/lib/auth/passwordResetActionCode";
+import { PASSWORD_RESET_SENT_NOTICE } from "@/lib/auth/passwordResetCopy";
 import {
   clearGoogleOAuthRedirectFlow,
   isGoogleOAuthFlowCookieActive,
@@ -171,6 +178,7 @@ export function LoginClient({ returnToRaw }: { returnToRaw: string | null }) {
   const [busyEmail, setBusyEmail] = useState(false);
   const [busyReset, setBusyReset] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [registrationCompleteEmail, setRegistrationCompleteEmail] = useState<string | null>(null);
   /** iOS/Android の Google ポップアップ成功後にフルページ遷移する直前だけ表示 */
   const [fullPagePostLoginPending, setFullPagePostLoginPending] = useState(false);
   /** Google リダイレクトで `/login` に戻った最初から全画面案内（`dynamic` の ssr:false とセット） */
@@ -184,7 +192,7 @@ export function LoginClient({ returnToRaw }: { returnToRaw: string | null }) {
   const loginFlow = resolveLoginFlow(returnTo);
   const isRegisterFlow = loginFlow === "register";
   const cookieLoggedIn = isLjLoggedInOnClient();
-  const shouldLeaveLoginPage = (Boolean(user) || cookieLoggedIn) && !oauthReturnHandoffUi;
+  const isAlreadySignedIn = (Boolean(user) || cookieLoggedIn) && !oauthReturnHandoffUi;
 
   const showGoogleReturnBanner =
     !authLoading &&
@@ -248,13 +256,6 @@ export function LoginClient({ returnToRaw }: { returnToRaw: string | null }) {
     }, 15000);
     return () => window.clearTimeout(id);
   }, [authLoading, user, oauthReturnSurface]);
-
-  useEffect(() => {
-    if (authLoading) return;
-    if (oauthReturnHandoffUi && !user) return;
-    if (!user && !isLjLoggedInOnClient()) return;
-    router.replace(returnTo);
-  }, [authLoading, user, returnTo, router, oauthReturnHandoffUi]);
 
   const auth = () => {
     try {
@@ -400,9 +401,23 @@ export function LoginClient({ returnToRaw }: { returnToRaw: string | null }) {
       let cred;
       if (mode === "register") {
         cred = await createUserWithEmailAndPassword(a, email, password);
-      } else {
-        cred = await signInWithEmailAndPassword(a, email, password);
+        syncLjAuthClientCookies({ email: cred.user.email ?? null });
+        await fetch("/api/auth/session", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email: cred.user.email ?? "" }),
+          credentials: "same-origin",
+        }).catch(() => {});
+        void fetch("/api/auth/welcome-email", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email: cred.user.email ?? email }),
+          credentials: "same-origin",
+        }).catch(() => {});
+        setRegistrationCompleteEmail(cred.user.email ?? email);
+        return;
       }
+      cred = await signInWithEmailAndPassword(a, email, password);
       syncLjAuthClientCookies({ email: cred.user.email ?? null });
       await fetch("/api/auth/session", {
         method: "POST",
@@ -435,8 +450,9 @@ export function LoginClient({ returnToRaw }: { returnToRaw: string | null }) {
     if (!a) return;
     setBusyReset(true);
     try {
-      await sendPasswordResetEmail(a, email);
-      setNotice("パスワード再設定メールを送信しました。受信ボックスをご確認ください。");
+      const actionCodeSettings = getPasswordResetActionCodeSettings();
+      await sendPasswordResetEmail(a, email, actionCodeSettings);
+      setNotice(PASSWORD_RESET_SENT_NOTICE);
     } catch (e) {
       console.error("[login:password-reset]", e);
       const raw =
@@ -450,9 +466,7 @@ export function LoginClient({ returnToRaw }: { returnToRaw: string | null }) {
         raw.includes("auth/invalid-email") ||
         raw.includes("auth/invalid-login-credentials")
       ) {
-        setNotice(
-          "再設定メールを送信しました。登録済みのメールアドレスであれば、数分以内に届きます。",
-        );
+        setNotice(PASSWORD_RESET_SENT_NOTICE);
       } else {
         setError(pickErrorMessage(e, "パスワード再設定メールの送信に失敗しました。"));
       }
@@ -468,8 +482,28 @@ export function LoginClient({ returnToRaw }: { returnToRaw: string | null }) {
     return <PostLoginTransitionOverlay variant="oauth-return" />;
   }
 
-  if (shouldLeaveLoginPage) {
-    return <PostLoginTransitionOverlay variant="already-signed-in" />;
+  if (registrationCompleteEmail) {
+    return (
+      <RegistrationCompletePanel
+        email={registrationCompleteEmail}
+        onGoMyPage={() => {
+          if (browserWantsFullPagePostLoginNavigation()) {
+            window.location.assign("/orders");
+          } else {
+            router.push("/orders");
+            router.refresh();
+          }
+        }}
+        onGoLogin={() => {
+          setRegistrationCompleteEmail(null);
+          router.push("/login?returnTo=%2Forders");
+        }}
+      />
+    );
+  }
+
+  if (isAlreadySignedIn) {
+    return <AlreadyLoggedInPanel />;
   }
 
   if (authLoading) {
@@ -487,10 +521,10 @@ export function LoginClient({ returnToRaw }: { returnToRaw: string | null }) {
   }
 
   return (
-    <div className="mx-auto max-w-md space-y-6 rounded-xl border border-stone-200 bg-white p-6 shadow-sm">
+    <div className="mx-auto max-w-md space-y-6 rounded-xl border border-stone-200 bg-white p-6 shadow-sm sm:p-7">
       <div>
         <div className="flex items-center gap-2">
-          <h1 className="text-2xl font-bold text-stone-900">
+          <h1 className={mobileReadable.pageTitle}>
             {isRegisterFlow ? "アカウント作成" : "ログイン"}
           </h1>
           <InlineHelpButton
@@ -509,7 +543,7 @@ export function LoginClient({ returnToRaw }: { returnToRaw: string | null }) {
             )}
           </InlineHelpButton>
         </div>
-        <p className="mt-1 text-sm text-stone-600">
+        <p className={`mt-2 ${mobileReadable.bodyMuted}`}>
           {isRegisterFlow
             ? "無料鑑定へ進むために、アカウントを作成します。作成後はお名前と生年月日の入力画面へ進みます。"
             : "登録済みの方は、メールアドレスとパスワードでログインしてください。"}
@@ -519,7 +553,7 @@ export function LoginClient({ returnToRaw }: { returnToRaw: string | null }) {
       {showGoogleReturnBanner ? (
         <div
           key={oauthReturnSurface}
-          className="rounded-lg border border-violet-300 bg-violet-50 px-3 py-3 text-sm leading-relaxed text-violet-950"
+          className="rounded-lg border border-violet-300 bg-violet-50 px-3 py-3 text-base leading-[1.6] text-violet-950"
           role="status"
           aria-live="polite"
         >
@@ -533,12 +567,12 @@ export function LoginClient({ returnToRaw }: { returnToRaw: string | null }) {
 
       {error ? (
         <div className="space-y-2">
-          <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-900 whitespace-pre-wrap">
+          <div className={mobileReadable.error}>
             {error}
           </div>
           <button
             type="button"
-            className="text-sm font-medium text-stone-700 underline underline-offset-2 hover:text-stone-900"
+            className={`${mobileReadable.link} font-medium`}
             onClick={() => {
               setError(null);
               setOauthReturnHandoffUi(false);
@@ -550,7 +584,7 @@ export function LoginClient({ returnToRaw }: { returnToRaw: string | null }) {
         </div>
       ) : null}
       {notice ? (
-        <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-900">
+        <div className={mobileReadable.notice} role="status">
           {notice}
         </div>
       ) : null}
@@ -559,14 +593,14 @@ export function LoginClient({ returnToRaw }: { returnToRaw: string | null }) {
         type="button"
         disabled={busyGoogle}
         onClick={() => void handleGoogle()}
-        className="flex w-full items-center justify-center gap-2 rounded-lg border border-stone-300 bg-white px-4 py-2.5 text-sm font-medium text-stone-800 shadow-sm hover:bg-stone-50 disabled:opacity-50"
+        className={`flex w-full items-center justify-center gap-2 rounded-lg border border-stone-300 bg-white px-4 py-2.5 ${mobileReadable.buttonSecondary}`}
       >
         {busyGoogle ? "処理中…" : "Google で続ける"}
       </button>
 
       {busyGoogle ? (
         <div
-          className="rounded-lg border border-amber-300 bg-amber-50 px-3 py-3 text-sm font-medium text-amber-950"
+          className="rounded-lg border border-amber-300 bg-amber-50 px-3 py-3 text-base font-medium leading-[1.6] text-amber-950"
           role="status"
           aria-live="polite"
         >
@@ -574,7 +608,7 @@ export function LoginClient({ returnToRaw }: { returnToRaw: string | null }) {
         </div>
       ) : null}
 
-      <div className="relative text-center text-xs text-stone-400">
+      <div className="relative text-center text-sm text-stone-400">
         <span className="relative z-10 bg-white px-2">または</span>
         <span className="absolute inset-x-0 top-1/2 z-0 h-px bg-stone-200" aria-hidden />
       </div>
@@ -587,7 +621,7 @@ export function LoginClient({ returnToRaw }: { returnToRaw: string | null }) {
           void handleEmailSubmit(new FormData(e.currentTarget), isRegisterFlow ? "register" : "login");
         }}
       >
-        <label className="block text-sm font-medium text-stone-700">
+        <label className={`block ${mobileReadable.label}`}>
           メールアドレス
           <input
             name="email"
@@ -595,15 +629,15 @@ export function LoginClient({ returnToRaw }: { returnToRaw: string | null }) {
             inputMode="email"
             autoComplete="email"
             defaultValue=""
-            className="mt-1 w-full rounded-lg border border-stone-300 px-3 py-2 text-stone-900 outline-none ring-stone-400 focus:ring-2"
+            className={mobileReadable.input}
           />
         </label>
-        <p className="text-xs leading-relaxed text-stone-600">
+        <p className={mobileReadable.helper}>
           メールアドレスはログインと大切なお知らせのために使用します。
           <br />
           販促目的のメール配信には使用しません。
         </p>
-        <label className="block text-sm font-medium text-stone-700">
+        <label className={`block ${mobileReadable.label}`}>
           パスワード
           <div className="relative mt-1">
             <input
@@ -611,12 +645,12 @@ export function LoginClient({ returnToRaw }: { returnToRaw: string | null }) {
               type={showPassword ? "text" : "password"}
               autoComplete={isRegisterFlow ? "new-password" : "current-password"}
               defaultValue=""
-              className="w-full rounded-lg border border-stone-300 px-3 py-2 pr-16 text-stone-900 outline-none ring-stone-400 focus:ring-2"
+              className={`${mobileReadable.input} pr-16`}
             />
             <button
               type="button"
               aria-label={showPassword ? "パスワードを隠す" : "パスワードを表示"}
-              className="absolute right-2 top-1/2 -translate-y-1/2 rounded px-2 py-1 text-xs font-medium text-stone-600 hover:bg-stone-100 hover:text-stone-900"
+              className="absolute right-2 top-1/2 min-h-[44px] -translate-y-1/2 rounded px-2 text-sm font-medium text-stone-600 hover:bg-stone-100 hover:text-stone-900"
               onClick={() => setShowPassword((prev) => !prev)}
             >
               {showPassword ? "隠す" : "表示"}
@@ -627,7 +661,7 @@ export function LoginClient({ returnToRaw }: { returnToRaw: string | null }) {
           <button
             type="submit"
             disabled={busyEmail}
-            className="w-full rounded-lg bg-stone-800 px-3 py-2.5 text-sm font-medium text-white hover:bg-stone-900 disabled:opacity-50"
+            className={mobileReadable.buttonPrimary}
           >
             新規登録（次に生年月日入力）
           </button>
@@ -635,22 +669,22 @@ export function LoginClient({ returnToRaw }: { returnToRaw: string | null }) {
           <button
             type="submit"
             disabled={busyEmail}
-            className="w-full rounded-lg bg-stone-800 px-3 py-2.5 text-sm font-medium text-white hover:bg-stone-900 disabled:opacity-50"
+            className={mobileReadable.buttonPrimary}
           >
             ログイン
           </button>
         )}
         {busyEmail ? (
-          <p className="text-center text-sm font-medium text-stone-600">処理中…</p>
+          <p className={`text-center font-medium ${mobileReadable.bodyMuted}`}>処理中…</p>
         ) : null}
-        <p className="text-xs text-stone-500">
+        <p className={mobileReadable.helperMuted}>
           Enterキーで送信した場合は「{isRegisterFlow ? "新規登録" : "ログイン"}」として処理されます。
         </p>
         {!isRegisterFlow ? (
           <button
             type="button"
             disabled={busyReset}
-            className="text-xs text-stone-600 underline underline-offset-2 hover:text-stone-900 disabled:opacity-50"
+            className={`${mobileReadable.link} text-left disabled:opacity-50`}
             onClick={(e) => {
               const form = e.currentTarget.form;
               if (!form) return;
@@ -660,18 +694,18 @@ export function LoginClient({ returnToRaw }: { returnToRaw: string | null }) {
             {busyReset ? "再設定メールを送信中…" : "パスワードを忘れた場合（再設定メールを送る）"}
           </button>
         ) : null}
-        <p className="text-center text-xs text-stone-600">
+        <p className={`text-center ${mobileReadable.helper}`}>
           {isRegisterFlow ? (
             <Link
               href={buildLoginHref("/orders")}
-              className="text-stone-800 underline-offset-2 hover:underline"
+              className={mobileReadable.link}
             >
               すでにアカウントをお持ちの方はログイン
             </Link>
           ) : (
             <Link
               href={buildLoginHref("/order")}
-              className="text-stone-800 underline-offset-2 hover:underline"
+              className={mobileReadable.link}
             >
               はじめての方はこちら
             </Link>
@@ -679,8 +713,8 @@ export function LoginClient({ returnToRaw }: { returnToRaw: string | null }) {
         </p>
       </form>
 
-      <p className="text-center text-sm text-stone-600">
-        <Link href="/" className="text-stone-800 underline-offset-2 hover:underline">
+      <p className={`text-center ${mobileReadable.bodyMuted}`}>
+        <Link href="/" className={mobileReadable.link}>
           トップへ戻る
         </Link>
       </p>

@@ -1,7 +1,7 @@
 "use client";
 
 import { useFirebaseAuth } from "@/components/auth/FirebaseAuthProvider";
-import { isLjLoggedInOnClient } from "@/lib/auth/clientCookies";
+import { getLjViewerEmailOnClient, isLjLoggedInOnClient } from "@/lib/auth/clientCookies";
 
 /**
  * ヘッダー等のクライアント認証表示。
@@ -11,9 +11,11 @@ export function useClientAuthNavState() {
   const { user, loading } = useFirebaseAuth();
   const cookieLoggedIn = isLjLoggedInOnClient();
   const isLoggedIn = Boolean(user) || cookieLoggedIn;
+  const viewerEmail = user?.email ?? getLjViewerEmailOnClient();
 
   return {
     isLoggedIn,
+    viewerEmail,
     /** Firebase 初期化中で、未ログインと確定していない */
     isAuthLoading: loading && !isLoggedIn,
     showGuestNav: !isLoggedIn && !loading,

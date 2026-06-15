@@ -32,6 +32,23 @@ export function isLjLoggedInOnClient(): boolean {
   return document.cookie.split(";").some((part) => part.trim() === "lj_logged_in=1");
 }
 
+/** ヘッダー・ログイン画面表示用。`lj_user_email` Cookie からメールを読む */
+export function getLjViewerEmailOnClient(): string | null {
+  if (typeof document === "undefined") return null;
+  for (const part of document.cookie.split(";")) {
+    const trimmed = part.trim();
+    if (!trimmed.startsWith("lj_user_email=")) continue;
+    const raw = trimmed.slice("lj_user_email=".length);
+    if (!raw) return null;
+    try {
+      return decodeURIComponent(raw);
+    } catch {
+      return raw;
+    }
+  }
+  return null;
+}
+
 /** Google `signInWithRedirect` 完了後に戻すパス（同一オリジン・先頭 `/` のみ） */
 export const OAUTH_RETURN_SESSION_KEY = "lj_oauth_return_to";
 

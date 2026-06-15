@@ -6,6 +6,9 @@ import { sendPasswordResetEmail } from "firebase/auth";
 
 import { useFirebaseAuth } from "@/components/auth/FirebaseAuthProvider";
 import { getFirebaseAuth } from "@/lib/firebase/client";
+import { getPasswordResetActionCodeSettings } from "@/lib/auth/passwordResetActionCode";
+import { PASSWORD_RESET_SENT_NOTICE } from "@/lib/auth/passwordResetCopy";
+import { mobileReadable } from "@/lib/auth/mobileReadableStyles";
 
 import { JournalBackupDownloadButton } from "@/components/orders/JournalBackupDownloadButton";
 import { formatMyPageProfileLimitLabel } from "@/lib/profile/effectiveProfileLimit";
@@ -60,12 +63,11 @@ export function MyPageAccountSection({
     setResetBusy(true);
     try {
       const auth = getFirebaseAuth();
-      await sendPasswordResetEmail(auth, email);
-      setResetNotice("パスワード再設定メールを送信しました。受信ボックスをご確認ください。");
+      const actionCodeSettings = getPasswordResetActionCodeSettings();
+      await sendPasswordResetEmail(auth, email, actionCodeSettings);
+      setResetNotice(PASSWORD_RESET_SENT_NOTICE);
     } catch {
-      setResetNotice(
-        "再設定メールを送信しました。登録済みのメールアドレスであれば、数分以内に届きます。",
-      );
+      setResetNotice(PASSWORD_RESET_SENT_NOTICE);
     } finally {
       setResetBusy(false);
     }
@@ -73,10 +75,10 @@ export function MyPageAccountSection({
 
   return (
     <section className="space-y-5 rounded-xl border border-stone-200 bg-white p-4 shadow-sm sm:p-5">
-      <h2 className="text-lg font-semibold text-stone-900">アカウント情報</h2>
+      <h2 className={mobileReadable.sectionTitle}>アカウント情報</h2>
 
-      <dl className="grid gap-3 text-sm sm:grid-cols-[7.5rem_1fr]">
-        <dt className="text-stone-500">ログイン中メール</dt>
+      <dl className="grid gap-3 text-base sm:grid-cols-[7.5rem_1fr]">
+        <dt className="text-stone-500">ログイン中</dt>
         <dd className="break-all text-stone-900">{viewerEmail}</dd>
 
         <dt className="text-stone-500">現在のプラン</dt>
@@ -94,22 +96,22 @@ export function MyPageAccountSection({
       <div className="border-t border-stone-100 pt-4">
         <Link
           href="/plans"
-          className="inline-flex min-h-[44px] items-center rounded-lg border border-violet-300 bg-violet-50 px-4 py-2.5 text-sm font-medium text-violet-950 transition hover:bg-violet-100"
+          className="inline-flex min-h-[44px] items-center rounded-lg border border-violet-300 bg-violet-50 px-4 py-2.5 text-base font-medium text-violet-950 transition hover:bg-violet-100"
         >
           プランを変更する →
         </Link>
       </div>
 
       <div className="space-y-4 border-t border-stone-100 pt-4">
-        <h3 className="text-sm font-semibold text-stone-900">ログインとセキュリティ</h3>
+        <h3 className="text-base font-semibold text-stone-900">ログインとセキュリティ</h3>
 
-        <div className="rounded-lg border border-stone-200 bg-stone-50/80 px-3 py-3 text-sm leading-relaxed text-stone-700">
+        <div className="rounded-lg border border-stone-200 bg-stone-50/80 px-3 py-3 text-base leading-[1.6] text-stone-700">
           <p className="font-medium text-stone-800">メールアドレスの変更</p>
           <p className="mt-1.5">メールアドレスの変更は現在準備中です。</p>
           <p className="mt-1">変更が必要な場合は、運営までお問い合わせください。</p>
         </div>
 
-        <div className="rounded-lg border border-stone-200 bg-stone-50/80 px-3 py-3 text-sm leading-relaxed text-stone-700">
+        <div className="rounded-lg border border-stone-200 bg-stone-50/80 px-3 py-3 text-base leading-[1.6] text-stone-700">
           <p className="font-medium text-stone-800">パスワード</p>
           {authLoading ? (
             <p className="mt-1.5 text-stone-600">ログイン方式を確認しています…</p>
@@ -127,12 +129,12 @@ export function MyPageAccountSection({
                 type="button"
                 disabled={resetBusy}
                 onClick={() => void sendPasswordReset()}
-                className="mt-3 inline-flex min-h-[44px] items-center rounded-lg border border-stone-300 bg-white px-4 py-2 text-sm font-medium text-stone-800 transition hover:bg-stone-50 disabled:opacity-60"
+                className="mt-3 inline-flex min-h-[44px] items-center rounded-lg border border-stone-300 bg-white px-4 py-2 text-base font-medium text-stone-800 transition hover:bg-stone-50 disabled:opacity-60"
               >
                 {resetBusy ? "送信中…" : "パスワード再設定メールを送る"}
               </button>
               {resetNotice ? (
-                <p className="mt-2 text-xs text-emerald-800" role="status">
+                <p className="mt-2 text-sm leading-[1.6] text-emerald-800 whitespace-pre-line" role="status">
                   {resetNotice}
                 </p>
               ) : null}
