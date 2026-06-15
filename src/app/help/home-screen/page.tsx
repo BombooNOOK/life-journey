@@ -5,9 +5,8 @@ import {
   IphoneSafariHomeScreenDiagram,
   NumberedSteps,
 } from "@/components/help/homeScreen/HomeScreenGuideDiagrams";
+import { HomeScreenHelpPageHeader } from "@/components/help/homeScreen/HomeScreenHelpPageHeader";
 import { OptionalHelpScreenshot } from "@/components/help/homeScreen/OptionalHelpScreenshot";
-import { PageTitleWithAccent } from "@/components/ui/PageTitleWithAccent";
-import { APP_DISPLAY_NAME } from "@/lib/branding/appDisplayName";
 
 export const dynamic = "force-static";
 
@@ -61,19 +60,7 @@ function PlatformSection({
 export default function HomeScreenHelpPage() {
   return (
     <div className="space-y-6">
-      <PageTitleWithAccent
-        tone="guide"
-        title="LJDをホーム画面に追加する方法"
-        backLink={{ href: "/orders", label: "← マイページ" }}
-        description={
-          <>
-            {APP_DISPLAY_NAME}は、スマホのホーム画面に追加すると、アプリのようにすぐ開けます。
-            <br />
-            毎日の記録を続けやすくするために、はじめに設定しておくのがおすすめです。
-          </>
-        }
-        cornerAccents={["leaf", "book"]}
-      />
+      <HomeScreenHelpPageHeader />
 
       <PlatformSection
         title="iPhoneの場合（Safari）"
