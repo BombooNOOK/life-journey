@@ -178,7 +178,9 @@ export function LoginClient({ returnToRaw }: { returnToRaw: string | null }) {
   const [busyEmail, setBusyEmail] = useState(false);
   const [busyReset, setBusyReset] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const [registrationCompleteEmail, setRegistrationCompleteEmail] = useState<string | null>(null);
+  const [registrationComplete, setRegistrationComplete] = useState<{
+    welcomeEmailSent: boolean;
+  } | null>(null);
   /** iOS/Android の Google ポップアップ成功後にフルページ遷移する直前だけ表示 */
   const [fullPagePostLoginPending, setFullPagePostLoginPending] = useState(false);
   /** Google リダイレクトで `/login` に戻った最初から全画面案内（`dynamic` の ssr:false とセット） */
@@ -408,13 +410,22 @@ export function LoginClient({ returnToRaw }: { returnToRaw: string | null }) {
           body: JSON.stringify({ email: cred.user.email ?? "" }),
           credentials: "same-origin",
         }).catch(() => {});
-        void fetch("/api/auth/welcome-email", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email: cred.user.email ?? email }),
-          credentials: "same-origin",
-        }).catch(() => {});
-        setRegistrationCompleteEmail(cred.user.email ?? email);
+        let welcomeEmailSent = false;
+        try {
+          const welcomeRes = await fetch("/api/auth/welcome-email", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ email: cred.user.email ?? email }),
+            credentials: "same-origin",
+          });
+          if (welcomeRes.ok) {
+            const welcomeData = (await welcomeRes.json()) as { sent?: boolean };
+            welcomeEmailSent = welcomeData.sent === true;
+          }
+        } catch {
+          /* 登録完了画面はメール送信成否に関わらず表示 */
+        }
+        setRegistrationComplete({ welcomeEmailSent });
         return;
       }
       cred = await signInWithEmailAndPassword(a, email, password);
@@ -482,10 +493,10 @@ export function LoginClient({ returnToRaw }: { returnToRaw: string | null }) {
     return <PostLoginTransitionOverlay variant="oauth-return" />;
   }
 
-  if (registrationCompleteEmail) {
+  if (registrationComplete) {
     return (
       <RegistrationCompletePanel
-        email={registrationCompleteEmail}
+        welcomeEmailSent={registrationComplete.welcomeEmailSent}
         onGoMyPage={() => {
           if (browserWantsFullPagePostLoginNavigation()) {
             window.location.assign("/orders");
@@ -493,10 +504,6 @@ export function LoginClient({ returnToRaw }: { returnToRaw: string | null }) {
             router.push("/orders");
             router.refresh();
           }
-        }}
-        onGoLogin={() => {
-          setRegistrationCompleteEmail(null);
-          router.push("/login?returnTo=%2Forders");
         }}
       />
     );

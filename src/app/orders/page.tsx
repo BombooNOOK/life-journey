@@ -4,11 +4,10 @@ import { KanteiMissingBanner } from "@/components/orders/KanteiMissingBanner";
 import { MyPageAccountSection } from "@/components/orders/MyPageAccountSection";
 import { LegalFooterLinks } from "@/components/legal/LegalFooterLinks";
 import { MyPageContactSection } from "@/components/orders/MyPageContactSection";
-import { LoggedInStatusBadge } from "@/components/auth/LoggedInStatusBadge";
 import { MyPageLogoutButton } from "@/components/auth/AuthSessionPanels";
 import { MyPageHomeScreenTip } from "@/components/orders/MyPageHomeScreenTip";
-import { MyPageHeaderIllustration } from "@/components/orders/MyPageHeaderIllustration";
 import { MyPageMainActions } from "@/components/orders/MyPageMainActions";
+import { MyPagePageHeader } from "@/components/orders/MyPagePageHeader";
 import { MyPageProfileList } from "@/components/orders/MyPageProfileList";
 import { ProfileAddCard } from "@/components/profile/ProfileAddCard";
 import { isAdminEmail } from "@/lib/admin/access";
@@ -145,21 +144,8 @@ export default async function OrdersListPage() {
   const activeProfile = profiles.find((p) => p.id === activeProfileId) ?? null;
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <h1 className="text-[1.625rem] font-bold text-stone-900 sm:text-2xl">マイページ</h1>
-          <p className="mt-2 text-base leading-relaxed text-stone-600">
-            プロフィールを選んでから、日記の記録や本棚（鑑定書・日記ブック）へ進めます。
-          </p>
-          <p className="mt-2 break-all text-base text-emerald-900">
-            ログイン中：{viewerEmail}
-          </p>
-        </div>
-        <MyPageHeaderIllustration />
-      </div>
-
-      <LoggedInStatusBadge variant="banner" />
+    <div className="space-y-5 sm:space-y-6">
+      <MyPagePageHeader />
 
       <MyPageProfileList profiles={profiles} activeProfileId={activeProfileId} />
 

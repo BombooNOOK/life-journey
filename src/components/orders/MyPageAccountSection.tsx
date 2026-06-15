@@ -78,7 +78,7 @@ export function MyPageAccountSection({
       <h2 className={mobileReadable.sectionTitle}>アカウント情報</h2>
 
       <dl className="grid gap-3 text-base sm:grid-cols-[7.5rem_1fr]">
-        <dt className="text-stone-500">ログイン中</dt>
+        <dt className="text-stone-500">メールアドレス</dt>
         <dd className="break-all text-stone-900">{viewerEmail}</dd>
 
         <dt className="text-stone-500">現在のプラン</dt>

@@ -49,21 +49,13 @@ export function MyPageProfileList({ profiles, activeProfileId }: Props) {
           helpAriaLabel="プロフィール一覧の説明"
           help={
             <>
-              <p>プロフィールごとに、日記・鑑定書・本棚が分かれます。</p>
-              <p className="mt-1.5">家族やペット、テーマごとに記録を分けたいときに使います。</p>
-              <p className="mt-1.5">
-                {multiple
-                  ? "使うプロフィールを選んでから、下の「日記を書く」「本棚を見る」へ進んでください。"
-                  : "このプロフィールで、下の「日記を書く」「本棚を見る」が使えます。"}
-              </p>
+              <p>プロフィールを選ぶと、日記や本棚へ進めます。</p>
+              {multiple ? (
+                <p className="mt-1.5">使うプロフィールを選んでから、下のボタンへ進んでください。</p>
+              ) : null}
             </>
           }
         />
-        <p className="mt-1 hidden text-sm text-stone-600 sm:block">
-          {multiple
-            ? "使うプロフィールを選んでから、下の「日記を書く」「本棚を見る」へ進んでください。"
-            : "このプロフィールで、下の「日記を書く」「本棚を見る」が使えます。"}
-        </p>
       </div>
       {error ? (
         <p className="rounded-md bg-red-50 px-3 py-2 text-xs text-red-800" role="alert">

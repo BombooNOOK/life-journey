@@ -5,28 +5,17 @@ import { useRouter } from "next/navigation";
 
 import { useFirebaseAuth } from "@/components/auth/FirebaseAuthProvider";
 import { mobileReadable } from "@/lib/auth/mobileReadableStyles";
-import { useClientAuthNavState } from "@/hooks/useClientAuthNavState";
 
-/** マイページ：目立つ位置のログアウトボタン */
+/** マイページ下部：控えめなログアウト導線 */
 export function MyPageLogoutButton({ className = "" }: { className?: string }) {
   const router = useRouter();
   const { signOutUser } = useFirebaseAuth();
-  const { viewerEmail } = useClientAuthNavState();
 
   return (
-    <div
-      className={`rounded-xl border border-stone-200 bg-[#faf8f5] px-4 py-4 sm:px-5 ${className}`.trim()}
-    >
-      <p className={mobileReadable.sectionTitle}>ログアウト</p>
-      {viewerEmail ? (
-        <p className={`mt-1.5 break-all ${mobileReadable.helper}`}>ログイン中：{viewerEmail}</p>
-      ) : null}
-      <p className={`mt-2 ${mobileReadable.bodyMuted}`}>
-        共有の端末をお使いのときは、記録を見終えたらログアウトしてください。
-      </p>
+    <div className={`border-t border-stone-200 pt-4 ${className}`.trim()}>
       <button
         type="button"
-        className={`mt-4 ${mobileReadable.buttonSecondary} w-full sm:w-auto`}
+        className={`${mobileReadable.buttonSecondary} w-full sm:w-auto`}
         onClick={() => {
           void (async () => {
             await signOutUser();
@@ -45,15 +34,11 @@ export function MyPageLogoutButton({ className = "" }: { className?: string }) {
 export function AlreadyLoggedInPanel() {
   const router = useRouter();
   const { signOutUser } = useFirebaseAuth();
-  const { viewerEmail } = useClientAuthNavState();
 
   return (
     <div className="mx-auto max-w-md space-y-5 rounded-xl border border-stone-200 bg-white p-6 shadow-sm sm:p-8">
       <div className="space-y-2 text-center">
         <h1 className={mobileReadable.pageTitle}>すでにログインしています</h1>
-        {viewerEmail ? (
-          <p className={`break-all ${mobileReadable.bodyMuted}`}>ログイン中：{viewerEmail}</p>
-        ) : null}
         <p className={mobileReadable.body}>マイページへ進むか、ログアウトできます。</p>
       </div>
 
@@ -79,40 +64,30 @@ export function AlreadyLoggedInPanel() {
 }
 
 type RegistrationCompletePanelProps = {
-  email: string;
+  welcomeEmailSent: boolean;
   onGoMyPage: () => void;
-  onGoLogin: () => void;
 };
 
 /** 新規アカウント作成直後の案内 */
 export function RegistrationCompletePanel({
-  email,
+  welcomeEmailSent,
   onGoMyPage,
-  onGoLogin,
 }: RegistrationCompletePanelProps) {
   return (
     <div className="mx-auto max-w-md space-y-5 rounded-xl border border-emerald-200/80 bg-white p-6 shadow-sm sm:p-8">
       <div className="space-y-3">
         <h1 className={mobileReadable.pageTitle}>アカウントを作成しました</h1>
-        <p className={mobileReadable.body}>
-          ご登録のメールアドレスに確認メールをお送りしました。
-        </p>
-        {email ? (
-          <p className={`break-all ${mobileReadable.helper}`}>送信先：{email}</p>
+        <p className={mobileReadable.body}>このままマイページへ進めます。</p>
+        {welcomeEmailSent ? (
+          <p className={mobileReadable.helper}>
+            ご登録のメールアドレスに確認メールをお送りしました。届かない場合は、迷惑メールフォルダもご確認ください。
+          </p>
         ) : null}
-        <p className={mobileReadable.helper}>
-          メールが届かない場合は、迷惑メールフォルダもご確認ください。
-        </p>
       </div>
 
-      <div className="space-y-3">
-        <button type="button" className={mobileReadable.buttonPrimary} onClick={onGoMyPage}>
-          マイページへ進む
-        </button>
-        <button type="button" className={mobileReadable.buttonSecondary} onClick={onGoLogin}>
-          ログイン画面へ
-        </button>
-      </div>
+      <button type="button" className={mobileReadable.buttonPrimary} onClick={onGoMyPage}>
+        マイページへ進む
+      </button>
     </div>
   );
 }

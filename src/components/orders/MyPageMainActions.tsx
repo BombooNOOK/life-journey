@@ -13,7 +13,7 @@ type Props = {
 };
 
 const mainNavButtonClass =
-  "flex min-h-[52px] w-full items-center justify-center rounded-xl border px-4 py-3.5 text-center text-sm font-semibold shadow-sm transition hover:shadow disabled:cursor-not-allowed disabled:opacity-60";
+  "flex min-h-[48px] w-full items-center justify-center rounded-xl border px-4 py-3.5 text-center text-base font-semibold shadow-sm transition hover:shadow disabled:cursor-not-allowed disabled:opacity-60";
 
 /** マイページトップ：選択中プロフィール向けの主導線 */
 export function MyPageMainActions({
@@ -29,19 +29,15 @@ export function MyPageMainActions({
 
   return (
     <section id="main-actions" className="space-y-3">
-      <div>
-        <p className="text-lg font-semibold text-stone-900">② つぎに進む</p>
-      </div>
-
       <div
         aria-label={`${profileNickname}さんの記録`}
         className="rounded-2xl border border-emerald-100 bg-gradient-to-br from-[#f6f4ef] via-white to-emerald-50/40 p-4 shadow-sm sm:p-5"
       >
-        <h2 className="text-lg font-semibold text-stone-900">
+        <p className="text-base font-semibold text-stone-900 sm:text-lg">
           {profileNickname}
-          <span className="ml-2 text-sm font-normal text-stone-600">さんの記録</span>
-        </h2>
-        <div className="mt-4 grid w-full max-w-[17.5rem] grid-cols-1 gap-3 sm:max-w-2xl sm:grid-cols-2">
+          <span className="ml-1.5 text-sm font-normal text-stone-600">さん</span>
+        </p>
+        <div className="mt-3 grid w-full max-w-[17.5rem] grid-cols-1 gap-3 sm:max-w-2xl sm:mt-4 sm:grid-cols-2">
           {journalExpired ? (
             <div className="space-y-2">
               <ProfileSelectNavButton
