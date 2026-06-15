@@ -1,22 +1,15 @@
 "use client";
 
-import { useEffect, useState } from "react";
-
 import { PageTitleWithAccent } from "@/components/ui/PageTitleWithAccent";
 import { useClientAuthNavState } from "@/hooks/useClientAuthNavState";
 import { APP_DISPLAY_NAME } from "@/lib/branding/appDisplayName";
 
-const TOP_BACK_LINK = { href: "/", label: "← トップへ" } as const;
-const MY_PAGE_BACK_LINK = { href: "/orders", label: "← マイページ" } as const;
-
 /** 未ログインはトップへ、ログイン済みはマイページへ戻る */
 export function HomeScreenHelpPageHeader() {
   const { isLoggedIn } = useClientAuthNavState();
-  const [backLink, setBackLink] = useState(TOP_BACK_LINK);
-
-  useEffect(() => {
-    setBackLink(isLoggedIn ? MY_PAGE_BACK_LINK : TOP_BACK_LINK);
-  }, [isLoggedIn]);
+  const backLink = isLoggedIn
+    ? { href: "/orders", label: "← マイページ" }
+    : { href: "/", label: "← トップへ" };
 
   return (
     <PageTitleWithAccent
