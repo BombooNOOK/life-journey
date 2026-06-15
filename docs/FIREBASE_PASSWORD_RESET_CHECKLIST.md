@@ -87,4 +87,4 @@ Preview ブランチでは Preview URL がデプロイのたびに変わる場�
 | 必須 env | `RESEND_API_KEY`（任意）、`RESEND_FROM`（任意） |
 | 未設定時 | 画面のみ「アカウントを作成しました」。確認メール文言は出ない |
 
-パスワード再設定が届かなくても、Resend 未設定は別問題です。
+関連: [`EMAIL_DELIVERABILITY_SETUP.md`](./EMAIL_DELIVERABILITY_SETUP.md)（Resend + Firebase SMTP の本番手順）

@@ -20,7 +20,7 @@ import {
 } from "@/components/auth/AuthSessionPanels";
 import { InlineHelpButton } from "@/components/ui/InlineHelpButton";
 import { mobileReadable } from "@/lib/auth/mobileReadableStyles";
-import { PASSWORD_RESET_SENT_NOTICE } from "@/lib/auth/passwordResetCopy";
+import { getPasswordResetSentNotice } from "@/lib/auth/passwordResetCopy";
 import { sendLjPasswordResetEmail } from "@/lib/auth/sendPasswordResetEmailSafe";
 import {
   clearGoogleOAuthRedirectFlow,
@@ -467,7 +467,7 @@ export function LoginClient({ returnToRaw }: { returnToRaw: string | null }) {
     setBusyReset(true);
     try {
       await sendLjPasswordResetEmail(a, email);
-      setNotice(PASSWORD_RESET_SENT_NOTICE);
+      setNotice(getPasswordResetSentNotice());
     } catch (e) {
       console.error("[login:password-reset]", e);
       const raw =
@@ -481,7 +481,7 @@ export function LoginClient({ returnToRaw }: { returnToRaw: string | null }) {
         raw.includes("auth/invalid-email") ||
         raw.includes("auth/invalid-login-credentials")
       ) {
-        setNotice(PASSWORD_RESET_SENT_NOTICE);
+        setNotice(getPasswordResetSentNotice());
       } else {
         setError(pickErrorMessage(e, "パスワード再設定メールの送信に失敗しました。"));
       }

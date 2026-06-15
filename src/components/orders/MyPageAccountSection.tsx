@@ -5,7 +5,7 @@ import { useState } from "react";
 
 import { useFirebaseAuth } from "@/components/auth/FirebaseAuthProvider";
 import { getFirebaseAuth } from "@/lib/firebase/client";
-import { PASSWORD_RESET_SENT_NOTICE } from "@/lib/auth/passwordResetCopy";
+import { getPasswordResetSentNotice } from "@/lib/auth/passwordResetCopy";
 import { sendLjPasswordResetEmail } from "@/lib/auth/sendPasswordResetEmailSafe";
 import { mobileReadable } from "@/lib/auth/mobileReadableStyles";
 
@@ -63,7 +63,7 @@ export function MyPageAccountSection({
     try {
       const auth = getFirebaseAuth();
       await sendLjPasswordResetEmail(auth, email);
-      setResetNotice(PASSWORD_RESET_SENT_NOTICE);
+      setResetNotice(getPasswordResetSentNotice());
     } catch (e) {
       console.error("[mypage:password-reset]", e);
       const raw =
@@ -77,7 +77,7 @@ export function MyPageAccountSection({
         raw.includes("auth/invalid-email") ||
         raw.includes("auth/invalid-login-credentials")
       ) {
-        setResetNotice(PASSWORD_RESET_SENT_NOTICE);
+        setResetNotice(getPasswordResetSentNotice());
       } else {
         setResetError("パスワード再設定メールの送信に失敗しました。時間をおいて再度お試しください。");
       }
