@@ -84,7 +84,7 @@ export function DiaryJournalListHome({
     <div className="pb-24">
       <div className="space-y-4">
         <div>
-          <h1 className="text-xl font-bold text-stone-900 sm:text-2xl">リスト</h1>
+          <h1 className="text-xl font-bold text-stone-900 sm:text-2xl">日記一覧</h1>
           <ActiveProfileLabel nickname={effectiveProfileNickname} className="mt-2" />
           <p className="mt-2 text-sm leading-relaxed text-stone-600">
             月ごとの記録一覧です。項目をタップすると、読みやすいプレビューが開きます。

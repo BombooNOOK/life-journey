@@ -43,7 +43,7 @@ export function numerologyNumbersBackLink(returnTo: string | null): {
     return { href: returnTo, label: "日記プレビューへ戻る" };
   }
   if (returnTo.startsWith("/orders/list")) {
-    return { href: returnTo, label: "リストへ戻る" };
+    return { href: returnTo, label: "日記一覧へ戻る" };
   }
   if (returnTo.startsWith("/orders/calendar")) {
     return { href: returnTo, label: "カレンダーへ戻る" };

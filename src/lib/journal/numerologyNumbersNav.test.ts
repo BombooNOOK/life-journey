@@ -29,4 +29,8 @@ describe("numerologyNumbersBackLink", () => {
       "日記プレビューへ戻る",
     );
   });
+
+  it("labels list return", () => {
+    expect(numerologyNumbersBackLink("/orders/list").label).toBe("日記一覧へ戻る");
+  });
 });

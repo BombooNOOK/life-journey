@@ -6,7 +6,7 @@ import { usePathname } from "next/navigation";
 const TAB_CLASS =
   "flex min-h-[52px] flex-1 flex-col items-center justify-center gap-0.5 px-1 py-2 text-[10px] font-medium sm:text-xs";
 
-/** ログイン後の主要画面用・下部ナビ（カレンダー / リスト / 本棚 / マイページ） */
+/** ログイン後の主要画面用・下部ナビ（カレンダー / 日記一覧 / 本棚 / マイページ） */
 export function DiaryHomeBottomNav() {
   const pathname = usePathname();
 
@@ -18,7 +18,7 @@ export function DiaryHomeBottomNav() {
     },
     {
       href: "/orders/list",
-      label: "リスト",
+      label: "日記一覧",
       active: pathname === "/orders/list",
     },
     {
