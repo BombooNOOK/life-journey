@@ -46,6 +46,32 @@ export function journalCalendarPathForMonth(monthKey: string): string {
   return `/orders/calendar?month=${encodeURIComponent(key)}`;
 }
 
+/** `Date`（月の1日）から `YYYY-MM` */
+export function monthKeyFromDateAnchor(date: Date): string {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, "0");
+  return `${y}-${m}`;
+}
+
+/** 日本時間の「今月」の1日 */
+export function currentMonthAnchorInJapan(): Date {
+  const [y, m] = new Date()
+    .toLocaleDateString("en-CA", { timeZone: "Asia/Tokyo" })
+    .split("-")
+    .map(Number);
+  return new Date(y, m - 1, 1);
+}
+
+export function shiftMonthAnchor(anchor: Date, deltaMonths: number): Date {
+  return new Date(anchor.getFullYear(), anchor.getMonth() + deltaMonths, 1);
+}
+
+export function journalListPathForMonth(monthKey: string): string {
+  const parsed = parseMonthKeyParam(monthKey);
+  const key = parsed ?? monthKey.trim();
+  return `/orders/list?month=${encodeURIComponent(key)}`;
+}
+
 /** 記録の createdAt または YYYY-MM-DD からカレンダー month キーを得る */
 export function resolveJournalEntryMonthKey(params: {
   createdAt?: string | null;
