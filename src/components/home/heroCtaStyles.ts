@@ -1,6 +1,6 @@
 /** トップヒーロー内CTA（初回・継続の2導線を縦並び・やや左寄せ） */
 export const heroCtaStackClass =
-  "ml-4 mr-auto flex w-max max-w-[calc(100%-2rem)] flex-col items-stretch md:ml-[12%] lg:ml-[14%]";
+  "ml-2 mr-auto flex w-max max-w-[calc(100%-min(11.25rem,47vw))] flex-col items-stretch md:ml-[12%] md:max-w-[calc(100%-1.5rem)] lg:ml-[14%]";
 
 /** 将来の文字サイズ設定では、CTAは本文より控えめに拡大（max クランプ想定） */
 
