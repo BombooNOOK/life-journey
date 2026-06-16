@@ -4,11 +4,8 @@ import Image from "next/image";
 import Link from "next/link";
 
 import { MoodOwlIcon } from "@/components/journal/MoodOwlIcon";
-import { InlineHelpButton } from "@/components/ui/InlineHelpButton";
+import { DiaryNumbersHintSection } from "@/components/journal/DiaryNumbersHintSection";
 import { JOURNAL_OWL_COMMENT_KANTEI_REQUIRED_MESSAGE } from "@/lib/journal/kanteiCommentCopy";
-import {
-  JOURNAL_DIARY_NUMBERS_HELP_TEXT,
-} from "@/lib/journal/journalDiaryNumbersHelpCopy";
 import { formatJournalPreviewDateHeading } from "@/lib/journal/journalRecordDateDisplay";
 import { journalEditPath } from "@/lib/journal/journalNav";
 import { getMoodMeta } from "@/lib/journal/meta";
@@ -138,28 +135,13 @@ export function JournalReadablePreview({
       ) : null}
 
       {diaryNumbers ? (
-        <section className="rounded-xl border border-stone-200/80 bg-white/80 px-4 py-4">
-          <div className="flex flex-wrap items-center gap-2">
-            <h3 className="text-sm font-semibold text-stone-700">数字情報</h3>
-            <InlineHelpButton ariaLabel="数字情報の説明を表示">
-              <p className="whitespace-pre-line">{JOURNAL_DIARY_NUMBERS_HELP_TEXT}</p>
-            </InlineHelpButton>
-          </div>
-          <dl className="mt-3 space-y-2 text-base leading-relaxed text-stone-800">
-            <div className="flex flex-wrap gap-x-2">
-              <dt className="text-stone-600">今日の数字：</dt>
-              <dd className="font-medium">{diaryNumbers.today}</dd>
-            </div>
-            <div className="flex flex-wrap gap-x-2">
-              <dt className="text-stone-600">月の数字：</dt>
-              <dd className="font-medium">{diaryNumbers.month}</dd>
-            </div>
-            <div className="flex flex-wrap gap-x-2">
-              <dt className="text-stone-600">年の数字：</dt>
-              <dd className="font-medium">{diaryNumbers.year}</dd>
-            </div>
-          </dl>
-        </section>
+        <DiaryNumbersHintSection
+          diaryNumbers={{
+            today: diaryNumbers.today,
+            month: diaryNumbers.month,
+            year: diaryNumbers.year,
+          }}
+        />
       ) : null}
 
       <section className="rounded-xl border border-stone-200/80 bg-white/80 px-4 py-4">
