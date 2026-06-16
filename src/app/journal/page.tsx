@@ -13,7 +13,6 @@ import {
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useFirebaseAuth } from "@/components/auth/FirebaseAuthProvider";
-import { formatDateTimeJa } from "@/lib/date/formatJa";
 
 import { JournalCompanionPicker } from "@/components/journal/JournalCompanionPicker";
 import { MoodOwlIcon } from "@/components/journal/MoodOwlIcon";
@@ -51,10 +50,6 @@ import {
 import type { JournalNumerologyDebug } from "@/lib/journal/journalNumerologyDebug";
 import {
   activityOptions,
-  getActivityMeta,
-  getCompanionLabel,
-  getCompanionReadingHeading,
-  getMoodMeta,
   moodOptions,
   PHASE1_COMPANION_TYPE,
   type ActivityId,
@@ -62,7 +57,6 @@ import {
   type MoodId,
 } from "@/lib/journal/meta";
 import { OwlLoadingInline } from "@/components/ui/OwlLoadingInline";
-import { JOURNAL_OWL_COMMENT_KANTEI_REQUIRED_MESSAGE } from "@/lib/journal/kanteiCommentCopy";
 import { TrialStatusBanner } from "@/components/entitlement/TrialStatusBanner";
 import { useEntitlement } from "@/components/entitlement/useEntitlement";
 
@@ -178,13 +172,11 @@ function JournalPageContent() {
   const [activity, setActivity] = useState<ActivityId>("record_anyway");
   const designTheme: DiaryDesignId = "simple_plain";
   const [contentFontMode, setContentFontMode] = useState<ContentFontMode>(DEFAULT_CONTENT_FONT_MODE);
-  const [entries, setEntries] = useState<Entry[]>([]);
   const [photoDataUrl, setPhotoDataUrl] = useState<string>("");
   const [existingPhotoSrc, setExistingPhotoSrc] = useState<string>("");
   const [photoDirty, setPhotoDirty] = useState(false);
   const [selectedPhotoFile, setSelectedPhotoFile] = useState<File | null>(null);
   const [cropOffset, setCropOffset] = useState(50);
-  const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [loadingEdit, setLoadingEdit] = useState(() => Boolean(editingId));
   const [processingPhoto, setProcessingPhoto] = useState(false);
@@ -226,17 +218,9 @@ function JournalPageContent() {
     }
   }, []);
 
-  const monthKeyFromEditingContext = useCallback(
-    (entryId?: string | null): string | null => {
-      const id = entryId?.trim() || editingId?.trim() || "";
-      const target = id ? entries.find((e) => e.id === id) : undefined;
-      return resolveJournalEntryMonthKey({
-        createdAt: target?.createdAt,
-        entryDateYmd: entryDate,
-      });
-    },
-    [editingId, entries, entryDate],
-  );
+  const monthKeyFromEditingContext = useCallback((): string | null => {
+    return resolveJournalEntryMonthKey({ entryDateYmd: entryDate });
+  }, [entryDate]);
 
   const navigateToEntryMonthCalendar = useCallback(
     (monthKey: string | null) => {
@@ -254,53 +238,16 @@ function JournalPageContent() {
     navigateToEntryMonthCalendar(monthKey);
   }, [monthKeyFromEditingContext, navigateToEntryMonthCalendar, resetJournalFormState]);
 
-  const loadEntries = useCallback(async (opts?: { silent?: boolean }) => {
-    const silent = opts?.silent ?? false;
-    if (!silent) {
-      setLoading(true);
-    }
-    setError(null);
-    try {
-      const qs = new URLSearchParams();
-      qs.set("_", String(Date.now()));
-      if (effectiveProfileId) qs.set("profileId", effectiveProfileId);
-      const res = await fetch(`/api/journal?${qs.toString()}`, {
-        cache: "no-store",
-        credentials: "same-origin",
-      });
-      const data = (await res.json()) as {
-        entries?: Entry[];
-        kanteiOrderExists?: boolean;
-        error?: string;
-      };
-      if (!res.ok) {
-        setError(data.error ?? "日記の読み込みに失敗しました。");
-        return;
-      }
-      setKanteiOrderExists(data.kanteiOrderExists);
-      setEntries(data.entries ?? []);
-    } catch {
-      setError("日記の読み込みに失敗しました。");
-    } finally {
-      if (!silent) {
-        setLoading(false);
-      }
-    }
-  }, [effectiveProfileId]);
-
   useEffect(() => {
     if (authLoading || !profileState.ready) return;
 
     const clientEmail = user?.email?.trim().toLowerCase() ?? "";
     if (!clientEmail) {
-      setEntries([]);
       setServerViewerEmail(null);
-      setLoading(false);
       return;
     }
 
     let cancelled = false;
-    setLoading(true);
     setError(null);
 
     void (async () => {
@@ -321,39 +268,15 @@ function JournalPageContent() {
             setServerViewerEmail(null);
           }
         }
-
-        if (cancelled) return;
-        await loadEntries({ silent: true });
       } finally {
-        setLoading(false);
+        /* session sync only */
       }
     })();
 
     return () => {
       cancelled = true;
     };
-  }, [authLoading, user?.email, loadEntries, profileState.ready]);
-
-  useEffect(() => {
-    const reload = () => {
-      if (authLoading) return;
-      const email = user?.email?.trim();
-      if (!email) return;
-      void loadEntries({ silent: true });
-      router.refresh();
-    };
-    const onVisibility = () => {
-      if (document.visibilityState === "visible") reload();
-    };
-    window.addEventListener("focus", reload);
-    window.addEventListener("pageshow", reload);
-    document.addEventListener("visibilitychange", onVisibility);
-    return () => {
-      window.removeEventListener("focus", reload);
-      window.removeEventListener("pageshow", reload);
-      document.removeEventListener("visibilitychange", onVisibility);
-    };
-  }, [authLoading, user?.email, loadEntries, router, profileState.ready]);
+  }, [authLoading, user?.email, profileState.ready]);
 
   useEffect(() => {
     if (editingId) return;
@@ -562,7 +485,6 @@ function JournalPageContent() {
         return;
       }
       resetJournalFormState();
-      await loadEntries({ silent: true });
       if (options?.redirectToOrders) {
         router.push("/orders");
         return;
@@ -622,7 +544,6 @@ function JournalPageContent() {
         setError(data.error ?? "読み解きの再生成に失敗しました。");
         return;
       }
-      await loadEntries({ silent: true });
       const qs = new URLSearchParams();
       qs.set("_", String(Date.now()));
       if (showNumerologyDebug) qs.set("numerologyDebug", "1");
@@ -653,7 +574,7 @@ function JournalPageContent() {
     const ok = window.confirm("この記録を本当に削除しますか？");
     if (!ok) return;
 
-    const monthKey = monthKeyFromEditingContext(entryId);
+    const monthKey = monthKeyFromEditingContext();
 
     setDeletingId(entryId);
     setError(null);
@@ -1099,95 +1020,6 @@ function JournalPageContent() {
       )}
 
       {error ? <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-800">{error}</p> : null}
-
-      <section className="space-y-3">
-        <h2 className="text-lg font-semibold text-stone-900">これまでの記録</h2>
-        {loading ? (
-          <p className="text-sm text-stone-500">読み込み中…</p>
-        ) : entries.length === 0 ? (
-          <p className="text-sm text-stone-500">まだ記録はありません。</p>
-        ) : (
-          <ul className="space-y-3">
-            {entries.map((entry) => (
-              <li key={entry.id} className="rounded-xl border border-stone-200 bg-white p-4 text-sm shadow-sm">
-                <div className="flex items-start justify-between gap-3">
-                  <p className="flex min-w-0 flex-1 items-center gap-2 text-sm text-stone-700">
-                    <MoodOwlIcon moodId={entry.mood} sizePx={22} className="shrink-0" />
-                    <span>{getMoodMeta(entry.mood).label}</span>
-                  </p>
-                  <div className="relative z-10 flex shrink-0 flex-wrap items-center justify-end gap-x-3 gap-y-1">
-                    {canEditJournal ? (
-                      <button
-                        type="button"
-                        className="text-xs text-stone-600 underline underline-offset-2 hover:text-stone-900"
-                        onClick={() => {
-                          router.push(`/journal?edit=${encodeURIComponent(entry.id)}`);
-                        }}
-                      >
-                        編集する
-                      </button>
-                    ) : null}
-                    <button
-                      type="button"
-                      className="text-xs text-violet-700 underline underline-offset-2 hover:text-violet-900"
-                      onClick={() => {
-                        router.push(
-                          `/journal/preview?entry=${encodeURIComponent(entry.id)}&theme=simple_plain&pv=3`,
-                        );
-                      }}
-                    >
-                      読む
-                    </button>
-                    {canEditJournal ? (
-                      <button
-                        type="button"
-                        disabled={deletingId === entry.id}
-                        className="shrink-0 px-0.5 py-1 text-xs text-red-600 underline underline-offset-2 hover:text-red-700 disabled:opacity-50"
-                        onClick={() => void deleteEntry(entry.id)}
-                      >
-                        {deletingId === entry.id ? "削除中…" : "削除"}
-                      </button>
-                    ) : null}
-                  </div>
-                </div>
-                <p className="mt-1 text-xs text-stone-500">
-                  今日やったこと: {getActivityMeta(entry.activity).label}
-                </p>
-                <p className="mt-1 text-xs text-stone-500">
-                  伴走キャラ:{" "}
-                  {getCompanionLabel(PHASE1_COMPANION_TYPE)}
-                </p>
-                {entry.hasPhoto === true ? (
-                  <p className="mt-2 text-xs text-stone-500">写真あり（編集で表示）</p>
-                ) : null}
-                <p className="whitespace-pre-wrap leading-7 text-stone-800">{entry.content}</p>
-                {entry.generatedComment ? (
-                  <div className="mt-3 rounded-lg border border-emerald-100 bg-emerald-50/70 px-3 py-2">
-                    <p className="text-xs font-medium text-emerald-900">
-                      {getCompanionReadingHeading(PHASE1_COMPANION_TYPE)}
-                    </p>
-                    <p className="mt-1 whitespace-pre-line text-sm leading-6 text-emerald-900/90">
-                      {entry.generatedComment}
-                    </p>
-                  </div>
-                ) : kanteiOrderExists === false ? (
-                  <div className="mt-3 rounded-lg border border-stone-200 bg-stone-50 px-3 py-2">
-                    <p className="text-xs font-medium text-stone-700">
-                      {getCompanionReadingHeading(PHASE1_COMPANION_TYPE)}
-                    </p>
-                    <p className="mt-1 text-sm leading-6 text-stone-600">
-                      {JOURNAL_OWL_COMMENT_KANTEI_REQUIRED_MESSAGE}
-                    </p>
-                  </div>
-                ) : null}
-                <p className="mt-2 text-xs text-stone-500">
-                  {formatDateTimeJa(entry.createdAt)}
-                </p>
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
     </div>
   );
 }

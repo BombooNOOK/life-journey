@@ -52,6 +52,8 @@ function JournalPreviewPageContent() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>("readable");
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
   const authSession = useEnsureServerAuthSession();
   const { entitlement } = useEntitlement();
   const canEditJournal = entitlement?.canUseContinuedFeatures ?? true;
@@ -123,6 +125,38 @@ function JournalPreviewPageContent() {
     if (effectiveProfileId) qs.set("profile", effectiveProfileId);
     return `/journal/preview?${qs.toString()}`;
   }, [entryId, designTheme, returnTo, effectiveProfileId]);
+
+  const returnHomeLabel = returnTo?.startsWith("/orders/calendar")
+    ? "カレンダーへ戻る"
+    : returnTo?.startsWith("/orders/list")
+      ? "日記一覧へ戻る"
+      : "一覧に戻る";
+
+  const afterDeleteHref = returnTo ?? "/orders/list";
+
+  async function handleDeleteEntry() {
+    if (!entry || deleting) return;
+    const ok = window.confirm("この記録を本当に削除しますか？");
+    if (!ok) return;
+
+    setDeleting(true);
+    setDeleteError(null);
+    try {
+      const res = await fetch(`/api/journal/${encodeURIComponent(entry.id)}`, {
+        method: "DELETE",
+        credentials: "same-origin",
+      });
+      const data = (await res.json()) as { error?: string };
+      if (!res.ok) {
+        throw new Error(data.error ?? "削除に失敗しました。");
+      }
+      router.push(afterDeleteHref);
+    } catch (e) {
+      setDeleteError(e instanceof Error ? e.message : "削除に失敗しました。");
+    } finally {
+      setDeleting(false);
+    }
+  }
 
   return (
     <DiaryLoggedInPageShell>
@@ -220,32 +254,47 @@ function JournalPreviewPageContent() {
         )}
       </div>
 
-      <div className="flex flex-wrap gap-2 pb-[max(1rem,env(safe-area-inset-bottom))] sm:pb-0">
+      <div className="space-y-3 pb-[max(1rem,env(safe-area-inset-bottom))] sm:space-y-0 sm:pb-0">
         {returnTo ? (
           <Link
             href={returnTo}
-            className="relative z-[1] min-h-[44px] rounded-lg border border-emerald-300 bg-emerald-50 px-4 py-2.5 text-base font-medium text-emerald-900 hover:bg-emerald-100 active:bg-emerald-100/90"
+            className="relative z-[1] inline-flex min-h-[44px] items-center rounded-lg border border-emerald-300 bg-emerald-50 px-4 py-2.5 text-base font-medium text-emerald-900 hover:bg-emerald-100 active:bg-emerald-100/90"
           >
-            {returnTo.startsWith("/orders/calendar") ? "カレンダーへ戻る" : "一覧に戻る"}
+            {returnHomeLabel}
           </Link>
         ) : null}
         {canEditJournal && entry ? (
-          <button
-            type="button"
-            onClick={() => {
-              router.push(
-                journalEditPath(
-                  entry.id,
-                  returnTo ?? "/journal/preview",
-                  effectiveProfileId || entry.profileId,
-                ),
-              );
-            }}
-            className="min-h-[44px] rounded-lg border border-stone-300 bg-white px-4 py-2.5 text-base text-stone-700 hover:bg-stone-50"
-          >
-            この記録を編集する
-          </button>
+          <div className="w-full rounded-lg border border-stone-200 bg-white px-4 py-3 sm:max-w-md">
+            <p className="text-sm font-medium text-stone-700">この記録を</p>
+            <div className="mt-2 flex flex-wrap gap-2">
+              <button
+                type="button"
+                disabled={deleting}
+                onClick={() => {
+                  router.push(
+                    journalEditPath(
+                      entry.id,
+                      returnTo ?? "/journal/preview",
+                      effectiveProfileId || entry.profileId,
+                    ),
+                  );
+                }}
+                className="min-h-[44px] rounded-lg border border-stone-300 bg-white px-4 py-2.5 text-base text-stone-700 hover:bg-stone-50 disabled:opacity-60"
+              >
+                編集する
+              </button>
+              <button
+                type="button"
+                disabled={deleting}
+                onClick={() => void handleDeleteEntry()}
+                className="min-h-[44px] rounded-lg border border-red-200 bg-red-50 px-4 py-2.5 text-base font-medium text-red-800 hover:bg-red-100 disabled:opacity-60"
+              >
+                {deleting ? "削除中…" : "削除する"}
+              </button>
+            </div>
+          </div>
         ) : null}
+        {deleteError ? <p className="text-sm text-red-700">{deleteError}</p> : null}
         {!returnTo ? (
           <>
             {canEditJournal ? (
