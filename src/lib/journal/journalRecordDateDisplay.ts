@@ -24,11 +24,11 @@ export function isJournalEntryDateToday(entryDate: string): boolean {
   return entryDate === localTodayDateInputValue();
 }
 
-/** 例: 2026年5月26日の記録 */
+/** 例: 2026年5月26日の日記 */
 export function formatJournalRecordPageTitle(entryDate: string): string {
-  if (!isValidJournalDateInput(entryDate)) return "記録";
+  if (!isValidJournalDateInput(entryDate)) return "日記";
   const [y, m, d] = entryDate.split("-").map(Number);
-  return `${y}年${m}月${d}日の記録`;
+  return `${y}年${m}月${d}日の日記`;
 }
 
 /** 日記プレビュー見出し用（例: 2026年6月16日） */

@@ -395,7 +395,7 @@ export function DiaryFlipReader({ year, initialSettings, bookshelfProfileId }: P
   );
 
   if (loading) {
-    return <p className="text-sm text-stone-500">{year}年の記録を読み込み中…</p>;
+    return <p className="text-sm text-stone-500">{year}年の日記を読み込み中…</p>;
   }
 
   if (error) {
@@ -454,7 +454,7 @@ export function DiaryFlipReader({ year, initialSettings, bookshelfProfileId }: P
               }
               className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-sm text-emerald-900 hover:bg-emerald-100"
             >
-              記録する
+              日記を書く
             </Link>
           ) : null}
         </div>
@@ -556,7 +556,7 @@ export function DiaryFlipReader({ year, initialSettings, bookshelfProfileId }: P
         <BookshelfDiaryBindingOrder year={year} pageCount={includedPageCount} />
 
         {monthlyBuckets.length === 0 ? (
-          <p className="text-sm text-stone-500">この年の記録がありません。</p>
+          <p className="text-sm text-stone-500">この年の日記がありません。</p>
         ) : (
           <div className="space-y-2">
             {monthlyBuckets.map((bucket) => {

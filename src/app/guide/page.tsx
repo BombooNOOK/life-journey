@@ -94,9 +94,9 @@ export default function GuidePage() {
         <li>
           <StepCard step="3" title="3. 今日の日記を書く">
             <p>
-              ヘッダーの「今日の記録」から、その日の気持ちや出来事を短く残せます。活動の種類（仕事・休息など）を選び、本文を書いて保存します。
+              マイページやカレンダーから「今日の日記を書く」を選び、その日の気持ちや出来事を短く残せます。活動の種類（仕事・休息など）を選び、本文を書いて保存します。
             </p>
-            <GuideAppLink href="/journal" label="今日の記録を書く" />
+            <GuideAppLink href="/journal" label="今日の日記を書く" />
           </StepCard>
         </li>
 
@@ -105,7 +105,7 @@ export default function GuidePage() {
             <p>
               記録フォームから、1日につき1枚まで写真を添付できます。製本イメージのプレビューでも、写真の見え方を確認できます。
             </p>
-            <GuideAppLink href="/journal" label="記録画面で写真を添える" />
+            <GuideAppLink href="/journal" label="日記画面で写真を添える" />
           </StepCard>
         </li>
 
@@ -114,7 +114,7 @@ export default function GuidePage() {
             <p>
               日記を保存すると、フクロウ先生の読み解き（数字に沿ったことば）が届きます。記録画面やプレビューで、いつでも読み返せます。
             </p>
-            <GuideAppLink href="/journal" label="記録を保存して読み解きを見る" />
+            <GuideAppLink href="/journal" label="日記を保存して読み解きを見る" />
           </StepCard>
         </li>
 

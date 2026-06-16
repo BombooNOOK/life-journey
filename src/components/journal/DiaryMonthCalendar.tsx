@@ -162,7 +162,7 @@ export function DiaryMonthCalendar({
                       ? "border-2 border-[#E7C66A] bg-amber-50/50 hover:border-[#D8A93A] hover:bg-amber-50/70 focus-visible:outline-[#D8A93A]"
                       : "border-stone-100 bg-stone-50/90 hover:border-emerald-200 hover:bg-emerald-50/50 focus-visible:outline-stone-400",
                 ].join(" ")}
-                aria-label={`${day}日${hasEntry ? `・記録${count}件` : ""}${isToday ? "・今日" : ""}`}
+                aria-label={`${day}日${hasEntry ? `・日記${count}件` : ""}${isToday ? "・今日" : ""}`}
                 aria-pressed={isSelected}
               >
                 {isToday ? (
@@ -214,7 +214,7 @@ export function DiaryMonthCalendar({
       ) : null}
       </div>
       <p className="mt-1.5 hidden min-h-[2.5rem] text-[11px] leading-relaxed text-stone-500 sm:block">
-        記録がある日をタップすると、下に一覧が表示されます。「今日」と表示されている日が本日です。
+        日記がある日をタップすると、下に一覧が表示されます。「今日」と表示されている日が本日です。
       </p>
     </div>
   );

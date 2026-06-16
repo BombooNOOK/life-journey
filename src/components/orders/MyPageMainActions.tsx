@@ -30,7 +30,7 @@ export function MyPageMainActions({
   return (
     <section id="main-actions" className="space-y-3">
       <div
-        aria-label={`${profileNickname}さんの記録`}
+        aria-label={`${profileNickname}さんの日記`}
         className="rounded-2xl border border-emerald-100 bg-gradient-to-br from-[#f6f4ef] via-white to-emerald-50/40 p-4 shadow-sm sm:p-5"
       >
         <p className="text-base font-semibold text-stone-900 sm:text-lg">

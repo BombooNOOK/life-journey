@@ -127,7 +127,7 @@ export const DIARY_PREVIEW_BODY_CONTENT_REGION = {
   contentWidthPx: 527,
 } as const;
 
-export const DIARY_PREVIEW_BODY_LABEL_TEXT = "今日の記録" as const;
+export const DIARY_PREVIEW_BODY_LABEL_TEXT = "今日の日記" as const;
 
 export const DIARY_PREVIEW_BODY_LABEL_STYLE = {
   color: DIARY_PREVIEW_BODY_TEXT_COLOR,

@@ -135,7 +135,7 @@ function JournalPreviewPageContent() {
 
   async function handleDeleteEntry() {
     if (!entry || deleting) return;
-    const ok = window.confirm("この記録を本当に削除しますか？");
+    const ok = window.confirm("この日記を本当に削除しますか？");
     if (!ok) return;
 
     setDeleting(true);
@@ -263,7 +263,7 @@ function JournalPreviewPageContent() {
         ) : null}
         {canEditJournal && entry ? (
           <div className="w-full rounded-lg border border-stone-200 bg-white px-4 py-3 sm:max-w-md">
-            <p className="text-sm font-medium text-stone-700">この記録を</p>
+            <p className="text-sm font-medium text-stone-700">この日記を</p>
             <div className="mt-2 flex flex-wrap gap-2">
               <button
                 type="button"

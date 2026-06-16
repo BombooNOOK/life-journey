@@ -56,7 +56,7 @@ async function fetchJournalListMonth(
     credentials: "same-origin",
   });
   const data = (await res.json()) as { entries?: JournalListEntry[]; error?: string };
-  if (!res.ok) throw new Error(data.error ?? "記録一覧の取得に失敗しました。");
+  if (!res.ok) throw new Error(data.error ?? "日記一覧の取得に失敗しました。");
   return data.entries ?? [];
 }
 
@@ -116,7 +116,7 @@ export function DiaryJournalListHome({
       setHasLoadedOnce(true);
     } catch (e) {
       if (generation !== fetchGenerationRef.current) return;
-      setError(e instanceof Error ? e.message : "記録一覧の取得に失敗しました。");
+      setError(e instanceof Error ? e.message : "日記一覧の取得に失敗しました。");
       setEntries([]);
     } finally {
       if (generation === fetchGenerationRef.current) {
@@ -163,7 +163,7 @@ export function DiaryJournalListHome({
     });
   }, [searchParams]);
 
-  const loadingLabel = !hasLoadedOnce ? "日記一覧を読み込み中…" : "記録を読み込み中…";
+  const loadingLabel = !hasLoadedOnce ? "日記一覧を読み込み中…" : "日記を読み込み中…";
 
   return (
     <div>
@@ -241,13 +241,13 @@ export function DiaryJournalListHome({
           <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800">{error}</p>
         ) : sortedEntries.length === 0 ? (
           <div className="rounded-xl border border-stone-200 bg-white p-5 text-sm text-stone-600 shadow-sm">
-            <p>この月の記録はまだありません。</p>
-            <p className="mt-2 text-stone-500">上の年・月を変えると、別の月の記録を表示できます。</p>
+            <p>この月の日記はまだありません。</p>
+            <p className="mt-2 text-stone-500">上の年・月を変えると、別の月の日記を表示できます。</p>
             <Link
               href="/orders/calendar"
               className="mt-3 inline-flex min-h-[44px] items-center text-base font-medium text-emerald-900 underline-offset-2 hover:underline"
             >
-              カレンダーから記録を書く
+              カレンダーから日記を書く
             </Link>
           </div>
         ) : (

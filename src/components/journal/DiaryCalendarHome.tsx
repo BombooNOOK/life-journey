@@ -85,7 +85,7 @@ async function fetchJournalMonth(monthKey: string, profileId: string): Promise<D
     credentials: "same-origin",
   });
   const data = (await res.json()) as { entries?: DiaryCalendarEntry[]; error?: string };
-  if (!res.ok) throw new Error(data.error ?? "記録の取得に失敗しました。");
+  if (!res.ok) throw new Error(data.error ?? "日記の取得に失敗しました。");
   return data.entries ?? [];
 }
 
@@ -364,17 +364,17 @@ export function DiaryCalendarHome({
           {canWriteJournal ? (
             <div className="flex flex-col items-center gap-2 sm:flex-row sm:flex-wrap sm:justify-center sm:gap-3">
               <Link href={journalTodayHref} className={writeTodayButtonClass}>
-                {entitlement.tier === "trial_not_started" ? "はじめての記録を書く" : "今日の記録を書く"}
+                {entitlement.tier === "trial_not_started" ? "はじめての日記を書く" : "今日の日記を書く"}
               </Link>
               {showSelectedDayWriteButton && journalSelectedHref ? (
                 <Link href={journalSelectedHref} className={writeSelectedDayButtonClass}>
-                  選択した日の記録を書く
+                  選択した日の日記を書く
                 </Link>
               ) : null}
             </div>
           ) : (
             <p className="rounded-lg border border-violet-200 bg-violet-50/70 px-3 py-2 text-center text-sm text-violet-950">
-              無料お試し期間が終了したため、新しい記録の作成はできません。下の一覧から過去の記録を読むことができます。
+              無料お試し期間が終了したため、新しい日記の作成はできません。下の一覧から過去の日記を読むことができます。
             </p>
           )}
         </div>
@@ -382,7 +382,7 @@ export function DiaryCalendarHome({
         <div ref={listRef} className="scroll-mt-4 space-y-3">
           {selectedDay === null ? (
             <p className="rounded-xl border border-dashed border-stone-200 bg-stone-50/80 px-4 py-6 text-center text-sm text-stone-500">
-              日付をタップすると、その日の記録がここに表示されます。
+              日付をタップすると、その日の日記がここに表示されます。
             </p>
           ) : (
             <>
@@ -392,7 +392,7 @@ export function DiaryCalendarHome({
                   viewMonth.getMonth(),
                   selectedDay,
                 )}
-                の記録
+                の日記
                 <span className="ml-2 text-sm font-normal text-stone-500">
                   {selectedDayEntries.length}件
                 </span>
@@ -400,7 +400,7 @@ export function DiaryCalendarHome({
 
               {selectedDayEntries.length === 0 ? (
                 <div className="rounded-xl border border-stone-200 bg-white px-4 py-6 text-center text-sm text-stone-600">
-                  <p>この日の記録はまだありません。</p>
+                  <p>この日の日記はまだありません。</p>
                 </div>
               ) : (
                 <ul className="space-y-2">

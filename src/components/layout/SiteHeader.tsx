@@ -6,6 +6,11 @@ import { AuthNav } from "@/components/auth/AuthNav";
 import { LoggedInStatusBadge } from "@/components/auth/LoggedInStatusBadge";
 import { OwlNavButton } from "@/components/ui/OwlNavButton";
 import { useClientAuthNavState } from "@/hooks/useClientAuthNavState";
+import {
+  MYPAGE_CONTACT_FORM_LABEL,
+  MYPAGE_CONTACT_FORM_LOGIN_PATH,
+  MYPAGE_CONTACT_FORM_PATH,
+} from "@/lib/legal/legalDocumentLinks";
 
 const navLinkClass = "shrink-0 whitespace-nowrap hover:text-stone-900";
 const navNavButtonClass = `${navLinkClass} cursor-pointer border-0 bg-transparent p-0 text-inherit font-inherit`;
@@ -65,8 +70,11 @@ export function SiteHeader() {
             <span className={navSepClass} aria-hidden>
               |
             </span>
-            <Link href="/plans" className={navLinkClass}>
-              プラン
+            <Link
+              href={isLoggedIn ? MYPAGE_CONTACT_FORM_PATH : MYPAGE_CONTACT_FORM_LOGIN_PATH}
+              className={navLinkClass}
+            >
+              {MYPAGE_CONTACT_FORM_LABEL}
             </Link>
             <div
               className={`flex shrink-0 items-center justify-end overflow-visible sm:w-auto sm:basis-auto ${

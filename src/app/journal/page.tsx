@@ -60,7 +60,8 @@ import { OwlLoadingInline } from "@/components/ui/OwlLoadingInline";
 import { TrialStatusBanner } from "@/components/entitlement/TrialStatusBanner";
 import { useEntitlement } from "@/components/entitlement/useEntitlement";
 
-const JOURNAL_EDIT_LOADING_LABEL = "フクロウ先生が記録を開いています…";
+const JOURNAL_EDIT_LOADING_LABEL = "フクロウ先生が日記を開いています…";
+const CALENDAR_RETURN_LOADING_LABEL = "カレンダーに戻っています…";
 
 type Entry = {
   id: string;
@@ -192,6 +193,7 @@ function JournalPageContent() {
   const [numerologyDebug, setNumerologyDebug] = useState<JournalNumerologyDebug | null>(null);
   const [owlRegenLoading, setOwlRegenLoading] = useState(false);
   const [navigatingToPreview, setNavigatingToPreview] = useState(false);
+  const [navigatingToCalendar, setNavigatingToCalendar] = useState(false);
   const [kanteiOrderExists, setKanteiOrderExists] = useState<boolean | undefined>(undefined);
 
   const photoInputRef = useRef<HTMLInputElement>(null);
@@ -224,6 +226,7 @@ function JournalPageContent() {
 
   const navigateToEntryMonthCalendar = useCallback(
     (monthKey: string | null) => {
+      setNavigatingToCalendar(true);
       router.push(
         monthKey ? journalCalendarPathForMonth(monthKey) : "/orders/calendar",
       );
@@ -231,12 +234,28 @@ function JournalPageContent() {
     [router],
   );
 
+  const beginCalendarReturn = useCallback(
+    (href: string) => {
+      if (navigatingToCalendar) return;
+      setNavigatingToCalendar(true);
+      router.push(href);
+    },
+    [navigatingToCalendar, router],
+  );
+
   const cancelEditingAndReturnToCalendar = useCallback(() => {
+    if (navigatingToCalendar) return;
     const monthKey = monthKeyFromEditingContext();
     editLoadGenerationRef.current += 1;
+    setNavigatingToCalendar(true);
     resetJournalFormState();
     navigateToEntryMonthCalendar(monthKey);
-  }, [monthKeyFromEditingContext, navigateToEntryMonthCalendar, resetJournalFormState]);
+  }, [
+    monthKeyFromEditingContext,
+    navigateToEntryMonthCalendar,
+    navigatingToCalendar,
+    resetJournalFormState,
+  ]);
 
   useEffect(() => {
     if (authLoading || !profileState.ready) return;
@@ -571,7 +590,7 @@ function JournalPageContent() {
     const entryId = id.trim();
     if (!entryId) return;
 
-    const ok = window.confirm("この記録を本当に削除しますか？");
+    const ok = window.confirm("この日記を本当に削除しますか？");
     if (!ok) return;
 
     const monthKey = monthKeyFromEditingContext();
@@ -618,7 +637,7 @@ function JournalPageContent() {
 
   const isEditEntryLoading = Boolean(editingId && loadingEdit);
   const recordPageTitle = isEditEntryLoading
-    ? "記録を開いています"
+    ? "日記を開いています"
     : formatJournalRecordPageTitle(entryDate);
   const bodyInputHeading = journalBodyInputHeading(entryDate);
 
@@ -633,6 +652,19 @@ function JournalPageContent() {
           <p className="rounded-xl border border-stone-200 bg-white px-5 py-4 text-sm text-stone-700 shadow-sm">
             プレビューを準備しています…
           </p>
+        </div>
+      ) : null}
+      {navigatingToCalendar ? (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-[#faf8f5]/90 backdrop-blur-[2px]"
+          aria-live="polite"
+          aria-busy="true"
+        >
+          <OwlLoadingInline
+            label={CALENDAR_RETURN_LOADING_LABEL}
+            size="md"
+            className="rounded-xl border border-stone-200 bg-white px-5 py-4 text-sm text-stone-700 shadow-sm"
+          />
         </div>
       ) : null}
       <div className="space-y-1">
@@ -654,11 +686,6 @@ function JournalPageContent() {
         {diaryTargetLabel !== null ? (
           <ActiveProfileLabel nickname={diaryTargetLabel} className="sm:hidden" />
         ) : null}
-        <p className="text-sm leading-[1.6] text-stone-600">
-          こんな日だった。こんなことを思った。
-          <br />
-          そのままの言葉で残してみましょう。
-        </p>
         {showAuthDebug && user?.email ? (
           <p className="text-[10px] leading-snug text-stone-400">
             ログイン: {user.email}
@@ -672,12 +699,29 @@ function JournalPageContent() {
             マイページ
           </Link>
           {safeReturnTo ? (
-            <Link
-              href={safeReturnTo}
-              className="text-emerald-800 underline-offset-2 hover:underline"
-            >
-              {returnToIsCalendar ? "カレンダーへ戻る" : "本の確認へ"}
-            </Link>
+            returnToIsCalendar ? (
+              <button
+                type="button"
+                disabled={
+                  navigatingToCalendar ||
+                  navigatingToPreview ||
+                  saving ||
+                  processingPhoto ||
+                  Boolean(deletingId)
+                }
+                onClick={() => beginCalendarReturn(safeReturnTo)}
+                className="text-emerald-800 underline-offset-2 hover:underline disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                カレンダーへ戻る
+              </button>
+            ) : (
+              <Link
+                href={safeReturnTo}
+                className="text-emerald-800 underline-offset-2 hover:underline"
+              >
+                本の確認へ
+              </Link>
+            )
           ) : null}
         </p>
       </div>
@@ -698,10 +742,10 @@ function JournalPageContent() {
         </div>
       ) : !showJournalForm ? (
         <div className="rounded-xl border border-violet-200 bg-violet-50/70 px-4 py-5 text-sm leading-relaxed text-violet-950">
-          <p>無料お試し期間が終了したため、新しい記録の作成はできません。</p>
+          <p>無料お試し期間が終了したため、新しい日記の作成はできません。</p>
           <p className="mt-2">
             <Link href="/orders/calendar" className="font-medium underline-offset-2 hover:underline">
-              カレンダーで過去の記録を見る
+              カレンダーで過去の日記を見る
             </Link>
           </p>
         </div>
@@ -1008,7 +1052,9 @@ function JournalPageContent() {
             {editingId ? (
               <button
                 type="button"
-                disabled={saving || processingPhoto || deletingId === editingId}
+                disabled={
+                  saving || processingPhoto || deletingId === editingId || navigatingToCalendar
+                }
                 onClick={cancelEditingAndReturnToCalendar}
                 className="whitespace-nowrap rounded-lg border border-stone-300 bg-white px-4 py-2.5 text-base font-medium text-stone-700 transition hover:bg-stone-50 disabled:opacity-60 min-h-[44px]"
               >

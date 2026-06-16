@@ -202,7 +202,7 @@ export function LifeJourneyDiaryCard() {
       <div className="flex items-center justify-between gap-3">
         <h2 className="text-lg font-semibold text-stone-900">Life Journey Diary</h2>
         <Link href="/journal" className="text-sm text-emerald-900 hover:underline">
-          記録する
+          日記を書く
         </Link>
       </div>
 
@@ -263,7 +263,7 @@ export function LifeJourneyDiaryCard() {
                     <Link
                       href={`/journal?edit=${encodeURIComponent(stampEntry.id)}`}
                       className="mt-0.5 hover:opacity-80"
-                      title="この日の記録を編集"
+                      title="この日の日記を編集"
                     >
                       <Image
                         src={diaryBookCalendarPawprintImagePath()}
@@ -282,7 +282,7 @@ export function LifeJourneyDiaryCard() {
                       toDateParam(cursorMonth.getFullYear(), cursorMonth.getMonth(), day),
                     )}`}
                     className="flex h-full flex-col items-center justify-center leading-tight text-stone-700 hover:bg-stone-100"
-                    title="この日付で新しい記録を作成"
+                    title="この日付で新しい日記を作成"
                   >
                     <span>{day}</span>
                   </Link>
@@ -298,13 +298,13 @@ export function LifeJourneyDiaryCard() {
 
       <div className="rounded-xl border border-emerald-100 bg-emerald-50/60 p-3 text-sm text-stone-700">
         {loading ? (
-          <p>今月の記録を読み込み中…</p>
+          <p>今月の日記を読み込み中…</p>
         ) : error ? (
-          <p>今月の記録を取得できませんでした。</p>
+          <p>今月の日記を取得できませんでした。</p>
         ) : (
           <div className="space-y-1.5">
             <p>
-              今月の記録: <span className="font-semibold text-stone-900">{entries.length}日</span>
+              今月の日記: <span className="font-semibold text-stone-900">{entries.length}日</span>
             </p>
             <p className="flex flex-wrap items-center gap-1.5">
               <span>今月よく出た気分:</span>
