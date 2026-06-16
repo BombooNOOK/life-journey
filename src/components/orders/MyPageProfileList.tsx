@@ -63,7 +63,7 @@ export function MyPageProfileList({ profiles, activeProfileId }: Props) {
         </p>
       ) : null}
       {profiles.length === 0 ? (
-        <p className="text-sm text-stone-600">プロフィールがまだありません。下から追加してください。</p>
+        <p className="lj-read-desc text-stone-600">プロフィールがまだありません。下から追加してください。</p>
       ) : (
         <ul className="grid gap-3 sm:grid-cols-2">
           {profiles.map((profile) => {

@@ -29,7 +29,7 @@ export function DiaryNumbersHintSection({ diaryNumbers, meaningsReturnTo }: Prop
   return (
     <section className="rounded-xl border border-stone-200/80 bg-white/80 px-4 py-4">
       <div className="flex items-center gap-2">
-        <h3 className="text-sm font-semibold text-stone-700">{JOURNAL_DIARY_NUMBERS_SECTION_TITLE}</h3>
+        <h3 className="lj-read-desc font-semibold text-stone-700">{JOURNAL_DIARY_NUMBERS_SECTION_TITLE}</h3>
         <button
           type="button"
           aria-label={helpOpen ? "説明を閉じる" : "数字からのヒントの説明を表示"}
@@ -70,7 +70,7 @@ export function DiaryNumbersHintSection({ diaryNumbers, meaningsReturnTo }: Prop
       <p className="mt-4">
         <Link
           href={numerologyNumberMeaningsHref(meaningsReturnTo)}
-          className="inline-flex min-h-[44px] items-center text-base font-medium text-emerald-900 underline-offset-2 hover:underline"
+          className="inline-flex min-h-[44px] items-center lj-read-desc font-medium text-emerald-900 underline-offset-2 hover:underline"
         >
           {NUMEROLOGY_NUMBER_MEANINGS_LINK_LABEL}
         </Link>

@@ -130,7 +130,7 @@ export function JournalReadablePreview({
 
       {commentText ? (
         <section className="rounded-xl border border-[#e8dfd0] bg-[#f7f1e6] px-4 py-4 shadow-sm sm:px-5 sm:py-5">
-          <h3 className="text-base font-semibold text-stone-800">フクロウ先生より</h3>
+          <h3 className="lj-read-desc font-semibold text-stone-800">フクロウ先生より</h3>
           <p className="lj-read-comment mt-3 whitespace-pre-wrap break-words text-stone-800">
             {commentText}
           </p>
@@ -149,10 +149,10 @@ export function JournalReadablePreview({
       ) : null}
 
       <section className="rounded-xl border border-stone-200/80 bg-white/80 px-4 py-4">
-        <h3 className="text-sm font-semibold text-stone-700">今日の気分</h3>
+        <h3 className="lj-read-desc font-semibold text-stone-700">今日の気分</h3>
         <div className="mt-3 flex items-center gap-3">
           <MoodOwlIcon moodId={mood} sizePx={48} className="shrink-0" />
-          <p className="text-base font-medium text-stone-800">{moodMeta.label}</p>
+          <p className="lj-read-desc font-medium text-stone-800">{moodMeta.label}</p>
         </div>
       </section>
     </article>

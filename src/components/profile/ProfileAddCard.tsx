@@ -70,13 +70,13 @@ export function ProfileAddCard({
     <section className="rounded-xl border border-stone-200 bg-white p-4 shadow-sm">
       <h2 className="text-lg font-semibold text-stone-900">プロフィールを追加</h2>
       {blockContinuedFeatures && !atLimit ? (
-        <div className="mt-3 space-y-2 text-sm leading-relaxed text-stone-700">
+        <div className="mt-3 space-y-2 lj-read-desc text-stone-700">
           <p>新規プロフィールの追加は、日記の無料お試し開始後にご利用いただけます。</p>
           <p>まずは日記の記録からお試しください。</p>
         </div>
       ) : atLimit ? (
         isStandardPlanAtLimit ? (
-          <div className="mt-3 space-y-3 text-sm leading-relaxed text-stone-700">
+          <div className="mt-3 space-y-3 lj-read-desc text-stone-700">
             <p>現在、1つのアカウントで作成できるプロフィールは最大3件までです。</p>
             <p>
               新しい記録を始めたい場合は、バックアップ・製本後に不要なプロフィールを整理する流れをおすすめしています。
@@ -84,7 +84,7 @@ export function ProfileAddCard({
             <p>今後、さらに多くのプロフィールを記録できるプレミアムプランも検討中です。</p>
           </div>
         ) : (
-          <div className="mt-3 space-y-3 text-sm leading-relaxed text-stone-700">
+          <div className="mt-3 space-y-3 lj-read-desc text-stone-700">
             <p>現在のプランではプロフィールを追加できません。</p>
             <p>プロフィールを増やすには、プラン変更が必要です。</p>
             <Link
@@ -97,7 +97,7 @@ export function ProfileAddCard({
         )
       ) : (
         <>
-          <p className="mt-1 text-xs text-stone-600">家族やテーマごとに記録を分けられます。</p>
+          <p className="mt-1 lj-read-caption text-stone-600">家族やテーマごとに記録を分けられます。</p>
           <div className="mt-3 flex flex-wrap items-center gap-2">
             <input
               type="text"
@@ -120,7 +120,7 @@ export function ProfileAddCard({
         </>
       )}
 
-      <div className="mt-4 border-t border-stone-100 pt-3 text-xs leading-relaxed text-stone-500">
+      <div className="mt-4 border-t border-stone-100 pt-3 lj-read-caption leading-relaxed text-stone-500">
         <p>プロフィールの削除は、誤削除防止のため運営側で対応しています。</p>
         <p className="mt-1">
           削除をご希望の場合は、

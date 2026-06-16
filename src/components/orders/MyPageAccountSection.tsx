@@ -90,7 +90,7 @@ export function MyPageAccountSection({
     <section className="space-y-5 rounded-xl border border-stone-200 bg-white p-4 shadow-sm sm:p-5">
       <h2 className={mobileReadable.sectionTitle}>アカウント情報</h2>
 
-      <dl className="grid gap-3 text-base sm:grid-cols-[7.5rem_1fr]">
+      <dl className="lj-read-desc grid gap-3 sm:grid-cols-[7.5rem_1fr]">
         <dt className="text-stone-500">メールアドレス</dt>
         <dd className="break-all text-stone-900">{viewerEmail}</dd>
 
@@ -118,13 +118,13 @@ export function MyPageAccountSection({
       <div className="space-y-4 border-t border-stone-100 pt-4">
         <h3 className="text-base font-semibold text-stone-900">ログインとセキュリティ</h3>
 
-        <div className="rounded-lg border border-stone-200 bg-stone-50/80 px-3 py-3 text-base leading-[1.6] text-stone-700">
+        <div className="rounded-lg border border-stone-200 bg-stone-50/80 px-3 py-3 lj-read-desc text-stone-700">
           <p className="font-medium text-stone-800">メールアドレスの変更</p>
           <p className="mt-1.5">メールアドレスの変更は現在準備中です。</p>
           <p className="mt-1">変更が必要な場合は、運営までお問い合わせください。</p>
         </div>
 
-        <div className="rounded-lg border border-stone-200 bg-stone-50/80 px-3 py-3 text-base leading-[1.6] text-stone-700">
+        <div className="rounded-lg border border-stone-200 bg-stone-50/80 px-3 py-3 lj-read-desc text-stone-700">
           <p className="font-medium text-stone-800">パスワード</p>
           {authLoading ? (
             <p className="mt-1.5 text-stone-600">ログイン方式を確認しています…</p>
@@ -147,12 +147,12 @@ export function MyPageAccountSection({
                 {resetBusy ? "送信中…" : "パスワード再設定メールを送る"}
               </button>
               {resetNotice ? (
-                <div className={`mt-3 ${mobileReadable.notice}`} role="status" aria-live="polite">
+                <div className={`mt-3 lj-read-desc ${mobileReadable.notice}`} role="status" aria-live="polite">
                   {resetNotice}
                 </div>
               ) : null}
               {resetError ? (
-                <div className={`mt-3 ${mobileReadable.error}`} role="alert">
+                <div className={`mt-3 lj-read-desc ${mobileReadable.error}`} role="alert">
                   {resetError}
                 </div>
               ) : null}
@@ -175,7 +175,7 @@ export function MyPageAccountSection({
 
       <div className="space-y-2 border-t border-stone-100 pt-4">
         <h3 className="text-sm font-semibold text-stone-900">申込・コード確認</h3>
-        <p className="text-sm leading-relaxed text-stone-700">
+        <p className="lj-read-desc text-stone-700">
           鑑定コード・製本申し込みコードは、各プロフィールの本棚で確認できます。
         </p>
         <Link
@@ -189,15 +189,15 @@ export function MyPageAccountSection({
       <div className="space-y-3 border-t border-stone-100 pt-4">
         <h3 className="text-sm font-semibold text-stone-900">大切な日記をバックアップする</h3>
         {activeProfileNickname ? (
-          <p className="text-xs text-stone-600">
+          <p className="lj-read-caption text-stone-600">
             現在選択中のプロフィール「{activeProfileNickname}」の日記を書き出します。
           </p>
         ) : null}
-        <p className="text-sm leading-relaxed text-stone-700">
+        <p className="lj-read-desc text-stone-700">
           日記本文・写真・気分・製本に使う情報をZIPファイルとして保存できます。
           バックアップファイルには個人的な内容が含まれるため、安全な場所に保管してください。
         </p>
-        <p className="text-xs leading-relaxed text-stone-600">
+        <p className="lj-read-caption leading-relaxed text-stone-600">
           バックアップファイルからの復元は、現在、運営確認のうえ個別に対応しています。
           復元時は、既存の日記を上書きせず、新しいプロフィールとして復元します。
           復元をご希望の場合は、お問い合わせください。

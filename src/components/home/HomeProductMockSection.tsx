@@ -15,8 +15,8 @@ const PHONE_MOCK_SCREEN_CLASS =
 
 function PhoneMockScrollHint() {
   return (
-    <p className="mt-1.5 text-center text-[10px] leading-4 text-stone-500/80">
-      枠内をクリックして、上下にスクロールして全体を見られます
+    <p className="mb-1.5 text-center text-[10px] leading-4 text-stone-500/80">
+      枠内をタップして、上下にスクロールして全体を見られます
     </p>
   );
 }
@@ -54,6 +54,7 @@ function PhoneMockFrame({ step }: { step: HomeProductMockStep }) {
         className="mx-auto shrink-0 md:hidden"
         style={{ width: mockWidthMobile }}
       >
+        <PhoneMockScrollHint />
         <div className={PHONE_MOCK_OUTER_CLASS}>
           <div className={PHONE_MOCK_SCREEN_CLASS}>
             <PhoneMockScrollViewport label={`${step.imageAlt}のプレビュー`}>
@@ -71,6 +72,7 @@ function PhoneMockFrame({ step }: { step: HomeProductMockStep }) {
         className="mx-auto hidden shrink-0 md:block"
         style={{ width: mockWidthDesktop }}
       >
+        <PhoneMockScrollHint />
         <div className={PHONE_MOCK_OUTER_CLASS}>
           <div className={PHONE_MOCK_SCREEN_CLASS}>
             <PhoneMockScrollViewport label={`${step.imageAlt}のプレビュー`}>
@@ -82,11 +84,6 @@ function PhoneMockFrame({ step }: { step: HomeProductMockStep }) {
             </PhoneMockScrollViewport>
           </div>
         </div>
-        <PhoneMockScrollHint />
-      </div>
-
-      <div className="md:hidden">
-        <PhoneMockScrollHint />
       </div>
     </div>
   );

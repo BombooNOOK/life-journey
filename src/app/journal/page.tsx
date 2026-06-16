@@ -741,7 +741,7 @@ function JournalPageContent() {
           />
         </div>
       ) : !showJournalForm ? (
-        <div className="rounded-xl border border-violet-200 bg-violet-50/70 px-4 py-5 text-sm leading-relaxed text-violet-950">
+        <div className="lj-read-desc rounded-xl border border-violet-200 bg-violet-50/70 px-4 py-5 text-violet-950">
           <p>無料お試し期間が終了したため、新しい日記の作成はできません。</p>
           <p className="mt-2">
             <Link href="/orders/calendar" className="font-medium underline-offset-2 hover:underline">
@@ -753,7 +753,7 @@ function JournalPageContent() {
       <form onSubmit={(e) => void onSubmit(e)} className="space-y-3 rounded-xl border border-stone-200 bg-white p-4 shadow-sm sm:p-5">
         {editingId ? (
           <div className="flex flex-col gap-2 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 sm:flex-row sm:items-center sm:justify-between">
-            <p className="text-xs text-amber-900">編集モードです。内容を更新できます。</p>
+            <p className="lj-read-caption text-amber-900">編集モードです。内容を更新できます。</p>
             <button
               type="button"
               disabled={saving || processingPhoto || deletingId === editingId}
@@ -773,7 +773,7 @@ function JournalPageContent() {
               label={bodyInputHeading}
               help={JOURNAL_CONTENT_HELP}
               helpAriaLabel={`${bodyInputHeading}の説明`}
-              labelClassName="text-base font-semibold text-stone-800"
+              labelClassName="lj-read-desc font-semibold text-stone-800"
             />
           }
           recordPageTitle={recordPageTitle}
@@ -834,7 +834,7 @@ function JournalPageContent() {
         />
 
         <div className="space-y-2 rounded-lg border border-dashed border-stone-200/90 bg-[#faf8f5]/50 px-3 py-3">
-          <label className="block text-base font-medium text-stone-700" htmlFor="journal-photo">
+          <label className="lj-read-desc block font-medium text-stone-700" htmlFor="journal-photo">
             この日の写真（任意）
           </label>
           <input
@@ -859,7 +859,7 @@ function JournalPageContent() {
           />
           {selectedPhotoFile ? (
             <label className="block">
-              <span className="text-xs text-stone-600">写真の位置調整（{cropOffset}%）</span>
+              <span className="lj-read-caption text-stone-600">写真の位置調整（{cropOffset}%）</span>
               <input
                 type="range"
                 min={0}
@@ -872,7 +872,7 @@ function JournalPageContent() {
             </label>
           ) : null}
           {processingPhoto ? (
-            <p className="text-xs text-stone-500">写真を最適化しています…</p>
+            <p className="lj-read-caption text-stone-500">写真を最適化しています…</p>
           ) : null}
           {photoDataUrl || existingPhotoSrc ? (
             <div className="space-y-2">
@@ -885,7 +885,7 @@ function JournalPageContent() {
                 type="button"
                 onClick={removePhoto}
                 disabled={saving || loadingEdit || processingPhoto}
-                className="text-xs text-stone-600 underline underline-offset-2 hover:text-stone-800 disabled:opacity-50"
+                className="lj-read-caption text-stone-600 underline underline-offset-2 hover:text-stone-800 disabled:opacity-50"
               >
                 写真を削除する
               </button>
@@ -896,7 +896,7 @@ function JournalPageContent() {
         <div className="space-y-3 border-t border-stone-100 pt-3">
           <JournalCompanionPicker disabled={saving || loadingEdit || processingPhoto} />
 
-        <label className="block text-base font-medium text-stone-700" htmlFor="journal-entry-date">
+        <label className="lj-read-desc block font-medium text-stone-700" htmlFor="journal-entry-date">
           記録日
         </label>
         <input
@@ -968,7 +968,7 @@ function JournalPageContent() {
           </details>
         ) : null}
         <fieldset>
-          <legend className="mb-2 block text-base font-medium text-stone-700">今日の気分</legend>
+          <legend className="lj-read-desc mb-2 block font-medium text-stone-700">今日の気分</legend>
           <div
             className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-5"
             role="radiogroup"
@@ -991,13 +991,13 @@ function JournalPageContent() {
                   ].join(" ")}
                 >
                   <MoodOwlIcon moodId={option.id} sizePx={44} />
-                  <span className="text-xs font-medium text-stone-800">{option.label}</span>
+                  <span className="lj-read-caption font-medium text-stone-800">{option.label}</span>
                 </button>
               );
             })}
           </div>
         </fieldset>
-        <label className="block text-base font-medium text-stone-700" htmlFor="journal-activity">
+        <label className="lj-read-desc block font-medium text-stone-700" htmlFor="journal-activity">
           今日はどんな一日でしたか？
         </label>
         <select

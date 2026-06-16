@@ -12,7 +12,7 @@ export function MyPageHomeScreenTip() {
           <h2 className="text-base font-semibold leading-snug text-stone-900 sm:text-[1.05rem]">
             LJDをホーム画面に追加しませんか？
           </h2>
-          <p className="mt-2 text-sm leading-relaxed text-stone-700">
+          <p className="mt-2 lj-read-desc text-stone-700">
             スマホのホーム画面に追加すると、アプリのようにすぐ開けます。
             日記を書くときに、毎回ブラウザで探さなくて済みます。
           </p>
