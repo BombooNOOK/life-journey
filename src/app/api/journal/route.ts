@@ -116,8 +116,9 @@ export async function GET(req: Request) {
     }
     const yearFilter = parseYear(url.searchParams.get("year"));
     const monthFilter = yearFilter ? null : parseMonth(url.searchParams.get("month"));
+    const viewList = url.searchParams.get("view") === "list";
     const rangeFilter = yearFilter ?? monthFilter;
-    const takeLimit = yearFilter ? 500 : monthFilter ? 400 : 120;
+    const takeLimit = viewList ? 200 : yearFilter ? 500 : monthFilter ? 400 : 120;
     /** 本棚年次フリップ（`?year=`）のみ photoDataUrl 本文を返す。一覧・カレンダーは hasPhoto のみ */
     const includePhotoBodyInResponse = Boolean(yearFilter);
     const profileIds = journalProfileIdsForQuery(profileId, viewerEmail);

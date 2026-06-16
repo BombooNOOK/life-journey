@@ -490,11 +490,7 @@ export function DiaryCalendarHome({
         </div>
       </div>
 
-      <DiaryHomeBottomNav
-        journalWriteHref={canWriteJournal ? journalTodayHref : "/orders/calendar"}
-        journalWriteLabel={canWriteJournal ? undefined : "記録を見る"}
-        journalWriteDisabled={!canWriteJournal}
-      />
+      <DiaryHomeBottomNav />
     </div>
   );
 }
