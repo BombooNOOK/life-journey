@@ -75,7 +75,7 @@ export function HomeHeroSection() {
       </div>
 
       <div className="relative z-10 min-h-[14rem] sm:min-h-[16rem] md:min-h-[18rem] lg:min-h-[20rem]">
-        <div className="flex min-h-full flex-col items-center justify-end px-3 pb-4 pt-2 sm:px-6 sm:pb-6 md:pb-8">
+        <div className="flex min-h-full flex-col items-start justify-end px-2 pb-4 pt-2 sm:px-6 sm:pb-6 md:items-center md:pb-8">
           <div className={heroCtaStackClass}>
             <div className="space-y-2 sm:space-y-2.5">
               <p className={heroCtaMicrocopyAboveButtonClass}>
