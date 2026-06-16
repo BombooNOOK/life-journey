@@ -5,7 +5,6 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { JournalPreviewSpread } from "@/components/journal/JournalPreviewSpread";
 import { JournalReadablePreview } from "@/components/journal/JournalReadablePreview";
-import { DiaryLoggedInPageShell } from "@/components/journal/DiaryLoggedInPageShell";
 import { ActiveProfileLabel } from "@/components/profile/ActiveProfileLabel";
 import { useEnsureServerAuthSession } from "@/hooks/useEnsureServerAuthSession";
 import { useEnsureActiveViewerProfile } from "@/hooks/useEnsureActiveViewerProfile";
@@ -159,7 +158,6 @@ function JournalPreviewPageContent() {
   }
 
   return (
-    <DiaryLoggedInPageShell>
       <div className="space-y-5">
       <div className="space-y-3">
         <div>
@@ -326,7 +324,6 @@ function JournalPreviewPageContent() {
         ) : null}
       </div>
       </div>
-    </DiaryLoggedInPageShell>
   );
 }
 

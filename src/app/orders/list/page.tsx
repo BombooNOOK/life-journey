@@ -9,7 +9,7 @@ import { listProfilesAndActiveProfileId } from "@/lib/profile/activeProfile";
 export const dynamic = "force-dynamic";
 
 function ListFallback() {
-  return <p className="pb-24 text-sm text-stone-500">日記一覧を読み込み中…</p>;
+  return <p className="text-sm text-stone-500">日記一覧を読み込み中…</p>;
 }
 
 export default async function OrdersJournalListPage() {

@@ -35,7 +35,7 @@ export default async function OrdersCalendarPage() {
   } catch (e) {
     const detail = e instanceof Error ? e.message : "プロフィール情報を読み込めませんでした。";
     return (
-      <div className="space-y-4 pb-24">
+      <div className="space-y-4">
         <Link href="/orders" className="text-sm text-stone-600 hover:text-stone-900">
           ← マイページ
         </Link>

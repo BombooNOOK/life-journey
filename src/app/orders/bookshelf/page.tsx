@@ -4,7 +4,6 @@ import { redirect } from "next/navigation";
 import { BookshelfBookCard, type BookshelfBookDetailRow } from "@/components/orders/BookshelfBookCard";
 import { BookshelfEditIncludesNavButton } from "@/components/orders/BookshelfEditIncludesNavButton";
 import { BookshelfPageHeader } from "@/components/orders/BookshelfPageHeader";
-import { DiaryLoggedInPageShell } from "@/components/journal/DiaryLoggedInPageShell";
 import { DiaryBookCreateForm } from "@/components/orders/DiaryBookCreateForm";
 import { DiaryBookDeleteButton } from "@/components/orders/DiaryBookDeleteButton";
 import { KanteiMissingBanner } from "@/components/orders/KanteiMissingBanner";
@@ -194,7 +193,6 @@ export default async function BookshelfPage() {
     const books = [...diaryBookCards, ...reportCards];
 
     return (
-      <DiaryLoggedInPageShell>
         <div className="space-y-5">
         <BookshelfPageHeader
           activeProfileLabel={activeProfileLabel}
@@ -233,7 +231,6 @@ export default async function BookshelfPage() {
           </ul>
         )}
         </div>
-      </DiaryLoggedInPageShell>
     );
   } catch (e) {
     console.error("[orders/bookshelf]", e);

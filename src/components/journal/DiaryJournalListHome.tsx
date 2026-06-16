@@ -5,7 +5,6 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
-import { DiaryHomeBottomNav } from "@/components/journal/DiaryHomeBottomNav";
 import { ProfileSwitcher } from "@/components/profile/ProfileSwitcher";
 import { ActiveProfileLabel } from "@/components/profile/ActiveProfileLabel";
 import { OwlLoadingInline } from "@/components/ui/OwlLoadingInline";
@@ -167,7 +166,7 @@ export function DiaryJournalListHome({
   const loadingLabel = !hasLoadedOnce ? "日記一覧を読み込み中…" : "記録を読み込み中…";
 
   return (
-    <div className="pb-24">
+    <div>
       <div className="space-y-4">
         <div>
           <h1 className="text-xl font-bold text-stone-900 sm:text-2xl">日記一覧</h1>
@@ -315,8 +314,6 @@ export function DiaryJournalListHome({
           </ul>
         )}
       </div>
-
-      <DiaryHomeBottomNav />
     </div>
   );
 }

@@ -4,7 +4,6 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
-import { DiaryHomeBottomNav } from "@/components/journal/DiaryHomeBottomNav";
 import { DiarySyncDebugPanel } from "@/components/journal/DiarySyncDebugPanel";
 import {
   DiaryMonthCalendar,
@@ -281,7 +280,7 @@ export function DiaryCalendarHome({
   const writeSelectedDayButtonClass = `${writeButtonBase} border border-emerald-300/80 bg-emerald-700 text-white hover:border-emerald-400 hover:bg-emerald-800`;
 
   return (
-    <div className="pb-24">
+    <div>
       <div className="space-y-1.5 sm:space-y-4">
         <div className="max-sm:pt-0 sm:space-y-2">
           <Link
@@ -489,8 +488,6 @@ export function DiaryCalendarHome({
           )}
         </div>
       </div>
-
-      <DiaryHomeBottomNav />
     </div>
   );
 }

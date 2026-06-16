@@ -1,7 +1,6 @@
 import Link from "next/link";
 
 import { KanteiMissingBanner } from "@/components/orders/KanteiMissingBanner";
-import { DiaryLoggedInPageShell } from "@/components/journal/DiaryLoggedInPageShell";
 import { MyPageAccountSection } from "@/components/orders/MyPageAccountSection";
 import { LegalFooterLinks } from "@/components/legal/LegalFooterLinks";
 import { MyPageContactSection } from "@/components/orders/MyPageContactSection";
@@ -146,7 +145,6 @@ export default async function OrdersListPage() {
   const activeProfile = profiles.find((p) => p.id === activeProfileId) ?? null;
 
   return (
-    <DiaryLoggedInPageShell>
       <div className="space-y-5 sm:space-y-6">
       <MyPagePageHeader />
 
@@ -214,6 +212,5 @@ export default async function OrdersListPage() {
       ) : null}
 
       </div>
-    </DiaryLoggedInPageShell>
   );
 }

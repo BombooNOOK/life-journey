@@ -15,7 +15,6 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useFirebaseAuth } from "@/components/auth/FirebaseAuthProvider";
 
 import { JournalCompanionPicker } from "@/components/journal/JournalCompanionPicker";
-import { DiaryLoggedInPageShell } from "@/components/journal/DiaryLoggedInPageShell";
 import { MoodOwlIcon } from "@/components/journal/MoodOwlIcon";
 import { FieldLabelWithHelp } from "@/components/ui/InlineHelpButton";
 import {
@@ -624,7 +623,6 @@ function JournalPageContent() {
   const bodyInputHeading = journalBodyInputHeading(entryDate);
 
   return (
-    <DiaryLoggedInPageShell>
     <div className="relative space-y-3">
       {navigatingToPreview ? (
         <div
@@ -1023,7 +1021,6 @@ function JournalPageContent() {
 
       {error ? <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-800">{error}</p> : null}
     </div>
-    </DiaryLoggedInPageShell>
   );
 }
 
