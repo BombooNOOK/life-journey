@@ -4,10 +4,11 @@ import Link from "next/link";
 import { ReadingFontSizeControl } from "@/components/reading/ReadingFontSizeControl";
 import { HomeHeroSubNavLink } from "@/components/home/HomeHeroSubNavLink";
 import {
+  heroCtaAreaClass,
+  heroCtaButtonsClass,
   heroCtaMicrocopyAboveButtonClass,
   heroCtaMicrocopyBelowButtonClass,
   heroCtaPrimaryClass,
-  heroCtaStackClass,
 } from "@/components/home/heroCtaStyles";
 import {
   HOME_HERO_FOREST_BG_SRC,
@@ -76,15 +77,17 @@ export function HomeHeroSection() {
 
       <div className="relative z-10 min-h-[14rem] sm:min-h-[16rem] md:min-h-[18rem] lg:min-h-[20rem]">
         <div className="flex min-h-full flex-col items-start justify-end px-2 pb-4 pt-2 sm:px-6 sm:pb-6 md:pb-8">
-          <div className={heroCtaStackClass}>
+          <div className={heroCtaAreaClass}>
             <div className="space-y-2 sm:space-y-2.5">
               <p className={heroCtaMicrocopyAboveButtonClass}>
                 クレジットカード登録なしで、2週間無料お試し
               </p>
-              <Link href="/order" className={heroCtaPrimaryClass}>
-                はじめての方はこちら
-              </Link>
-              <HomeHeroSubNavLink />
+              <div className={heroCtaButtonsClass}>
+                <Link href="/order" className={heroCtaPrimaryClass}>
+                  はじめての方はこちら
+                </Link>
+                <HomeHeroSubNavLink />
+              </div>
               <p className={heroCtaMicrocopyBelowButtonClass}>
                 ※まずは、お名前と生年月日だけで無料鑑定へ
               </p>

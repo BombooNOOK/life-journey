@@ -2,9 +2,10 @@ import Image from "next/image";
 import Link from "next/link";
 
 import {
+  heroCtaClosingMicrocopyClass,
+  heroCtaClosingStackClass,
   heroCtaMicrocopyBelowButtonClass,
   heroCtaPrimaryClass,
-  heroCtaStackClass,
 } from "@/components/home/heroCtaStyles";
 import { HOME_CLOSING_GROUP_IMAGE } from "@/lib/home/homeClosingSection";
 
@@ -35,11 +36,11 @@ export function HomeClosingSection() {
           ))}
         </div>
 
-        <div className={`mx-auto mt-6 sm:mt-8 ${heroCtaStackClass}`}>
+        <div className={`mt-6 sm:mt-8 ${heroCtaClosingStackClass}`}>
           <Link href="/order" className={heroCtaPrimaryClass}>
             はじめての方はこちら
           </Link>
-          <p className={`mt-3 ${heroCtaMicrocopyBelowButtonClass}`}>
+          <p className={`mt-3 ${heroCtaClosingMicrocopyClass}`}>
             お名前と生年月日だけで無料鑑定へ。
             <br className="sm:hidden" />
             クレジットカード登録なしで、2週間日記をお試しいただけます。
