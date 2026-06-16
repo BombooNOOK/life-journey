@@ -226,7 +226,7 @@ function JournalPreviewPageContent() {
           />
         ) : (
           <div className="space-y-3">
-            <p className="text-xs leading-relaxed text-stone-500">{JOURNAL_BOOK_PREVIEW_NOTICE}</p>
+            <p className="lj-read-caption leading-relaxed text-stone-500">{JOURNAL_BOOK_PREVIEW_NOTICE}</p>
             <p className="hidden text-sm text-stone-600 sm:block">
               デザイン: {getDiaryDesignLabel(designTheme)}
             </p>

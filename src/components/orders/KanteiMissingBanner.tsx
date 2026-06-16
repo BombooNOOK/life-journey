@@ -17,12 +17,12 @@ export function KanteiMissingBanner({ profileId, blockNewKantei = false }: Props
       <h2 id="kantei-missing-banner-heading" className="text-sm font-semibold text-amber-950">
         このプロフィールには鑑定情報がありません。
       </h2>
-      <p className="mt-2 text-sm leading-relaxed text-amber-950/90">
+      <p className="mt-2 lj-read-desc text-amber-950/90">
         バックアップから復元されたプロフィールなどでは、日記本文と写真は戻りますが、鑑定書は復元されません。
         鑑定を作成すると、鑑定書が本棚に表示され、今後の日記の数字やコメント生成にも使えるようになります。
       </p>
       {blockNewKantei ? (
-        <p className="mt-4 text-sm text-amber-950/90">
+        <p className="mt-4 lj-read-desc text-amber-950/90">
           新規鑑定の作成は、日記の無料お試し開始後にご利用いただけます。まずは日記の記録からお試しください。
         </p>
       ) : (

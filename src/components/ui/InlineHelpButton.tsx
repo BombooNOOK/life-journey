@@ -64,7 +64,7 @@ export function InlineHelpButton({
           id={panelId}
           role="region"
           className={[
-            "absolute top-[calc(100%+6px)] box-border rounded-lg border border-stone-200/90 bg-[#faf8f5] p-3 text-left text-xs leading-relaxed text-stone-600 shadow-md",
+            "absolute top-[calc(100%+6px)] box-border rounded-lg border border-stone-200/90 bg-[#faf8f5] p-3 text-left lj-read-desc text-stone-600 shadow-md",
             "w-[min(320px,calc(100vw-32px))] max-w-[calc(100vw-32px)] sm:w-[min(360px,calc(100vw-32px))]",
             "whitespace-normal break-keep [overflow-wrap:break-word]",
             "left-1/2 -translate-x-1/2 sm:left-auto sm:right-0 sm:translate-x-0",

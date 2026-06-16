@@ -58,7 +58,7 @@ export function MyPageSupportInquiriesSection() {
     <section className="space-y-3 rounded-xl border border-stone-200 bg-white p-4 shadow-sm sm:p-5">
       <div>
         <h2 className="text-lg font-semibold text-stone-900">お問い合わせ履歴</h2>
-        <p className="mt-2 text-sm leading-relaxed text-stone-700">
+        <p className="mt-2 lj-read-desc text-stone-700">
           過去のお問い合わせと運営からの返信を確認できます。
         </p>
       </div>

@@ -242,7 +242,7 @@ export function DiaryJournalListHome({
         ) : sortedEntries.length === 0 ? (
           <div className="lj-read-desc rounded-xl border border-stone-200 bg-white p-5 text-stone-600 shadow-sm">
             <p>この月の日記はまだありません。</p>
-            <p className="mt-2 text-stone-500">上の年・月を変えると、別の月の日記を表示できます。</p>
+            <p className="mt-2 lj-read-caption text-stone-500">上の年・月を変えると、別の月の日記を表示できます。</p>
             <Link
               href="/orders/calendar"
               className="mt-3 inline-flex min-h-[44px] items-center text-base font-medium text-emerald-900 underline-offset-2 hover:underline"
@@ -271,7 +271,7 @@ export function DiaryJournalListHome({
                     href={previewHref}
                     className="flex min-h-[56px] items-center gap-3 px-3 py-3.5 transition active:bg-stone-50/80"
                   >
-                    <span className="w-[5.5rem] shrink-0 text-sm font-medium text-stone-700">
+                    <span className="lj-read-desc w-[5.5rem] shrink-0 font-medium text-stone-700">
                       {dayLabel}
                     </span>
                     {photoUrl ? (

@@ -41,7 +41,7 @@ export function JournalContentLengthAlerts({
   return (
     <div className="mt-2 space-y-2">
       {bodyOverflows ? (
-        <p className="rounded-md border border-orange-400 bg-orange-50 px-3 py-2 text-xs font-medium leading-relaxed text-orange-950">
+        <p className="rounded-md border border-orange-400 bg-orange-50 px-3 py-2 lj-read-caption font-medium text-orange-950">
           <span className="inline-flex flex-wrap items-center gap-1.5">
             {DIARY_BINDING_BODY_OVERFLOW_MESSAGE_BY_MODE[mode]}
             <InlineHelpButton ariaLabel="製本の目安について" panelZIndexClass="z-30">
@@ -51,17 +51,17 @@ export function JournalContentLengthAlerts({
         </p>
       ) : null}
       {commentOverflows ? (
-        <p className="rounded-md border border-orange-300 bg-orange-50 px-3 py-2 text-xs leading-relaxed text-orange-950">
+        <p className="rounded-md border border-orange-300 bg-orange-50 px-3 py-2 lj-read-caption text-orange-950">
           {COMMENT_FRAME_OVERFLOW_MESSAGE}
         </p>
       ) : null}
       {strong ? (
-        <p className="rounded-md border border-orange-300 bg-orange-50 px-3 py-2 text-xs leading-relaxed text-orange-950">
+        <p className="rounded-md border border-orange-300 bg-orange-50 px-3 py-2 lj-read-caption text-orange-950">
           {JOURNAL_VERY_LONG_CONTENT_WARN_MESSAGE}
         </p>
       ) : null}
       {soft && !strong && !frameIssue ? (
-        <p className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs leading-relaxed text-amber-950">
+        <p className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 lj-read-caption text-amber-950">
           {JOURNAL_LONG_CONTENT_WARN_MESSAGE}
         </p>
       ) : null}

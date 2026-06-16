@@ -56,13 +56,13 @@ export function MyPageContactSection({ viewerEmail }: Props) {
     >
       <div>
         <h2 className="text-lg font-semibold text-stone-900">お問い合わせ</h2>
-        <p className="mt-2 text-sm leading-relaxed text-stone-700">
+        <p className="mt-2 lj-read-desc text-stone-700">
           プロフィール削除、バックアップ復元、製本申込、その他ご不明点がある場合はこちらからお問い合わせください。
         </p>
-        <p className="mt-2 text-xs text-stone-500">
+        <p className="mt-2 lj-read-caption text-stone-500">
           ログイン中のアカウント（{viewerEmail}）として送信します。
         </p>
-        <p className="mt-2 text-xs leading-relaxed text-stone-500">
+        <p className="mt-2 lj-read-caption text-stone-500">
           個人情報の取扱いについては
           <Link
             href={PRIVACY_POLICY_PATH}
@@ -75,7 +75,7 @@ export function MyPageContactSection({ viewerEmail }: Props) {
       </div>
 
       {successInquiryId ? (
-        <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-3 text-sm leading-relaxed text-emerald-950" role="status">
+        <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-3 lj-read-desc text-emerald-950" role="status">
           <p>お問い合わせを受け付けました。</p>
           <p className="mt-1">内容を確認のうえ、運営より返信します。返信はこのページの「お問い合わせ履歴」でも確認できます。</p>
           <Link

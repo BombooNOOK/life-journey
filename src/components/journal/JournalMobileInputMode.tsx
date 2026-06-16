@@ -386,7 +386,7 @@ export function JournalMobileInputMode({
         >
           <p
             id="journal-input-mode-title"
-            className="min-w-0 flex-1 truncate text-xs font-semibold text-stone-800"
+            className="min-w-0 flex-1 truncate lj-read-desc font-semibold text-stone-800"
           >
             {bodyInputHeading}
           </p>
@@ -411,7 +411,7 @@ export function JournalMobileInputMode({
               onChange={(e) => onContentChange(e.target.value)}
               maxLength={maxLength}
               placeholder={placeholder}
-              className="box-border min-h-0 w-full resize-none overflow-y-auto overscroll-y-contain rounded-lg border border-stone-200 bg-white px-3 py-2 text-base leading-relaxed text-stone-900 outline-none ring-stone-400 focus:ring-2 touch-auto"
+              className="lj-read-diary box-border min-h-0 w-full resize-none overflow-y-auto overscroll-y-contain rounded-lg border border-stone-200 bg-white px-3 py-2 text-stone-900 outline-none ring-stone-400 focus:ring-2 touch-auto"
               style={{
                 WebkitOverflowScrolling: "touch",
                 height: twoLineMinPx,
@@ -423,7 +423,7 @@ export function JournalMobileInputMode({
             <button
               type="button"
               onClick={startEditing}
-              className="box-border flex h-full min-h-0 w-full items-start overflow-y-auto rounded-lg border border-stone-200 bg-white px-3 py-2 text-left text-base leading-relaxed text-stone-900"
+              className="lj-read-diary box-border flex h-full min-h-0 w-full items-start overflow-y-auto rounded-lg border border-stone-200 bg-white px-3 py-2 text-left text-stone-900"
             >
               {content.trim() ? (
                 <span className="block w-full whitespace-pre-wrap">{content.trim()}</span>

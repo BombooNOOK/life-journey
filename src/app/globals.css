@@ -48,6 +48,10 @@ body {
   --lj-read-caption: 0.875rem;
   --lj-read-diary: 1.125rem;
   --lj-read-comment: 1.125rem;
+  --lj-read-body-leading: 1.7;
+  --lj-read-desc-leading: 1.65;
+  --lj-read-diary-leading: 1.7;
+  --lj-read-comment-leading: 1.7;
 }
 
 [data-reading-font-size="x-large"] {
@@ -56,6 +60,10 @@ body {
   --lj-read-caption: 0.9375rem;
   --lj-read-diary: 1.1875rem;
   --lj-read-comment: 1.1875rem;
+  --lj-read-body-leading: 1.75;
+  --lj-read-desc-leading: 1.7;
+  --lj-read-diary-leading: 1.75;
+  --lj-read-comment-leading: 1.75;
 }
 
 .lj-read-body {
