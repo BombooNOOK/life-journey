@@ -4,12 +4,13 @@ import Link from "next/link";
 import { ReadingFontSizeControl } from "@/components/reading/ReadingFontSizeControl";
 import { HomeHeroSubNavLink } from "@/components/home/HomeHeroSubNavLink";
 import {
+  heroCtaButtonsGroupClass,
   heroCtaMicrocopyAboveButtonClass,
   heroCtaMicrocopyBelowButtonClass,
   heroCtaMicrocopyGroupClass,
   heroCtaPrimaryClass,
-  heroCtaPrimaryGroupClass,
   heroCtaStackClass,
+  heroCtaTextBandClass,
 } from "@/components/home/heroCtaStyles";
 import {
   HOME_HERO_FOREST_BG_SRC,
@@ -77,25 +78,27 @@ export function HomeHeroSection() {
       </div>
 
       <div className="relative z-10 min-h-[14rem] sm:min-h-[16rem] md:min-h-[18rem] lg:min-h-[20rem]">
-        <div className="flex min-h-full flex-col items-start justify-end px-1 pb-4 pt-2 sm:px-6 sm:pb-6 md:pb-8">
-          <div className={heroCtaStackClass}>
-            <div className="space-y-2 sm:space-y-2.5">
-              <div className={heroCtaPrimaryGroupClass}>
-                <div className={heroCtaMicrocopyGroupClass}>
-                  <p className={heroCtaMicrocopyAboveButtonClass}>
-                    クレジットカード登録なしで、2週間無料お試し
-                  </p>
-                  <p className={heroCtaMicrocopyBelowButtonClass}>
-                    ※まずは、お名前と生年月日だけで無料鑑定へ
-                  </p>
-                </div>
-                <Link href="/order" className={heroCtaPrimaryClass}>
-                  はじめての方はこちら
-                </Link>
-              </div>
-              <HomeHeroSubNavLink />
-              <ReadingFontSizeControl variant="hero" className="mt-2 border-t border-stone-300/40 pt-2" />
+        <div className="flex min-h-full flex-col items-start justify-end gap-2 px-1 pb-4 pt-2 sm:gap-2.5 sm:px-6 sm:pb-6 md:pb-8">
+          <div className={heroCtaTextBandClass}>
+            <div className={heroCtaMicrocopyGroupClass}>
+              <p className={heroCtaMicrocopyAboveButtonClass}>
+                クレジットカード登録なしで、2週間無料お試し
+              </p>
+              <p className={heroCtaMicrocopyBelowButtonClass}>
+                ※まずは、お名前と生年月日だけで無料鑑定へ
+              </p>
             </div>
+          </div>
+          <div className={heroCtaStackClass}>
+            <div className={heroCtaButtonsGroupClass}>
+              <Link href="/order" className={heroCtaPrimaryClass}>
+                はじめての方はこちら
+              </Link>
+              <HomeHeroSubNavLink />
+            </div>
+          </div>
+          <div className={heroCtaTextBandClass}>
+            <ReadingFontSizeControl variant="hero" className="border-t border-stone-300/40 pt-2" />
           </div>
         </div>
       </div>
