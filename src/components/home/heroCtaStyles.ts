@@ -7,13 +7,20 @@ export const heroCtaStackClass =
 export const heroCtaSecondaryHintClass =
   "text-center text-[10px] leading-4 text-stone-500 sm:text-[11px] sm:leading-4";
 
+/** 主CTAの直上：お試し・補足（2行まとめてボタン上に配置） */
+export const heroCtaMicrocopyGroupClass =
+  "flex w-full flex-col items-center gap-0.5 text-center sm:gap-1";
+
 /** 主CTAの直上：お試し案内 */
 export const heroCtaMicrocopyAboveButtonClass =
-  "whitespace-nowrap text-left text-[8px] font-medium leading-none tracking-wide text-stone-600 sm:text-[10px]";
+  "whitespace-nowrap text-[8px] font-medium leading-none tracking-wide text-stone-600 sm:text-[10px]";
 
-/** 主CTAの直下：補足（※） */
+/** 主CTAの直上：補足（※） */
 export const heroCtaMicrocopyBelowButtonClass =
-  "whitespace-nowrap text-left text-[8.5px] leading-none text-stone-600 sm:text-[9.5px]";
+  "whitespace-nowrap text-[8.5px] leading-none text-stone-600 sm:text-[9.5px]";
+
+/** 主CTAと直上メッセージのまとまり */
+export const heroCtaPrimaryGroupClass = "flex w-full flex-col items-stretch gap-1.5 sm:gap-2";
 
 /** 継続導線（記録の続き／ログイン）：初回CTAと同幅・やや軽いトーン */
 export const heroCtaContinueClass = [

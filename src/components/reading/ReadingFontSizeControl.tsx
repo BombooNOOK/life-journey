@@ -74,7 +74,7 @@ export function ReadingFontSizeControl({ className = "", variant = "hero" }: Pro
       aria-label="文字の大きさ"
     >
       <div className="flex flex-nowrap items-center justify-center gap-x-0 whitespace-nowrap text-[9px] leading-none sm:text-[11px]">
-        <span className="mr-0.5 shrink-0 font-medium text-stone-600">文字の大きさ</span>
+        <span className="mr-1.5 shrink-0 font-medium text-stone-600 sm:mr-2">文字の大きさ</span>
         {READING_FONT_SIZES.map((size, index) => (
           <span key={size} className="inline-flex shrink-0 items-center">
             {index > 0 ? (

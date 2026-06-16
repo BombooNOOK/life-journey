@@ -6,7 +6,9 @@ import { HomeHeroSubNavLink } from "@/components/home/HomeHeroSubNavLink";
 import {
   heroCtaMicrocopyAboveButtonClass,
   heroCtaMicrocopyBelowButtonClass,
+  heroCtaMicrocopyGroupClass,
   heroCtaPrimaryClass,
+  heroCtaPrimaryGroupClass,
   heroCtaStackClass,
 } from "@/components/home/heroCtaStyles";
 import {
@@ -78,16 +80,20 @@ export function HomeHeroSection() {
         <div className="flex min-h-full flex-col items-start justify-end px-2 pb-4 pt-2 sm:px-6 sm:pb-6 md:pb-8">
           <div className={heroCtaStackClass}>
             <div className="space-y-2 sm:space-y-2.5">
-              <p className={heroCtaMicrocopyAboveButtonClass}>
-                クレジットカード登録なしで、2週間無料お試し
-              </p>
-              <Link href="/order" className={heroCtaPrimaryClass}>
-                はじめての方はこちら
-              </Link>
+              <div className={heroCtaPrimaryGroupClass}>
+                <div className={heroCtaMicrocopyGroupClass}>
+                  <p className={heroCtaMicrocopyAboveButtonClass}>
+                    クレジットカード登録なしで、2週間無料お試し
+                  </p>
+                  <p className={heroCtaMicrocopyBelowButtonClass}>
+                    ※まずは、お名前と生年月日だけで無料鑑定へ
+                  </p>
+                </div>
+                <Link href="/order" className={heroCtaPrimaryClass}>
+                  はじめての方はこちら
+                </Link>
+              </div>
               <HomeHeroSubNavLink />
-              <p className={heroCtaMicrocopyBelowButtonClass}>
-                ※まずは、お名前と生年月日だけで無料鑑定へ
-              </p>
               <ReadingFontSizeControl variant="hero" className="mt-2 border-t border-stone-300/40 pt-2" />
             </div>
           </div>
