@@ -7,8 +7,8 @@ import {
   JOURNAL_DIARY_NUMBERS_HELP_TEXT,
   JOURNAL_DIARY_NUMBERS_SECTION_TITLE,
   NUMEROLOGY_NUMBER_MEANINGS_LINK_LABEL,
-  NUMEROLOGY_NUMBER_MEANINGS_PATH,
 } from "@/lib/journal/journalDiaryNumbersHelpCopy";
+import { numerologyNumberMeaningsHref } from "@/lib/journal/numerologyNumbersNav";
 
 type DiaryNumbers = {
   today: number;
@@ -18,9 +18,11 @@ type DiaryNumbers = {
 
 type Props = {
   diaryNumbers: DiaryNumbers;
+  /** 数字の意味ページから戻る先（日記プレビュー URL など） */
+  meaningsReturnTo?: string | null;
 };
 
-export function DiaryNumbersHintSection({ diaryNumbers }: Props) {
+export function DiaryNumbersHintSection({ diaryNumbers, meaningsReturnTo }: Props) {
   const [helpOpen, setHelpOpen] = useState(false);
   const helpPanelId = useId();
 
@@ -67,7 +69,7 @@ export function DiaryNumbersHintSection({ diaryNumbers }: Props) {
 
       <p className="mt-4">
         <Link
-          href={NUMEROLOGY_NUMBER_MEANINGS_PATH}
+          href={numerologyNumberMeaningsHref(meaningsReturnTo)}
           className="inline-flex min-h-[44px] items-center text-base font-medium text-emerald-900 underline-offset-2 hover:underline"
         >
           {NUMEROLOGY_NUMBER_MEANINGS_LINK_LABEL}

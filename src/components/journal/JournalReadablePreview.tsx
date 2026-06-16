@@ -29,6 +29,8 @@ type Props = {
   returnTo: string | null;
   profileId?: string | null;
   canEdit?: boolean;
+  /** 数字の意味ページから戻る先（このプレビュー URL） */
+  meaningsReturnTo?: string | null;
 };
 
 function PencilEditLink({
@@ -77,6 +79,7 @@ export function JournalReadablePreview({
   returnTo,
   profileId,
   canEdit = true,
+  meaningsReturnTo,
 }: Props) {
   const previewDate = new Date(createdAt);
   const dateLabel = formatJournalPreviewDateHeading(previewDate);
@@ -141,6 +144,7 @@ export function JournalReadablePreview({
             month: diaryNumbers.month,
             year: diaryNumbers.year,
           }}
+          meaningsReturnTo={meaningsReturnTo}
         />
       ) : null}
 

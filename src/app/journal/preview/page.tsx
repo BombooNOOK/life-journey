@@ -112,6 +112,18 @@ function JournalPreviewPageContent() {
     entry?.profileId?.trim() ||
     "";
 
+  const meaningsReturnTo = useMemo(() => {
+    if (!entryId) return null;
+    const qs = new URLSearchParams({
+      entry: entryId,
+      theme: designTheme,
+      pv: "3",
+    });
+    if (returnTo) qs.set("returnTo", returnTo);
+    if (effectiveProfileId) qs.set("profile", effectiveProfileId);
+    return `/journal/preview?${qs.toString()}`;
+  }, [entryId, designTheme, returnTo, effectiveProfileId]);
+
   return (
     <DiaryLoggedInPageShell>
       <div className="space-y-5">
@@ -178,6 +190,7 @@ function JournalPreviewPageContent() {
             returnTo={returnTo}
             profileId={effectiveProfileId || entry.profileId}
             canEdit={canEditJournal}
+            meaningsReturnTo={meaningsReturnTo}
           />
         ) : (
           <div className="space-y-3">
