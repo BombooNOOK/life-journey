@@ -9,7 +9,7 @@ import { HomeRecommendedForSection } from "@/components/home/HomeRecommendedForS
 
 export default function HomePage() {
   return (
-    <div className="-mt-2 space-y-4 sm:mt-0 sm:space-y-5">
+    <div className="home-read-scope -mt-2 space-y-4 sm:mt-0 sm:space-y-5">
       <HomeHeroSection />
 
       <HomeAboutSection />

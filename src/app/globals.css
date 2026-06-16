@@ -28,9 +28,26 @@ body {
     sans-serif;
 }
 
-/* 読み物用文字サイズ（html data-reading-font-size で切り替え） */
+/*
+ * 読み物用文字サイズ（html data-reading-font-size で切り替え）
+ * ふつう = 100%（現行デザイン固定）。大きめ以降は html の rem 基準だけを段階拡大。
+ */
+html[data-reading-font-size="normal"] {
+  font-size: 100%;
+}
+
+html[data-reading-font-size="large"] {
+  font-size: 106.25%;
+}
+
+html[data-reading-font-size="x-large"] {
+  font-size: 112.5%;
+}
+
 :root,
-[data-reading-font-size="normal"] {
+[data-reading-font-size="normal"],
+[data-reading-font-size="large"],
+[data-reading-font-size="x-large"] {
   --lj-read-body: 1rem;
   --lj-read-desc: 0.9375rem;
   --lj-read-caption: 0.8125rem;
@@ -43,11 +60,6 @@ body {
 }
 
 [data-reading-font-size="large"] {
-  --lj-read-body: 1.0625rem;
-  --lj-read-desc: 1rem;
-  --lj-read-caption: 0.875rem;
-  --lj-read-diary: 1.125rem;
-  --lj-read-comment: 1.125rem;
   --lj-read-body-leading: 1.7;
   --lj-read-desc-leading: 1.65;
   --lj-read-diary-leading: 1.7;
@@ -55,11 +67,6 @@ body {
 }
 
 [data-reading-font-size="x-large"] {
-  --lj-read-body: 1.125rem;
-  --lj-read-desc: 1.0625rem;
-  --lj-read-caption: 0.9375rem;
-  --lj-read-diary: 1.1875rem;
-  --lj-read-comment: 1.1875rem;
   --lj-read-body-leading: 1.75;
   --lj-read-desc-leading: 1.7;
   --lj-read-diary-leading: 1.75;
@@ -91,11 +98,53 @@ body {
   line-height: var(--lj-read-comment-leading);
 }
 
-/* 製本イメージなど：読み物サイズ設定の影響を受けない */
+/*
+ * 製本イメージ・モック枠内・イラスト上の文字など：拡大の影響を受けない
+ * rem 指定は html 基準のため px/clamp 指定を推奨。em 子要素向けに親 font-size を打ち消す。
+ */
 .lj-reading-exempt {
   --lj-read-body: 1rem;
   --lj-read-desc: 0.9375rem;
   --lj-read-caption: 0.8125rem;
   --lj-read-diary: 1.0625rem;
   --lj-read-comment: 1.0625rem;
+}
+
+html[data-reading-font-size="large"] .lj-reading-exempt {
+  font-size: 94.117647%;
+}
+
+html[data-reading-font-size="x-large"] .lj-reading-exempt {
+  font-size: 88.888889%;
+}
+
+/* 上部・下部メニュー：拡大するが px 上限でレイアウト破綻を防ぐ */
+.lj-site-nav {
+  font-size: clamp(0.875rem, 0.875rem, 16px);
+}
+
+@media (min-width: 640px) {
+  .lj-site-nav {
+    font-size: clamp(1rem, 1rem, 18px);
+  }
+}
+
+.lj-site-footer {
+  font-size: clamp(0.75rem, 0.75rem, 14px);
+}
+
+@media (min-width: 640px) {
+  .lj-site-footer {
+    font-size: clamp(0.875rem, 0.875rem, 16px);
+  }
+}
+
+.lj-bottom-nav {
+  font-size: clamp(0.625rem, 0.625rem, 13px);
+}
+
+@media (min-width: 640px) {
+  .lj-bottom-nav {
+    font-size: clamp(0.75rem, 0.75rem, 14px);
+  }
 }

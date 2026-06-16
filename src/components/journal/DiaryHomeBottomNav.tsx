@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 const TAB_CLASS =
-  "flex min-h-[52px] flex-1 flex-col items-center justify-center gap-0.5 px-1 py-2 text-[10px] font-medium sm:text-xs";
+  "flex min-h-[52px] flex-1 flex-col items-center justify-center gap-0.5 px-1 py-2 font-medium";
 
 /** ログイン後の主要画面用・下部ナビ（カレンダー / 日記一覧 / 本棚 / マイページ） */
 export function DiaryHomeBottomNav() {
@@ -35,7 +35,7 @@ export function DiaryHomeBottomNav() {
 
   return (
     <nav
-      className="fixed inset-x-0 bottom-0 z-40 border-t border-emerald-100/90 bg-[#fffdf9]/95 backdrop-blur-md"
+      className="lj-bottom-nav fixed inset-x-0 bottom-0 z-40 border-t border-emerald-100/90 bg-[#fffdf9]/95 backdrop-blur-md"
       aria-label="日記メニュー"
     >
       <div className="mx-auto flex max-w-3xl pb-[max(0px,env(safe-area-inset-bottom))]">

@@ -16,7 +16,7 @@ type Props = {
 
 function heroOptionClass(active: boolean): string {
   return [
-    "shrink-0 whitespace-nowrap rounded-md px-1 py-0.5 text-[9px] leading-none transition sm:px-1.5 sm:text-[11px]",
+    "shrink-0 whitespace-nowrap rounded-md px-1 py-0.5 text-[0.5625rem] leading-none transition sm:px-1.5 sm:text-[0.6875rem]",
     active
       ? "bg-emerald-100/95 font-semibold text-emerald-900 ring-1 ring-emerald-300/80"
       : "font-medium text-stone-600 hover:text-emerald-800 hover:underline hover:underline-offset-2",
@@ -73,7 +73,7 @@ export function ReadingFontSizeControl({ className = "", variant = "hero" }: Pro
       role="group"
       aria-label="文字の大きさ"
     >
-      <div className="flex flex-nowrap items-center justify-center gap-x-0 whitespace-nowrap text-[9px] leading-none sm:text-[11px]">
+      <div className="flex flex-nowrap items-center justify-center gap-x-0 whitespace-nowrap text-[0.5625rem] leading-none sm:text-[0.6875rem]">
         <span className="mr-1.5 shrink-0 font-medium text-stone-600 sm:mr-2">文字の大きさ</span>
         {READING_FONT_SIZES.map((size, index) => (
           <span key={size} className="inline-flex shrink-0 items-center">

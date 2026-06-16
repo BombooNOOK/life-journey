@@ -15,13 +15,13 @@ export const heroCtaTextBandClass =
 export const heroCtaMicrocopyGroupClass =
   "flex w-full flex-col items-center gap-0.5 text-center sm:gap-1";
 
-/** 主CTAの直上：お試し案内 */
+/** 主CTAの直上：お試し案内（rem 指定で大きめ設定時のみ拡大） */
 export const heroCtaMicrocopyAboveButtonClass =
-  "whitespace-nowrap text-[8px] font-medium leading-none tracking-wide text-stone-600 sm:text-[10px]";
+  "whitespace-nowrap text-[0.5rem] font-medium leading-none tracking-wide text-stone-600 sm:text-[0.625rem]";
 
 /** 主CTAの直上：補足（※） */
 export const heroCtaMicrocopyBelowButtonClass =
-  "whitespace-nowrap text-[8.5px] leading-none text-stone-600 sm:text-[9.5px]";
+  "whitespace-nowrap text-[0.53125rem] leading-none text-stone-600 sm:text-[0.59375rem]";
 
 /** 主CTAと直上メッセージのまとまり（ボタンのみ） */
 export const heroCtaButtonsGroupClass = "flex w-full flex-col items-stretch gap-2 sm:gap-2.5";
@@ -35,7 +35,7 @@ export const heroCtaContinueLeadClass =
   "whitespace-nowrap text-sm font-semibold leading-snug text-emerald-950 sm:text-base";
 
 export const heroCtaContinueSubClass =
-  "text-[10px] font-medium leading-tight text-emerald-800/80 sm:text-[11px]";
+  "text-[0.625rem] font-medium leading-tight text-emerald-800/80 sm:text-[0.6875rem]";
 
 export const heroCtaPrimaryClass = [
   "flex min-h-[48px] w-full min-w-[11.25rem] items-center justify-center whitespace-nowrap rounded-xl border border-emerald-900/60 bg-emerald-800 px-2.5 py-3.5 text-center text-sm font-semibold leading-snug text-white shadow-[0_3px_10px_rgba(6,78,59,0.28)] transition hover:border-emerald-950/75 hover:bg-emerald-900 hover:shadow-[0_4px_14px_rgba(6,78,59,0.34)] active:scale-[0.98] active:opacity-95 disabled:cursor-not-allowed disabled:border-stone-300 disabled:bg-stone-400 disabled:text-white/85 disabled:shadow-none sm:min-h-[52px] sm:px-3.5 sm:text-base",
@@ -51,4 +51,4 @@ export const heroCtaClosingStackClass =
 
 /** ページ下部の補足文 */
 export const heroCtaClosingMicrocopyClass =
-  "text-center text-[8.5px] leading-[1.45] text-stone-600 sm:text-[9.5px] sm:leading-[1.5]";
+  "text-center text-[0.53125rem] leading-[1.45] text-stone-600 sm:text-[0.59375rem] sm:leading-[1.5]";

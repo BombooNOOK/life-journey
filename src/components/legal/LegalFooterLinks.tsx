@@ -39,7 +39,7 @@ export function LegalFooterLinks({ className = "" }: Props) {
   return (
     <nav
       aria-label="法務情報・お問い合わせ"
-      className={`flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-stone-600 sm:gap-x-3 sm:text-sm ${className}`.trim()}
+      className={`flex flex-wrap items-center gap-x-2 gap-y-1 text-stone-600 sm:gap-x-3 ${className}`.trim()}
     >
       <Link href={PRIVACY_POLICY_PATH} className={linkClass}>
         {PRIVACY_POLICY_LABEL}

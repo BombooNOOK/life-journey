@@ -35,7 +35,7 @@ export function SiteHeader() {
             Life Journey Diary
           </a>
           <nav
-            className={`flex min-w-0 flex-wrap items-center justify-end gap-x-1.5 gap-y-1 overflow-visible text-sm text-stone-600 sm:gap-x-2 sm:text-base ${
+            className={`lj-site-nav flex min-w-0 flex-wrap items-center justify-end gap-x-1.5 gap-y-1 overflow-visible text-stone-600 sm:gap-x-2 ${
               isLoggedIn ? "basis-auto flex-1" : "basis-full sm:basis-auto sm:flex-1"
             }`}
             aria-label="メインメニュー"

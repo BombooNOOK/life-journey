@@ -10,7 +10,7 @@ const PROFILE_NAME_CLASS =
 const PROFILE_CATCHPHRASE_CLASS =
   "mt-2.5 w-full text-[clamp(10px,2.75vw,12px)] leading-snug text-[#6b5a4a] sm:mt-3";
 const PROFILE_DESCRIPTION_CLASS =
-  "lj-read-desc w-full leading-[1.75] text-[#5c4a3a]/92";
+  "w-full text-[clamp(9px,2.4vw,11px)] leading-[1.75] text-[#5c4a3a]/92";
 
 function AppraiserProfileCard({ card }: { card: HomeAppraiserProfileCard }) {
   return (
@@ -25,12 +25,12 @@ function AppraiserProfileCard({ card }: { card: HomeAppraiserProfileCard }) {
           className="z-0 object-cover object-center"
         />
 
-        <div className="absolute left-[8%] right-[8%] top-[7%] z-10 text-center">
+        <div className="lj-reading-exempt absolute left-[8%] right-[8%] top-[7%] z-10 text-center">
           <h3 className={PROFILE_NAME_CLASS}>{card.name}</h3>
           <p className={PROFILE_CATCHPHRASE_CLASS}>{card.catchphrase}</p>
         </div>
 
-        <div className="absolute bottom-[8%] left-[9%] right-[9%] z-10 text-center">
+        <div className="lj-reading-exempt absolute bottom-[8%] left-[9%] right-[9%] z-10 text-center">
           <p className={PROFILE_DESCRIPTION_CLASS}>{card.description}</p>
         </div>
       </div>

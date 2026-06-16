@@ -137,7 +137,9 @@ function MockStepCard({ step }: { step: HomeProductMockStep }) {
         {step.description}
       </p>
       <div className="mt-3 flex w-full flex-1 justify-center sm:mt-4">
-        <MockImageFrame step={step} />
+        <div className="lj-reading-exempt">
+          <MockImageFrame step={step} />
+        </div>
       </div>
     </article>
   );
