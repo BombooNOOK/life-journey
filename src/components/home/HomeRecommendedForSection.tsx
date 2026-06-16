@@ -90,7 +90,7 @@ function WorryLine({ icon, children }: { icon: CharacterFaceIconName; children: 
 function ReplyLine({ children }: { children: string }) {
   return (
     <div className="flex justify-end pl-6 sm:pl-10">
-      <div className="flex max-w-[94%] items-start gap-2.5 rounded-xl bg-[#faf6ef]/85 px-3 py-2 sm:max-w-[90%]">
+      <div className="flex max-w-[94%] items-start gap-2.5 rounded-xl bg-[#efe6d8] px-3 py-2 sm:max-w-[90%]">
         <p className={`min-w-0 flex-1 text-left ${REPLY_TEXT_CLASS}`}>{children}</p>
         <CharacterFaceIcon name="character-owl-face" />
       </div>

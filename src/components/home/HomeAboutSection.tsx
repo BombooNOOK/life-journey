@@ -19,10 +19,10 @@ export function HomeAboutSection() {
           <br className="block md:hidden" />
           日々のきもちをやさしくひも解き、
           <br />
-          あなたのことばや写真とともに記録。
+          あなたのことばや写真とともに記録します。
         </p>
         <p>
-          デジタルで残した日々を、手元に残る
+          そして、デジタルで残した日々を、手元に残る
           <br />
           <span className="font-semibold text-stone-700">世界に一冊の「日記ブック」</span>へと
           <br className="block md:hidden" />
