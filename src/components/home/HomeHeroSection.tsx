@@ -60,8 +60,8 @@ export function HomeHeroSection() {
             className="object-cover object-[44%_68%] sm:object-[50%_64%] md:object-[50%_72%] lg:object-center"
             priority
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-[#f6f4ef]/95 via-[#fffdf9]/80 to-[#fffdf9]/45 md:from-[#f6f4ef]/90 md:via-[#fffdf9]/62 md:to-[#fffdf9]/25" />
-          <div className="absolute inset-0 bg-gradient-to-r from-white/92 via-white/62 to-white/5 md:from-white/88 md:via-white/42 md:to-transparent md:max-w-[70%]" />
+          <div className="absolute inset-0 bg-gradient-to-t from-[#f6f4ef]/75 via-[#fffdf9]/45 to-transparent md:from-[#f6f4ef]/65 md:via-[#fffdf9]/28 md:to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-r from-white/65 via-white/28 to-transparent md:max-w-[55%]" />
         </div>
 
         <Image
@@ -76,21 +76,19 @@ export function HomeHeroSection() {
         />
 
         <div className="relative z-10 flex min-h-full flex-col justify-end px-3 pb-4 pt-1 sm:px-6 sm:pb-6 md:max-w-xs md:pb-8 lg:max-w-sm">
-          <div className="rounded-2xl bg-[#fffdf9]/84 p-2 backdrop-blur-[2px] sm:bg-[#fffdf9]/78 sm:p-3 md:bg-transparent md:p-0 md:backdrop-blur-none">
-            <div className={heroCtaStackClass}>
-              <div className="space-y-2 sm:space-y-2.5">
-                <p className={heroCtaMicrocopyAboveButtonClass}>
-                  クレジットカード登録なしで、2週間無料お試し
-                </p>
-                <Link href="/order" className={heroCtaPrimaryClass}>
-                  はじめての方はこちら
-                </Link>
-                <HomeHeroSubNavLink />
-                <p className={heroCtaMicrocopyBelowButtonClass}>
-                  ※まずは、お名前と生年月日だけで無料鑑定へ
-                </p>
-                <ReadingFontSizeControl className="mt-3 border-t border-stone-200/70 pt-3" />
-              </div>
+          <div className={heroCtaStackClass}>
+            <div className="space-y-2 sm:space-y-2.5">
+              <p className={heroCtaMicrocopyAboveButtonClass}>
+                クレジットカード登録なしで、2週間無料お試し
+              </p>
+              <Link href="/order" className={heroCtaPrimaryClass}>
+                はじめての方はこちら
+              </Link>
+              <HomeHeroSubNavLink />
+              <p className={heroCtaMicrocopyBelowButtonClass}>
+                ※まずは、お名前と生年月日だけで無料鑑定へ
+              </p>
+              <ReadingFontSizeControl variant="hero" className="mt-2 border-t border-stone-300/40 pt-2" />
             </div>
           </div>
         </div>

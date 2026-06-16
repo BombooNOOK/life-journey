@@ -1,6 +1,5 @@
 /** トップヒーロー内CTA（初回・継続の2導線を縦並び） */
-export const heroCtaStackClass =
-  "w-full max-w-[17.75rem] rounded-2xl p-1.5 sm:max-w-none sm:p-4 md:max-w-xs";
+export const heroCtaStackClass = "w-full max-w-[17.75rem] sm:max-w-none md:max-w-xs";
 
 /** 将来の文字サイズ設定では、CTAは本文より控えめに拡大（max クランプ想定） */
 
