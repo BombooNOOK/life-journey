@@ -176,6 +176,7 @@ export function LoginClient({ returnToRaw }: { returnToRaw: string | null }) {
   const [busyGoogle, setBusyGoogle] = useState(false);
   const [busyEmail, setBusyEmail] = useState(false);
   const [busyReset, setBusyReset] = useState(false);
+  const [showResetFeedback, setShowResetFeedback] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [registrationComplete, setRegistrationComplete] = useState<{
     welcomeEmailSent: boolean;
@@ -190,6 +191,7 @@ export function LoginClient({ returnToRaw }: { returnToRaw: string | null }) {
   const googleSignInLock = useRef(false);
   const emailInputRef = useRef<HTMLInputElement>(null);
   const feedbackRef = useRef<HTMLDivElement>(null);
+  const resetSectionRef = useRef<HTMLDivElement>(null);
 
   const returnTo = resolveSafeReturnTo(returnToRaw);
   const loginFlow = resolveLoginFlow(returnTo);
@@ -384,6 +386,7 @@ export function LoginClient({ returnToRaw }: { returnToRaw: string | null }) {
   ) => {
     setError(null);
     setNotice(null);
+    setShowResetFeedback(false);
     const email = String(formData.get("email") ?? "").trim();
     const password = String(formData.get("password") ?? "");
 
@@ -450,13 +453,26 @@ export function LoginClient({ returnToRaw }: { returnToRaw: string | null }) {
     }
   };
 
+  function readLoginEmailFromForm(): string {
+    const input = emailInputRef.current;
+    const form = input?.form;
+    if (form) {
+      return String(new FormData(form).get("email") ?? "").trim();
+    }
+    return (input?.value ?? "").trim();
+  }
+
   const handlePasswordReset = async () => {
     setError(null);
     setNotice(null);
-    const email = (emailInputRef.current?.value ?? "").trim();
+    setShowResetFeedback(true);
+    const email = readLoginEmailFromForm();
     if (!email) {
       setError("先にメールアドレスを入力してください。");
       emailInputRef.current?.focus();
+      requestAnimationFrame(() => {
+        resetSectionRef.current?.scrollIntoView({ block: "center", behavior: "smooth" });
+      });
       return;
     }
     const a = auth();
@@ -488,7 +504,7 @@ export function LoginClient({ returnToRaw }: { returnToRaw: string | null }) {
     } finally {
       setBusyReset(false);
       requestAnimationFrame(() => {
-        feedbackRef.current?.scrollIntoView({ block: "nearest", behavior: "smooth" });
+        resetSectionRef.current?.scrollIntoView({ block: "center", behavior: "smooth" });
       });
     }
   };
@@ -724,21 +740,29 @@ export function LoginClient({ returnToRaw }: { returnToRaw: string | null }) {
         </p>
       </form>
 
-      {!isRegisterFlow ? (
-        <div className="space-y-2 border-t border-stone-100 pt-4">
-          <button
-            type="button"
-            disabled={busyReset || busyEmail}
-            className={mobileReadable.buttonSecondary}
-            onClick={() => void handlePasswordReset()}
-          >
-            {busyReset ? "再設定メールを送信中…" : "パスワード再設定メールを送る"}
-          </button>
-          <p className={mobileReadable.helperMuted}>
-            上のメールアドレス宛に、パスワード再設定用のリンクを送ります。
-          </p>
-        </div>
-      ) : null}
+      <div ref={resetSectionRef} className="space-y-2 border-t border-stone-100 pt-4">
+        {showResetFeedback && error ? (
+          <div className={mobileReadable.error} role="alert">
+            {error}
+          </div>
+        ) : null}
+        {showResetFeedback && notice ? (
+          <div className={mobileReadable.notice} role="status" aria-live="polite">
+            {notice}
+          </div>
+        ) : null}
+        <button
+          type="button"
+          disabled={busyReset || busyEmail}
+          className={mobileReadable.buttonSecondary}
+          onClick={() => void handlePasswordReset()}
+        >
+          {busyReset ? "再設定メールを送信中…" : "パスワード再設定メールを送る"}
+        </button>
+        <p className={mobileReadable.helperMuted}>
+          上のメールアドレス宛に、パスワード再設定用のリンクを送ります。
+        </p>
+      </div>
 
       <p className={`text-center ${mobileReadable.bodyMuted}`}>
         <Link href="/" className={mobileReadable.link}>
