@@ -14,11 +14,11 @@ const CLOSING_MESSAGE =
   "鑑定で見つけた小さな気づきが、\n日々を記録する中で、あなたらしい物語へ育っていきます。";
 
 const WORRY_TEXT_CLASS =
-  "text-sm font-semibold leading-6 text-stone-700 sm:text-[15px] sm:leading-7";
+  "lj-read-body font-semibold text-stone-700";
 const REPLY_TEXT_CLASS =
-  "text-sm leading-5 text-[#6B5A4A] sm:text-[15px] sm:leading-6";
+  "lj-read-body text-[#6B5A4A]";
 const NARRATION_TEXT_CLASS =
-  "min-w-0 flex-1 whitespace-pre-line text-[13px] leading-[1.55] text-stone-600 sm:text-sm sm:leading-6";
+  "lj-read-desc min-w-0 flex-1 whitespace-pre-line text-stone-600";
 
 const CONVERSATIONS: ConversationBlock[] = [
   {

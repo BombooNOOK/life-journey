@@ -6,6 +6,7 @@ import { LegalFooterLinks } from "@/components/legal/LegalFooterLinks";
 import { MyPageContactSection } from "@/components/orders/MyPageContactSection";
 import { MyPageSupportInquiriesSection } from "@/components/orders/MyPageSupportInquiriesSection";
 import { MyPageLogoutButton } from "@/components/auth/AuthSessionPanels";
+import { MyPageDisplaySettingsSection } from "@/components/orders/MyPageDisplaySettingsSection";
 import { MyPageHomeScreenTip } from "@/components/orders/MyPageHomeScreenTip";
 import { MyPageMainActions } from "@/components/orders/MyPageMainActions";
 import { MyPagePageHeader } from "@/components/orders/MyPagePageHeader";
@@ -176,6 +177,8 @@ export default async function OrdersListPage() {
       />
 
       <MyPageHomeScreenTip />
+
+      <MyPageDisplaySettingsSection />
 
       <MyPageAccountSection
         viewerEmail={viewerEmail}

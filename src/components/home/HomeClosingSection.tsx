@@ -28,7 +28,7 @@ export function HomeClosingSection() {
           {BODY_PARAGRAPHS.map((paragraph) => (
             <p
               key={paragraph}
-              className="text-[13px] leading-[1.7] text-stone-600 sm:text-sm sm:leading-7"
+              className="lj-read-body text-stone-600"
             >
               {paragraph}
             </p>

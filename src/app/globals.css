@@ -27,3 +27,67 @@ body {
     "Hiragino Kaku Gothic ProN",
     sans-serif;
 }
+
+/* 読み物用文字サイズ（html data-reading-font-size で切り替え） */
+:root,
+[data-reading-font-size="normal"] {
+  --lj-read-body: 1rem;
+  --lj-read-desc: 0.9375rem;
+  --lj-read-caption: 0.8125rem;
+  --lj-read-diary: 1.0625rem;
+  --lj-read-comment: 1.0625rem;
+  --lj-read-body-leading: 1.65;
+  --lj-read-desc-leading: 1.6;
+  --lj-read-diary-leading: 1.65;
+  --lj-read-comment-leading: 1.65;
+}
+
+[data-reading-font-size="large"] {
+  --lj-read-body: 1.0625rem;
+  --lj-read-desc: 1rem;
+  --lj-read-caption: 0.875rem;
+  --lj-read-diary: 1.125rem;
+  --lj-read-comment: 1.125rem;
+}
+
+[data-reading-font-size="x-large"] {
+  --lj-read-body: 1.125rem;
+  --lj-read-desc: 1.0625rem;
+  --lj-read-caption: 0.9375rem;
+  --lj-read-diary: 1.1875rem;
+  --lj-read-comment: 1.1875rem;
+}
+
+.lj-read-body {
+  font-size: var(--lj-read-body);
+  line-height: var(--lj-read-body-leading);
+}
+
+.lj-read-desc {
+  font-size: var(--lj-read-desc);
+  line-height: var(--lj-read-desc-leading);
+}
+
+.lj-read-caption {
+  font-size: var(--lj-read-caption);
+  line-height: 1.5;
+}
+
+.lj-read-diary {
+  font-size: var(--lj-read-diary);
+  line-height: var(--lj-read-diary-leading);
+}
+
+.lj-read-comment {
+  font-size: var(--lj-read-comment);
+  line-height: var(--lj-read-comment-leading);
+}
+
+/* 製本イメージなど：読み物サイズ設定の影響を受けない */
+.lj-reading-exempt {
+  --lj-read-body: 1rem;
+  --lj-read-desc: 0.9375rem;
+  --lj-read-caption: 0.8125rem;
+  --lj-read-diary: 1.0625rem;
+  --lj-read-comment: 1.0625rem;
+}

@@ -46,7 +46,7 @@ export function HomeFaqSection() {
         <h2 className="text-base font-semibold leading-snug text-stone-900 sm:text-[1.05rem]">
           よくある質問
         </h2>
-        <p className="mt-2 text-[13px] leading-relaxed text-stone-600 sm:text-sm">
+        <p className="lj-read-desc mt-2 leading-relaxed text-stone-600">
           はじめる前に気になりやすいことをまとめました。
         </p>
 
@@ -71,7 +71,7 @@ export function HomeFaqSection() {
                   </span>
                 </span>
               </summary>
-              <div className="space-y-2.5 border-t border-stone-200/70 px-3.5 pb-3.5 pt-3 text-[13px] leading-[1.7] text-[#6b5a4a] sm:px-4 sm:pb-4 sm:text-sm sm:leading-7">
+              <div className="lj-read-body space-y-2.5 border-t border-stone-200/70 px-3.5 pb-3.5 pt-3 text-[#6b5a4a] sm:px-4 sm:pb-4">
                 {item.paragraphs.map((paragraph) => (
                   <p key={paragraph}>{paragraph}</p>
                 ))}

@@ -136,7 +136,7 @@ function MockStepCard({ step }: { step: HomeProductMockStep }) {
       <h3 className="text-sm font-semibold leading-snug text-emerald-800 sm:text-[15px]">
         {step.stepLabel} {step.title}
       </h3>
-      <p className="mt-1.5 text-xs leading-5 text-stone-600 sm:text-[13px] sm:leading-6">
+      <p className="lj-read-desc mt-1.5 leading-5 text-stone-600 sm:leading-6">
         {step.description}
       </p>
       <div className="mt-3 flex w-full flex-1 justify-center sm:mt-4">
@@ -157,7 +157,7 @@ export function HomeProductMockSection() {
         <p className="mt-1 text-[10px] text-amber-700/55" aria-hidden>
           ✦
         </p>
-        <p className="mt-2 text-xs leading-5 text-stone-600 sm:text-[13px] sm:leading-6">
+        <p className="lj-read-desc mt-2 leading-5 text-stone-600 sm:leading-6">
           その日のきもちや写真を残しながら、あとから読み返せる記録へ。
           <br className="hidden sm:block" />
           そして最後には、手元に残る一冊の日記ブックへ育っていきます。

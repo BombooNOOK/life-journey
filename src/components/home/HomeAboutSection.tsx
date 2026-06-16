@@ -11,7 +11,7 @@ export function HomeAboutSection() {
       >
         Life Journey Diaryとは
       </h2>
-      <div className="mt-3 space-y-2 text-sm leading-[1.55] text-stone-600 sm:mt-3.5 sm:text-[15px] sm:leading-7">
+      <div className="lj-read-desc mt-3 space-y-2 leading-[1.55] text-stone-600 sm:mt-3.5 sm:leading-7">
         <p>
           Life Journey Diaryは、
           <br className="sm:hidden" />

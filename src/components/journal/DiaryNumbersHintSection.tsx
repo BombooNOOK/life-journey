@@ -46,13 +46,13 @@ export function DiaryNumbersHintSection({ diaryNumbers, meaningsReturnTo }: Prop
         <div
           id={helpPanelId}
           role="region"
-          className="mt-3 w-full rounded-lg border border-stone-200/90 bg-[#faf8f5] px-3 py-3 text-sm leading-relaxed text-stone-700"
+          className="mt-3 w-full rounded-lg border border-stone-200/90 bg-[#faf8f5] px-3 py-3 lj-read-desc text-stone-700"
         >
           <p className="whitespace-pre-line">{JOURNAL_DIARY_NUMBERS_HELP_TEXT}</p>
         </div>
       ) : null}
 
-      <dl className="mt-3 space-y-2 text-base leading-relaxed text-stone-800">
+      <dl className="lj-read-body mt-3 space-y-2 text-stone-800">
         <div className="flex flex-wrap gap-x-2">
           <dt className="text-stone-600">今日の数字：</dt>
           <dd className="font-medium">{diaryNumbers.today}</dd>

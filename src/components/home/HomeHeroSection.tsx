@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 
+import { ReadingFontSizeControl } from "@/components/reading/ReadingFontSizeControl";
 import { HomeHeroSubNavLink } from "@/components/home/HomeHeroSubNavLink";
 import {
   heroCtaMicrocopyAboveButtonClass,
@@ -43,7 +44,7 @@ export function HomeHeroSection() {
               className="pointer-events-none absolute -right-1 top-0 z-0 h-[8.25rem] w-[8.25rem] object-contain object-top sm:right-0 sm:h-36 sm:w-36 lg:-right-1 lg:h-[9.75rem] lg:w-[9.75rem]"
             />
           </div>
-          <p className="mt-3 whitespace-pre-line text-[15px] font-semibold leading-[1.45] text-emerald-900 sm:mt-3.5 sm:text-lg sm:leading-8 md:text-xl md:leading-8">
+          <p className="lj-read-desc mt-3 whitespace-pre-line font-semibold leading-[1.45] text-emerald-900 sm:mt-3.5 md:text-xl md:leading-8">
             数秘術鑑定からはじまる、{"\n"}あなただけの人生記録ノート。
           </p>
         </div>
@@ -88,6 +89,7 @@ export function HomeHeroSection() {
                 <p className={heroCtaMicrocopyBelowButtonClass}>
                   ※まずは、お名前と生年月日だけで無料鑑定へ
                 </p>
+                <ReadingFontSizeControl className="mt-3 border-t border-stone-200/70 pt-3" />
               </div>
             </div>
           </div>
