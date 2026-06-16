@@ -11,18 +11,20 @@ import { ActiveProfileLabel } from "@/components/profile/ActiveProfileLabel";
 import { OwlLoadingInline } from "@/components/ui/OwlLoadingInline";
 import {
   formatJournalListDayLabel,
-  formatJournalListMonthHeading,
   journalEntryListPreviewLine,
   type JournalListEntry,
 } from "@/lib/journal/journalListDisplay";
 import {
   currentMonthAnchorInJapan,
+  currentYearInJapan,
+  journalListMonthOptions,
   journalListPathForMonth,
+  journalListYearOptions,
   journalPreviewPath,
   monthAnchorFromMonthKey,
+  monthAnchorFromYearMonth,
   monthKeyFromDateAnchor,
   parseMonthKeyParam,
-  shiftMonthAnchor,
 } from "@/lib/journal/journalNav";
 
 type ProfileOption = { id: string; nickname: string };
@@ -33,8 +35,12 @@ type Props = {
   activeProfileNickname: string;
 };
 
-const monthNavButtonClass =
-  "min-h-[44px] min-w-[44px] rounded-lg text-stone-600 transition duration-150 ease-out hover:bg-white hover:text-stone-900 active:scale-[0.97] active:opacity-75 disabled:pointer-events-none disabled:opacity-40";
+const listSelectClass =
+  "min-h-[44px] w-full appearance-none rounded-lg border border-stone-300 bg-white bg-[length:12px] bg-[right_0.75rem_center] bg-no-repeat px-3 py-2 pr-9 text-base text-stone-900 outline-none ring-stone-400 focus:ring-2 disabled:opacity-60";
+const listSelectStyle = {
+  backgroundImage:
+    "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12' fill='none'%3E%3Cpath d='M3 4.5L6 7.5L9 4.5' stroke='%2378716c' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E\")",
+} as const;
 
 async function fetchJournalListMonth(
   profileId: string,
@@ -75,8 +81,17 @@ export function DiaryJournalListHome({
   const fetchGenerationRef = useRef(0);
 
   const monthKey = useMemo(() => monthKeyFromDateAnchor(viewMonth), [viewMonth]);
-  const monthLabel = useMemo(() => formatJournalListMonthHeading(monthKey), [monthKey]);
   const returnTo = useMemo(() => journalListPathForMonth(monthKey), [monthKey]);
+  const yearOptions = useMemo(() => {
+    const years = journalListYearOptions(Math.max(currentYearInJapan(), selectedYear));
+    if (!years.includes(selectedYear)) {
+      return [selectedYear, ...years].sort((a, b) => b - a);
+    }
+    return years;
+  }, [selectedYear]);
+  const monthOptions = useMemo(() => journalListMonthOptions(), []);
+  const selectedYear = viewMonth.getFullYear();
+  const selectedMonth = viewMonth.getMonth() + 1;
 
   const effectiveProfileNickname = useMemo(() => {
     return profiles.find((p) => p.id === effectiveProfileId)?.nickname ?? activeProfileNickname;
@@ -120,15 +135,14 @@ export function DiaryJournalListHome({
     [router, searchParams],
   );
 
-  const shiftMonth = useCallback(
-    (delta: -1 | 1) => {
-      if (loading) return;
-      const next = shiftMonthAnchor(viewMonth, delta);
+  const applyYearMonth = useCallback(
+    (year: number, monthOneBased: number) => {
+      const next = monthAnchorFromYearMonth(year, monthOneBased);
       const key = monthKeyFromDateAnchor(next);
       setViewMonth(next);
       syncMonthInUrl(key);
     },
-    [loading, syncMonthInUrl, viewMonth],
+    [syncMonthInUrl],
   );
 
   useEffect(() => {
@@ -179,34 +193,45 @@ export function DiaryJournalListHome({
         ) : null}
 
         <div
-          className="flex items-center justify-between rounded-xl border border-stone-200 bg-white px-2 py-2 shadow-sm"
+          className="rounded-xl border border-stone-200 bg-white px-3 py-3 shadow-sm"
           aria-busy={loading}
         >
-          <button
-            type="button"
-            onClick={() => shiftMonth(-1)}
-            disabled={loading}
-            className={monthNavButtonClass}
-            aria-label="前の月"
-          >
-            ←
-          </button>
-          <p
-            className={`text-base font-semibold text-stone-800 transition-opacity duration-150 ease-out sm:text-lg ${
-              loading ? "opacity-70" : "opacity-100"
-            }`}
-          >
-            {monthLabel}
-          </p>
-          <button
-            type="button"
-            onClick={() => shiftMonth(1)}
-            disabled={loading}
-            className={monthNavButtonClass}
-            aria-label="次の月"
-          >
-            →
-          </button>
+          <div className="flex gap-2">
+            <label className="min-w-0 flex-1">
+              <span className="sr-only">表示する年</span>
+              <select
+                aria-label="表示する年"
+                value={selectedYear}
+                disabled={loading}
+                onChange={(e) => applyYearMonth(Number(e.target.value), selectedMonth)}
+                className={listSelectClass}
+                style={listSelectStyle}
+              >
+                {yearOptions.map((year) => (
+                  <option key={year} value={year}>
+                    {year}年
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="min-w-0 flex-1">
+              <span className="sr-only">表示する月</span>
+              <select
+                aria-label="表示する月"
+                value={selectedMonth}
+                disabled={loading}
+                onChange={(e) => applyYearMonth(selectedYear, Number(e.target.value))}
+                className={listSelectClass}
+                style={listSelectStyle}
+              >
+                {monthOptions.map((month) => (
+                  <option key={month.value} value={month.value}>
+                    {month.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
         </div>
 
         {loading ? (
@@ -217,8 +242,8 @@ export function DiaryJournalListHome({
           <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800">{error}</p>
         ) : sortedEntries.length === 0 ? (
           <div className="rounded-xl border border-stone-200 bg-white p-5 text-sm text-stone-600 shadow-sm">
-            <p>この月の記録はありません。</p>
-            <p className="mt-2 text-stone-500">左右の矢印で別の月を表示できます。</p>
+            <p>この月の記録はまだありません。</p>
+            <p className="mt-2 text-stone-500">上の年・月を変えると、別の月の記録を表示できます。</p>
             <Link
               href="/orders/calendar"
               className="mt-3 inline-flex min-h-[44px] items-center text-base font-medium text-emerald-900 underline-offset-2 hover:underline"
