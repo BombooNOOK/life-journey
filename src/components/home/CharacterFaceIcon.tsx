@@ -31,17 +31,24 @@ const FACE_TUNING: Record<CharacterFaceIconName, FaceTuning> = {
 };
 
 /** 会話用：丸背景に収めた顔アイコン */
-export function CharacterFaceIcon({ name }: { name: CharacterFaceIconName }) {
+export function CharacterFaceIcon({
+  name,
+  frameClassName,
+}: {
+  name: CharacterFaceIconName;
+  /** 返答ボックス内など、枠背景を消したいとき */
+  frameClassName?: string;
+}) {
   const asset = getDecorationAsset(name);
   const tuning = FACE_TUNING[name];
   const [failed, setFailed] = useState(false);
 
   if (failed) {
-    return <span aria-hidden className={FACE_FRAME_CLASS} />;
+    return <span aria-hidden className={[FACE_FRAME_CLASS, frameClassName].filter(Boolean).join(" ")} />;
   }
 
   return (
-    <span aria-hidden className={FACE_FRAME_CLASS}>
+    <span aria-hidden className={[FACE_FRAME_CLASS, frameClassName].filter(Boolean).join(" ")}>
       <Image
         src={asset.src}
         alt=""

@@ -19,19 +19,12 @@ import {
   formatJournalRecordPageTitle,
   journalBodyInputHeading,
 } from "@/lib/journal/journalRecordDateDisplay";
-import { formatDateTimeJa } from "@/lib/date/formatJa";
-import { getMoodMeta, moodOptions, type MoodId } from "@/lib/journal/meta";
+import { moodOptions, type MoodId } from "@/lib/journal/meta";
 
 const DEMO_ENTRY_DATE = "2026-08-13";
 const DEMO_CONTENT =
   "モゲが帰ってきて4ヶ月。今日はお部屋の掃除をしました。モゲはいつも通り、ケージの中で丸くなって寝ていました。そんな日常のひとコマです。";
 const DEMO_ACTIVITY_ANSWER = "おでかけした。動物とふれあう体験ができた。";
-const DEMO_PREVIOUS_ENTRY = {
-  mood: "happy" as MoodId,
-  summary:
-    "やったこと：京都へ行った。登場：フクロウ先生。写真：あり。本文：動物ふれあいセンターでハリネズミに会えた。小さな体でちょこんとしている姿がかわいくて、触れるときはちょっとドキドキしたけれど、ふわふわの感触が忘れられない。帰り道、少しだけ気持ちが軽くなった気がした。",
-  createdAt: "2026-08-13T12:00:00.000Z",
-};
 
 const DEMO_PHOTO_SRC = "/images/home-mock/demo-journal-photo.png";
 
@@ -49,15 +42,21 @@ export function HomeMockJournalCapture() {
   return (
     <div className="relative space-y-3">
       <div className="space-y-1">
-        <h1 className="text-xl font-bold leading-tight text-stone-900 sm:text-2xl">
-          {recordPageTitle}
-        </h1>
-        <p className="text-xs leading-relaxed text-stone-500">
-          トゲトゲと、おでかけと、ひとりごと
+        <div className="flex flex-wrap items-center gap-2">
+          <h1 className="text-[1.375rem] font-bold leading-tight text-stone-900 sm:text-[1.75rem]">
+            {recordPageTitle}
+          </h1>
+          <span className="rounded-full border border-violet-200/90 bg-violet-50 px-2.5 py-0.5 text-xs font-medium text-violet-900">
+            メイン
+          </span>
+        </div>
+        <p className="flex flex-wrap items-center gap-x-3 text-sm text-stone-500">
+          <span className="underline-offset-2">マイページ</span>
+          <span className="text-emerald-800 underline-offset-2">カレンダーへ戻る</span>
         </p>
       </div>
 
-      <div className="space-y-3 rounded-xl border border-stone-200 bg-white p-4 shadow-sm sm:p-5">
+      <form className="space-y-3 rounded-xl border border-stone-200 bg-white p-4 shadow-sm sm:p-5">
         <JournalWritingComposer
           label={
             <FieldLabelWithHelp
@@ -111,7 +110,7 @@ export function HomeMockJournalCapture() {
         <div className="space-y-3 border-t border-stone-100 pt-3">
           <JournalCompanionPicker disabled />
 
-          <label className="block text-sm font-medium text-stone-700" htmlFor="home-mock-entry-date">
+          <label className="block text-base font-medium text-stone-700" htmlFor="home-mock-entry-date">
             記録日
           </label>
           <input
@@ -119,11 +118,11 @@ export function HomeMockJournalCapture() {
             type="date"
             value={DEMO_ENTRY_DATE}
             readOnly
-            className="w-full rounded-lg border border-stone-300 px-3 py-2 text-sm text-stone-900 outline-none"
+            className="w-full rounded-lg border border-stone-300 px-3 py-2 text-base text-stone-900 outline-none"
           />
 
           <fieldset>
-            <legend className="mb-2 block text-sm font-medium text-stone-700">今日の気分</legend>
+            <legend className="mb-2 block text-base font-medium text-stone-700">今日の気分</legend>
             <div
               className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-5"
               role="radiogroup"
@@ -152,8 +151,8 @@ export function HomeMockJournalCapture() {
           </fieldset>
 
           <div>
-            <p className="text-sm font-medium text-stone-700">今日はどんな一日でしたか？</p>
-            <p className="mt-2 rounded-lg border border-stone-200 bg-stone-50/80 px-3 py-2.5 text-sm text-stone-800">
+            <p className="text-base font-medium text-stone-700">今日はどんな一日でしたか？</p>
+            <p className="mt-2 rounded-lg border border-stone-200 bg-stone-50/80 px-3 py-2.5 text-base text-stone-800">
               {DEMO_ACTIVITY_ANSWER}
             </p>
           </div>
@@ -162,53 +161,30 @@ export function HomeMockJournalCapture() {
         <div className="flex flex-col gap-2 pt-1 sm:flex-row sm:flex-wrap">
           <button
             type="button"
-            className="rounded-lg bg-stone-900 px-4 py-2.5 text-sm font-medium text-white"
+            className="rounded-lg bg-stone-900 px-4 py-2.5 text-base font-medium text-white"
           >
             保存する
           </button>
           <button
             type="button"
-            className="rounded-lg border border-violet-300 bg-violet-50 px-4 py-2.5 text-sm font-medium text-violet-950"
+            className="rounded-lg border border-violet-300 bg-violet-50 px-4 py-2.5 text-base font-medium text-violet-950"
           >
             保存してプレビュー
           </button>
           <button
             type="button"
-            className="rounded-lg border border-stone-300 bg-white px-4 py-2.5 text-sm font-medium text-stone-800"
+            className="rounded-lg border border-stone-300 bg-white px-4 py-2.5 text-base font-medium text-stone-800"
           >
             保存してマイページへ
           </button>
           <button
             type="button"
-            className="rounded-lg border border-stone-200 bg-white px-4 py-2.5 text-sm text-stone-600"
+            className="rounded-lg border border-stone-200 bg-white px-4 py-2.5 text-base text-stone-600"
           >
             入力をクリア
           </button>
         </div>
-      </div>
-
-      <section className="space-y-3">
-        <h2 className="text-base font-semibold text-stone-900">これまでの記録</h2>
-        <article className="rounded-xl border border-stone-200 bg-white p-4 shadow-sm">
-          <div className="flex flex-wrap items-start justify-between gap-2">
-            <div className="flex items-center gap-2 text-sm text-stone-700">
-              <MoodOwlIcon moodId={DEMO_PREVIOUS_ENTRY.mood} sizePx={22} className="shrink-0" />
-              <span>{getMoodMeta(DEMO_PREVIOUS_ENTRY.mood).label}</span>
-            </div>
-            <div className="flex gap-2 text-xs text-stone-500">
-              <span>編集</span>
-              <span>複製</span>
-              <span>削除</span>
-            </div>
-          </div>
-          <p className="mt-3 whitespace-pre-wrap text-sm leading-relaxed text-stone-800">
-            {DEMO_PREVIOUS_ENTRY.summary}
-          </p>
-          <p className="mt-3 text-xs text-stone-500">
-            {formatDateTimeJa(new Date(DEMO_PREVIOUS_ENTRY.createdAt))}
-          </p>
-        </article>
-      </section>
+      </form>
     </div>
   );
 }

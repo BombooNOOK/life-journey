@@ -14,11 +14,11 @@ const CLOSING_MESSAGE =
   "鑑定で見つけた小さな気づきが、\n日々を記録する中で、あなたらしい物語へ育っていきます。";
 
 const WORRY_TEXT_CLASS =
-  "text-sm font-semibold leading-6 text-stone-700 sm:text-[15px] sm:leading-7";
+  "lj-read-body font-semibold text-stone-700";
 const REPLY_TEXT_CLASS =
-  "text-sm leading-5 text-[#6B5A4A] sm:text-[15px] sm:leading-6";
+  "lj-read-body text-[#6B5A4A]";
 const NARRATION_TEXT_CLASS =
-  "min-w-0 flex-1 whitespace-pre-line text-[13px] leading-[1.55] text-stone-600 sm:text-sm sm:leading-6";
+  "lj-read-desc min-w-0 flex-1 whitespace-pre-line text-stone-600";
 
 const CONVERSATIONS: ConversationBlock[] = [
   {
@@ -90,9 +90,12 @@ function WorryLine({ icon, children }: { icon: CharacterFaceIconName; children: 
 function ReplyLine({ children }: { children: string }) {
   return (
     <div className="flex justify-end pl-6 sm:pl-10">
-      <div className="flex max-w-[94%] items-start gap-2.5 rounded-xl bg-[#faf6ef]/85 px-3 py-2 sm:max-w-[90%]">
+      <div className="flex max-w-[94%] items-start gap-2.5 rounded-xl bg-[#efe6d8] px-3 py-2 sm:max-w-[90%]">
         <p className={`min-w-0 flex-1 text-left ${REPLY_TEXT_CLASS}`}>{children}</p>
-        <CharacterFaceIcon name="character-owl-face" />
+        <CharacterFaceIcon
+          name="character-owl-face"
+          frameClassName="border-transparent bg-transparent shadow-none"
+        />
       </div>
     </div>
   );

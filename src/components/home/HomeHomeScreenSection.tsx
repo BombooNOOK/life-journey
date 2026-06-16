@@ -12,7 +12,7 @@ export function HomeHomeScreenSection() {
           <h2 className="text-base font-semibold leading-snug text-stone-900 sm:text-[1.05rem]">
             ホーム画面に追加すると便利です
           </h2>
-          <p className="mt-2 text-sm leading-relaxed text-stone-700">
+          <p className="lj-read-desc mt-2 leading-relaxed text-stone-700">
             スマホのホーム画面に追加すると、アプリのようにすぐ開けます。
             日記を書くときに、毎回ブラウザで探さなくて済みます。
           </p>

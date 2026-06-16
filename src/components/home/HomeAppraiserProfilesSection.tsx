@@ -10,7 +10,7 @@ const PROFILE_NAME_CLASS =
 const PROFILE_CATCHPHRASE_CLASS =
   "mt-2.5 w-full text-[clamp(10px,2.75vw,12px)] leading-snug text-[#6b5a4a] sm:mt-3";
 const PROFILE_DESCRIPTION_CLASS =
-  "w-full text-[clamp(10px,2.65vw,12px)] leading-[1.75] text-[#5c4a3a]/92";
+  "lj-read-desc w-full leading-[1.75] text-[#5c4a3a]/92";
 
 function AppraiserProfileCard({ card }: { card: HomeAppraiserProfileCard }) {
   return (
@@ -55,7 +55,7 @@ export function HomeAppraiserProfilesSection() {
         <p className="mt-1 text-[10px] text-amber-700/55" aria-hidden>
           ✦
         </p>
-        <p className="mt-2 text-xs leading-5 text-stone-600 sm:text-[13px] sm:leading-6">
+        <p className="lj-read-desc mt-2 leading-5 text-stone-600 sm:leading-6">
           あなたの数字や日々の記録に、森のどうぶつ鑑定士たちがそっと寄り添います。
           <br className="hidden sm:block" />
           その日の気持ちに合わせて、やさしい言葉を届けてくれる仲間たちです。

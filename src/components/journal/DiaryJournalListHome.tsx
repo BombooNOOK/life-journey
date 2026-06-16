@@ -171,7 +171,7 @@ export function DiaryJournalListHome({
         <div>
           <h1 className="text-xl font-bold text-stone-900 sm:text-2xl">日記一覧</h1>
           <ActiveProfileLabel nickname={effectiveProfileNickname} className="mt-2" />
-          <p className="mt-2 text-sm leading-relaxed text-stone-600">
+          <p className="lj-read-desc mt-2 leading-relaxed text-stone-600">
             年月を選んで記録を表示します。項目をタップすると、読みやすいプレビューが開きます。
           </p>
           <button
@@ -240,7 +240,7 @@ export function DiaryJournalListHome({
         ) : error ? (
           <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800">{error}</p>
         ) : sortedEntries.length === 0 ? (
-          <div className="rounded-xl border border-stone-200 bg-white p-5 text-sm text-stone-600 shadow-sm">
+          <div className="lj-read-desc rounded-xl border border-stone-200 bg-white p-5 text-stone-600 shadow-sm">
             <p>この月の日記はまだありません。</p>
             <p className="mt-2 text-stone-500">上の年・月を変えると、別の月の日記を表示できます。</p>
             <Link
@@ -304,7 +304,7 @@ export function DiaryJournalListHome({
                         </svg>
                       </span>
                     )}
-                    <span className="min-w-0 flex-1 text-base leading-snug text-stone-800 line-clamp-1">
+                    <span className="lj-read-diary min-w-0 flex-1 leading-snug text-stone-800 line-clamp-1">
                       {previewLine}
                     </span>
                   </Link>

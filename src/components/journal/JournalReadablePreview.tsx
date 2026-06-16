@@ -123,7 +123,7 @@ export function JournalReadablePreview({
       ) : null}
 
       <section className="rounded-xl border border-stone-200/90 bg-white px-4 py-4 shadow-sm sm:px-5 sm:py-5">
-        <p className="whitespace-pre-wrap break-words text-[17px] leading-[1.65] text-stone-800">
+        <p className="lj-read-body whitespace-pre-wrap break-words text-stone-800">
           {content.trim() || "（本文なし）"}
         </p>
       </section>
@@ -131,7 +131,7 @@ export function JournalReadablePreview({
       {commentText ? (
         <section className="rounded-xl border border-[#e8dfd0] bg-[#f7f1e6] px-4 py-4 shadow-sm sm:px-5 sm:py-5">
           <h3 className="text-base font-semibold text-stone-800">フクロウ先生より</h3>
-          <p className="mt-3 whitespace-pre-wrap break-words text-[17px] leading-[1.65] text-stone-800">
+          <p className="lj-read-comment mt-3 whitespace-pre-wrap break-words text-stone-800">
             {commentText}
           </p>
         </section>

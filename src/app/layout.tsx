@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { FirebaseAuthProvider } from "@/components/auth/FirebaseAuthProvider";
 import { SiteFooter } from "@/components/layout/SiteFooter";
 import { SiteHeader } from "@/components/layout/SiteHeader";
+import { ReadingFontSizeProvider } from "@/components/reading/ReadingFontSizeContext";
 import {
   APP_DESCRIPTION,
   APP_DISPLAY_NAME,
@@ -56,9 +57,13 @@ export default function RootLayout({
     <html lang="ja">
       <body className="flex min-h-screen flex-col antialiased">
         <FirebaseAuthProvider>
-          <SiteHeader />
-          <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-8">{children}</main>
-          <SiteFooter />
+          <ReadingFontSizeProvider>
+            <SiteHeader />
+            <main className="lj-read-surface mx-auto w-full max-w-3xl flex-1 px-4 py-8">
+              {children}
+            </main>
+            <SiteFooter />
+          </ReadingFontSizeProvider>
         </FirebaseAuthProvider>
       </body>
     </html>

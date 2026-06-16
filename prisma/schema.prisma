@@ -152,6 +152,9 @@ model AccountSettings {
 
   /// LJD 14日無料トライアル開始日時（初回日記作成のサーバー時刻）
   freeTrialStartedAt DateTime?
+
+  /// 画面読み物の文字サイズ: normal | large | xLarge
+  readingFontSize String @default("normal")
 }
 
 /// 鑑定書製本版（BASE単発）の申込予定・製本進捗（決済前は pending）
