@@ -82,6 +82,8 @@ export function DiaryJournalListHome({
 
   const monthKey = useMemo(() => monthKeyFromDateAnchor(viewMonth), [viewMonth]);
   const returnTo = useMemo(() => journalListPathForMonth(monthKey), [monthKey]);
+  const selectedYear = viewMonth.getFullYear();
+  const selectedMonth = viewMonth.getMonth() + 1;
   const yearOptions = useMemo(() => {
     const years = journalListYearOptions(Math.max(currentYearInJapan(), selectedYear));
     if (!years.includes(selectedYear)) {
@@ -90,8 +92,6 @@ export function DiaryJournalListHome({
     return years;
   }, [selectedYear]);
   const monthOptions = useMemo(() => journalListMonthOptions(), []);
-  const selectedYear = viewMonth.getFullYear();
-  const selectedMonth = viewMonth.getMonth() + 1;
 
   const effectiveProfileNickname = useMemo(() => {
     return profiles.find((p) => p.id === effectiveProfileId)?.nickname ?? activeProfileNickname;
