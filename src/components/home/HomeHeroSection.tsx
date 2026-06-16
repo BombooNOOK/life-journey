@@ -35,8 +35,8 @@ export function HomeHeroSection() {
         src={HOME_HERO_OWL_TEACHER_SRC}
         alt=""
         aria-hidden
-        width={568}
-        height={781}
+        width={682}
+        height={1024}
         sizes="(max-width: 640px) 42vw, (max-width: 1024px) 34vw, 280px"
         className="pointer-events-none absolute bottom-0 right-[-0.5rem] z-[6] h-[10.75rem] w-auto max-w-[44%] object-contain object-bottom sm:right-0 sm:h-[12.5rem] sm:max-w-[40%] md:h-[19rem] md:max-w-[34%] md:right-3 lg:right-8 lg:h-[21rem]"
         priority
