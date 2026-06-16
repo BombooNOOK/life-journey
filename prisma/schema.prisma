@@ -236,9 +236,29 @@ model SupportInquiry {
 
   status String @default("pending")
 
+  messages SupportInquiryMessage[]
+
   @@index([status, createdAt])
   @@index([email, createdAt])
   @@index([category, createdAt])
+}
+
+/// お問い合わせスレッド内のメッセージ（ユーザー / 運営）
+model SupportInquiryMessage {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+
+  inquiryId String
+  inquiry   SupportInquiry @relation(fields: [inquiryId], references: [id], onDelete: Cascade)
+
+  /// "user" | "admin"
+  role String
+  body String @db.Text
+
+  /// 運営返信時の送信者メール（任意）
+  authorEmail String?
+
+  @@index([inquiryId, createdAt])
 }
 
 /// 1アカウント配下のプロフィール（ニックネーム表示用）

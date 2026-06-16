@@ -1,11 +1,12 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
-import { SupportInquiryReplyActions } from "@/components/admin/SupportInquiryReplyActions";
+import { AdminSupportInquiryThreadPanel } from "@/components/admin/AdminSupportInquiryThreadPanel";
 import { SupportInquiryResolveButton } from "@/components/admin/SupportInquiryResolveButton";
 import { getViewerEmailFromCookie } from "@/lib/auth/viewer";
 import { isAdminEmail } from "@/lib/admin/access";
 import { prisma } from "@/lib/db";
+import { serializeSupportInquiryMessage } from "@/lib/support/serializeSupportInquiryMessage";
 import {
   SUPPORT_INQUIRY_CATEGORY_LABELS,
   SUPPORT_INQUIRY_STATUS_LABELS,
@@ -42,6 +43,16 @@ export default async function AdminSupportInquiryDetailPage({ params }: Props) {
       category: true,
       message: true,
       status: true,
+      messages: {
+        orderBy: { createdAt: "asc" },
+        select: {
+          id: true,
+          createdAt: true,
+          role: true,
+          body: true,
+          authorEmail: true,
+        },
+      },
     },
   });
 
@@ -52,7 +63,8 @@ export default async function AdminSupportInquiryDetailPage({ params }: Props) {
   const category = inquiry.category as SupportInquiryCategory;
   const status = inquiry.status as SupportInquiryStatus;
   const categoryLabel = SUPPORT_INQUIRY_CATEGORY_LABELS[category] ?? inquiry.category;
-  const createdAtLabel = inquiry.createdAt.toLocaleString("ja-JP");
+  const messages = inquiry.messages.map(serializeSupportInquiryMessage);
+  const canReply = status !== "closed";
 
   return (
     <div className="space-y-6">
@@ -94,20 +106,10 @@ export default async function AdminSupportInquiryDetailPage({ params }: Props) {
         </dl>
 
         <div className="mt-6 border-t border-stone-100 pt-5">
-          <h2 className="text-sm font-semibold text-stone-900">本文</h2>
-          <div className="mt-3 whitespace-pre-wrap break-words rounded-lg border border-stone-200 bg-stone-50/80 px-4 py-3 text-sm leading-relaxed text-stone-800">
-            {inquiry.message}
-          </div>
-        </div>
-
-        <div className="mt-6 border-t border-stone-100 pt-5">
-          <SupportInquiryReplyActions
-            replyContext={{
-              userEmail: inquiry.email,
-              categoryLabel,
-              createdAtLabel,
-              activeProfileName: inquiry.activeProfileName,
-            }}
+          <AdminSupportInquiryThreadPanel
+            inquiryId={inquiry.id}
+            messages={messages}
+            canReply={canReply}
           />
         </div>
 

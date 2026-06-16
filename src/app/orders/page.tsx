@@ -4,6 +4,7 @@ import { KanteiMissingBanner } from "@/components/orders/KanteiMissingBanner";
 import { MyPageAccountSection } from "@/components/orders/MyPageAccountSection";
 import { LegalFooterLinks } from "@/components/legal/LegalFooterLinks";
 import { MyPageContactSection } from "@/components/orders/MyPageContactSection";
+import { MyPageSupportInquiriesSection } from "@/components/orders/MyPageSupportInquiriesSection";
 import { MyPageLogoutButton } from "@/components/auth/AuthSessionPanels";
 import { MyPageHomeScreenTip } from "@/components/orders/MyPageHomeScreenTip";
 import { MyPageMainActions } from "@/components/orders/MyPageMainActions";
@@ -188,6 +189,8 @@ export default async function OrdersListPage() {
         }
         activeProfileNickname={activeProfile?.nickname ?? null}
       />
+
+      <MyPageSupportInquiriesSection />
 
       <MyPageContactSection viewerEmail={viewerEmail} />
 

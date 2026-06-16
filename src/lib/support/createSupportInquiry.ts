@@ -56,16 +56,28 @@ export async function createSupportInquiry(
     return validated;
   }
 
-  const row = await prisma.supportInquiry.create({
-    data: {
-      email,
-      activeProfileId: input.activeProfileId?.trim() || null,
-      activeProfileName: input.activeProfileName?.trim() || null,
-      category: validated.category,
-      message: validated.message,
-      status: "pending",
-    },
-    select: { id: true },
+  const row = await prisma.$transaction(async (tx) => {
+    const inquiry = await tx.supportInquiry.create({
+      data: {
+        email,
+        activeProfileId: input.activeProfileId?.trim() || null,
+        activeProfileName: input.activeProfileName?.trim() || null,
+        category: validated.category,
+        message: validated.message,
+        status: "pending",
+      },
+      select: { id: true },
+    });
+
+    await tx.supportInquiryMessage.create({
+      data: {
+        inquiryId: inquiry.id,
+        role: "user",
+        body: validated.message,
+      },
+    });
+
+    return inquiry;
   });
 
   return { ok: true, inquiryId: row.id };

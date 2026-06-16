@@ -1,14 +1,68 @@
 import { NextResponse } from "next/server";
 
-import { getViewerEmailFromCookie } from "@/lib/auth/viewer";
+import { normalizeEmail, getViewerEmailFromCookie } from "@/lib/auth/viewer";
+import { prisma } from "@/lib/db";
 import { createSupportInquiry } from "@/lib/support/createSupportInquiry";
 import { listProfilesAndActiveProfileId } from "@/lib/profile/activeProfile";
+import {
+  SUPPORT_INQUIRY_CATEGORY_LABELS,
+  SUPPORT_INQUIRY_STATUS_LABELS,
+  truncateSupportInquiryMessagePreview,
+  type SupportInquiryCategory,
+  type SupportInquiryStatus,
+} from "@/lib/support/supportInquiryTypes";
 
 const JSON_NO_STORE = {
   headers: {
     "Cache-Control": "private, no-store, max-age=0, must-revalidate",
   },
 } as const;
+
+export async function GET() {
+  const viewerEmail = await getViewerEmailFromCookie();
+  if (!viewerEmail) {
+    return NextResponse.json(
+      { error: "ログインが必要です。", code: "AUTH_REQUIRED" },
+      { status: 401, ...JSON_NO_STORE },
+    );
+  }
+
+  const email = normalizeEmail(viewerEmail);
+  const rows = await prisma.supportInquiry.findMany({
+    where: { email },
+    orderBy: { updatedAt: "desc" },
+    take: 50,
+    select: {
+      id: true,
+      createdAt: true,
+      updatedAt: true,
+      category: true,
+      message: true,
+      status: true,
+    },
+  });
+
+  return NextResponse.json(
+    {
+      code: "OK",
+      inquiries: rows.map((row) => {
+        const category = row.category as SupportInquiryCategory;
+        const status = row.status as SupportInquiryStatus;
+        return {
+          id: row.id,
+          createdAt: row.createdAt.toISOString(),
+          updatedAt: row.updatedAt.toISOString(),
+          category,
+          categoryLabel: SUPPORT_INQUIRY_CATEGORY_LABELS[category] ?? row.category,
+          status,
+          statusLabel: SUPPORT_INQUIRY_STATUS_LABELS[status] ?? row.status,
+          preview: truncateSupportInquiryMessagePreview(row.message),
+        };
+      }),
+    },
+    { ...JSON_NO_STORE },
+  );
+}
 
 export async function POST(req: Request) {
   const viewerEmail = await getViewerEmailFromCookie();

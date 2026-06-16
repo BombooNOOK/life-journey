@@ -20,11 +20,11 @@ export function MyPageContactSection({ viewerEmail }: Props) {
   const [message, setMessage] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState(false);
+  const [successInquiryId, setSuccessInquiryId] = useState<string | null>(null);
 
   async function submitInquiry() {
     setError(null);
-    setSuccess(false);
+    setSuccessInquiryId(null);
     setBusy(true);
     try {
       const res = await fetch("/api/support/inquiries", {
@@ -33,14 +33,15 @@ export function MyPageContactSection({ viewerEmail }: Props) {
         credentials: "same-origin",
         body: JSON.stringify({ category, message }),
       });
-      const data = (await res.json()) as { error?: string; code?: string };
+      const data = (await res.json()) as { error?: string; code?: string; inquiryId?: string };
       if (!res.ok) {
         setError(data.error ?? "送信に失敗しました。");
         return;
       }
       setCategory("");
       setMessage("");
-      setSuccess(true);
+      setSuccessInquiryId(data.inquiryId ?? null);
+      window.dispatchEvent(new CustomEvent("support-inquiry-created"));
     } catch {
       setError("送信に失敗しました。時間をおいて再度お試しください。");
     } finally {
@@ -73,10 +74,16 @@ export function MyPageContactSection({ viewerEmail }: Props) {
         </p>
       </div>
 
-      {success ? (
+      {successInquiryId ? (
         <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-3 text-sm leading-relaxed text-emerald-950" role="status">
           <p>お問い合わせを受け付けました。</p>
-          <p className="mt-1">内容を確認のうえ、必要に応じて運営よりご連絡します。</p>
+          <p className="mt-1">内容を確認のうえ、運営より返信します。返信はこのページの「お問い合わせ履歴」でも確認できます。</p>
+          <Link
+            href={`/orders/support/${encodeURIComponent(successInquiryId)}`}
+            className="mt-2 inline-flex text-sm font-medium text-emerald-900 underline-offset-2 hover:underline"
+          >
+            お問い合わせの詳細を見る
+          </Link>
         </div>
       ) : null}
 
