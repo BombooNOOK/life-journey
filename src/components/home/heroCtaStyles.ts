@@ -1,6 +1,6 @@
-/** トップヒーロー内CTA（初回・継続の2導線を縦並び・左寄せ／md以上は中央） */
+/** トップヒーロー内CTA（初回・継続の2導線を縦並び・やや左寄せ） */
 export const heroCtaStackClass =
-  "mr-auto flex w-full max-w-[calc(100%-9.75rem)] flex-col items-stretch sm:max-w-[16.5rem] md:mx-auto md:max-w-[17rem] md:items-center";
+  "ml-4 mr-auto flex w-full max-w-[calc(100%-10.25rem)] flex-col items-stretch sm:max-w-[16.5rem] md:ml-[12%] md:mr-auto md:max-w-[17rem] lg:ml-[14%]";
 
 /** 将来の文字サイズ設定では、CTAは本文より控えめに拡大（max クランプ想定） */
 
