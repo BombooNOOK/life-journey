@@ -94,7 +94,8 @@ function ReplyLine({ children }: { children: string }) {
         <p className={`min-w-0 flex-1 text-left ${REPLY_TEXT_CLASS}`}>{children}</p>
         <CharacterFaceIcon
           name="character-owl-face"
-          frameClassName="border-transparent bg-transparent shadow-none"
+          frameClassName="!border-transparent !bg-transparent !shadow-none"
+          imageClassName="mix-blend-multiply"
         />
       </div>
     </div>

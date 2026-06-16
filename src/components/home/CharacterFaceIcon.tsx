@@ -34,10 +34,13 @@ const FACE_TUNING: Record<CharacterFaceIconName, FaceTuning> = {
 export function CharacterFaceIcon({
   name,
   frameClassName,
+  imageClassName,
 }: {
   name: CharacterFaceIconName;
   /** 返答ボックス内など、枠背景を消したいとき */
   frameClassName?: string;
+  /** 画像側の調整（白縁の馴染みなど） */
+  imageClassName?: string;
 }) {
   const asset = getDecorationAsset(name);
   const tuning = FACE_TUNING[name];
@@ -54,7 +57,7 @@ export function CharacterFaceIcon({
         alt=""
         width={asset.width}
         height={asset.height}
-        className="absolute inset-0 h-full w-full object-cover"
+        className={["absolute inset-0 h-full w-full object-cover", imageClassName].filter(Boolean).join(" ")}
         style={{
           objectPosition: tuning.objectPosition,
           transform: `scale(${tuning.scale})`,
