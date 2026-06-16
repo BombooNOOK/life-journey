@@ -77,17 +77,17 @@ export function HomeHeroSection() {
         <div className="relative z-10 flex min-h-full flex-col justify-end px-3 pb-4 pt-1 sm:px-6 sm:pb-6 md:max-w-xs md:pb-8 lg:max-w-sm">
           <div className="rounded-2xl bg-[#fffdf9]/84 p-2 backdrop-blur-[2px] sm:bg-[#fffdf9]/78 sm:p-3 md:bg-transparent md:p-0 md:backdrop-blur-none">
             <div className={heroCtaStackClass}>
-              <div className="space-y-1.5 sm:space-y-2">
+              <div className="space-y-2 sm:space-y-2.5">
                 <p className={heroCtaMicrocopyAboveButtonClass}>
                   クレジットカード登録なしで、2週間無料お試し
                 </p>
                 <Link href="/order" className={heroCtaPrimaryClass}>
                   はじめての方はこちら
                 </Link>
+                <HomeHeroSubNavLink />
                 <p className={heroCtaMicrocopyBelowButtonClass}>
                   ※まずは、お名前と生年月日だけで無料鑑定へ
                 </p>
-                <HomeHeroSubNavLink />
               </div>
             </div>
           </div>
