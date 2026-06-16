@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import { HomeAboutSection } from "@/components/home/HomeAboutSection";
 import { HomeAppraiserProfilesSection } from "@/components/home/HomeAppraiserProfilesSection";
 import { HomeClosingSection } from "@/components/home/HomeClosingSection";
 import { HomeFaqSection } from "@/components/home/HomeFaqSection";
@@ -17,7 +18,7 @@ import {
 export default function HomePage() {
   return (
     <div className="-mt-2 space-y-4 sm:mt-0 sm:space-y-5">
-      <section className="relative overflow-hidden rounded-3xl border border-emerald-100 bg-[#f6f4ef] p-3 pb-14 shadow-sm sm:p-6 sm:pb-14 md:min-h-[480px] md:p-8 md:pb-12 lg:min-h-[520px]">
+      <section className="relative overflow-hidden rounded-3xl border border-emerald-100 bg-[#f6f4ef] p-3 pb-12 shadow-sm sm:p-6 sm:pb-14 md:min-h-[420px] md:p-8 md:pb-12 lg:min-h-[460px]">
         <div
           aria-hidden
           className="pointer-events-none absolute inset-x-0 bottom-0 h-[min(44vw,14rem)] sm:h-[min(40vw,15rem)] md:hidden"
@@ -49,8 +50,8 @@ export default function HomePage() {
         <div className="relative z-10 grid gap-4 p-1.5 sm:gap-3 sm:p-3 md:max-w-xl md:gap-5 lg:max-w-2xl">
           <div className="min-w-0 rounded-2xl bg-[#fffdf9]/72 p-2.5 backdrop-blur-[1px] sm:p-4 md:bg-[#fffdf9]/78">
             <div className="relative">
-              <p className="relative z-[1] whitespace-nowrap text-[clamp(8.5px,2.3vw,11px)] leading-none tracking-[0.1em] text-emerald-800 md:text-xs md:tracking-[0.2em]">
-                BAMBOONOOK / LIFE JOURNEY
+              <p className="relative z-[1] whitespace-nowrap text-[clamp(9px,2.4vw,12px)] font-medium leading-none tracking-[0.08em] text-emerald-800 md:text-xs md:tracking-[0.16em]">
+                Life Journey Diary
               </p>
               <h1 className="relative z-[1] mt-2 font-extrabold leading-none tracking-tight text-stone-900 text-[clamp(1.5rem,0.9rem+4vw,2.375rem)] sm:text-3xl md:mt-2 md:text-4xl md:leading-[1.12] lg:text-[2.75rem]">
                 <span className="flex flex-col gap-[0.14em] md:hidden">
@@ -75,22 +76,6 @@ export default function HomePage() {
             <p className="mt-3 whitespace-pre-line text-[15px] font-semibold leading-[1.45] text-emerald-900 sm:mt-3.5 sm:text-lg sm:leading-8 md:text-xl md:leading-8">
               数秘術鑑定からはじまる、{"\n"}あなただけの人生記録ノート。
             </p>
-            <div className="mt-3 space-y-1 text-[13px] leading-[1.45] text-stone-500 sm:mt-3 sm:space-y-2 sm:text-[15px] sm:leading-7">
-              <p>
-                森のどうぶつ鑑定士たちと
-                <br className="block md:hidden" />
-                日々のきもちをやさしくひも解き、
-                <br />
-                あなたのことばや写真とともに記録。
-              </p>
-              <p>
-                デジタルで残した日々を、手元に残る
-                <br />
-                <span className="font-semibold text-stone-600">世界に一冊の「日記ブック」</span>へと
-                <br className="block md:hidden" />
-                育てていくサービスです。
-              </p>
-            </div>
           </div>
 
           <div className={heroCtaStackClass}>
@@ -109,6 +94,8 @@ export default function HomePage() {
           </div>
         </div>
       </section>
+
+      <HomeAboutSection />
 
       <HomeRecommendedForSection />
 
