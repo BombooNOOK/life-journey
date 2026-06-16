@@ -31,6 +31,18 @@ export function formatJournalRecordPageTitle(entryDate: string): string {
   return `${y}年${m}月${d}日の記録`;
 }
 
+/** 日記プレビュー見出し用（例: 2026年6月16日） */
+export function formatJournalPreviewDateHeading(value: string | number | Date): string {
+  const d =
+    typeof value === "string" || typeof value === "number" ? new Date(value) : value;
+  return d.toLocaleDateString("ja-JP", {
+    timeZone: "Asia/Tokyo",
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
+}
+
 export function journalBodyInputHeading(entryDate: string): string {
   return isJournalEntryDateToday(entryDate)
     ? "今日のことを書いてみる"

@@ -457,7 +457,12 @@ export function DiaryCalendarHome({
                         </div>
                         <div className="mt-3 flex flex-wrap gap-2">
                           <Link
-                            href={journalPreviewPath(entry.id, entry.designTheme, returnToBase)}
+                            href={journalPreviewPath(
+                              entry.id,
+                              entry.designTheme,
+                              returnToBase,
+                              effectiveProfileId,
+                            )}
                             className="inline-flex min-h-[44px] flex-1 items-center justify-center rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm font-medium text-emerald-950 hover:bg-emerald-100/80 sm:flex-none sm:px-4"
                           >
                             {canEditJournal ? "プレビュー" : "読む"}

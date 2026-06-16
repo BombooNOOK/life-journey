@@ -65,6 +65,7 @@ export function journalPreviewPath(
   entryId: string,
   designTheme: string | null | undefined,
   returnTo: string,
+  profileId?: string,
 ): string {
   const theme = normalizeDiaryDesignTheme(designTheme ?? "simple_plain");
   const qs = new URLSearchParams({
@@ -73,6 +74,7 @@ export function journalPreviewPath(
     pv: "3",
     returnTo,
   });
+  if (profileId?.trim()) qs.set("profile", profileId.trim());
   return `/journal/preview?${qs.toString()}`;
 }
 

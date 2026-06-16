@@ -28,6 +28,8 @@ import {
 } from "@/lib/journal/journalRecordDateDisplay";
 import { JournalWritingComposer } from "@/components/journal/JournalWritingComposer";
 import { JournalContentLengthAlerts } from "@/components/journal/JournalContentLengthAlerts";
+import { ActiveProfileLabel } from "@/components/profile/ActiveProfileLabel";
+import { useEnsureActiveViewerProfile } from "@/hooks/useEnsureActiveViewerProfile";
 import { parseSafeJournalReturnTo } from "@/lib/journal/bookshelfReturnTo";
 import {
   journalCalendarPathForMonth,
@@ -188,10 +190,12 @@ function JournalPageContent() {
   const [processingPhoto, setProcessingPhoto] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [serverViewerEmail, setServerViewerEmail] = useState<string | null>(null);
-  const [profilesSnapshot, setProfilesSnapshot] = useState<{
-    profiles: Array<{ id: string; nickname: string }>;
-    activeProfileId: string;
-  } | null>(null);
+  const profileState = useEnsureActiveViewerProfile({
+    urlProfileId: profileId,
+    syncProfileToUrl: true,
+    redirectIfMissing: "/orders",
+  });
+  const effectiveProfileId = profileState.effectiveProfileId || profileId;
   const [error, setError] = useState<string | null>(null);
   const [numerologyDebug, setNumerologyDebug] = useState<JournalNumerologyDebug | null>(null);
   const [owlRegenLoading, setOwlRegenLoading] = useState(false);
@@ -259,7 +263,7 @@ function JournalPageContent() {
     try {
       const qs = new URLSearchParams();
       qs.set("_", String(Date.now()));
-      if (profileId) qs.set("profileId", profileId);
+      if (effectiveProfileId) qs.set("profileId", effectiveProfileId);
       const res = await fetch(`/api/journal?${qs.toString()}`, {
         cache: "no-store",
         credentials: "same-origin",
@@ -282,10 +286,10 @@ function JournalPageContent() {
         setLoading(false);
       }
     }
-  }, [profileId]);
+  }, [effectiveProfileId]);
 
   useEffect(() => {
-    if (authLoading) return;
+    if (authLoading || !profileState.ready) return;
 
     const clientEmail = user?.email?.trim().toLowerCase() ?? "";
     if (!clientEmail) {
@@ -328,7 +332,7 @@ function JournalPageContent() {
     return () => {
       cancelled = true;
     };
-  }, [authLoading, user?.email, loadEntries]);
+  }, [authLoading, user?.email, loadEntries, profileState.ready]);
 
   useEffect(() => {
     const reload = () => {
@@ -349,33 +353,7 @@ function JournalPageContent() {
       window.removeEventListener("pageshow", reload);
       document.removeEventListener("visibilitychange", onVisibility);
     };
-  }, [authLoading, user?.email, loadEntries, router]);
-
-  useEffect(() => {
-    if (authLoading || !user?.email?.trim()) {
-      setProfilesSnapshot(null);
-      return;
-    }
-    let cancelled = false;
-    void fetch("/api/profiles", { credentials: "same-origin", cache: "no-store" })
-      .then(async (res) => {
-        const data = (await res.json()) as {
-          profiles?: Array<{ id: string; nickname: string }>;
-          activeProfileId?: string;
-        };
-        if (!res.ok || cancelled) return;
-        setProfilesSnapshot({
-          profiles: data.profiles ?? [],
-          activeProfileId: String(data.activeProfileId ?? ""),
-        });
-      })
-      .catch(() => {
-        if (!cancelled) setProfilesSnapshot(null);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [authLoading, user?.email]);
+  }, [authLoading, user?.email, loadEntries, router, profileState.ready]);
 
   useEffect(() => {
     if (editingId) return;
@@ -401,8 +379,9 @@ function JournalPageContent() {
       pv: "3",
     });
     if (safeReturnTo) qs.set("returnTo", safeReturnTo);
+    if (effectiveProfileId) qs.set("profile", effectiveProfileId);
     router.replace(`/journal/preview?${qs.toString()}`);
-  }, [entitlementLoading, entitlement, editingId, safeReturnTo, router, designTheme]);
+  }, [entitlementLoading, entitlement, editingId, safeReturnTo, router, designTheme, effectiveProfileId]);
 
   useEffect(() => {
     if (!editingId) {
@@ -462,8 +441,8 @@ function JournalPageContent() {
         if (generation !== editLoadGenerationRef.current) return;
         editLoadGenerationRef.current += 1;
         resetJournalFormState();
-        const href = profileId
-          ? `/journal?profile=${encodeURIComponent(profileId)}`
+        const href = effectiveProfileId
+          ? `/journal?profile=${encodeURIComponent(effectiveProfileId)}`
           : "/journal";
         router.replace(href);
         setError(e instanceof Error ? e.message : "編集対象の読み込みに失敗しました。");
@@ -474,7 +453,7 @@ function JournalPageContent() {
       });
   }, [
     editingId,
-    profileId,
+    effectiveProfileId,
     resetJournalFormState,
     router,
     searchParams,
@@ -561,7 +540,7 @@ function JournalPageContent() {
           contentFontMode,
           ...photoPayload,
           entryDate,
-          profileId,
+          effectiveProfileId,
         }),
       });
       const data = (await res.json()) as { error?: string; entry?: { id?: string } };
@@ -578,6 +557,7 @@ function JournalPageContent() {
           pv: "3",
         });
         if (safeReturnTo) previewQs.set("returnTo", safeReturnTo);
+        if (effectiveProfileId) previewQs.set("profile", effectiveProfileId);
         router.push(`/journal/preview?${previewQs.toString()}`);
         return;
       }
@@ -592,7 +572,11 @@ function JournalPageContent() {
         return;
       }
       if (editingId) {
-        router.replace(profileId ? `/journal?profile=${encodeURIComponent(profileId)}` : "/journal");
+        router.replace(
+          effectiveProfileId
+            ? `/journal?profile=${encodeURIComponent(effectiveProfileId)}`
+            : "/journal",
+        );
       }
     } catch {
       setError("通信に失敗しました。");
@@ -629,7 +613,7 @@ function JournalPageContent() {
           contentFontMode,
           photoUnchanged: true,
           entryDate,
-          profileId,
+          effectiveProfileId,
           regenerateOwlComment: true,
         }),
       });
@@ -694,13 +678,8 @@ function JournalPageContent() {
     }
   }
 
-  const effectiveProfileIdForLabel =
-    profileId.trim() || (profilesSnapshot?.activeProfileId ?? "").trim() || "";
   const diaryTargetLabel =
-    profilesSnapshot && effectiveProfileIdForLabel
-      ? profilesSnapshot.profiles.find((p) => p.id === effectiveProfileIdForLabel)?.nickname ??
-        "メイン"
-      : null;
+    profileState.ready && profileState.hasProfiles ? profileState.activeProfileNickname : null;
 
   const trimmedContent = content.trim();
   const charCount = trimmedContent.length;
@@ -742,7 +721,7 @@ function JournalPageContent() {
           </h1>
           {diaryTargetLabel !== null ? (
             <span
-              className="rounded-full border border-violet-200/90 bg-violet-50 px-2.5 py-0.5 text-xs font-medium text-violet-900"
+              className="hidden rounded-full border border-violet-200/90 bg-violet-50 px-2.5 py-0.5 text-xs font-medium text-violet-900 sm:inline"
               title="いま書いている日記の対象"
             >
               {diaryTargetLabel}
@@ -751,6 +730,9 @@ function JournalPageContent() {
             <span className="text-[11px] text-stone-400">読み込み中…</span>
           ) : null}
         </div>
+        {diaryTargetLabel !== null ? (
+          <ActiveProfileLabel nickname={diaryTargetLabel} className="sm:hidden" />
+        ) : null}
         <p className="text-sm leading-[1.6] text-stone-600">
           こんな日だった。こんなことを思った。
           <br />

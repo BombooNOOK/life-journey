@@ -4,8 +4,12 @@ import { Suspense, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { JournalPreviewSpread } from "@/components/journal/JournalPreviewSpread";
+import { JournalReadablePreview } from "@/components/journal/JournalReadablePreview";
+import { ActiveProfileLabel } from "@/components/profile/ActiveProfileLabel";
 import { useEnsureServerAuthSession } from "@/hooks/useEnsureServerAuthSession";
+import { useEnsureActiveViewerProfile } from "@/hooks/useEnsureActiveViewerProfile";
 import { useEntitlement } from "@/components/entitlement/useEntitlement";
+import { JOURNAL_BOOK_PREVIEW_NOTICE } from "@/lib/journal/journalDiaryNumbersHelpCopy";
 import { journalEditPath } from "@/lib/journal/journalNav";
 import { getDiaryDesignLabel, normalizeDiaryDesignTheme, type DiaryDesignId } from "@/lib/journal/meta";
 
@@ -32,6 +36,8 @@ type PreviewEntry = {
   kanteiOrderExists?: boolean;
 };
 
+type ViewMode = "readable" | "book";
+
 function JournalPreviewPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -44,10 +50,13 @@ function JournalPreviewPageContent() {
   const [kanteiOrderExists, setKanteiOrderExists] = useState<boolean | undefined>(undefined);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [spread, setSpread] = useState<"cover" | "body">("body");
+  const [viewMode, setViewMode] = useState<ViewMode>("readable");
   const authSession = useEnsureServerAuthSession();
   const { entitlement } = useEntitlement();
   const canEditJournal = entitlement?.canUseContinuedFeatures ?? true;
+  const profileState = useEnsureActiveViewerProfile({
+    redirectIfMissing: "/orders",
+  });
 
   useEffect(() => {
     if (!entryId) {
@@ -97,48 +106,53 @@ function JournalPreviewPageContent() {
     return normalizeDiaryDesignTheme(entry.designTheme);
   }, [entry?.designTheme, themeParam]);
 
+  const effectiveProfileId =
+    profileState.effectiveProfileId ||
+    entry?.profileId?.trim() ||
+    "";
+
   return (
     <div className="space-y-5">
-      <div className="flex flex-wrap items-center justify-between gap-2">
+      <div className="space-y-3">
         <div>
           <h1 className="text-[1.375rem] font-bold text-stone-900 sm:text-[1.75rem]">日記プレビュー</h1>
-          <p className="mt-1 text-base leading-[1.6] text-stone-600">
-            製本時の見え方イメージを、ページをめくるように確認できます。
-          </p>
+          {profileState.ready && profileState.hasProfiles ? (
+            <ActiveProfileLabel nickname={profileState.activeProfileNickname} className="mt-2" />
+          ) : null}
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap gap-2">
           <button
             type="button"
-            onClick={() => setSpread("cover")}
+            onClick={() => setViewMode("readable")}
             className={[
               "min-h-[44px] rounded-md border px-3 py-2 text-base",
-              spread === "cover"
+              viewMode === "readable"
                 ? "border-stone-700 bg-stone-800 text-white"
                 : "border-stone-300 bg-white text-stone-700 hover:bg-stone-50",
             ].join(" ")}
           >
-            表紙イメージ
+            読みやすく表示
           </button>
           <button
             type="button"
-            onClick={() => setSpread("body")}
+            onClick={() => setViewMode("book")}
             className={[
               "min-h-[44px] rounded-md border px-3 py-2 text-base",
-              spread === "body"
+              viewMode === "book"
                 ? "border-stone-700 bg-stone-800 text-white"
                 : "border-stone-300 bg-white text-stone-700 hover:bg-stone-50",
             ].join(" ")}
           >
-            本文イメージ
+            製本イメージ
           </button>
         </div>
       </div>
 
       <div
         className={
-          spread === "body"
+          viewMode === "book"
             ? "sm:rounded-xl sm:border sm:border-stone-200 sm:bg-white sm:p-4 sm:shadow-sm"
-            : "rounded-xl border border-stone-200 bg-white p-4 shadow-sm"
+            : ""
         }
       >
         {loading ? (
@@ -147,40 +161,47 @@ function JournalPreviewPageContent() {
           <p className="text-base text-red-700">{error}</p>
         ) : !entry ? (
           <p className="text-base text-stone-500">表示する記録がありません。</p>
-        ) : spread === "cover" ? (
-          <div className="mx-auto max-w-2xl">
-            <div className="rounded-xl border border-stone-200 bg-gradient-to-br from-[#f8f3ea] to-[#efe6d8] p-8 text-center shadow-inner">
-              <p className="text-sm tracking-[0.2em] text-stone-500">LIFE JOURNEY DIARY</p>
-              <h2 className="mt-3 text-[1.375rem] font-semibold text-stone-900 sm:text-2xl">
-                {new Date(entry.createdAt).getFullYear()}年 日記
-              </h2>
-              <p className="mt-3 text-base text-stone-600">
-                デザイン: {getDiaryDesignLabel(designTheme)}
-              </p>
-              <p className="mt-8 text-base leading-[1.6] text-stone-700">
-                ※ 表紙は次段で本デザインに合わせて正式連動します（今回先行は本文優先）。
-              </p>
-            </div>
-          </div>
-        ) : (
-          <JournalPreviewSpread
-            designTheme={designTheme}
-            companionType={entry.companionType}
-            mood={entry.mood}
-            activity={entry.activity}
+        ) : viewMode === "readable" ? (
+          <JournalReadablePreview
+            entryId={entry.id}
+            createdAt={entry.createdAt}
             content={entry.content}
-            comment={entry.generatedComment}
+            mood={entry.mood}
             photoDataUrl={entry.photoDataUrl}
-            photoSrc={entry.photoSrc ?? null}
-            previewDate={new Date(entry.createdAt)}
+            photoSrc={entry.photoSrc}
+            hasPhoto={entry.hasPhoto}
+            generatedComment={entry.generatedComment}
             diaryNumbers={entry.diaryNumbers}
-            contentFontMode={entry.contentFontMode}
             kanteiOrderExists={kanteiOrderExists}
             returnTo={returnTo}
-            returnHomeLabel={
-              returnTo?.startsWith("/orders/calendar") ? "カレンダーへ戻る" : "一覧に戻る"
-            }
+            profileId={effectiveProfileId || entry.profileId}
+            canEdit={canEditJournal}
           />
+        ) : (
+          <div className="space-y-3">
+            <p className="text-xs leading-relaxed text-stone-500">{JOURNAL_BOOK_PREVIEW_NOTICE}</p>
+            <p className="hidden text-sm text-stone-600 sm:block">
+              デザイン: {getDiaryDesignLabel(designTheme)}
+            </p>
+            <JournalPreviewSpread
+              designTheme={designTheme}
+              companionType={entry.companionType}
+              mood={entry.mood}
+              activity={entry.activity}
+              content={entry.content}
+              comment={entry.generatedComment}
+              photoDataUrl={entry.photoDataUrl}
+              photoSrc={entry.photoSrc ?? null}
+              previewDate={new Date(entry.createdAt)}
+              diaryNumbers={entry.diaryNumbers}
+              contentFontMode={entry.contentFontMode}
+              kanteiOrderExists={kanteiOrderExists}
+              returnTo={returnTo}
+              returnHomeLabel={
+                returnTo?.startsWith("/orders/calendar") ? "カレンダーへ戻る" : "一覧に戻る"
+              }
+            />
+          </div>
         )}
       </div>
 
@@ -193,16 +214,15 @@ function JournalPreviewPageContent() {
             {returnTo.startsWith("/orders/calendar") ? "カレンダーへ戻る" : "一覧に戻る"}
           </Link>
         ) : null}
-        {canEditJournal ? (
+        {canEditJournal && entry ? (
           <button
             type="button"
             onClick={() => {
-              if (!entry?.id) return;
               router.push(
                 journalEditPath(
                   entry.id,
-                  returnTo ?? "/journal",
-                  entry.profileId,
+                  returnTo ?? "/journal/preview",
+                  effectiveProfileId || entry.profileId,
                 ),
               );
             }}
@@ -215,7 +235,11 @@ function JournalPreviewPageContent() {
           <>
             {canEditJournal ? (
               <Link
-                href="/journal"
+                href={
+                  effectiveProfileId
+                    ? `/journal?profile=${encodeURIComponent(effectiveProfileId)}`
+                    : "/journal"
+                }
                 className="min-h-[44px] rounded-lg border border-stone-300 bg-white px-4 py-2.5 text-base text-stone-700 hover:bg-stone-50"
               >
                 入力ページへ戻る
