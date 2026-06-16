@@ -1,10 +1,6 @@
-/** トップヒーロー内CTAエリア（位置のみ。幅制限はボタン側に分離） */
-export const heroCtaAreaClass =
-  "ml-4 mr-auto w-full max-w-[calc(100%-2rem)] flex flex-col items-stretch sm:max-w-none md:ml-[12%] md:max-w-[min(100%,24rem)] lg:ml-[14%]";
-
-/** フクロウ先生との重なりを避けるボタン幅 */
-export const heroCtaButtonsClass =
-  "flex w-full max-w-[calc(100%-9.5rem)] flex-col items-stretch gap-2 sm:max-w-[16.5rem] sm:gap-2.5 md:max-w-[17rem]";
+/** トップヒーロー内CTA（初回・継続の2導線を縦並び・やや左寄せ） */
+export const heroCtaStackClass =
+  "ml-4 mr-auto flex w-max max-w-[calc(100%-2rem)] flex-col items-stretch md:ml-[12%] lg:ml-[14%]";
 
 /** 将来の文字サイズ設定では、CTAは本文より控えめに拡大（max クランプ想定） */
 
@@ -21,17 +17,17 @@ export const heroCtaMicrocopyBelowButtonClass =
 
 /** 継続導線（記録の続き／ログイン）：初回CTAと同幅・やや軽いトーン */
 export const heroCtaContinueClass = [
-  "flex min-h-[48px] w-full flex-col items-center justify-center gap-0.5 rounded-xl border border-emerald-400/75 bg-[#fffdf9]/92 px-2.5 py-3 text-center shadow-[0_2px_8px_rgba(6,78,59,0.1)] backdrop-blur-[1px] transition hover:border-emerald-500 hover:bg-white hover:shadow-[0_3px_12px_rgba(6,78,59,0.14)] active:scale-[0.98] active:opacity-95 disabled:cursor-not-allowed disabled:border-stone-300 disabled:bg-stone-100 disabled:text-stone-400 disabled:shadow-none sm:min-h-[50px] sm:px-3.5 sm:py-3.5",
+  "flex min-h-[48px] w-full min-w-[11.25rem] flex-col items-center justify-center gap-0.5 rounded-xl border border-emerald-400/75 bg-[#fffdf9]/92 px-2.5 py-3 text-center shadow-[0_2px_8px_rgba(6,78,59,0.1)] backdrop-blur-[1px] transition hover:border-emerald-500 hover:bg-white hover:shadow-[0_3px_12px_rgba(6,78,59,0.14)] active:scale-[0.98] active:opacity-95 disabled:cursor-not-allowed disabled:border-stone-300 disabled:bg-stone-100 disabled:text-stone-400 disabled:shadow-none sm:min-h-[50px] sm:px-3.5 sm:py-3.5",
 ].join(" ");
 
 export const heroCtaContinueLeadClass =
-  "text-sm font-semibold leading-snug text-emerald-950 sm:text-base";
+  "whitespace-nowrap text-sm font-semibold leading-snug text-emerald-950 sm:text-base";
 
 export const heroCtaContinueSubClass =
   "text-[10px] font-medium leading-tight text-emerald-800/80 sm:text-[11px]";
 
 export const heroCtaPrimaryClass = [
-  "flex min-h-[48px] w-full items-center justify-center rounded-xl border border-emerald-900/60 bg-emerald-800 px-2.5 py-3.5 text-center text-sm font-semibold leading-snug text-white shadow-[0_3px_10px_rgba(6,78,59,0.28)] transition hover:border-emerald-950/75 hover:bg-emerald-900 hover:shadow-[0_4px_14px_rgba(6,78,59,0.34)] active:scale-[0.98] active:opacity-95 disabled:cursor-not-allowed disabled:border-stone-300 disabled:bg-stone-400 disabled:text-white/85 disabled:shadow-none sm:min-h-[52px] sm:px-3.5 sm:text-base",
+  "flex min-h-[48px] w-full min-w-[11.25rem] items-center justify-center whitespace-nowrap rounded-xl border border-emerald-900/60 bg-emerald-800 px-2.5 py-3.5 text-center text-sm font-semibold leading-snug text-white shadow-[0_3px_10px_rgba(6,78,59,0.28)] transition hover:border-emerald-950/75 hover:bg-emerald-900 hover:shadow-[0_4px_14px_rgba(6,78,59,0.34)] active:scale-[0.98] active:opacity-95 disabled:cursor-not-allowed disabled:border-stone-300 disabled:bg-stone-400 disabled:text-white/85 disabled:shadow-none sm:min-h-[52px] sm:px-3.5 sm:text-base",
 ].join(" ");
 
 export const heroCtaSecondaryClass = [
