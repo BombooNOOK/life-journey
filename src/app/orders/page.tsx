@@ -1,24 +1,17 @@
 import Link from "next/link";
 
 import { KanteiMissingBanner } from "@/components/orders/KanteiMissingBanner";
-import { MyPageAccountSection } from "@/components/orders/MyPageAccountSection";
 import { LegalFooterLinks } from "@/components/legal/LegalFooterLinks";
-import { MyPageContactSection } from "@/components/orders/MyPageContactSection";
-import { MyPageSupportInquiriesSection } from "@/components/orders/MyPageSupportInquiriesSection";
-import { MyPageLogoutButton } from "@/components/auth/AuthSessionPanels";
-import { MyPageDisplaySettingsSection } from "@/components/orders/MyPageDisplaySettingsSection";
-import { MyPageHomeScreenTip } from "@/components/orders/MyPageHomeScreenTip";
+import { MyPageManageHub } from "@/components/orders/MyPageManageMenu";
 import { MyPageMainActions } from "@/components/orders/MyPageMainActions";
 import { MyPagePageHeader } from "@/components/orders/MyPagePageHeader";
 import { MyPageProfileList } from "@/components/orders/MyPageProfileList";
-import { ProfileAddCard } from "@/components/profile/ProfileAddCard";
 import { isAdminEmail } from "@/lib/admin/access";
 import { getViewerEmailFromCookie } from "@/lib/auth/viewer";
 import { prisma } from "@/lib/db";
 import { withPrismaConnectionRetry } from "@/lib/db/prismaRetry";
 import { findKanteiOrderForProfile } from "@/lib/profile/orderPerProfile";
 import { listProfilesAndActiveProfileId } from "@/lib/profile/activeProfile";
-import { effectiveProfileLimit } from "@/lib/profile/effectiveProfileLimit";
 import { loadEntitlementContext } from "@/lib/entitlement/accountSettingsForEntitlement";
 import {
   resolveUserEntitlement,
@@ -47,17 +40,6 @@ export default async function OrdersListPage() {
 
   let profiles: Awaited<ReturnType<typeof listProfilesAndActiveProfileId>>["profiles"] = [];
   let activeProfileId = "";
-  let accountInfo: {
-    createdAt: Date | null;
-    profileLimit: number;
-    isMonitor: boolean;
-    subscriptionPlan: string | null;
-  } = {
-    createdAt: null,
-    profileLimit: 1,
-    isMonitor: false,
-    subscriptionPlan: null,
-  };
   let fetchError: string | null = null;
   let hasKanteiOrder = true;
   let activeKanteiOrderId: string | null = null;
@@ -83,30 +65,6 @@ export default async function OrdersListPage() {
       hasKanteiOrder = kanteiOrder != null;
       activeKanteiOrderId = kanteiOrder?.id ?? null;
     }
-    const [settings, oldestProfile] = await withPrismaConnectionRetry(() =>
-      Promise.all([
-        prisma.accountSettings.findUnique({
-          where: { email: viewerEmail },
-          select: {
-            createdAt: true,
-            profileLimit: true,
-            isMonitor: true,
-            subscriptionPlan: true,
-          },
-        }),
-        prisma.profile.findFirst({
-          where: { email: viewerEmail, isArchived: false },
-          orderBy: { createdAt: "asc" },
-          select: { createdAt: true },
-        }),
-      ]),
-    );
-    accountInfo = {
-      createdAt: settings?.createdAt ?? oldestProfile?.createdAt ?? null,
-      profileLimit: effectiveProfileLimit(settings),
-      isMonitor: settings?.isMonitor === true,
-      subscriptionPlan: settings?.subscriptionPlan ?? null,
-    };
     const entitlementCtx = await withPrismaConnectionRetry(() =>
       loadEntitlementContext(viewerEmail),
     );
@@ -172,35 +130,7 @@ export default async function OrdersListPage() {
         />
       ) : null}
 
-      <ProfileAddCard
-        profileCount={profiles.length}
-        profileLimit={accountInfo.profileLimit}
-        subscriptionPlan={accountInfo.subscriptionPlan}
-        blockContinuedFeatures={!entitlement.canUseContinuedFeatures}
-      />
-
-      <MyPageHomeScreenTip />
-
-      <MyPageDisplaySettingsSection />
-
-      <MyPageAccountSection
-        viewerEmail={viewerEmail}
-        subscriptionPlan={accountInfo.subscriptionPlan}
-        profileLimit={accountInfo.profileLimit}
-        isMonitor={accountInfo.isMonitor}
-        registeredAtLabel={
-          accountInfo.createdAt
-            ? accountInfo.createdAt.toLocaleDateString("ja-JP")
-            : "登録日を確認できません"
-        }
-        activeProfileNickname={activeProfile?.nickname ?? null}
-      />
-
-      <MyPageSupportInquiriesSection />
-
-      <MyPageContactSection viewerEmail={viewerEmail} />
-
-      <MyPageLogoutButton />
+      <MyPageManageHub activeProfileId={activeProfileId || null} />
 
       <div className="border-t border-stone-200 pt-6">
         <LegalFooterLinks />

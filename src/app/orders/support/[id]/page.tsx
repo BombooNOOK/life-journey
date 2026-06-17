@@ -69,8 +69,8 @@ export default async function MyPageSupportInquiryDetailPage({ params }: Props) 
   return (
     <div className="space-y-6">
       <div>
-        <Link href="/orders#contact-form" className="text-sm text-stone-600 hover:text-stone-900">
-          ← マイページのお問い合わせへ
+        <Link href="/orders/support" className="text-sm text-stone-600 hover:text-stone-900">
+          ← お問い合わせ履歴
         </Link>
         <h1 className="mt-2 text-2xl font-bold text-stone-900">お問い合わせ詳細</h1>
         <p className="mt-1 text-sm text-stone-600">
@@ -95,7 +95,7 @@ export default async function MyPageSupportInquiryDetailPage({ params }: Props) 
           />
         ) : (
           <p className="mt-4 border-t border-stone-100 pt-4 text-sm text-stone-500">
-            このお問い合わせは終了しています。新しい内容は、マイページから再度お問い合わせください。
+            このお問い合わせは終了しています。新しい内容は、お問い合わせ履歴から再度お問い合わせください。
           </p>
         )}
       </div>

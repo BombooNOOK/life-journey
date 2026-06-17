@@ -12,7 +12,11 @@ type InquirySummary = {
   preview: string;
 };
 
-export function MyPageSupportInquiriesSection() {
+type Props = {
+  showHeader?: boolean;
+};
+
+export function MyPageSupportInquiriesSection({ showHeader = true }: Props) {
   const [inquiries, setInquiries] = useState<InquirySummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -56,12 +60,14 @@ export function MyPageSupportInquiriesSection() {
 
   return (
     <section className="space-y-3 rounded-xl border border-stone-200 bg-white p-4 shadow-sm sm:p-5">
-      <div>
-        <h2 className="text-lg font-semibold text-stone-900">お問い合わせ履歴</h2>
-        <p className="mt-2 lj-read-desc text-stone-700">
-          過去のお問い合わせと運営からの返信を確認できます。
-        </p>
-      </div>
+      {showHeader ? (
+        <div>
+          <h2 className="text-lg font-semibold text-stone-900">お問い合わせ履歴</h2>
+          <p className="mt-2 lj-read-desc text-stone-700">
+            過去のお問い合わせと運営からの返信を確認できます。
+          </p>
+        </div>
+      ) : null}
 
       {loading ? <p className="text-sm text-stone-500">読み込み中…</p> : null}
       {error ? <p className="text-sm text-red-700">{error}</p> : null}

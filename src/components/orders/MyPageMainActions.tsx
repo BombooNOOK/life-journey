@@ -18,9 +18,6 @@ type Props = {
 const navButtonClass =
   "block w-full rounded-2xl text-left transition-[transform,opacity] duration-75 active:scale-[0.99]";
 
-const textLinkClass =
-  "flex min-h-[44px] w-full items-center text-sm font-medium text-emerald-900 underline-offset-2 hover:underline";
-
 /** マイページトップ：選択中プロフィールで何をするか */
 export function MyPageMainActions({
   profileId,
@@ -32,7 +29,6 @@ export function MyPageMainActions({
     entitlement.canUseContinuedFeatures || entitlement.canCreateFirstJournal;
   const journalEmphasis = entitlement.tier === "trial_not_started";
   const journalBlocked = entitlement.tier === "trial_expired" || !canWriteJournal;
-  const profileDetailHref = `/orders/profile/${encodeURIComponent(profileId)}`;
 
   return (
     <section id="main-actions" className="space-y-3">
@@ -42,7 +38,7 @@ export function MyPageMainActions({
         helpAriaLabel="マイページの操作説明"
         help={
           <p>
-            選んだプロフィールの日記を書いたり、記録や本棚・鑑定結果を開けます。プロフィール名の変更もここから進められます。
+            選んだプロフィールの日記を書いたり、記録や本棚・鑑定結果を開けます。
           </p>
         }
       />
@@ -125,12 +121,6 @@ export function MyPageMainActions({
             />
           </Link>
         ) : null}
-
-        <div className="space-y-1 border-t border-stone-200/80 pt-3">
-          <Link href={profileDetailHref} className={textLinkClass}>
-            プロフィール名を変更する
-          </Link>
-        </div>
       </div>
     </section>
   );
