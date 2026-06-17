@@ -9,6 +9,8 @@ import {
   heroCtaMicrocopyBelowButtonClass,
   heroCtaMicrocopyGroupClass,
   heroCtaPrimaryClass,
+  heroCtaAreaClass,
+  heroCtaAreaInnerClass,
   heroCtaStackClass,
   heroCtaTextBandClass,
   heroFontSizeControlBandClass,
@@ -78,8 +80,8 @@ export function HomeHeroSection() {
         </div>
       </div>
 
-      <div className="relative z-10 min-h-[14rem] sm:min-h-[16rem] md:min-h-[18rem] lg:min-h-[20rem]">
-        <div className="flex min-h-full flex-col items-start justify-end gap-2 px-1 pb-4 pt-2 sm:gap-2.5 sm:px-6 sm:pb-6 md:pb-8">
+      <div className={heroCtaAreaClass}>
+        <div className={heroCtaAreaInnerClass}>
           <div className={heroCtaTextBandClass}>
             <div className={heroCtaMicrocopyGroupClass}>
               <p className={heroCtaMicrocopyAboveButtonClass}>

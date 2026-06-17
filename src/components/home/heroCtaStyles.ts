@@ -25,10 +25,17 @@ export const heroCtaMicrocopyBelowButtonClass =
 
 /** ヒーロー下端：文字サイズ切り替え帯 */
 export const heroFontSizeControlBandClass =
-  "ml-2 mr-auto w-max max-w-[calc(100%-0.75rem)] border-t border-stone-300/40 px-1 pb-3 pt-2 md:ml-[12%] md:px-0 lg:ml-[14%]";
+  "ml-2 mr-auto w-max max-w-[calc(100%-0.75rem)] border-t border-stone-300/40 px-1 pb-2.5 pt-1.5 md:ml-[12%] md:px-0 lg:ml-[14%]";
 
 /** 主CTAと直上メッセージのまとまり（ボタンのみ） */
-export const heroCtaButtonsGroupClass = "flex w-full flex-col items-stretch gap-2 sm:gap-2.5";
+export const heroCtaButtonsGroupClass = "flex w-full flex-col items-stretch gap-3 sm:gap-3.5";
+
+/** ヒーローCTAエリア（フクロウ先生とのバランス用・文字サイズ帯は外側） */
+export const heroCtaAreaClass =
+  "relative z-10 min-h-[9.5rem] sm:min-h-[10.5rem] md:min-h-[12rem] lg:min-h-[14rem]";
+
+export const heroCtaAreaInnerClass =
+  "flex min-h-full flex-col items-start justify-end gap-3 px-1 pb-1 pt-5 sm:gap-3.5 sm:px-6 sm:pb-2 sm:pt-7 md:pb-2.5 md:pt-9 lg:pt-10";
 
 /** 継続導線（記録の続き／ログイン）：初回CTAと同幅・やや軽いトーン */
 export const heroCtaContinueClass = [

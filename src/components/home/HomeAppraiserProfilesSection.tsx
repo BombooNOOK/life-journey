@@ -9,6 +9,13 @@ const PROFILE_NAME_CLASS =
   "w-full text-[16px] font-semibold leading-tight tracking-wide text-[#5c4a3a]";
 const PROFILE_CATCHPHRASE_CLASS =
   "mt-2.5 w-full text-[13px] leading-snug text-[#6b5a4a] sm:mt-3";
+
+/** 下端説明文：小さいスマホは現状維持、大きいスマホだけ少し下げてイラストと被りにくくする */
+const PROFILE_TOP_BLOCK_CLASS =
+  "lj-reading-exempt absolute left-[8%] right-[8%] top-[7%] z-10 text-center min-[390px]:top-[9%] min-[430px]:top-[9.5%]";
+const PROFILE_BOTTOM_BLOCK_CLASS =
+  "lj-reading-exempt absolute bottom-[8%] left-[9%] right-[9%] z-10 text-center min-[390px]:bottom-[5.5%] min-[430px]:bottom-[5%]";
+
 const PROFILE_DESCRIPTION_CLASS =
   "w-full text-[12px] leading-[1.75] text-[#5c4a3a]/92";
 
@@ -25,12 +32,12 @@ function AppraiserProfileCard({ card }: { card: HomeAppraiserProfileCard }) {
           className="z-0 object-cover object-center"
         />
 
-        <div className="lj-reading-exempt absolute left-[8%] right-[8%] top-[7%] z-10 text-center">
+        <div className={PROFILE_TOP_BLOCK_CLASS}>
           <h3 className={PROFILE_NAME_CLASS}>{card.name}</h3>
           <p className={PROFILE_CATCHPHRASE_CLASS}>{card.catchphrase}</p>
         </div>
 
-        <div className="lj-reading-exempt absolute bottom-[8%] left-[9%] right-[9%] z-10 text-center">
+        <div className={PROFILE_BOTTOM_BLOCK_CLASS}>
           <p className={PROFILE_DESCRIPTION_CLASS}>{card.description}</p>
         </div>
       </div>
