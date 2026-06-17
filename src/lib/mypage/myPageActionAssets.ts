@@ -1,21 +1,21 @@
-/** マイページ「やりたいことを選ぶ」カード用イラスト（差し替え: 同名 PNG を上書き） */
+/** マイページ「やりたいことを選ぶ」カード用イラスト */
 export const myPageActionIllustrations = {
   writeDiary: {
-    src: "/images/mypage/actions/write-diary.png",
-    width: 160,
-    height: 160,
+    src: "/images/mypage/mypage_action_write_diary.png",
+    width: 1024,
+    height: 1024,
     alt: "",
   },
   readDiary: {
-    src: "/images/mypage/actions/read-diary.png",
-    width: 160,
-    height: 160,
+    src: "/images/mypage/mypage_action_read_diary.png",
+    width: 1024,
+    height: 1024,
     alt: "",
   },
   bookshelf: {
-    src: "/images/mypage/actions/bookshelf.png",
-    width: 160,
-    height: 160,
+    src: "/images/mypage/mypage_action_bookshelf.png",
+    width: 1024,
+    height: 1024,
     alt: "",
   },
 } as const;
