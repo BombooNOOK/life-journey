@@ -4,7 +4,6 @@ import Link from "next/link";
 import {
   heroCtaClosingMicrocopyClass,
   heroCtaClosingStackClass,
-  heroCtaMicrocopyBelowButtonClass,
   heroCtaPrimaryClass,
 } from "@/components/home/heroCtaStyles";
 import { HOME_CLOSING_GROUP_IMAGE } from "@/lib/home/homeClosingSection";

@@ -19,9 +19,13 @@ export const heroCtaMicrocopyGroupClass =
 export const heroCtaMicrocopyAboveButtonClass =
   "whitespace-nowrap text-[0.625rem] font-medium leading-none tracking-wide text-stone-600";
 
-/** 主CTAの直上：補足（※） */
+/** 主CTAの直上：補足（※）（ふつう 10px） */
 export const heroCtaMicrocopyBelowButtonClass =
-  "whitespace-nowrap text-[0.53125rem] leading-none text-stone-600 sm:text-[0.59375rem]";
+  "whitespace-nowrap text-[0.625rem] leading-none text-stone-600";
+
+/** ヒーロー下端：文字サイズ切り替え帯 */
+export const heroFontSizeControlBandClass =
+  "ml-2 mr-auto w-max max-w-[calc(100%-0.75rem)] border-t border-stone-300/40 px-1 pb-3 pt-2 md:ml-[12%] md:px-0 lg:ml-[14%]";
 
 /** 主CTAと直上メッセージのまとまり（ボタンのみ） */
 export const heroCtaButtonsGroupClass = "flex w-full flex-col items-stretch gap-2 sm:gap-2.5";
@@ -49,6 +53,6 @@ export const heroCtaSecondaryClass = [
 export const heroCtaClosingStackClass =
   "mx-auto flex w-full max-w-[17rem] flex-col items-stretch";
 
-/** ページ下部の補足文 */
+/** ページ下部の補足文（ふつう 10px） */
 export const heroCtaClosingMicrocopyClass =
-  "text-center text-[0.53125rem] leading-[1.45] text-stone-600 sm:text-[0.59375rem] sm:leading-[1.5]";
+  "text-center text-[0.625rem] leading-[1.45] text-stone-600 sm:leading-[1.5]";

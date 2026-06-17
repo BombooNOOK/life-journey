@@ -130,7 +130,7 @@ function StepFlowArrow() {
 function MockStepCard({ step }: { step: HomeProductMockStep }) {
   return (
     <article className="flex min-w-0 flex-1 flex-col">
-      <h3 className="text-sm font-semibold leading-snug text-emerald-800 sm:text-[15px]">
+      <h3 className="text-[0.9375rem] font-semibold leading-snug text-emerald-800">
         {step.stepLabel} {step.title}
       </h3>
       <p className="lj-read-desc mt-1.5 leading-5 text-stone-600 sm:leading-6">
@@ -153,7 +153,7 @@ export function HomeProductMockSection() {
         <h2 className="text-base font-semibold leading-snug text-stone-900">
           記録はこんなふうに育っていきます
         </h2>
-        <p className="mt-1 text-[10px] text-amber-700/55" aria-hidden>
+        <p className="mt-1 text-[13px] text-amber-700/55" aria-hidden>
           ✦
         </p>
         <p className="lj-read-desc mt-2 leading-5 text-stone-600 sm:leading-6">

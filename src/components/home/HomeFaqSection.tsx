@@ -57,7 +57,7 @@ export function HomeFaqSection() {
               open={index === 0}
               className="group rounded-xl border border-stone-200/80 bg-[#fffdf9]/90 shadow-[0_1px_0_rgba(92,74,58,0.04)]"
             >
-              <summary className="cursor-pointer list-none px-3.5 py-3.5 text-[13px] font-semibold leading-snug text-[#5c4a3a] marker:content-none sm:px-4 sm:py-4 sm:text-sm [&::-webkit-details-marker]:hidden">
+              <summary className="cursor-pointer list-none px-3.5 py-3.5 text-sm font-semibold leading-snug text-[#5c4a3a] marker:content-none sm:px-4 sm:py-4 [&::-webkit-details-marker]:hidden">
                 <span className="flex items-start justify-between gap-3">
                   <span>
                     <span className="mr-1.5 text-emerald-800/85">Q.</span>

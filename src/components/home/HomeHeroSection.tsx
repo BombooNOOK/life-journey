@@ -11,6 +11,7 @@ import {
   heroCtaPrimaryClass,
   heroCtaStackClass,
   heroCtaTextBandClass,
+  heroFontSizeControlBandClass,
 } from "@/components/home/heroCtaStyles";
 import {
   HOME_HERO_FOREST_BG_SRC,
@@ -97,10 +98,11 @@ export function HomeHeroSection() {
               <HomeHeroSubNavLink />
             </div>
           </div>
-          <div className={heroCtaTextBandClass}>
-            <ReadingFontSizeControl variant="hero" className="border-t border-stone-300/40 pt-2" />
-          </div>
         </div>
+      </div>
+
+      <div className={`relative z-10 sm:px-6 ${heroFontSizeControlBandClass}`}>
+        <ReadingFontSizeControl variant="hero" />
       </div>
     </section>
   );

@@ -6,11 +6,11 @@ import {
 } from "@/lib/home/homeAppraiserProfileCards";
 
 const PROFILE_NAME_CLASS =
-  "w-full text-[clamp(15px,4.1vw,17px)] font-semibold leading-tight tracking-wide text-[#5c4a3a]";
+  "w-full text-[16px] font-semibold leading-tight tracking-wide text-[#5c4a3a]";
 const PROFILE_CATCHPHRASE_CLASS =
-  "mt-2.5 w-full text-[clamp(10px,2.75vw,12px)] leading-snug text-[#6b5a4a] sm:mt-3";
+  "mt-2.5 w-full text-[13px] leading-snug text-[#6b5a4a] sm:mt-3";
 const PROFILE_DESCRIPTION_CLASS =
-  "w-full text-[clamp(9px,2.4vw,11px)] leading-[1.75] text-[#5c4a3a]/92";
+  "w-full text-[12px] leading-[1.75] text-[#5c4a3a]/92";
 
 function AppraiserProfileCard({ card }: { card: HomeAppraiserProfileCard }) {
   return (
@@ -52,7 +52,7 @@ export function HomeAppraiserProfilesSection() {
         <h2 className="text-base font-semibold leading-snug text-stone-900">
           森のどうぶつ鑑定士たち
         </h2>
-        <p className="mt-1 text-[10px] text-amber-700/55" aria-hidden>
+        <p className="mt-1 text-[13px] text-amber-700/55" aria-hidden>
           ✦
         </p>
         <p className="lj-read-desc mt-2 leading-5 text-stone-600 sm:leading-6">
