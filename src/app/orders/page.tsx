@@ -16,7 +16,7 @@ import { isAdminEmail } from "@/lib/admin/access";
 import { getViewerEmailFromCookie } from "@/lib/auth/viewer";
 import { prisma } from "@/lib/db";
 import { withPrismaConnectionRetry } from "@/lib/db/prismaRetry";
-import { profileHasKanteiOrder } from "@/lib/journal/kanteiCommentEligibility";
+import { findKanteiOrderForProfile } from "@/lib/profile/orderPerProfile";
 import { listProfilesAndActiveProfileId } from "@/lib/profile/activeProfile";
 import { effectiveProfileLimit } from "@/lib/profile/effectiveProfileLimit";
 import { loadEntitlementContext } from "@/lib/entitlement/accountSettingsForEntitlement";
@@ -60,6 +60,7 @@ export default async function OrdersListPage() {
   };
   let fetchError: string | null = null;
   let hasKanteiOrder = true;
+  let activeKanteiOrderId: string | null = null;
   let entitlement: SerializedUserEntitlement = {
     tier: "trial_not_started",
     showTrialBanner: false,
@@ -76,9 +77,11 @@ export default async function OrdersListPage() {
     profiles = loaded.profiles;
     activeProfileId = loaded.activeProfileId;
     if (activeProfileId) {
-      hasKanteiOrder = await withPrismaConnectionRetry(() =>
-        profileHasKanteiOrder(viewerEmail, activeProfileId),
+      const kanteiOrder = await withPrismaConnectionRetry(() =>
+        findKanteiOrderForProfile({ viewerEmail, profileId: activeProfileId }),
       );
+      hasKanteiOrder = kanteiOrder != null;
+      activeKanteiOrderId = kanteiOrder?.id ?? null;
     }
     const [settings, oldestProfile] = await withPrismaConnectionRetry(() =>
       Promise.all([
@@ -163,9 +166,9 @@ export default async function OrdersListPage() {
       {activeProfile ? (
         <MyPageMainActions
           profileId={activeProfile.id}
-          profileNickname={activeProfile.nickname}
           isActive
           entitlement={entitlement}
+          kanteiOrderId={activeKanteiOrderId}
         />
       ) : null}
 
