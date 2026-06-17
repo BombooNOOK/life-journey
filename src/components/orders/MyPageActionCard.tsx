@@ -10,7 +10,7 @@ type Illustration = {
   alt?: string;
 };
 
-type Tone = "emerald" | "wood" | "shelf";
+type Tone = "emerald" | "wood" | "shelf" | "fortune";
 
 const toneClass: Record<
   Tone,
@@ -36,6 +36,13 @@ const toneClass: Record<
     arrow: "group-hover:text-[#6B5638]",
     title: "text-[#6B5638]",
     description: "text-[#6B5638]/80",
+  },
+  fortune: {
+    card: "border-[#d9c9a8] bg-gradient-to-br from-[#fffaf3] via-white to-[#f3ead8]/70 hover:border-[#c4b08e] hover:shadow-md",
+    iconWrap: "bg-[#faf4e8] ring-[#eadfce]",
+    arrow: "group-hover:text-[#8a6b42]",
+    title: "text-stone-900",
+    description: "text-stone-600",
   },
 };
 

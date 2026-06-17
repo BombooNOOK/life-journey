@@ -18,4 +18,10 @@ export const myPageActionIllustrations = {
     height: 570,
     alt: "",
   },
+  fortune: {
+    src: "/images/mypage/mypage_action_fortune.png?v=1",
+    width: 688,
+    height: 583,
+    alt: "",
+  },
 } as const;

@@ -42,7 +42,7 @@ export function MyPageMainActions({
         helpAriaLabel="マイページの操作説明"
         help={
           <p>
-            選んだプロフィールの日記を書いたり、これまでの記録や本棚を開けます。プロフィール名の変更や鑑定結果の確認もここから進められます。
+            選んだプロフィールの日記を書いたり、記録や本棚・鑑定結果を開けます。プロフィール名の変更もここから進められます。
           </p>
         }
       />
@@ -112,15 +112,24 @@ export function MyPageMainActions({
           />
         </ProfileSelectNavButton>
 
+        {kanteiOrderId ? (
+          <Link
+            href={`/orders/${encodeURIComponent(kanteiOrderId)}`}
+            className={navButtonClass}
+          >
+            <MyPageActionCard
+              illustration={myPageActionIllustrations.fortune}
+              title="鑑定を見る"
+              description="今年のテーマや今日のヒントを確認します"
+              tone="fortune"
+            />
+          </Link>
+        ) : null}
+
         <div className="space-y-1 border-t border-stone-200/80 pt-3">
           <Link href={profileDetailHref} className={textLinkClass}>
             プロフィール名を変更する
           </Link>
-          {kanteiOrderId ? (
-            <Link href={`/orders/${encodeURIComponent(kanteiOrderId)}`} className={textLinkClass}>
-              保存済み鑑定を見る
-            </Link>
-          ) : null}
         </div>
       </div>
     </section>
