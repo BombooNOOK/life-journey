@@ -18,8 +18,8 @@ function heroOptionClass(active: boolean): string {
   return [
     "shrink-0 whitespace-nowrap rounded-md px-1 py-0.5 leading-none transition",
     active
-      ? "bg-emerald-100/95 font-semibold text-emerald-900 ring-1 ring-emerald-300/80"
-      : "font-medium text-stone-600 hover:text-emerald-800 hover:underline hover:underline-offset-2",
+      ? "bg-[#DDEFE4] font-semibold text-[#0B6B4A] ring-1 ring-[#8DBFA5]"
+      : "font-medium text-[#6B6258] hover:text-[#0B6B4A]/85 hover:underline hover:underline-offset-2",
   ].join(" ");
 }
 
@@ -73,12 +73,12 @@ export function ReadingFontSizeControl({ className = "", variant = "hero" }: Pro
       role="group"
       aria-label="文字の大きさ"
     >
-      <p className="text-center font-medium text-stone-600">文字の大きさ</p>
+      <p className="text-center font-medium text-[#6B6258]">文字の大きさ</p>
       <div className="mt-0.5 flex flex-nowrap items-center justify-center gap-x-0 whitespace-nowrap">
         {READING_FONT_SIZES.map((size, index) => (
           <span key={size} className="inline-flex shrink-0 items-center">
             {index > 0 ? (
-              <span className="select-none px-0.5 text-stone-300" aria-hidden>
+              <span className="select-none px-0.5 text-[#D8D0C6]" aria-hidden>
                 ｜
               </span>
             ) : null}
