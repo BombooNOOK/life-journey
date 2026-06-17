@@ -1,4 +1,3 @@
-import Image from "next/image";
 import { Fragment } from "react";
 
 import { PhoneMockScrollViewport } from "@/components/home/PhoneMockScrollViewport";
@@ -96,17 +95,17 @@ function MockImageFrame({ step }: { step: HomeProductMockStep }) {
 
   /** 表紙正面の冊子イメージ（背表紙の厚い本に見せない） */
   return (
-    <div className="mx-auto w-full max-w-[9.5rem] sm:max-w-[10.5rem]">
+    <div className="mx-auto w-full min-w-[9.5rem] max-w-[9.5rem] shrink-0 sm:max-w-[10.5rem]">
       <div className="overflow-hidden rounded-lg border border-stone-200/55 bg-[#fffdf9] p-1.5 shadow-[0_2px_10px_rgba(107,90,74,0.08)]">
-        <div className="relative aspect-[2/3] overflow-hidden rounded-md bg-[#faf6ef]">
-          <Image
-            src={step.imageSrc}
-            alt={step.imageAlt}
-            fill
-            sizes="(max-width: 640px) 152px, 168px"
-            className="object-cover object-center"
-          />
-        </div>
+        <img
+          src={step.imageSrc}
+          alt={step.imageAlt}
+          width={step.imageWidth}
+          height={step.imageHeight}
+          className="block h-auto w-full rounded-md bg-[#faf6ef] object-cover object-center"
+          loading="lazy"
+          decoding="async"
+        />
       </div>
     </div>
   );
@@ -137,7 +136,7 @@ function MockStepCard({ step }: { step: HomeProductMockStep }) {
         {step.description}
       </p>
       <div className="mt-3 flex w-full flex-1 justify-center sm:mt-4">
-        <div className="lj-reading-exempt">
+        <div className={step.frame === "phone" ? "lj-reading-exempt shrink-0" : "shrink-0"}>
           <MockImageFrame step={step} />
         </div>
       </div>

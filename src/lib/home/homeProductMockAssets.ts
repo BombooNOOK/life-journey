@@ -50,7 +50,7 @@ export const HOME_PRODUCT_MOCK_STEPS: HomeProductMockStep[] = [
   {
     stepLabel: "②",
     title: "あとから読み返す",
-    description: "書いた日記や鑑定書は、本棚のように並び、あとからやさしく読み返せます。",
+    description: "書いた日記や鑑定書は、本棚のように並び、あとから読み返せます。",
     imageSrc: HOME_PRODUCT_MOCK_IMAGES.bookshelf,
     imageAlt: "本棚画面",
     imageWidth: 390,
