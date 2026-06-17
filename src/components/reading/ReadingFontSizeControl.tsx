@@ -12,6 +12,8 @@ type Props = {
   className?: string;
   /** マイページなど説明付きレイアウト */
   variant?: "hero" | "section";
+  /** section 時の見出し（専用ページでは false） */
+  showSectionHeading?: boolean;
 };
 
 function heroOptionClass(active: boolean): string {
@@ -33,7 +35,11 @@ function sectionOptionClass(active: boolean): string {
 }
 
 /** 読み物用の文字サイズ切り替え（CTA・見出しは対象外） */
-export function ReadingFontSizeControl({ className = "", variant = "hero" }: Props) {
+export function ReadingFontSizeControl({
+  className = "",
+  variant = "hero",
+  showSectionHeading = true,
+}: Props) {
   const { readingFontSize, setReadingFontSize } = useReadingFontSize();
 
   if (variant === "section") {
@@ -43,8 +49,10 @@ export function ReadingFontSizeControl({ className = "", variant = "hero" }: Pro
         role="group"
         aria-label="文字の大きさ"
       >
-        <h2 className="text-base font-semibold text-stone-900">表示設定</h2>
-        <p className="lj-read-desc mt-2 text-sm text-stone-600">文字の大きさ</p>
+        {showSectionHeading ? (
+          <h2 className="text-base font-semibold text-stone-900">表示設定</h2>
+        ) : null}
+        <p className={`lj-read-desc text-sm text-stone-600 ${showSectionHeading ? "mt-2" : ""}`}>文字の大きさ</p>
         <div className="mt-3 flex gap-2">
           {READING_FONT_SIZES.map((size) => (
             <button

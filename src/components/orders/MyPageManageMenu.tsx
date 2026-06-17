@@ -11,7 +11,7 @@ const rowClass =
   "flex min-h-[48px] items-center gap-3 px-3.5 py-2.5 text-left transition hover:bg-[#f7f3eb]/80 active:bg-[#f3ede3]/90";
 
 const iconWrapClass =
-  "flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#f3ede3] text-[13px] text-[#6B5638]";
+  "flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#efe6d8] text-[13px] font-medium text-[#7a6248] ring-1 ring-[#e3d6c4]/80";
 
 export function MyPageManageMenuRow({ href, label, icon }: MenuRowProps) {
   return (
@@ -19,8 +19,8 @@ export function MyPageManageMenuRow({ href, label, icon }: MenuRowProps) {
       <span className={iconWrapClass} aria-hidden>
         {icon}
       </span>
-      <span className="min-w-0 flex-1 text-sm font-medium text-stone-800">{label}</span>
-      <span className="shrink-0 text-sm text-stone-300" aria-hidden>
+      <span className="min-w-0 flex-1 text-sm font-medium text-[#5c4a36]">{label}</span>
+      <span className="shrink-0 text-sm text-[#d4c4b0]" aria-hidden>
         →
       </span>
     </Link>
@@ -55,8 +55,8 @@ type HubProps = {
 /** マイページ下部：設定・アカウント・お問い合わせ履歴の控えめな導線 */
 export function MyPageManageHub({ activeProfileId }: HubProps) {
   const profileRenameHref = activeProfileId
-    ? `/orders/profile/${encodeURIComponent(activeProfileId)}`
-    : "/orders/settings#add-profile";
+    ? "/orders/settings/rename-profile"
+    : "/orders/settings/add-profile";
 
   return (
     <div className="mx-auto w-full max-w-md space-y-5 border-t border-stone-200/80 pt-5">
@@ -64,10 +64,10 @@ export function MyPageManageHub({ activeProfileId }: HubProps) {
         title="設定"
         description="プロフィールや表示の設定を変更できます"
       >
-        <MyPageManageMenuRow href="/orders/settings#add-profile" label="プロフィールを追加" icon="＋" />
+        <MyPageManageMenuRow href="/orders/settings/add-profile" label="プロフィールを追加" icon="＋" />
         <MyPageManageMenuRow href={profileRenameHref} label="プロフィール名を変更" icon="✎" />
-        <MyPageManageMenuRow href="/orders/settings#display" label="表示設定" icon="Aa" />
-        <MyPageManageMenuRow href="/orders/settings#backup" label="バックアップ作成" icon="↓" />
+        <MyPageManageMenuRow href="/orders/settings/display" label="表示設定" icon="Aa" />
+        <MyPageManageMenuRow href="/orders/settings/backup" label="バックアップ作成" icon="↓" />
       </MyPageManageMenuSection>
 
       <MyPageManageMenuSection

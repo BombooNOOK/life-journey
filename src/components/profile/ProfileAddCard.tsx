@@ -9,6 +9,7 @@ type Props = {
   profileLimit: number;
   subscriptionPlan: string | null;
   blockContinuedFeatures?: boolean;
+  showHeading?: boolean;
 };
 
 export function ProfileAddCard({
@@ -16,6 +17,7 @@ export function ProfileAddCard({
   profileLimit,
   subscriptionPlan,
   blockContinuedFeatures = false,
+  showHeading = true,
 }: Props) {
   const router = useRouter();
   const [nickname, setNickname] = useState("");
@@ -68,9 +70,9 @@ export function ProfileAddCard({
 
   return (
     <section className="rounded-xl border border-stone-200 bg-white p-4 shadow-sm">
-      <h2 className="text-lg font-semibold text-stone-900">プロフィールを追加</h2>
+      {showHeading ? <h2 className="text-lg font-semibold text-stone-900">プロフィールを追加</h2> : null}
       {blockContinuedFeatures && !atLimit ? (
-        <div className="mt-3 space-y-2 lj-read-desc text-stone-700">
+        <div className={`${showHeading ? "mt-3" : ""} space-y-2 lj-read-desc text-stone-700`}>
           <p>新規プロフィールの追加は、日記の無料お試し開始後にご利用いただけます。</p>
           <p>まずは日記の記録からお試しください。</p>
         </div>
