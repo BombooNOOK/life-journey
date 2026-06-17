@@ -15,9 +15,9 @@ export const heroCtaTextBandClass =
 export const heroCtaMicrocopyGroupClass =
   "flex w-full flex-col items-center gap-0.5 text-center sm:gap-1";
 
-/** 主CTAの直上：お試し案内（rem 指定で大きめ設定時のみ拡大） */
+/** 主CTAの直上：お試し案内（ふつう 10px / rem 指定で大きめ設定時のみ拡大） */
 export const heroCtaMicrocopyAboveButtonClass =
-  "whitespace-nowrap text-[0.5rem] font-medium leading-none tracking-wide text-stone-600 sm:text-[0.625rem]";
+  "whitespace-nowrap text-[0.625rem] font-medium leading-none tracking-wide text-stone-600";
 
 /** 主CTAの直上：補足（※） */
 export const heroCtaMicrocopyBelowButtonClass =
