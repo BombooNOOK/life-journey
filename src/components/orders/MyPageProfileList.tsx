@@ -69,7 +69,7 @@ export function MyPageProfileList({ profiles, activeProfileId }: Props) {
             const isActive = profile.id === activeProfileId;
             const isBusy = busyId === profile.id;
             return (
-              <li key={profile.id} className={isActive ? "pt-2.5" : undefined}>
+              <li key={profile.id} className="pt-2.5">
                 <div className="relative">
                   {isActive ? (
                     <span className="absolute -top-2.5 left-3 z-10 rounded bg-white px-1.5 py-0.5 text-[10px] font-semibold leading-none text-emerald-800 ring-1 ring-emerald-400">
@@ -90,9 +90,9 @@ export function MyPageProfileList({ profiles, activeProfileId }: Props) {
                     }
                     onClick={() => void selectProfile(profile.id)}
                     className={[
-                      "block w-full rounded-xl border bg-white px-4 py-4 text-center text-sm font-medium shadow-sm transition",
+                      "block w-full rounded-xl border-2 bg-white px-4 py-4 text-center text-sm font-medium shadow-sm transition",
                       isActive
-                        ? "border-2 border-emerald-400 text-emerald-950"
+                        ? "border-emerald-400 text-emerald-950"
                         : "border-stone-200 text-stone-900 hover:border-stone-300 hover:bg-stone-50/80",
                       isBusy ? "scale-[0.98] opacity-80" : "active:scale-[0.98]",
                       busyId !== null && !isBusy ? "disabled:opacity-60" : "",
