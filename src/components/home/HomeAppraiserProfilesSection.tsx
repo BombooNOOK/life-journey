@@ -16,8 +16,22 @@ const PROFILE_TOP_BLOCK_CLASS =
 const PROFILE_BOTTOM_BLOCK_CLASS =
   "lj-reading-exempt absolute bottom-[8%] left-[9%] right-[9%] z-10 text-center min-[390px]:bottom-[5.5%] min-[430px]:bottom-[5%]";
 
+/** ケロシオン：イラストが縦長のため、他カードより少し下げる */
+const PROFILE_TOP_BLOCK_KEROSION_CLASS =
+  "lj-reading-exempt absolute left-[8%] right-[8%] top-[8.5%] z-10 text-center min-[390px]:top-[10.5%] min-[430px]:top-[11%]";
+const PROFILE_BOTTOM_BLOCK_KEROSION_CLASS =
+  "lj-reading-exempt absolute bottom-[7%] left-[9%] right-[9%] z-10 text-center min-[390px]:bottom-[4.5%] min-[430px]:bottom-[4%]";
+
 const PROFILE_DESCRIPTION_CLASS =
   "w-full text-[12px] leading-[1.75] text-[#5c4a3a]/92";
+
+function profileTopBlockClass(cardId: HomeAppraiserProfileCard["id"]): string {
+  return cardId === "kerosion" ? PROFILE_TOP_BLOCK_KEROSION_CLASS : PROFILE_TOP_BLOCK_CLASS;
+}
+
+function profileBottomBlockClass(cardId: HomeAppraiserProfileCard["id"]): string {
+  return cardId === "kerosion" ? PROFILE_BOTTOM_BLOCK_KEROSION_CLASS : PROFILE_BOTTOM_BLOCK_CLASS;
+}
 
 function AppraiserProfileCard({ card }: { card: HomeAppraiserProfileCard }) {
   return (
@@ -32,12 +46,12 @@ function AppraiserProfileCard({ card }: { card: HomeAppraiserProfileCard }) {
           className="z-0 object-cover object-center"
         />
 
-        <div className={PROFILE_TOP_BLOCK_CLASS}>
+        <div className={profileTopBlockClass(card.id)}>
           <h3 className={PROFILE_NAME_CLASS}>{card.name}</h3>
           <p className={PROFILE_CATCHPHRASE_CLASS}>{card.catchphrase}</p>
         </div>
 
-        <div className={PROFILE_BOTTOM_BLOCK_CLASS}>
+        <div className={profileBottomBlockClass(card.id)}>
           <p className={PROFILE_DESCRIPTION_CLASS}>{card.description}</p>
         </div>
       </div>
