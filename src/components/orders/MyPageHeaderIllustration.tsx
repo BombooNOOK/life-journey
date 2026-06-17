@@ -10,9 +10,10 @@ export function MyPageHeaderIllustration() {
       src="/decorations/owl-sensei-my-page-header.png"
       alt=""
       aria-hidden
-      width={80}
-      height={80}
-      className="pointer-events-none h-14 w-14 shrink-0 select-none object-contain opacity-90 sm:h-20 sm:w-20"
+      width={682}
+      height={1024}
+      className="pointer-events-none h-[4.5rem] w-auto shrink-0 select-none object-contain opacity-95 sm:h-24"
+      priority
     />
   );
 }

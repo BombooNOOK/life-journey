@@ -11,7 +11,7 @@ export function MyPagePageHeader() {
         helpAriaLabel="マイページの説明"
         help={<p>プロフィールを選ぶと、日記や本棚へ進めます。</p>}
       />
-      <div className="hidden shrink-0 sm:block">
+      <div className="shrink-0 self-start">
         <MyPageHeaderIllustration />
       </div>
     </div>
