@@ -7,12 +7,12 @@ import Image from "next/image";
 export function MyPageHeaderIllustration() {
   return (
     <Image
-      src="/decorations/owl-sensei-my-page-header.png"
+      src="/decorations/owl-sensei-my-page-header.png?v=3"
       alt=""
       aria-hidden
-      width={682}
-      height={1024}
-      className="pointer-events-none h-[4.5rem] w-auto shrink-0 select-none object-contain opacity-95 sm:h-24"
+      width={610}
+      height={751}
+      className="h-[3.25rem] w-auto select-none object-contain sm:h-[4.25rem]"
       priority
     />
   );
