@@ -19,7 +19,7 @@ const navButtonClass =
   "block w-full rounded-2xl text-left transition-[transform,opacity] duration-75 active:scale-[0.99]";
 
 const textLinkClass =
-  "inline-flex min-h-[44px] items-center text-sm font-medium text-emerald-900 underline-offset-2 hover:underline";
+  "flex min-h-[44px] w-full items-center text-sm font-medium text-emerald-900 underline-offset-2 hover:underline";
 
 /** マイページトップ：選択中プロフィールで何をするか */
 export function MyPageMainActions({
@@ -108,7 +108,7 @@ export function MyPageMainActions({
             illustration={myPageActionIllustrations.bookshelf}
             title="本棚を見る"
             description="育ってきた本や記録を見ます"
-            tone="violet"
+            tone="shelf"
           />
         </ProfileSelectNavButton>
 

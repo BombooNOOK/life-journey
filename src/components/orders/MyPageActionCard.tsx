@@ -10,26 +10,32 @@ type Illustration = {
   alt?: string;
 };
 
-type Tone = "emerald" | "wood" | "violet";
+type Tone = "emerald" | "wood" | "shelf";
 
 const toneClass: Record<
   Tone,
-  { card: string; iconWrap: string; arrow: string }
+  { card: string; iconWrap: string; arrow: string; title: string; description: string }
 > = {
   emerald: {
     card: "border-emerald-200/90 bg-gradient-to-br from-[#f8f6f0] via-white to-emerald-50/50 hover:border-emerald-300 hover:shadow-md",
-    iconWrap: "bg-emerald-50/80 ring-emerald-100/80",
+    iconWrap: "bg-[#f8f6f0] ring-emerald-100/80",
     arrow: "group-hover:text-emerald-700",
+    title: "text-stone-900",
+    description: "text-stone-600",
   },
   wood: {
     card: "border-[#e5ddd0] bg-gradient-to-br from-[#faf7f1] via-white to-[#f3ebe0]/60 hover:border-[#d9cbb8] hover:shadow-md",
     iconWrap: "bg-[#f5efe6] ring-[#ebe2d6]",
     arrow: "group-hover:text-[#7a6248]",
+    title: "text-stone-900",
+    description: "text-stone-600",
   },
-  violet: {
-    card: "border-violet-200/80 bg-gradient-to-br from-[#f9f7fc] via-white to-violet-50/40 hover:border-violet-300 hover:shadow-md",
-    iconWrap: "bg-violet-50/70 ring-violet-100/80",
-    arrow: "group-hover:text-violet-800",
+  shelf: {
+    card: "border-[#CDBB9C] bg-[#FFFBF2] hover:border-[#bfa888] hover:shadow-md",
+    iconWrap: "bg-[#f7f0e4] ring-[#e8dcc8]",
+    arrow: "group-hover:text-[#6B5638]",
+    title: "text-[#6B5638]",
+    description: "text-[#6B5638]/80",
   },
 };
 
@@ -86,13 +92,15 @@ export function MyPageActionCard({
         <div className="min-w-0 flex-1">
           <p
             className={[
-              "text-base font-semibold leading-snug text-stone-900",
-              emphasis ? "text-emerald-950" : "",
+              "text-base font-semibold leading-snug",
+              emphasis ? "text-emerald-950" : palette.title,
             ].join(" ")}
           >
             {title}
           </p>
-          <p className="mt-1 text-sm leading-relaxed text-stone-600">{description}</p>
+          <p className={["mt-1 text-sm leading-relaxed", palette.description].join(" ")}>
+            {description}
+          </p>
         </div>
         {!disabled ? (
           <span
