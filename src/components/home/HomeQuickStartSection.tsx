@@ -1,8 +1,8 @@
 import Link from "next/link";
 
-import { heroCtaPrimaryClass, heroCtaSecondaryClass } from "@/components/home/heroCtaStyles";
+import { heroCtaPrimaryClass } from "@/components/home/heroCtaStyles";
 
-/** はじめての方へ：説明の直後に置く早速始める導線 */
+/** はじめての方へ：動画の直後に置く、やわらかい開始導線 */
 export function HomeQuickStartSection() {
   return (
     <section
@@ -11,20 +11,17 @@ export function HomeQuickStartSection() {
     >
       <h2
         id="home-quick-start-heading"
-        className="text-center text-sm font-semibold text-stone-800 sm:text-base"
+        className="text-center text-sm font-semibold leading-snug text-stone-800 sm:text-base"
       >
-        説明を読まずに、いますぐ始める
+        まずは、あなたのページをひらく
       </h2>
-      <div className="mx-auto mt-4 flex w-full max-w-sm flex-col gap-3">
+      <div className="mx-auto mt-4 flex w-full max-w-sm flex-col">
         <Link href="/order" className={heroCtaPrimaryClass}>
-          早速始める
-        </Link>
-        <Link href="/order" className={heroCtaSecondaryClass}>
           無料鑑定をはじめる
         </Link>
       </div>
-      <p className="mt-3 text-center text-[0.625rem] leading-relaxed text-stone-500">
-        お名前と生年月日だけで無料鑑定へ。下の説明はあとから読めます。
+      <p className="lj-read-desc mt-3 text-center leading-relaxed text-stone-600">
+        お名前と生年月日だけで、Life Journey Diaryをお試しできます。
       </p>
     </section>
   );

@@ -1,39 +1,29 @@
-import Link from "next/link";
+import { LjdIntroVideoPlayer } from "@/components/home/LjdIntroVideoPlayer";
 
-/** はじめての方へ：動画リンク仮置き（将来 Instagram リールへ差し替え） */
+/** はじめての方へ：LJD紹介動画（軽量MP4・タップ後に読み込み） */
 export function HomeVideoIntroSection() {
-  const videoHref = "https://www.instagram.com/";
-
   return (
     <section
       className="rounded-2xl border border-stone-200/75 bg-[#fffdf9] p-4 shadow-sm sm:p-5"
       aria-labelledby="home-video-intro-heading"
     >
-      <h2 id="home-video-intro-heading" className="sr-only">
-        動画で知る
-      </h2>
-      <a
-        href={videoHref}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="group block rounded-xl focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-700"
+      <h2
+        id="home-video-intro-heading"
+        className="text-base font-semibold leading-snug text-stone-900 sm:text-[1.05rem]"
       >
-        <div className="relative flex aspect-video items-center justify-center overflow-hidden rounded-xl border border-stone-200/80 bg-gradient-to-br from-[#f3ebe0] via-[#faf6ef] to-[#e8dfd0]">
-          <div
-            className="flex h-14 w-14 items-center justify-center rounded-full bg-white/90 text-xl text-emerald-800 shadow-md ring-1 ring-stone-200/80 transition group-hover:scale-105"
-            aria-hidden
-          >
-            ▶
-          </div>
-          <p className="absolute bottom-3 left-3 rounded-md bg-white/85 px-2 py-1 text-[10px] font-medium text-stone-500 ring-1 ring-stone-200/70">
-            準備中
-          </p>
-        </div>
-        <p className="mt-3 text-center text-sm font-semibold text-stone-800 group-hover:text-emerald-900">
-          LJDの流れを20秒で見る
-        </p>
-        <p className="mt-1 text-center text-xs text-stone-500">外部リンク（Instagramリール予定）</p>
-      </a>
+        LJDの流れを約20秒で見る
+      </h2>
+      <p className="lj-read-desc mt-2 leading-[1.55] text-stone-600 sm:mt-2.5 sm:leading-7">
+        何気ない日々が、一冊に育っていくイメージを短い動画でご紹介します。
+      </p>
+
+      <div className="mt-4 sm:mt-5">
+        <LjdIntroVideoPlayer />
+      </div>
+
+      <p className="mt-3 text-center text-[0.6875rem] leading-relaxed text-stone-500 sm:text-xs">
+        約20秒／ページ内で再生できます
+      </p>
     </section>
   );
 }
