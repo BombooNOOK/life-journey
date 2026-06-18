@@ -6,7 +6,6 @@ import { ReadingFontSizeControl } from "@/components/reading/ReadingFontSizeCont
 import {
   heroCtaContinueClass,
   heroCtaMicrocopyAboveButtonClass,
-  heroCtaMicrocopyGroupClass,
   heroFontSizeControlBandClass,
 } from "@/components/home/heroCtaStyles";
 import {
@@ -66,23 +65,21 @@ export function HomeEntranceSection() {
         </div>
 
         <div className="mt-6 flex flex-1 flex-col items-center justify-center pb-36 sm:mt-8 sm:pb-40">
-          <div className="flex w-full max-w-[min(20rem,90vw)] flex-col items-center sm:max-w-[21rem]">
-            <div className={heroCtaMicrocopyGroupClass}>
-              <p className={heroCtaMicrocopyAboveButtonClass}>
-                クレジットカード登録なし／2週間無料お試し
-              </p>
-            </div>
-            <div className="mt-2 w-full">
-              <HomeHeroSubNavLink variant="entrance" className="mx-auto" />
-            </div>
+          <div className="w-full max-w-[min(20rem,90vw)] sm:max-w-[21rem]">
+            <HomeHeroSubNavLink variant="entrance" className="mx-auto" />
           </div>
         </div>
 
-        <div className="absolute bottom-[3.75rem] left-4 z-20 sm:bottom-[4.25rem] sm:left-6">
-          <Link href="/about" className={newcomerButtonClass}>
-            <span className={newcomerLineClass}>はじめての方は</span>
-            <span className={`${newcomerLineClass} mt-0.5`}>こちら</span>
-          </Link>
+        <div className="absolute bottom-[5rem] left-7 z-20 sm:bottom-[5.75rem] sm:left-11">
+          <div className="flex flex-col items-start gap-1.5">
+            <p className={heroCtaMicrocopyAboveButtonClass}>
+              クレジットカード登録なし／2週間無料お試し
+            </p>
+            <Link href="/about" className={newcomerButtonClass}>
+              <span className={newcomerLineClass}>はじめての方は</span>
+              <span className={`${newcomerLineClass} mt-0.5`}>こちら</span>
+            </Link>
+          </div>
         </div>
 
         <div className={`relative z-20 ${heroFontSizeControlBandClass}`}>
