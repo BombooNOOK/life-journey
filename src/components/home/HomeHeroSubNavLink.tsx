@@ -23,9 +23,9 @@ const entranceContinueButtonClass = [
 const entranceContinueLeadClass =
   "whitespace-nowrap text-[0.625rem] font-medium leading-none text-white/85 sm:text-xs";
 
-/** 2行目：大きく（大きめ設定時は lj-reading-exempt でふつう相当に） */
+/** 2行目：大きく（html の読み物サイズに連動） */
 const entranceContinueSubClass =
-  "lj-reading-exempt whitespace-nowrap text-[clamp(1.125rem,1rem+1.5vw,1.375rem)] font-bold leading-tight text-white sm:text-xl";
+  "whitespace-nowrap text-[clamp(1.125rem,1rem+1.5vw,1.375rem)] font-bold leading-tight text-white sm:text-xl";
 
 type Props = {
   className?: string;
