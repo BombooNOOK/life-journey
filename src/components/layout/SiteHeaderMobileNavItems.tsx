@@ -47,11 +47,9 @@ export function SiteHeaderMobileNavItems({ onNavigate }: Props) {
         </OwlNavButton>
       ) : null}
 
-      {showGuestNav ? (
-        <Link href="/about" className={mobileMenuItemClass} onClick={onNavigate}>
-          はじめての方へ
-        </Link>
-      ) : null}
+      <Link href="/about" className={mobileMenuItemClass} onClick={onNavigate}>
+        Life Journey Diaryとは
+      </Link>
 
       <Link href="/guide" className={mobileMenuItemClass} onClick={onNavigate}>
         使い方
@@ -63,6 +61,18 @@ export function SiteHeaderMobileNavItems({ onNavigate }: Props) {
         onClick={onNavigate}
       >
         {MYPAGE_CONTACT_FORM_LABEL}
+      </Link>
+
+      <Link
+        href={
+          isLoggedIn
+            ? "/orders/settings/display"
+            : "/login?returnTo=%2Forders%2Fsettings%2Fdisplay"
+        }
+        className={mobileMenuItemClass}
+        onClick={onNavigate}
+      >
+        文字の大きさ
       </Link>
 
       {showAuthenticatedNav ? (

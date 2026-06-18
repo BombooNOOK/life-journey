@@ -1,3 +1,5 @@
+import { LjdIntroVideoPlayer } from "@/components/home/LjdIntroVideoPlayer";
+
 /** トップ：ヒーロー直下のサービス説明カード */
 export function HomeAboutSection() {
   return (
@@ -29,6 +31,13 @@ export function HomeAboutSection() {
           育てていくサービスです。
         </p>
       </div>
+
+      <div className="mt-5 sm:mt-6">
+        <LjdIntroVideoPlayer />
+      </div>
+      <p className="mt-2.5 text-center text-[0.6875rem] leading-relaxed text-stone-500 sm:text-xs">
+        約20秒／ページ内で再生できます
+      </p>
     </section>
   );
 }

@@ -8,7 +8,6 @@ import { HomeFaqSection } from "@/components/home/HomeFaqSection";
 import { HomeProductMockSection } from "@/components/home/HomeProductMockSection";
 import { HomeQuickStartSection } from "@/components/home/HomeQuickStartSection";
 import { HomeRecommendedForSection } from "@/components/home/HomeRecommendedForSection";
-import { HomeVideoIntroSection } from "@/components/home/HomeVideoIntroSection";
 
 export const metadata: Metadata = {
   title: "はじめての方へ",
@@ -28,8 +27,6 @@ export default function AboutPage() {
       </div>
 
       <HomeAboutSection />
-
-      <HomeVideoIntroSection />
 
       <HomeQuickStartSection />
 
