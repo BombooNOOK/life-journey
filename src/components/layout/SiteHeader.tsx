@@ -57,7 +57,7 @@ export function SiteHeader() {
   const closeMenu = () => setMenuOpen(false);
 
   return (
-    <header className="relative overflow-visible border-b border-stone-200 bg-white/80 backdrop-blur">
+    <header className="relative z-50 overflow-visible border-b border-stone-200 bg-white/80 backdrop-blur">
       <div className="mx-auto max-w-3xl overflow-visible px-4 py-3 sm:py-4">
         <div className="flex items-center justify-between gap-3">
           {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
@@ -136,13 +136,13 @@ export function SiteHeader() {
         <>
           <button
             type="button"
-            className="fixed inset-0 z-40 bg-stone-900/20 md:hidden"
+            className="fixed inset-0 z-[60] bg-stone-900/20 md:hidden"
             aria-label="メニューを閉じる"
             onClick={closeMenu}
           />
           <nav
             id={menuId}
-            className="absolute inset-x-4 top-full z-50 mt-1 overflow-hidden rounded-2xl border border-stone-200/90 bg-[#fffdf9] shadow-lg md:hidden"
+            className="absolute inset-x-4 top-full z-[70] mt-1 overflow-hidden rounded-2xl border border-stone-200/90 bg-[#fffdf9] shadow-lg md:hidden"
             aria-label="メインメニュー"
           >
             <SiteHeaderMobileNavItems onNavigate={closeMenu} />
