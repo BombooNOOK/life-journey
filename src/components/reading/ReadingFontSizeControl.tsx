@@ -1,5 +1,7 @@
 "use client";
 
+import { useRef } from "react";
+
 import {
   READING_FONT_SIZE_LABELS,
   READING_FONT_SIZES,
@@ -45,10 +47,17 @@ export function ReadingFontSizeControl({
   comfortable = false,
 }: Props) {
   const { readingFontSize, setReadingFontSize } = useReadingFontSize();
+  const rootRef = useRef<HTMLDivElement>(null);
+
+  function chooseSize(size: ReadingFontSize, button: HTMLButtonElement) {
+    setReadingFontSize(size, { scrollAnchor: rootRef.current });
+    button.blur();
+  }
 
   if (variant === "section") {
     return (
       <div
+        ref={rootRef}
         className={["w-full", className].filter(Boolean).join(" ")}
         role="group"
         aria-label="文字の大きさ"
@@ -63,7 +72,7 @@ export function ReadingFontSizeControl({
               key={size}
               type="button"
               aria-pressed={readingFontSize === size}
-              onClick={() => setReadingFontSize(size as ReadingFontSize)}
+              onClick={(event) => chooseSize(size as ReadingFontSize, event.currentTarget)}
               className={sectionOptionClass(readingFontSize === size)}
             >
               {READING_FONT_SIZE_LABELS[size]}
@@ -85,6 +94,7 @@ export function ReadingFontSizeControl({
 
   return (
     <div
+      ref={rootRef}
       className={[heroRootClass, className].filter(Boolean).join(" ")}
       role="group"
       aria-label="文字の大きさ"
@@ -101,7 +111,7 @@ export function ReadingFontSizeControl({
             <button
               type="button"
               aria-pressed={readingFontSize === size}
-              onClick={() => setReadingFontSize(size as ReadingFontSize)}
+              onClick={(event) => chooseSize(size as ReadingFontSize, event.currentTarget)}
               className={heroOptionClass(readingFontSize === size, comfortable)}
             >
               {READING_FONT_SIZE_LABELS[size]}

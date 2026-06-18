@@ -18,6 +18,7 @@ import {
   resolveInitialReadingFontSize,
   type ReadingFontSize,
 } from "@/lib/reading/readingFontSize";
+import { preserveScrollPosition } from "@/lib/reading/preserveScrollPosition";
 import {
   readReadingFontSizeFromStorage,
   writeReadingFontSizeToStorage,
@@ -25,8 +26,13 @@ import {
 
 type ReadingFontSizeContextValue = {
   readingFontSize: ReadingFontSize;
-  setReadingFontSize: (size: ReadingFontSize) => void;
+  setReadingFontSize: (size: ReadingFontSize, options?: SetReadingFontSizeOptions) => void;
   ready: boolean;
+};
+
+export type SetReadingFontSizeOptions = {
+  /** 文字サイズ変更後も画面上の位置を保つ基準要素 */
+  scrollAnchor?: HTMLElement | null;
 };
 
 const ReadingFontSizeContext = createContext<ReadingFontSizeContextValue | null>(null);
@@ -104,10 +110,19 @@ export function ReadingFontSizeProvider({ children }: { children: ReactNode }) {
   }, [authLoading, user?.email]);
 
   const setReadingFontSize = useCallback(
-    (size: ReadingFontSize) => {
-      setReadingFontSizeState(size);
-      writeReadingFontSizeToStorage(size);
-      applyReadingFontSizeToDocument(size);
+    (size: ReadingFontSize, options?: SetReadingFontSizeOptions) => {
+      const apply = () => {
+        setReadingFontSizeState(size);
+        writeReadingFontSizeToStorage(size);
+        applyReadingFontSizeToDocument(size);
+      };
+
+      const anchor = options?.scrollAnchor;
+      if (anchor) {
+        preserveScrollPosition(anchor, apply);
+      } else {
+        apply();
+      }
 
       if (persistTimerRef.current !== null) {
         window.clearTimeout(persistTimerRef.current);
