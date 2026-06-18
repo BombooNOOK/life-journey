@@ -33,7 +33,7 @@ const pcEntranceFontSizeBandClass =
 
 /** スマホ・タブレット縦：文字サイズ帯 */
 const mobileEntranceFontSizeBandClass =
-  "relative z-20 mx-auto mt-3 w-full max-w-[min(17rem,78vw)] border-t border-stone-300/40 px-1 pb-2.5 pt-2.5 sm:mt-4 sm:max-w-[17rem]";
+  "relative z-20 mx-auto w-full max-w-[min(17rem,78vw)] border-t border-stone-300/40 px-1 pb-2.5 pt-2.5 sm:max-w-[17rem]";
 
 function NewcomerBlock({ stacked = false }: { stacked?: boolean }) {
   return (
@@ -78,7 +78,7 @@ export function HomeEntranceSection() {
           width={682}
           height={1024}
           sizes="(max-width: 767px) 44vw, 280px"
-          className="pointer-events-none absolute bottom-4 right-[-0.5rem] z-[6] h-[11.5rem] w-auto max-w-[46%] object-contain object-bottom sm:bottom-5 sm:right-0 sm:h-[13.5rem] sm:max-w-[42%] lg:hidden"
+          className="pointer-events-none absolute bottom-10 right-[-0.5rem] z-[6] h-[11.5rem] w-auto max-w-[46%] object-contain object-bottom sm:bottom-12 sm:right-0 sm:h-[13.5rem] sm:max-w-[42%] lg:hidden"
           priority
         />
 
@@ -99,12 +99,14 @@ export function HomeEntranceSection() {
             </p>
           </div>
 
-          <div className="mt-auto flex flex-col pb-1 pt-8 sm:pt-10">
+          <div className="mt-[clamp(2.25rem,8vh,3.5rem)]">
             <div className={mobileEntranceCtaStackClass}>
               <HomeHeroSubNavLink variant="entrance" className="!max-w-none w-full" />
               <NewcomerBlock stacked />
             </div>
+          </div>
 
+          <div className="mt-auto pb-1 pt-6 sm:pt-8">
             <div className={mobileEntranceFontSizeBandClass}>
               <ReadingFontSizeControl variant="hero" comfortable />
             </div>
