@@ -5,19 +5,21 @@ import { HomeHeroSubNavLink } from "@/components/home/HomeHeroSubNavLink";
 import { ReadingFontSizeControl } from "@/components/reading/ReadingFontSizeControl";
 import {
   heroCtaAreaClass,
-  heroCtaAreaInnerClass,
   heroCtaButtonsGroupClass,
   heroCtaMicrocopyAboveButtonClass,
   heroCtaMicrocopyGroupClass,
   heroCtaPrimaryClass,
-  heroCtaStackClass,
-  heroCtaTextBandClass,
-  heroFontSizeControlBandClass,
 } from "@/components/home/heroCtaStyles";
 import {
   HOME_HERO_FOREST_BG_SRC,
   HOME_HERO_OWL_TEACHER_SRC,
 } from "@/lib/home/homeHeroAssets";
+
+const entranceCtaStackClass = "mx-auto flex w-full max-w-[18rem] flex-col items-stretch sm:max-w-[19rem]";
+const entranceCtaAreaInnerClass =
+  "flex min-h-full flex-col items-center justify-end gap-3 px-1 pb-3 pt-5 sm:gap-3.5 sm:px-6 sm:pb-4 sm:pt-7 md:pb-5 md:pt-9";
+const entranceFontSizeControlBandClass =
+  "mx-auto mt-1 w-full max-w-[18rem] border-t border-stone-300/40 px-1 pb-2.5 pt-2 sm:mt-1.5 sm:max-w-[19rem]";
 
 /** アプリ玄関：1画面の森ヒーロー＋2導線 */
 export function HomeEntranceSection() {
@@ -42,38 +44,36 @@ export function HomeEntranceSection() {
         aria-hidden
         width={682}
         height={1024}
-        sizes="(max-width: 640px) 46vw, 34vw"
-        className="pointer-events-none absolute bottom-[5.5rem] right-[-0.25rem] z-[6] h-[11.5rem] w-auto max-w-[46%] object-contain object-bottom sm:bottom-[6rem] sm:right-0 sm:h-[13.5rem] sm:max-w-[42%] md:bottom-[7rem] md:h-[18rem] md:max-w-[36%]"
+        sizes="(max-width: 640px) 44vw, 34vw"
+        className="pointer-events-none absolute bottom-0 right-[-0.5rem] z-[6] h-[11.5rem] w-auto max-w-[46%] object-contain object-bottom sm:right-0 sm:h-[13.5rem] sm:max-w-[42%] md:right-3 md:h-[19rem] md:max-w-[36%] lg:right-6 lg:h-[21.5rem]"
         priority
       />
 
       <div className="relative z-20 flex flex-1 flex-col px-4 pb-6 pt-8 sm:px-6 sm:pt-10">
         <div className="min-w-0 max-w-xl">
-          <p className="whitespace-nowrap text-[clamp(10px,2.5vw,12px)] font-medium leading-none tracking-[0.1em] text-emerald-800">
+          <p className="whitespace-nowrap text-[clamp(10px,2.5vw,13px)] font-medium leading-none tracking-[0.1em] text-emerald-800">
             Life Journey Diary
           </p>
-          <h1 className="mt-2 font-extrabold leading-none tracking-tight text-stone-900 text-[clamp(1.625rem,1rem+4.5vw,2.5rem)] sm:text-4xl">
-            <span className="flex flex-col gap-[0.12em]">
+          <h1 className="mt-2 font-extrabold leading-[1.02] tracking-tight text-stone-900 text-[clamp(2rem,1.1rem+6vw,3.25rem)] sm:text-[2.75rem] md:text-5xl">
+            <span className="flex flex-col gap-[0.1em]">
               <span className="block whitespace-nowrap">数字で紡ぐ、</span>
               <span className="block">人生の旅</span>
             </span>
           </h1>
-          <p className="lj-read-desc mt-3 whitespace-pre-line font-semibold leading-[1.45] text-emerald-900 sm:mt-4 sm:text-lg sm:leading-8">
+          <p className="lj-read-desc mt-3 whitespace-pre-line text-[clamp(1rem,0.9rem+1.2vw,1.375rem)] font-semibold leading-[1.5] text-emerald-900 sm:mt-4 sm:text-xl sm:leading-8 md:text-[1.35rem]">
             数秘術鑑定からはじまる、{"\n"}あなただけの人生記録ノート。
           </p>
         </div>
 
         <div className={`mt-auto ${heroCtaAreaClass}`}>
-          <div className={heroCtaAreaInnerClass}>
-            <div className={heroCtaTextBandClass}>
+          <div className={entranceCtaAreaInnerClass}>
+            <div className={entranceCtaStackClass}>
               <div className={heroCtaMicrocopyGroupClass}>
                 <p className={heroCtaMicrocopyAboveButtonClass}>
                   クレジットカード登録なし／2週間無料お試し
                 </p>
               </div>
-            </div>
-            <div className={heroCtaStackClass}>
-              <div className={heroCtaButtonsGroupClass}>
+              <div className={`mt-2 ${heroCtaButtonsGroupClass}`}>
                 <Link href="/about" className={heroCtaPrimaryClass}>
                   はじめての方はこちら
                 </Link>
@@ -83,7 +83,7 @@ export function HomeEntranceSection() {
           </div>
         </div>
 
-        <div className={`relative z-10 ${heroFontSizeControlBandClass}`}>
+        <div className={`relative z-10 ${entranceFontSizeControlBandClass}`}>
           <ReadingFontSizeControl variant="hero" />
         </div>
       </div>
