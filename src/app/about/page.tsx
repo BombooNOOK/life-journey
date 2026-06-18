@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 import { HomeAboutSection } from "@/components/home/HomeAboutSection";
-import { AboutReadingFontSizeBand } from "@/components/home/AboutReadingFontSizeBand";
+import { GuestReadingFontSizeBand } from "@/components/reading/GuestReadingFontSizeBand";
 import { HomeAppraiserProfilesSection } from "@/components/home/HomeAppraiserProfilesSection";
 import { HomeClosingSection } from "@/components/home/HomeClosingSection";
 import { HomeFaqSection } from "@/components/home/HomeFaqSection";
@@ -41,7 +41,7 @@ export default function AboutPage() {
 
       <HomeClosingSection />
 
-      <AboutReadingFontSizeBand />
+      <GuestReadingFontSizeBand pageKey="about" />
     </div>
   );
 }

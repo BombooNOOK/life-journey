@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 
+import { GuestReadingFontSizeBand } from "@/components/reading/GuestReadingFontSizeBand";
 import { LinkToDiaryGuide } from "@/components/guide/GuideCrossLinks";
 import { PageTitleWithAccent } from "@/components/ui/PageTitleWithAccent";
 import { SoftIllustrationAccent } from "@/components/ui/SoftIllustrationAccent";
@@ -53,14 +54,16 @@ function GuideAppLink({ href, label }: { href: string; label: string }) {
 
 export default function GuidePage() {
   return (
-    <div className="space-y-6">
-      <PageTitleWithAccent
-        tone="guide"
-        title="Life Journey Diaryの使い方"
-        backLink={{ href: "/orders", label: "← マイページ" }}
-        description={`${APP_DISPLAY_NAME} で、無料鑑定から日記・製本までの流れをまとめました。実際の画面操作に沿った内容です。`}
-        cornerAccents={["book", "leaf"]}
-      />
+    <div className="home-read-scope space-y-6">
+      <div id="guide-top" className="scroll-mt-24">
+        <PageTitleWithAccent
+          tone="guide"
+          title="Life Journey Diaryの使い方"
+          backLink={{ href: "/orders", label: "← マイページ" }}
+          description={`${APP_DISPLAY_NAME} で、無料鑑定から日記・製本までの流れをまとめました。実際の画面操作に沿った内容です。`}
+          cornerAccents={["book", "leaf"]}
+        />
+      </div>
 
       <ol className="space-y-3">
         <li>
@@ -155,6 +158,8 @@ export default function GuidePage() {
       </div>
 
       <LinkToDiaryGuide />
+
+      <GuestReadingFontSizeBand pageKey="guide" />
     </div>
   );
 }

@@ -3,6 +3,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import { GuestContactSection } from "@/components/contact/GuestContactSection";
+import { GuestReadingFontSizeBand } from "@/components/reading/GuestReadingFontSizeBand";
 import { getViewerEmailFromCookie } from "@/lib/auth/viewer";
 import { MYPAGE_CONTACT_FORM_PATH } from "@/lib/legal/legalDocumentLinks";
 
@@ -19,7 +20,7 @@ export default async function ContactPage() {
 
   return (
     <div className="home-read-scope space-y-4">
-      <div>
+      <div id="contact-top" className="scroll-mt-24">
         <Link href="/about" className="text-sm text-stone-600 hover:text-stone-900">
           ← はじめての方へ
         </Link>
@@ -30,6 +31,8 @@ export default async function ContactPage() {
       </div>
 
       <GuestContactSection />
+
+      <GuestReadingFontSizeBand pageKey="contact" />
     </div>
   );
 }
