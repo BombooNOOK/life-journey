@@ -1,12 +1,14 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import { KanteiTodayHintSection } from "@/components/orders/KanteiTodayHintSection";
 import { getViewerEmailFromCookie, normalizeEmail } from "@/lib/auth/viewer";
 import { prisma } from "@/lib/db";
-import { numerologyWithRefreshedLifePath } from "@/lib/order/numerologyDisplay";
+import { buildTodayHintContent } from "@/lib/kantei/todayHintContent";
 import { personalYearCycleEntry } from "@/lib/numerology/data/personalYearCycleData";
 import { personalYearNumber } from "@/lib/numerology/personalYearMonth";
 import { maturityNumberFromNumerology } from "@/lib/numerology/reduce";
+import { numerologyWithRefreshedLifePath } from "@/lib/order/numerologyDisplay";
 
 export const dynamic = "force-dynamic";
 
@@ -78,6 +80,11 @@ export default async function OrderDetailPage({ params }: Props) {
     );
   }
 
+  const todayHint = buildTodayHintContent({
+    orderId: order.id,
+    birthMonth: order.birthMonth,
+    birthDay: order.birthDay,
+  });
   const maturityNumber = maturityNumberFromNumerology(numerology);
   const currentYear = new Date().getFullYear();
   const yearCycle = personalYearNumber(order.birthMonth, order.birthDay, currentYear);
@@ -90,16 +97,31 @@ export default async function OrderDetailPage({ params }: Props) {
         <Link href="/orders" className="text-sm text-stone-600 hover:text-stone-900">
           ← マイページ
         </Link>
-        <h1 className="mt-2 text-2xl font-bold text-stone-900">{order.fullNameDisplay} さんの鑑定結果</h1>
+        <h1 className="mt-2 text-2xl font-bold text-stone-900">{order.fullNameDisplay} さんの鑑定</h1>
         <p className="mt-1 text-sm text-stone-600">
-          あなたのコアナンバーと、今年の流れをまとめました。
+          今日のヒントから、今年のテーマやコアナンバーまで、あなたの鑑定をまとめて見られます。
         </p>
         <p className="mt-2 text-xs text-stone-500">
           保存・製本・修正は、本棚の「概要」から行えます。
         </p>
       </div>
 
-      <section className="rounded-2xl border border-amber-100 bg-gradient-to-br from-white to-amber-50 p-5 shadow-sm">
+      <KanteiTodayHintSection hint={todayHint} />
+
+      <section
+        id="year-theme"
+        className="scroll-mt-6 rounded-xl border border-stone-200 bg-white p-5 shadow-sm"
+      >
+        <h2 className="text-lg font-semibold text-stone-900">今年のテーマ</h2>
+        <p className="mt-2 text-sm text-stone-500">パーソナルイヤー {yearCycle}</p>
+        <p className="mt-1 text-base font-medium text-stone-900">{yearTheme.theme}</p>
+        <p className="mt-2 whitespace-pre-line text-sm leading-6 text-stone-600">{yearTheme.subtitle}</p>
+      </section>
+
+      <section
+        id="core-numbers"
+        className="scroll-mt-6 rounded-2xl border border-amber-100 bg-gradient-to-br from-white to-amber-50 p-5 shadow-sm"
+      >
         <h2 className="flex items-center gap-2 text-lg font-semibold text-stone-900">
           あなたのコアナンバー
           <span aria-hidden>🦉</span>
@@ -114,27 +136,23 @@ export default async function OrderDetailPage({ params }: Props) {
         </div>
       </section>
 
-      <section className="rounded-xl border border-stone-200 bg-white p-5 shadow-sm">
-        <h2 className="text-lg font-semibold text-stone-900">今年のテーマ</h2>
-        <p className="mt-2 text-sm text-stone-500">パーソナルイヤー {yearCycle}</p>
-        <p className="mt-1 text-base font-medium text-stone-900">{yearTheme.theme}</p>
-        <p className="mt-2 whitespace-pre-line text-sm leading-6 text-stone-600">{yearTheme.subtitle}</p>
-      </section>
-
-      <section className="rounded-xl border border-amber-200/80 bg-gradient-to-br from-amber-50/80 via-white to-white p-5 shadow-sm">
+      <section
+        id="how-to-use"
+        className="scroll-mt-6 rounded-xl border border-amber-200/80 bg-gradient-to-br from-amber-50/80 via-white to-white p-5 shadow-sm"
+      >
         <h2 className="text-lg font-semibold text-stone-900">鑑定結果の活かし方</h2>
         <p className="mt-2 text-sm leading-6 text-stone-600">
-          コアナンバーと今年のテーマを見ながら、気になる章から読み進めるのがおすすめです。
+          今日のヒントを手がかりに、今年のテーマやコアナンバーをゆっくり味わってみてください。気になるところから、あなたのペースで読み返せます。
         </p>
         <div className="mt-4 rounded-lg border border-amber-100 bg-amber-50/60 px-4 py-3">
           <p className="text-sm leading-relaxed text-stone-700">
-            今日の数字から、今のあなたに合う小さなメッセージを表示します。
+            今日の言葉や気づきは、日記に残すとあとから振り返りやすくなります。
           </p>
           <Link
-            href={`/orders/${order.id}/today`}
+            href="/orders/calendar"
             className="mt-3 inline-flex min-h-[42px] items-center justify-center rounded-lg border border-amber-400 bg-white px-5 py-2.5 text-sm font-semibold text-amber-950 shadow-sm transition hover:border-amber-500 hover:bg-amber-50"
           >
-            今日のヒントを見る
+            日記を書く
           </Link>
         </div>
         <div className="mt-4">
