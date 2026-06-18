@@ -1,31 +1,8 @@
-import Link from "next/link";
 import type { ReactNode } from "react";
 
-type MenuRowProps = {
-  href: string;
-  label: string;
-  icon: ReactNode;
-};
+import { MyPageManageMenuRow } from "@/components/orders/MyPageManageMenuRow";
 
-const rowClass =
-  "flex min-h-[48px] items-center gap-3 px-3.5 py-2.5 text-left transition hover:bg-[#f7f3eb]/80 active:bg-[#f3ede3]/90";
-
-const iconWrapClass =
-  "flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#efe6d8] text-[13px] font-medium text-[#7a6248] ring-1 ring-[#e3d6c4]/80";
-
-export function MyPageManageMenuRow({ href, label, icon }: MenuRowProps) {
-  return (
-    <Link href={href} className={rowClass}>
-      <span className={iconWrapClass} aria-hidden>
-        {icon}
-      </span>
-      <span className="min-w-0 flex-1 text-sm font-medium text-[#5c4a36]">{label}</span>
-      <span className="shrink-0 text-sm text-[#d4c4b0]" aria-hidden>
-        →
-      </span>
-    </Link>
-  );
-}
+export { MyPageManageMenuRow } from "@/components/orders/MyPageManageMenuRow";
 
 type SectionProps = {
   title: string;
@@ -64,24 +41,54 @@ export function MyPageManageHub({ activeProfileId }: HubProps) {
         title="設定"
         description="プロフィールや表示の設定を変更できます"
       >
-        <MyPageManageMenuRow href="/orders/settings/add-profile" label="プロフィールを追加" icon="＋" />
-        <MyPageManageMenuRow href={profileRenameHref} label="プロフィール名を変更" icon="✎" />
-        <MyPageManageMenuRow href="/orders/settings/display" label="表示設定" icon="Aa" />
-        <MyPageManageMenuRow href="/orders/settings/backup" label="バックアップ作成" icon="↓" />
+        <MyPageManageMenuRow
+          href="/orders/settings/add-profile"
+          label="プロフィールを追加"
+          icon="＋"
+          loadingLabel="プロフィール追加を開いています…"
+        />
+        <MyPageManageMenuRow
+          href={profileRenameHref}
+          label="プロフィール名を変更"
+          icon="✎"
+          loadingLabel="プロフィール名の変更を開いています…"
+        />
+        <MyPageManageMenuRow
+          href="/orders/settings/display"
+          label="表示設定"
+          icon="Aa"
+          loadingLabel="表示設定を開いています…"
+        />
+        <MyPageManageMenuRow
+          href="/orders/settings/backup"
+          label="バックアップ作成"
+          icon="↓"
+          loadingLabel="バックアップ作成を開いています…"
+        />
       </MyPageManageMenuSection>
 
       <MyPageManageMenuSection
         title="アカウント情報"
         description="登録情報や利用状況を確認できます"
       >
-        <MyPageManageMenuRow href="/orders/account" label="アカウント情報" icon="◎" />
+        <MyPageManageMenuRow
+          href="/orders/account"
+          label="アカウント情報"
+          icon="◎"
+          loadingLabel="アカウント情報を開いています…"
+        />
       </MyPageManageMenuSection>
 
       <MyPageManageMenuSection
         title="お問い合わせ履歴"
         description="これまでのお問い合わせを確認できます"
       >
-        <MyPageManageMenuRow href="/orders/support" label="お問い合わせ履歴" icon="✉" />
+        <MyPageManageMenuRow
+          href="/orders/support"
+          label="お問い合わせ履歴"
+          icon="✉"
+          loadingLabel="お問い合わせ履歴を開いています…"
+        />
       </MyPageManageMenuSection>
     </div>
   );

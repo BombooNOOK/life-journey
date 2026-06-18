@@ -27,10 +27,30 @@ export default async function MyPageSettingsIndexPage() {
       />
 
       <MyPageManageMenuSection title="項目を選ぶ" description="変更したい設定を選んでください">
-        <MyPageManageMenuRow href="/orders/settings/add-profile" label="プロフィールを追加" icon="＋" />
-        <MyPageManageMenuRow href={renameHref} label="プロフィール名を変更" icon="✎" />
-        <MyPageManageMenuRow href="/orders/settings/display" label="表示設定" icon="Aa" />
-        <MyPageManageMenuRow href="/orders/settings/backup" label="バックアップ作成" icon="↓" />
+        <MyPageManageMenuRow
+          href="/orders/settings/add-profile"
+          label="プロフィールを追加"
+          icon="＋"
+          loadingLabel="プロフィール追加を開いています…"
+        />
+        <MyPageManageMenuRow
+          href={renameHref}
+          label="プロフィール名を変更"
+          icon="✎"
+          loadingLabel="プロフィール名の変更を開いています…"
+        />
+        <MyPageManageMenuRow
+          href="/orders/settings/display"
+          label="表示設定"
+          icon="Aa"
+          loadingLabel="表示設定を開いています…"
+        />
+        <MyPageManageMenuRow
+          href="/orders/settings/backup"
+          label="バックアップ作成"
+          icon="↓"
+          loadingLabel="バックアップ作成を開いています…"
+        />
       </MyPageManageMenuSection>
 
       <p>

@@ -89,12 +89,6 @@ export function ProfileAddCard({
           <div className="mt-3 space-y-3 lj-read-desc text-stone-700">
             <p>現在のプランではプロフィールを追加できません。</p>
             <p>プロフィールを増やすには、プラン変更が必要です。</p>
-            <Link
-              href="/plans"
-              className="inline-flex rounded-lg border border-violet-300 bg-violet-50 px-4 py-2 text-sm font-medium text-violet-950 transition hover:bg-violet-100"
-            >
-              プランを見る
-            </Link>
           </div>
         )
       ) : (
@@ -121,6 +115,15 @@ export function ProfileAddCard({
           {error ? <p className="mt-2 text-xs text-red-700">{error}</p> : null}
         </>
       )}
+
+      <div className="mt-4 border-t border-stone-100 pt-3">
+        <Link
+          href="/plans"
+          className="inline-flex min-h-[44px] items-center rounded-lg border border-violet-300 bg-violet-50 px-4 py-2 text-sm font-medium text-violet-950 transition hover:bg-violet-100"
+        >
+          プラン変更 →
+        </Link>
+      </div>
 
       <div className="mt-4 border-t border-stone-100 pt-3 lj-read-caption leading-relaxed text-stone-500">
         <p>プロフィールの削除は、誤削除防止のため運営側で対応しています。</p>
