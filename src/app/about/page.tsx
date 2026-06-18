@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 import { HomeAboutSection } from "@/components/home/HomeAboutSection";
+import { HomeOwlNavigatorIntroSection } from "@/components/home/HomeOwlNavigatorIntroSection";
 import { GuestReadingFontSizeBand } from "@/components/reading/GuestReadingFontSizeBand";
 import { HomeAppraiserProfilesSection } from "@/components/home/HomeAppraiserProfilesSection";
 import { HomeClosingSection } from "@/components/home/HomeClosingSection";
@@ -28,6 +29,8 @@ export default function AboutPage() {
       </div>
 
       <HomeAboutSection />
+
+      <HomeOwlNavigatorIntroSection />
 
       <HomeQuickStartSection />
 
