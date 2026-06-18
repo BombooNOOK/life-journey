@@ -1,7 +1,6 @@
 "use client";
 
-import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 
 import { useFirebaseAuth } from "@/components/auth/FirebaseAuthProvider";
 import { LoggedInStatusBadge } from "@/components/auth/LoggedInStatusBadge";
@@ -23,11 +22,59 @@ type Props = {
   onNavigate: () => void;
 };
 
+function navigateFromMobileMenu(href: string, router: ReturnType<typeof useRouter>) {
+  const targetUrl = new URL(href, window.location.origin);
+  const currentPath = window.location.pathname;
+  const currentSearch = window.location.search;
+
+  const samePath = targetUrl.pathname === currentPath;
+  const sameSearch = targetUrl.search === currentSearch;
+  const sameHash = targetUrl.hash === window.location.hash;
+
+  if (samePath && sameSearch && sameHash) {
+    return;
+  }
+
+  // /login 上で returnTo だけ変えるとき、Next Link は反応しないことがある
+  if (samePath && targetUrl.pathname === "/login") {
+    window.location.assign(href);
+    return;
+  }
+
+  router.push(href);
+}
+
+function MobileMenuNavButton({
+  href,
+  children,
+  router,
+}: {
+  href: string;
+  children: React.ReactNode;
+  router: ReturnType<typeof useRouter>;
+}) {
+  return (
+    <button
+      type="button"
+      className={mobileMenuItemClass}
+      onClick={() => navigateFromMobileMenu(href, router)}
+    >
+      {children}
+    </button>
+  );
+}
+
 /** スマホメニュー内のナビ項目（デスクトップと同内容） */
 export function SiteHeaderMobileNavItems({ onNavigate }: Props) {
   const router = useRouter();
+  const pathname = usePathname();
   const { signOutUser } = useFirebaseAuth();
   const { isLoggedIn, showGuestNav, showAuthenticatedNav } = useClientAuthNavState();
+
+  const contactHref = isLoggedIn ? MYPAGE_CONTACT_FORM_PATH : MYPAGE_CONTACT_FORM_LOGIN_PATH;
+  const displayHref = isLoggedIn
+    ? "/orders/settings/display"
+    : "/login?returnTo=%2Forders%2Fsettings%2Fdisplay";
 
   return (
     <div className="flex flex-col gap-0.5 p-2">
@@ -47,31 +94,27 @@ export function SiteHeaderMobileNavItems({ onNavigate }: Props) {
         </OwlNavButton>
       ) : null}
 
-      <Link href="/about" className={mobileMenuItemClass}>
-        Life Journey Diaryとは
-      </Link>
+      {pathname === "/about" ? (
+        <span className={`${mobileMenuItemClass} text-stone-400`} aria-current="page">
+          Life Journey Diaryとは
+        </span>
+      ) : (
+        <MobileMenuNavButton href="/about" router={router}>
+          Life Journey Diaryとは
+        </MobileMenuNavButton>
+      )}
 
-      <Link href="/guide" className={mobileMenuItemClass}>
+      <MobileMenuNavButton href="/guide" router={router}>
         使い方
-      </Link>
+      </MobileMenuNavButton>
 
-      <Link
-        href={isLoggedIn ? MYPAGE_CONTACT_FORM_PATH : MYPAGE_CONTACT_FORM_LOGIN_PATH}
-        className={mobileMenuItemClass}
-      >
+      <MobileMenuNavButton href={contactHref} router={router}>
         {MYPAGE_CONTACT_FORM_LABEL}
-      </Link>
+      </MobileMenuNavButton>
 
-      <Link
-        href={
-          isLoggedIn
-            ? "/orders/settings/display"
-            : "/login?returnTo=%2Forders%2Fsettings%2Fdisplay"
-        }
-        className={mobileMenuItemClass}
-      >
+      <MobileMenuNavButton href={displayHref} router={router}>
         文字の大きさ
-      </Link>
+      </MobileMenuNavButton>
 
       {showAuthenticatedNav ? (
         <button
@@ -91,9 +134,15 @@ export function SiteHeaderMobileNavItems({ onNavigate }: Props) {
       ) : null}
 
       {showGuestNav ? (
-        <Link href="/login?returnTo=%2Forders" className={mobileMenuItemClass}>
-          ログイン
-        </Link>
+        pathname === "/login" ? (
+          <span className={`${mobileMenuItemClass} text-stone-400`} aria-current="page">
+            ログイン
+          </span>
+        ) : (
+          <MobileMenuNavButton href="/login?returnTo=%2Forders" router={router}>
+            ログイン
+          </MobileMenuNavButton>
+        )
       ) : null}
     </div>
   );

@@ -1,8 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { useEffect, useId, useState } from "react";
+import { usePathname, useSearchParams } from "next/navigation";
+import { Suspense, useEffect, useId, useLayoutEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 
 import { AuthNav } from "@/components/auth/AuthNav";
 import { LoggedInStatusBadge } from "@/components/auth/LoggedInStatusBadge";
@@ -36,14 +37,51 @@ function MenuIcon({ open }: { open: boolean }) {
 }
 
 export function SiteHeader() {
+  return (
+    <Suspense
+      fallback={
+        <header className="border-b border-stone-200 bg-white/80 backdrop-blur">
+          <div className="mx-auto max-w-3xl px-4 py-3 sm:py-4">
+            <span className="font-semibold text-stone-800 text-base sm:text-lg">Life Journey Diary</span>
+          </div>
+        </header>
+      }
+    >
+      <SiteHeaderInner />
+    </Suspense>
+  );
+}
+
+function SiteHeaderInner() {
   const menuId = useId();
   const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const headerRef = useRef<HTMLElement>(null);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [menuTop, setMenuTop] = useState(56);
+  const [mounted, setMounted] = useState(false);
   const { isLoggedIn, showGuestNav, showAuthenticatedNav } = useClientAuthNavState();
 
   useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
     setMenuOpen(false);
-  }, [pathname]);
+  }, [pathname, searchParams]);
+
+  useLayoutEffect(() => {
+    if (!menuOpen || !headerRef.current) return;
+
+    const updateTop = () => {
+      const rect = headerRef.current?.getBoundingClientRect();
+      if (rect) setMenuTop(rect.bottom + 4);
+    };
+
+    updateTop();
+    window.addEventListener("resize", updateTop);
+    return () => window.removeEventListener("resize", updateTop);
+  }, [menuOpen, showAuthenticatedNav]);
 
   useEffect(() => {
     if (!menuOpen) return;
@@ -56,8 +94,34 @@ export function SiteHeader() {
 
   const closeMenu = () => setMenuOpen(false);
 
+  const mobileMenu =
+    menuOpen && mounted
+      ? createPortal(
+          <>
+            <button
+              type="button"
+              className="fixed inset-0 z-[200] bg-stone-900/20 md:hidden"
+              aria-label="メニューを閉じる"
+              onClick={closeMenu}
+            />
+            <nav
+              id={menuId}
+              style={{ top: menuTop }}
+              className="fixed inset-x-4 z-[210] overflow-hidden rounded-2xl border border-stone-200/90 bg-[#fffdf9] shadow-lg md:hidden"
+              aria-label="メインメニュー"
+            >
+              <SiteHeaderMobileNavItems onNavigate={closeMenu} />
+            </nav>
+          </>,
+          document.body,
+        )
+      : null;
+
   return (
-    <header className="relative z-50 overflow-visible border-b border-stone-200 bg-white/80 backdrop-blur">
+    <header
+      ref={headerRef}
+      className="relative z-50 overflow-visible border-b border-stone-200 bg-white/80 backdrop-blur"
+    >
       <div className="mx-auto max-w-3xl overflow-visible px-4 py-3 sm:py-4">
         <div className="flex items-center justify-between gap-3">
           {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
@@ -132,24 +196,7 @@ export function SiteHeader() {
         ) : null}
       </div>
 
-      {menuOpen ? (
-        <>
-          <button
-            type="button"
-            className="fixed inset-0 z-[60] bg-stone-900/20 md:hidden"
-            aria-label="メニューを閉じる"
-            onClick={closeMenu}
-          />
-          <nav
-            id={menuId}
-            className="absolute inset-x-4 top-full z-[70] mt-1 overflow-hidden rounded-2xl border border-stone-200/90 bg-[#fffdf9] shadow-lg md:hidden"
-            aria-label="メインメニュー"
-            onClick={(event) => event.stopPropagation()}
-          >
-            <SiteHeaderMobileNavItems onNavigate={closeMenu} />
-          </nav>
-        </>
-      ) : null}
+      {mobileMenu}
     </header>
   );
 }
