@@ -36,7 +36,7 @@ export function MyPageManageHub({ activeProfileId }: HubProps) {
     : "/orders/settings/add-profile";
 
   return (
-    <div className="mx-auto w-full max-w-md space-y-5 border-t border-stone-200/80 pt-5">
+    <div className="w-full space-y-5 border-t border-stone-200/80 pt-5">
       <MyPageManageMenuSection
         title="設定"
         description="プロフィールや表示の設定を変更できます"
