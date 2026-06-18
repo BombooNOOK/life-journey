@@ -12,7 +12,6 @@ import { OwlNavButton } from "@/components/ui/OwlNavButton";
 import { useClientAuthNavState } from "@/hooks/useClientAuthNavState";
 import {
   MYPAGE_CONTACT_FORM_LABEL,
-  MYPAGE_CONTACT_FORM_LOGIN_PATH,
   MYPAGE_CONTACT_FORM_PATH,
 } from "@/lib/legal/legalDocumentLinks";
 
@@ -60,7 +59,7 @@ function SiteHeaderInner() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [menuTop, setMenuTop] = useState(56);
   const [mounted, setMounted] = useState(false);
-  const { isLoggedIn, showGuestNav, showAuthenticatedNav } = useClientAuthNavState();
+  const { showGuestNav, showAuthenticatedNav } = useClientAuthNavState();
 
   useEffect(() => {
     setMounted(true);
@@ -174,15 +173,16 @@ function SiteHeaderInner() {
             <Link href="/guide" className={navLinkClass}>
               使い方
             </Link>
-            <span className={navSepClass} aria-hidden>
-              |
-            </span>
-            <Link
-              href={isLoggedIn ? MYPAGE_CONTACT_FORM_PATH : MYPAGE_CONTACT_FORM_LOGIN_PATH}
-              className={navLinkClass}
-            >
-              {MYPAGE_CONTACT_FORM_LABEL}
-            </Link>
+            {showAuthenticatedNav ? (
+              <>
+                <span className={navSepClass} aria-hidden>
+                  |
+                </span>
+                <Link href={MYPAGE_CONTACT_FORM_PATH} className={navLinkClass}>
+                  {MYPAGE_CONTACT_FORM_LABEL}
+                </Link>
+              </>
+            ) : null}
             <div className="flex shrink-0 items-center justify-end overflow-visible">
               <AuthNav />
             </div>

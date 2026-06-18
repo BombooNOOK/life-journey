@@ -8,7 +8,6 @@ import { OwlNavButton } from "@/components/ui/OwlNavButton";
 import { useClientAuthNavState } from "@/hooks/useClientAuthNavState";
 import {
   MYPAGE_CONTACT_FORM_LABEL,
-  MYPAGE_CONTACT_FORM_LOGIN_PATH,
   MYPAGE_CONTACT_FORM_PATH,
 } from "@/lib/legal/legalDocumentLinks";
 
@@ -69,12 +68,7 @@ export function SiteHeaderMobileNavItems({ onNavigate }: Props) {
   const router = useRouter();
   const pathname = usePathname();
   const { signOutUser } = useFirebaseAuth();
-  const { isLoggedIn, showGuestNav, showAuthenticatedNav } = useClientAuthNavState();
-
-  const contactHref = isLoggedIn ? MYPAGE_CONTACT_FORM_PATH : MYPAGE_CONTACT_FORM_LOGIN_PATH;
-  const displayHref = isLoggedIn
-    ? "/orders/settings/display"
-    : "/login?returnTo=%2Forders%2Fsettings%2Fdisplay";
+  const { showGuestNav, showAuthenticatedNav } = useClientAuthNavState();
 
   return (
     <div className="flex flex-col gap-0.5 p-2">
@@ -108,13 +102,43 @@ export function SiteHeaderMobileNavItems({ onNavigate }: Props) {
         使い方
       </MobileMenuNavButton>
 
-      <MobileMenuNavButton href={contactHref} router={router}>
-        {MYPAGE_CONTACT_FORM_LABEL}
-      </MobileMenuNavButton>
+      {showAuthenticatedNav ? (
+        <MobileMenuNavButton href={MYPAGE_CONTACT_FORM_PATH} router={router}>
+          {MYPAGE_CONTACT_FORM_LABEL}
+        </MobileMenuNavButton>
+      ) : null}
 
-      <MobileMenuNavButton href={displayHref} router={router}>
-        文字の大きさ
-      </MobileMenuNavButton>
+      {showAuthenticatedNav ? (
+        <MobileMenuNavButton href="/orders/settings/display" router={router}>
+          文字の大きさ
+        </MobileMenuNavButton>
+      ) : null}
+
+      {showGuestNav && pathname === "/about" ? (
+        <button
+          type="button"
+          className={mobileMenuItemClass}
+          onClick={() => {
+            onNavigate();
+            document.getElementById("about-font-size")?.scrollIntoView({ behavior: "smooth", block: "center" });
+          }}
+        >
+          文字の大きさ
+        </button>
+      ) : null}
+
+      {showGuestNav && pathname !== "/about" ? (
+        <button
+          type="button"
+          className={mobileMenuItemClass}
+          onClick={() => {
+            onNavigate();
+            window.location.assign("/about#about-font-size");
+          }}
+        >
+          文字の大きさ
+        </button>
+      ) : null}
 
       {showAuthenticatedNav ? (
         <button
