@@ -53,6 +53,8 @@ type Props = {
   tone?: Tone;
   emphasis?: boolean;
   disabled?: boolean;
+  /** カード内の控えめな補足ラベル（例: 毎日更新） */
+  supplementLabel?: string;
   className?: string;
   children?: ReactNode;
 };
@@ -65,6 +67,7 @@ export function MyPageActionCard({
   tone = "emerald",
   emphasis = false,
   disabled = false,
+  supplementLabel,
   className = "",
   children,
 }: Props) {
@@ -97,14 +100,21 @@ export function MyPageActionCard({
           />
         </div>
         <div className="min-w-0 flex-1">
-          <p
-            className={[
-              "text-base font-semibold leading-snug",
-              emphasis ? "text-emerald-950" : palette.title,
-            ].join(" ")}
-          >
-            {title}
-          </p>
+          <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
+            <p
+              className={[
+                "text-base font-semibold leading-snug",
+                emphasis ? "text-emerald-950" : palette.title,
+              ].join(" ")}
+            >
+              {title}
+            </p>
+            {supplementLabel ? (
+              <span className="rounded-full bg-white/70 px-1.5 py-0.5 text-[10px] font-medium leading-none text-stone-500 ring-1 ring-stone-200/70">
+                {supplementLabel}
+              </span>
+            ) : null}
+          </div>
           <p className={["mt-1 text-sm leading-relaxed", palette.description].join(" ")}>
             {description}
           </p>

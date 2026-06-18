@@ -115,8 +115,9 @@ export function MyPageMainActions({
           >
             <MyPageActionCard
               illustration={myPageActionIllustrations.fortune}
-              title="鑑定を見る"
-              description="今年のテーマや今日のヒントを確認します"
+              title="鑑定結果を見る"
+              description="今日のヒントや今年のテーマを確認します"
+              supplementLabel="毎日更新"
               tone="fortune"
             />
           </Link>

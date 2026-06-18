@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
@@ -37,7 +38,6 @@ export function MyPageProfileList({ profiles, activeProfileId }: Props) {
     }
   }
 
-  const multiple = profiles.length > 1;
 
   return (
     <section id="profile-list" className="space-y-3">
@@ -48,10 +48,18 @@ export function MyPageProfileList({ profiles, activeProfileId }: Props) {
           helpAriaLabel="プロフィール一覧の説明"
           help={
             <>
-              <p>使うプロフィールを選んでから、下の「何をしますか」へ進んでください。</p>
-              {multiple ? (
-                <p className="mt-1.5">家族やテーマごとに、記録を分けて残せます。</p>
-              ) : null}
+              <p>使うプロフィールを選んでから、下の「やりたいことを選ぶ」へ進んでください。</p>
+              <p className="mt-1.5">
+                プロフィールの追加は
+                <Link
+                  href="/orders/settings/add-profile"
+                  className="font-medium text-stone-800 underline-offset-2 hover:underline"
+                >
+                  こちら
+                </Link>
+                からできます。
+              </p>
+              <p className="mt-1.5">家族やテーマごとに、記録を分けて残せます。</p>
             </>
           }
         />
