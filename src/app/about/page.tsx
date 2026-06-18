@@ -19,7 +19,7 @@ export const metadata: Metadata = {
 export default function AboutPage() {
   return (
     <div className="home-read-scope -mt-2 space-y-4 sm:mt-0 sm:space-y-5">
-      <div>
+      <div id="about-top" className="scroll-mt-24">
         <Link href="/" className="text-sm text-stone-600 hover:text-stone-900">
           ← トップ
         </Link>

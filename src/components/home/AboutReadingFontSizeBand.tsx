@@ -11,6 +11,17 @@ export function AboutReadingFontSizeBand() {
       aria-label="文字の大きさ"
     >
       <ReadingFontSizeControl variant="hero" comfortable />
+      <p className="mt-3 text-center">
+        <button
+          type="button"
+          className="text-sm text-stone-600 underline-offset-2 transition hover:text-stone-900 hover:underline"
+          onClick={() => {
+            document.getElementById("about-top")?.scrollIntoView({ behavior: "smooth", block: "start" });
+          }}
+        >
+          一番上へ
+        </button>
+      </p>
     </section>
   );
 }
