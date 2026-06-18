@@ -16,16 +16,17 @@ const MY_PAGE_HREF = "/orders";
 const LOGIN_HREF = buildLoginHref(MY_PAGE_HREF);
 
 /** トップヒーロー：継続導線（マイページ／ログイン） */
-export function HomeHeroSubNavLink() {
+export function HomeHeroSubNavLink({ className = "" }: { className?: string }) {
   const { user } = useFirebaseAuth();
   const isLoggedIn = Boolean(user) || isLjLoggedInOnClient();
+  const continueClass = [heroCtaContinueClass, className].filter(Boolean).join(" ");
 
   if (isLoggedIn) {
     return (
       <OwlNavButton
         href={MY_PAGE_HREF}
         loadingLabel="マイページを開いています…"
-        className={heroCtaContinueClass}
+        className={continueClass}
       >
         <span className={heroCtaContinueLeadClass}>記録の続きはこちら</span>
         <span className={heroCtaContinueSubClass}>マイページへ</span>
@@ -34,7 +35,7 @@ export function HomeHeroSubNavLink() {
   }
 
   return (
-    <Link href={LOGIN_HREF} className={heroCtaContinueClass}>
+    <Link href={LOGIN_HREF} className={continueClass}>
       <span className={heroCtaContinueLeadClass}>記録の続きはこちら</span>
       <span className={heroCtaContinueSubClass}>ログイン</span>
     </Link>

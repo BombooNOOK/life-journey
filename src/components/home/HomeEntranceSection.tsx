@@ -4,7 +4,6 @@ import Link from "next/link";
 import { HomeHeroSubNavLink } from "@/components/home/HomeHeroSubNavLink";
 import { ReadingFontSizeControl } from "@/components/reading/ReadingFontSizeControl";
 import {
-  heroCtaAreaClass,
   heroCtaButtonsGroupClass,
   heroCtaMicrocopyAboveButtonClass,
   heroCtaMicrocopyGroupClass,
@@ -15,11 +14,12 @@ import {
   HOME_HERO_OWL_TEACHER_SRC,
 } from "@/lib/home/homeHeroAssets";
 
-const entranceCtaStackClass = "mx-auto flex w-full max-w-[18rem] flex-col items-stretch sm:max-w-[19rem]";
-const entranceCtaAreaInnerClass =
-  "flex min-h-full flex-col items-center justify-end gap-3 px-1 pb-3 pt-5 sm:gap-3.5 sm:px-6 sm:pb-4 sm:pt-7 md:pb-5 md:pt-9";
+const entranceCtaStackClass =
+  "mx-auto flex w-full max-w-[13.25rem] flex-col items-stretch sm:max-w-[14rem]";
+const entranceCtaButtonClass = `${heroCtaPrimaryClass} !min-w-0 px-3 py-3 text-[13px] sm:min-h-[48px] sm:py-3 sm:text-sm`;
+const entranceContinueButtonClass = "!min-w-0 px-3 py-2.5 sm:px-3 sm:py-3";
 const entranceFontSizeControlBandClass =
-  "mx-auto mt-1 w-full max-w-[18rem] border-t border-stone-300/40 px-1 pb-2.5 pt-2 sm:mt-1.5 sm:max-w-[19rem]";
+  "mx-auto mt-2 w-full max-w-[13.25rem] border-t border-stone-300/40 px-1 pb-2.5 pt-2 sm:max-w-[14rem]";
 
 /** アプリ玄関：1画面の森ヒーロー＋2導線 */
 export function HomeEntranceSection() {
@@ -65,26 +65,24 @@ export function HomeEntranceSection() {
           </p>
         </div>
 
-        <div className={`mt-auto ${heroCtaAreaClass}`}>
-          <div className={entranceCtaAreaInnerClass}>
-            <div className={entranceCtaStackClass}>
-              <div className={heroCtaMicrocopyGroupClass}>
-                <p className={heroCtaMicrocopyAboveButtonClass}>
-                  クレジットカード登録なし／2週間無料お試し
-                </p>
-              </div>
-              <div className={`mt-2 ${heroCtaButtonsGroupClass}`}>
-                <Link href="/about" className={heroCtaPrimaryClass}>
-                  はじめての方はこちら
-                </Link>
-                <HomeHeroSubNavLink />
-              </div>
+        <div className="relative z-10 mt-6 flex flex-col items-center sm:mt-7">
+          <div className={entranceCtaStackClass}>
+            <div className={heroCtaMicrocopyGroupClass}>
+              <p className={heroCtaMicrocopyAboveButtonClass}>
+                クレジットカード登録なし／2週間無料お試し
+              </p>
+            </div>
+            <div className={`mt-2 ${heroCtaButtonsGroupClass}`}>
+              <Link href="/about" className={entranceCtaButtonClass}>
+                はじめての方はこちら
+              </Link>
+              <HomeHeroSubNavLink className={entranceContinueButtonClass} />
             </div>
           </div>
-        </div>
 
-        <div className={`relative z-10 ${entranceFontSizeControlBandClass}`}>
-          <ReadingFontSizeControl variant="hero" />
+          <div className={entranceFontSizeControlBandClass}>
+            <ReadingFontSizeControl variant="hero" />
+          </div>
         </div>
       </div>
     </section>
