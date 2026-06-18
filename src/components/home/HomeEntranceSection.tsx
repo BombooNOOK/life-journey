@@ -60,7 +60,7 @@ export function HomeEntranceSection() {
         <div className="absolute inset-0 bg-gradient-to-r from-white/55 via-white/12 to-transparent lg:max-w-[68%]" />
       </div>
 
-      <div className="relative z-20 mx-auto w-full max-w-3xl px-4 pb-3 pt-8 sm:px-6 sm:pt-10 lg:py-12">
+      <div className="relative z-20 mx-auto w-full max-w-3xl px-4 pb-3 pt-10 sm:px-6 sm:pt-11 lg:py-12">
         {/* スマホ：右下のフクロウ */}
         <Image
           src={HOME_HERO_OWL_TEACHER_SRC}
@@ -69,7 +69,7 @@ export function HomeEntranceSection() {
           width={682}
           height={1024}
           sizes="(max-width: 767px) 44vw, 280px"
-          className="pointer-events-none absolute bottom-0 right-[-0.5rem] z-[6] h-[11.5rem] w-auto max-w-[46%] object-contain object-bottom sm:right-0 sm:h-[13.5rem] sm:max-w-[42%] lg:hidden"
+          className="pointer-events-none absolute bottom-4 right-[-0.5rem] z-[6] h-[11.5rem] w-auto max-w-[46%] object-contain object-bottom sm:bottom-5 sm:right-0 sm:h-[13.5rem] sm:max-w-[42%] lg:hidden"
           priority
         />
 
@@ -79,29 +79,29 @@ export function HomeEntranceSection() {
             <p className="whitespace-nowrap text-[clamp(11px,2.8vw,15px)] font-medium leading-none tracking-[0.12em] text-emerald-800 sm:text-sm">
               Life Journey Diary
             </p>
-            <h1 className="mt-2 font-extrabold leading-[1.02] tracking-tight text-stone-900 text-[clamp(2rem,1.1rem+6vw,3.25rem)] sm:text-[2.75rem]">
-              <span className="flex flex-col gap-[0.1em]">
+            <h1 className="mt-3 font-extrabold leading-[1.1] tracking-tight text-stone-900 text-[clamp(2rem,1.1rem+6vw,3.25rem)] sm:mt-3.5 sm:text-[2.75rem]">
+              <span className="flex flex-col gap-1">
                 <span className="block whitespace-nowrap">数字で紡ぐ、</span>
                 <span className="block">人生の旅</span>
               </span>
             </h1>
-            <p className="lj-read-desc mt-3 whitespace-pre-line text-[clamp(1rem,0.9rem+1.2vw,1.375rem)] font-semibold leading-[1.5] text-emerald-900 sm:mt-4 sm:text-xl sm:leading-8">
+            <p className="lj-read-desc mt-5 whitespace-pre-line text-[clamp(1rem,0.9rem+1.2vw,1.375rem)] font-semibold leading-[1.62] text-emerald-900 sm:mt-5 sm:text-xl sm:leading-[1.75]">
               数秘術鑑定からはじまる、{"\n"}あなただけの人生記録ノート。
             </p>
           </div>
 
-          <div className="mt-6 flex flex-1 flex-col items-center justify-center pb-36 sm:mt-8 sm:pb-40">
+          <div className="mt-8 flex flex-1 flex-col items-center justify-center pb-32 sm:mt-9 sm:pb-36">
             <div className="w-full max-w-[min(16rem,78vw)] sm:max-w-[17rem]">
               <HomeHeroSubNavLink variant="entrance" className="mx-auto" />
             </div>
           </div>
 
-          <div className="absolute bottom-[5rem] left-10 z-20 sm:bottom-[5.75rem] sm:left-14">
+          <div className="absolute bottom-[6.5rem] left-10 z-20 sm:bottom-[7.25rem] sm:left-14">
             <NewcomerBlock />
           </div>
 
           <div className={mobileEntranceFontSizeBandClass}>
-            <ReadingFontSizeControl variant="hero" />
+            <ReadingFontSizeControl variant="hero" comfortable />
           </div>
         </div>
 
@@ -129,7 +129,7 @@ export function HomeEntranceSection() {
               <NewcomerBlock />
 
               <div className={pcEntranceFontSizeBandClass}>
-                <ReadingFontSizeControl variant="hero" />
+                <ReadingFontSizeControl variant="hero" comfortable />
               </div>
             </div>
           </div>

@@ -14,11 +14,14 @@ type Props = {
   variant?: "hero" | "section";
   /** section 時の見出し（専用ページでは false） */
   showSectionHeading?: boolean;
+  /** 玄関ページなど：ヒーロー帯の文字を少し大きく */
+  comfortable?: boolean;
 };
 
-function heroOptionClass(active: boolean): string {
+function heroOptionClass(active: boolean, comfortable: boolean): string {
   return [
-    "shrink-0 whitespace-nowrap rounded-md px-1 py-0.5 leading-none transition",
+    "shrink-0 whitespace-nowrap rounded-md leading-none transition",
+    comfortable ? "px-1.5 py-1" : "px-1 py-0.5",
     active
       ? "bg-[#DDEFE4] font-semibold text-[#0B6B4A] ring-1 ring-[#8DBFA5]"
       : "font-medium text-[#6B6258] hover:text-[#0B6B4A]/85 hover:underline hover:underline-offset-2",
@@ -39,6 +42,7 @@ export function ReadingFontSizeControl({
   className = "",
   variant = "hero",
   showSectionHeading = true,
+  comfortable = false,
 }: Props) {
   const { readingFontSize, setReadingFontSize } = useReadingFontSize();
 
@@ -75,14 +79,18 @@ export function ReadingFontSizeControl({
     );
   }
 
+  const heroRootClass = comfortable
+    ? "w-full text-[0.75rem] leading-none sm:text-[0.8125rem]"
+    : "w-full text-[0.625rem] leading-none";
+
   return (
     <div
-      className={["w-full text-[0.625rem] leading-none", className].filter(Boolean).join(" ")}
+      className={[heroRootClass, className].filter(Boolean).join(" ")}
       role="group"
       aria-label="文字の大きさ"
     >
       <p className="text-center font-medium text-[#6B6258]">文字の大きさ</p>
-      <div className="mt-0.5 flex flex-nowrap items-center justify-center gap-x-0 whitespace-nowrap">
+      <div className={`flex flex-nowrap items-center justify-center gap-x-0 whitespace-nowrap ${comfortable ? "mt-1" : "mt-0.5"}`}>
         {READING_FONT_SIZES.map((size, index) => (
           <span key={size} className="inline-flex shrink-0 items-center">
             {index > 0 ? (
@@ -94,7 +102,7 @@ export function ReadingFontSizeControl({
               type="button"
               aria-pressed={readingFontSize === size}
               onClick={() => setReadingFontSize(size as ReadingFontSize)}
-              className={heroOptionClass(readingFontSize === size)}
+              className={heroOptionClass(readingFontSize === size, comfortable)}
             >
               {READING_FONT_SIZE_LABELS[size]}
             </button>
