@@ -144,6 +144,7 @@ export function SiteHeader() {
             id={menuId}
             className="absolute inset-x-4 top-full z-[70] mt-1 overflow-hidden rounded-2xl border border-stone-200/90 bg-[#fffdf9] shadow-lg md:hidden"
             aria-label="メインメニュー"
+            onClick={(event) => event.stopPropagation()}
           >
             <SiteHeaderMobileNavItems onNavigate={closeMenu} />
           </nav>

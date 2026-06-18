@@ -47,18 +47,17 @@ export function SiteHeaderMobileNavItems({ onNavigate }: Props) {
         </OwlNavButton>
       ) : null}
 
-      <Link href="/about" className={mobileMenuItemClass} onClick={onNavigate}>
+      <Link href="/about" className={mobileMenuItemClass}>
         Life Journey Diaryとは
       </Link>
 
-      <Link href="/guide" className={mobileMenuItemClass} onClick={onNavigate}>
+      <Link href="/guide" className={mobileMenuItemClass}>
         使い方
       </Link>
 
       <Link
         href={isLoggedIn ? MYPAGE_CONTACT_FORM_PATH : MYPAGE_CONTACT_FORM_LOGIN_PATH}
         className={mobileMenuItemClass}
-        onClick={onNavigate}
       >
         {MYPAGE_CONTACT_FORM_LABEL}
       </Link>
@@ -70,7 +69,6 @@ export function SiteHeaderMobileNavItems({ onNavigate }: Props) {
             : "/login?returnTo=%2Forders%2Fsettings%2Fdisplay"
         }
         className={mobileMenuItemClass}
-        onClick={onNavigate}
       >
         文字の大きさ
       </Link>
@@ -93,7 +91,7 @@ export function SiteHeaderMobileNavItems({ onNavigate }: Props) {
       ) : null}
 
       {showGuestNav ? (
-        <Link href="/login?returnTo=%2Forders" className={mobileMenuItemClass} onClick={onNavigate}>
+        <Link href="/login?returnTo=%2Forders" className={mobileMenuItemClass}>
           ログイン
         </Link>
       ) : null}
