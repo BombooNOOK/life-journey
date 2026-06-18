@@ -133,7 +133,7 @@ export default async function OrderDetailPage({ params }: Props) {
         id="how-to-use"
         className="scroll-mt-6 rounded-xl border border-amber-200/80 bg-gradient-to-br from-amber-50/80 via-white to-white p-5 shadow-sm"
       >
-        <h2 className="text-lg font-semibold text-stone-900">鑑定結果の活かし方</h2>
+        <h2 className="text-lg font-semibold text-stone-900">鑑定書の活かし方</h2>
         <p className="mt-2 text-sm leading-6 text-stone-600">
           今日のヒントを手がかりに、今年のテーマやコアナンバーをゆっくり味わってみてください。気になるところから、あなたのペースで読み返せます。
         </p>
