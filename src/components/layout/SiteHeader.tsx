@@ -42,7 +42,7 @@ export function SiteHeader() {
           >
             {showGuestNav ? (
               <>
-                <Link href="/order" className={navLinkClass}>
+                <Link href="/about" className={navLinkClass}>
                   はじめての方へ
                 </Link>
                 <span className={navSepClass} aria-hidden>
