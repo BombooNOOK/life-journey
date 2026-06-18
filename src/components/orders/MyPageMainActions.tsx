@@ -43,7 +43,7 @@ export function MyPageMainActions({
         }
       />
 
-      <div className="mx-auto flex w-full max-w-md flex-col gap-3">
+      <div className="flex w-full flex-col gap-3">
         {journalBlocked ? (
           <div className="space-y-2">
             <MyPageActionCard
