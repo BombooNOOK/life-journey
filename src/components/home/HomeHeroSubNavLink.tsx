@@ -16,7 +16,7 @@ const MY_PAGE_HREF = "/orders";
 const LOGIN_HREF = buildLoginHref(MY_PAGE_HREF);
 
 const entranceContinueButtonClass = [
-  "flex min-h-[4.75rem] w-full max-w-[min(20rem,90vw)] flex-col items-center justify-center gap-1 rounded-2xl border border-emerald-900/60 bg-emerald-800 px-4 py-4 text-center shadow-[0_4px_14px_rgba(6,78,59,0.32)] transition hover:border-emerald-950/75 hover:bg-emerald-900 hover:shadow-[0_5px_18px_rgba(6,78,59,0.38)] active:scale-[0.98] active:opacity-95 disabled:cursor-not-allowed disabled:border-stone-300 disabled:bg-stone-400 disabled:text-white/85 disabled:shadow-none sm:min-h-[5rem] sm:max-w-[21rem]",
+  "flex min-h-[4.75rem] w-full max-w-[min(16rem,78vw)] flex-col items-center justify-center gap-1 rounded-2xl border border-emerald-900/60 bg-emerald-800 px-3 py-4 text-center shadow-[0_4px_14px_rgba(6,78,59,0.32)] transition hover:border-emerald-950/75 hover:bg-emerald-900 hover:shadow-[0_5px_18px_rgba(6,78,59,0.38)] active:scale-[0.98] active:opacity-95 disabled:cursor-not-allowed disabled:border-stone-300 disabled:bg-stone-400 disabled:text-white/85 disabled:shadow-none sm:min-h-[5rem] sm:max-w-[17rem]",
 ].join(" ");
 
 /** 1行目：小さく */
