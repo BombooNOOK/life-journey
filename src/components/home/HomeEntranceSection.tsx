@@ -20,6 +20,12 @@ const newcomerButtonClass = [
 
 const newcomerLineClass = "block text-sm font-semibold leading-snug text-emerald-950 sm:text-base";
 
+/** PC玄関：ログイン・初回導線・文字サイズの左端を揃える */
+const pcEntranceActionsClass = "flex w-full max-w-[17rem] flex-col gap-6";
+
+const pcEntranceFontSizeBandClass =
+  "w-full border-t border-stone-300/40 pb-2.5 pt-2";
+
 function NewcomerBlock() {
   return (
     <div className="flex flex-col items-start gap-1.5">
@@ -114,16 +120,14 @@ export function HomeEntranceSection() {
               </p>
             </div>
 
-            <div className="mx-auto w-full max-w-[17rem]">
-              <HomeHeroSubNavLink variant="entrance" className="mx-auto" />
-            </div>
+            <div className={pcEntranceActionsClass}>
+              <HomeHeroSubNavLink variant="entrance" className="!max-w-none w-full" />
 
-            <div className="ml-[12%] w-max lg:ml-[14%]">
               <NewcomerBlock />
-            </div>
 
-            <div className={heroFontSizeControlBandClass}>
-              <ReadingFontSizeControl variant="hero" />
+              <div className={pcEntranceFontSizeBandClass}>
+                <ReadingFontSizeControl variant="hero" />
+              </div>
             </div>
           </div>
 
