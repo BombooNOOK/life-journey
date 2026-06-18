@@ -7,6 +7,25 @@ export const SUPPORT_INQUIRY_CATEGORIES = [
   "other",
 ] as const;
 
+/** 未ログインのお問い合わせで選べる種別（アカウント操作系は除く） */
+export const GUEST_SUPPORT_INQUIRY_CATEGORIES = [
+  "book_binding",
+  "kantei",
+  "bug_display",
+  "other",
+] as const;
+
+export type GuestSupportInquiryCategory = (typeof GUEST_SUPPORT_INQUIRY_CATEGORIES)[number];
+
+export const SUPPORT_INQUIRY_REPLY_CHANNELS = ["chat", "email"] as const;
+
+export type SupportInquiryReplyChannel = (typeof SUPPORT_INQUIRY_REPLY_CHANNELS)[number];
+
+export const SUPPORT_INQUIRY_REPLY_CHANNEL_LABELS: Record<SupportInquiryReplyChannel, string> = {
+  chat: "チャット",
+  email: "メール",
+};
+
 export type SupportInquiryCategory = (typeof SUPPORT_INQUIRY_CATEGORIES)[number];
 
 export const SUPPORT_INQUIRY_CATEGORY_LABELS: Record<SupportInquiryCategory, string> = {
@@ -34,6 +53,14 @@ export const SUPPORT_INQUIRY_MESSAGE_MAX_LENGTH = 4000;
 
 export function isSupportInquiryCategory(value: string): value is SupportInquiryCategory {
   return (SUPPORT_INQUIRY_CATEGORIES as readonly string[]).includes(value);
+}
+
+export function isGuestSupportInquiryCategory(value: string): value is GuestSupportInquiryCategory {
+  return (GUEST_SUPPORT_INQUIRY_CATEGORIES as readonly string[]).includes(value);
+}
+
+export function isSupportInquiryReplyChannel(value: string): value is SupportInquiryReplyChannel {
+  return (SUPPORT_INQUIRY_REPLY_CHANNELS as readonly string[]).includes(value);
 }
 
 export function isSupportInquiryStatus(value: string): value is SupportInquiryStatus {

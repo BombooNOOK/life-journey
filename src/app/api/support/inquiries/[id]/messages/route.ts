@@ -46,7 +46,7 @@ export async function POST(req: Request, context: RouteContext) {
 
   const inquiry = await prisma.supportInquiry.findUnique({
     where: { id },
-    select: { id: true, email: true, status: true },
+    select: { id: true, email: true, status: true, replyChannel: true },
   });
 
   if (!inquiry) {
@@ -59,6 +59,13 @@ export async function POST(req: Request, context: RouteContext) {
   const email = normalizeEmail(viewerEmail);
   if (inquiry.email !== email) {
     return NextResponse.json({ error: "送信権限がありません。", code: "FORBIDDEN" }, { status: 403, ...JSON_NO_STORE });
+  }
+
+  if (inquiry.replyChannel === "email") {
+    return NextResponse.json(
+      { error: "このお問い合わせはメール返信専用です。", code: "EMAIL_CHANNEL" },
+      { status: 403, ...JSON_NO_STORE },
+    );
   }
 
   if (inquiry.status === "closed") {

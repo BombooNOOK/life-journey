@@ -43,6 +43,7 @@ export async function GET(_req: Request, context: RouteContext) {
       email: true,
       category: true,
       status: true,
+      replyChannel: true,
       messages: {
         orderBy: { createdAt: "asc" },
         select: {
@@ -66,6 +67,13 @@ export async function GET(_req: Request, context: RouteContext) {
   const email = normalizeEmail(viewerEmail);
   if (inquiry.email !== email) {
     return NextResponse.json({ error: "閲覧権限がありません。", code: "FORBIDDEN" }, { status: 403, ...JSON_NO_STORE });
+  }
+
+  if (inquiry.replyChannel === "email") {
+    return NextResponse.json(
+      { error: "このお問い合わせはメール返信専用です。", code: "EMAIL_CHANNEL" },
+      { status: 403, ...JSON_NO_STORE },
+    );
   }
 
   const category = inquiry.category as SupportInquiryCategory;

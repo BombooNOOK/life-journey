@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { AdminSupportInquiryThreadPanel } from "@/components/admin/AdminSupportInquiryThreadPanel";
+import { SupportInquiryReplyActions } from "@/components/admin/SupportInquiryReplyActions";
 import { SupportInquiryResolveButton } from "@/components/admin/SupportInquiryResolveButton";
 import { getViewerEmailFromCookie } from "@/lib/auth/viewer";
 import { isAdminEmail } from "@/lib/admin/access";
@@ -9,8 +10,10 @@ import { prisma } from "@/lib/db";
 import { serializeSupportInquiryMessage } from "@/lib/support/serializeSupportInquiryMessage";
 import {
   SUPPORT_INQUIRY_CATEGORY_LABELS,
+  SUPPORT_INQUIRY_REPLY_CHANNEL_LABELS,
   SUPPORT_INQUIRY_STATUS_LABELS,
   type SupportInquiryCategory,
+  type SupportInquiryReplyChannel,
   type SupportInquiryStatus,
 } from "@/lib/support/supportInquiryTypes";
 
@@ -43,6 +46,7 @@ export default async function AdminSupportInquiryDetailPage({ params }: Props) {
       category: true,
       message: true,
       status: true,
+      replyChannel: true,
       messages: {
         orderBy: { createdAt: "asc" },
         select: {
@@ -62,9 +66,17 @@ export default async function AdminSupportInquiryDetailPage({ params }: Props) {
 
   const category = inquiry.category as SupportInquiryCategory;
   const status = inquiry.status as SupportInquiryStatus;
+  const replyChannel = inquiry.replyChannel as SupportInquiryReplyChannel;
   const categoryLabel = SUPPORT_INQUIRY_CATEGORY_LABELS[category] ?? inquiry.category;
   const messages = inquiry.messages.map(serializeSupportInquiryMessage);
   const canReply = status !== "closed";
+  const isEmailChannel = replyChannel === "email";
+  const replyContext = {
+    userEmail: inquiry.email,
+    categoryLabel,
+    createdAtLabel: inquiry.createdAt.toLocaleString("ja-JP"),
+    activeProfileName: inquiry.activeProfileName,
+  };
 
   return (
     <div className="space-y-6">
@@ -95,6 +107,11 @@ export default async function AdminSupportInquiryDetailPage({ params }: Props) {
           <dt className="text-stone-500">プロフィール名</dt>
           <dd className="text-stone-900">{inquiry.activeProfileName?.trim() || "—"}</dd>
 
+          <dt className="text-stone-500">返信方法</dt>
+          <dd className="text-stone-900">
+            {SUPPORT_INQUIRY_REPLY_CHANNEL_LABELS[replyChannel] ?? inquiry.replyChannel}
+          </dd>
+
           <dt className="text-stone-500">status</dt>
           <dd className="text-stone-900">{SUPPORT_INQUIRY_STATUS_LABELS[status] ?? inquiry.status}</dd>
 
@@ -106,11 +123,26 @@ export default async function AdminSupportInquiryDetailPage({ params }: Props) {
         </dl>
 
         <div className="mt-6 border-t border-stone-100 pt-5">
-          <AdminSupportInquiryThreadPanel
-            inquiryId={inquiry.id}
-            messages={messages}
-            canReply={canReply}
-          />
+          {isEmailChannel ? (
+            <div className="space-y-5">
+              <div>
+                <h2 className="text-sm font-semibold text-stone-900">お問い合わせ内容</h2>
+                <p className="mt-3 whitespace-pre-wrap rounded-lg border border-stone-200 bg-stone-50 px-3 py-3 text-sm leading-relaxed text-stone-800">
+                  {inquiry.message}
+                </p>
+                <p className="mt-3 text-xs leading-relaxed text-stone-500">
+                  未ログインからのお問い合わせです。返信はメールで行い、ユーザー側のチャット画面はありません。
+                </p>
+              </div>
+              {canReply ? <SupportInquiryReplyActions replyContext={replyContext} /> : null}
+            </div>
+          ) : (
+            <AdminSupportInquiryThreadPanel
+              inquiryId={inquiry.id}
+              messages={messages}
+              canReply={canReply}
+            />
+          )}
         </div>
 
         <div className="mt-6 flex flex-wrap items-center gap-3 border-t border-stone-100 pt-5">

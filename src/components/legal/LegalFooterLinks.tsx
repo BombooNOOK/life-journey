@@ -5,8 +5,9 @@ import Link from "next/link";
 import { useFirebaseAuth } from "@/components/auth/FirebaseAuthProvider";
 import { isLjLoggedInOnClient } from "@/lib/auth/clientCookies";
 import {
+  GUEST_CONTACT_FORM_LABEL,
+  GUEST_CONTACT_FORM_PATH,
   MYPAGE_CONTACT_FORM_LABEL,
-  MYPAGE_CONTACT_FORM_LOGIN_PATH,
   MYPAGE_CONTACT_FORM_PATH,
   PRIVACY_POLICY_LABEL,
   PRIVACY_POLICY_PATH,
@@ -34,7 +35,7 @@ export function LegalFooterLinks({ className = "" }: Props) {
   const { user } = useFirebaseAuth();
   const cookieLoggedIn = isLjLoggedInOnClient();
   const isLoggedIn = Boolean(user) || cookieLoggedIn;
-  const contactHref = isLoggedIn ? MYPAGE_CONTACT_FORM_PATH : MYPAGE_CONTACT_FORM_LOGIN_PATH;
+  const contactHref = isLoggedIn ? MYPAGE_CONTACT_FORM_PATH : GUEST_CONTACT_FORM_PATH;
 
   return (
     <nav

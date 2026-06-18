@@ -4,44 +4,40 @@ import Link from "next/link";
 import { useState } from "react";
 
 import { PRIVACY_POLICY_LABEL, PRIVACY_POLICY_PATH } from "@/lib/legal/legalDocumentLinks";
-
 import {
-  SUPPORT_INQUIRY_CATEGORIES,
+  GUEST_SUPPORT_INQUIRY_CATEGORIES,
   SUPPORT_INQUIRY_CATEGORY_LABELS,
   SUPPORT_INQUIRY_MESSAGE_MAX_LENGTH,
 } from "@/lib/support/supportInquiryTypes";
 
-type Props = {
-  viewerEmail: string;
-};
-
-export function MyPageContactSection({ viewerEmail }: Props) {
+export function GuestContactSection() {
+  const [email, setEmail] = useState("");
   const [category, setCategory] = useState("");
   const [message, setMessage] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [successInquiryId, setSuccessInquiryId] = useState<string | null>(null);
+  const [submitted, setSubmitted] = useState(false);
 
   async function submitInquiry() {
     setError(null);
-    setSuccessInquiryId(null);
+    setSubmitted(false);
     setBusy(true);
     try {
-      const res = await fetch("/api/support/inquiries", {
+      const res = await fetch("/api/support/guest-inquiries", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "same-origin",
-        body: JSON.stringify({ category, message }),
+        body: JSON.stringify({ email, category, message }),
       });
-      const data = (await res.json()) as { error?: string; code?: string; inquiryId?: string };
+      const data = (await res.json()) as { error?: string; code?: string };
       if (!res.ok) {
         setError(data.error ?? "送信に失敗しました。");
         return;
       }
+      setEmail("");
       setCategory("");
       setMessage("");
-      setSuccessInquiryId(data.inquiryId ?? null);
-      window.dispatchEvent(new CustomEvent("support-inquiry-created"));
+      setSubmitted(true);
     } catch {
       setError("送信に失敗しました。時間をおいて再度お試しください。");
     } finally {
@@ -52,15 +48,15 @@ export function MyPageContactSection({ viewerEmail }: Props) {
   return (
     <section
       id="contact-form"
-      className="scroll-mt-6 space-y-4 rounded-xl border border-stone-200 bg-white p-4 shadow-sm sm:p-5"
+      className="scroll-mt-24 space-y-4 rounded-xl border border-stone-200 bg-white p-4 shadow-sm sm:p-5"
     >
       <div>
         <h2 className="text-lg font-semibold text-stone-900">お問い合わせ</h2>
         <p className="mt-2 lj-read-desc text-stone-700">
-          プロフィール削除、バックアップ復元、製本申込、その他ご不明点がある場合はこちらからお問い合わせください。
+          サービスをご利用になる前のご質問や、ご不明点がある場合はこちらからお問い合わせください。
         </p>
         <p className="mt-2 lj-read-caption text-stone-500">
-          ログイン中のアカウント（{viewerEmail}）として送信します。返信はこのページのチャットで確認できます。
+          返信は、下記に入力いただいたメールアドレス宛にお送りします。
         </p>
         <p className="mt-2 lj-read-caption text-stone-500">
           個人情報の取扱いについては
@@ -74,33 +70,49 @@ export function MyPageContactSection({ viewerEmail }: Props) {
         </p>
       </div>
 
-      {successInquiryId ? (
-        <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-3 lj-read-desc text-emerald-950" role="status">
+      {submitted ? (
+        <div
+          className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-3 lj-read-desc text-emerald-950"
+          role="status"
+        >
           <p>お問い合わせを受け付けました。</p>
-          <p className="mt-1">内容を確認のうえ、運営より返信します。返信はこのページの「お問い合わせ履歴」でも確認できます。</p>
-          <Link
-            href={`/orders/support/${encodeURIComponent(successInquiryId)}`}
-            className="mt-2 inline-flex text-sm font-medium text-emerald-900 underline-offset-2 hover:underline"
-          >
-            お問い合わせの詳細を見る
-          </Link>
+          <p className="mt-1">
+            内容を確認のうえ、ご入力いただいたメールアドレス宛に返信します。しばらくお待ちください。
+          </p>
         </div>
       ) : null}
 
       <div className="space-y-4">
         <div>
-          <label htmlFor="support-inquiry-category" className="block text-sm font-medium text-stone-800">
+          <label htmlFor="guest-support-email" className="block text-sm font-medium text-stone-800">
+            返信用メールアドレス
+          </label>
+          <input
+            id="guest-support-email"
+            type="email"
+            autoComplete="email"
+            inputMode="email"
+            value={email}
+            disabled={busy}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="example@mail.example"
+            className="mt-1.5 w-full max-w-md rounded-md border border-stone-300 bg-white px-3 py-2 text-sm text-stone-900 disabled:opacity-60"
+          />
+        </div>
+
+        <div>
+          <label htmlFor="guest-support-category" className="block text-sm font-medium text-stone-800">
             お問い合わせ種別
           </label>
           <select
-            id="support-inquiry-category"
+            id="guest-support-category"
             value={category}
             disabled={busy}
             onChange={(e) => setCategory(e.target.value)}
             className="mt-1.5 w-full max-w-md rounded-md border border-stone-300 bg-white px-3 py-2 text-sm text-stone-900 disabled:opacity-60"
           >
             <option value="">選択してください</option>
-            {SUPPORT_INQUIRY_CATEGORIES.map((value) => (
+            {GUEST_SUPPORT_INQUIRY_CATEGORIES.map((value) => (
               <option key={value} value={value}>
                 {SUPPORT_INQUIRY_CATEGORY_LABELS[value]}
               </option>
@@ -109,11 +121,11 @@ export function MyPageContactSection({ viewerEmail }: Props) {
         </div>
 
         <div>
-          <label htmlFor="support-inquiry-message" className="block text-sm font-medium text-stone-800">
+          <label htmlFor="guest-support-message" className="block text-sm font-medium text-stone-800">
             内容
           </label>
           <textarea
-            id="support-inquiry-message"
+            id="guest-support-message"
             value={message}
             disabled={busy}
             onChange={(e) => setMessage(e.target.value)}

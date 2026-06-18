@@ -12,3 +12,7 @@ export const MYPAGE_CONTACT_FORM_PATH = "/orders/support#contact-form" as const;
 export const MYPAGE_CONTACT_FORM_LOGIN_PATH =
   "/login?returnTo=%2Forders%2Fsupport%23contact-form" as const;
 export const MYPAGE_CONTACT_FORM_LABEL = "お問い合わせ" as const;
+
+/** 未ログイン向けお問い合わせフォーム（メール返信） */
+export const GUEST_CONTACT_FORM_PATH = "/contact" as const;
+export const GUEST_CONTACT_FORM_LABEL = MYPAGE_CONTACT_FORM_LABEL;

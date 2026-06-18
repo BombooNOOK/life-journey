@@ -29,7 +29,7 @@ export async function GET() {
 
   const email = normalizeEmail(viewerEmail);
   const rows = await prisma.supportInquiry.findMany({
-    where: { email },
+    where: { email, replyChannel: "chat" },
     orderBy: { updatedAt: "desc" },
     take: 50,
     select: {

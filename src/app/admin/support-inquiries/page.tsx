@@ -15,10 +15,12 @@ import type { SupportInquiryMessageRole } from "@/lib/support/supportInquiryMess
 import {
   SUPPORT_INQUIRY_CATEGORIES,
   SUPPORT_INQUIRY_CATEGORY_LABELS,
+  SUPPORT_INQUIRY_REPLY_CHANNEL_LABELS,
   SUPPORT_INQUIRY_STATUSES,
   SUPPORT_INQUIRY_STATUS_LABELS,
   truncateSupportInquiryMessagePreview,
   type SupportInquiryCategory,
+  type SupportInquiryReplyChannel,
   type SupportInquiryStatus,
 } from "@/lib/support/supportInquiryTypes";
 
@@ -84,6 +86,7 @@ export default async function AdminSupportInquiriesPage({ searchParams }: Props)
       category: true,
       message: true,
       status: true,
+      replyChannel: true,
       messages: {
         orderBy: { createdAt: "desc" },
         take: 1,
@@ -235,6 +238,7 @@ export default async function AdminSupportInquiriesPage({ searchParams }: Props)
             <tr>
               <th className="px-4 py-3 font-medium">更新日時</th>
               <th className="px-4 py-3 font-medium">返信</th>
+              <th className="px-4 py-3 font-medium">方式</th>
               <th className="px-4 py-3 font-medium">メール</th>
               <th className="px-4 py-3 font-medium">種別</th>
               <th className="px-4 py-3 font-medium">プロフィール名</th>
@@ -246,7 +250,7 @@ export default async function AdminSupportInquiriesPage({ searchParams }: Props)
           <tbody>
             {rows.length === 0 ? (
               <tr>
-                <td colSpan={8} className="px-4 py-8 text-center text-stone-500">
+                <td colSpan={9} className="px-4 py-8 text-center text-stone-500">
                   {awaitingReplyOnly
                     ? "要返信のお問い合わせはありません。"
                     : "お問い合わせはまだありません。"}
@@ -255,6 +259,7 @@ export default async function AdminSupportInquiriesPage({ searchParams }: Props)
             ) : (
               rows.map((row) => {
                 const category = row.category as SupportInquiryCategory;
+                const replyChannel = row.replyChannel as SupportInquiryReplyChannel;
                 return (
                   <tr
                     key={row.id}
@@ -271,6 +276,9 @@ export default async function AdminSupportInquiriesPage({ searchParams }: Props)
                       {!row.awaitingAdminReply ? (
                         <span className="text-[11px] text-stone-400">返信済</span>
                       ) : null}
+                    </td>
+                    <td className="px-4 py-3 text-stone-700">
+                      {SUPPORT_INQUIRY_REPLY_CHANNEL_LABELS[replyChannel] ?? row.replyChannel}
                     </td>
                     <td className="px-4 py-3 break-all text-stone-800">{row.email}</td>
                     <td className="px-4 py-3 text-stone-700">

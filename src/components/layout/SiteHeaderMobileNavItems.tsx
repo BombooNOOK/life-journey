@@ -7,6 +7,8 @@ import { LoggedInStatusBadge } from "@/components/auth/LoggedInStatusBadge";
 import { OwlNavButton } from "@/components/ui/OwlNavButton";
 import { useClientAuthNavState } from "@/hooks/useClientAuthNavState";
 import {
+  GUEST_CONTACT_FORM_LABEL,
+  GUEST_CONTACT_FORM_PATH,
   MYPAGE_CONTACT_FORM_LABEL,
   MYPAGE_CONTACT_FORM_PATH,
 } from "@/lib/legal/legalDocumentLinks";
@@ -106,6 +108,18 @@ export function SiteHeaderMobileNavItems({ onNavigate }: Props) {
         <MobileMenuNavButton href={MYPAGE_CONTACT_FORM_PATH} router={router}>
           {MYPAGE_CONTACT_FORM_LABEL}
         </MobileMenuNavButton>
+      ) : null}
+
+      {showGuestNav ? (
+        pathname === "/contact" ? (
+          <span className={`${mobileMenuItemClass} text-stone-400`} aria-current="page">
+            {GUEST_CONTACT_FORM_LABEL}
+          </span>
+        ) : (
+          <MobileMenuNavButton href={GUEST_CONTACT_FORM_PATH} router={router}>
+            {GUEST_CONTACT_FORM_LABEL}
+          </MobileMenuNavButton>
+        )
       ) : null}
 
       {showAuthenticatedNav ? (

@@ -11,6 +11,8 @@ import { SiteHeaderMobileNavItems } from "@/components/layout/SiteHeaderMobileNa
 import { OwlNavButton } from "@/components/ui/OwlNavButton";
 import { useClientAuthNavState } from "@/hooks/useClientAuthNavState";
 import {
+  GUEST_CONTACT_FORM_LABEL,
+  GUEST_CONTACT_FORM_PATH,
   MYPAGE_CONTACT_FORM_LABEL,
   MYPAGE_CONTACT_FORM_PATH,
 } from "@/lib/legal/legalDocumentLinks";
@@ -180,6 +182,16 @@ function SiteHeaderInner() {
                 </span>
                 <Link href={MYPAGE_CONTACT_FORM_PATH} className={navLinkClass}>
                   {MYPAGE_CONTACT_FORM_LABEL}
+                </Link>
+              </>
+            ) : null}
+            {showGuestNav ? (
+              <>
+                <span className={navSepClass} aria-hidden>
+                  |
+                </span>
+                <Link href={GUEST_CONTACT_FORM_PATH} className={navLinkClass}>
+                  {GUEST_CONTACT_FORM_LABEL}
                 </Link>
               </>
             ) : null}

@@ -41,13 +41,20 @@ export async function POST(req: Request, context: RouteContext) {
 
   const inquiry = await prisma.supportInquiry.findUnique({
     where: { id },
-    select: { id: true, status: true },
+    select: { id: true, status: true, replyChannel: true },
   });
 
   if (!inquiry) {
     return NextResponse.json(
       { error: "お問い合わせが見つかりません。", code: "NOT_FOUND" },
       { status: 404, ...JSON_NO_STORE },
+    );
+  }
+
+  if (inquiry.replyChannel === "email") {
+    return NextResponse.json(
+      { error: "このお問い合わせはメール返信専用です。", code: "EMAIL_CHANNEL" },
+      { status: 409, ...JSON_NO_STORE },
     );
   }
 

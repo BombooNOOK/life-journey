@@ -239,6 +239,9 @@ model SupportInquiry {
 
   status String @default("pending")
 
+  /// "chat" = ログイン後のスレッド返信 / "email" = 未ログインのメール返信
+  replyChannel String @default("chat")
+
   messages SupportInquiryMessage[]
 
   @@index([status, createdAt])

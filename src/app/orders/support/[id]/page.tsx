@@ -39,6 +39,7 @@ export default async function MyPageSupportInquiryDetailPage({ params }: Props) 
       updatedAt: true,
       category: true,
       status: true,
+      replyChannel: true,
       messages: {
         orderBy: { createdAt: "asc" },
         select: {
@@ -58,6 +59,10 @@ export default async function MyPageSupportInquiryDetailPage({ params }: Props) 
 
   const email = normalizeEmail(viewerEmail);
   if (inquiry.email !== email) {
+    notFound();
+  }
+
+  if (inquiry.replyChannel === "email") {
     notFound();
   }
 
