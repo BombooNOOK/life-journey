@@ -19,23 +19,32 @@ const newcomerButtonClass = [
 
 const newcomerLineClass = "block text-sm font-semibold leading-snug text-emerald-950 sm:text-base";
 
+const stackedNewcomerButtonClass = [heroCtaContinueClass, "w-full"].join(" ");
+
+/** スマホ：ログインと初回導線を縦に揃える */
+const mobileEntranceCtaStackClass =
+  "mx-auto flex w-full max-w-[min(17rem,78vw)] flex-col gap-5 sm:max-w-[17rem] sm:gap-6";
+
 /** PC玄関：ログイン・初回導線・文字サイズの左端を揃える */
 const pcEntranceActionsClass = "flex w-full max-w-[17rem] flex-col gap-6";
 
 const pcEntranceFontSizeBandClass =
   "w-full border-t border-stone-300/40 pb-2.5 pt-2";
 
-/** スマホ・タブレット縦：文字サイズ帯（md 用の左マージンは入れない） */
+/** スマホ・タブレット縦：文字サイズ帯 */
 const mobileEntranceFontSizeBandClass =
-  "relative z-20 ml-2 mr-auto mt-1 w-max max-w-[calc(100%-0.75rem)] border-t border-stone-300/40 px-1 pb-2.5 pt-2 sm:mt-1.5";
+  "relative z-20 mx-auto mt-3 w-full max-w-[min(17rem,78vw)] border-t border-stone-300/40 px-1 pb-2.5 pt-2.5 sm:mt-4 sm:max-w-[17rem]";
 
-function NewcomerBlock() {
+function NewcomerBlock({ stacked = false }: { stacked?: boolean }) {
   return (
-    <div className="flex flex-col items-start gap-1.5">
+    <div className={`flex flex-col gap-1.5 ${stacked ? "items-stretch" : "items-start"}`}>
       <p className={heroCtaMicrocopyAboveButtonClass}>
         クレジットカード登録なし／2週間無料お試し
       </p>
-      <Link href="/about" className={newcomerButtonClass}>
+      <Link
+        href="/about"
+        className={stacked ? stackedNewcomerButtonClass : newcomerButtonClass}
+      >
         <span className={newcomerLineClass}>はじめての方は</span>
         <span className={`${newcomerLineClass} mt-0.5`}>こちら</span>
       </Link>
@@ -90,18 +99,15 @@ export function HomeEntranceSection() {
             </p>
           </div>
 
-          <div className="mt-8 flex flex-1 flex-col items-center justify-center pb-32 sm:mt-9 sm:pb-36">
-            <div className="w-full max-w-[min(16rem,78vw)] sm:max-w-[17rem]">
-              <HomeHeroSubNavLink variant="entrance" className="mx-auto" />
+          <div className="mt-auto flex flex-col pb-1 pt-8 sm:pt-10">
+            <div className={mobileEntranceCtaStackClass}>
+              <HomeHeroSubNavLink variant="entrance" className="!max-w-none w-full" />
+              <NewcomerBlock stacked />
             </div>
-          </div>
 
-          <div className="absolute bottom-[6.5rem] left-10 z-20 sm:bottom-[7.25rem] sm:left-14">
-            <NewcomerBlock />
-          </div>
-
-          <div className={mobileEntranceFontSizeBandClass}>
-            <ReadingFontSizeControl variant="hero" comfortable />
+            <div className={mobileEntranceFontSizeBandClass}>
+              <ReadingFontSizeControl variant="hero" comfortable />
+            </div>
           </div>
         </div>
 
