@@ -6,7 +6,6 @@ import { ReadingFontSizeControl } from "@/components/reading/ReadingFontSizeCont
 import {
   heroCtaContinueClass,
   heroCtaMicrocopyAboveButtonClass,
-  heroFontSizeControlBandClass,
 } from "@/components/home/heroCtaStyles";
 import {
   HOME_HERO_FOREST_BG_SRC,
@@ -25,6 +24,10 @@ const pcEntranceActionsClass = "flex w-full max-w-[17rem] flex-col gap-6";
 
 const pcEntranceFontSizeBandClass =
   "w-full border-t border-stone-300/40 pb-2.5 pt-2";
+
+/** スマホ・タブレット縦：文字サイズ帯（md 用の左マージンは入れない） */
+const mobileEntranceFontSizeBandClass =
+  "relative z-20 ml-2 mr-auto mt-1 w-max max-w-[calc(100%-0.75rem)] border-t border-stone-300/40 px-1 pb-2.5 pt-2 sm:mt-1.5";
 
 function NewcomerBlock() {
   return (
@@ -50,14 +53,14 @@ export function HomeEntranceSection() {
           alt=""
           fill
           sizes="100vw"
-          className="object-cover object-[44%_42%] sm:object-[50%_48%] md:object-[50%_55%]"
+          className="object-cover object-[44%_42%] sm:object-[50%_48%] lg:object-[50%_55%]"
           priority
         />
         <div className="absolute inset-0 bg-gradient-to-b from-[#fffdf9]/55 via-[#fffdf9]/18 to-[#f6f4ef]/60" />
-        <div className="absolute inset-0 bg-gradient-to-r from-white/55 via-white/12 to-transparent md:max-w-[68%]" />
+        <div className="absolute inset-0 bg-gradient-to-r from-white/55 via-white/12 to-transparent lg:max-w-[68%]" />
       </div>
 
-      <div className="relative z-20 mx-auto w-full max-w-3xl px-4 pb-3 pt-8 sm:px-6 sm:pt-10 md:py-12">
+      <div className="relative z-20 mx-auto w-full max-w-3xl px-4 pb-3 pt-8 sm:px-6 sm:pt-10 lg:py-12">
         {/* スマホ：右下のフクロウ */}
         <Image
           src={HOME_HERO_OWL_TEACHER_SRC}
@@ -66,12 +69,12 @@ export function HomeEntranceSection() {
           width={682}
           height={1024}
           sizes="(max-width: 767px) 44vw, 280px"
-          className="pointer-events-none absolute bottom-0 right-[-0.5rem] z-[6] h-[11.5rem] w-auto max-w-[46%] object-contain object-bottom sm:right-0 sm:h-[13.5rem] sm:max-w-[42%] md:hidden"
+          className="pointer-events-none absolute bottom-0 right-[-0.5rem] z-[6] h-[11.5rem] w-auto max-w-[46%] object-contain object-bottom sm:right-0 sm:h-[13.5rem] sm:max-w-[42%] lg:hidden"
           priority
         />
 
         {/* スマホ：従来レイアウト */}
-        <div className="flex min-h-[calc(100dvh-2.75rem)] flex-col md:hidden">
+        <div className="flex min-h-[calc(100dvh-2.75rem)] flex-col lg:hidden">
           <div className="min-w-0 max-w-xl">
             <p className="whitespace-nowrap text-[clamp(11px,2.8vw,15px)] font-medium leading-none tracking-[0.12em] text-emerald-800 sm:text-sm">
               Life Journey Diary
@@ -97,13 +100,13 @@ export function HomeEntranceSection() {
             <NewcomerBlock />
           </div>
 
-          <div className={`relative z-20 ${heroFontSizeControlBandClass}`}>
+          <div className={mobileEntranceFontSizeBandClass}>
             <ReadingFontSizeControl variant="hero" />
           </div>
         </div>
 
         {/* PC：左にコンテンツを縦積み、右にフクロウ */}
-        <div className="hidden md:grid md:grid-cols-[minmax(0,1fr)_12.5rem] md:items-end md:gap-6 lg:grid-cols-[minmax(0,1fr)_14rem] lg:gap-8">
+        <div className="hidden lg:grid lg:grid-cols-[minmax(0,1fr)_12.5rem] lg:items-end lg:gap-6 xl:grid-cols-[minmax(0,1fr)_14rem] xl:gap-8">
           <div className="flex flex-col gap-8">
             <div className="min-w-0 max-w-xl">
               <p className="whitespace-nowrap text-base font-medium leading-none tracking-[0.12em] text-emerald-800">
@@ -139,7 +142,7 @@ export function HomeEntranceSection() {
               width={682}
               height={1024}
               sizes="224px"
-              className="h-[19rem] w-auto max-w-full object-contain object-bottom lg:h-[21.5rem]"
+              className="h-[19rem] w-auto max-w-full object-contain object-bottom xl:h-[21.5rem]"
               priority
             />
           </div>
