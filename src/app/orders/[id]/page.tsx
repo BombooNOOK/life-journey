@@ -89,7 +89,7 @@ export default async function OrderDetailPage({ params }: Props) {
   const currentYear = new Date().getFullYear();
   const yearCycle = personalYearNumber(order.birthMonth, order.birthDay, currentYear);
   const yearTheme = personalYearCycleEntry(yearCycle);
-  const canCorrectIdentity = (order.identityCorrectionCount ?? 0) === 0;
+  const showDevDetails = process.env.NODE_ENV === "development";
 
   return (
     <div className="space-y-6">
@@ -97,13 +97,6 @@ export default async function OrderDetailPage({ params }: Props) {
         <Link href="/orders" className="text-sm text-stone-600 hover:text-stone-900">
           ← マイページ
         </Link>
-        <h1 className="mt-2 text-2xl font-bold text-stone-900">{order.fullNameDisplay} さんの鑑定</h1>
-        <p className="mt-1 text-sm text-stone-600">
-          今日のヒントから、今年のテーマやコアナンバーまで、あなたの鑑定をまとめて見られます。
-        </p>
-        <p className="mt-2 text-xs text-stone-500">
-          保存・製本・修正は、本棚の「概要」から行えます。
-        </p>
       </div>
 
       <KanteiTodayHintSection hint={todayHint} />
@@ -157,26 +150,30 @@ export default async function OrderDetailPage({ params }: Props) {
         </div>
         <div className="mt-4">
           <Link
-            href="/orders/bookshelf"
+            href="/orders"
             className="text-sm text-stone-600 underline-offset-2 hover:text-stone-900 hover:underline"
           >
-            ← 本棚に戻る
+            ← マイページ
           </Link>
         </div>
       </section>
 
-      <details className="rounded-xl border border-stone-200 bg-stone-50 p-4 text-xs text-stone-600">
-        <summary className="cursor-pointer font-medium text-stone-700">開発用情報</summary>
-        <div className="mt-2 space-y-1">
-          <p>注文ID: {order.id}</p>
-          <p>ステータス: {order.status}</p>
-          <p>登録: {order.createdAt.toLocaleString("ja-JP")}</p>
-          <p>入力修正可能: {canCorrectIdentity ? "はい（1回まで）" : "いいえ（利用済み）"}</p>
-          <p>
-            LP: {numerology.lifePathNumber} / Maturity: {maturityNumber}
-          </p>
-        </div>
-      </details>
+      {showDevDetails ? (
+        <details className="rounded-xl border border-stone-200 bg-stone-50 p-4 text-xs text-stone-600">
+          <summary className="cursor-pointer font-medium text-stone-700">開発用情報</summary>
+          <div className="mt-2 space-y-1">
+            <p>注文ID: {order.id}</p>
+            <p>ステータス: {order.status}</p>
+            <p>登録: {order.createdAt.toLocaleString("ja-JP")}</p>
+            <p>
+              入力修正可能: {(order.identityCorrectionCount ?? 0) === 0 ? "はい（1回まで）" : "いいえ（利用済み）"}
+            </p>
+            <p>
+              LP: {numerology.lifePathNumber} / Maturity: {maturityNumber}
+            </p>
+          </div>
+        </details>
+      ) : null}
     </div>
   );
 }
