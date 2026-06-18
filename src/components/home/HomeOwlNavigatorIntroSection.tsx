@@ -10,12 +10,13 @@ export function HomeOwlNavigatorIntroSection() {
       <div className="flex items-start gap-3 sm:gap-4">
         <div className="lj-reading-exempt shrink-0 pt-0.5">
           <Image
-            src="/decorations/owl-sensei-sm.png"
+            src="/decorations/owl-sensei-my-page-header.png"
             alt=""
             aria-hidden
-            width={56}
-            height={56}
-            className="h-14 w-14 rounded-full bg-[#f5f0e8]/80 object-contain p-1"
+            width={610}
+            height={751}
+            sizes="(max-width: 640px) 72px, 80px"
+            className="h-[4.5rem] w-auto select-none object-contain sm:h-20"
           />
         </div>
         <div className="min-w-0 pt-0.5">
