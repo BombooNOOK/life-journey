@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useLayoutEffect, useState } from "react";
+import { useLayoutEffect, useState } from "react";
 
 import { SaveTransitionAcornIndicator } from "@/components/journal/SaveTransitionAcornIndicator";
 import { guardianColorStyleForName } from "@/lib/journal/guardianColorDisplay";
@@ -54,19 +54,17 @@ export function JournalSaveStoryTransitionOverlay({
       if (!cancelled) setAnimalBeatReady(true);
     });
 
+    const timer = window.setTimeout(() => {
+      if (!cancelled) setOpeningElapsed(true);
+    }, SAVE_TRANSITION_PHASE1_MS);
+
     return () => {
       cancelled = true;
+      window.clearTimeout(timer);
     };
   }, [animal.imagePath]);
 
-  useEffect(() => {
-    const timer = window.setTimeout(() => {
-      setOpeningElapsed(true);
-    }, SAVE_TRANSITION_PHASE1_MS);
-    return () => window.clearTimeout(timer);
-  }, []);
-
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (openingElapsed && guardianColorResolved && animalBeatReady) {
       setPhase("animal");
     }
@@ -123,35 +121,41 @@ export function JournalSaveStoryTransitionOverlay({
                   </p>
                 </div>
               </div>
-            ) : (
+            ) : null}
+
+            {animalBeatReady ? (
               <div
-                className="overflow-hidden rounded-2xl shadow-[0_14px_44px_rgba(80,62,44,0.14)]"
-                style={{
-                  borderWidth: 1.5,
-                  borderStyle: "solid",
-                  borderColor: animalColorStyle.borderColor,
-                  backgroundColor: animalColorStyle.backgroundColor,
-                }}
+                className={phase === "animal" ? undefined : "hidden"}
+                aria-hidden={phase !== "animal"}
               >
-                <div className="h-1.5" style={{ backgroundColor: animalColorStyle.topAccent }} />
-                <div className="px-6 pb-7 pt-7 text-center">
-                  <div className="relative mx-auto h-[88px] w-[88px]">
-                    <Image
+                <div
+                  className="overflow-hidden rounded-2xl shadow-[0_14px_44px_rgba(80,62,44,0.14)]"
+                  style={{
+                    borderWidth: 1.5,
+                    borderStyle: "solid",
+                    borderColor: animalColorStyle.borderColor,
+                    backgroundColor: animalColorStyle.backgroundColor,
+                  }}
+                >
+                  <div className="h-1.5" style={{ backgroundColor: animalColorStyle.topAccent }} />
+                  <div className="px-6 pb-7 pt-7 text-center">
+                    {/* eslint-disable-next-line @next/next/no-img-element -- 先読み済み img で2段目を一括表示 */}
+                    <img
                       src={animal.imagePath}
                       alt=""
-                      fill
-                      className="object-contain object-bottom"
-                      sizes="88px"
-                      unoptimized
+                      width={88}
+                      height={88}
+                      decoding="sync"
+                      className="mx-auto h-[88px] w-[88px] object-contain object-bottom"
                     />
+                    <p className="mt-4 text-sm font-semibold text-stone-700">{animal.name}より</p>
+                    <p className="mt-3 whitespace-pre-wrap text-[15px] leading-7 text-stone-800">
+                      {animal.message}
+                    </p>
                   </div>
-                  <p className="mt-4 text-sm font-semibold text-stone-700">{animal.name}より</p>
-                  <p className="mt-3 whitespace-pre-wrap text-[15px] leading-7 text-stone-800">
-                    {animal.message}
-                  </p>
                 </div>
               </div>
-            )}
+            ) : null}
           </div>
         </>
       ) : null}
