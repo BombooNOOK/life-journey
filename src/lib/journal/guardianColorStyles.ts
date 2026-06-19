@@ -34,10 +34,10 @@ export const GUARDIAN_COLOR_STYLES: Record<string, GuardianColorCardStyle> = {
     textColor: "#a88a20",
   },
   緑: {
-    borderColor: "rgba(72, 150, 96, 0.45)",
+    borderColor: "rgba(42, 157, 85, 0.48)",
     backgroundColor: "rgba(244, 252, 246, 0.94)",
-    topAccent: "rgba(72, 150, 96, 0.58)",
-    textColor: "#3d8f58",
+    topAccent: "rgba(42, 157, 85, 0.62)",
+    textColor: "#2a9d55",
   },
   青: {
     borderColor: "rgba(72, 130, 190, 0.42)",

@@ -4,7 +4,7 @@ import Image from "next/image";
 import { useEffect, useState } from "react";
 
 import { SaveTransitionAcornIndicator } from "@/components/journal/SaveTransitionAcornIndicator";
-import { guardianColorStyle } from "@/lib/journal/guardianColorStyles";
+import { guardianColorStyleForName } from "@/lib/journal/guardianColorDisplay";
 import type { SaveAfterAnimalPick } from "@/lib/journal/journalSaveAfterAnimalMessages";
 import {
   SAVE_TRANSITION_OPENING_TEXT,
@@ -31,7 +31,7 @@ export function JournalSaveStoryTransitionOverlay({
 }: Props) {
   const [phase, setPhase] = useState<Phase>("opening");
   const [openingElapsed, setOpeningElapsed] = useState(false);
-  const colorStyle = guardianColorStyle(guardianColorName);
+  const colorStyle = guardianColorStyleForName(guardianColorName);
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
