@@ -32,4 +32,20 @@ describe("parseSafeJournalReturnTo", () => {
   it("rejects diary book return with invalid id", () => {
     expect(parseSafeJournalReturnTo("/orders/bookshelf/diary-book/../evil")).toBeNull();
   });
+
+  it("allows journal preview return with entry id", () => {
+    expect(
+      parseSafeJournalReturnTo(
+        "/journal/preview?entry=clxyz1234567890&theme=simple_plain&pv=3",
+      ),
+    ).toBe("/journal/preview?entry=clxyz1234567890&pv=3&theme=simple_plain");
+  });
+
+  it("allows journal list return with month", () => {
+    expect(parseSafeJournalReturnTo("/orders/list?month=2026-08")).toBe("/orders/list?month=2026-08");
+  });
+
+  it("allows bookshelf home return", () => {
+    expect(parseSafeJournalReturnTo("/orders/bookshelf")).toBe("/orders/bookshelf");
+  });
 });

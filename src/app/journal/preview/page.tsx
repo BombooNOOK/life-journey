@@ -286,7 +286,7 @@ function JournalPreviewPageContent() {
                   router.push(
                     journalEditPath(
                       entry.id,
-                      returnTo ?? "/journal/preview",
+                      meaningsReturnTo ?? returnTo ?? "/journal/preview",
                       effectiveProfileId || entry.profileId,
                     ),
                   );

@@ -86,7 +86,7 @@ export function JournalReadablePreview({
   const moodMeta = getMoodMeta(mood);
   const editHref = journalEditPath(
     entryId,
-    returnTo ?? "/journal/preview",
+    meaningsReturnTo ?? returnTo ?? "/journal/preview",
     profileId ?? undefined,
   );
   const photoUrl =

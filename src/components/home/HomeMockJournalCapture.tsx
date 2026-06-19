@@ -165,27 +165,9 @@ export function HomeMockJournalCapture() {
         <div className="flex flex-col gap-2 pt-1 sm:flex-row sm:flex-wrap">
           <button
             type="button"
-            className="rounded-lg bg-stone-900 px-4 py-2.5 text-base font-medium text-white"
+            className="min-h-[44px] rounded-lg bg-stone-900 px-4 py-2.5 text-base font-medium text-white"
           >
             保存する
-          </button>
-          <button
-            type="button"
-            className="rounded-lg border border-violet-300 bg-violet-50 px-4 py-2.5 text-base font-medium text-violet-950"
-          >
-            保存してプレビュー
-          </button>
-          <button
-            type="button"
-            className="rounded-lg border border-stone-300 bg-white px-4 py-2.5 text-base font-medium text-stone-800"
-          >
-            保存してマイページへ
-          </button>
-          <button
-            type="button"
-            className="rounded-lg border border-stone-200 bg-white px-4 py-2.5 text-base text-stone-600"
-          >
-            入力をクリア
           </button>
         </div>
       </form>

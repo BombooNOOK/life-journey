@@ -32,6 +32,8 @@ import { useEnsureActiveViewerProfile } from "@/hooks/useEnsureActiveViewerProfi
 import { parseSafeJournalReturnTo } from "@/lib/journal/bookshelfReturnTo";
 import {
   journalCalendarPathForMonth,
+  journalListPathForMonth,
+  journalPreviewPath,
   resolveJournalEntryMonthKey,
 } from "@/lib/journal/journalNav";
 import {
@@ -433,7 +435,7 @@ function JournalPageContent() {
     }
   }
 
-  async function saveEntry(options?: { redirectToOrders?: boolean; redirectToPreview?: boolean }) {
+  async function saveEntry(redirectMode: "preview" | "returnTo" = "preview") {
     setError(null);
 
     if (editingId && !canEditJournal) {
@@ -491,34 +493,31 @@ function JournalPageContent() {
         return;
       }
       const savedId = data.entry?.id ? String(data.entry.id) : editingId;
-      if (options?.redirectToPreview && savedId) {
+      if (!savedId) {
+        setError("保存に失敗しました。");
+        return;
+      }
+
+      const monthKey = resolveJournalEntryMonthKey({ entryDateYmd: entryDate });
+      const listFallback = monthKey ? journalListPathForMonth(monthKey) : "/orders/list";
+      const previewReturnTo = safeReturnTo ?? listFallback;
+
+      const goToPreview = () => {
         setNavigatingToPreview(true);
-        const previewQs = new URLSearchParams({
-          entry: savedId,
-          theme: designTheme,
-          pv: "3",
-        });
-        if (safeReturnTo) previewQs.set("returnTo", safeReturnTo);
-        if (effectiveProfileId) previewQs.set("profile", effectiveProfileId);
-        router.push(`/journal/preview?${previewQs.toString()}`);
+        router.push(journalPreviewPath(savedId, designTheme, previewReturnTo, effectiveProfileId));
+      };
+
+      if (!editingId || redirectMode === "preview") {
+        goToPreview();
         return;
       }
+
       resetJournalFormState();
-      if (options?.redirectToOrders) {
-        router.push("/orders");
-        return;
-      }
       if (safeReturnTo) {
         router.push(safeReturnTo);
         return;
       }
-      if (editingId) {
-        router.replace(
-          effectiveProfileId
-            ? `/journal?profile=${encodeURIComponent(effectiveProfileId)}`
-            : "/journal",
-        );
-      }
+      goToPreview();
     } catch {
       setError("通信に失敗しました。");
     } finally {
@@ -1018,48 +1017,31 @@ function JournalPageContent() {
             <button
               type="submit"
               disabled={saving || processingPhoto}
-              className="whitespace-nowrap rounded-lg bg-stone-800 px-4 py-2.5 text-base font-medium text-white transition hover:bg-stone-700 disabled:opacity-60 min-h-[44px]"
+              className="min-h-[44px] whitespace-nowrap rounded-lg bg-stone-800 px-4 py-2.5 text-base font-medium text-white transition hover:bg-stone-700 disabled:opacity-60"
             >
-              {saving ? "保存中…" : editingId ? "更新する" : "保存する"}
-            </button>
-            <button
-              type="button"
-              disabled={saving || processingPhoto}
-              onClick={() => void saveEntry({ redirectToPreview: true })}
-              className="whitespace-nowrap rounded-lg border border-violet-300 bg-violet-50 px-4 py-2.5 text-base font-medium text-violet-900 transition hover:bg-violet-100 disabled:opacity-60 min-h-[44px]"
-            >
-              保存してプレビュー
-            </button>
-            <button
-              type="button"
-              disabled={saving || processingPhoto}
-              onClick={() => void saveEntry({ redirectToOrders: true })}
-              className="whitespace-nowrap rounded-lg border border-stone-300 bg-white px-4 py-2.5 text-base font-medium text-stone-700 transition hover:bg-stone-50 disabled:opacity-60 min-h-[44px]"
-            >
-              保存してマイページへ
-            </button>
-            <button
-              type="button"
-              disabled={saving || processingPhoto}
-              onClick={() => {
-                resetJournalFormState();
-                setError(null);
-              }}
-              className="whitespace-nowrap rounded-lg border border-stone-300 bg-white px-4 py-2.5 text-base font-medium text-stone-700 transition hover:bg-stone-50 disabled:opacity-60 min-h-[44px]"
-            >
-              入力をクリア
+              {saving ? "保存中…" : "保存する"}
             </button>
             {editingId ? (
-              <button
-                type="button"
-                disabled={
-                  saving || processingPhoto || deletingId === editingId || navigatingToCalendar
-                }
-                onClick={cancelEditingAndReturnToCalendar}
-                className="whitespace-nowrap rounded-lg border border-stone-300 bg-white px-4 py-2.5 text-base font-medium text-stone-700 transition hover:bg-stone-50 disabled:opacity-60 min-h-[44px]"
-              >
-                編集をやめる
-              </button>
+              <>
+                <button
+                  type="button"
+                  disabled={saving || processingPhoto}
+                  onClick={() => void saveEntry("returnTo")}
+                  className="min-h-[44px] whitespace-nowrap rounded-lg border border-stone-300 bg-white px-4 py-2.5 text-base font-medium text-stone-700 transition hover:bg-stone-50 disabled:opacity-60"
+                >
+                  {saving ? "保存中…" : "保存して戻る"}
+                </button>
+                <button
+                  type="button"
+                  disabled={
+                    saving || processingPhoto || deletingId === editingId || navigatingToCalendar
+                  }
+                  onClick={cancelEditingAndReturnToCalendar}
+                  className="min-h-[44px] whitespace-nowrap rounded-lg border border-stone-300 bg-white px-4 py-2.5 text-base font-medium text-stone-700 transition hover:bg-stone-50 disabled:opacity-60"
+                >
+                  編集をやめる
+                </button>
+              </>
             ) : null}
         </div>
       </form>

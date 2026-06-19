@@ -5,10 +5,22 @@ function isValidCalendarDayParam(day: string): boolean {
   return probe.getFullYear() === y && probe.getMonth() === m - 1 && probe.getDate() === d;
 }
 
+function decodeSafePath(raw: string | null): string | null {
+  if (raw == null || typeof raw !== "string") return null;
+  try {
+    const decoded = decodeURIComponent(raw.trim());
+    if (!decoded.startsWith("/") || decoded.includes("//")) return null;
+    return decoded;
+  } catch {
+    return null;
+  }
+}
+
+const ENTRY_ID_PATTERN = /^[a-z0-9]{10,64}$/i;
+const PROFILE_ID_PATTERN = /^[a-z0-9]{10,64}$/i;
+
 /**
  * 日記編集画面の `returnTo` 用。オープンリダイレクトを防ぎ、許可した戻り先のみ返す。
- * - `/orders/calendar` + 任意 `?day=YYYY-MM-DD`
- * - `/orders/bookshelf/diary/1970..2100` + 任意 `?p=1`
  */
 export function parseSafeJournalReturnTo(raw: string | null): string | null {
   const diaryBook = parseSafeDiaryBookReturnTo(raw);
@@ -17,14 +29,17 @@ export function parseSafeJournalReturnTo(raw: string | null): string | null {
   const bookshelf = parseSafeBookshelfDiaryReturnTo(raw);
   if (bookshelf) return bookshelf;
 
-  if (raw == null || typeof raw !== "string") return null;
-  let decoded: string;
-  try {
-    decoded = decodeURIComponent(raw.trim());
-  } catch {
-    return null;
-  }
-  if (!decoded.startsWith("/") || decoded.includes("//")) return null;
+  const preview = parseSafeJournalPreviewReturnTo(raw);
+  if (preview) return preview;
+
+  const list = parseSafeJournalListReturnTo(raw);
+  if (list) return list;
+
+  const bookshelfHome = parseSafeBookshelfHomeReturnTo(raw);
+  if (bookshelfHome) return bookshelfHome;
+
+  const decoded = decodeSafePath(raw);
+  if (!decoded) return null;
 
   const qIndex = decoded.indexOf("?");
   const pathPart = qIndex >= 0 ? decoded.slice(0, qIndex) : decoded;
@@ -40,19 +55,77 @@ export function parseSafeJournalReturnTo(raw: string | null): string | null {
   return `${pathPart}?day=${day}`;
 }
 
+/** `/journal/preview?entry=…` など、日記プレビューへの戻り先 */
+export function parseSafeJournalPreviewReturnTo(raw: string | null): string | null {
+  const decoded = decodeSafePath(raw);
+  if (!decoded) return null;
+
+  const qIndex = decoded.indexOf("?");
+  const pathPart = qIndex >= 0 ? decoded.slice(0, qIndex) : decoded;
+  if (pathPart !== "/journal/preview") return null;
+  if (qIndex < 0) return pathPart;
+
+  const sp = new URLSearchParams(decoded.slice(qIndex + 1));
+  const entry = sp.get("entry")?.trim();
+  if (!entry || !ENTRY_ID_PATTERN.test(entry)) return null;
+
+  const rebuilt = new URLSearchParams({ entry, pv: "3" });
+  const theme = sp.get("theme")?.trim();
+  if (theme && /^[a-z0-9_-]{1,40}$/i.test(theme)) {
+    rebuilt.set("theme", theme);
+  }
+  const profile = sp.get("profile")?.trim();
+  if (profile && PROFILE_ID_PATTERN.test(profile)) {
+    rebuilt.set("profile", profile);
+  }
+  const nestedReturnTo = sp.get("returnTo");
+  if (nestedReturnTo) {
+    const safeNested = parseSafeJournalReturnTo(nestedReturnTo);
+    if (safeNested) rebuilt.set("returnTo", safeNested);
+  }
+
+  return `/journal/preview?${rebuilt.toString()}`;
+}
+
+/** `/orders/list?month=YYYY-MM` 日記一覧への戻り先 */
+export function parseSafeJournalListReturnTo(raw: string | null): string | null {
+  const decoded = decodeSafePath(raw);
+  if (!decoded) return null;
+
+  const qIndex = decoded.indexOf("?");
+  const pathPart = qIndex >= 0 ? decoded.slice(0, qIndex) : decoded;
+  if (pathPart !== "/orders/list") return null;
+  if (qIndex < 0) return pathPart;
+
+  const sp = new URLSearchParams(decoded.slice(qIndex + 1));
+  const month = sp.get("month")?.trim();
+  if (!month || !/^\d{4}-\d{2}$/.test(month)) return pathPart;
+
+  const [y, m] = month.split("-").map(Number);
+  const probe = new Date(y, m - 1, 1);
+  if (probe.getFullYear() !== y || probe.getMonth() !== m - 1) return pathPart;
+
+  return `/orders/list?month=${month}`;
+}
+
+/** 本棚トップ `/orders/bookshelf` */
+export function parseSafeBookshelfHomeReturnTo(raw: string | null): string | null {
+  const decoded = decodeSafePath(raw);
+  if (!decoded) return null;
+  const qIndex = decoded.indexOf("?");
+  const pathPart = qIndex >= 0 ? decoded.slice(0, qIndex) : decoded;
+  if (pathPart !== "/orders/bookshelf") return null;
+  if (qIndex < 0) return pathPart;
+  return null;
+}
+
 /**
  * 日記編集画面の `returnTo` 用。DiaryBook 読書画面のみ許可。
  * 形式: `/orders/bookshelf/diary-book/{bookId}` + 任意で `?p=1`（1始まりページ）
  */
 export function parseSafeDiaryBookReturnTo(raw: string | null): string | null {
-  if (raw == null || typeof raw !== "string") return null;
-  let decoded: string;
-  try {
-    decoded = decodeURIComponent(raw.trim());
-  } catch {
-    return null;
-  }
-  if (!decoded.startsWith("/") || decoded.includes("//")) return null;
+  const decoded = decodeSafePath(raw);
+  if (!decoded) return null;
 
   const qIndex = decoded.indexOf("?");
   const pathPart = qIndex >= 0 ? decoded.slice(0, qIndex) : decoded;
@@ -77,14 +150,8 @@ export function parseSafeDiaryBookReturnTo(raw: string | null): string | null {
  * 形式: `/orders/bookshelf/diary/1970..2100` + 任意で `?p=1`（1始まりページ）
  */
 export function parseSafeBookshelfDiaryReturnTo(raw: string | null): string | null {
-  if (raw == null || typeof raw !== "string") return null;
-  let decoded: string;
-  try {
-    decoded = decodeURIComponent(raw.trim());
-  } catch {
-    return null;
-  }
-  if (!decoded.startsWith("/") || decoded.includes("//")) return null;
+  const decoded = decodeSafePath(raw);
+  if (!decoded) return null;
 
   const qIndex = decoded.indexOf("?");
   const pathPart = qIndex >= 0 ? decoded.slice(0, qIndex) : decoded;
