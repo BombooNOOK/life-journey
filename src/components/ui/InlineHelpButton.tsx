@@ -9,6 +9,14 @@ type InlineHelpButtonProps = {
   buttonClassName?: string;
   /** 吹き出しの z-index（sticky 直上など） */
   panelZIndexClass?: string;
+  /** 吹き出しの水平位置（左端寄せは画面左で切れにくい） */
+  panelAlign?: "center" | "start" | "end";
+};
+
+const PANEL_ALIGN_CLASS: Record<NonNullable<InlineHelpButtonProps["panelAlign"]>, string> = {
+  center: "left-1/2 -translate-x-1/2 sm:left-auto sm:right-0 sm:translate-x-0",
+  start: "left-0 translate-x-0",
+  end: "left-auto right-0 translate-x-0",
 };
 
 export function InlineHelpButton({
@@ -16,6 +24,7 @@ export function InlineHelpButton({
   children,
   buttonClassName = "",
   panelZIndexClass = "z-50",
+  panelAlign = "center",
 }: InlineHelpButtonProps) {
   const [open, setOpen] = useState(false);
   const panelId = useId();
@@ -67,7 +76,7 @@ export function InlineHelpButton({
             "absolute top-[calc(100%+6px)] box-border rounded-lg border border-stone-200/90 bg-[#faf8f5] p-3 text-left lj-read-desc text-stone-600 shadow-md",
             "w-[min(320px,calc(100vw-32px))] max-w-[calc(100vw-32px)] sm:w-[min(360px,calc(100vw-32px))]",
             "whitespace-normal break-keep [overflow-wrap:break-word]",
-            "left-1/2 -translate-x-1/2 sm:left-auto sm:right-0 sm:translate-x-0",
+            PANEL_ALIGN_CLASS[panelAlign],
             panelZIndexClass,
           ].join(" ")}
         >
