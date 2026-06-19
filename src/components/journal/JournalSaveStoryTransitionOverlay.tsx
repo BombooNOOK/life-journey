@@ -3,7 +3,7 @@
 import Image from "next/image";
 import { useLayoutEffect, useState } from "react";
 
-import { SaveTransitionAcornIndicator } from "@/components/journal/SaveTransitionAcornIndicator";
+import { SaveTransitionForestDecoIndicator } from "@/components/journal/SaveTransitionForestDecoIndicator";
 import { guardianColorStyleForName } from "@/lib/journal/guardianColorDisplay";
 import type { SaveAfterAnimalPick } from "@/lib/journal/journalSaveAfterAnimalMessages";
 import {
@@ -115,7 +115,7 @@ export function JournalSaveStoryTransitionOverlay({
                   style={{ backgroundColor: OPENING_CARD_STYLE.topAccent }}
                 />
                 <div className="px-6 pb-8 pt-8 text-center">
-                  <SaveTransitionAcornIndicator />
+                  <SaveTransitionForestDecoIndicator />
                   <p className="mt-5 whitespace-pre-wrap text-[15px] font-medium leading-7 tracking-wide text-stone-800">
                     {SAVE_TRANSITION_OPENING_TEXT}
                   </p>
