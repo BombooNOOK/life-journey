@@ -48,7 +48,7 @@ export function JournalSaveStoryTransitionOverlay({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-gradient-to-b from-[#e8dfd2] via-[#f3ebe2] to-[#ddd4c8] px-4"
+      className="fixed inset-0 z-[100] flex items-center justify-center bg-gradient-to-b from-[#e8dfd2] via-[#f3ebe2] to-[#ddd4c8] px-4"
       aria-live="polite"
       aria-busy="true"
       role="status"

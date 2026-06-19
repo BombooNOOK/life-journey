@@ -563,8 +563,8 @@ function JournalPageContent() {
             prefetchJournalPreview(savedId),
             waitForSaveTransitionMinimum(startedAt),
           ]);
-          setSaveTransition(null);
           saveTransitionStartedAtRef.current = null;
+          // オーバーレイはページ離脱まで維持（消してから push すると入力画面が一瞬見える）
           router.push(previewPath);
         })();
         return;
