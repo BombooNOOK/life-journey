@@ -138,7 +138,7 @@ export function JournalSaveStoryTransitionOverlay({
                   }}
                 >
                   <div className="h-1.5" style={{ backgroundColor: animalColorStyle.topAccent }} />
-                  <div className="px-6 pb-7 pt-7 text-center">
+                  <div className="px-6 pb-7 pt-7">
                     {/* eslint-disable-next-line @next/next/no-img-element -- 先読み済み img で2段目を一括表示 */}
                     <img
                       src={animal.imagePath}
@@ -148,9 +148,11 @@ export function JournalSaveStoryTransitionOverlay({
                       decoding="sync"
                       className="mx-auto h-[88px] w-[88px] object-contain object-bottom"
                     />
-                    <p className="mt-4 text-sm font-semibold text-stone-700">{animal.name}より</p>
-                    <p className="mt-3 whitespace-pre-wrap text-[15px] leading-7 text-stone-800">
+                    <p className="mt-4 whitespace-pre-wrap text-left text-[15px] leading-7 text-stone-800">
                       {animal.message}
+                    </p>
+                    <p className="mt-3 text-right text-sm font-semibold text-stone-700">
+                      {animal.name}より
                     </p>
                   </div>
                 </div>
