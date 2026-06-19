@@ -94,11 +94,11 @@ function DiaryDesignPreviewInner({
 
   if (variant === "page") {
     return (
-      <div className="lj-reading-exempt">
+      <div className="lj-reading-exempt size-full min-h-0">
         <DiaryPreviewScaledViewport
           fitMode={pageFitMode}
           isolatePointerEvents={isolatePointerEvents}
-          className={`min-h-0 ${pageFitMode === "fullscreen" ? "w-full" : "h-full w-full"} ${scaledClassName}`.trim()}
+          className={`min-h-0 ${pageFitMode === "fullscreen" ? "w-full" : "size-full"} ${scaledClassName}`.trim()}
         >
           {page}
         </DiaryPreviewScaledViewport>

@@ -7,6 +7,7 @@ import { JournalPreviewDayNav } from "@/components/journal/JournalPreviewDayNav"
 import { JournalPreviewSpread } from "@/components/journal/JournalPreviewSpread";
 import { JournalReadablePreview } from "@/components/journal/JournalReadablePreview";
 import { ActiveProfileLabel } from "@/components/profile/ActiveProfileLabel";
+import { InlineHelpButton } from "@/components/ui/InlineHelpButton";
 import { useEnsureServerAuthSession } from "@/hooks/useEnsureServerAuthSession";
 import { useEnsureActiveViewerProfile } from "@/hooks/useEnsureActiveViewerProfile";
 import { useEntitlement } from "@/components/entitlement/useEntitlement";
@@ -171,7 +172,7 @@ function JournalPreviewPageContent() {
             <ActiveProfileLabel nickname={profileState.activeProfileNickname} className="mt-2" />
           ) : null}
         </div>
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <button
             type="button"
             onClick={() => setViewMode("readable")}
@@ -196,6 +197,9 @@ function JournalPreviewPageContent() {
           >
             製本イメージ
           </button>
+          <InlineHelpButton ariaLabel="製本イメージについて" panelZIndexClass="z-50">
+            {JOURNAL_BOOK_PREVIEW_NOTICE}
+          </InlineHelpButton>
         </div>
       </div>
 
@@ -231,7 +235,6 @@ function JournalPreviewPageContent() {
           />
         ) : (
           <div className="space-y-3">
-            <p className="lj-read-caption leading-relaxed text-stone-500">{JOURNAL_BOOK_PREVIEW_NOTICE}</p>
             <p className="hidden text-sm text-stone-600 sm:block">
               デザイン: {getDiaryDesignLabel(designTheme)}
             </p>

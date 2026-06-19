@@ -59,12 +59,14 @@ export function JournalPreviewSpread({ returnTo, returnHomeLabel, ...preview }: 
           aria-label="日記ページを全画面で見る"
         >
           <div className="relative mx-auto aspect-[724/1024] w-full max-w-md overflow-hidden">
-            <DiaryDesignPreview
-              {...preview}
-              variant="page"
-              pageFitMode="contain"
-              showBindingAlerts={false}
-            />
+            <div className="absolute inset-0">
+              <DiaryDesignPreview
+                {...preview}
+                variant="page"
+                pageFitMode="width"
+                showBindingAlerts={false}
+              />
+            </div>
           </div>
         </button>
         <DiaryPreviewBindingAlerts

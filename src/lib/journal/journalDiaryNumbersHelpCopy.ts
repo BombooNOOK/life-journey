@@ -14,3 +14,6 @@ export const NUMEROLOGY_NUMBER_MEANINGS_LINK_LABEL = "数字の意味を見る";
 
 export const JOURNAL_BOOK_PREVIEW_NOTICE =
   "製本イメージは、本にしたときの見え方を確認するための表示です。細かな確認は、PCまたはタブレットでの確認をおすすめします。";
+
+export const JOURNAL_LIST_HELP_TEXT =
+  "年月を選んで記録を表示します。項目をタップすると、読みやすいプレビューが開きます。";

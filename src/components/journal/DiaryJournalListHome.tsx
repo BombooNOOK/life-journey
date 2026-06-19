@@ -7,7 +7,9 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { ProfileSwitcher } from "@/components/profile/ProfileSwitcher";
 import { ActiveProfileLabel } from "@/components/profile/ActiveProfileLabel";
+import { InlineHelpButton } from "@/components/ui/InlineHelpButton";
 import { OwlLoadingInline } from "@/components/ui/OwlLoadingInline";
+import { JOURNAL_LIST_HELP_TEXT } from "@/lib/journal/journalDiaryNumbersHelpCopy";
 import {
   formatJournalListDayLabel,
   journalEntryListPreviewLine,
@@ -169,11 +171,13 @@ export function DiaryJournalListHome({
     <div>
       <div className="space-y-4">
         <div>
-          <h1 className="text-xl font-bold text-stone-900 sm:text-2xl">日記一覧</h1>
+          <div className="flex flex-wrap items-center gap-2">
+            <h1 className="text-xl font-bold text-stone-900 sm:text-2xl">日記一覧</h1>
+            <InlineHelpButton ariaLabel="日記一覧の説明" panelZIndexClass="z-50">
+              {JOURNAL_LIST_HELP_TEXT}
+            </InlineHelpButton>
+          </div>
           <ActiveProfileLabel nickname={effectiveProfileNickname} className="mt-2" />
-          <p className="lj-read-desc mt-2 leading-relaxed text-stone-600">
-            年月を選んで記録を表示します。項目をタップすると、読みやすいプレビューが開きます。
-          </p>
           <button
             type="button"
             onClick={() => setShowProfilePanel((v) => !v)}

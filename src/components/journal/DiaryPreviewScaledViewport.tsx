@@ -80,7 +80,11 @@ export function DiaryPreviewScaledViewport({
         const availH = Math.max(0, el.clientHeight - pad);
         if (availH > 0) {
           const byHeight = availH / DIARY_PREVIEW_PAGE_HEIGHT;
-          factor = Math.min(byWidth, byHeight);
+          const expectedH = (availW / DIARY_PREVIEW_PAGE_WIDTH) * DIARY_PREVIEW_PAGE_HEIGHT;
+          // 親の高さ未確定時に contain が極端に縮小するのを防ぐ
+          if (availH >= expectedH * 0.85) {
+            factor = Math.min(byWidth, byHeight);
+          }
         }
       }
 
