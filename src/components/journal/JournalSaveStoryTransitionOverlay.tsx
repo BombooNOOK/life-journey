@@ -138,20 +138,22 @@ export function JournalSaveStoryTransitionOverlay({
                   }}
                 >
                   <div className="h-1.5" style={{ backgroundColor: animalColorStyle.topAccent }} />
-                  <div className="px-6 pb-7 pt-7">
-                    {/* eslint-disable-next-line @next/next/no-img-element -- 先読み済み img で2段目を一括表示 */}
-                    <img
-                      src={animal.imagePath}
-                      alt=""
-                      width={88}
-                      height={88}
-                      decoding="sync"
-                      className="mx-auto h-[88px] w-[88px] object-contain object-bottom"
-                    />
-                    <p className="mt-4 whitespace-pre-wrap text-left text-[15px] leading-7 text-stone-800">
+                  <div className="flex flex-col px-6 pb-7 pt-7">
+                    <div className="flex justify-center">
+                      {/* eslint-disable-next-line @next/next/no-img-element -- 先読み済み img で2段目を一括表示 */}
+                      <img
+                        src={animal.imagePath}
+                        alt=""
+                        width={88}
+                        height={88}
+                        decoding="sync"
+                        className="h-[88px] w-[88px] object-contain object-bottom"
+                      />
+                    </div>
+                    <p className="mt-4 w-full text-start text-[15px] leading-7 text-stone-800 whitespace-pre-wrap">
                       {animal.message}
                     </p>
-                    <p className="mt-3 text-right text-sm font-semibold text-stone-700">
+                    <p className="mt-3 ml-auto text-sm font-semibold text-stone-700">
                       {animal.name}より
                     </p>
                   </div>
