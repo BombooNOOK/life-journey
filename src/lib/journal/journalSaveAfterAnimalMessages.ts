@@ -116,4 +116,4 @@ export function journalSaveTransitionRemainingMs(startedAt: number, now = Date.n
 }
 
 export const SAVE_TRANSITION_OPENING_TEXT =
-  "森のどうぶつ鑑定士が、\nこの日の記録をそっと見つめています…";
+  "森のどうぶつ鑑定士が、\nこの日の記録をひらいています…";

@@ -38,6 +38,10 @@ import {
 } from "@/lib/journal/journalSaveAfterAnimalMessages";
 import { prefetchJournalPreview } from "@/lib/journal/journalPreviewPrefetch";
 import {
+  preloadSaveTransitionAnimalAsset,
+  preloadSaveTransitionOpeningAssets,
+} from "@/lib/journal/saveTransitionAssets";
+import {
   journalCalendarPathForMonth,
   journalListPathForMonth,
   journalPreviewPath,
@@ -315,6 +319,10 @@ function JournalPageContent() {
   }, [authLoading, user?.email, profileState.ready]);
 
   useEffect(() => {
+    void preloadSaveTransitionOpeningAssets();
+  }, []);
+
+  useEffect(() => {
     if (editingId) return;
     if (!dateFromQuery || !isValidDateInput(dateFromQuery)) {
       setEntryDate(toDateInputValue(new Date()));
@@ -474,9 +482,11 @@ function JournalPageContent() {
 
     const isNewEntrySave = !editingId;
     if (isNewEntrySave) {
+      const animal = pickSaveAfterAnimalMessage();
+      void preloadSaveTransitionAnimalAsset(animal.imagePath);
       saveTransitionStartedAtRef.current = Date.now();
       setSaveTransition({
-        animal: pickSaveAfterAnimalMessage(),
+        animal,
         guardianColorName: null,
         guardianColorResolved: false,
       });

@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useState } from "react";
+import { useEffect, useLayoutEffect, useState } from "react";
 
 import { SaveTransitionAcornIndicator } from "@/components/journal/SaveTransitionAcornIndicator";
 import { guardianColorStyleForName } from "@/lib/journal/guardianColorDisplay";
@@ -13,6 +13,8 @@ import {
 import {
   SAVE_TRANSITION_FOREST_BG_DESKTOP_SRC,
   SAVE_TRANSITION_FOREST_BG_MOBILE_SRC,
+  preloadSaveTransitionAnimalAsset,
+  preloadSaveTransitionOpeningAssets,
 } from "@/lib/journal/saveTransitionAssets";
 
 type Props = {
@@ -24,8 +26,11 @@ type Props = {
 
 type Phase = "opening" | "animal";
 
+const OPENING_CARD_STYLE = guardianColorStyleForName(null);
+
 /**
  * 新規日記保存直後：2段構成の刹那演出。
+ * 1段目・2段目それぞれ要素をまとめて表示する（ぱっ、ぱっ）。
  * プレビューには残さない。
  */
 export function JournalSaveStoryTransitionOverlay({
@@ -35,7 +40,24 @@ export function JournalSaveStoryTransitionOverlay({
 }: Props) {
   const [phase, setPhase] = useState<Phase>("opening");
   const [openingElapsed, setOpeningElapsed] = useState(false);
-  const colorStyle = guardianColorStyleForName(guardianColorName);
+  const [openingBeatReady, setOpeningBeatReady] = useState(false);
+  const [animalBeatReady, setAnimalBeatReady] = useState(false);
+  const animalColorStyle = guardianColorStyleForName(guardianColorName);
+
+  useLayoutEffect(() => {
+    let cancelled = false;
+
+    void preloadSaveTransitionOpeningAssets().then(() => {
+      if (!cancelled) setOpeningBeatReady(true);
+    });
+    void preloadSaveTransitionAnimalAsset(animal.imagePath).then(() => {
+      if (!cancelled) setAnimalBeatReady(true);
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [animal.imagePath]);
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -45,10 +67,10 @@ export function JournalSaveStoryTransitionOverlay({
   }, []);
 
   useEffect(() => {
-    if (openingElapsed && guardianColorResolved) {
+    if (openingElapsed && guardianColorResolved && animalBeatReady) {
       setPhase("animal");
     }
-  }, [openingElapsed, guardianColorResolved]);
+  }, [openingElapsed, guardianColorResolved, animalBeatReady]);
 
   return (
     <div
@@ -57,68 +79,82 @@ export function JournalSaveStoryTransitionOverlay({
       aria-busy="true"
       role="status"
     >
-      <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden>
-        <Image
-          src={SAVE_TRANSITION_FOREST_BG_MOBILE_SRC}
-          alt=""
-          fill
-          sizes="100vw"
-          className="object-cover object-center md:hidden"
-          priority
-        />
-        <Image
-          src={SAVE_TRANSITION_FOREST_BG_DESKTOP_SRC}
-          alt=""
-          fill
-          sizes="100vw"
-          className="hidden object-cover object-center md:block"
-          priority
-        />
-        <div className="absolute inset-0 bg-[#faf8f5]/10" />
-      </div>
+      {openingBeatReady ? (
+        <>
+          <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden>
+            <Image
+              src={SAVE_TRANSITION_FOREST_BG_MOBILE_SRC}
+              alt=""
+              fill
+              sizes="100vw"
+              className="object-cover object-center md:hidden"
+              priority
+            />
+            <Image
+              src={SAVE_TRANSITION_FOREST_BG_DESKTOP_SRC}
+              alt=""
+              fill
+              sizes="100vw"
+              className="hidden object-cover object-center md:block"
+              priority
+            />
+            <div className="absolute inset-0 bg-[#faf8f5]/10" />
+          </div>
 
-      <div className="relative z-10 w-full max-w-sm">
-        <div
-          className="overflow-hidden rounded-2xl shadow-[0_14px_44px_rgba(80,62,44,0.14)] transition-[border-color,background-color] duration-500"
-          style={{
-            borderWidth: 1.5,
-            borderStyle: "solid",
-            borderColor: colorStyle.borderColor,
-            backgroundColor: colorStyle.backgroundColor,
-          }}
-        >
-          <div
-            className="h-1.5 transition-[background-color] duration-500"
-            style={{ backgroundColor: colorStyle.topAccent }}
-          />
-
-          {phase === "opening" ? (
-            <div className="px-6 pb-8 pt-8 text-center">
-              <SaveTransitionAcornIndicator />
-              <p className="mt-5 whitespace-pre-wrap text-[15px] font-medium leading-7 tracking-wide text-stone-800">
-                {SAVE_TRANSITION_OPENING_TEXT}
-              </p>
-            </div>
-          ) : (
-            <div className="px-6 pb-7 pt-7 text-center">
-              <div className="relative mx-auto h-[88px] w-[88px]">
-                <Image
-                  src={animal.imagePath}
-                  alt=""
-                  fill
-                  className="object-contain object-bottom"
-                  sizes="88px"
-                  unoptimized
+          <div className="relative z-10 w-full max-w-sm">
+            {phase === "opening" ? (
+              <div
+                className="overflow-hidden rounded-2xl shadow-[0_14px_44px_rgba(80,62,44,0.14)]"
+                style={{
+                  borderWidth: 1.5,
+                  borderStyle: "solid",
+                  borderColor: OPENING_CARD_STYLE.borderColor,
+                  backgroundColor: OPENING_CARD_STYLE.backgroundColor,
+                }}
+              >
+                <div
+                  className="h-1.5"
+                  style={{ backgroundColor: OPENING_CARD_STYLE.topAccent }}
                 />
+                <div className="px-6 pb-8 pt-8 text-center">
+                  <SaveTransitionAcornIndicator />
+                  <p className="mt-5 whitespace-pre-wrap text-[15px] font-medium leading-7 tracking-wide text-stone-800">
+                    {SAVE_TRANSITION_OPENING_TEXT}
+                  </p>
+                </div>
               </div>
-              <p className="mt-4 text-sm font-semibold text-stone-700">{animal.name}より</p>
-              <p className="mt-3 whitespace-pre-wrap text-[15px] leading-7 text-stone-800">
-                {animal.message}
-              </p>
-            </div>
-          )}
-        </div>
-      </div>
+            ) : (
+              <div
+                className="overflow-hidden rounded-2xl shadow-[0_14px_44px_rgba(80,62,44,0.14)]"
+                style={{
+                  borderWidth: 1.5,
+                  borderStyle: "solid",
+                  borderColor: animalColorStyle.borderColor,
+                  backgroundColor: animalColorStyle.backgroundColor,
+                }}
+              >
+                <div className="h-1.5" style={{ backgroundColor: animalColorStyle.topAccent }} />
+                <div className="px-6 pb-7 pt-7 text-center">
+                  <div className="relative mx-auto h-[88px] w-[88px]">
+                    <Image
+                      src={animal.imagePath}
+                      alt=""
+                      fill
+                      className="object-contain object-bottom"
+                      sizes="88px"
+                      unoptimized
+                    />
+                  </div>
+                  <p className="mt-4 text-sm font-semibold text-stone-700">{animal.name}より</p>
+                  <p className="mt-3 whitespace-pre-wrap text-[15px] leading-7 text-stone-800">
+                    {animal.message}
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
+        </>
+      ) : null}
     </div>
   );
 }
