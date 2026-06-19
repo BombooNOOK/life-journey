@@ -23,9 +23,8 @@ describe("journalSaveAfterAnimalMessages", () => {
     expect(pick.imagePath).toContain("diary-book-entry-companion-");
   });
 
-  it("演出合計は約2.75秒", () => {
-    expect(SAVE_TRANSITION_TOTAL_MS).toBeGreaterThanOrEqual(2500);
-    expect(SAVE_TRANSITION_TOTAL_MS).toBeLessThanOrEqual(3200);
+  it("演出合計は約3.4秒", () => {
+    expect(SAVE_TRANSITION_TOTAL_MS).toBe(3400);
   });
 
   it("残り時間を計算する", () => {

@@ -4,7 +4,7 @@ import Image from "next/image";
 import { useEffect, useState } from "react";
 
 import { SaveTransitionAcornIndicator } from "@/components/journal/SaveTransitionAcornIndicator";
-import { guardianColorCardStyle } from "@/lib/journal/guardianColorStyles";
+import { guardianColorStyle } from "@/lib/journal/guardianColorStyles";
 import type { SaveAfterAnimalPick } from "@/lib/journal/journalSaveAfterAnimalMessages";
 import {
   SAVE_TRANSITION_OPENING_TEXT,
@@ -14,6 +14,8 @@ import {
 type Props = {
   animal: SaveAfterAnimalPick;
   guardianColorName: string | null;
+  /** 保存API応答後 true（お守りカラー確定 or 未鑑定と判明） */
+  guardianColorResolved: boolean;
 };
 
 type Phase = "opening" | "animal";
@@ -22,16 +24,27 @@ type Phase = "opening" | "animal";
  * 新規日記保存直後：2段構成の刹那演出。
  * プレビューには残さない。
  */
-export function JournalSaveStoryTransitionOverlay({ animal, guardianColorName }: Props) {
+export function JournalSaveStoryTransitionOverlay({
+  animal,
+  guardianColorName,
+  guardianColorResolved,
+}: Props) {
   const [phase, setPhase] = useState<Phase>("opening");
-  const colorStyle = guardianColorCardStyle(guardianColorName);
+  const [openingElapsed, setOpeningElapsed] = useState(false);
+  const colorStyle = guardianColorStyle(guardianColorName);
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
-      setPhase("animal");
+      setOpeningElapsed(true);
     }, SAVE_TRANSITION_PHASE1_MS);
     return () => window.clearTimeout(timer);
   }, []);
+
+  useEffect(() => {
+    if (openingElapsed && guardianColorResolved) {
+      setPhase("animal");
+    }
+  }, [openingElapsed, guardianColorResolved]);
 
   return (
     <div
@@ -42,16 +55,16 @@ export function JournalSaveStoryTransitionOverlay({ animal, guardianColorName }:
     >
       <div className="w-full max-w-sm">
         <div
-          className="overflow-hidden rounded-2xl shadow-[0_14px_44px_rgba(80,62,44,0.14)] transition-colors duration-500"
+          className="overflow-hidden rounded-2xl shadow-[0_14px_44px_rgba(80,62,44,0.14)] transition-[border-color,background-color] duration-500"
           style={{
-            borderWidth: 1,
+            borderWidth: 1.5,
             borderStyle: "solid",
             borderColor: colorStyle.borderColor,
             backgroundColor: colorStyle.backgroundColor,
           }}
         >
           <div
-            className="h-1 transition-colors duration-500"
+            className="h-1.5 transition-[background-color] duration-500"
             style={{ backgroundColor: colorStyle.topAccent }}
           />
 

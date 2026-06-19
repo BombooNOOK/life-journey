@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useLayoutEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { JournalPreviewDayNav } from "@/components/journal/JournalPreviewDayNav";
@@ -12,7 +12,7 @@ import { useEnsureServerAuthSession } from "@/hooks/useEnsureServerAuthSession";
 import { useEnsureActiveViewerProfile } from "@/hooks/useEnsureActiveViewerProfile";
 import { useEntitlement } from "@/components/entitlement/useEntitlement";
 import { JOURNAL_BOOK_PREVIEW_NOTICE } from "@/lib/journal/journalDiaryNumbersHelpCopy";
-import { consumeJournalPreviewPrefetch } from "@/lib/journal/journalPreviewPrefetch";
+import { consumeJournalPreviewPrefetch, peekJournalPreviewPrefetch } from "@/lib/journal/journalPreviewPrefetch";
 import { journalEditPath } from "@/lib/journal/journalNav";
 import { getDiaryDesignLabel, normalizeDiaryDesignTheme, type DiaryDesignId } from "@/lib/journal/meta";
 import type { JournalPreviewNeighbors } from "@/lib/journal/journalPreviewNeighbors";
@@ -58,6 +58,7 @@ function JournalPreviewPageContent() {
   const [viewMode, setViewMode] = useState<ViewMode>("readable");
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [hydratedFromPrefetch, setHydratedFromPrefetch] = useState(false);
   const authSession = useEnsureServerAuthSession();
   const { entitlement } = useEntitlement();
   const canEditJournal = entitlement?.canUseContinuedFeatures ?? true;
@@ -65,23 +66,27 @@ function JournalPreviewPageContent() {
     redirectIfMissing: "/orders",
   });
 
+  useLayoutEffect(() => {
+    if (!entryId) return;
+    const prefetched = peekJournalPreviewPrefetch(entryId);
+    if (!prefetched) return;
+    setEntry(prefetched.entry as PreviewEntry);
+    setNeighbors(prefetched.neighbors);
+    setKanteiOrderExists(prefetched.kanteiOrderExists);
+    setLoading(false);
+    setError(null);
+    setHydratedFromPrefetch(true);
+    consumeJournalPreviewPrefetch(entryId);
+  }, [entryId]);
+
   useEffect(() => {
     if (!entryId) {
       setLoading(false);
       setError("表示する記録が指定されていません。");
       return;
     }
+    if (hydratedFromPrefetch) return;
     if (!authSession.ready) return;
-
-    const prefetched = consumeJournalPreviewPrefetch(entryId);
-    if (prefetched) {
-      setEntry(prefetched.entry as PreviewEntry);
-      setNeighbors(prefetched.neighbors);
-      setKanteiOrderExists(prefetched.kanteiOrderExists);
-      setLoading(false);
-      setError(null);
-      return;
-    }
 
     let cancelled = false;
     setLoading(true);
@@ -118,7 +123,7 @@ function JournalPreviewPageContent() {
     return () => {
       cancelled = true;
     };
-  }, [entryId, authSession.ready]);
+  }, [entryId, authSession.ready, hydratedFromPrefetch]);
 
   const designTheme: DiaryDesignId = useMemo(() => {
     if (themeParam?.trim()) return normalizeDiaryDesignTheme(themeParam);

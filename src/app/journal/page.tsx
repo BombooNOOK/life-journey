@@ -32,8 +32,8 @@ import { ActiveProfileLabel } from "@/components/profile/ActiveProfileLabel";
 import { useEnsureActiveViewerProfile } from "@/hooks/useEnsureActiveViewerProfile";
 import { parseSafeJournalReturnTo } from "@/lib/journal/bookshelfReturnTo";
 import {
-  journalSaveTransitionRemainingMs,
   pickSaveAfterAnimalMessage,
+  waitForSaveTransitionMinimum,
   type SaveAfterAnimalPick,
 } from "@/lib/journal/journalSaveAfterAnimalMessages";
 import { prefetchJournalPreview } from "@/lib/journal/journalPreviewPrefetch";
@@ -205,6 +205,7 @@ function JournalPageContent() {
   const [saveTransition, setSaveTransition] = useState<{
     animal: SaveAfterAnimalPick;
     guardianColorName: string | null;
+    guardianColorResolved: boolean;
   } | null>(null);
   const [navigatingToCalendar, setNavigatingToCalendar] = useState(false);
   const [kanteiOrderExists, setKanteiOrderExists] = useState<boolean | undefined>(undefined);
@@ -477,6 +478,7 @@ function JournalPageContent() {
       setSaveTransition({
         animal: pickSaveAfterAnimalMessage(),
         guardianColorName: null,
+        guardianColorResolved: false,
       });
     }
 
@@ -533,21 +535,40 @@ function JournalPageContent() {
         return;
       }
 
+      const monthKey = resolveJournalEntryMonthKey({ entryDateYmd: entryDate });
+      const listFallback = monthKey ? journalListPathForMonth(monthKey) : "/orders/list";
+      const previewReturnTo = safeReturnTo ?? listFallback;
+
       if (isNewEntrySave) {
         setSaveTransition((prev) =>
           prev
             ? {
                 ...prev,
                 guardianColorName: data.guardianColorName ?? null,
+                guardianColorResolved: true,
               }
             : prev,
         );
-        void prefetchJournalPreview(savedId);
-      }
 
-      const monthKey = resolveJournalEntryMonthKey({ entryDateYmd: entryDate });
-      const listFallback = monthKey ? journalListPathForMonth(monthKey) : "/orders/list";
-      const previewReturnTo = safeReturnTo ?? listFallback;
+        const startedAt = saveTransitionStartedAtRef.current ?? Date.now();
+        const previewPath = journalPreviewPath(
+          savedId,
+          designTheme,
+          previewReturnTo,
+          effectiveProfileId,
+        );
+
+        void (async () => {
+          await Promise.all([
+            prefetchJournalPreview(savedId),
+            waitForSaveTransitionMinimum(startedAt),
+          ]);
+          setSaveTransition(null);
+          saveTransitionStartedAtRef.current = null;
+          router.push(previewPath);
+        })();
+        return;
+      }
 
       const goToPreview = () => {
         setNavigatingToPreview(true);
@@ -555,22 +576,6 @@ function JournalPageContent() {
       };
 
       if (!editingId || redirectMode === "preview") {
-        if (!editingId) {
-          const startedAt = saveTransitionStartedAtRef.current ?? Date.now();
-          const waitMs = journalSaveTransitionRemainingMs(startedAt);
-          const previewPath = journalPreviewPath(
-            savedId,
-            designTheme,
-            previewReturnTo,
-            effectiveProfileId,
-          );
-          window.setTimeout(() => {
-            setSaveTransition(null);
-            saveTransitionStartedAtRef.current = null;
-            router.push(previewPath);
-          }, waitMs);
-          return;
-        }
         goToPreview();
         return;
       }
@@ -713,6 +718,7 @@ function JournalPageContent() {
         <JournalSaveStoryTransitionOverlay
           animal={saveTransition.animal}
           guardianColorName={saveTransition.guardianColorName}
+          guardianColorResolved={saveTransition.guardianColorResolved}
         />
       ) : null}
       {navigatingToPreview ? (

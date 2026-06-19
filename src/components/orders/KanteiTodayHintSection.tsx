@@ -1,3 +1,4 @@
+import { guardianColorTextColor } from "@/lib/journal/guardianColorStyles";
 import type { TodayHintContent } from "@/lib/kantei/todayHintContent";
 
 type Props = {
@@ -7,6 +8,8 @@ type Props = {
 
 /** 鑑定ページ：今日のヒント（毎日見るメインコンテンツ） */
 export function KanteiTodayHintSection({ hint, className = "" }: Props) {
+  const guardianTextColor = guardianColorTextColor(hint.guardianColor);
+
   return (
     <section
       id="today-hint"
@@ -33,7 +36,9 @@ export function KanteiTodayHintSection({ hint, className = "" }: Props) {
       <div className="grid gap-3 sm:grid-cols-2">
         <div className="rounded-xl border border-stone-200 bg-white p-4 shadow-sm">
           <h3 className="text-sm font-semibold text-stone-700">今日のお守りカラー</h3>
-          <p className="mt-2 text-2xl font-semibold text-amber-700">{hint.guardianColor}</p>
+          <p className="mt-2 text-2xl font-semibold" style={{ color: guardianTextColor }}>
+            {hint.guardianColor}
+          </p>
         </div>
         <div className="rounded-xl border border-stone-200 bg-white p-4 shadow-sm">
           <h3 className="text-sm font-semibold text-stone-700">今日の小さな行動</h3>

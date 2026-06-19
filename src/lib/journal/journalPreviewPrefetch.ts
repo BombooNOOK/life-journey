@@ -10,27 +10,12 @@ export type JournalPreviewPrefetchPayload = {
   fetchedAt: number;
 };
 
-export function storeJournalPreviewPrefetch(
-  entryId: string,
-  payload: Omit<JournalPreviewPrefetchPayload, "fetchedAt">,
-): void {
-  if (typeof window === "undefined") return;
-  try {
-    sessionStorage.setItem(
-      PREFETCH_KEY_PREFIX + entryId,
-      JSON.stringify({ ...payload, fetchedAt: Date.now() }),
-    );
-  } catch {
-    // sessionStorage 不可時はスキップ
-  }
+function storageKey(entryId: string): string {
+  return PREFETCH_KEY_PREFIX + entryId;
 }
 
-export function consumeJournalPreviewPrefetch(entryId: string): JournalPreviewPrefetchPayload | null {
-  if (typeof window === "undefined") return null;
-  const key = PREFETCH_KEY_PREFIX + entryId;
-  const raw = sessionStorage.getItem(key);
+function parsePrefetch(raw: string | null): JournalPreviewPrefetchPayload | null {
   if (!raw) return null;
-  sessionStorage.removeItem(key);
   try {
     const parsed = JSON.parse(raw) as JournalPreviewPrefetchPayload;
     if (!parsed?.entry || Date.now() - parsed.fetchedAt > PREFETCH_TTL_MS) return null;
@@ -38,6 +23,35 @@ export function consumeJournalPreviewPrefetch(entryId: string): JournalPreviewPr
   } catch {
     return null;
   }
+}
+
+export function storeJournalPreviewPrefetch(
+  entryId: string,
+  payload: Omit<JournalPreviewPrefetchPayload, "fetchedAt">,
+): void {
+  if (typeof window === "undefined") return;
+  try {
+    sessionStorage.setItem(
+      storageKey(entryId),
+      JSON.stringify({ ...payload, fetchedAt: Date.now() }),
+    );
+  } catch {
+    // sessionStorage 不可時はスキップ
+  }
+}
+
+/** 先読み済みか確認（消費しない） */
+export function peekJournalPreviewPrefetch(entryId: string): JournalPreviewPrefetchPayload | null {
+  if (typeof window === "undefined") return null;
+  return parsePrefetch(sessionStorage.getItem(storageKey(entryId)));
+}
+
+export function consumeJournalPreviewPrefetch(entryId: string): JournalPreviewPrefetchPayload | null {
+  if (typeof window === "undefined") return null;
+  const key = storageKey(entryId);
+  const parsed = parsePrefetch(sessionStorage.getItem(key));
+  if (parsed) sessionStorage.removeItem(key);
+  return parsed;
 }
 
 export async function fetchJournalPreviewPayload(entryId: string): Promise<{
@@ -63,8 +77,9 @@ export async function fetchJournalPreviewPayload(entryId: string): Promise<{
   };
 }
 
-export async function prefetchJournalPreview(entryId: string): Promise<void> {
+export async function prefetchJournalPreview(entryId: string): Promise<boolean> {
   const payload = await fetchJournalPreviewPayload(entryId);
-  if (!payload) return;
+  if (!payload) return false;
   storeJournalPreviewPrefetch(entryId, payload);
+  return true;
 }

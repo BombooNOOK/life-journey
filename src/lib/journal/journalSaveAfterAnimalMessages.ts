@@ -93,17 +93,27 @@ export function pickSaveAfterAnimalMessage(): SaveAfterAnimalPick {
   };
 }
 
-/** 1段目：前置き演出（0.8〜1.2秒） */
-export const SAVE_TRANSITION_PHASE1_MS = 1000;
+/** 1段目：前置き演出（じらし時間を長めに） */
+export const SAVE_TRANSITION_PHASE1_MS = 1800;
 
-/** 2段目：どうぶつカード（1.5〜2.0秒） */
-export const SAVE_TRANSITION_PHASE2_MS = 1750;
+/** 2段目：どうぶつカード */
+export const SAVE_TRANSITION_PHASE2_MS = 1600;
 
 export const SAVE_TRANSITION_TOTAL_MS = SAVE_TRANSITION_PHASE1_MS + SAVE_TRANSITION_PHASE2_MS;
+
+/** 演出の最低表示時間を満たすまで待つ */
+export async function waitForSaveTransitionMinimum(startedAt: number): Promise<void> {
+  const remaining = journalSaveTransitionRemainingMs(startedAt);
+  if (remaining <= 0) return;
+  await new Promise<void>((resolve) => {
+    window.setTimeout(resolve, remaining);
+  });
+}
 
 /** 演出開始時刻から、プレビュー遷移まであと何 ms 待つか */
 export function journalSaveTransitionRemainingMs(startedAt: number, now = Date.now()): number {
   return Math.max(0, SAVE_TRANSITION_TOTAL_MS - (now - startedAt));
 }
 
-export const SAVE_TRANSITION_OPENING_TEXT = "フクロウ先生が、\nこの日の数字をひらいています…";
+export const SAVE_TRANSITION_OPENING_TEXT =
+  "森のどうぶつ鑑定士が、\nこの日の記録をそっと見つめています…";
