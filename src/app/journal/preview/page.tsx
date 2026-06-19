@@ -3,6 +3,7 @@
 import { Suspense, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
+import { JournalPreviewDayNav } from "@/components/journal/JournalPreviewDayNav";
 import { JournalPreviewSpread } from "@/components/journal/JournalPreviewSpread";
 import { JournalReadablePreview } from "@/components/journal/JournalReadablePreview";
 import { ActiveProfileLabel } from "@/components/profile/ActiveProfileLabel";
@@ -12,6 +13,7 @@ import { useEntitlement } from "@/components/entitlement/useEntitlement";
 import { JOURNAL_BOOK_PREVIEW_NOTICE } from "@/lib/journal/journalDiaryNumbersHelpCopy";
 import { journalEditPath } from "@/lib/journal/journalNav";
 import { getDiaryDesignLabel, normalizeDiaryDesignTheme, type DiaryDesignId } from "@/lib/journal/meta";
+import type { JournalPreviewNeighbors } from "@/lib/journal/journalPreviewNeighbors";
 
 type PreviewEntry = {
   id: string;
@@ -47,6 +49,7 @@ function JournalPreviewPageContent() {
   const returnTo =
     returnToRaw && returnToRaw.startsWith("/") && !returnToRaw.startsWith("//") ? returnToRaw : null;
   const [entry, setEntry] = useState<PreviewEntry | null>(null);
+  const [neighbors, setNeighbors] = useState<JournalPreviewNeighbors>({ prev: null, next: null });
   const [kanteiOrderExists, setKanteiOrderExists] = useState<boolean | undefined>(undefined);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -77,6 +80,7 @@ function JournalPreviewPageContent() {
       .then(async (res) => {
         const data = (await res.json()) as {
           entry?: PreviewEntry;
+          neighbors?: JournalPreviewNeighbors;
           kanteiOrderExists?: boolean;
           error?: string;
         };
@@ -85,6 +89,7 @@ function JournalPreviewPageContent() {
         }
         if (!cancelled) {
           setEntry(data.entry);
+          setNeighbors(data.neighbors ?? { prev: null, next: null });
           setKanteiOrderExists(data.kanteiOrderExists);
         }
       })
@@ -251,6 +256,15 @@ function JournalPreviewPageContent() {
           </div>
         )}
       </div>
+
+      {entry && (neighbors.prev || neighbors.next) ? (
+        <JournalPreviewDayNav
+          neighbors={neighbors}
+          designTheme={designTheme}
+          returnTo={returnTo}
+          profileId={effectiveProfileId || entry.profileId}
+        />
+      ) : null}
 
       <div className="space-y-3 pb-[max(1rem,env(safe-area-inset-bottom))] sm:space-y-0 sm:pb-0">
         {returnTo ? (

@@ -15,6 +15,7 @@ import { buildJournalNumerologyDebug } from "@/lib/journal/journalNumerologyDebu
 import { buildDiaryNumbers } from "@/lib/journal/numbers";
 import { shouldPreserveJournalGeneratedComment } from "@/lib/journal/preserveDiaryReading";
 import { resolveContentFontModeFromRequest } from "@/lib/journal/contentFontMode";
+import { findJournalPreviewNeighbors } from "@/lib/journal/journalPreviewNeighbors";
 import { formatJournalEntryForApiResponse } from "@/lib/journal/journalEntryApiSerialize";
 import {
   parsePhotoPatchFromRequestBody,
@@ -184,10 +185,18 @@ export async function GET(req: Request, { params }: Params) {
     generatedComment: sanitizeJournalCommentForResponse(r.generatedComment, kanteiOrderExists),
   });
 
+  const neighbors = await findJournalPreviewNeighbors({
+    viewerEmail,
+    entryId: r.id,
+    profileId: r.profileId,
+    createdAt: r.createdAt,
+  });
+
   return NextResponse.json(
     {
       kanteiOrderExists,
       entry: formatted,
+      neighbors,
       code: "OK",
     },
     JSON_NO_STORE,

@@ -1,3 +1,4 @@
+import { japanTodayAnchorDate } from "@/lib/date/japanCalendarDate";
 import { getPersonalDayOneLineMessageByBirthDate } from "@/lib/numerology/personalDayMessage";
 import {
   personalDayNumber,
@@ -50,7 +51,7 @@ export function buildTodayHintContent({
   orderId,
   birthMonth,
   birthDay,
-  date = new Date(),
+  date = japanTodayAnchorDate(),
 }: TodayHintInput): TodayHintContent {
   const personalYear = personalYearNumber(birthMonth, birthDay, date.getFullYear());
   const personalMonth = personalMonthNumber(personalYear, date.getMonth() + 1);
