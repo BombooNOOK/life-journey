@@ -10,6 +10,10 @@ import {
   SAVE_TRANSITION_OPENING_TEXT,
   SAVE_TRANSITION_PHASE1_MS,
 } from "@/lib/journal/journalSaveAfterAnimalMessages";
+import {
+  SAVE_TRANSITION_FOREST_BG_DESKTOP_SRC,
+  SAVE_TRANSITION_FOREST_BG_MOBILE_SRC,
+} from "@/lib/journal/saveTransitionAssets";
 
 type Props = {
   animal: SaveAfterAnimalPick;
@@ -48,12 +52,32 @@ export function JournalSaveStoryTransitionOverlay({
 
   return (
     <div
-      className="fixed inset-0 z-[100] flex items-center justify-center bg-gradient-to-b from-[#e8dfd2] via-[#f3ebe2] to-[#ddd4c8] px-4"
+      className="fixed inset-0 z-[100] flex items-center justify-center bg-[#f3ebe2] px-4"
       aria-live="polite"
       aria-busy="true"
       role="status"
     >
-      <div className="w-full max-w-sm">
+      <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden>
+        <Image
+          src={SAVE_TRANSITION_FOREST_BG_MOBILE_SRC}
+          alt=""
+          fill
+          sizes="100vw"
+          className="object-cover object-center md:hidden"
+          priority
+        />
+        <Image
+          src={SAVE_TRANSITION_FOREST_BG_DESKTOP_SRC}
+          alt=""
+          fill
+          sizes="100vw"
+          className="hidden object-cover object-center md:block"
+          priority
+        />
+        <div className="absolute inset-0 bg-[#faf8f5]/10" />
+      </div>
+
+      <div className="relative z-10 w-full max-w-sm">
         <div
           className="overflow-hidden rounded-2xl shadow-[0_14px_44px_rgba(80,62,44,0.14)] transition-[border-color,background-color] duration-500"
           style={{
