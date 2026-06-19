@@ -33,8 +33,10 @@ import { useEnsureActiveViewerProfile } from "@/hooks/useEnsureActiveViewerProfi
 import { parseSafeJournalReturnTo } from "@/lib/journal/bookshelfReturnTo";
 import {
   journalSaveTransitionRemainingMs,
-  pickJournalSaveTransitionLine,
-} from "@/lib/journal/journalSaveTransitionCopy";
+  pickSaveAfterAnimalMessage,
+  type SaveAfterAnimalPick,
+} from "@/lib/journal/journalSaveAfterAnimalMessages";
+import { prefetchJournalPreview } from "@/lib/journal/journalPreviewPrefetch";
 import {
   journalCalendarPathForMonth,
   journalListPathForMonth,
@@ -200,7 +202,10 @@ function JournalPageContent() {
   const [numerologyDebug, setNumerologyDebug] = useState<JournalNumerologyDebug | null>(null);
   const [owlRegenLoading, setOwlRegenLoading] = useState(false);
   const [navigatingToPreview, setNavigatingToPreview] = useState(false);
-  const [saveTransitionLine, setSaveTransitionLine] = useState<string | null>(null);
+  const [saveTransition, setSaveTransition] = useState<{
+    animal: SaveAfterAnimalPick;
+    guardianColorName: string | null;
+  } | null>(null);
   const [navigatingToCalendar, setNavigatingToCalendar] = useState(false);
   const [kanteiOrderExists, setKanteiOrderExists] = useState<boolean | undefined>(undefined);
 
@@ -224,7 +229,7 @@ function JournalPageContent() {
     setLoadingEdit(false);
     setOwlRegenLoading(false);
     setNavigatingToPreview(false);
-    setSaveTransitionLine(null);
+    setSaveTransition(null);
     saveTransitionStartedAtRef.current = null;
     if (photoInputRef.current) {
       photoInputRef.current.value = "";
@@ -469,7 +474,10 @@ function JournalPageContent() {
     const isNewEntrySave = !editingId;
     if (isNewEntrySave) {
       saveTransitionStartedAtRef.current = Date.now();
-      setSaveTransitionLine(pickJournalSaveTransitionLine());
+      setSaveTransition({
+        animal: pickSaveAfterAnimalMessage(),
+        guardianColorName: null,
+      });
     }
 
     setSaving(true);
@@ -502,10 +510,14 @@ function JournalPageContent() {
           effectiveProfileId,
         }),
       });
-      const data = (await res.json()) as { error?: string; entry?: { id?: string } };
+      const data = (await res.json()) as {
+        error?: string;
+        entry?: { id?: string };
+        guardianColorName?: string | null;
+      };
       if (!res.ok) {
         if (isNewEntrySave) {
-          setSaveTransitionLine(null);
+          setSaveTransition(null);
           saveTransitionStartedAtRef.current = null;
         }
         setError(data.error ?? "保存に失敗しました。");
@@ -514,11 +526,23 @@ function JournalPageContent() {
       const savedId = data.entry?.id ? String(data.entry.id) : editingId;
       if (!savedId) {
         if (isNewEntrySave) {
-          setSaveTransitionLine(null);
+          setSaveTransition(null);
           saveTransitionStartedAtRef.current = null;
         }
         setError("保存に失敗しました。");
         return;
+      }
+
+      if (isNewEntrySave) {
+        setSaveTransition((prev) =>
+          prev
+            ? {
+                ...prev,
+                guardianColorName: data.guardianColorName ?? null,
+              }
+            : prev,
+        );
+        void prefetchJournalPreview(savedId);
       }
 
       const monthKey = resolveJournalEntryMonthKey({ entryDateYmd: entryDate });
@@ -541,7 +565,7 @@ function JournalPageContent() {
             effectiveProfileId,
           );
           window.setTimeout(() => {
-            setSaveTransitionLine(null);
+            setSaveTransition(null);
             saveTransitionStartedAtRef.current = null;
             router.push(previewPath);
           }, waitMs);
@@ -560,7 +584,7 @@ function JournalPageContent() {
     } catch {
       setError("通信に失敗しました。");
       if (isNewEntrySave) {
-        setSaveTransitionLine(null);
+        setSaveTransition(null);
         saveTransitionStartedAtRef.current = null;
       }
     } finally {
@@ -685,8 +709,11 @@ function JournalPageContent() {
 
   return (
     <div className="relative space-y-3">
-      {saveTransitionLine ? (
-        <JournalSaveStoryTransitionOverlay randomLine={saveTransitionLine} />
+      {saveTransition ? (
+        <JournalSaveStoryTransitionOverlay
+          animal={saveTransition.animal}
+          guardianColorName={saveTransition.guardianColorName}
+        />
       ) : null}
       {navigatingToPreview ? (
         <div
@@ -750,7 +777,7 @@ function JournalPageContent() {
                 disabled={
                   navigatingToCalendar ||
                   navigatingToPreview ||
-                  saveTransitionLine != null ||
+                  saveTransition != null ||
                   saving ||
                   processingPhoto ||
                   Boolean(deletingId)

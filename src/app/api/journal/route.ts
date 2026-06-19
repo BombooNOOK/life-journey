@@ -18,6 +18,8 @@ const JSON_NO_STORE = {
 } as const;
 import { prisma } from "@/lib/db";
 import { buildDiaryNumbers } from "@/lib/journal/numbers";
+import { guardianColorNameForEntryDate } from "@/lib/journal/guardianColorForEntryDate";
+import { journalEntryDateToIsoDateInput } from "@/lib/journal/referenceDateParts";
 import {
   journalProfileIdsForQuery,
   profileByIdForViewer,
@@ -29,6 +31,7 @@ import {
   profileHasKanteiOrder,
   sanitizeJournalCommentForResponse,
 } from "@/lib/journal/kanteiCommentEligibility";
+import { findKanteiOrderForProfile } from "@/lib/profile/orderPerProfile";
 import { resolveContentFontModeFromRequest } from "@/lib/journal/contentFontMode";
 import { formatJournalEntryForApiResponse } from "@/lib/journal/journalEntryApiSerialize";
 import { loadJournalEntryHasPhotoFlags } from "@/lib/journal/journalEntryHasPhoto";
@@ -595,9 +598,22 @@ export async function POST(req: Request) {
     }
 
     const kanteiOrderExists = await profileHasKanteiOrder(viewerEmail, profileId);
+    const kanteiOrder = kanteiOrderExists
+      ? await findKanteiOrderForProfile({ viewerEmail, profileId })
+      : null;
+    const guardianColorName =
+      kanteiOrder?.birthMonth != null && kanteiOrder?.birthDay != null && parsedEntryDate
+        ? guardianColorNameForEntryDate({
+            birthMonth: kanteiOrder.birthMonth,
+            birthDay: kanteiOrder.birthDay,
+            entryDateYmd: journalEntryDateToIsoDateInput(parsedEntryDate),
+          })
+        : null;
+
     return NextResponse.json({
       entry: entry ? formatJournalEntryForApiResponse(entry) : null,
       kanteiOrderExists,
+      guardianColorName,
       code: "OK",
     });
   } catch (e) {

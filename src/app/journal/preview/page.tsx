@@ -12,6 +12,7 @@ import { useEnsureServerAuthSession } from "@/hooks/useEnsureServerAuthSession";
 import { useEnsureActiveViewerProfile } from "@/hooks/useEnsureActiveViewerProfile";
 import { useEntitlement } from "@/components/entitlement/useEntitlement";
 import { JOURNAL_BOOK_PREVIEW_NOTICE } from "@/lib/journal/journalDiaryNumbersHelpCopy";
+import { consumeJournalPreviewPrefetch } from "@/lib/journal/journalPreviewPrefetch";
 import { journalEditPath } from "@/lib/journal/journalNav";
 import { getDiaryDesignLabel, normalizeDiaryDesignTheme, type DiaryDesignId } from "@/lib/journal/meta";
 import type { JournalPreviewNeighbors } from "@/lib/journal/journalPreviewNeighbors";
@@ -71,6 +72,17 @@ function JournalPreviewPageContent() {
       return;
     }
     if (!authSession.ready) return;
+
+    const prefetched = consumeJournalPreviewPrefetch(entryId);
+    if (prefetched) {
+      setEntry(prefetched.entry as PreviewEntry);
+      setNeighbors(prefetched.neighbors);
+      setKanteiOrderExists(prefetched.kanteiOrderExists);
+      setLoading(false);
+      setError(null);
+      return;
+    }
+
     let cancelled = false;
     setLoading(true);
     setError(null);

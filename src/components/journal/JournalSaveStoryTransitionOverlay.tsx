@@ -1,68 +1,85 @@
 "use client";
 
+import Image from "next/image";
 import { useEffect, useState } from "react";
 
-import { OwlSpinIndicator } from "@/components/ui/OwlSpinIndicator";
-import { JOURNAL_SAVE_TRANSITION_RANDOM_LINE_DELAY_MS } from "@/lib/journal/journalSaveTransitionCopy";
+import { SaveTransitionAcornIndicator } from "@/components/journal/SaveTransitionAcornIndicator";
+import { guardianColorCardStyle } from "@/lib/journal/guardianColorStyles";
+import type { SaveAfterAnimalPick } from "@/lib/journal/journalSaveAfterAnimalMessages";
+import {
+  SAVE_TRANSITION_OPENING_TEXT,
+  SAVE_TRANSITION_PHASE1_MS,
+} from "@/lib/journal/journalSaveAfterAnimalMessages";
 
 type Props = {
-  randomLine: string;
+  animal: SaveAfterAnimalPick;
+  guardianColorName: string | null;
 };
 
+type Phase = "opening" | "animal";
+
 /**
- * 新規日記保存直後：ストーリーのように一瞬だけ表示するフクロウ演出。
- * くるくる表示は仮置き（OwlSpinIndicator）。後から差し替え可能。
+ * 新規日記保存直後：2段構成の刹那演出。
+ * プレビューには残さない。
  */
-export function JournalSaveStoryTransitionOverlay({ randomLine }: Props) {
-  const [showRandomLine, setShowRandomLine] = useState(false);
+export function JournalSaveStoryTransitionOverlay({ animal, guardianColorName }: Props) {
+  const [phase, setPhase] = useState<Phase>("opening");
+  const colorStyle = guardianColorCardStyle(guardianColorName);
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
-      setShowRandomLine(true);
-    }, JOURNAL_SAVE_TRANSITION_RANDOM_LINE_DELAY_MS);
+      setPhase("animal");
+    }, SAVE_TRANSITION_PHASE1_MS);
     return () => window.clearTimeout(timer);
   }, []);
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-gradient-to-b from-[#ebe3d6] via-[#f5efe6] to-[#ddd4c6] px-4"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-gradient-to-b from-[#e8dfd2] via-[#f3ebe2] to-[#ddd4c8] px-4"
       aria-live="polite"
       aria-busy="true"
       role="status"
     >
       <div className="w-full max-w-sm">
-        <div className="overflow-hidden rounded-2xl border border-amber-300/50 bg-gradient-to-br from-[#fffdf9] via-[#faf4ea] to-[#f0e6d8] shadow-[0_12px_40px_rgba(92,74,54,0.16)]">
-          <div className="h-1 bg-gradient-to-r from-amber-200/40 via-amber-400/70 to-amber-200/40" />
+        <div
+          className="overflow-hidden rounded-2xl shadow-[0_14px_44px_rgba(80,62,44,0.14)] transition-colors duration-500"
+          style={{
+            borderWidth: 1,
+            borderStyle: "solid",
+            borderColor: colorStyle.borderColor,
+            backgroundColor: colorStyle.backgroundColor,
+          }}
+        >
+          <div
+            className="h-1 transition-colors duration-500"
+            style={{ backgroundColor: colorStyle.topAccent }}
+          />
 
-          <div className="px-6 pb-7 pt-8 text-center">
-            <div className="relative mx-auto mb-5 flex h-16 w-16 items-center justify-center">
-              <span
-                aria-hidden
-                className="absolute inset-0 rounded-full bg-amber-100/80 animate-pulse"
-              />
-              <span
-                aria-hidden
-                className="absolute inset-1 rounded-full border border-amber-200/90"
-              />
-              <OwlSpinIndicator size="md" className="relative text-3xl" />
-            </div>
-
-            <p className="text-[15px] font-medium leading-7 tracking-wide text-stone-800">
-              この日の数字をひらいています…
-            </p>
-
-            <div
-              className={[
-                "mt-6 min-h-[3.5rem] transition-all duration-500 ease-out",
-                showRandomLine ? "translate-y-0 opacity-100" : "translate-y-1 opacity-0",
-              ].join(" ")}
-              aria-hidden={!showRandomLine}
-            >
-              <p className="whitespace-pre-wrap border-t border-amber-200/60 pt-5 text-sm leading-7 text-stone-600">
-                {randomLine}
+          {phase === "opening" ? (
+            <div className="px-6 pb-8 pt-8 text-center">
+              <SaveTransitionAcornIndicator />
+              <p className="mt-5 whitespace-pre-wrap text-[15px] font-medium leading-7 tracking-wide text-stone-800">
+                {SAVE_TRANSITION_OPENING_TEXT}
               </p>
             </div>
-          </div>
+          ) : (
+            <div className="px-6 pb-7 pt-7 text-center">
+              <div className="relative mx-auto h-[88px] w-[88px]">
+                <Image
+                  src={animal.imagePath}
+                  alt=""
+                  fill
+                  className="object-contain object-bottom"
+                  sizes="88px"
+                  unoptimized
+                />
+              </div>
+              <p className="mt-4 text-sm font-semibold text-stone-700">{animal.name}より</p>
+              <p className="mt-3 whitespace-pre-wrap text-[15px] leading-7 text-stone-800">
+                {animal.message}
+              </p>
+            </div>
+          )}
         </div>
       </div>
     </div>
