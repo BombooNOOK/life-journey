@@ -3,8 +3,9 @@
 import Image from "next/image";
 import Link from "next/link";
 
-import { MoodOwlIcon } from "@/components/journal/MoodOwlIcon";
 import { DiaryNumbersHintSection } from "@/components/journal/DiaryNumbersHintSection";
+import { JournalOwlDayHintReflectionSection } from "@/components/journal/JournalOwlDayHintReflectionSection";
+import { MoodOwlIcon } from "@/components/journal/MoodOwlIcon";
 import { JOURNAL_OWL_COMMENT_KANTEI_REQUIRED_MESSAGE } from "@/lib/journal/kanteiCommentCopy";
 import { formatJournalPreviewDateHeading } from "@/lib/journal/journalRecordDateDisplay";
 import { journalEditPath } from "@/lib/journal/journalNav";
@@ -18,7 +19,7 @@ type Props = {
   photoDataUrl?: string | null;
   photoSrc?: string | null;
   hasPhoto?: boolean;
-  generatedComment: string | null;
+  dayHintReflection?: { body: string } | null;
   diaryNumbers?: {
     today: number;
     month: number;
@@ -73,7 +74,7 @@ export function JournalReadablePreview({
   photoDataUrl,
   photoSrc,
   hasPhoto,
-  generatedComment,
+  dayHintReflection,
   diaryNumbers,
   kanteiOrderExists,
   returnTo,
@@ -94,9 +95,9 @@ export function JournalReadablePreview({
     photoDataUrl?.trim() ||
     (hasPhoto ? `/api/journal/entries/${encodeURIComponent(entryId)}/photo` : "");
   const showPhoto = Boolean(photoUrl);
-  const commentText =
-    generatedComment?.trim() ||
-    (kanteiOrderExists === false ? JOURNAL_OWL_COMMENT_KANTEI_REQUIRED_MESSAGE : null);
+  const reflectionBody = dayHintReflection?.body?.trim() ?? null;
+  const kanteiRequiredMessage =
+    kanteiOrderExists === false ? JOURNAL_OWL_COMMENT_KANTEI_REQUIRED_MESSAGE : null;
 
   return (
     <article className="space-y-6 rounded-xl bg-[#faf8f5] px-1 py-2 sm:bg-white sm:px-0 sm:py-0">
@@ -128,13 +129,10 @@ export function JournalReadablePreview({
         </p>
       </section>
 
-      {commentText ? (
-        <section className="rounded-xl border border-[#e8dfd0] bg-[#f7f1e6] px-4 py-4 shadow-sm sm:px-5 sm:py-5">
-          <h3 className="lj-read-desc font-semibold text-stone-800">フクロウ先生より</h3>
-          <p className="lj-read-comment mt-3 whitespace-pre-wrap break-words text-stone-800">
-            {commentText}
-          </p>
-        </section>
+      {reflectionBody ? (
+        <JournalOwlDayHintReflectionSection body={reflectionBody} />
+      ) : kanteiRequiredMessage ? (
+        <JournalOwlDayHintReflectionSection body={kanteiRequiredMessage} />
       ) : null}
 
       {diaryNumbers ? (
