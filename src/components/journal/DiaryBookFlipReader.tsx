@@ -17,6 +17,7 @@ import {
 } from "@/components/journal/DiaryBookBoundPages";
 import { DiaryBookPageViewport } from "@/components/journal/DiaryBookPageViewport";
 import { DiaryBookEntryV2PreviewPage } from "@/components/journal/DiaryBookEntryV2PreviewPage";
+import { BodyPortal, IMMERSIVE_OVERLAY_Z_CLASS } from "@/components/ui/BodyPortal";
 import { InlineHelpButton } from "@/components/ui/InlineHelpButton";
 import { OwlLoadingInline } from "@/components/ui/OwlLoadingInline";
 import { BookshelfEditIncludesNavButton } from "@/components/orders/BookshelfEditIncludesNavButton";
@@ -720,65 +721,67 @@ export function DiaryBookFlipReader({
       </div>
 
       {fullscreenOpen ? (
-        <div
-          className="fixed z-[100] overflow-hidden bg-[#f7f4ee]"
-          style={fullscreenShellStyle}
-          role="dialog"
-          aria-modal="true"
-          aria-label="日記ブック全画面ビューワー"
-        >
+        <BodyPortal>
           <div
-            className="absolute inset-0 z-10 touch-pan-y"
-            onTouchStart={onTouchStart}
-            onTouchEnd={onTouchEnd}
-            onClick={onFullscreenAreaClick}
-            role="presentation"
-          >
-            {fullscreenPageViewport}
-          </div>
-
-          <div
-            className={[
-              "absolute inset-x-0 top-0 z-20 flex items-start justify-between gap-3 px-3 pt-[max(0.35rem,env(safe-area-inset-top))] transition-opacity duration-200",
-              fullscreenChromeVisible
-                ? "opacity-100"
-                : "pointer-events-none opacity-0",
-            ].join(" ")}
+            className={`fixed ${IMMERSIVE_OVERLAY_Z_CLASS} overflow-hidden bg-[#f7f4ee]`}
+            style={fullscreenShellStyle}
+            role="dialog"
+            aria-modal="true"
+            aria-label="日記ブック全画面ビューワー"
           >
             <div
+              className="absolute inset-0 z-10 touch-pan-y"
+              onTouchStart={onTouchStart}
+              onTouchEnd={onTouchEnd}
+              onClick={onFullscreenAreaClick}
+              role="presentation"
+            >
+              {fullscreenPageViewport}
+            </div>
+
+            <div
               className={[
-                "flex flex-wrap items-center gap-2",
-                fullscreenChromeVisible ? "pointer-events-auto" : "pointer-events-none",
+                "absolute inset-x-0 top-0 z-20 flex items-start justify-between gap-3 px-3 pt-[max(0.35rem,env(safe-area-inset-top))] transition-opacity duration-200",
+                fullscreenChromeVisible
+                  ? "opacity-100"
+                  : "pointer-events-none opacity-0",
               ].join(" ")}
             >
-              <button
-                type="button"
-                onClick={closeFullscreen}
-                className="rounded-lg border border-stone-200 bg-white/95 px-3 py-2 text-sm font-medium text-stone-800 shadow-sm backdrop-blur-sm"
+              <div
+                className={[
+                  "flex flex-wrap items-center gap-2",
+                  fullscreenChromeVisible ? "pointer-events-auto" : "pointer-events-none",
+                ].join(" ")}
               >
-                通常表示に戻る
-              </button>
-              <Link
-                href={backHref}
-                className="rounded-lg border border-stone-200 bg-white/95 px-3 py-2 text-sm font-medium text-stone-700 shadow-sm backdrop-blur-sm"
-              >
-                {backLabel}
-              </Link>
+                <button
+                  type="button"
+                  onClick={closeFullscreen}
+                  className="rounded-lg border border-stone-200 bg-white/95 px-3 py-2 text-sm font-medium text-stone-800 shadow-sm backdrop-blur-sm"
+                >
+                  通常表示に戻る
+                </button>
+                <Link
+                  href={backHref}
+                  className="rounded-lg border border-stone-200 bg-white/95 px-3 py-2 text-sm font-medium text-stone-700 shadow-sm backdrop-blur-sm"
+                >
+                  {backLabel}
+                </Link>
+              </div>
+              <p className="rounded-lg bg-black/35 px-2.5 py-1.5 text-xs font-medium text-white backdrop-blur-sm">
+                {pageIndex + 1} / {totalPages}
+              </p>
             </div>
-            <p className="rounded-lg bg-black/35 px-2.5 py-1.5 text-xs font-medium text-white backdrop-blur-sm">
-              {pageIndex + 1} / {totalPages}
+
+            <p
+              className={[
+                "pointer-events-none absolute inset-x-0 bottom-[max(0.5rem,env(safe-area-inset-bottom))] z-20 text-center text-[11px] text-stone-500 transition-opacity duration-200",
+                fullscreenChromeVisible ? "opacity-0" : "opacity-70",
+              ].join(" ")}
+            >
+              {fullscreenHintText}
             </p>
           </div>
-
-          <p
-            className={[
-              "pointer-events-none absolute inset-x-0 bottom-[max(0.5rem,env(safe-area-inset-bottom))] z-20 text-center text-[11px] text-stone-500 transition-opacity duration-200",
-              fullscreenChromeVisible ? "opacity-0" : "opacity-70",
-            ].join(" ")}
-          >
-            {fullscreenHintText}
-          </p>
-        </div>
+        </BodyPortal>
       ) : null}
     </>
   );
