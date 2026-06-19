@@ -3,7 +3,6 @@
  *
  * ## 自動モード（ログイン不要・Cursor / CI 向け）
  *   npm run capture:home-mock:auto journal
- *   npm run capture:home-mock:auto bookshelf
  *   npm run capture:home-mock:auto all
  *
  * `/home-mock-preview/*` の公開プレビューページを headless で撮影します。
@@ -31,7 +30,15 @@ const TARGETS = {
     outputFile: "mock-journal-entry.png",
     label: "日記入力画面",
     assetsKey: "journalEntry" as const,
-    stepIndex: 0,
+    captureMode: "fullPage" as const,
+  },
+  journalPreview: {
+    path: "/journal/preview",
+    previewPath: "/home-mock-preview/journal-preview",
+    outputFile: "mock-journal-preview.png",
+    label: "日記プレビュー画面",
+    assetsKey: "journalPreview" as const,
+    captureMode: "fullPage" as const,
   },
   bookshelf: {
     path: "/orders/bookshelf",
@@ -39,7 +46,16 @@ const TARGETS = {
     outputFile: "mock-bookshelf.png",
     label: "本棚画面",
     assetsKey: "bookshelf" as const,
-    stepIndex: 1,
+    captureMode: "fullPage" as const,
+  },
+  diaryBook: {
+    path: "/orders/bookshelf",
+    previewPath: "/home-mock-preview/diary-book",
+    outputFile: "mock-diary-book.png",
+    label: "日記ブック製本イメージ",
+    assetsKey: "diaryBook" as const,
+    captureMode: "element" as const,
+    elementSelector: "img[alt='製本された Life Journey Diary']",
   },
 } as const;
 
@@ -108,7 +124,7 @@ async function launchBrowser(auto: boolean): Promise<Browser> {
     }
   }
 
-  console.log("Playwright 付属ブラウザで開きます");
+  console.log("Playwright 付属ブラウザで使います");
   return chromium.launch({ headless: false, args: CHROME_ARGS });
 }
 
@@ -126,10 +142,14 @@ async function assertStylesLoaded(page: import("playwright").Page): Promise<void
   console.log(`スタイル読み込みOK（stylesheet: ${stylesheetCount}, body背景: ${bodyBg}）`);
 }
 
-function updateHomeProductMockAssets(target: (typeof TARGETS)[TargetKey], width: number, height: number) {
+function updateHomeProductMockAssets(
+  assetsKey: (typeof TARGETS)[TargetKey]["assetsKey"],
+  width: number,
+  height: number,
+) {
   const assetsPath = join(process.cwd(), "src/lib/home/homeProductMockAssets.ts");
   const content = readFileSync(assetsPath, "utf8");
-  const imageSrc = `HOME_PRODUCT_MOCK_IMAGES.${target.assetsKey}`;
+  const imageSrc = `HOME_PRODUCT_MOCK_IMAGES.${assetsKey}`;
   const pattern = new RegExp(
     `(imageSrc: ${imageSrc.replace(".", "\\.")},[\\s\\S]*?imageWidth: )\\d+([\\s\\S]*?imageHeight: )\\d+`,
   );
@@ -141,7 +161,7 @@ function updateHomeProductMockAssets(target: (typeof TARGETS)[TargetKey], width:
 
   const next = content.replace(pattern, `$1${width}$2${height}`);
   writeFileSync(assetsPath, next, "utf8");
-  console.log(`更新しました: ${assetsPath} (${target.assetsKey} → ${width} x ${height})`);
+  console.log(`更新しました: ${assetsPath} (${assetsKey} → ${width} x ${height})`);
 }
 
 async function captureTarget(
@@ -171,21 +191,34 @@ async function captureTarget(
 
   await assertStylesLoaded(page);
 
-  await page.screenshot({
-    path: outputPath,
-    fullPage: true,
-    type: "png",
-  });
+  if (target.captureMode === "element" && target.elementSelector) {
+    const element = page.locator(target.elementSelector).first();
+    await element.waitFor({ state: "visible", timeout: 30_000 });
+    await element.screenshot({
+      path: outputPath,
+      type: "png",
+    });
+  } else {
+    await page.screenshot({
+      path: outputPath,
+      fullPage: true,
+      type: "png",
+    });
+  }
 
   const meta = await sharp(outputPath).metadata();
   const width = meta.width ?? 0;
   const height = meta.height ?? 0;
 
-  if (width < 350) {
+  if (width < 100) {
+    throw new Error(`幅が 100px 未満です (${width}px)。撮影に失敗した可能性があります。`);
+  }
+
+  if (target.captureMode === "fullPage" && width < 350) {
     throw new Error(`幅が 350px 未満です (${width}px)。撮影に失敗した可能性があります。`);
   }
 
-  updateHomeProductMockAssets(target, width, height);
+  updateHomeProductMockAssets(target.assetsKey, width, height);
   return { width, height, outputPath };
 }
 
@@ -196,14 +229,16 @@ async function main() {
 
   if (targetArg !== "all" && !TARGETS[targetArg]) {
     console.error("使い方:");
-    console.error("  npm run capture:home-mock [journal|bookshelf]");
-    console.error("  npm run capture:home-mock:auto [journal|bookshelf|all]");
+    console.error("  npm run capture:home-mock [journal|journalPreview|bookshelf|diaryBook]");
+    console.error("  npm run capture:home-mock:auto [journal|journalPreview|bookshelf|diaryBook|all]");
     process.exit(1);
   }
 
   const baseUrl = process.env.MOCK_CAPTURE_BASE_URL?.trim() || "http://127.0.0.1:3000";
   const keys: TargetKey[] =
-    targetArg === "all" ? (["journal", "bookshelf"] as TargetKey[]) : [targetArg];
+    targetArg === "all"
+      ? (["journal", "journalPreview", "bookshelf", "diaryBook"] as TargetKey[])
+      : [targetArg];
 
   console.log(`モード: ${auto ? "自動（ログイン不要）" : "手動（ログイン必要）"}`);
   console.log(`ベースURL: ${baseUrl}`);

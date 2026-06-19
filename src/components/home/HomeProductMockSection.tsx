@@ -1,5 +1,3 @@
-import { Fragment } from "react";
-
 import { PhoneMockScrollViewport } from "@/components/home/PhoneMockScrollViewport";
 import {
   HOME_PRODUCT_MOCK_STEPS,
@@ -15,7 +13,7 @@ const PHONE_MOCK_SCREEN_CLASS =
 function PhoneMockScrollHint() {
   return (
     <p className="mb-1.5 text-center text-[10px] leading-4 text-stone-500/80">
-      枠内をタップして、上下にスクロールして全体を見られます
+      枠内を上下にスクロール
     </p>
   );
 }
@@ -44,8 +42,8 @@ function PhoneMockScreenshot({
 }
 
 function PhoneMockFrame({ step }: { step: HomeProductMockStep }) {
-  const mockWidthMobile = `min(76vw, ${step.imageWidth}px)`;
-  const mockWidthDesktop = `min(12rem, ${step.imageWidth}px)`;
+  const mockWidthMobile = `min(72vw, ${step.imageWidth}px)`;
+  const mockWidthDesktop = `min(11rem, ${step.imageWidth}px)`;
 
   return (
     <div className="w-full">
@@ -93,9 +91,8 @@ function MockImageFrame({ step }: { step: HomeProductMockStep }) {
     return <PhoneMockFrame step={step} />;
   }
 
-  /** 表紙正面の冊子イメージ（背表紙の厚い本に見せない） */
   return (
-    <div className="mx-auto w-full min-w-[9.5rem] max-w-[9.5rem] shrink-0 sm:max-w-[10.5rem]">
+    <div className="mx-auto w-full min-w-[9rem] max-w-[9rem] shrink-0 sm:max-w-[10rem]">
       <div className="overflow-hidden rounded-lg border border-stone-200/55 bg-[#fffdf9] p-1.5 shadow-[0_2px_10px_rgba(107,90,74,0.08)]">
         <img
           src={step.imageSrc}
@@ -111,31 +108,16 @@ function MockImageFrame({ step }: { step: HomeProductMockStep }) {
   );
 }
 
-function StepFlowArrow() {
-  return (
-    <div
-      className="hidden shrink-0 items-center self-center pt-14 md:flex lg:pt-16"
-      aria-hidden
-    >
-      <div className="flex items-center text-emerald-900/20">
-        <span className="w-5 border-t border-dashed border-current lg:w-7" />
-        <span className="px-0.5 text-xs leading-none">›</span>
-        <span className="w-5 border-t border-dashed border-current lg:w-7" />
-      </div>
-    </div>
-  );
-}
-
 function MockStepCard({ step }: { step: HomeProductMockStep }) {
   return (
-    <article className="flex min-w-0 flex-1 flex-col">
+    <article className="flex min-w-0 flex-col">
       <h3 className="text-[0.9375rem] font-semibold leading-snug text-emerald-800">
         {step.stepLabel} {step.title}
       </h3>
-      <p className="lj-read-desc mt-1.5 leading-5 text-stone-600 sm:leading-6">
+      <p className="mt-1.5 text-[13px] leading-5 text-stone-600 sm:text-sm sm:leading-6">
         {step.description}
       </p>
-      <div className="mt-3 flex w-full flex-1 justify-center sm:mt-4">
+      <div className="mt-2.5 flex w-full flex-1 justify-center sm:mt-3">
         <div className={step.frame === "phone" ? "lj-reading-exempt shrink-0" : "shrink-0"}>
           <MockImageFrame step={step} />
         </div>
@@ -155,22 +137,17 @@ export function HomeProductMockSection() {
         <p className="mt-1 text-[13px] text-amber-700/55" aria-hidden>
           ✦
         </p>
-        <p className="lj-read-desc mt-2 leading-5 text-stone-600 sm:leading-6">
-          その日のきもちや写真を残しながら、あとから読み返せる記録へ。
-          <br className="hidden sm:block" />
-          そして最後には、手元に残る一冊の日記ブックへ育っていきます。
+        <p className="mt-2 text-[13px] leading-5 text-stone-600 sm:text-sm sm:leading-6">
+          その日のきもちや写真を残し、読み返し、本棚に並べ、手元の一冊へ。
         </p>
       </div>
 
-      <div className="mt-5 flex flex-col gap-7 sm:mt-6 md:flex-row md:items-stretch md:justify-center md:gap-2 lg:gap-3">
-        {HOME_PRODUCT_MOCK_STEPS.map((step, index) => (
-          <Fragment key={step.stepLabel}>
-            {index > 0 ? <StepFlowArrow /> : null}
-            <div className="min-w-0 md:max-w-[13.5rem] md:flex-1 lg:max-w-[15rem]">
-              <MockStepCard step={step} />
-            </div>
-          </Fragment>
-        ))}
+      <div className="mx-auto mt-5 max-w-5xl sm:mt-6">
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 md:gap-x-4 md:gap-y-7 lg:grid-cols-4 lg:gap-3">
+          {HOME_PRODUCT_MOCK_STEPS.map((step) => (
+            <MockStepCard key={step.stepLabel} step={step} />
+          ))}
+        </div>
       </div>
     </section>
   );
