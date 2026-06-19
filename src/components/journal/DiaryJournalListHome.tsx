@@ -173,11 +173,7 @@ export function DiaryJournalListHome({
         <div>
           <div className="flex flex-wrap items-center gap-2">
             <h1 className="text-xl font-bold text-stone-900 sm:text-2xl">日記一覧</h1>
-            <InlineHelpButton
-              ariaLabel="日記一覧の説明"
-              panelAlign="start"
-              panelZIndexClass="z-50"
-            >
+            <InlineHelpButton ariaLabel="日記一覧の説明" panelZIndexClass="z-50">
               {JOURNAL_LIST_HELP_TEXT}
             </InlineHelpButton>
           </div>
