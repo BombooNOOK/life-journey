@@ -2,7 +2,8 @@ import { describe, expect, it } from "vitest";
 
 import {
   JOURNAL_SAVE_TRANSITION_LINES,
-  journalSaveTransitionDurationMs,
+  JOURNAL_SAVE_TRANSITION_TOTAL_MS,
+  journalSaveTransitionRemainingMs,
   pickJournalSaveTransitionLine,
 } from "./journalSaveTransitionCopy";
 
@@ -16,11 +17,14 @@ describe("journalSaveTransitionCopy", () => {
     expect(JOURNAL_SAVE_TRANSITION_LINES).toContain(line);
   });
 
-  it("表示時間は1.8〜2.2秒", () => {
-    for (let i = 0; i < 20; i++) {
-      const ms = journalSaveTransitionDurationMs();
-      expect(ms).toBeGreaterThanOrEqual(1800);
-      expect(ms).toBeLessThanOrEqual(2200);
-    }
+  it("演出開始から合計2秒になるよう残り時間を計算する", () => {
+    const startedAt = 1_000;
+    expect(journalSaveTransitionRemainingMs(startedAt, 1_500)).toBe(1_500);
+    expect(journalSaveTransitionRemainingMs(startedAt, 1_000 + JOURNAL_SAVE_TRANSITION_TOTAL_MS)).toBe(
+      0,
+    );
+    expect(journalSaveTransitionRemainingMs(startedAt, 1_000 + JOURNAL_SAVE_TRANSITION_TOTAL_MS + 500)).toBe(
+      0,
+    );
   });
 });

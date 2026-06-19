@@ -32,7 +32,7 @@ import { ActiveProfileLabel } from "@/components/profile/ActiveProfileLabel";
 import { useEnsureActiveViewerProfile } from "@/hooks/useEnsureActiveViewerProfile";
 import { parseSafeJournalReturnTo } from "@/lib/journal/bookshelfReturnTo";
 import {
-  journalSaveTransitionDurationMs,
+  journalSaveTransitionRemainingMs,
   pickJournalSaveTransitionLine,
 } from "@/lib/journal/journalSaveTransitionCopy";
 import {
@@ -206,6 +206,7 @@ function JournalPageContent() {
 
   const photoInputRef = useRef<HTMLInputElement>(null);
   const editLoadGenerationRef = useRef(0);
+  const saveTransitionStartedAtRef = useRef<number | null>(null);
 
   const resetJournalFormState = useCallback(() => {
     setContent("");
@@ -224,6 +225,7 @@ function JournalPageContent() {
     setOwlRegenLoading(false);
     setNavigatingToPreview(false);
     setSaveTransitionLine(null);
+    saveTransitionStartedAtRef.current = null;
     if (photoInputRef.current) {
       photoInputRef.current.value = "";
     }
@@ -464,6 +466,12 @@ function JournalPageContent() {
       return;
     }
 
+    const isNewEntrySave = !editingId;
+    if (isNewEntrySave) {
+      saveTransitionStartedAtRef.current = Date.now();
+      setSaveTransitionLine(pickJournalSaveTransitionLine());
+    }
+
     setSaving(true);
     try {
       const endpoint = editingId
@@ -496,11 +504,19 @@ function JournalPageContent() {
       });
       const data = (await res.json()) as { error?: string; entry?: { id?: string } };
       if (!res.ok) {
+        if (isNewEntrySave) {
+          setSaveTransitionLine(null);
+          saveTransitionStartedAtRef.current = null;
+        }
         setError(data.error ?? "保存に失敗しました。");
         return;
       }
       const savedId = data.entry?.id ? String(data.entry.id) : editingId;
       if (!savedId) {
+        if (isNewEntrySave) {
+          setSaveTransitionLine(null);
+          saveTransitionStartedAtRef.current = null;
+        }
         setError("保存に失敗しました。");
         return;
       }
@@ -516,10 +532,8 @@ function JournalPageContent() {
 
       if (!editingId || redirectMode === "preview") {
         if (!editingId) {
-          const transitionLine = pickJournalSaveTransitionLine();
-          const durationMs = journalSaveTransitionDurationMs();
-          setSaving(false);
-          setSaveTransitionLine(transitionLine);
+          const startedAt = saveTransitionStartedAtRef.current ?? Date.now();
+          const waitMs = journalSaveTransitionRemainingMs(startedAt);
           const previewPath = journalPreviewPath(
             savedId,
             designTheme,
@@ -528,8 +542,9 @@ function JournalPageContent() {
           );
           window.setTimeout(() => {
             setSaveTransitionLine(null);
+            saveTransitionStartedAtRef.current = null;
             router.push(previewPath);
-          }, durationMs);
+          }, waitMs);
           return;
         }
         goToPreview();
@@ -544,6 +559,10 @@ function JournalPageContent() {
       goToPreview();
     } catch {
       setError("通信に失敗しました。");
+      if (isNewEntrySave) {
+        setSaveTransitionLine(null);
+        saveTransitionStartedAtRef.current = null;
+      }
     } finally {
       setSaving(false);
     }

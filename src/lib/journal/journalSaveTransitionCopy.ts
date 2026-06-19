@@ -1,3 +1,9 @@
+/** 保存直後演出：ランダム文が現れるまでの待ち（ms） */
+export const JOURNAL_SAVE_TRANSITION_RANDOM_LINE_DELAY_MS = 700;
+
+/** 演出開始からプレビュー遷移までの目安（ms） */
+export const JOURNAL_SAVE_TRANSITION_TOTAL_MS = 2000;
+
 /** 日記保存直後のストーリー演出用。日記本文・気分には依存しない中立文 */
 export const JOURNAL_SAVE_TRANSITION_LINES = [
   "書き残したことの中に、\nあとから気づける小さなヒントがあるかもしれません。",
@@ -32,7 +38,7 @@ export function pickJournalSaveTransitionLine(): string {
   return JOURNAL_SAVE_TRANSITION_LINES[index] ?? JOURNAL_SAVE_TRANSITION_LINES[0];
 }
 
-/** 保存直後演出の表示時間（1.8〜2.2秒） */
-export function journalSaveTransitionDurationMs(): number {
-  return 1800 + Math.floor(Math.random() * 401);
+/** 演出開始時刻から、プレビュー遷移まであと何 ms 待つか */
+export function journalSaveTransitionRemainingMs(startedAt: number, now = Date.now()): number {
+  return Math.max(0, JOURNAL_SAVE_TRANSITION_TOTAL_MS - (now - startedAt));
 }
