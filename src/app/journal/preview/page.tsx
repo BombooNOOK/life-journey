@@ -30,7 +30,6 @@ type PreviewEntry = {
   photoSrc?: string | null;
   hasPhoto?: boolean;
   generatedComment: string | null;
-  dayHintReflection?: { body: string; oneLineMessage: string } | null;
   diaryNumbers?: {
     today: number;
     month: number;
@@ -226,7 +225,7 @@ function JournalPreviewPageContent() {
             photoDataUrl={entry.photoDataUrl}
             photoSrc={entry.photoSrc}
             hasPhoto={entry.hasPhoto}
-            dayHintReflection={entry.dayHintReflection}
+            generatedComment={entry.generatedComment}
             diaryNumbers={entry.diaryNumbers}
             kanteiOrderExists={kanteiOrderExists}
             returnTo={returnTo}
@@ -245,7 +244,7 @@ function JournalPreviewPageContent() {
               mood={entry.mood}
               activity={entry.activity}
               content={entry.content}
-              comment={entry.dayHintReflection?.body ?? entry.generatedComment}
+              comment={entry.generatedComment}
               photoDataUrl={entry.photoDataUrl}
               photoSrc={entry.photoSrc ?? null}
               previewDate={new Date(entry.createdAt)}

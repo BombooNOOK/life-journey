@@ -5,14 +5,8 @@ const DEMO_ENTRY_ID = "home-mock-preview-entry";
 const DEMO_CREATED_AT = "2026-08-13T09:00:00.000Z";
 const DEMO_CONTENT =
   "モゲが帰ってきて4ヶ月。今日はお部屋の掃除をしました。モゲはいつも通り、ケージの中で丸くなって寝ていました。そんな日常のひとコマです。";
-const DEMO_DAY_HINT_REFLECTION = `この日の数字から見ると、
-
-「今日は、やわらかい呼吸を大切にしたい日。」
-
-というテーマがありました。
-
-書き残したことの中に、
-あとから気づける小さなヒントがあるかもしれません。`;
+const DEMO_OWL_COMMENT =
+  "たくさん話さなくても、同じ空間にいるだけで伝わるものがあったかもしれません。静かなつながりも、ちゃんと心に届いています。\n心を向けたい相手や、大切にしたいものが見えやすい時期です。";
 const DEMO_PHOTO_SRC = "/images/home-mock/demo-journal-photo.png";
 
 export function HomeMockJournalPreviewCapture() {
@@ -46,7 +40,7 @@ export function HomeMockJournalPreviewCapture() {
         mood="calm"
         photoSrc={DEMO_PHOTO_SRC}
         hasPhoto
-        dayHintReflection={{ body: DEMO_DAY_HINT_REFLECTION }}
+        generatedComment={DEMO_OWL_COMMENT}
         kanteiOrderExists
         returnTo="/orders/calendar"
         profileId="home-mock-profile"

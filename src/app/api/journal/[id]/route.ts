@@ -11,7 +11,6 @@ import {
   sanitizeJournalCommentForResponse,
 } from "@/lib/journal/kanteiCommentEligibility";
 import { findKanteiOrderForProfile } from "@/lib/profile/orderPerProfile";
-import { buildJournalDayHintReflection } from "@/lib/journal/journalDayHintReflection";
 import { buildJournalNumerologyDebug } from "@/lib/journal/journalNumerologyDebug";
 import { buildDiaryNumbers } from "@/lib/journal/numbers";
 import { shouldPreserveJournalGeneratedComment } from "@/lib/journal/preserveDiaryReading";
@@ -178,21 +177,10 @@ export async function GET(req: Request, { params }: Params) {
     photoDataUrl?: string | null;
     photoBlobUrl?: string | null;
   };
-  const dayHintReflection =
-    kanteiOrder && kanteiOrder.birthMonth != null && kanteiOrder.birthDay != null
-      ? buildJournalDayHintReflection({
-          birthMonth: kanteiOrder.birthMonth,
-          birthDay: kanteiOrder.birthDay,
-          entryDate: row.createdAt,
-          orderId: kanteiOrder.id,
-        })
-      : null;
-
   const formatted = formatJournalEntryForApiResponse({
     ...r,
     designTheme: normalizeDiaryDesignTheme(r.designTheme ?? "simple_plain"),
     diaryNumbers,
-    dayHintReflection,
     ...(numerologyDebug ? { numerologyDebug } : {}),
     generatedComment: sanitizeJournalCommentForResponse(r.generatedComment, kanteiOrderExists),
   });

@@ -27,9 +27,14 @@ import {
 } from "@/lib/journal/journalRecordDateDisplay";
 import { JournalWritingComposer } from "@/components/journal/JournalWritingComposer";
 import { JournalContentLengthAlerts } from "@/components/journal/JournalContentLengthAlerts";
+import { JournalSaveStoryTransitionOverlay } from "@/components/journal/JournalSaveStoryTransitionOverlay";
 import { ActiveProfileLabel } from "@/components/profile/ActiveProfileLabel";
 import { useEnsureActiveViewerProfile } from "@/hooks/useEnsureActiveViewerProfile";
 import { parseSafeJournalReturnTo } from "@/lib/journal/bookshelfReturnTo";
+import {
+  journalSaveTransitionDurationMs,
+  pickJournalSaveTransitionLine,
+} from "@/lib/journal/journalSaveTransitionCopy";
 import {
   journalCalendarPathForMonth,
   journalListPathForMonth,
@@ -195,7 +200,7 @@ function JournalPageContent() {
   const [numerologyDebug, setNumerologyDebug] = useState<JournalNumerologyDebug | null>(null);
   const [owlRegenLoading, setOwlRegenLoading] = useState(false);
   const [navigatingToPreview, setNavigatingToPreview] = useState(false);
-  const [saveTransitionOverlay, setSaveTransitionOverlay] = useState(false);
+  const [saveTransitionLine, setSaveTransitionLine] = useState<string | null>(null);
   const [navigatingToCalendar, setNavigatingToCalendar] = useState(false);
   const [kanteiOrderExists, setKanteiOrderExists] = useState<boolean | undefined>(undefined);
 
@@ -218,7 +223,7 @@ function JournalPageContent() {
     setLoadingEdit(false);
     setOwlRegenLoading(false);
     setNavigatingToPreview(false);
-    setSaveTransitionOverlay(false);
+    setSaveTransitionLine(null);
     if (photoInputRef.current) {
       photoInputRef.current.value = "";
     }
@@ -511,8 +516,10 @@ function JournalPageContent() {
 
       if (!editingId || redirectMode === "preview") {
         if (!editingId) {
+          const transitionLine = pickJournalSaveTransitionLine();
+          const durationMs = journalSaveTransitionDurationMs();
           setSaving(false);
-          setSaveTransitionOverlay(true);
+          setSaveTransitionLine(transitionLine);
           const previewPath = journalPreviewPath(
             savedId,
             designTheme,
@@ -520,10 +527,9 @@ function JournalPageContent() {
             effectiveProfileId,
           );
           window.setTimeout(() => {
-            setSaveTransitionOverlay(false);
-            setNavigatingToPreview(true);
+            setSaveTransitionLine(null);
             router.push(previewPath);
-          }, 1500);
+          }, durationMs);
           return;
         }
         goToPreview();
@@ -660,21 +666,8 @@ function JournalPageContent() {
 
   return (
     <div className="relative space-y-3">
-      {saveTransitionOverlay ? (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-[#faf8f5]/90 backdrop-blur-[2px]"
-          aria-live="polite"
-          aria-busy="true"
-        >
-          <div className="mx-4 max-w-sm rounded-xl border border-[#e8dfd0] bg-[#f7f1e6] px-6 py-5 text-center shadow-md">
-            <p className="text-base font-semibold text-stone-900">保存しました</p>
-            <p className="mt-3 text-sm leading-7 text-stone-700">
-              フクロウ先生が、
-              <br />
-              この日の数字をひらいています…
-            </p>
-          </div>
-        </div>
+      {saveTransitionLine ? (
+        <JournalSaveStoryTransitionOverlay randomLine={saveTransitionLine} />
       ) : null}
       {navigatingToPreview ? (
         <div
@@ -738,7 +731,7 @@ function JournalPageContent() {
                 disabled={
                   navigatingToCalendar ||
                   navigatingToPreview ||
-                  saveTransitionOverlay ||
+                  saveTransitionLine != null ||
                   saving ||
                   processingPhoto ||
                   Boolean(deletingId)
