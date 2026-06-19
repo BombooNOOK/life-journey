@@ -10,6 +10,9 @@ const PHONE_MOCK_OUTER_CLASS =
 const PHONE_MOCK_SCREEN_CLASS =
   "relative aspect-[9/19.5] overflow-hidden rounded-[1.1rem] bg-white";
 
+const PRIMARY_STEPS = HOME_PRODUCT_MOCK_STEPS.slice(0, 3);
+const FINAL_STEP = HOME_PRODUCT_MOCK_STEPS[3]!;
+
 function PhoneMockScrollHint() {
   return (
     <p className="mb-1.5 text-center text-[10px] leading-4 text-stone-500/80">
@@ -41,9 +44,14 @@ function PhoneMockScreenshot({
   );
 }
 
-function PhoneMockFrame({ step }: { step: HomeProductMockStep }) {
+function PhoneMockFrame({
+  step,
+  desktopWidth = "min(12rem, 390px)",
+}: {
+  step: HomeProductMockStep;
+  desktopWidth?: string;
+}) {
   const mockWidthMobile = `min(72vw, ${step.imageWidth}px)`;
-  const mockWidthDesktop = `min(11rem, ${step.imageWidth}px)`;
 
   return (
     <div className="w-full">
@@ -67,7 +75,7 @@ function PhoneMockFrame({ step }: { step: HomeProductMockStep }) {
 
       <div
         className="mx-auto hidden shrink-0 md:block"
-        style={{ width: mockWidthDesktop }}
+        style={{ width: desktopWidth }}
       >
         <PhoneMockScrollHint />
         <div className={PHONE_MOCK_OUTER_CLASS}>
@@ -86,13 +94,19 @@ function PhoneMockFrame({ step }: { step: HomeProductMockStep }) {
   );
 }
 
-function MockImageFrame({ step }: { step: HomeProductMockStep }) {
+function MockImageFrame({
+  step,
+  desktopPhoneWidth,
+}: {
+  step: HomeProductMockStep;
+  desktopPhoneWidth?: string;
+}) {
   if (step.frame === "phone") {
-    return <PhoneMockFrame step={step} />;
+    return <PhoneMockFrame step={step} desktopWidth={desktopPhoneWidth} />;
   }
 
   return (
-    <div className="mx-auto w-full min-w-[9rem] max-w-[9rem] shrink-0 sm:max-w-[10rem]">
+    <div className="mx-auto w-full min-w-[9rem] max-w-[9rem] shrink-0 sm:max-w-[10rem] md:min-w-[10rem] md:max-w-[11rem]">
       <div className="overflow-hidden rounded-lg border border-stone-200/55 bg-[#fffdf9] p-1.5 shadow-[0_2px_10px_rgba(107,90,74,0.08)]">
         <img
           src={step.imageSrc}
@@ -108,18 +122,32 @@ function MockImageFrame({ step }: { step: HomeProductMockStep }) {
   );
 }
 
-function MockStepCard({ step }: { step: HomeProductMockStep }) {
+function MockStepCard({
+  step,
+  alignMockToBottom = false,
+  desktopPhoneWidth,
+}: {
+  step: HomeProductMockStep;
+  alignMockToBottom?: boolean;
+  desktopPhoneWidth?: string;
+}) {
   return (
-    <article className="flex min-w-0 flex-col">
+    <article className={alignMockToBottom ? "flex h-full min-w-0 flex-col" : "flex min-w-0 flex-col"}>
       <h3 className="text-[0.9375rem] font-semibold leading-snug text-emerald-800">
         {step.stepLabel} {step.title}
       </h3>
       <p className="mt-1.5 text-[13px] leading-5 text-stone-600 sm:text-sm sm:leading-6">
         {step.description}
       </p>
-      <div className="mt-2.5 flex w-full flex-1 justify-center sm:mt-3">
+      <div
+        className={[
+          alignMockToBottom
+            ? "mt-2.5 flex flex-1 items-end justify-center sm:mt-3"
+            : "mt-2.5 flex w-full justify-center sm:mt-3",
+        ].join(" ")}
+      >
         <div className={step.frame === "phone" ? "lj-reading-exempt shrink-0" : "shrink-0"}>
-          <MockImageFrame step={step} />
+          <MockImageFrame step={step} desktopPhoneWidth={desktopPhoneWidth} />
         </div>
       </div>
     </article>
@@ -143,10 +171,26 @@ export function HomeProductMockSection() {
       </div>
 
       <div className="mx-auto mt-5 max-w-5xl sm:mt-6">
-        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 md:gap-x-4 md:gap-y-7 lg:grid-cols-4 lg:gap-3">
+        <div className="grid grid-cols-1 gap-6 md:hidden">
           {HOME_PRODUCT_MOCK_STEPS.map((step) => (
             <MockStepCard key={step.stepLabel} step={step} />
           ))}
+        </div>
+
+        <div className="hidden md:block">
+          <div className="grid grid-cols-3 gap-5 lg:gap-6">
+            {PRIMARY_STEPS.map((step) => (
+              <div key={step.stepLabel} className="min-w-0 max-w-[15rem] justify-self-center lg:max-w-[16rem]">
+                <MockStepCard step={step} alignMockToBottom desktopPhoneWidth="min(12.5rem, 390px)" />
+              </div>
+            ))}
+          </div>
+
+          <div className="mt-8 border-t border-stone-200/70 pt-8">
+            <div className="mx-auto max-w-sm">
+              <MockStepCard step={FINAL_STEP} />
+            </div>
+          </div>
         </div>
       </div>
     </section>

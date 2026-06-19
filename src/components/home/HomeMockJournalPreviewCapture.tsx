@@ -6,7 +6,7 @@ const DEMO_CREATED_AT = "2026-08-13T09:00:00.000Z";
 const DEMO_CONTENT =
   "モゲが帰ってきて4ヶ月。今日はお部屋の掃除をしました。モゲはいつも通り、ケージの中で丸くなって寝ていました。そんな日常のひとコマです。";
 const DEMO_OWL_COMMENT =
-  "やわらかな一日の記録ですね。身の回りを整えたあと、モゲさんと過ごす静かな時間が、心にそっと残っているようです。";
+  "たくさん話さなくても、同じ空間にいるだけで伝わるものがあったかもしれません。静かなつながりも、ちゃんと心に届いています。\n心を向けたい相手や、大切にしたいものが見えやすい時期です。";
 const DEMO_PHOTO_SRC = "/images/home-mock/demo-journal-photo.png";
 
 export function HomeMockJournalPreviewCapture() {
