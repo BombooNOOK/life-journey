@@ -666,6 +666,12 @@ export default async function AdminPage({ searchParams }: Props) {
           >
             お問い合わせ一覧 →
           </Link>
+          <Link
+            href="/admin/intro-cards"
+            className="text-sm font-medium text-emerald-900 underline-offset-2 hover:underline"
+          >
+            対面紹介用カード →
+          </Link>
         </p>
       </div>
 
