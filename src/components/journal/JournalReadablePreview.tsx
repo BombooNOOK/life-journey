@@ -8,13 +8,14 @@ import { DiaryNumbersHintSection } from "@/components/journal/DiaryNumbersHintSe
 import { JOURNAL_OWL_COMMENT_KANTEI_REQUIRED_MESSAGE } from "@/lib/journal/kanteiCommentCopy";
 import { formatJournalPreviewDateHeading } from "@/lib/journal/journalRecordDateDisplay";
 import { journalEditPath } from "@/lib/journal/journalNav";
-import { getMoodMeta } from "@/lib/journal/meta";
+import { getActivityMeta, getMoodMeta } from "@/lib/journal/meta";
 
 type Props = {
   entryId: string;
   createdAt: string;
   content: string;
   mood: string;
+  activity: string;
   photoDataUrl?: string | null;
   photoSrc?: string | null;
   hasPhoto?: boolean;
@@ -70,6 +71,7 @@ export function JournalReadablePreview({
   createdAt,
   content,
   mood,
+  activity,
   photoDataUrl,
   photoSrc,
   hasPhoto,
@@ -84,6 +86,7 @@ export function JournalReadablePreview({
   const previewDate = new Date(createdAt);
   const dateLabel = formatJournalPreviewDateHeading(previewDate);
   const moodMeta = getMoodMeta(mood);
+  const activityMeta = getActivityMeta(activity);
   const editHref = journalEditPath(
     entryId,
     meaningsReturnTo ?? returnTo ?? "/journal/preview",
@@ -154,6 +157,8 @@ export function JournalReadablePreview({
           <MoodOwlIcon moodId={mood} sizePx={48} className="shrink-0" />
           <p className="lj-read-desc font-medium text-stone-800">{moodMeta.label}</p>
         </div>
+        <h3 className="lj-read-desc mt-5 font-semibold text-stone-700">今日はどんな一日でしたか？</h3>
+        <p className="lj-read-desc mt-2 font-medium text-stone-800">{activityMeta.label}</p>
       </section>
     </article>
   );

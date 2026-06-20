@@ -239,6 +239,7 @@ function JournalPreviewPageContent() {
             createdAt={entry.createdAt}
             content={entry.content}
             mood={entry.mood}
+            activity={entry.activity}
             photoDataUrl={entry.photoDataUrl}
             photoSrc={entry.photoSrc}
             hasPhoto={entry.hasPhoto}

@@ -38,6 +38,7 @@ export function HomeMockJournalPreviewCapture() {
         createdAt={DEMO_CREATED_AT}
         content={DEMO_CONTENT}
         mood="calm"
+        activity="organize"
         photoSrc={DEMO_PHOTO_SRC}
         hasPhoto
         generatedComment={DEMO_OWL_COMMENT}
