@@ -7,6 +7,7 @@ import { getViewerEmailFromCookie } from "@/lib/auth/viewer";
 import { prisma } from "@/lib/db";
 import { withPrismaConnectionRetry } from "@/lib/db/prismaRetry";
 import { effectiveProfileLimit } from "@/lib/profile/effectiveProfileLimit";
+import { resolveSubscriptionCancelState } from "@/lib/stripe/subscriptionCancelState";
 
 export const dynamic = "force-dynamic";
 
@@ -25,6 +26,8 @@ export default async function MyPageAccountPage() {
           profileLimit: true,
           isMonitor: true,
           subscriptionPlan: true,
+          subscriptionStatus: true,
+          stripeSubscriptionId: true,
         },
       }),
       prisma.profile.findFirst({
@@ -36,12 +39,13 @@ export default async function MyPageAccountPage() {
   );
 
   const createdAt = settings?.createdAt ?? oldestProfile?.createdAt ?? null;
+  const subscriptionCancelState = await resolveSubscriptionCancelState(settings);
 
   return (
     <div className="space-y-5 sm:space-y-6">
       <MyPageSubpageHeader
         title="アカウント情報"
-        description="登録情報や利用状況を確認できます"
+        description="登録情報・プラン・解約手続きなどを確認できます"
       />
 
       <MyPageAccountSection
@@ -52,9 +56,10 @@ export default async function MyPageAccountPage() {
         registeredAtLabel={
           createdAt ? createdAt.toLocaleDateString("ja-JP") : "登録日を確認できません"
         }
+        subscriptionCancelState={subscriptionCancelState}
       />
 
-      <MyPageLogoutButton />
+      <MyPageLogoutButton className="mt-4 border-t-0 pt-8" />
     </div>
   );
 }

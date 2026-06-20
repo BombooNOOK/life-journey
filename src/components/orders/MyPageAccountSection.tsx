@@ -1,16 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
 
 import { useFirebaseAuth } from "@/components/auth/FirebaseAuthProvider";
-import { getFirebaseAuth } from "@/lib/firebase/client";
-import { getPasswordResetSentNotice } from "@/lib/auth/passwordResetCopy";
-import { sendLjPasswordResetEmail } from "@/lib/auth/sendPasswordResetEmailSafe";
+import { MyPageAccountSectionCard } from "@/components/orders/MyPageAccountSectionCard";
 import { mobileReadable } from "@/lib/auth/mobileReadableStyles";
-
+import { MYPAGE_CONTACT_FORM_PATH } from "@/lib/legal/legalDocumentLinks";
 import { formatMyPageProfileLimitLabel } from "@/lib/profile/effectiveProfileLimit";
 import { deriveSubscriptionPlanLabel } from "@/lib/stripe/plans";
+import type { SubscriptionCancelState } from "@/lib/stripe/subscriptionCancelState";
 
 type Props = {
   viewerEmail: string;
@@ -18,6 +16,7 @@ type Props = {
   profileLimit: number;
   isMonitor?: boolean;
   registeredAtLabel: string;
+  subscriptionCancelState: SubscriptionCancelState;
 };
 
 function usesGoogleSignInOnly(user: ReturnType<typeof useFirebaseAuth>["user"]): boolean {
@@ -27,161 +26,132 @@ function usesGoogleSignInOnly(user: ReturnType<typeof useFirebaseAuth>["user"]):
   return hasGoogle && !hasPassword;
 }
 
-function usesEmailPasswordSignIn(user: ReturnType<typeof useFirebaseAuth>["user"]): boolean {
-  if (!user) return false;
-  return user.providerData.some((p) => p.providerId === "password");
-}
-
 export function MyPageAccountSection({
   viewerEmail,
   subscriptionPlan,
   profileLimit,
   isMonitor = false,
   registeredAtLabel,
+  subscriptionCancelState,
 }: Props) {
   const { user, loading: authLoading } = useFirebaseAuth();
-  const [resetBusy, setResetBusy] = useState(false);
-  const [resetNotice, setResetNotice] = useState<string | null>(null);
-  const [resetError, setResetError] = useState<string | null>(null);
-
   const planLabel = deriveSubscriptionPlanLabel(subscriptionPlan);
   const googleOnly = usesGoogleSignInOnly(user);
-  const emailPassword = usesEmailPasswordSignIn(user);
-
-  async function sendPasswordReset() {
-    setResetNotice(null);
-    setResetError(null);
-    const email = (user?.email ?? viewerEmail).trim();
-    if (!email) {
-      setResetError("メールアドレスを確認できませんでした。");
-      return;
-    }
-    setResetBusy(true);
-    try {
-      const auth = getFirebaseAuth();
-      await sendLjPasswordResetEmail(auth, email);
-      setResetNotice(getPasswordResetSentNotice());
-    } catch (e) {
-      console.error("[mypage:password-reset]", e);
-      const raw =
-        e instanceof Error
-          ? e.message
-          : typeof e === "object" && e !== null && "message" in e
-            ? String((e as { message: unknown }).message)
-            : "";
-      if (
-        raw.includes("auth/user-not-found") ||
-        raw.includes("auth/invalid-email") ||
-        raw.includes("auth/invalid-login-credentials")
-      ) {
-        setResetNotice(getPasswordResetSentNotice());
-      } else {
-        setResetError("パスワード再設定メールの送信に失敗しました。時間をおいて再度お試しください。");
-      }
-    } finally {
-      setResetBusy(false);
-    }
-  }
 
   return (
-    <section className="space-y-5 rounded-xl border border-stone-200 bg-white p-4 shadow-sm sm:p-5">
-      <h2 className={mobileReadable.sectionTitle}>アカウント情報</h2>
+    <div className="space-y-5 sm:space-y-6">
+      <MyPageAccountSectionCard title="基本情報">
+        <dl className="lj-read-desc grid gap-3 sm:grid-cols-[7.5rem_1fr]">
+          <dt className="text-stone-500">メールアドレス</dt>
+          <dd className="break-all text-stone-900">{viewerEmail}</dd>
 
-      <dl className="lj-read-desc grid gap-3 sm:grid-cols-[7.5rem_1fr]">
-        <dt className="text-stone-500">メールアドレス</dt>
-        <dd className="break-all text-stone-900">{viewerEmail}</dd>
+          <dt className="text-stone-500">登録日</dt>
+          <dd className="text-stone-900">{registeredAtLabel}</dd>
+        </dl>
+      </MyPageAccountSectionCard>
 
-        <dt className="text-stone-500">現在のプラン</dt>
-        <dd className="text-stone-900">{planLabel}</dd>
+      <MyPageAccountSectionCard title="プラン・契約">
+        <dl className="lj-read-desc grid gap-3 sm:grid-cols-[7.5rem_1fr]">
+          <dt className="text-stone-500">現在のプラン</dt>
+          <dd className="text-stone-900">{planLabel}</dd>
 
-        <dt className="text-stone-500">プロフィール上限</dt>
-        <dd className="text-stone-900">
-          {formatMyPageProfileLimitLabel({ isMonitor, profileLimit })}
-        </dd>
+          <dt className="text-stone-500">プロフィール上限</dt>
+          <dd className="text-stone-900">
+            {formatMyPageProfileLimitLabel({ isMonitor, profileLimit })}
+          </dd>
+        </dl>
 
-        <dt className="text-stone-500">登録日</dt>
-        <dd className="text-stone-900">{registeredAtLabel}</dd>
-      </dl>
+        <div className="space-y-3 border-t border-stone-100 pt-4">
+          <Link
+            href="/plans"
+            className="inline-flex min-h-[44px] items-center rounded-lg border border-violet-300 bg-violet-50 px-4 py-2.5 text-base font-medium text-violet-950 transition hover:bg-violet-100"
+          >
+            プランを変更する →
+          </Link>
 
-      <div className="border-t border-stone-100 pt-4">
-        <Link
-          href="/plans"
-          className="inline-flex min-h-[44px] items-center rounded-lg border border-violet-300 bg-violet-50 px-4 py-2.5 text-base font-medium text-violet-950 transition hover:bg-violet-100"
-        >
-          プランを変更する →
-        </Link>
-      </div>
-
-      <div className="space-y-4 border-t border-stone-100 pt-4">
-        <h3 className="text-base font-semibold text-stone-900">ログインとセキュリティ</h3>
-
-        <div className="rounded-lg border border-stone-200 bg-stone-50/80 px-3 py-3 lj-read-desc text-stone-700">
-          <p className="font-medium text-stone-800">メールアドレスの変更</p>
-          <p className="mt-1.5">メールアドレスの変更は現在準備中です。</p>
-          <p className="mt-1">変更が必要な場合は、運営までお問い合わせください。</p>
+          {subscriptionCancelState.cancelAtPeriodEnd ? (
+            <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-base leading-[1.6] text-amber-950">
+              <p className="font-medium">解約申込済み</p>
+              {subscriptionCancelState.periodEndLabel ? (
+                <p className="mt-1">{subscriptionCancelState.periodEndLabel} までご利用いただけます</p>
+              ) : null}
+            </div>
+          ) : subscriptionCancelState.canRequestCancel ? (
+            <Link
+              href="/orders/account/cancel-plan"
+              className="inline-flex min-h-[44px] items-center rounded-lg border border-stone-300 bg-white px-4 py-2.5 text-base font-medium text-stone-800 transition hover:bg-stone-50"
+            >
+              有料プランを解約する →
+            </Link>
+          ) : null}
         </div>
+      </MyPageAccountSectionCard>
 
-        <div className="rounded-lg border border-stone-200 bg-stone-50/80 px-3 py-3 lj-read-desc text-stone-700">
-          <p className="font-medium text-stone-800">パスワード</p>
-          {authLoading ? (
-            <p className="mt-1.5 text-stone-600">ログイン方式を確認しています…</p>
-          ) : googleOnly ? (
-            <p className="mt-1.5">
-              Googleアカウント側で管理されています。パスワードの変更は Google
-              のアカウント設定から行ってください。
+      <MyPageAccountSectionCard title="ログインとセキュリティ">
+        <div className={`space-y-4 ${mobileReadable.body}`}>
+          <div>
+            <p className="font-medium text-stone-900">メールアドレスの変更</p>
+            <p className="mt-1.5 text-stone-700">
+              現在準備中です。変更が必要な場合はお問い合わせください。
             </p>
-          ) : emailPassword ? (
-            <>
-              <p className="mt-1.5">
-                登録メールアドレス宛に、パスワード再設定用のリンクを送れます。
-              </p>
-              <button
-                type="button"
-                disabled={resetBusy}
-                onClick={() => void sendPasswordReset()}
-                className="mt-3 inline-flex min-h-[44px] items-center rounded-lg border border-stone-300 bg-white px-4 py-2 text-base font-medium text-stone-800 transition hover:bg-stone-50 disabled:opacity-60"
-              >
-                {resetBusy ? "送信中…" : "パスワード再設定メールを送る"}
-              </button>
-              {resetNotice ? (
-                <div className={`mt-3 lj-read-desc ${mobileReadable.notice}`} role="status" aria-live="polite">
-                  {resetNotice}
-                </div>
-              ) : null}
-              {resetError ? (
-                <div className={`mt-3 lj-read-desc ${mobileReadable.error}`} role="alert">
-                  {resetError}
-                </div>
-              ) : null}
-            </>
-          ) : (
-            <>
-              <p className="mt-1.5">
-                パスワードの再設定は、ログイン画面からも行えます。
-              </p>
-              <Link
-                href="/login?returnTo=/orders"
-                className="mt-3 inline-flex min-h-[44px] items-center rounded-lg border border-stone-300 bg-white px-4 py-2 text-sm font-medium text-stone-800 transition hover:bg-stone-50"
-              >
-                ログイン画面で再設定する →
-              </Link>
-            </>
-          )}
-        </div>
-      </div>
+          </div>
 
-      <div className="space-y-2 border-t border-stone-100 pt-4">
-        <h3 className="text-sm font-semibold text-stone-900">申込・コード確認</h3>
-        <p className="lj-read-desc text-stone-700">
-          鑑定コード・製本申し込みコードは、各プロフィールの本棚で確認できます。
+          <div>
+            <p className="font-medium text-stone-900">パスワード</p>
+            {authLoading ? (
+              <p className="mt-1.5 text-stone-600">ログイン方式を確認しています…</p>
+            ) : googleOnly ? (
+              <p className="mt-1.5 text-stone-700">
+                Googleアカウント側で管理されています。
+                変更はGoogleのアカウント設定から行ってください。
+              </p>
+            ) : (
+              <p className="mt-1.5 text-stone-700">
+                パスワードの変更が必要な場合は、お問い合わせください。
+              </p>
+            )}
+          </div>
+        </div>
+
+        <div className="border-t border-stone-100 pt-4">
+          <Link
+            href={MYPAGE_CONTACT_FORM_PATH}
+            className="inline-flex min-h-[44px] items-center rounded-lg border border-stone-300 bg-white px-4 py-2.5 text-base font-medium text-stone-800 transition hover:bg-stone-50"
+          >
+            お問い合わせする →
+          </Link>
+        </div>
+      </MyPageAccountSectionCard>
+
+      <MyPageAccountSectionCard
+        title="申込・コード確認"
+        footer={
+          <Link
+            href="#profile-list"
+            className="inline-flex text-sm font-medium text-emerald-900 underline-offset-2 hover:underline"
+          >
+            プロフィール一覧へ
+          </Link>
+        }
+      >
+        <p className={`${mobileReadable.bodyMuted} text-sm`}>
+          鑑定コード・製本申し込みコードは、各プロフィールの本棚から確認できます。
         </p>
-        <Link
-          href="#profile-list"
-          className="inline-flex text-sm font-medium text-emerald-900 underline-offset-2 hover:underline"
-        >
-          プロフィール一覧へ
-        </Link>
-      </div>
-    </section>
+      </MyPageAccountSectionCard>
+
+      <MyPageAccountSectionCard title="データ管理">
+        <p className={mobileReadable.bodyMuted}>
+          保存されている日記・写真・鑑定結果などの管理ができます。
+        </p>
+        <div className="border-t border-stone-100 pt-4">
+          <Link
+            href="/orders/account/delete"
+            className="inline-flex min-h-[44px] items-center rounded-lg border border-red-200 bg-white px-4 py-2.5 text-base font-medium text-red-800 transition hover:bg-red-50"
+          >
+            アカウントを削除する
+          </Link>
+        </div>
+      </MyPageAccountSectionCard>
+    </div>
   );
 }
