@@ -18,6 +18,7 @@
     "db:local:sync": "DATABASE_URL=postgresql://ljd:ljd_local_dev@127.0.0.1:5433/ljd_dev?schema=public prisma migrate deploy && DATABASE_URL=postgresql://ljd:ljd_local_dev@127.0.0.1:5433/ljd_dev?schema=public prisma generate",
     "db:local:stripe-status": "DATABASE_URL=postgresql://ljd:ljd_local_dev@127.0.0.1:5433/ljd_dev?schema=public npx tsx scripts/check-account-settings-stripe.ts",
     "stripe:listen": "stripe listen --forward-to localhost:3000/api/stripe/webhook",
+    "stripe:test-setup-check": "npx tsx scripts/check-stripe-test-setup.ts",
     "db:local:seed": "prisma db seed",
     "db:local:reset": "docker compose down -v && docker compose up -d && sleep 3 && prisma migrate deploy && prisma generate && prisma db seed",
     "db:migrate:dev": "prisma migrate dev",
