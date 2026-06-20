@@ -10,6 +10,8 @@ export type AdminIntroCardDefinition = {
   description: string;
   imageSrc: string;
   imageAlt: string;
+  /** 縦長で幅が狭いカードは cover で画面いっぱいに */
+  imageFit: "contain" | "cover";
 };
 
 export const ADMIN_INTRO_CARDS: readonly AdminIntroCardDefinition[] = [
@@ -20,6 +22,7 @@ export const ADMIN_INTRO_CARDS: readonly AdminIntroCardDefinition[] = [
     description: "アプリの紹介カード。対面でそのまま見せられます。",
     imageSrc: ADMIN_INTRO_CARD_APP_SRC,
     imageAlt: "Life Journey Diary アプリ紹介カード",
+    imageFit: "cover",
   },
   {
     key: "shop",
@@ -28,6 +31,7 @@ export const ADMIN_INTRO_CARDS: readonly AdminIntroCardDefinition[] = [
     description: "ショップの紹介カード。対面でそのまま見せられます。",
     imageSrc: ADMIN_INTRO_CARD_SHOP_SRC,
     imageAlt: "BambooNOOK ショップ紹介カード",
+    imageFit: "contain",
   },
 ] as const;
 

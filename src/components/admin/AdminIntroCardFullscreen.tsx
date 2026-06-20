@@ -8,12 +8,19 @@ type Props = {
   title: string;
   imageSrc: string;
   imageAlt: string;
+  imageFit?: "contain" | "cover";
 };
 
 /** 対面紹介：1枚のカードを画面いっぱいに表示 */
-export function AdminIntroCardFullscreen({ backHref, title, imageSrc, imageAlt }: Props) {
+export function AdminIntroCardFullscreen({
+  backHref,
+  title,
+  imageSrc,
+  imageAlt,
+  imageFit = "contain",
+}: Props) {
   return (
-    <div className="fixed inset-0 z-50 flex flex-col bg-[#14120f]">
+    <div className="fixed inset-0 z-50 flex flex-col bg-[#ece6d8]">
       <header className="flex shrink-0 items-center justify-between gap-3 border-b border-white/10 bg-black/75 px-4 py-3 backdrop-blur-sm">
         <Link href={backHref} className="text-sm font-medium text-white/85 hover:text-white">
           ← 戻る
@@ -28,7 +35,7 @@ export function AdminIntroCardFullscreen({ backHref, title, imageSrc, imageAlt }
           alt={imageAlt}
           fill
           sizes="100vw"
-          className="object-contain"
+          className={imageFit === "cover" ? "object-cover object-center" : "object-contain"}
           priority
           unoptimized
         />

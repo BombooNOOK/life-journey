@@ -34,6 +34,7 @@ export default async function AdminIntroCardDetailPage({ params }: Props) {
         title={card.title}
         imageSrc={card.imageSrc}
         imageAlt={card.imageAlt}
+        imageFit={card.imageFit}
       />
     </>
   );
