@@ -3,6 +3,7 @@ import Link from "next/link";
 import { LegalFooterLinks } from "@/components/legal/LegalFooterLinks";
 import { PlanCards } from "@/components/plans/PlanCards";
 import { getViewerEmailFromCookie } from "@/lib/auth/viewer";
+import { SUBSCRIPTION_BILLING_SUMMARY } from "@/lib/stripe/subscriptionBillingCopy";
 
 export const dynamic = "force-dynamic";
 
@@ -31,6 +32,22 @@ export default async function PlansPage() {
       </div>
 
       <PlanCards />
+
+      <section className="space-y-2 rounded-xl border border-stone-200 bg-white px-4 py-4 text-sm leading-relaxed text-stone-700 shadow-sm sm:px-5">
+        <h2 className="text-base font-semibold text-stone-900">お支払い・解約について</h2>
+        <ul className="list-disc space-y-1.5 pl-5">
+          {SUBSCRIPTION_BILLING_SUMMARY.map((line) => (
+            <li key={line}>{line}</li>
+          ))}
+        </ul>
+        <p className="pt-1 text-xs text-stone-600">
+          解約手続きは、ログイン後の
+          <Link href="/orders/account" className="mx-0.5 font-medium text-stone-800 underline-offset-2 hover:underline">
+            アカウント情報
+          </Link>
+          から行えます。
+        </p>
+      </section>
 
       <div className="space-y-2 rounded-xl border border-stone-200 bg-[#faf8f5] px-4 py-4 text-xs leading-relaxed text-stone-600 sm:text-sm">
         <p>

@@ -8,6 +8,7 @@ import { mobileReadable } from "@/lib/auth/mobileReadableStyles";
 import { MYPAGE_CONTACT_FORM_PATH } from "@/lib/legal/legalDocumentLinks";
 import { formatMyPageProfileLimitLabel } from "@/lib/profile/effectiveProfileLimit";
 import { deriveSubscriptionPlanLabel } from "@/lib/stripe/plans";
+import { SUBSCRIPTION_CANCEL_PENDING_BILLING_NOTE } from "@/lib/stripe/subscriptionBillingCopy";
 import type { SubscriptionCancelState } from "@/lib/stripe/subscriptionCancelState";
 
 type Props = {
@@ -73,7 +74,10 @@ export function MyPageAccountSection({
             <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-base leading-[1.6] text-amber-950">
               <p className="font-medium">解約申込済み</p>
               {subscriptionCancelState.periodEndLabel ? (
-                <p className="mt-1">{subscriptionCancelState.periodEndLabel} までご利用いただけます</p>
+                <>
+                  <p className="mt-1">{subscriptionCancelState.periodEndLabel} までご利用いただけます</p>
+                  <p className="mt-1 text-sm">{SUBSCRIPTION_CANCEL_PENDING_BILLING_NOTE}</p>
+                </>
               ) : null}
             </div>
           ) : subscriptionCancelState.canRequestCancel ? (
