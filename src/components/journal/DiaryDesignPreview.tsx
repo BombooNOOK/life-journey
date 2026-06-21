@@ -47,6 +47,7 @@ function DiaryDesignPreviewInner({
   comment,
   contentFontMode: contentFontModeProp,
   kanteiOrderExists,
+  layoutRulerTarget,
   ...pageProps
 }: Props) {
   const searchParams = useSearchParams();
@@ -67,6 +68,7 @@ function DiaryDesignPreviewInner({
       comment={comment}
       contentFontMode={contentFontModeProp}
       kanteiOrderExists={kanteiOrderExists}
+      layoutRulerTarget={layoutRulerTarget}
       bodyLinesDebug={bodyLinesDebug}
       {...pageProps}
     />

@@ -28,10 +28,10 @@ describe("countBodyLayoutLines", () => {
     expect(countBodyLayoutLines("あ".repeat(perLine + 6), "standard")).toBe(2);
   });
 
-  it("uses standard limits (29 chars, 7 lines)", () => {
+  it("uses standard limits (30 chars, 7 lines)", () => {
     const perLine = DIARY_BODY_CHARS_PER_LINE_BY_MODE.standard;
     const max = DIARY_BODY_MAX_LINES_BY_MODE.standard;
-    expect(perLine).toBe(29);
+    expect(perLine).toBe(30);
     expect(max).toBe(7);
     const fits = "あ".repeat(perLine * max);
     expect(isDiaryBodyOverLineLimit(fits, "standard")).toBe(false);
@@ -50,17 +50,17 @@ describe("countBodyLayoutLines", () => {
     expect(isDiaryBodyOverLineLimit(`${fits}${"あ".repeat(perLine + 6)}`, "relaxed")).toBe(true);
   });
 
-  it("uses generous limits (36 chars, 10 lines)", () => {
+  it("uses generous limits (37 chars, 10 lines)", () => {
     const perLine = DIARY_BODY_CHARS_PER_LINE_BY_MODE.generous;
     const max = DIARY_BODY_MAX_LINES_BY_MODE.generous;
-    expect(perLine).toBe(36);
+    expect(perLine).toBe(37);
     expect(max).toBe(10);
   });
 
-  it("uses compact limits (39 chars, 11 lines)", () => {
+  it("uses compact limits (40 chars, 11 lines)", () => {
     const perLine = DIARY_BODY_CHARS_PER_LINE_BY_MODE.compact;
     const max = DIARY_BODY_MAX_LINES_BY_MODE.compact;
-    expect(perLine).toBe(39);
+    expect(perLine).toBe(40);
     expect(max).toBe(11);
   });
 });
@@ -83,8 +83,8 @@ describe("getBodyLayoutLines", () => {
   it("wraps at mode-specific chars per line", () => {
     const line = "あ".repeat(50);
     expect(getBodyLayoutLines(line, "standard")).toEqual([
-      "あ".repeat(29),
-      "あ".repeat(21),
+      "あ".repeat(30),
+      "あ".repeat(20),
     ]);
     expect(getBodyLayoutLines(line, "relaxed")).toEqual([
       "あ".repeat(25),

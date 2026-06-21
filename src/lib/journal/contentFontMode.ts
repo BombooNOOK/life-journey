@@ -7,7 +7,7 @@ export type ContentFontMode = (typeof CONTENT_FONT_MODES)[number];
 
 export const DEFAULT_CONTENT_FONT_MODE: ContentFontMode = "standard";
 
-/** 製本1ページ目安（chars/行 × 最大行・案D行間） */
+/** 製本1ページ目安（design 背景テンプレ本文枠 596×285 に基づく chars/行 × 最大行） */
 export const JOURNAL_CONTENT_SOFT_MAX_BY_MODE: Record<ContentFontMode, number> = {
   relaxed: 150,
   standard: 203,
@@ -19,7 +19,7 @@ export const JOURNAL_CONTENT_SOFT_MAX_BY_MODE: Record<ContentFontMode, number> =
  * さらに長い場合の警告しきい値（ソフト上限の約1.34倍）。
  */
 export const JOURNAL_CONTENT_STRONG_MAX_BY_MODE: Record<ContentFontMode, number> = {
-  relaxed: 200,
+  relaxed: 201,
   standard: 272,
   generous: 482,
   compact: 575,

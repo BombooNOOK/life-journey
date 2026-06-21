@@ -157,6 +157,43 @@ export function getDiaryCommentLinesForBindingAtWidth(
   return lines;
 }
 
+/** 行ごとに字数上限を変える（A案：1・2行目だけ広げる等） */
+export function getDiaryCommentLinesForBindingAtSchedule(
+  text: string,
+  maxCharsPerLineSchedule: readonly number[],
+  options?: { maxLines?: number; fallbackMaxCharsPerLine?: number },
+): string[] {
+  const normalized = normalizeDiaryCommentForPdfFlow(text);
+  if (!normalized) return [];
+
+  const fallbackMaxCharsPerLine =
+    options?.fallbackMaxCharsPerLine ??
+    maxCharsPerLineSchedule[maxCharsPerLineSchedule.length - 1] ??
+    DIARY_COMMENT_PDF_CHARS_PER_LINE;
+
+  const lines: string[] = [];
+  let remaining = normalized;
+
+  while (remaining.length > 0) {
+    if (options?.maxLines != null && lines.length >= options.maxLines) {
+      break;
+    }
+    const scheduledMax =
+      maxCharsPerLineSchedule[lines.length] ?? fallbackMaxCharsPerLine;
+    const isLastAllowedLine =
+      options?.maxLines != null && lines.length === options.maxLines - 1;
+    const maxForLine = isLastAllowedLine
+      ? Math.max(scheduledMax, remaining.length)
+      : scheduledMax;
+    const line = splitFixedWidthJapaneseLines(remaining, maxForLine)[0];
+    if (!line) break;
+    lines.push(line.trim());
+    remaining = remaining.slice(line.length);
+  }
+
+  return lines.filter(Boolean);
+}
+
 /** PDF 製本用：段落なし・孤立行マージ後の行配列 */
 export function getDiaryCommentPdfLinesForBinding(text: string): string[] {
   return getDiaryCommentLinesForBindingAtWidth(text, DIARY_COMMENT_PDF_CHARS_PER_LINE, {

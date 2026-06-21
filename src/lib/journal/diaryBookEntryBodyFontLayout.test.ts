@@ -6,44 +6,44 @@ import {
 } from "@/lib/journal/diaryBookEntryBodyFontLayout";
 
 describe("getDiaryBookEntryV2BodyFontLayout", () => {
-  it("uses 15px for compact (same as owl comment body)", () => {
+  it("uses 15px for compact", () => {
     const layout = getDiaryBookEntryV2BodyFontLayout("compact");
     expect(layout.fontSizePx).toBe(DIARY_BOOK_ENTRY_V2_COMPACT_FONT_SIZE_PX);
     expect(layout.lineHeight).toBe(1.62);
-    expect(layout.maxCharsPerLine).toBe(39);
+    expect(layout.maxCharsPerLine).toBe(40);
     expect(layout.maxLines).toBe(11);
-    expect(layout.maxBindingChars).toBe(429);
+    expect(layout.maxBindingChars).toBe(440);
   });
 
-  it("derives standard from legacy ratio with airy line height (案D)", () => {
+  it("uses standard from Chappy 724 coords", () => {
     const layout = getDiaryBookEntryV2BodyFontLayout("standard");
-    expect(layout.fontSizePx).toBe(20.1);
-    expect(layout.lineHeight).toBe(1.8);
-    expect(layout.maxCharsPerLine).toBe(29);
+    expect(layout.fontSizePx).toBe(20);
+    expect(layout.lineHeight).toBe(1.75);
+    expect(layout.maxCharsPerLine).toBe(30);
     expect(layout.maxLines).toBe(7);
-    expect(layout.maxBindingChars).toBe(203);
+    expect(layout.maxBindingChars).toBe(210);
   });
 
-  it("derives relaxed as largest font with most line spacing (案D)", () => {
+  it("uses relaxed as largest font with most line spacing", () => {
     const layout = getDiaryBookEntryV2BodyFontLayout("relaxed");
-    expect(layout.fontSizePx).toBe(23.7);
+    expect(layout.fontSizePx).toBe(24);
     expect(layout.lineHeight).toBe(1.9);
     expect(layout.maxCharsPerLine).toBe(25);
     expect(layout.maxLines).toBe(6);
     expect(layout.maxBindingChars).toBe(150);
   });
 
-  it("derives generous between standard and compact (案D)", () => {
+  it("uses generous between standard and compact", () => {
     const layout = getDiaryBookEntryV2BodyFontLayout("generous");
-    expect(layout.fontSizePx).toBe(16.3);
+    expect(layout.fontSizePx).toBe(16);
     expect(layout.lineHeight).toBe(1.68);
-    expect(layout.maxCharsPerLine).toBe(36);
+    expect(layout.maxCharsPerLine).toBe(37);
     expect(layout.maxLines).toBe(10);
-    expect(layout.maxBindingChars).toBe(360);
+    expect(layout.maxBindingChars).toBe(370);
   });
 
   it("defaults unknown mode to standard", () => {
-    expect(getDiaryBookEntryV2BodyFontLayout(null).maxBindingChars).toBe(203);
-    expect(getDiaryBookEntryV2BodyFontLayout("invalid").maxBindingChars).toBe(203);
+    expect(getDiaryBookEntryV2BodyFontLayout(null).maxBindingChars).toBe(210);
+    expect(getDiaryBookEntryV2BodyFontLayout("invalid").maxBindingChars).toBe(210);
   });
 });

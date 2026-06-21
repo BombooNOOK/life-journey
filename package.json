@@ -50,6 +50,7 @@
     "preview:diary-entry-frame": "npx tsx scripts/preview-diary-book-entry-body-frame.tsx"
   },
   "dependencies": {
+    "@fontsource/klee-one": "^5.2.8",
     "@fontsource/noto-sans-jp": "^5.2.5",
     "@prisma/client": "^6.6.0",
     "@react-pdf/renderer": "^4.3.0",

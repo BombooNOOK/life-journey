@@ -43,5 +43,14 @@ export function ensureJapaneseFont(): void {
     ],
   });
 
+  Font.register({
+    family: "KleeOne",
+    fonts: [
+      { src: getRepoFontPath("KleeOne-Regular.ttf"), fontWeight: 400, fontStyle: "normal" },
+      { src: getRepoFontPath("KleeOne-SemiBold.ttf"), fontWeight: 600, fontStyle: "normal" },
+      { src: getRepoFontPath("KleeOne-SemiBold.ttf"), fontWeight: 700, fontStyle: "normal" },
+    ],
+  });
+
   registered = true;
 }

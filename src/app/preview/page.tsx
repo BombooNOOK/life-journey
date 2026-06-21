@@ -13,6 +13,12 @@ const links: { href: string; label: string; note?: string; highlight?: boolean }
     note: "npm run dev 中のみ。初回は 1〜2 分かかることがあります",
   },
   {
+    href: "/preview/diary-book-entry",
+    label: "日記ブック本文テンプレ（v2・5キャラ切替）",
+    note: "水彩 scrapbook 背景 PNG ＋ 動的テキスト。npm run dev 中のみ",
+    highlight: true,
+  },
+  {
     href: "/preview/pdf-design-map",
     label: "鑑定書アセット：PDF ↔ PNG 対応表",
     note: "デザイン元 PDF をクリックすると本番 PNG を表示（npm run dev 中のみ）",

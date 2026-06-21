@@ -32,7 +32,8 @@ describe("generateDiaryReading（暦の月・日とパーソナルデイ）", ()
       recentTemplateIds: [],
     });
     const hasMonthOverlapCopy =
-      text.includes("暦の月も、どちらも「7」") || text.includes("今月の流れが「7」");
+      text.includes("今月も、どちらも「7」") ||
+      text.includes("あなたの今日と今月が「7」");
     expect(hasMonthOverlapCopy).toBe(true);
   });
 });
@@ -45,7 +46,7 @@ describe("calendarAccents 重なりテンプレの埋め込み", () => {
     expect(t?.text).toContain("「7」");
     const t2 = personalDayCalendarDayOverlapAccents.find((a) => a.id === "special_overlap_pd_7_2");
     expect(t2?.text).toContain("あなたの今日");
-    expect(t2?.text).toContain("日付の流れが「7」");
+    expect(t2?.text).toContain("あなたの今日と日付が「7」");
   });
 });
 

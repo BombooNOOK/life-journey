@@ -1,6 +1,7 @@
 import { companionTypeToTemplateSlug } from "@/lib/journal/coverAssets";
+import { DIARY_BOOK_ENTRY_V2_USE_COMPANION_OVERLAY } from "@/lib/journal/diaryBookEntryPrintLayout";
 
-const DIARY_BOOK_IMAGE_CACHE_VERSION = "12";
+const DIARY_BOOK_IMAGE_CACHE_VERSION = "21";
 
 function withCache(path: string): string {
   return `${path}?v=${DIARY_BOOK_IMAGE_CACHE_VERSION}`;
@@ -67,11 +68,12 @@ export function diaryBookPreBackCoverIllustrationImagePath(): string {
 }
 
 /**
- * 日記ブック本文テンプレ（金枠なし・キャラ別）。
+ * 日記ブック本文テンプレ（水彩 scrapbook 背景・キャラ別・724×1024）。
  * 未配置キャラはフクロウ（drfukuro）にフォールバック。
+ * 旧 `-plain-` 系は `public/images/` に参照用で残置。
  */
-/** `public/images/diary-book-body-plain-*.png` が置いてある slug */
-const DIARY_BOOK_BODY_TEMPLATE_AVAILABLE = new Set([
+/** `public/images/diary-book-body-design-*.png` が置いてある slug */
+const DIARY_BOOK_BODY_DESIGN_TEMPLATE_AVAILABLE = new Set([
   "drfukuro",
   "harinezumi",
   "namakemono",
@@ -79,10 +81,35 @@ const DIARY_BOOK_BODY_TEMPLATE_AVAILABLE = new Set([
   "kerosion",
 ]);
 
-export function diaryBookBodyTemplatePathForCompanion(companionType: string): string {
+export function diaryBookBodyDesignBaseTemplatePath(): string {
+  return withCache("/images/diary-book-body-design-base.png");
+}
+
+export function diaryBookBodyDesignBackgroundPathForCompanion(companionType: string): string {
+  if (DIARY_BOOK_ENTRY_V2_USE_COMPANION_OVERLAY) {
+    return diaryBookBodyDesignBaseTemplatePath();
+  }
+  return diaryBookBodyDesignTemplatePathForCompanion(companionType);
+}
+
+export function diaryBookBodyDesignTemplatePathForCompanion(companionType: string): string {
   const slug = companionTypeToTemplateSlug(companionType);
-  const resolved = DIARY_BOOK_BODY_TEMPLATE_AVAILABLE.has(slug) ? slug : "drfukuro";
-  return withCache(`/images/diary-book-body-plain-${resolved}.png`);
+  const resolved = DIARY_BOOK_BODY_DESIGN_TEMPLATE_AVAILABLE.has(slug) ? slug : "drfukuro";
+  return withCache(`/images/diary-book-body-design-${resolved}.png`);
+}
+
+/** 本文 v2 写真枠の装飾（マスキングテープ・花・枠線）を写真の上に重ねる透明 PNG */
+const DIARY_BOOK_BODY_DESIGN_PHOTO_OVERLAY_AVAILABLE = DIARY_BOOK_BODY_DESIGN_TEMPLATE_AVAILABLE;
+
+export function diaryBookBodyDesignPhotoOverlayPathForCompanion(companionType: string): string {
+  const slug = companionTypeToTemplateSlug(companionType);
+  const resolved = DIARY_BOOK_BODY_DESIGN_PHOTO_OVERLAY_AVAILABLE.has(slug) ? slug : "drfukuro";
+  return withCache(`/images/diary-book-body-design-${resolved}-photo-overlay.png`);
+}
+
+/** @deprecated `diaryBookBodyDesignTemplatePathForCompanion` を使用 */
+export function diaryBookBodyTemplatePathForCompanion(companionType: string): string {
+  return diaryBookBodyDesignTemplatePathForCompanion(companionType);
 }
 
 /** 日記ブック本文の写真枠・読み込み中プレースホルダー */

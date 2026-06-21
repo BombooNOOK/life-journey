@@ -3,16 +3,19 @@
 import { useEffect, type CSSProperties } from "react";
 
 import {
-  DIARY_BOOK_ENTRY_DECO,
-  DIARY_BOOK_ENTRY_NUMBER_BG,
-  diaryBookEntryCompanionImagePath,
-} from "@/lib/journal/diaryBookEntryAssets";
-import {
   getDiaryBookEntryV2BodyLayoutLines,
   getDiaryBookEntryV2BodyLayoutLinesAll,
 } from "@/lib/journal/diaryBookEntryBodyWrap";
 import { getDiaryBookEntryV2BodyFontLayout } from "@/lib/journal/diaryBookEntryBodyFontLayout";
-import { resolveDiaryBookEntryV2CommentRenderLayout } from "@/lib/journal/diaryBookEntryCommentWrap";
+import {
+  resolveDiaryBookEntryV2CommentRenderLayout,
+} from "@/lib/journal/diaryBookEntryCommentWrap";
+import { DiaryBookEntryLayoutRuler } from "@/components/journal/DiaryBookEntryLayoutRuler";
+import {
+  estimateDiaryBookEntryDateRowLayoutWidthPx,
+  getDiaryBookEntryLayoutRulerAnchor,
+  type DiaryBookEntryLayoutRulerTarget,
+} from "@/lib/journal/diaryBookEntryLayoutRuler";
 import {
   DIARY_BOOK_ENTRY_V2_BODY,
   DIARY_BOOK_ENTRY_V2_COLORS,
@@ -24,11 +27,25 @@ import {
   DIARY_BOOK_ENTRY_V2_MOOD,
   DIARY_BOOK_ENTRY_V2_NUMBERS,
   DIARY_BOOK_ENTRY_V2_PHOTO,
-  estimateDiaryBookEntryDateRowWidthPx,
-  estimateDiaryBookEntryBodyLabelWidthPx,
+  DIARY_BOOK_ENTRY_V2_USE_COMPANION_OVERLAY,
+  DIARY_BOOK_ENTRY_V2_USE_PHOTO_OVERLAY,
+  getDiaryBookEntryCompanionBox,
+  getDiaryBookEntryDateRowLeftPx,
+  getDiaryBookEntryNumberLabelBox,
+  getDiaryBookEntryNumberSlotBox,
+  getDiaryBookEntryPhotoLabelRotateOriginPx,
+  getDiaryBookEntryPhotoRotateOriginPx,
 } from "@/lib/journal/diaryBookEntryPrintLayout";
-import { diaryBookPhotoMemoryLoadingImagePath } from "@/lib/journal/diaryBookAssets";
+import {
+  diaryBookBodyDesignBackgroundPathForCompanion,
+  diaryBookBodyDesignBaseTemplatePath,
+  diaryBookBodyDesignPhotoOverlayPathForCompanion,
+  diaryBookBodyDesignTemplatePathForCompanion,
+  diaryBookPhotoMemoryLoadingImagePath,
+} from "@/lib/journal/diaryBookAssets";
+import { diaryBookEntryCompanionImagePath } from "@/lib/journal/diaryBookEntryAssets";
 import { DIARY_PREVIEW_BODY_FONT_FAMILY } from "@/lib/journal/diaryPreviewBodyFont";
+import { DIARY_PREVIEW_LABEL_BASE_STYLE } from "@/lib/journal/diaryPreviewLabelFont";
 import {
   DIARY_PREVIEW_BODY_LINE_BASE_STYLE,
   DIARY_PREVIEW_BODY_LINES_CONTAINER_STYLE,
@@ -42,7 +59,6 @@ import {
 } from "@/lib/journal/diaryPreviewBodyLineLimits";
 import {
   getDiaryPreviewDateRowSegments,
-  getDiaryPreviewDateRowTextStyle,
 } from "@/lib/journal/diaryPreviewFixedLayout";
 import { normalizeContentFontMode } from "@/lib/journal/contentFontMode";
 import { JOURNAL_OWL_COMMENT_KANTEI_REQUIRED_MESSAGE } from "@/lib/journal/kanteiCommentCopy";
@@ -71,6 +87,10 @@ export type DiaryBookEntryV2PreviewPageProps = {
   kanteiOrderExists?: boolean;
   /** ?bodyLinesDebug=1 — 行配列確認・行ごと背景（本文のみ） */
   bodyLinesDebug?: boolean;
+  /** レイアウト微調整用の 5px 基準マス（プレビュー専用・?ruler=photo 等） */
+  layoutRulerTarget?: DiaryBookEntryLayoutRulerTarget | null;
+  /** companion = キャラ別1枚絵。base = 共通背景（キャラなし・合成試作） */
+  backgroundTemplate?: "companion" | "base";
 };
 
 function absBox(
@@ -92,41 +112,21 @@ function labelLetterSpacingPx(fontSizePx: number): string {
   return `${DIARY_BOOK_ENTRY_V2_LABEL_LETTER_SPACING_EM * fontSizePx}px`;
 }
 
-function numberSlotLeftPx(index: number): number {
-  const { leftPx, widthPx, slotSizePx, slotGapPx } = DIARY_BOOK_ENTRY_V2_NUMBERS;
-  const rowWidth = slotSizePx * 3 + slotGapPx * 2;
-  const rowLeft = leftPx + (widthPx - rowWidth) / 2;
-  return rowLeft + index * (slotSizePx + slotGapPx);
-}
-
-function numberSlotBgSizePx(key: "day" | "month" | "year"): number {
-  return DIARY_BOOK_ENTRY_V2_NUMBERS.slotBgSizePxByKey[key];
-}
-
-function numberSlotBgBox(index: number, key: "day" | "month" | "year") {
-  const numbersCfg = DIARY_BOOK_ENTRY_V2_NUMBERS;
-  const slotLeft = numberSlotLeftPx(index);
-  const slotTop = numbersCfg.rowTopPx;
-  const sizePx = numberSlotBgSizePx(key);
-  const slotCenterX = slotLeft + numbersCfg.slotSizePx / 2;
-  const slotCenterY = slotTop + numbersCfg.slotSizePx / 2;
+function sectionTitleStyle(fontSizePx: number, extra?: CSSProperties): CSSProperties {
   return {
-    leftPx: slotCenterX - sizePx / 2,
-    topPx: slotCenterY - sizePx / 2,
-    sizePx,
+    ...DIARY_PREVIEW_LABEL_BASE_STYLE,
+    fontSize: `${fontSizePx}px`,
+    letterSpacing: labelLetterSpacingPx(fontSizePx),
+    color: DIARY_BOOK_ENTRY_V2_COLORS.header,
+    ...extra,
   };
 }
 
-function numberSlotValueBox(index: number) {
-  const numbersCfg = DIARY_BOOK_ENTRY_V2_NUMBERS;
-  const slotLeft = numberSlotLeftPx(index);
-  const offset = numbersCfg.valueOffsetPx;
-  return {
-    leftPx: slotLeft + offset.x,
-    topPx: numbersCfg.rowTopPx + offset.y,
-    widthPx: numbersCfg.slotSizePx,
-    heightPx: numbersCfg.slotSizePx,
-  };
+function tapeTitleStyle(fontSizePx: number, extra?: CSSProperties): CSSProperties {
+  return sectionTitleStyle(fontSizePx, {
+    color: DIARY_BOOK_ENTRY_V2_COLORS.textMuted,
+    ...extra,
+  });
 }
 
 function EntryTextLines({
@@ -137,6 +137,7 @@ function EntryTextLines({
   lineHeight,
   letterSpacing,
   lineBaseStyle,
+  clipOverflow = true,
 }: {
   lines: string[];
   widthPx: number;
@@ -145,15 +146,17 @@ function EntryTextLines({
   lineHeight: number;
   letterSpacing?: string;
   lineBaseStyle: CSSProperties;
+  clipOverflow?: boolean;
 }) {
   const lineBoxPx = fontSizePx * lineHeight;
   return (
     <div
-      className="overflow-hidden"
+      className={clipOverflow ? "overflow-hidden" : undefined}
       style={{
         ...absBox(0, 0, widthPx, heightPx),
         fontFamily: DIARY_PREVIEW_BODY_FONT_FAMILY,
         color: DIARY_BOOK_ENTRY_V2_COLORS.text,
+        ...(clipOverflow ? {} : { overflowX: "visible", overflowY: "hidden" }),
       }}
     >
       {lines.map((line, index) => (
@@ -178,7 +181,7 @@ function EntryTextLines({
 
 /**
  * 日記ブック本文ページ v2（724×1024）。
- * DiaryBookEntryPdfPage と同一レイアウト・改行ルール（本棚プレビュー用）。
+ * 背景 PNG + 動的オーバーレイ。DiaryBookEntryPdfPage と同一レイアウト。
  */
 export function DiaryBookEntryV2PreviewPage({
   companionType,
@@ -194,22 +197,21 @@ export function DiaryBookEntryV2PreviewPage({
   contentFontMode: contentFontModeProp,
   kanteiOrderExists,
   bodyLinesDebug = false,
+  layoutRulerTarget = null,
+  backgroundTemplate = "companion",
 }: DiaryBookEntryV2PreviewPageProps) {
   const contentFontMode = normalizeContentFontMode(contentFontModeProp);
   const trimmedBody = content.trim();
   const dateSegments = getDiaryPreviewDateRowSegments(previewDate).filter(
     (segment) => segment.key !== "label",
   );
-  const dateTextStyle = getDiaryPreviewDateRowTextStyle(contentFontMode);
-  const dateFontSizePx = parseFloat(dateTextStyle.fontSize);
-  const dateRowWidthPx = estimateDiaryBookEntryDateRowWidthPx(
-    dateSegments,
-    dateFontSizePx,
-    DIARY_BOOK_ENTRY_V2_DATE.letterSpacingEm,
-    DIARY_BOOK_ENTRY_V2_DATE.segmentGapPx,
-  );
-  const dateBranchWidthPx = dateRowWidthPx + DIARY_BOOK_ENTRY_V2_DATE.branchExtraWidthPx;
-  const dateBranchHeightPx = dateBranchWidthPx / DIARY_BOOK_ENTRY_V2_DATE.branchAspectRatio;
+  const dateFontSizePx = DIARY_BOOK_ENTRY_V2_DATE.fontSizePx;
+  const dateRowLeftPx = getDiaryBookEntryDateRowLeftPx(dateSegments, dateFontSizePx);
+  const dateRowWidthPx = estimateDiaryBookEntryDateRowLayoutWidthPx(dateSegments, dateFontSizePx);
+  const layoutRulerAnchor =
+    layoutRulerTarget != null
+      ? getDiaryBookEntryLayoutRulerAnchor(layoutRulerTarget, dateRowLeftPx, dateRowWidthPx)
+      : null;
 
   const { maxLines: bodyMaxLines } = getDiaryBodyLineLimit(contentFontMode);
   const allBodyLayoutLines = trimmedBody
@@ -273,55 +275,104 @@ export function DiaryBookEntryV2PreviewPage({
   const showPhotoLoading = photoLoading && !hasPhoto;
 
   const photo = DIARY_BOOK_ENTRY_V2_PHOTO;
-  const photoInnerSizePx = photo.photoInnerSizePx;
-  const photoContentSizePx = photoInnerSizePx * photo.photoContentScale;
-  const photoContentOffsetInInnerPx = (photoInnerSizePx - photoContentSizePx) / 2;
-  const photoContentLeftPx =
-    photo.leftPx + photo.photoInnerInsetLeftPx + photoContentOffsetInInnerPx;
-  const photoContentTopPx =
-    photo.topPx + photo.photoInnerInsetTopPx + photoContentOffsetInInnerPx;
-
   const numbersCfg = DIARY_BOOK_ENTRY_V2_NUMBERS;
   const moodCfg = DIARY_BOOK_ENTRY_V2_MOOD;
   const bodyCfg = DIARY_BOOK_ENTRY_V2_BODY;
   const commentCfg = DIARY_BOOK_ENTRY_V2_COMMENT;
   const bodyFontLayout = getDiaryBookEntryV2BodyFontLayout(contentFontMode);
-  const bodyTitleWidthPx = estimateDiaryBookEntryBodyLabelWidthPx(
-    bodyCfg.labelText,
-    bodyCfg.labelFontSizePx,
-    DIARY_BOOK_ENTRY_V2_LABEL_LETTER_SPACING_EM,
-  );
-  const pawprintCfg = bodyCfg.pawprintAfterTitle;
-  const bodyPawprintLeftPx =
-    bodyCfg.labelLeftPx + bodyTitleWidthPx + pawprintCfg.gapAfterTitlePx;
-  const bodyPawprintTopPx =
-    bodyCfg.labelTopPx +
-    (bodyCfg.labelFontSizePx - pawprintCfg.heightPx) / 2 +
-    pawprintCfg.topNudgePx;
-
-  const companionLeft =
-    DIARY_BOOK_ENTRY_V2_DESIGN.widthPx -
-    commentCfg.companionRightPx -
-    commentCfg.companionWidthPx;
-
   const commentFontSizePx = commentCfg.contentFontSizePx * commentLayout.fontScale;
+  const companionBox = getDiaryBookEntryCompanionBox(companionType ?? "owl");
+  const showCompanionOverlay =
+    DIARY_BOOK_ENTRY_V2_USE_COMPANION_OVERLAY && backgroundTemplate === "base";
+  const backgroundSrc = showCompanionOverlay
+    ? diaryBookBodyDesignBackgroundPathForCompanion(companionType ?? "owl")
+    : backgroundTemplate === "base"
+      ? diaryBookBodyDesignBaseTemplatePath()
+      : diaryBookBodyDesignTemplatePathForCompanion(companionType ?? "owl");
+  const companionSrc = diaryBookEntryCompanionImagePath(companionType ?? "owl");
+  const photoOverlaySrc = DIARY_BOOK_ENTRY_V2_USE_PHOTO_OVERLAY
+    ? diaryBookBodyDesignPhotoOverlayPathForCompanion(companionType ?? "owl")
+    : null;
+
+  const photoRotateOrigin = getDiaryBookEntryPhotoRotateOriginPx();
+  const photoLabelRotateOrigin = getDiaryBookEntryPhotoLabelRotateOriginPx();
 
   return (
     <div
-      className="relative bg-white"
+      className="relative overflow-hidden"
       style={{
         width: `${DIARY_BOOK_ENTRY_V2_DESIGN.widthPx}px`,
         height: `${DIARY_BOOK_ENTRY_V2_DESIGN.heightPx}px`,
       }}
     >
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        alt=""
+        src={backgroundSrc}
+        className="absolute inset-0 h-full w-full object-fill"
+        draggable={false}
+      />
+
+      {hasPhoto ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          alt=""
+          src={photoDisplaySrc}
+          className="absolute object-cover"
+          style={{
+            ...absBox(
+              photo.contentLeftPx,
+              photo.contentTopPx,
+              photo.contentSizePx,
+              photo.contentSizePx,
+            ),
+            transform: `rotate(${photo.contentRotateDeg}deg)`,
+            transformOrigin: `${photoRotateOrigin.xPx}px ${photoRotateOrigin.yPx}px`,
+          }}
+        />
+      ) : null}
+
+      {showPhotoLoading ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          alt=""
+          src={diaryBookPhotoMemoryLoadingImagePath()}
+          className="absolute object-contain opacity-80"
+          style={{
+            ...absBox(
+              photo.contentLeftPx,
+              photo.contentTopPx,
+              photo.contentSizePx,
+              photo.contentSizePx,
+            ),
+            transform: `rotate(${photo.contentRotateDeg}deg)`,
+            transformOrigin: `${photoRotateOrigin.xPx}px ${photoRotateOrigin.yPx}px`,
+          }}
+        />
+      ) : null}
+
+      {DIARY_BOOK_ENTRY_V2_USE_PHOTO_OVERLAY && photoOverlaySrc ? (
+        <>
+          {/* 写真枠装飾（テープ・花・枠線）を写真の上に重ねる */}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            alt=""
+            src={photoOverlaySrc}
+            className="pointer-events-none absolute inset-0 h-full w-full object-fill"
+            draggable={false}
+          />
+        </>
+      ) : null}
+
       <div
-        className="absolute left-0 flex w-full items-center justify-center"
-        style={{ top: `${DIARY_BOOK_ENTRY_V2_DATE.topPx}px` }}
+        className="absolute inline-flex max-w-none items-center whitespace-nowrap"
+        style={{ left: `${dateRowLeftPx}px`, top: `${DIARY_BOOK_ENTRY_V2_DATE.topPx}px` }}
       >
         {dateSegments.map((segment, index) => (
           <span
             key={segment.key}
             style={{
+              ...DIARY_PREVIEW_LABEL_BASE_STYLE,
               fontWeight: DIARY_BOOK_ENTRY_V2_DATE.fontWeight,
               fontSize: `${dateFontSizePx}px`,
               color: DIARY_BOOK_ENTRY_V2_DATE.color,
@@ -334,139 +385,72 @@ export function DiaryBookEntryV2PreviewPage({
         ))}
       </div>
 
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
-        alt=""
-        src={DIARY_BOOK_ENTRY_DECO.branch}
-        className="absolute object-contain"
+      <div
+        className="absolute flex items-center justify-center text-center"
         style={{
           ...absBox(
-            (DIARY_BOOK_ENTRY_V2_DESIGN.widthPx - dateBranchWidthPx) / 2,
-            DIARY_BOOK_ENTRY_V2_DATE.branchTopPx,
-            dateBranchWidthPx,
-            dateBranchHeightPx,
+            photo.labelLeftPx,
+            photo.labelTopPx,
+            photo.labelWidthPx,
+            photo.labelHeightPx,
           ),
-        }}
-      />
-
-      <div
-        className="absolute text-center font-bold"
-        style={{
-          ...absBox(photo.leftPx, photo.labelTopPx, photo.sizePx),
-          fontSize: `${photo.labelFontSizePx}px`,
-          letterSpacing: labelLetterSpacingPx(photo.labelFontSizePx),
-          color: DIARY_BOOK_ENTRY_V2_COLORS.text,
+          ...tapeTitleStyle(photo.labelFontSizePx),
+          transform: `rotate(${photo.contentRotateDeg}deg)`,
+          transformOrigin: `${photoLabelRotateOrigin.xPx - photo.labelLeftPx}px ${photoLabelRotateOrigin.yPx - photo.labelTopPx}px`,
         }}
       >
         {photo.labelText}
       </div>
 
-      {hasPhoto ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
-          alt=""
-          src={photoDisplaySrc}
-          className="absolute object-cover"
-          style={absBox(photoContentLeftPx, photoContentTopPx, photoContentSizePx, photoContentSizePx)}
-        />
-      ) : null}
-
-      {showPhotoLoading ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
-          alt=""
-          src={diaryBookPhotoMemoryLoadingImagePath()}
-          className="absolute object-contain opacity-80"
-          style={absBox(photoContentLeftPx, photoContentTopPx, photoContentSizePx, photoContentSizePx)}
-        />
-      ) : null}
-
-      {!hasPhoto && !showPhotoLoading ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
-          alt=""
-          src={DIARY_BOOK_ENTRY_DECO.photoCameraIcon}
-          className="absolute object-contain"
-          style={absBox(
-            photo.leftPx + photo.sizePx * (0.5 - photo.cameraIconScale / 2),
-            photo.topPx + photo.sizePx * (0.5 - photo.cameraIconScale / 2),
-            photo.sizePx * photo.cameraIconScale,
-            photo.sizePx * photo.cameraIconScale,
-          )}
-        />
-      ) : null}
-
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
-        alt=""
-        src={DIARY_BOOK_ENTRY_DECO.photoLeaves}
-        className="absolute object-contain"
-        style={absBox(photo.leftPx, photo.topPx, photo.sizePx, photo.sizePx)}
-      />
-
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
-        alt=""
-        src={DIARY_BOOK_ENTRY_DECO.branch}
-        className="absolute object-contain"
-        style={absBox(
-          numbersCfg.leftPx + (numbersCfg.widthPx - numbersCfg.branchWidthPx) / 2,
-          numbersCfg.branchTopPx,
-          numbersCfg.branchWidthPx,
-          numbersCfg.branchHeightPx,
-        )}
-      />
-
       <div
-        className="absolute text-center font-bold"
+        className="absolute text-center"
         style={{
-          ...absBox(numbersCfg.leftPx, numbersCfg.topPx, numbersCfg.widthPx),
-          fontSize: `${numbersCfg.headerFontSizePx}px`,
-          letterSpacing: labelLetterSpacingPx(numbersCfg.headerFontSizePx),
-          color: DIARY_BOOK_ENTRY_V2_COLORS.text,
+          ...absBox(numbersCfg.headerLeftPx, numbersCfg.headerTopPx, numbersCfg.headerWidthPx),
+          ...sectionTitleStyle(numbersCfg.headerFontSizePx),
         }}
       >
         {numbersCfg.headerText}
       </div>
 
-      {(["day", "month", "year"] as const).map((key, index) => {
-        const bgBox = numberSlotBgBox(index, key);
-        const valueBox = numberSlotValueBox(index);
-        const valueKey = DIARY_BOOK_ENTRY_V2_NUMBERS.keys[index];
+      {(["day", "month", "year"] as const).map((_, index) => {
+        const slotBox = getDiaryBookEntryNumberSlotBox(index);
+        const labelBox = getDiaryBookEntryNumberLabelBox(index);
+        const valueKey = numbersCfg.keys[index];
+        const offset = numbersCfg.valueOffsetPx;
         return (
-          <div key={key}>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              alt=""
-              src={DIARY_BOOK_ENTRY_NUMBER_BG[key]}
-              className="absolute object-contain"
-              style={absBox(bgBox.leftPx, bgBox.topPx, bgBox.sizePx, bgBox.sizePx)}
-            />
+          <div key={numbersCfg.labels[index]}>
             <div
               className="absolute flex items-center justify-center"
-              style={absBox(valueBox.leftPx, valueBox.topPx, valueBox.widthPx, valueBox.heightPx)}
+              style={absBox(
+                slotBox.leftPx + offset.x,
+                slotBox.topPx + offset.y,
+                slotBox.widthPx,
+                slotBox.heightPx,
+              )}
             >
               <span
                 style={{
                   fontFamily: DIARY_PREVIEW_BODY_FONT_FAMILY,
                   fontSize: `${numbersCfg.valueFontSizePx}px`,
-                  color: DIARY_BOOK_ENTRY_V2_COLORS.text,
+                  fontWeight: 600,
+                  color: DIARY_BOOK_ENTRY_V2_COLORS.numberValue,
                 }}
               >
                 {numberValuesByKey[valueKey]}
               </span>
             </div>
             <div
-              className="absolute text-center font-bold"
+              className="absolute flex items-center justify-center text-center font-bold"
               style={{
                 ...absBox(
-                  numberSlotLeftPx(index),
-                  numbersCfg.rowTopPx + numbersCfg.slotSizePx + 4,
-                  numbersCfg.slotSizePx,
+                  labelBox.leftPx,
+                  labelBox.topPx,
+                  labelBox.widthPx,
+                  labelBox.heightPx,
                 ),
                 fontSize: `${numbersCfg.labelFontSizePx}px`,
                 letterSpacing: labelLetterSpacingPx(numbersCfg.labelFontSizePx),
-                color: DIARY_BOOK_ENTRY_V2_COLORS.text,
+                color: DIARY_BOOK_ENTRY_V2_COLORS.textMuted,
               }}
             >
               {numbersCfg.labels[index]}
@@ -475,26 +459,11 @@ export function DiaryBookEntryV2PreviewPage({
         );
       })}
 
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
-        alt=""
-        src={DIARY_BOOK_ENTRY_DECO.branch02}
-        className="absolute object-contain"
-        style={absBox(
-          moodCfg.leftPx + (moodCfg.widthPx - numbersCfg.branchWidthPx) / 2,
-          moodCfg.branchTopPx,
-          numbersCfg.branchWidthPx,
-          numbersCfg.branchHeightPx,
-        )}
-      />
-
       <div
-        className="absolute text-center font-bold"
+        className="absolute text-center"
         style={{
-          ...absBox(moodCfg.leftPx, moodCfg.topPx, moodCfg.widthPx),
-          fontSize: `${moodCfg.headerFontSizePx}px`,
-          letterSpacing: labelLetterSpacingPx(moodCfg.headerFontSizePx),
-          color: DIARY_BOOK_ENTRY_V2_COLORS.text,
+          ...absBox(moodCfg.headerLeftPx, moodCfg.headerTopPx, moodCfg.headerWidthPx),
+          ...sectionTitleStyle(moodCfg.headerFontSizePx),
         }}
       >
         {moodCfg.headerText}
@@ -508,41 +477,47 @@ export function DiaryBookEntryV2PreviewPage({
         style={absBox(moodCfg.iconLeftPx, moodCfg.iconTopPx, moodCfg.iconSizePx, moodCfg.iconSizePx)}
       />
 
-      <div style={absBox(moodCfg.textLeftPx, moodCfg.textTopPx, moodCfg.textWidthPx)}>
-        <EntryTextLines
-          lines={moodTextLines}
-          widthPx={moodCfg.textWidthPx}
-          fontSizePx={moodCfg.textFontSizePx}
-          lineHeight={moodCfg.textLineHeight}
-          letterSpacing={labelLetterSpacingPx(moodCfg.textFontSizePx)}
-          lineBaseStyle={DIARY_PREVIEW_BODY_LINE_BASE_STYLE}
-        />
+      <div
+        className="absolute overflow-hidden"
+        style={absBox(
+          moodCfg.textLeftPx,
+          moodCfg.textTopPx,
+          moodCfg.textWidthPx,
+          moodCfg.textHeightPx,
+        )}
+      >
+        <div
+          className="flex h-full flex-col justify-center"
+          style={{ width: `${moodCfg.textWidthPx}px` }}
+        >
+          <EntryTextLines
+            lines={moodTextLines}
+            widthPx={moodCfg.textWidthPx}
+            fontSizePx={moodCfg.textFontSizePx}
+            lineHeight={moodCfg.textLineHeight}
+            letterSpacing={labelLetterSpacingPx(moodCfg.textFontSizePx)}
+            lineBaseStyle={{
+              ...DIARY_PREVIEW_BODY_LINE_BASE_STYLE,
+              fontWeight: moodCfg.textFontWeight,
+            }}
+          />
+        </div>
       </div>
 
       <div
-        className="absolute font-bold"
+        className="absolute flex items-center justify-center text-center"
         style={{
-          ...absBox(bodyCfg.labelLeftPx, bodyCfg.labelTopPx),
-          fontSize: `${bodyCfg.labelFontSizePx}px`,
-          letterSpacing: labelLetterSpacingPx(bodyCfg.labelFontSizePx),
-          color: DIARY_BOOK_ENTRY_V2_COLORS.text,
+          ...absBox(
+            bodyCfg.labelLeftPx,
+            bodyCfg.labelTopPx,
+            bodyCfg.labelWidthPx,
+            bodyCfg.labelHeightPx,
+          ),
+          ...tapeTitleStyle(bodyCfg.labelFontSizePx),
         }}
       >
         {bodyCfg.labelText}
       </div>
-
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
-        alt=""
-        src={DIARY_BOOK_ENTRY_DECO.bodyPawprintAfterTitle}
-        className="absolute object-contain"
-        style={absBox(
-          bodyPawprintLeftPx,
-          bodyPawprintTopPx,
-          pawprintCfg.widthPx,
-          pawprintCfg.heightPx,
-        )}
-      />
 
       <div
         className="absolute overflow-hidden"
@@ -602,73 +577,86 @@ export function DiaryBookEntryV2PreviewPage({
       </div>
 
       <div
-        className="absolute rounded-[10px]"
+        className="absolute flex items-center justify-center text-center"
         style={{
           ...absBox(
-            commentCfg.panelLeftPx,
-            commentCfg.panelTopPx,
-            commentCfg.panelWidthPx,
-            commentCfg.panelHeightPx,
+            commentCfg.labelLeftPx,
+            commentCfg.labelTopPx,
+            commentCfg.labelWidthPx,
+            commentCfg.labelHeightPx,
           ),
-          backgroundColor: commentCfg.panelFill,
-        }}
-      />
-
-      <div
-        className="absolute font-bold"
-        style={{
-          ...absBox(commentCfg.labelLeftPx, commentCfg.labelTopPx),
-          fontSize: `${commentCfg.labelFontSizePx}px`,
-          letterSpacing: labelLetterSpacingPx(commentCfg.labelFontSizePx),
-          color: DIARY_BOOK_ENTRY_V2_COLORS.text,
+          ...tapeTitleStyle(commentCfg.labelFontSizePx),
         }}
       >
-        {commentCfg.labelText}
+        {commentHeading}
       </div>
 
       <div
-        className="absolute overflow-hidden"
-        style={absBox(
-          commentCfg.contentLeftPx,
-          commentCfg.contentTopPx,
-          commentCfg.contentWidthPx,
-          commentCfg.contentHeightPx,
-        )}
+        className="absolute"
+        style={{
+          ...absBox(
+            commentCfg.contentLeftPx,
+            commentCfg.contentTopPx,
+            commentCfg.contentWidthPx,
+            commentCfg.contentHeightPx,
+          ),
+          boxSizing: "border-box",
+          paddingRight: `${commentCfg.contentPaddingRightPx}px`,
+          overflowX: "visible",
+          overflowY: "hidden",
+        }}
       >
         <EntryTextLines
           lines={commentLayout.lines}
-          widthPx={commentCfg.contentWidthPx}
+          widthPx={commentCfg.contentWidthPx - commentCfg.contentPaddingRightPx}
           heightPx={commentCfg.contentHeightPx}
           fontSizePx={commentFontSizePx}
           lineHeight={commentLayout.lineHeight}
           lineBaseStyle={DIARY_PREVIEW_COMMENT_LINE_BASE_STYLE}
+          clipOverflow={false}
         />
       </div>
 
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
-        alt=""
-        src={diaryBookEntryCompanionImagePath(companionType ?? "owl")}
-        className="absolute object-contain object-left object-bottom"
-        style={absBox(
-          companionLeft,
-          commentCfg.companionTopPx,
-          commentCfg.companionWidthPx,
-          commentCfg.companionHeightPx,
-        )}
-      />
+      {showCompanionOverlay ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          alt=""
+          src={companionSrc}
+          className="absolute object-contain"
+          style={{
+            ...absBox(
+              companionBox.leftPx,
+              companionBox.topPx,
+              companionBox.widthPx,
+              companionBox.heightPx,
+            ),
+            objectPosition: "left bottom",
+          }}
+          draggable={false}
+        />
+      ) : null}
 
-      <div
-        className="absolute w-full text-center"
-        style={{
-          top: `${DIARY_BOOK_ENTRY_V2_FOOTER.topPx}px`,
-          fontSize: `${DIARY_BOOK_ENTRY_V2_FOOTER.fontSizePx}px`,
-          color: DIARY_BOOK_ENTRY_V2_FOOTER.color,
-          fontFamily: "Libre Baskerville, serif",
-        }}
-      >
-        {DIARY_BOOK_ENTRY_V2_FOOTER.text}
-      </div>
+      {DIARY_BOOK_ENTRY_V2_FOOTER.showInDesignBackground ? (
+        <div
+          className="absolute w-full text-center"
+          style={{
+            top: `${DIARY_BOOK_ENTRY_V2_FOOTER.topPx}px`,
+            fontSize: `${DIARY_BOOK_ENTRY_V2_FOOTER.fontSizePx}px`,
+            color: DIARY_BOOK_ENTRY_V2_FOOTER.color,
+            fontFamily: "Libre Baskerville, serif",
+          }}
+        >
+          {DIARY_BOOK_ENTRY_V2_FOOTER.text}
+        </div>
+      ) : null}
+
+      {layoutRulerAnchor && layoutRulerTarget ? (
+        <DiaryBookEntryLayoutRuler
+          target={layoutRulerTarget}
+          leftPx={layoutRulerAnchor.leftPx}
+          topPx={layoutRulerAnchor.topPx}
+        />
+      ) : null}
     </div>
   );
 }

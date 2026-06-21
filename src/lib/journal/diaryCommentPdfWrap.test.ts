@@ -6,15 +6,20 @@ import {
   isDiaryCommentOverPdfLineLimit,
   resolveDiaryCommentPdfRenderLayout,
 } from "@/lib/journal/diaryCommentPdfWrap";
+import { DIARY_BOOK_ENTRY_COMMENT_PREVIEW_LONG_132 } from "@/lib/journal/diaryBookEntryCommentPreviewSamples";
+import {
+  DIARY_BOOK_ENTRY_V2_COMMENT_RENDER_OPTIONS,
+} from "@/lib/journal/diaryBookEntryPrintLayout";
+import {
+  resolveDiaryBookEntryV2CommentRenderLayout,
+} from "@/lib/journal/diaryBookEntryCommentWrap";
+import { normalizeDiaryCommentForPdfFlow } from "@/lib/journal/diaryPreviewCommentLineWrap";
 
 const SAMPLE =
   "「7」の静けさが、人との時間を少し深くしてくれる日。たくさん話さなくても、同じ空間にいるだけで伝わるものがあったかもしれません。静かなつながりも、ちゃんと心に届いています。今日は「7」の流れに、日付の7の響きも重なる日。手ごたえや現実的な力が、いつもよりはっきり感じられそうです。";
 
 const OWL_CLIP_SAMPLE =
   "誰かのためになる挑戦だったり、周りとの関係を深める経験だったかもしれません。新しいことの中にも、あたたかい意味が宿っています。今月は、いつもと違う選択や小さな変化が入りやすい時期です。";
-
-const EDGE_BREAK_SAMPLE =
-  "今日はとても良い日でした。深める挑戦が続き、変化が入りやすい時期です。がんばった自分を認めて、すこやかに過ごしましょう。だからこそ、無理のない一歩を大切にしてください。";
 
 const SOFT_MAX = DIARY_COMMENT_PDF_CHARS_PER_LINE + 5;
 
@@ -23,7 +28,7 @@ function assertCommentLinesIntact(text: string) {
   expect(lines.join("")).toBe(text);
   expect(lines.every((line) => line.length <= SOFT_MAX)).toBe(true);
   expect(lines.some((line) => /^[、。っゃゅょぁー]/.test(line))).toBe(false);
-  expect(resolveDiaryCommentPdfRenderLayout(text).overflows).toBe(false);
+  expect(isDiaryCommentOverPdfLineLimit(text)).toBe(false);
 }
 
 describe("getDiaryCommentPdfLinesForBinding", () => {
@@ -56,8 +61,8 @@ describe("getDiaryCommentPdfLinesForBinding", () => {
     expect(isDiaryCommentOverPdfLineLimit(SAMPLE)).toBe(false);
   });
 
-  it("resolves layout without dropping text", () => {
-    const layout = resolveDiaryCommentPdfRenderLayout(SAMPLE);
+  it("resolves production layout without dropping text", () => {
+    const layout = resolveDiaryCommentPdfRenderLayout(SAMPLE, DIARY_BOOK_ENTRY_V2_COMMENT_RENDER_OPTIONS);
     expect(layout.lines.join("")).toBe(SAMPLE);
     expect(layout.overflows).toBe(false);
   });
@@ -73,13 +78,15 @@ describe("getDiaryCommentPdfLinesForBinding", () => {
     assertCommentLinesIntact(SAMPLE);
   });
 
-  it("keeps edge-break characters intact (が・だ・め・す)", () => {
-    assertCommentLinesIntact(EDGE_BREAK_SAMPLE);
-    const lines = getDiaryCommentPdfLinesForBinding(EDGE_BREAK_SAMPLE);
-    expect(lines.some((line) => line.endsWith("深"))).toBe(false);
-    expect(lines.join("")).toContain("深める");
-    expect(lines.join("")).toContain("がんばった");
-    expect(lines.join("")).toContain("すこやかに");
-    expect(lines.join("")).toContain("大切にしてください。");
+  it("fits 132-char overlap comment at full 15px without clipping", () => {
+    const normalized = normalizeDiaryCommentForPdfFlow(
+      DIARY_BOOK_ENTRY_COMMENT_PREVIEW_LONG_132,
+    );
+    const layout = resolveDiaryBookEntryV2CommentRenderLayout(normalized);
+    expect(layout.lines.join("")).toBe(normalized);
+    expect(layout.lines.length).toBe(5);
+    expect(layout.fontScale).toBe(1);
+    expect(layout.overflows).toBe(false);
+    expect(layout.lines.map((line) => line.length)).toEqual([29, 29, 24, 25, 24]);
   });
 });

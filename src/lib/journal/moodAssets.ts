@@ -1,6 +1,6 @@
 import { isMoodId, type MoodId } from "@/lib/journal/meta";
 
-const MOOD_OWL_ICON_CACHE_VERSION = "1";
+const MOOD_OWL_ICON_CACHE_VERSION = "2";
 
 /** moodId → フクロウ先生の気分アイコン PNG（public/images） */
 export const MOOD_OWL_ICON_FILE_BY_ID: Record<MoodId, string> = {
