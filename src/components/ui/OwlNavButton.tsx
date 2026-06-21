@@ -4,6 +4,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState, type ReactNode } from "react";
 
 import { OwlLoadingInline } from "@/components/ui/OwlLoadingInline";
+import { OwlSpinIndicator } from "@/components/ui/OwlSpinIndicator";
 
 type Props = {
   href: string;
@@ -13,6 +14,10 @@ type Props = {
   prefetch?: boolean;
   /** 新しいタブで開く（鑑定書PDFプレビューなど） */
   openInNewTab?: boolean;
+  /** 下部タブなど狭い領域：くるくるフクロウのみ（文言は sr-only） */
+  compactLoading?: boolean;
+  /** 遷移完了判定（未指定時は href のパスと完全一致） */
+  matchPathname?: (pathname: string) => boolean;
 };
 
 const BUSY_CLASS =
@@ -32,6 +37,8 @@ export function OwlNavButton({
   children,
   prefetch = true,
   openInNewTab = false,
+  compactLoading = false,
+  matchPathname,
 }: Props) {
   const router = useRouter();
   const pathname = usePathname();
@@ -46,10 +53,11 @@ export function OwlNavButton({
 
   useEffect(() => {
     if (!busy || openInNewTab) return;
-    if (pathname === targetPathname) {
+    const arrived = matchPathname ? matchPathname(pathname) : pathname === targetPathname;
+    if (arrived) {
       setBusy(false);
     }
-  }, [busy, openInNewTab, pathname, targetPathname]);
+  }, [busy, matchPathname, openInNewTab, pathname, targetPathname]);
 
   useEffect(() => {
     if (!busy || openInNewTab) return;
@@ -76,7 +84,18 @@ export function OwlNavButton({
       onClick={handleNavigate}
       className={[className, busy ? BUSY_CLASS : IDLE_CLASS].filter(Boolean).join(" ")}
     >
-      {busy ? <OwlLoadingInline label={loadingLabel} size="sm" /> : children}
+      {busy ? (
+        compactLoading ? (
+          <span className="inline-flex flex-col items-center justify-center gap-0.5" role="status">
+            <OwlSpinIndicator size="sm" />
+            <span className="sr-only">{loadingLabel}</span>
+          </span>
+        ) : (
+          <OwlLoadingInline label={loadingLabel} size="sm" />
+        )
+      ) : (
+        children
+      )}
     </button>
   );
 }
