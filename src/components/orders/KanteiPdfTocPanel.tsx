@@ -5,6 +5,9 @@ import { useEffect, useMemo, useRef } from "react";
 import { PDF_TOC_ENTRIES } from "@/lib/pdf/pdfTocEntries";
 import { buildTocJumpIndexByDestination } from "@/lib/pdf/kanteiReaderPage";
 
+/** 没入ビューワー (z-220) より前面 */
+const TOC_OVERLAY_Z_CLASS = "z-[230]" as const;
+
 type Props = {
   open: boolean;
   currentPdfIndex: number;
@@ -40,7 +43,7 @@ export function KanteiPdfTocPanel({ open, currentPdfIndex, onClose, onJump }: Pr
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-end justify-center bg-stone-900/45 p-0 sm:items-center sm:p-4"
+      className={`fixed inset-0 ${TOC_OVERLAY_Z_CLASS} flex items-end justify-center bg-stone-900/45 p-0 sm:items-center sm:p-4`}
       role="dialog"
       aria-modal="true"
       aria-label="目次"

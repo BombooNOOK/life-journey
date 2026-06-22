@@ -1,7 +1,7 @@
 "use client";
 
 import type { PDFDocumentProxy } from "pdfjs-dist";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 
 type Props = {
   pdfDoc: PDFDocumentProxy;
@@ -19,7 +19,11 @@ export function KanteiPdfCanvasView({
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const renderTaskRef = useRef<{ cancel: () => void } | null>(null);
-  const [rendering, setRendering] = useState(true);
+  const pdfIndexRef = useRef(pdfIndex);
+
+  useEffect(() => {
+    pdfIndexRef.current = pdfIndex;
+  }, [pdfIndex]);
 
   useEffect(() => {
     const container = containerRef.current;
@@ -27,19 +31,20 @@ export function KanteiPdfCanvasView({
     if (!container || !canvas) return;
 
     let cancelled = false;
+    let resizeTimer: number | null = null;
 
     async function renderPage() {
       const host = containerRef.current;
       const surface = canvasRef.current;
       if (!host || !surface) return;
 
-      setRendering(true);
+      const renderIndex = pdfIndexRef.current;
       renderTaskRef.current?.cancel();
       renderTaskRef.current = null;
 
       try {
-        const page = await pdfDoc.getPage(pdfIndex + 1);
-        if (cancelled) return;
+        const page = await pdfDoc.getPage(renderIndex + 1);
+        if (cancelled || renderIndex !== pdfIndexRef.current) return;
 
         const baseViewport = page.getViewport({ scale: 1 });
         const cw = host.clientWidth || baseViewport.width;
@@ -50,7 +55,7 @@ export function KanteiPdfCanvasView({
             : Math.min(cw / baseViewport.width, ch / baseViewport.height, 3);
         const viewport = page.getViewport({ scale: Math.max(scale, 0.1) });
         const ctx = surface.getContext("2d");
-        if (!ctx || cancelled) return;
+        if (!ctx || cancelled || renderIndex !== pdfIndexRef.current) return;
 
         const outputScale = window.devicePixelRatio || 1;
         surface.width = Math.floor(viewport.width * outputScale);
@@ -62,21 +67,24 @@ export function KanteiPdfCanvasView({
         const task = page.render({ canvasContext: ctx, viewport });
         renderTaskRef.current = task;
         await task.promise;
-        if (!cancelled) setRendering(false);
       } catch {
-        if (!cancelled) setRendering(false);
+        // cancelled render tasks throw; ignore
       }
     }
 
     void renderPage();
 
     const ro = new ResizeObserver(() => {
-      void renderPage();
+      if (resizeTimer != null) window.clearTimeout(resizeTimer);
+      resizeTimer = window.setTimeout(() => {
+        void renderPage();
+      }, 80);
     });
     ro.observe(container);
 
     return () => {
       cancelled = true;
+      if (resizeTimer != null) window.clearTimeout(resizeTimer);
       renderTaskRef.current?.cancel();
       ro.disconnect();
     };
@@ -89,13 +97,7 @@ export function KanteiPdfCanvasView({
         .filter(Boolean)
         .join(" ")}
     >
-      <canvas
-        ref={canvasRef}
-        className={[
-          "max-h-full max-w-full transition-opacity duration-150",
-          rendering ? "opacity-40" : "opacity-100",
-        ].join(" ")}
-      />
+      <canvas ref={canvasRef} className="max-h-full max-w-full" />
     </div>
   );
 }
