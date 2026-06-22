@@ -51,7 +51,7 @@ export default async function KanteiReadPage({ params }: Props) {
   const downloadFileName = resolveKanteiPdfDownloadFilename(order.id, kanteiCode, "preview");
 
   return (
-    <div className="mx-auto max-w-3xl px-4 pb-4 pt-2 sm:px-0">
+    <div className="mx-auto max-w-3xl sm:px-0 max-sm:px-0 max-sm:pb-0 max-sm:pt-0">
       <Suspense fallback={<ReaderFallback />}>
         <KanteiPdfReader
           orderId={orderId}

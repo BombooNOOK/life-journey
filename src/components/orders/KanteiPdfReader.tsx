@@ -2,13 +2,20 @@
 
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import type { PDFDocumentProxy } from "pdfjs-dist";
 
+import { KanteiPdfCanvasView } from "@/components/orders/KanteiPdfCanvasView";
 import { KanteiPdfTocPanel } from "@/components/orders/KanteiPdfTocPanel";
 import { PdfDownloadButton } from "@/components/orders/PdfDownloadButton";
+import { BodyPortal, IMMERSIVE_OVERLAY_Z_CLASS } from "@/components/ui/BodyPortal";
 import { OwlSpinIndicator } from "@/components/ui/OwlSpinIndicator";
+import { useVisualViewportDock } from "@/hooks/useVisualViewportDock";
 import {
-  buildKanteiPdfViewSrc,
+  openKanteiPdfDocument,
+  resolveKanteiPdfNamedDestination,
+} from "@/lib/pdf/loadKanteiPdfJs";
+import {
   clampPdfIndex,
   formatKanteiReaderPageIndicator,
   KANTEI_PDF_COVER_INDEX,
@@ -19,6 +26,7 @@ import {
 const PDF_FETCH_TIMEOUT_MS = 310_000;
 const LOAD_HINT_MS = 60_000;
 const SWIPE_THRESHOLD_PX = 44;
+const COMPACT_READER_HINT = "タップでメニュー・左右スワイプでめくる";
 
 type Props = {
   orderId: string;
@@ -31,6 +39,18 @@ type Props = {
 
 function storageKey(orderId: string): string {
   return `kantei-read-page:${orderId}`;
+}
+
+function useCompactReader(): boolean {
+  const [compact, setCompact] = useState(false);
+  useEffect(() => {
+    const mq = window.matchMedia("(max-width: 639px)");
+    const update = () => setCompact(mq.matches);
+    update();
+    mq.addEventListener("change", update);
+    return () => mq.removeEventListener("change", update);
+  }, []);
+  return compact;
 }
 
 function parsePdfFetchError(status: number, contentType: string, text: string): string {
@@ -64,18 +84,24 @@ export function KanteiPdfReader({
   backHref = "/orders/bookshelf",
 }: Props) {
   const searchParams = useSearchParams();
+  const isCompact = useCompactReader();
   const touchStartRef = useRef<{ x: number; y: number } | null>(null);
-  const pdfBlobUrlRef = useRef<string | null>(null);
+  const didSwipeRef = useRef(false);
+  const pdfDocRef = useRef<PDFDocumentProxy | null>(null);
   const loadGenerationRef = useRef(0);
 
   const [reloadKey, setReloadKey] = useState(0);
   const [pdfIndex, setPdfIndex] = useState(KANTEI_PDF_COVER_INDEX);
-  const [iframeSrc, setIframeSrc] = useState<string | null>(null);
+  const [pdfDoc, setPdfDoc] = useState<PDFDocumentProxy | null>(null);
+  const [pdfPageCount, setPdfPageCount] = useState(KANTEI_PDF_PHYSICAL_PAGE_COUNT);
   const [loading, setLoading] = useState(true);
   const [loadHint, setLoadHint] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [tocOpen, setTocOpen] = useState(false);
   const [downloadOpen, setDownloadOpen] = useState(false);
+  const [chromeVisible, setChromeVisible] = useState(false);
+
+  const viewportDock = useVisualViewportDock(isCompact && !loading && !error && pdfDoc != null);
 
   const syncUrl = useCallback((nextIndex: number) => {
     const params = new URLSearchParams(window.location.search);
@@ -88,11 +114,10 @@ export function KanteiPdfReader({
     window.history.replaceState(null, "", qs ? `?${qs}` : window.location.pathname);
   }, []);
 
-  const applyView = useCallback(
-    (blobUrl: string, nextIndex: number, destinationId?: string) => {
-      const clamped = clampPdfIndex(nextIndex, KANTEI_PDF_PHYSICAL_PAGE_COUNT);
+  const applyPageIndex = useCallback(
+    (nextIndex: number) => {
+      const clamped = clampPdfIndex(nextIndex, pdfPageCount);
       setPdfIndex(clamped);
-      setIframeSrc(buildKanteiPdfViewSrc(blobUrl, { pdfIndex: clamped, destinationId }));
       syncUrl(clamped);
       try {
         sessionStorage.setItem(storageKey(orderId), String(clamped));
@@ -100,21 +125,26 @@ export function KanteiPdfReader({
         // ignore
       }
     },
-    [orderId, syncUrl],
+    [orderId, pdfPageCount, syncUrl],
   );
 
   const navigateTo = useCallback(
-    (nextIndex: number, destinationId?: string) => {
-      const blobUrl = pdfBlobUrlRef.current;
-      if (!blobUrl) return;
-      applyView(blobUrl, nextIndex, destinationId);
+    async (nextIndex: number, destinationId?: string) => {
+      const doc = pdfDocRef.current;
+      if (!doc) return;
+      let target = nextIndex;
+      if (destinationId) {
+        const resolved = await resolveKanteiPdfNamedDestination(doc, destinationId);
+        if (resolved != null) target = resolved;
+      }
+      applyPageIndex(target);
     },
-    [applyView],
+    [applyPageIndex],
   );
 
   const goDelta = useCallback(
     (delta: number) => {
-      navigateTo(pdfIndex + delta);
+      void navigateTo(pdfIndex + delta);
     },
     [navigateTo, pdfIndex],
   );
@@ -131,12 +161,8 @@ export function KanteiPdfReader({
       setLoading(true);
       setError(null);
       setLoadHint(null);
-      setIframeSrc(null);
-
-      if (pdfBlobUrlRef.current) {
-        URL.revokeObjectURL(pdfBlobUrlRef.current);
-        pdfBlobUrlRef.current = null;
-      }
+      setPdfDoc(null);
+      pdfDocRef.current = null;
 
       const initialPageParam = searchParams.get("p");
       let initial = parsePdfPageSearchParam(initialPageParam, KANTEI_PDF_PHYSICAL_PAGE_COUNT);
@@ -187,11 +213,26 @@ export function KanteiPdfReader({
           return;
         }
 
-        const blobUrl = URL.createObjectURL(blob);
-        pdfBlobUrlRef.current = blobUrl;
-        applyView(blobUrl, startIndex);
-        if (initialPageParam == null && startIndex > KANTEI_PDF_COVER_INDEX) {
-          syncUrl(startIndex);
+        const arrayBuffer = await blob.arrayBuffer();
+        if (cancelled || generation !== loadGenerationRef.current) return;
+
+        const doc = await openKanteiPdfDocument(arrayBuffer);
+        if (cancelled || generation !== loadGenerationRef.current) {
+          void doc.destroy();
+          return;
+        }
+
+        pdfDocRef.current = doc;
+        const pageCount = doc.numPages || KANTEI_PDF_PHYSICAL_PAGE_COUNT;
+        const clamped = clampPdfIndex(startIndex, pageCount);
+        setPdfPageCount(pageCount);
+        setPdfDoc(doc);
+        setPdfIndex(clamped);
+        syncUrl(clamped);
+        try {
+          sessionStorage.setItem(storageKey(orderId), String(clamped));
+        } catch {
+          // ignore
         }
       } catch (e) {
         if (cancelled || generation !== loadGenerationRef.current) return;
@@ -216,12 +257,12 @@ export function KanteiPdfReader({
       cancelled = true;
       controller.abort();
       window.clearTimeout(timeoutId);
-      if (pdfBlobUrlRef.current) {
-        URL.revokeObjectURL(pdfBlobUrlRef.current);
-        pdfBlobUrlRef.current = null;
+      if (pdfDocRef.current) {
+        void pdfDocRef.current.destroy();
+        pdfDocRef.current = null;
       }
     };
-  }, [applyView, orderId, pdfPreviewHref, reloadKey, searchParams, syncUrl]);
+  }, [orderId, pdfPreviewHref, reloadKey, searchParams, syncUrl]);
 
   useEffect(() => {
     if (!loading || error) return;
@@ -230,6 +271,12 @@ export function KanteiPdfReader({
     }, LOAD_HINT_MS);
     return () => window.clearTimeout(hintTimer);
   }, [error, loading]);
+
+  useEffect(() => {
+    if (!isCompact || !chromeVisible) return;
+    const timer = window.setTimeout(() => setChromeVisible(false), 4000);
+    return () => window.clearTimeout(timer);
+  }, [chromeVisible, isCompact, pdfIndex]);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -254,7 +301,7 @@ export function KanteiPdfReader({
 
   const onTouchEnd = useCallback(
     (e: React.TouchEvent<HTMLElement>) => {
-      if (loading || tocOpen || error) return;
+      if (loading || tocOpen || error || !pdfDoc) return;
       const start = touchStartRef.current;
       touchStartRef.current = null;
       if (!start) return;
@@ -262,17 +309,213 @@ export function KanteiPdfReader({
       if (!t) return;
       const dx = t.clientX - start.x;
       const dy = t.clientY - start.y;
-      if (Math.abs(dx) < SWIPE_THRESHOLD_PX || Math.abs(dx) < Math.abs(dy) * 1.15) return;
+      const isTap = Math.abs(dx) < 12 && Math.abs(dy) < 12;
+
+      if (Math.abs(dx) < SWIPE_THRESHOLD_PX || Math.abs(dx) < Math.abs(dy) * 1.15) {
+        if (isTap && isCompact) {
+          setChromeVisible((v) => !v);
+        }
+        return;
+      }
+
+      didSwipeRef.current = true;
       if (dx < 0) goDelta(1);
       else goDelta(-1);
+      window.setTimeout(() => {
+        didSwipeRef.current = false;
+      }, 300);
     },
-    [error, goDelta, loading, tocOpen],
+    [error, goDelta, isCompact, loading, pdfDoc, tocOpen],
   );
 
-  const pageIndicator = formatKanteiReaderPageIndicator(pdfIndex, KANTEI_PDF_PHYSICAL_PAGE_COUNT);
+  const onReaderAreaClick = useCallback(() => {
+    if (!isCompact || didSwipeRef.current || loading || tocOpen || error || !pdfDoc) return;
+    setChromeVisible((v) => !v);
+  }, [error, isCompact, loading, pdfDoc, tocOpen]);
+
+  const pageIndicator = formatKanteiReaderPageIndicator(pdfIndex, pdfPageCount);
   const canGoPrev = pdfIndex > KANTEI_PDF_COVER_INDEX;
-  const canGoNext = pdfIndex < KANTEI_PDF_PHYSICAL_PAGE_COUNT - 1;
-  const showFooter = !loading && !error && iframeSrc != null;
+  const canGoNext = pdfIndex < pdfPageCount - 1;
+  const showControls = !loading && !error && pdfDoc != null;
+
+  const compactShellStyle = useMemo(() => {
+    if (viewportDock.width > 0 && viewportDock.height > 0) {
+      return {
+        top: viewportDock.offsetTop,
+        left: viewportDock.offsetLeft,
+        width: viewportDock.width,
+        height: viewportDock.height,
+      } as const;
+    }
+    return {
+      top: 0,
+      left: 0,
+      width: "100%",
+      height: "100dvh",
+    } as const;
+  }, [viewportDock]);
+
+  const loadingOverlay = (
+    <div
+      className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 bg-[#faf8f5]/92 px-6 py-12 text-center backdrop-blur-[1px]"
+      role="status"
+      aria-live="polite"
+    >
+      <OwlSpinIndicator size="md" />
+      <p className="text-sm font-medium text-stone-800">鑑定書を準備しています…</p>
+      <p className="max-w-sm text-xs leading-relaxed text-stone-600">
+        {loadHint ??
+          "初回は30秒〜1分ほどかかることがあります。フクロウが回っているあいだはそのままお待ちください。"}
+      </p>
+    </div>
+  );
+
+  const errorPanel = (
+    <div className="flex flex-1 flex-col items-center justify-center gap-4 px-6 py-12 text-center">
+      <p className="text-sm font-medium text-red-800" role="alert">
+        {error}
+      </p>
+      <button
+        type="button"
+        onClick={() => setReloadKey((k) => k + 1)}
+        className="rounded-lg bg-amber-800 px-4 py-2 text-sm font-medium text-white hover:bg-amber-900"
+      >
+        もう一度試す
+      </button>
+      <Link href={backHref} className="text-sm text-stone-600 hover:text-stone-900">
+        ← 本棚へ戻る
+      </Link>
+    </div>
+  );
+
+  const pageCanvas = pdfDoc ? (
+    <KanteiPdfCanvasView pdfDoc={pdfDoc} pdfIndex={pdfIndex} fitMode="contain" className="h-full w-full" />
+  ) : null;
+
+  const navButtons = (
+    <div className="flex items-center gap-2">
+      <button
+        type="button"
+        disabled={!canGoPrev}
+        onClick={() => goDelta(-1)}
+        className="min-h-[40px] flex-1 rounded-lg border border-stone-300 bg-white px-2 text-sm font-medium text-stone-800 hover:bg-stone-50 disabled:cursor-not-allowed disabled:opacity-40"
+      >
+        ← 前へ
+      </button>
+      <p className="w-[5.5rem] shrink-0 text-center text-xs tabular-nums text-stone-600">
+        {pageIndicator}
+      </p>
+      <button
+        type="button"
+        disabled={!canGoNext}
+        onClick={() => goDelta(1)}
+        className="min-h-[40px] flex-1 rounded-lg border border-stone-300 bg-white px-2 text-sm font-medium text-stone-800 hover:bg-stone-50 disabled:cursor-not-allowed disabled:opacity-40"
+      >
+        次へ →
+      </button>
+    </div>
+  );
+
+  if (isCompact) {
+    return (
+      <>
+        <BodyPortal>
+          <div
+            className={`fixed overflow-hidden bg-[#faf8f5] ${IMMERSIVE_OVERLAY_Z_CLASS}`}
+            style={compactShellStyle}
+            role="dialog"
+            aria-modal="true"
+            aria-label="鑑定書ビューワー"
+          >
+            <div
+              className="absolute inset-0 z-10 touch-pan-y"
+              onTouchStart={onTouchStart}
+              onTouchEnd={onTouchEnd}
+              onClick={onReaderAreaClick}
+              role="presentation"
+            >
+              {pageCanvas}
+            </div>
+
+            {loading ? loadingOverlay : null}
+            {error ? <div className="absolute inset-0 z-20 bg-[#faf8f5]">{errorPanel}</div> : null}
+
+            {showControls ? (
+              <>
+                <div
+                  className={[
+                    "absolute inset-x-0 top-0 z-20 border-b border-stone-200/80 bg-[#faf8f5]/95 px-3 py-2 pt-[max(0.35rem,env(safe-area-inset-top))] backdrop-blur-sm transition-opacity duration-200",
+                    chromeVisible ? "opacity-100" : "pointer-events-none opacity-0",
+                  ].join(" ")}
+                >
+                  <div
+                    className={[
+                      "flex items-center gap-2",
+                      chromeVisible ? "pointer-events-auto" : "pointer-events-none",
+                    ].join(" ")}
+                  >
+                    <Link
+                      href={backHref}
+                      className="shrink-0 rounded-lg px-2 py-1.5 text-sm font-medium text-stone-700 hover:bg-stone-100"
+                    >
+                      ← 本棚
+                    </Link>
+                    <p className="min-w-0 flex-1 truncate text-sm font-medium text-stone-900">{title}</p>
+                    <button
+                      type="button"
+                      onClick={() => setTocOpen(true)}
+                      className="shrink-0 rounded-lg border border-amber-200 bg-white px-2.5 py-1.5 text-xs font-medium text-amber-950"
+                    >
+                      目次
+                    </button>
+                  </div>
+                </div>
+
+                <div
+                  className={[
+                    "absolute inset-x-0 bottom-0 z-20 border-t border-stone-200/80 bg-[#faf8f5]/95 px-3 py-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] backdrop-blur-sm transition-opacity duration-200",
+                    chromeVisible ? "opacity-100" : "pointer-events-none opacity-0",
+                  ].join(" ")}
+                >
+                  <div className={chromeVisible ? "pointer-events-auto" : "pointer-events-none"}>
+                    {navButtons}
+                  </div>
+                </div>
+
+                <p
+                  className={[
+                    "pointer-events-none absolute inset-x-0 bottom-[max(0.5rem,env(safe-area-inset-bottom))] z-20 text-center text-[11px] text-stone-500 transition-opacity duration-200",
+                    chromeVisible ? "opacity-0" : "opacity-80",
+                  ].join(" ")}
+                >
+                  {COMPACT_READER_HINT}
+                </p>
+
+                <p
+                  className={[
+                    "pointer-events-none absolute left-1/2 top-[max(0.5rem,env(safe-area-inset-top))] z-20 -translate-x-1/2 rounded-lg bg-black/35 px-2.5 py-1 text-xs font-medium text-white backdrop-blur-sm transition-opacity duration-200",
+                    chromeVisible ? "opacity-0" : "opacity-90",
+                  ].join(" ")}
+                >
+                  {pageIndicator}
+                </p>
+              </>
+            ) : null}
+          </div>
+        </BodyPortal>
+
+        <KanteiPdfTocPanel
+          open={tocOpen}
+          currentPdfIndex={pdfIndex}
+          onClose={() => setTocOpen(false)}
+          onJump={(nextIndex, destinationId) => {
+            void navigateTo(nextIndex, destinationId);
+            setChromeVisible(false);
+          }}
+        />
+      </>
+    );
+  }
 
   return (
     <div className="flex min-h-[calc(100dvh-6rem)] flex-col">
@@ -288,7 +531,7 @@ export function KanteiPdfReader({
           <button
             type="button"
             onClick={() => setTocOpen(true)}
-            disabled={loading || !!error || !iframeSrc}
+            disabled={loading || !!error || !pdfDoc}
             className="shrink-0 rounded-lg border border-amber-200 bg-white px-2.5 py-1.5 text-xs font-medium text-amber-950 hover:bg-amber-50 disabled:cursor-not-allowed disabled:opacity-50"
           >
             目次
@@ -301,70 +544,14 @@ export function KanteiPdfReader({
         onTouchStart={onTouchStart}
         onTouchEnd={onTouchEnd}
       >
-        {error ? (
-          <div className="flex flex-1 flex-col items-center justify-center gap-4 px-6 py-12 text-center">
-            <p className="text-sm font-medium text-red-800" role="alert">
-              {error}
-            </p>
-            <button
-              type="button"
-              onClick={() => setReloadKey((k) => k + 1)}
-              className="rounded-lg bg-amber-800 px-4 py-2 text-sm font-medium text-white hover:bg-amber-900"
-            >
-              もう一度試す
-            </button>
-            <Link href={backHref} className="text-sm text-stone-600 hover:text-stone-900">
-              ← 本棚へ戻る
-            </Link>
-          </div>
-        ) : iframeSrc ? (
-          <iframe
-            key={iframeSrc}
-            title={`${title} PDF`}
-            src={iframeSrc}
-            className="min-h-[calc(100dvh-12rem)] w-full flex-1 border-0 bg-white"
-          />
-        ) : null}
+        {error ? errorPanel : <div className="min-h-[calc(100dvh-14rem)] flex-1">{pageCanvas}</div>}
 
-        {loading ? (
-          <div
-            className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 bg-[#faf8f5]/92 px-6 py-12 text-center backdrop-blur-[1px]"
-            role="status"
-            aria-live="polite"
-          >
-            <OwlSpinIndicator size="md" />
-            <p className="text-sm font-medium text-stone-800">鑑定書を準備しています…</p>
-            <p className="max-w-sm text-xs leading-relaxed text-stone-600">
-              {loadHint ??
-                "初回は30秒〜1分ほどかかることがあります。フクロウが回っているあいだはそのままお待ちください。"}
-            </p>
-          </div>
-        ) : null}
+        {loading ? loadingOverlay : null}
       </div>
 
-      {showFooter ? (
+      {showControls ? (
         <footer className="sticky bottom-[calc(4.5rem+env(safe-area-inset-bottom))] z-20 -mx-4 border-t border-stone-200 bg-[#faf8f5]/95 px-3 py-2 backdrop-blur-sm sm:-mx-0 sm:rounded-b-xl">
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              disabled={!canGoPrev}
-              onClick={() => goDelta(-1)}
-              className="min-h-[40px] flex-1 rounded-lg border border-stone-300 bg-white px-2 text-sm font-medium text-stone-800 hover:bg-stone-50 disabled:cursor-not-allowed disabled:opacity-40"
-            >
-              ← 前へ
-            </button>
-            <p className="w-[5.5rem] shrink-0 text-center text-xs tabular-nums text-stone-600">
-              {pageIndicator}
-            </p>
-            <button
-              type="button"
-              disabled={!canGoNext}
-              onClick={() => goDelta(1)}
-              className="min-h-[40px] flex-1 rounded-lg border border-stone-300 bg-white px-2 text-sm font-medium text-stone-800 hover:bg-stone-50 disabled:cursor-not-allowed disabled:opacity-40"
-            >
-              次へ →
-            </button>
-          </div>
+          {navButtons}
           <p className="mt-1.5 text-center text-[10px] text-stone-500">
             左右スワイプでもページをめくれます
           </p>
@@ -398,7 +585,7 @@ export function KanteiPdfReader({
         open={tocOpen}
         currentPdfIndex={pdfIndex}
         onClose={() => setTocOpen(false)}
-        onJump={(nextIndex, destinationId) => navigateTo(nextIndex, destinationId)}
+        onJump={(nextIndex, destinationId) => void navigateTo(nextIndex, destinationId)}
       />
     </div>
   );

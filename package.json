@@ -25,7 +25,7 @@
     "db:migrate:dev": "prisma migrate dev",
     "db:migrate:deploy": "prisma migrate deploy",
     "build:vercel": "prisma generate && prisma migrate deploy && next build",
-    "postinstall": "prisma generate && patch-package",
+    "postinstall": "prisma generate && patch-package && node scripts/copy-pdfjs-worker.mjs",
     "test": "vitest run",
     "verify:print": "npx tsx scripts/print-numerology.ts",
     "dump:bodies": "npx tsx scripts/dump-numerology-body-text.ts",
@@ -60,6 +60,7 @@
     "firebase": "^11.10.0",
     "next": "^15.2.0",
     "pdf-lib": "^1.17.1",
+    "pdfjs-dist": "^4.10.38",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "stripe": "^17.7.0"
