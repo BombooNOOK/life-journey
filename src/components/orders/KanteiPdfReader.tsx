@@ -25,7 +25,8 @@ import {
 const PDF_FETCH_TIMEOUT_MS = 310_000;
 const LOAD_HINT_MS = 60_000;
 const SWIPE_THRESHOLD_PX = 44;
-const COMPACT_READER_HINT = "タップで前後ボタン表示・左右スワイプでめくる";
+const COMPACT_READER_HINT =
+  "左右スワイプでめくる・ピンチで拡大・ダブルタップで戻す・タップで前後ボタン";
 
 type Props = {
   orderId: string;
@@ -98,6 +99,11 @@ export function KanteiPdfReader({
   const [tocOpen, setTocOpen] = useState(false);
   const [downloadOpen, setDownloadOpen] = useState(false);
   const [chromeVisible, setChromeVisible] = useState(false);
+  const isPdfZoomedRef = useRef(false);
+
+  const handlePdfZoomedChange = useCallback((zoomed: boolean) => {
+    isPdfZoomedRef.current = zoomed;
+  }, []);
 
   const viewportDock = useVisualViewportDock(isCompact && !loading && !error && pdfDoc != null);
 
@@ -299,7 +305,7 @@ export function KanteiPdfReader({
 
   const onPointerUp = useCallback(
     (e: React.PointerEvent<HTMLElement>) => {
-      if (loading || tocOpen || error || !pdfDoc) return;
+      if (loading || tocOpen || error || !pdfDoc || isPdfZoomedRef.current) return;
       const start = touchStartRef.current;
       if (!start || start.pointerId !== e.pointerId) return;
       touchStartRef.current = null;
@@ -331,6 +337,7 @@ export function KanteiPdfReader({
   );
 
   const onTouchStart = useCallback((e: React.TouchEvent<HTMLElement>) => {
+    if (e.touches.length > 1 || isPdfZoomedRef.current) return;
     const t = e.touches[0];
     if (!t) return;
     touchStartRef.current = { x: t.clientX, y: t.clientY, pointerId: t.identifier };
@@ -338,7 +345,7 @@ export function KanteiPdfReader({
 
   const onTouchEnd = useCallback(
     (e: React.TouchEvent<HTMLElement>) => {
-      if (loading || tocOpen || error || !pdfDoc) return;
+      if (loading || tocOpen || error || !pdfDoc || isPdfZoomedRef.current) return;
       const start = touchStartRef.current;
       touchStartRef.current = null;
       if (!start) return;
@@ -421,7 +428,14 @@ export function KanteiPdfReader({
   );
 
   const pageCanvas = pdfDoc ? (
-    <KanteiPdfCanvasView pdfDoc={pdfDoc} pdfIndex={pdfIndex} fitMode="contain" className="h-full w-full" />
+    <KanteiPdfCanvasView
+      pdfDoc={pdfDoc}
+      pdfIndex={pdfIndex}
+      fitMode="contain"
+      className="h-full w-full"
+      pinchZoom={isCompact}
+      onZoomedChange={handlePdfZoomedChange}
+    />
   ) : null;
 
   const navButtons = (
