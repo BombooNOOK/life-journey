@@ -32,20 +32,21 @@ export function HomeMockBookshelfCapture() {
           id="home-mock-report"
           kind="report"
           title="鑑定書"
-          href="/orders/demo"
+          href="/orders/demo/read"
           tone="amber"
           coverImageSrc="/images/kantei-cover.png?v=1"
           coverAlt="鑑定書の表紙"
-          readButtonLabel="PDFで読む"
+          readButtonLabel="読む"
+          readLoadingLabel="鑑定書を開いています…"
           quickPreviewHref="/orders/demo"
           quickPreviewLabel="鑑定結果を見る"
-          quickPreviewHelpText="目次リンクつき。気になる章へすぐ移動できます。"
+          quickPreviewHelpText="今日のヒントやコアナンバーの要約ページです。"
           bindingHref="/orders/demo/book-binding"
           bindingLabel="製本版を注文する"
           details={[
             { label: "お名前", value: "あなた" },
             { label: "作成日", value: "2026/4/21" },
-            { label: "PDF形式", value: "目次リンクつき軽量PDF（ブラウザ表示対応）" },
+            { label: "PDF形式", value: "目次リンクつき軽量PDF（アプリ内ビューア対応）" },
             { label: "ダウンロード", value: "ダウンロード残り 3 / 3 回" },
           ]}
         />

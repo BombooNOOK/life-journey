@@ -41,20 +41,16 @@ export default async function OrderPdfPreviewPage({ params }: Props) {
 
       <h1 className="text-xl font-semibold text-stone-900">{order.fullNameDisplay} さんの鑑定書</h1>
       <p className="text-sm leading-relaxed text-stone-600">
-        鑑定書は PDF 形式です。日記ブックのようなめくりビューワーではなく、
-        <strong className="font-medium text-stone-800">お使いのブラウザの PDF 表示</strong>
-        で読むのがいちばん見やすくなります（スマホでも同様です）。
+        本棚からはアプリ内ビューアで読めます。目次から章へジャンプしたり、左右スワイプでページをめくれます。
       </p>
 
       <div className="space-y-3 rounded-xl border border-amber-100 bg-amber-50/50 p-4">
-        <a
-          href={previewHref}
-          target="_blank"
-          rel="noreferrer"
+        <Link
+          href={`/orders/${orderId}/read`}
           className="flex min-h-[44px] w-full items-center justify-center rounded-lg bg-amber-800 px-4 py-2.5 text-sm font-medium text-white hover:bg-amber-900"
         >
-          目次つきPDFで読む（推奨）
-        </a>
+          アプリ内で読む（推奨）
+        </Link>
         <p className="text-center text-[11px] text-stone-600">
           目次リンクつき。気になる章へすぐ移動できます。
         </p>
@@ -76,7 +72,7 @@ export default async function OrderPdfPreviewPage({ params }: Props) {
 
       <div className="hidden overflow-auto rounded-xl border border-stone-200 bg-white md:block">
         <p className="border-b border-stone-100 px-3 py-2 text-xs text-stone-500">
-          PC向け：ページ内プレビュー（うまく表示されない場合は上の「目次つきPDFで読む」をご利用ください）
+          PC向け：ページ内プレビュー（うまく表示されない場合は上の「アプリ内で読む」をご利用ください）
         </p>
         <iframe
           title="鑑定書PDFプレビュー"

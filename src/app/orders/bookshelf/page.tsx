@@ -122,13 +122,13 @@ export default async function BookshelfPage() {
       const details: BookshelfBookDetailRow[] = [
         { label: "お名前", value: order.fullNameDisplay },
         { label: "作成日", value: createdLabel },
-        { label: "PDF形式", value: "目次リンクつき軽量PDF（ブラウザ表示対応）" },
+        { label: "PDF形式", value: "目次リンクつき軽量PDF（アプリ内ビューア対応）" },
         {
           label: "ダウンロード",
           value: `ダウンロード残り ${remaining} / ${effectiveLimit} 回`,
         },
       ];
-      const previewPdfHref = `/api/orders/${order.id}/pdf?download=0&quality=low`;
+      const readHref = `/orders/${order.id}/read`;
       const boundPdfHref = `/api/orders/${order.id}/pdf?download=1&quality=low`;
       const overviewExtra = (
         <>
@@ -174,11 +174,12 @@ export default async function BookshelfPage() {
         id: `report-${order.id}`,
         kind: "report" as const,
         title: `鑑定書（${romanizedName}）`,
-        href: previewPdfHref,
-        readButtonLabel: "PDFで読む",
+        href: readHref,
+        readButtonLabel: "読む",
+        readLoadingLabel: "鑑定書を開いています…",
         quickPreviewHref: `/orders/${order.id}`,
         quickPreviewLabel: "鑑定結果を見る",
-        quickPreviewHelpText: "目次リンクつき。気になる章へすぐ移動できます。",
+        quickPreviewHelpText: "今日のヒントやコアナンバーの要約ページです。",
         quickPreviewOpenInNewTab: false,
         bindingHref: `/orders/${order.id}/book-binding`,
         bindingLabel: "製本版を注文する",
