@@ -11,8 +11,8 @@ describe("getDiaryBookEntryV2BodyFontLayout", () => {
     expect(layout.fontSizePx).toBe(DIARY_BOOK_ENTRY_V2_COMPACT_FONT_SIZE_PX);
     expect(layout.lineHeight).toBe(1.62);
     expect(layout.maxCharsPerLine).toBe(40);
-    expect(layout.maxLines).toBe(11);
-    expect(layout.maxBindingChars).toBe(440);
+    expect(layout.maxLines).toBe(10);
+    expect(layout.maxBindingChars).toBe(400);
   });
 
   it("uses standard from Chappy 724 coords", () => {
@@ -20,8 +20,8 @@ describe("getDiaryBookEntryV2BodyFontLayout", () => {
     expect(layout.fontSizePx).toBe(20);
     expect(layout.lineHeight).toBe(1.75);
     expect(layout.maxCharsPerLine).toBe(30);
-    expect(layout.maxLines).toBe(7);
-    expect(layout.maxBindingChars).toBe(210);
+    expect(layout.maxLines).toBe(6);
+    expect(layout.maxBindingChars).toBe(180);
   });
 
   it("uses relaxed as largest font with most line spacing", () => {
@@ -29,8 +29,8 @@ describe("getDiaryBookEntryV2BodyFontLayout", () => {
     expect(layout.fontSizePx).toBe(24);
     expect(layout.lineHeight).toBe(1.9);
     expect(layout.maxCharsPerLine).toBe(25);
-    expect(layout.maxLines).toBe(6);
-    expect(layout.maxBindingChars).toBe(150);
+    expect(layout.maxLines).toBe(5);
+    expect(layout.maxBindingChars).toBe(125);
   });
 
   it("uses generous between standard and compact", () => {
@@ -38,12 +38,12 @@ describe("getDiaryBookEntryV2BodyFontLayout", () => {
     expect(layout.fontSizePx).toBe(16);
     expect(layout.lineHeight).toBe(1.68);
     expect(layout.maxCharsPerLine).toBe(37);
-    expect(layout.maxLines).toBe(10);
-    expect(layout.maxBindingChars).toBe(370);
+    expect(layout.maxLines).toBe(9);
+    expect(layout.maxBindingChars).toBe(333);
   });
 
   it("defaults unknown mode to standard", () => {
-    expect(getDiaryBookEntryV2BodyFontLayout(null).maxBindingChars).toBe(210);
-    expect(getDiaryBookEntryV2BodyFontLayout("invalid").maxBindingChars).toBe(210);
+    expect(getDiaryBookEntryV2BodyFontLayout(null).maxBindingChars).toBe(180);
+    expect(getDiaryBookEntryV2BodyFontLayout("invalid").maxBindingChars).toBe(180);
   });
 });

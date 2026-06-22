@@ -28,40 +28,40 @@ describe("countBodyLayoutLines", () => {
     expect(countBodyLayoutLines("あ".repeat(perLine + 6), "standard")).toBe(2);
   });
 
-  it("uses standard limits (30 chars, 7 lines)", () => {
+  it("uses standard limits (30 chars, 6 lines)", () => {
     const perLine = DIARY_BODY_CHARS_PER_LINE_BY_MODE.standard;
     const max = DIARY_BODY_MAX_LINES_BY_MODE.standard;
     expect(perLine).toBe(30);
-    expect(max).toBe(7);
+    expect(max).toBe(6);
     const fits = "あ".repeat(perLine * max);
     expect(isDiaryBodyOverLineLimit(fits, "standard")).toBe(false);
     // ソフトオーバーフロー分を超えて10行目が必要になる長さ
     expect(isDiaryBodyOverLineLimit(`${fits}${"あ".repeat(perLine + 6)}`, "standard")).toBe(true);
   });
 
-  it("uses relaxed limits (25 chars, 6 lines)", () => {
+  it("uses relaxed limits (25 chars, 5 lines)", () => {
     const perLine = DIARY_BODY_CHARS_PER_LINE_BY_MODE.relaxed;
     const max = DIARY_BODY_MAX_LINES_BY_MODE.relaxed;
     expect(perLine).toBe(25);
-    expect(max).toBe(6);
+    expect(max).toBe(5);
     const fits = "あ".repeat(perLine * max);
     expect(countBodyLayoutLines(fits, "relaxed")).toBe(max);
     expect(isDiaryBodyOverLineLimit(fits, "relaxed")).toBe(false);
     expect(isDiaryBodyOverLineLimit(`${fits}${"あ".repeat(perLine + 6)}`, "relaxed")).toBe(true);
   });
 
-  it("uses generous limits (37 chars, 10 lines)", () => {
+  it("uses generous limits (37 chars, 9 lines)", () => {
     const perLine = DIARY_BODY_CHARS_PER_LINE_BY_MODE.generous;
     const max = DIARY_BODY_MAX_LINES_BY_MODE.generous;
     expect(perLine).toBe(37);
-    expect(max).toBe(10);
+    expect(max).toBe(9);
   });
 
-  it("uses compact limits (40 chars, 11 lines)", () => {
+  it("uses compact limits (40 chars, 10 lines)", () => {
     const perLine = DIARY_BODY_CHARS_PER_LINE_BY_MODE.compact;
     const max = DIARY_BODY_MAX_LINES_BY_MODE.compact;
     expect(perLine).toBe(40);
-    expect(max).toBe(11);
+    expect(max).toBe(10);
   });
 });
 

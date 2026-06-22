@@ -35,10 +35,10 @@ export const DIARY_BODY_MAX_LINES_BY_MODE = buildMaxLinesByMode();
 
 /** 推奨行数（警告は maxLines 超のみ。UI 目安用） */
 export const DIARY_BODY_RECOMMENDED_MAX_LINES_BY_MODE: Record<ContentFontMode, number> = {
-  relaxed: 5,
-  standard: 7,
-  generous: 9,
-  compact: 9,
+  relaxed: 4,
+  standard: 6,
+  generous: 8,
+  compact: 8,
 };
 
 /** 入力欄・ステータス用（短いラベル） */
