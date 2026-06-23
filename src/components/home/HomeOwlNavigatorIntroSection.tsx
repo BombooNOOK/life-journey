@@ -65,7 +65,7 @@ export function HomeOwlNavigatorIntroSection() {
           日記を見返すときの小さな手がかりとして使います。
         </p>
 
-        <p className="border-l-[3px] border-amber-200/90 pl-3.5 text-[0.95em] italic leading-relaxed text-stone-500 sm:pl-4">
+        <p className="border-l-[3px] border-emerald-200/90 pl-3.5 text-[0.95em] italic leading-relaxed text-stone-500 sm:pl-4">
           「今日は、このテーマに少し近い一日だったかも」
         </p>
 
