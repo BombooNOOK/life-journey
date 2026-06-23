@@ -13,6 +13,7 @@ import {
   DiaryBookMonthBodyOddAdjustmentPage,
   DiaryBookMonthIllustrationPage,
   DiaryBookMonthPage,
+  DiaryBookNumerologyQuickReferencePage,
   DiaryBookPreBackCoverIllustrationPage,
 } from "@/components/journal/DiaryBookBoundPages";
 import { DiaryBookPageViewport } from "@/components/journal/DiaryBookPageViewport";
@@ -467,6 +468,8 @@ export function DiaryBookFlipReader({
             monthIndex={current.monthIndex}
           />
         );
+      case "numerology-quick-reference":
+        return <DiaryBookNumerologyQuickReferencePage />;
       case "free-writing":
         return <DiaryBookFreeWritingPage spreadSide={current.spreadSide} />;
       case "pre-back-cover-illustration":

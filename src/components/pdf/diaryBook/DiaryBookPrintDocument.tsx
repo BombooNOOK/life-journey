@@ -5,6 +5,7 @@ import { DiaryBookEntryPdfPage } from "@/components/pdf/diaryBook/DiaryBookEntry
 import { DiaryBookFullBleedPdfPage } from "@/components/pdf/diaryBook/DiaryBookFullBleedPdfPage";
 import { DiaryBookInsideCoverPdfPage } from "@/components/pdf/diaryBook/DiaryBookInsideCoverPdfPage";
 import { DiaryBookMonthIndexPdfPage } from "@/components/pdf/diaryBook/DiaryBookMonthIndexPdfPage";
+import { DiaryBookNumerologyQuickReferencePdfPage } from "@/components/pdf/diaryBook/DiaryBookNumerologyQuickReferencePdfPage";
 import {
   diaryBookBackCoverImagePath,
   diaryBookFreeWritingLeftImagePath,
@@ -94,6 +95,10 @@ export function DiaryBookPrintDocument({
                 entry={page.entry}
                 photoDataUri={photoDataUriByEntryId[page.entry.id] ?? null}
               />
+            );
+          case "numerology-quick-reference":
+            return (
+              <DiaryBookNumerologyQuickReferencePdfPage key={`numerology-quick-ref-${index}`} />
             );
           case "free-writing":
             return (

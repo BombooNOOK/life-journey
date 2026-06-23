@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { isDiaryBookRightPage } from "./diaryBookBindingLayout";
+import { isDiaryBookLeftPage, isDiaryBookRightPage } from "./diaryBookBindingLayout";
 import {
   buildBoundDiaryBookPages,
   compareBoundDiaryEntriesChronological,
@@ -25,15 +25,22 @@ function monthIndexPageNumbers(pages: ReturnType<typeof buildBoundDiaryBookPages
     .filter((n): n is number => n != null);
 }
 
+function freeWritingLeftPageNumber(pages: ReturnType<typeof buildBoundDiaryBookPages>): number {
+  const index = pages.findIndex((p) => p.kind === "free-writing" && p.spreadSide === "left");
+  expect(index).toBeGreaterThanOrEqual(0);
+  return index + 1;
+}
+
 describe("monthNeedsBodyOddAdjustment", () => {
-  it("non-final month: odd entry count", () => {
-    expect(monthNeedsBodyOddAdjustment(1, false)).toBe(true);
-    expect(monthNeedsBodyOddAdjustment(2, false)).toBe(false);
+  it("adds adjustment when entry count is odd", () => {
+    expect(monthNeedsBodyOddAdjustment(1)).toBe(true);
+    expect(monthNeedsBodyOddAdjustment(3)).toBe(true);
   });
 
-  it("final month: even entry count (inverted due to free-writing tail)", () => {
-    expect(monthNeedsBodyOddAdjustment(1, true)).toBe(false);
-    expect(monthNeedsBodyOddAdjustment(2, true)).toBe(true);
+  it("does not add adjustment when entry count is even or zero", () => {
+    expect(monthNeedsBodyOddAdjustment(0)).toBe(false);
+    expect(monthNeedsBodyOddAdjustment(2)).toBe(false);
+    expect(monthNeedsBodyOddAdjustment(4)).toBe(false);
   });
 });
 
@@ -83,28 +90,25 @@ describe("buildBoundDiaryBookPages", () => {
     expect(entryPages[0]?.kind === "entry" && entryPages[0].entry.id).toBe("e-older");
     expect(entryPages[1]?.kind === "entry" && entryPages[1].entry.id).toBe("e-newer");
   });
-  it("ends with free-writing spread, pre-back illustration, and back cover", () => {
+
+  it("ends with numerology quick reference, free-writing spread, pre-back, and back cover", () => {
     const pages = buildBoundDiaryBookPages([sampleEntry], "2025-10-01", "2025-10-31");
-    const tail = pages.slice(-4).map((p) => p.kind);
+    const tail = pages.slice(-5).map((p) => p.kind);
     expect(tail).toEqual([
+      "numerology-quick-reference",
       "free-writing",
       "free-writing",
       "pre-back-cover-illustration",
       "back",
     ]);
-    expect(pages.at(-2)?.kind).toBe("pre-back-cover-illustration");
   });
 
-  it("uses month-body-odd for final month with even entry count", () => {
+  it("uses month-body-odd for final month with odd entry count", () => {
     const pages = buildBoundDiaryBookPages(
-      [
-        { ...sampleEntry, id: "e1", createdAt: "2025-11-10T03:00:00.000Z" },
-        { ...sampleEntry, id: "e2", createdAt: "2025-11-20T03:00:00.000Z" },
-      ],
+      [{ ...sampleEntry, createdAt: "2025-11-12T03:00:00.000Z" }],
       "2025-10-01",
       "2025-11-30",
     );
-    expect(pages.some((p) => p.kind === "final-month-odd-adjustment")).toBe(false);
     expect(
       pages.some(
         (p) =>
@@ -115,13 +119,20 @@ describe("buildBoundDiaryBookPages", () => {
     ).toBe(true);
   });
 
-  it("does not add adjustment for final month with odd entry count", () => {
+  it("does not add adjustment for final month with even entry count", () => {
     const pages = buildBoundDiaryBookPages(
-      [{ ...sampleEntry, createdAt: "2025-11-12T03:00:00.000Z" }],
+      [
+        { ...sampleEntry, id: "e1", createdAt: "2025-11-10T03:00:00.000Z" },
+        { ...sampleEntry, id: "e2", createdAt: "2025-11-20T03:00:00.000Z" },
+      ],
       "2025-10-01",
       "2025-11-30",
     );
-    expect(pages.filter((p) => p.kind === "month-body-odd-adjustment")).toHaveLength(0);
+    expect(
+      pages.filter(
+        (p) => p.kind === "month-body-odd-adjustment" && p.calendarYear === 2025 && p.monthIndex === 10,
+      ),
+    ).toHaveLength(0);
   });
 
   it("adds month-body-odd for non-final month with odd entry count", () => {
@@ -152,6 +163,27 @@ describe("buildBoundDiaryBookPages", () => {
     for (const pageNum of monthIndexPageNumbers(pages)) {
       expect(isDiaryBookRightPage(pageNum)).toBe(true);
     }
+  });
+
+  it("places free-writing left on an odd page when final month has odd entries", () => {
+    const pages = buildBoundDiaryBookPages(
+      [{ ...sampleEntry, createdAt: "2025-10-15T03:00:00.000Z" }],
+      "2025-10-01",
+      "2025-10-31",
+    );
+    expect(isDiaryBookLeftPage(freeWritingLeftPageNumber(pages))).toBe(true);
+  });
+
+  it("places free-writing left on an odd page when final month has even entries", () => {
+    const pages = buildBoundDiaryBookPages(
+      [
+        { ...sampleEntry, id: "e1", createdAt: "2025-10-10T03:00:00.000Z" },
+        { ...sampleEntry, id: "e2", createdAt: "2025-10-20T03:00:00.000Z" },
+      ],
+      "2025-10-01",
+      "2025-10-31",
+    );
+    expect(isDiaryBookLeftPage(freeWritingLeftPageNumber(pages))).toBe(true);
   });
 });
 

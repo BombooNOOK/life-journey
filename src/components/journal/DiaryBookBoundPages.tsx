@@ -14,6 +14,7 @@ import {
   diaryBookInsideCoverImagePath,
   diaryBookMonthBodyOddAdjustmentIllustrationImagePath,
   diaryBookMonthIllustrationImagePath,
+  diaryBookNumerologyQuickReferenceImagePath,
   diaryBookPreBackCoverIllustrationImagePath,
 } from "@/lib/journal/diaryBookAssets";
 import { DIARY_BOOK_INSIDE_COVER_TEXT } from "@/lib/journal/diaryBookInsideCoverLayout";
@@ -145,6 +146,21 @@ export function DiaryBookMonthBodyOddAdjustmentPage({
       <span className="sr-only">
         {year}年{month}月・調整ページ
       </span>
+    </div>
+  );
+}
+
+/** 今日のすうじ 早見表（自由記入の直前・724×1024） */
+export function DiaryBookNumerologyQuickReferencePage() {
+  return (
+    <div className="relative overflow-hidden bg-[#fdfaf4]" style={PAGE_STYLE}>
+      <Image
+        src={diaryBookNumerologyQuickReferenceImagePath()}
+        alt="日記ブック・今日のすうじ 早見表"
+        fill
+        className="object-cover"
+        sizes="540px"
+      />
     </div>
   );
 }

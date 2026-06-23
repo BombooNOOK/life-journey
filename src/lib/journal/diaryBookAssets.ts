@@ -1,7 +1,7 @@
 import { companionTypeToTemplateSlug } from "@/lib/journal/coverAssets";
 import { DIARY_BOOK_ENTRY_V2_USE_COMPANION_OVERLAY } from "@/lib/journal/diaryBookEntryPrintLayout";
 
-const DIARY_BOOK_IMAGE_CACHE_VERSION = "21";
+const DIARY_BOOK_IMAGE_CACHE_VERSION = "22";
 
 function withCache(path: string): string {
   return `${path}?v=${DIARY_BOOK_IMAGE_CACHE_VERSION}`;
@@ -60,6 +60,11 @@ export function diaryBookFreeWritingLeftImagePath(): string {
 /** 自由記入欄・見開き右（724×1024） */
 export function diaryBookFreeWritingRightImagePath(): string {
   return withCache("/images/diary-book-free-writing-right.png");
+}
+
+/** 今日のすうじ 早見表（724×1024・Canva 全面） */
+export function diaryBookNumerologyQuickReferenceImagePath(): string {
+  return withCache("/images/diary-book-numerology-quick-reference.png");
 }
 
 /** 裏表紙直前（全員必須・724×1024） */

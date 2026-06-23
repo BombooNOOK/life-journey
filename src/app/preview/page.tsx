@@ -19,6 +19,18 @@ const links: { href: string; label: string; note?: string; highlight?: boolean }
     highlight: true,
   },
   {
+    href: "/preview/diary-book-tail",
+    label: "日記ブック末尾（早見表・自由記入など）",
+    note: "今日のすうじ 早見表を含む製本イメージ。npm run dev 中のみ",
+    highlight: true,
+  },
+  {
+    href: "/preview/numerology-numbers",
+    label: "数字の意味辞書（1〜9）",
+    note: "「数字の意味を見る」の内容確認。ログイン不要",
+    highlight: true,
+  },
+  {
     href: "/preview/pdf-design-map",
     label: "鑑定書アセット：PDF ↔ PNG 対応表",
     note: "デザイン元 PDF をクリックすると本番 PNG を表示（npm run dev 中のみ）",
