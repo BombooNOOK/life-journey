@@ -111,7 +111,7 @@ export const DIARY_BOOK_ENTRY_V2_MOOD = {
   iconLeftPx: 427,
   iconTopPx: 354,
   iconSizePx: 54,
-  textLeftPx: 508,
+  textLeftPx: 505,
   textTopPx: 366,
   textWidthPx: 168,
   textHeightPx: 33,
