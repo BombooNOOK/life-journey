@@ -65,7 +65,7 @@ export function HomeOwlNavigatorIntroSection() {
           日記を見返すときの小さな手がかりとして使います。
         </p>
 
-        <p className="rounded-lg border border-amber-100/80 bg-amber-50/35 px-3 py-2.5 text-stone-700 sm:px-4 sm:py-3">
+        <p className="border-l-[3px] border-amber-200/90 pl-3.5 text-[0.95em] italic leading-relaxed text-stone-500 sm:pl-4">
           「今日は、このテーマに少し近い一日だったかも」
         </p>
 
@@ -76,13 +76,13 @@ export function HomeOwlNavigatorIntroSection() {
         </p>
       </div>
 
-      <div className="lj-read-desc mt-5 rounded-xl border border-emerald-100/70 bg-gradient-to-br from-emerald-50/40 via-[#fffdf9] to-stone-50/80 px-3.5 py-4 leading-[1.7] text-stone-700 sm:mt-6 sm:px-4 sm:py-4 sm:leading-7">
-        <p className="space-y-2 font-medium text-stone-800">
-          <span className="block">日々を書き残す。</span>
-          <span className="block">あとから数字のテーマと照らしてみる。</span>
-          <span className="block">なんでもない一日の中に、小さな気づきが見えてくる。</span>
-          <span className="block">その積み重ねが、自分だけの一冊になる。</span>
+      <div className="lj-read-desc mt-5 space-y-2 leading-[1.7] sm:mt-6 sm:leading-7">
+        <p className="text-base font-bold text-emerald-900 sm:text-[1.05rem]">日々を書き残す。</p>
+        <p className="font-medium text-emerald-800">あとから数字のテーマと照らしてみる。</p>
+        <p className="font-medium text-emerald-800">
+          なんでもない一日の中に、小さな気づきが見えてくる。
         </p>
+        <p className="font-medium text-emerald-800">その積み重ねが、自分だけの一冊になる。</p>
       </div>
 
       <p className="lj-read-desc mt-4 text-center font-medium leading-relaxed text-stone-700 sm:mt-5">
