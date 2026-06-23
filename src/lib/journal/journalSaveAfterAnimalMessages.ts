@@ -96,23 +96,37 @@ export function pickSaveAfterAnimalMessage(): SaveAfterAnimalPick {
 /** 1段目：切り株→きのこ→どんぐり＋文言（3つ揃うまでの余裕） */
 export const SAVE_TRANSITION_PHASE1_MS = 2400;
 
-/** 2段目：どうぶつカード（読み切れるよう4秒） */
+/** 2段目：どうぶつカードが表示されてからの最低時間（読み切れるよう4秒） */
 export const SAVE_TRANSITION_PHASE2_MS = 4000;
 
+/** 1段目のみのフォールバック合計（2段目が出ない場合） */
 export const SAVE_TRANSITION_TOTAL_MS = SAVE_TRANSITION_PHASE1_MS + SAVE_TRANSITION_PHASE2_MS;
 
-/** 演出の最低表示時間を満たすまで待つ */
-export async function waitForSaveTransitionMinimum(startedAt: number): Promise<void> {
-  const remaining = journalSaveTransitionRemainingMs(startedAt);
-  if (remaining <= 0) return;
-  await new Promise<void>((resolve) => {
-    window.setTimeout(resolve, remaining);
-  });
+/** 演出の最低表示時間を満たすまで待つ（2段目表示後は animalShownAt 基準） */
+export async function waitForSaveTransitionMinimum(
+  startedAt: number,
+  getAnimalShownAt: () => number | null,
+): Promise<void> {
+  while (true) {
+    const remaining = journalSaveTransitionRemainingMs(startedAt, getAnimalShownAt());
+    if (remaining <= 0) return;
+    await new Promise<void>((resolve) => {
+      window.setTimeout(resolve, Math.min(remaining, 200));
+    });
+  }
 }
 
-/** 演出開始時刻から、プレビュー遷移まであと何 ms 待つか */
-export function journalSaveTransitionRemainingMs(startedAt: number, now = Date.now()): number {
-  return Math.max(0, SAVE_TRANSITION_TOTAL_MS - (now - startedAt));
+/** プレビュー遷移まであと何 ms 待つか */
+export function journalSaveTransitionRemainingMs(
+  startedAt: number,
+  animalShownAt: number | null = null,
+  now = Date.now(),
+): number {
+  const navigateAt =
+    animalShownAt != null
+      ? animalShownAt + SAVE_TRANSITION_PHASE2_MS
+      : startedAt + SAVE_TRANSITION_TOTAL_MS;
+  return Math.max(0, navigateAt - now);
 }
 
 export const SAVE_TRANSITION_OPENING_TEXT =

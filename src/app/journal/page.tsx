@@ -217,6 +217,7 @@ function JournalPageContent() {
   const photoInputRef = useRef<HTMLInputElement>(null);
   const editLoadGenerationRef = useRef(0);
   const saveTransitionStartedAtRef = useRef<number | null>(null);
+  const saveTransitionAnimalShownAtRef = useRef<number | null>(null);
 
   const resetJournalFormState = useCallback(() => {
     setContent("");
@@ -236,6 +237,7 @@ function JournalPageContent() {
     setNavigatingToPreview(false);
     setSaveTransition(null);
     saveTransitionStartedAtRef.current = null;
+    saveTransitionAnimalShownAtRef.current = null;
     if (photoInputRef.current) {
       photoInputRef.current.value = "";
     }
@@ -485,6 +487,7 @@ function JournalPageContent() {
       const animal = pickSaveAfterAnimalMessage();
       void preloadSaveTransitionAnimalAsset(animal.imagePath);
       saveTransitionStartedAtRef.current = Date.now();
+      saveTransitionAnimalShownAtRef.current = null;
       setSaveTransition({
         animal,
         guardianColorName: null,
@@ -531,6 +534,7 @@ function JournalPageContent() {
         if (isNewEntrySave) {
           setSaveTransition(null);
           saveTransitionStartedAtRef.current = null;
+          saveTransitionAnimalShownAtRef.current = null;
         }
         setError(data.error ?? "保存に失敗しました。");
         return;
@@ -540,6 +544,7 @@ function JournalPageContent() {
         if (isNewEntrySave) {
           setSaveTransition(null);
           saveTransitionStartedAtRef.current = null;
+          saveTransitionAnimalShownAtRef.current = null;
         }
         setError("保存に失敗しました。");
         return;
@@ -571,9 +576,10 @@ function JournalPageContent() {
         void (async () => {
           await Promise.all([
             prefetchJournalPreview(savedId),
-            waitForSaveTransitionMinimum(startedAt),
+            waitForSaveTransitionMinimum(startedAt, () => saveTransitionAnimalShownAtRef.current),
           ]);
           saveTransitionStartedAtRef.current = null;
+          saveTransitionAnimalShownAtRef.current = null;
           // オーバーレイはページ離脱まで維持（消してから push すると入力画面が一瞬見える）
           router.push(previewPath);
         })();
@@ -601,6 +607,7 @@ function JournalPageContent() {
       if (isNewEntrySave) {
         setSaveTransition(null);
         saveTransitionStartedAtRef.current = null;
+        saveTransitionAnimalShownAtRef.current = null;
       }
     } finally {
       setSaving(false);
@@ -729,6 +736,11 @@ function JournalPageContent() {
           animal={saveTransition.animal}
           guardianColorName={saveTransition.guardianColorName}
           guardianColorResolved={saveTransition.guardianColorResolved}
+          onAnimalPhaseVisible={() => {
+            if (saveTransitionAnimalShownAtRef.current == null) {
+              saveTransitionAnimalShownAtRef.current = Date.now();
+            }
+          }}
         />
       ) : null}
       {navigatingToPreview ? (

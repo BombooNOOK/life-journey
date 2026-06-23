@@ -22,6 +22,8 @@ type Props = {
   guardianColorName: string | null;
   /** 保存API応答後 true（お守りカラー確定 or 未鑑定と判明） */
   guardianColorResolved: boolean;
+  /** 2段目カードが画面に出た瞬間（プレビュー遷移タイミング用） */
+  onAnimalPhaseVisible?: () => void;
 };
 
 type Phase = "opening" | "animal";
@@ -37,6 +39,7 @@ export function JournalSaveStoryTransitionOverlay({
   animal,
   guardianColorName,
   guardianColorResolved,
+  onAnimalPhaseVisible,
 }: Props) {
   const [phase, setPhase] = useState<Phase>("opening");
   const [openingElapsed, setOpeningElapsed] = useState(false);
@@ -69,6 +72,12 @@ export function JournalSaveStoryTransitionOverlay({
       setPhase("animal");
     }
   }, [openingElapsed, guardianColorResolved, animalBeatReady]);
+
+  useLayoutEffect(() => {
+    if (phase === "animal") {
+      onAnimalPhaseVisible?.();
+    }
+  }, [onAnimalPhaseVisible, phase]);
 
   return (
     <div

@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import { guardianColorNameForEntryDate } from "./guardianColorForEntryDate";
 import {
   SAVE_AFTER_ANIMALS,
+  SAVE_TRANSITION_PHASE2_MS,
   SAVE_TRANSITION_TOTAL_MS,
   journalSaveTransitionRemainingMs,
   pickSaveAfterAnimalMessage,
@@ -23,15 +24,24 @@ describe("journalSaveAfterAnimalMessages", () => {
     expect(pick.imagePath).toContain("diary-book-entry-companion-");
   });
 
-  it("演出合計は約6.4秒", () => {
+  it("演出合計フォールバックは約6.4秒", () => {
     expect(SAVE_TRANSITION_TOTAL_MS).toBe(6400);
   });
 
-  it("残り時間を計算する", () => {
+  it("2段目未表示時は保存開始からフォールバック合計まで待つ", () => {
     const startedAt = 1_000;
-    expect(journalSaveTransitionRemainingMs(startedAt, startedAt + 500)).toBe(
+    expect(journalSaveTransitionRemainingMs(startedAt, null, startedAt + 500)).toBe(
       SAVE_TRANSITION_TOTAL_MS - 500,
     );
+  });
+
+  it("2段目表示後は animalShownAt から phase2 分待つ", () => {
+    const startedAt = 1_000;
+    const animalShownAt = 3_500;
+    expect(journalSaveTransitionRemainingMs(startedAt, animalShownAt, 4_000)).toBe(
+      SAVE_TRANSITION_PHASE2_MS - 500,
+    );
+    expect(journalSaveTransitionRemainingMs(startedAt, animalShownAt, 7_500)).toBe(0);
   });
 });
 
