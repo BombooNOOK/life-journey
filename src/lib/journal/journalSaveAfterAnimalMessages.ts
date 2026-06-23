@@ -96,8 +96,8 @@ export function pickSaveAfterAnimalMessage(): SaveAfterAnimalPick {
 /** 1段目：切り株→きのこ→どんぐり＋文言（3つ揃うまでの余裕） */
 export const SAVE_TRANSITION_PHASE1_MS = 2400;
 
-/** 2段目：どうぶつカード（読み切れるよう +1秒程度） */
-export const SAVE_TRANSITION_PHASE2_MS = 2600;
+/** 2段目：どうぶつカード（読み切れるよう4秒） */
+export const SAVE_TRANSITION_PHASE2_MS = 4000;
 
 export const SAVE_TRANSITION_TOTAL_MS = SAVE_TRANSITION_PHASE1_MS + SAVE_TRANSITION_PHASE2_MS;
 
