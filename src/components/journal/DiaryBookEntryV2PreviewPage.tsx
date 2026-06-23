@@ -62,8 +62,8 @@ import {
 } from "@/lib/journal/diaryPreviewFixedLayout";
 import { normalizeContentFontMode } from "@/lib/journal/contentFontMode";
 import { JOURNAL_OWL_COMMENT_KANTEI_REQUIRED_MESSAGE } from "@/lib/journal/kanteiCommentCopy";
-import { getActivityBindingLabelLines } from "@/lib/journal/activityBindingLabelLines";
-import { getCompanionReadingHeading, normalizeCompanionType } from "@/lib/journal/meta";
+import { getActivityMeta, getCompanionReadingHeading, normalizeCompanionType } from "@/lib/journal/meta";
+import { splitFixedWidthJapaneseLines } from "@/lib/pdf/splitFixedWidthJapaneseLines";
 import { moodOwlIconImagePath } from "@/lib/journal/moodAssets";
 
 export type DiaryBookEntryV2PreviewPageProps = {
@@ -256,7 +256,11 @@ export function DiaryBookEntryV2PreviewPage({
     year: String(numbers.year),
   } as const;
 
-  const moodTextLines = getActivityBindingLabelLines(activity);
+  const activityLabel = getActivityMeta(activity).label;
+  const moodTextLines = splitFixedWidthJapaneseLines(
+    activityLabel,
+    DIARY_BOOK_ENTRY_V2_MOOD.textMaxCharsPerLine,
+  );
 
   const commentHeading = getCompanionReadingHeading(normalizeCompanionType(companionType));
   const owlComment =
