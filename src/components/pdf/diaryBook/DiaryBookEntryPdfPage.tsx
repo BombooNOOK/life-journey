@@ -35,9 +35,9 @@ import { resolveDiaryBookEntryV2CommentRenderLayout } from "@/lib/journal/diaryB
 import { DIARY_BOOK_ENTRY_V2_LABEL_FONT_FAMILY_PDF } from "@/lib/journal/diaryBookEntryLabelFont";
 import { normalizeContentFontMode } from "@/lib/journal/contentFontMode";
 import { getDiaryPreviewDateRowSegments } from "@/lib/journal/diaryPreviewFixedLayout";
-import { getActivityMeta, getCompanionReadingHeading, normalizeCompanionType } from "@/lib/journal/meta";
+import { getActivityBindingLabelLines } from "@/lib/journal/activityBindingLabelLines";
+import { getCompanionReadingHeading, normalizeCompanionType } from "@/lib/journal/meta";
 import { moodOwlIconImagePath } from "@/lib/journal/moodAssets";
-import { splitFixedWidthJapaneseLines } from "@/lib/pdf/splitFixedWidthJapaneseLines";
 
 const px = (value: number, axis: "x" | "y" = "x") => diaryBookPdfPx(value, axis);
 
@@ -158,11 +158,7 @@ export function DiaryBookEntryPdfPage({
     year: String(numbers.year),
   } as const;
 
-  const activityLabel = getActivityMeta(entry.activity).label;
-  const moodTextLines = splitFixedWidthJapaneseLines(
-    activityLabel,
-    DIARY_BOOK_ENTRY_V2_MOOD.textMaxCharsPerLine,
-  );
+  const moodTextLines = getActivityBindingLabelLines(entry.activity);
 
   const commentHeading = getCompanionReadingHeading(normalizeCompanionType(entry.companionType));
   const owlComment =

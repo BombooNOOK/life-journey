@@ -114,7 +114,7 @@ export const DIARY_BOOK_ENTRY_V2_MOOD = {
   textLeftPx: 508,
   textTopPx: 366,
   textWidthPx: 168,
-  textHeightPx: 33,
+  textHeightPx: 40,
   textFontSizePx: 14,
   textLineHeight: 1.25,
   textLetterSpacingEm: 0.04,
@@ -130,7 +130,7 @@ export const DIARY_BOOK_ENTRY_V2_BODY = {
   labelHeightPx: 33,
   labelFontSizePx: DIARY_BOOK_ENTRY_V2_PROMINENT_LABEL_FONT_SIZE_PX,
   contentLeftPx: 60,
-  contentTopPx: 501,
+  contentTopPx: 506,
   contentWidthPx: 604,
   contentHeightPx: 278,
   /** 標準モード基準（実際の描画は contentFontMode 別） */
