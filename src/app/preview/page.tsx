@@ -13,6 +13,12 @@ const links: { href: string; label: string; note?: string; highlight?: boolean }
     note: "npm run dev 中のみ。初回は 1〜2 分かかることがあります",
   },
   {
+    href: "/preview/journal-local-draft",
+    label: "日記オフライン下書き（バナー UI 確認）",
+    note: "npm run dev 中のみ。Simple Browser 用。ログイン不要",
+    highlight: true,
+  },
+  {
     href: "/preview/diary-book-entry",
     label: "日記ブック本文テンプレ（v2・5キャラ切替）",
     note: "水彩 scrapbook 背景 PNG ＋ 動的テキスト。npm run dev 中のみ",

@@ -27,6 +27,10 @@ import {
 } from "@/lib/journal/journalRecordDateDisplay";
 import { JournalWritingComposer } from "@/components/journal/JournalWritingComposer";
 import { JournalContentLengthAlerts } from "@/components/journal/JournalContentLengthAlerts";
+import {
+  JournalLocalDraftBanner,
+  JOURNAL_LOCAL_DRAFT_PHOTO_NOTICE,
+} from "@/components/journal/JournalLocalDraftBanner";
 import { JournalSaveStoryTransitionOverlay } from "@/components/journal/JournalSaveStoryTransitionOverlay";
 import { ActiveProfileLabel } from "@/components/profile/ActiveProfileLabel";
 import { useEnsureActiveViewerProfile } from "@/hooks/useEnsureActiveViewerProfile";
@@ -72,6 +76,13 @@ import {
 import { OwlLoadingInline } from "@/components/ui/OwlLoadingInline";
 import { TrialStatusBanner } from "@/components/entitlement/TrialStatusBanner";
 import { useEntitlement } from "@/components/entitlement/useEntitlement";
+import { useJournalLocalDraft } from "@/hooks/useJournalLocalDraft";
+import {
+  buildJournalLocalDraftKey,
+  readJournalLocalDraft,
+  type JournalLocalDraftFormSnapshot,
+  type JournalLocalDraftPayload,
+} from "@/lib/journal/journalLocalDraftStorage";
 
 const JOURNAL_EDIT_LOADING_LABEL = "フクロウ先生が日記を開いています…";
 const CALENDAR_RETURN_LOADING_LABEL = "カレンダーに戻っています…";
@@ -213,6 +224,9 @@ function JournalPageContent() {
   } | null>(null);
   const [navigatingToCalendar, setNavigatingToCalendar] = useState(false);
   const [kanteiOrderExists, setKanteiOrderExists] = useState<boolean | undefined>(undefined);
+  const [editLoadFailed, setEditLoadFailed] = useState(false);
+  const [editServerSnapshot, setEditServerSnapshot] =
+    useState<JournalLocalDraftFormSnapshot | null>(null);
 
   const photoInputRef = useRef<HTMLInputElement>(null);
   const editLoadGenerationRef = useRef(0);
@@ -242,6 +256,42 @@ function JournalPageContent() {
       photoInputRef.current.value = "";
     }
   }, []);
+
+  const applyLocalDraft = useCallback((draft: JournalLocalDraftPayload) => {
+    setContent(draft.content);
+    setMood(draft.mood);
+    setActivity(draft.activity);
+    setEntryDate(draft.entryDate);
+    setContentFontMode(normalizeContentFontMode(draft.contentFontMode));
+    setError(null);
+  }, []);
+
+  const localDraft = useJournalLocalDraft({
+    enabled:
+      Boolean(showJournalForm) &&
+      Boolean(user?.email?.trim()) &&
+      profileState.ready &&
+      Boolean(effectiveProfileId || profileId || user?.email),
+    viewerEmail: user?.email ?? null,
+    profileId: effectiveProfileId,
+    editingId,
+    entryDate,
+    mood,
+    activity,
+    content,
+    contentFontMode,
+    loadingEdit,
+    editLoadFailed,
+    editServerSnapshot,
+    autosavePaused:
+      saving ||
+      processingPhoto ||
+      saveTransition != null ||
+      navigatingToPreview ||
+      navigatingToCalendar ||
+      Boolean(deletingId),
+    onApplyDraft: applyLocalDraft,
+  });
 
   const monthKeyFromEditingContext = useCallback((): string | null => {
     return resolveJournalEntryMonthKey({ entryDateYmd: entryDate });
@@ -355,10 +405,14 @@ function JournalPageContent() {
   useEffect(() => {
     if (!editingId) {
       setNumerologyDebug(null);
+      setEditLoadFailed(false);
+      setEditServerSnapshot(null);
       return;
     }
     const generation = ++editLoadGenerationRef.current;
     setLoadingEdit(true);
+    setEditLoadFailed(false);
+    setEditServerSnapshot(null);
     setError(null);
     const qs = new URLSearchParams();
     qs.set("_", String(Date.now()));
@@ -378,10 +432,17 @@ function JournalPageContent() {
           throw new Error(data.error ?? "編集対象の読み込みに失敗しました。");
         }
         setKanteiOrderExists(data.kanteiOrderExists);
-        setContent(data.entry.content ?? "");
-        setMood(data.entry.mood ?? "calm");
-        setActivity(data.entry.activity ?? "record_anyway");
-        setContentFontMode(normalizeContentFontMode(data.entry.contentFontMode));
+        const loadedEntryDate = toDateInputValueUtc(
+          new Date(data.entry.createdAt != null ? data.entry.createdAt : Date.now()),
+        );
+        const loadedMood = (data.entry.mood ?? "calm") as MoodId;
+        const loadedActivity = (data.entry.activity ?? "record_anyway") as ActivityId;
+        const loadedContent = data.entry.content ?? "";
+        const loadedFontMode = normalizeContentFontMode(data.entry.contentFontMode);
+        setContent(loadedContent);
+        setMood(loadedMood);
+        setActivity(loadedActivity);
+        setContentFontMode(loadedFontMode);
         setPhotoDataUrl(data.entry.photoDataUrl ?? "");
         setExistingPhotoSrc(
           data.entry.photoSrc?.trim() ||
@@ -391,11 +452,15 @@ function JournalPageContent() {
         setSelectedPhotoFile(null);
         setCropOffset(50);
         if (photoInputRef.current) photoInputRef.current.value = "";
-        setEntryDate(
-          toDateInputValueUtc(
-            new Date(data.entry.createdAt != null ? data.entry.createdAt : Date.now()),
-          ),
-        );
+        setEntryDate(loadedEntryDate);
+        setEditServerSnapshot({
+          entryDate: loadedEntryDate,
+          mood: loadedMood,
+          activity: loadedActivity,
+          content: loadedContent,
+          contentFontMode: loadedFontMode,
+        });
+        setEditLoadFailed(false);
         setNumerologyDebug(data.entry.numerologyDebug ?? null);
         const rowPid =
           typeof data.entry.profileId === "string" ? data.entry.profileId.trim() : "";
@@ -409,6 +474,25 @@ function JournalPageContent() {
       .catch((e) => {
         if (generation !== editLoadGenerationRef.current) return;
         editLoadGenerationRef.current += 1;
+        const viewerEmail = user?.email?.trim() ?? "";
+        const draftKey =
+          viewerEmail && editingId
+            ? buildJournalLocalDraftKey({
+                email: viewerEmail,
+                profileId: effectiveProfileId,
+                mode: "edit",
+                editingId,
+              })
+            : null;
+        const draft = draftKey ? readJournalLocalDraft(draftKey) : null;
+        setEditLoadFailed(true);
+        setEditServerSnapshot(null);
+        if (draft) {
+          setError(
+            "オフラインまたは通信エラーのため、サーバーから日記を開けませんでした。端末内の下書きから復元できます。",
+          );
+          return;
+        }
         resetJournalFormState();
         const href = effectiveProfileId
           ? `/journal?profile=${encodeURIComponent(effectiveProfileId)}`
@@ -427,6 +511,7 @@ function JournalPageContent() {
     router,
     searchParams,
     showNumerologyDebug,
+    user?.email,
   ]);
 
   useEffect(() => {
@@ -549,6 +634,8 @@ function JournalPageContent() {
         setError("保存に失敗しました。");
         return;
       }
+
+      localDraft.clearDraftAfterSuccessfulSave();
 
       const monthKey = resolveJournalEntryMonthKey({ entryDateYmd: entryDate });
       const listFallback = monthKey ? journalListPathForMonth(monthKey) : "/orders/list";
@@ -729,6 +816,12 @@ function JournalPageContent() {
     : formatJournalRecordPageTitle(entryDate);
   const bodyInputHeading = journalBodyInputHeading(entryDate);
 
+  const hasPhotoSelection = Boolean(
+    photoDataUrl.trim() || existingPhotoSrc.trim() || selectedPhotoFile || photoDirty,
+  );
+  const showPhotoDraftNotice =
+    localDraft.isOffline || (hasPhotoSelection && localDraft.hasActiveLocalDraft);
+
   return (
     <div className="relative space-y-3">
       {saveTransition ? (
@@ -828,6 +921,16 @@ function JournalPageContent() {
       </div>
 
       {entitlement ? <TrialStatusBanner entitlement={entitlement} /> : null}
+
+      {showJournalForm ? (
+        <JournalLocalDraftBanner
+          showDeviceOnlyNotice={localDraft.showDeviceOnlyNotice}
+          isOffline={localDraft.isOffline}
+          restorePromptVisible={localDraft.restorePromptVisible}
+          onRestore={localDraft.acceptRestore}
+          onDiscardRestore={localDraft.discardRestore}
+        />
+      ) : null}
 
       {isEditEntryLoading ? (
         <div
@@ -938,6 +1041,9 @@ function JournalPageContent() {
           <label className="lj-read-desc block font-medium text-stone-700" htmlFor="journal-photo">
             この日の写真（任意）
           </label>
+          {showPhotoDraftNotice ? (
+            <p className="text-xs leading-relaxed text-stone-500">{JOURNAL_LOCAL_DRAFT_PHOTO_NOTICE}</p>
+          ) : null}
           <input
             ref={photoInputRef}
             id="journal-photo"
