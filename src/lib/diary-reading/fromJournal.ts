@@ -4,10 +4,11 @@ import {
   personalMonthNumber,
   personalYearNumber,
 } from "@/lib/numerology/personalYearMonth";
+import { normalizeCompanionType } from "@/lib/journal/meta";
 
 /**
  * 日記 API → generateDiaryReading の橋渡し。
- * 現状は常に owl 用テンプレート（comment*Draft.ts）のみ。companionType は未参照。
+ * ベース本文・アクセント文は companionType に応じて切り替え（pending 原稿）。
  */
 import { generateDiaryReading } from "./generateDiaryReading";
 import type {
@@ -20,6 +21,7 @@ import type {
 type BuildFromJournalInput = {
   activity: string;
   mood: string;
+  companionType?: string;
   /** Calendar date used for PY/PM/PD (must match `createdAt` / 記録日 shown in the diary UI). */
   referenceDate: Date;
   birthMonth: number | null;
@@ -86,6 +88,7 @@ export function buildDiaryReadingFromJournalInput(input: BuildFromJournalInput):
     calendarMonth: calMonth,
     calendarDay: calDay,
     recentTemplateIds: input.recentTemplateIds,
+    companionType: normalizeCompanionType(input.companionType),
   };
 
   return generateDiaryReading(readingInput);

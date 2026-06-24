@@ -9,6 +9,8 @@ import {
 } from "./calendarAccents";
 import { joinDiaryReadingCommentParts } from "./commentTextRules";
 import { reduceToSingleDigit } from "./numerology";
+import { getCompanionBaseCommentText, getCompanionFallbackBaseCommentText } from "@/lib/journal/commentPersonalDayActivityByCompanion";
+import { getCompanionAccentText } from "@/lib/journal/commentCalendarAccentByCompanion";
 import type { AccentTemplate, DiaryReadingInput } from "./types";
 
 function hashSeed(parts: Array<string | number | undefined>): number {
@@ -108,13 +110,15 @@ export function generateDiaryReading(input: DiaryReadingInput): {
 
   if (!base) {
     return {
-      text: "今日の記録には、あなたにしか分からない小さな意味があります。書き残したことそのものが、明日の自分への手紙になります。",
+      text: getCompanionFallbackBaseCommentText(input.companionType ?? "owl"),
       usedTemplateIds: [],
     };
   }
 
+  const baseText = getCompanionBaseCommentText(base.id, input.companionType ?? "owl");
+
   const accent = pickAccent({
-    baseTextLength: base.text.length,
+    baseTextLength: baseText.length,
     personalDay: input.personalDay,
     monthNumber,
     dayNumber,
@@ -123,7 +127,10 @@ export function generateDiaryReading(input: DiaryReadingInput): {
   });
 
   return {
-    text: joinDiaryReadingCommentParts(base.text, accent?.text),
+    text: joinDiaryReadingCommentParts(
+      baseText,
+      accent ? getCompanionAccentText(accent.id, input.companionType ?? "owl", accent.text) : undefined,
+    ),
     usedTemplateIds: [base.id, ...(accent ? [accent.id] : [])],
   };
 }

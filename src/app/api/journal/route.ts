@@ -458,6 +458,7 @@ export async function POST(req: Request) {
       profileId,
       activity,
       mood,
+      companionType,
       referenceDate: parsedEntryDate,
       recentTemplateIds,
     });

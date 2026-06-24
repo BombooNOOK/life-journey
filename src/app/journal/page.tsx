@@ -68,11 +68,16 @@ import type { JournalNumerologyDebug } from "@/lib/journal/journalNumerologyDebu
 import {
   activityOptions,
   moodOptions,
-  PHASE1_COMPANION_TYPE,
+  normalizeCompanionType,
   type ActivityId,
+  type CompanionType,
   type DiaryDesignId,
   type MoodId,
 } from "@/lib/journal/meta";
+import {
+  readJournalCompanionPreference,
+  writeJournalCompanionPreference,
+} from "@/lib/journal/journalCompanionPreference";
 import { OwlLoadingInline } from "@/components/ui/OwlLoadingInline";
 import { TrialStatusBanner } from "@/components/entitlement/TrialStatusBanner";
 import { useEntitlement } from "@/components/entitlement/useEntitlement";
@@ -195,6 +200,9 @@ function JournalPageContent() {
   const [entryDate, setEntryDate] = useState(() => toDateInputValue(new Date()));
   const [mood, setMood] = useState<MoodId>("calm");
   const [activity, setActivity] = useState<ActivityId>("record_anyway");
+  const [companionType, setCompanionType] = useState<CompanionType>(() =>
+    readJournalCompanionPreference(),
+  );
   const designTheme: DiaryDesignId = "simple_plain";
   const [contentFontMode, setContentFontMode] = useState<ContentFontMode>(DEFAULT_CONTENT_FONT_MODE);
   const [photoDataUrl, setPhotoDataUrl] = useState<string>("");
@@ -237,6 +245,7 @@ function JournalPageContent() {
     setContent("");
     setMood("calm");
     setActivity("record_anyway");
+    setCompanionType(readJournalCompanionPreference());
     setContentFontMode(DEFAULT_CONTENT_FONT_MODE);
     setEntryDate(toDateInputValue(new Date()));
     setPhotoDataUrl("");
@@ -442,6 +451,7 @@ function JournalPageContent() {
         setContent(loadedContent);
         setMood(loadedMood);
         setActivity(loadedActivity);
+        setCompanionType(normalizeCompanionType(data.entry.companionType));
         setContentFontMode(loadedFontMode);
         setPhotoDataUrl(data.entry.photoDataUrl ?? "");
         setExistingPhotoSrc(
@@ -602,7 +612,7 @@ function JournalPageContent() {
           content: text,
           mood,
           activity,
-          companionType: PHASE1_COMPANION_TYPE,
+          companionType,
           designTheme,
           contentFontMode,
           ...photoPayload,
@@ -724,7 +734,7 @@ function JournalPageContent() {
           content: text,
           mood,
           activity,
-          companionType: PHASE1_COMPANION_TYPE,
+          companionType,
           designTheme,
           contentFontMode,
           photoUnchanged: true,
@@ -1101,7 +1111,14 @@ function JournalPageContent() {
         </div>
 
         <div className="space-y-3 border-t border-stone-100 pt-3">
-          <JournalCompanionPicker disabled={saving || loadingEdit || processingPhoto} />
+          <JournalCompanionPicker
+            value={companionType}
+            onChange={(next) => {
+              setCompanionType(next);
+              writeJournalCompanionPreference(next);
+            }}
+            disabled={saving || loadingEdit || processingPhoto}
+          />
 
         <label className="lj-read-desc block font-medium text-stone-700" htmlFor="journal-entry-date">
           記録日

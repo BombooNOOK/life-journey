@@ -38,6 +38,7 @@ export type DiaryReadingInput = {
   calendarMonth: number; // 1-12
   calendarDay: number; // 1-31
   recentTemplateIds?: string[];
+  companionType?: string;
 };
 
 export type CommentTemplate = {

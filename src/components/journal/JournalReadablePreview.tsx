@@ -8,7 +8,7 @@ import { DiaryNumbersHintSection } from "@/components/journal/DiaryNumbersHintSe
 import { JOURNAL_OWL_COMMENT_KANTEI_REQUIRED_MESSAGE } from "@/lib/journal/kanteiCommentCopy";
 import { formatJournalPreviewDateHeading } from "@/lib/journal/journalRecordDateDisplay";
 import { journalEditPath } from "@/lib/journal/journalNav";
-import { getActivityMeta, getMoodMeta } from "@/lib/journal/meta";
+import { getActivityMeta, getCompanionLabel, getMoodMeta, normalizeCompanionType } from "@/lib/journal/meta";
 
 type Props = {
   entryId: string;
@@ -16,6 +16,7 @@ type Props = {
   content: string;
   mood: string;
   activity: string;
+  companionType?: string | null;
   photoDataUrl?: string | null;
   photoSrc?: string | null;
   hasPhoto?: boolean;
@@ -72,6 +73,7 @@ export function JournalReadablePreview({
   content,
   mood,
   activity,
+  companionType,
   photoDataUrl,
   photoSrc,
   hasPhoto,
@@ -97,6 +99,7 @@ export function JournalReadablePreview({
     photoDataUrl?.trim() ||
     (hasPhoto ? `/api/journal/entries/${encodeURIComponent(entryId)}/photo` : "");
   const showPhoto = Boolean(photoUrl);
+  const commentHeading = `${getCompanionLabel(normalizeCompanionType(companionType))}より`;
   const commentText =
     generatedComment?.trim() ||
     (kanteiOrderExists === false ? JOURNAL_OWL_COMMENT_KANTEI_REQUIRED_MESSAGE : null);
@@ -133,7 +136,7 @@ export function JournalReadablePreview({
 
       {commentText ? (
         <section className="rounded-xl border border-[#e8dfd0] bg-[#f7f1e6] px-4 py-4 shadow-sm sm:px-5 sm:py-5">
-          <h3 className="lj-read-desc font-semibold text-stone-800">フクロウ先生より</h3>
+          <h3 className="lj-read-desc font-semibold text-stone-800">{commentHeading}</h3>
           <p className="lj-read-comment mt-3 whitespace-pre-wrap break-words text-stone-800">
             {commentText}
           </p>

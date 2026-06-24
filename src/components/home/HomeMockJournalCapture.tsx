@@ -112,7 +112,7 @@ export function HomeMockJournalCapture() {
         </div>
 
         <div className="space-y-3 border-t border-stone-100 pt-3">
-          <JournalCompanionPicker disabled />
+          <JournalCompanionPicker value="owl" onChange={() => undefined} disabled />
 
           <label className="block text-base font-medium text-stone-700" htmlFor="home-mock-entry-date">
             記録日

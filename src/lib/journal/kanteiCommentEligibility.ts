@@ -19,6 +19,7 @@ type BuildJournalGeneratedCommentParams = {
   profileId: string;
   activity: string;
   mood: string;
+  companionType?: string;
   referenceDate: Date;
   recentTemplateIds?: string[];
   existingComment?: string | null;
@@ -52,6 +53,7 @@ export async function buildJournalGeneratedComment(
     buildDiaryReadingFromJournalInput({
       activity: params.activity,
       mood: params.mood,
+      companionType: params.companionType,
       referenceDate: params.referenceDate,
       birthMonth: order.birthMonth,
       birthDay: order.birthDay,

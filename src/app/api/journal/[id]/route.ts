@@ -376,6 +376,7 @@ export async function PATCH(req: Request, { params }: Params) {
     profileId: exists.profileId,
     activity,
     mood,
+    companionType,
     referenceDate: parsedEntryDate,
     recentTemplateIds,
     existingComment: exists.generatedComment,

@@ -3,6 +3,7 @@
 import { Suspense, useEffect, useLayoutEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
+import { JournalPreviewCompanionSwitcher } from "@/components/journal/JournalPreviewCompanionSwitcher";
 import { JournalPreviewDayNav } from "@/components/journal/JournalPreviewDayNav";
 import { JournalPreviewSpread } from "@/components/journal/JournalPreviewSpread";
 import { JournalReadablePreview } from "@/components/journal/JournalReadablePreview";
@@ -14,7 +15,8 @@ import { useEntitlement } from "@/components/entitlement/useEntitlement";
 import { JOURNAL_BOOK_PREVIEW_NOTICE } from "@/lib/journal/journalDiaryNumbersHelpCopy";
 import { consumeJournalPreviewPrefetch, peekJournalPreviewPrefetch } from "@/lib/journal/journalPreviewPrefetch";
 import { journalEditPath } from "@/lib/journal/journalNav";
-import { getDiaryDesignLabel, normalizeDiaryDesignTheme, type DiaryDesignId } from "@/lib/journal/meta";
+import { normalizeContentFontMode } from "@/lib/journal/contentFontMode";
+import { getDiaryDesignLabel, normalizeCompanionType, normalizeDiaryDesignTheme, type CompanionType, type DiaryDesignId } from "@/lib/journal/meta";
 import type { JournalPreviewNeighbors } from "@/lib/journal/journalPreviewNeighbors";
 
 type PreviewEntry = {
@@ -42,6 +44,13 @@ type PreviewEntry = {
 
 type ViewMode = "readable" | "book";
 
+function toDateInputValueUtc(date: Date): string {
+  const y = date.getUTCFullYear();
+  const m = String(date.getUTCMonth() + 1).padStart(2, "0");
+  const d = String(date.getUTCDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
+}
+
 function JournalPreviewPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -59,6 +68,8 @@ function JournalPreviewPageContent() {
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [hydratedFromPrefetch, setHydratedFromPrefetch] = useState(false);
+  const [companionSwitching, setCompanionSwitching] = useState(false);
+  const [companionSwitchError, setCompanionSwitchError] = useState<string | null>(null);
   const authSession = useEnsureServerAuthSession();
   const { entitlement } = useEntitlement();
   const canEditJournal = entitlement?.canUseContinuedFeatures ?? true;
@@ -156,6 +167,62 @@ function JournalPreviewPageContent() {
 
   const afterDeleteHref = returnTo ?? "/orders/list";
 
+  async function refetchPreviewEntry(id: string) {
+    const res = await fetch(`/api/journal/${encodeURIComponent(id)}`, {
+      cache: "no-store",
+      credentials: "same-origin",
+    });
+    const data = (await res.json()) as {
+      entry?: PreviewEntry;
+      neighbors?: JournalPreviewNeighbors;
+      kanteiOrderExists?: boolean;
+      error?: string;
+    };
+    if (!res.ok || !data.entry) {
+      throw new Error(data.error ?? "プレビュー対象の読み込みに失敗しました。");
+    }
+    setEntry(data.entry);
+    setNeighbors(data.neighbors ?? { prev: null, next: null });
+    setKanteiOrderExists(data.kanteiOrderExists);
+  }
+
+  async function handleCompanionChange(next: CompanionType) {
+    if (!entry || companionSwitching) return;
+    if (normalizeCompanionType(entry.companionType) === next) return;
+
+    setCompanionSwitching(true);
+    setCompanionSwitchError(null);
+    try {
+      const res = await fetch(`/api/journal/${encodeURIComponent(entry.id)}`, {
+        method: "PATCH",
+        credentials: "same-origin",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          content: entry.content,
+          mood: entry.mood,
+          activity: entry.activity,
+          companionType: next,
+          designTheme: entry.designTheme ?? designTheme,
+          contentFontMode: normalizeContentFontMode(entry.contentFontMode),
+          photoUnchanged: true,
+          entryDate: toDateInputValueUtc(new Date(entry.createdAt)),
+          effectiveProfileId: effectiveProfileId || entry.profileId,
+        }),
+      });
+      const data = (await res.json()) as { error?: string };
+      if (!res.ok) {
+        throw new Error(data.error ?? "伴走キャラの切り替えに失敗しました。");
+      }
+      await refetchPreviewEntry(entry.id);
+    } catch (e) {
+      setCompanionSwitchError(
+        e instanceof Error ? e.message : "伴走キャラの切り替えに失敗しました。",
+      );
+    } finally {
+      setCompanionSwitching(false);
+    }
+  }
+
   async function handleDeleteEntry() {
     if (!entry || deleting) return;
     const ok = window.confirm("この日記を本当に削除しますか？");
@@ -218,6 +285,17 @@ function JournalPreviewPageContent() {
             {JOURNAL_BOOK_PREVIEW_NOTICE}
           </InlineHelpButton>
         </div>
+        {canEditJournal && entry ? (
+          <JournalPreviewCompanionSwitcher
+            value={entry.companionType}
+            disabled={loading || deleting}
+            switching={companionSwitching}
+            onChange={(next) => void handleCompanionChange(next)}
+          />
+        ) : null}
+        {companionSwitchError ? (
+          <p className="text-sm text-red-700">{companionSwitchError}</p>
+        ) : null}
       </div>
 
       <div
@@ -240,6 +318,7 @@ function JournalPreviewPageContent() {
             content={entry.content}
             mood={entry.mood}
             activity={entry.activity}
+            companionType={entry.companionType}
             photoDataUrl={entry.photoDataUrl}
             photoSrc={entry.photoSrc}
             hasPhoto={entry.hasPhoto}

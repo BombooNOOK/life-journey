@@ -19,9 +19,15 @@ const links: { href: string; label: string; note?: string; highlight?: boolean }
     highlight: true,
   },
   {
+    href: "/preview/journal-companion-comments",
+    label: "日記読み解き（5キャラ・本文切替確認）",
+    note: "ログイン不要。伴走キャラごとの読み解き本文を確認。npm run dev 中のみ",
+    highlight: true,
+  },
+  {
     href: "/preview/diary-book-entry",
     label: "日記ブック本文テンプレ（v2・5キャラ切替）",
-    note: "水彩 scrapbook 背景 PNG ＋ 動的テキスト。npm run dev 中のみ",
+    note: "レイアウト確認用。読み解き文はサンプル固定。npm run dev 中のみ",
     highlight: true,
   },
   {
