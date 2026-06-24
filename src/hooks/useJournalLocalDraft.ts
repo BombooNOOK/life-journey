@@ -48,9 +48,9 @@ export type UseJournalLocalDraftResult = {
   currentDraftKey: string | null;
 };
 
-function readInitialOnlineState(): boolean {
-  if (typeof window === "undefined") return true;
-  return window.navigator.onLine;
+function readInitialOfflineState(): boolean {
+  if (typeof window === "undefined") return false;
+  return !window.navigator.onLine;
 }
 
 export function useJournalLocalDraft({
@@ -69,7 +69,7 @@ export function useJournalLocalDraft({
   autosavePaused,
   onApplyDraft,
 }: UseJournalLocalDraftParams): UseJournalLocalDraftResult {
-  const [isOffline, setIsOffline] = useState(readInitialOnlineState);
+  const [isOffline, setIsOffline] = useState(readInitialOfflineState);
   const [restorePromptVisible, setRestorePromptVisible] = useState(false);
   const [pendingRestoreDraft, setPendingRestoreDraft] = useState<JournalLocalDraftPayload | null>(
     null,
