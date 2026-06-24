@@ -14,6 +14,16 @@ import {
 export const JOURNAL_LOCAL_DRAFT_STORAGE_VERSION = 1 as const;
 export const JOURNAL_LOCAL_DRAFT_KEY_PREFIX = "lj-journal-draft:v1:";
 
+/**
+ * 端末内下書き（localStorage autosave / 復元バナー）の有効フラグ。
+ * 本番 Web では無効。コードはフェーズ2ハイブリッド向けに温存する。
+ * 開発時のみ /journal で有効。検証用に NEXT_PUBLIC_JOURNAL_LOCAL_DRAFT=1 で一時的に有効化可。
+ */
+export function isJournalLocalDraftFeatureEnabled(): boolean {
+  if (process.env.NEXT_PUBLIC_JOURNAL_LOCAL_DRAFT === "1") return true;
+  return process.env.NODE_ENV === "development";
+}
+
 export type JournalLocalDraftPayload = {
   version: typeof JOURNAL_LOCAL_DRAFT_STORAGE_VERSION;
   savedAt: string;

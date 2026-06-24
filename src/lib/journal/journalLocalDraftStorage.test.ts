@@ -1,13 +1,37 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import {
   buildJournalLocalDraftKey,
   buildJournalLocalDraftPayload,
+  isJournalLocalDraftFeatureEnabled,
   isMeaningfulNewJournalLocalDraft,
   journalLocalDraftDiffersFromSnapshot,
   parseJournalLocalDraftPayload,
   snapshotsEqual,
 } from "./journalLocalDraftStorage";
+
+describe("isJournalLocalDraftFeatureEnabled", () => {
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
+  it("本番相当では無効", () => {
+    vi.stubEnv("NODE_ENV", "production");
+    vi.stubEnv("NEXT_PUBLIC_JOURNAL_LOCAL_DRAFT", "");
+    expect(isJournalLocalDraftFeatureEnabled()).toBe(false);
+  });
+
+  it("開発時は有効", () => {
+    vi.stubEnv("NODE_ENV", "development");
+    expect(isJournalLocalDraftFeatureEnabled()).toBe(true);
+  });
+
+  it("NEXT_PUBLIC_JOURNAL_LOCAL_DRAFT=1 で本番でも有効", () => {
+    vi.stubEnv("NODE_ENV", "production");
+    vi.stubEnv("NEXT_PUBLIC_JOURNAL_LOCAL_DRAFT", "1");
+    expect(isJournalLocalDraftFeatureEnabled()).toBe(true);
+  });
+});
 
 describe("buildJournalLocalDraftKey", () => {
   it("新規は email + profileId + 記録日", () => {

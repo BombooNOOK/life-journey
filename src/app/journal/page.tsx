@@ -84,6 +84,7 @@ import { useEntitlement } from "@/components/entitlement/useEntitlement";
 import { useJournalLocalDraft } from "@/hooks/useJournalLocalDraft";
 import {
   buildJournalLocalDraftKey,
+  isJournalLocalDraftFeatureEnabled,
   readJournalLocalDraft,
   type JournalLocalDraftFormSnapshot,
   type JournalLocalDraftPayload,
@@ -275,12 +276,15 @@ function JournalPageContent() {
     setError(null);
   }, []);
 
+  const journalLocalDraftActive =
+    isJournalLocalDraftFeatureEnabled() &&
+    Boolean(showJournalForm) &&
+    Boolean(user?.email?.trim()) &&
+    profileState.ready &&
+    Boolean(effectiveProfileId || profileId || user?.email);
+
   const localDraft = useJournalLocalDraft({
-    enabled:
-      Boolean(showJournalForm) &&
-      Boolean(user?.email?.trim()) &&
-      profileState.ready &&
-      Boolean(effectiveProfileId || profileId || user?.email),
+    enabled: journalLocalDraftActive,
     viewerEmail: user?.email ?? null,
     profileId: effectiveProfileId,
     editingId,
@@ -494,7 +498,10 @@ function JournalPageContent() {
                 editingId,
               })
             : null;
-        const draft = draftKey ? readJournalLocalDraft(draftKey) : null;
+        const draft =
+          isJournalLocalDraftFeatureEnabled() && draftKey
+            ? readJournalLocalDraft(draftKey)
+            : null;
         setEditLoadFailed(true);
         setEditServerSnapshot(null);
         if (draft) {
