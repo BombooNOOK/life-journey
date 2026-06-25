@@ -1,7 +1,7 @@
 import { companionTypeToTemplateSlug } from "@/lib/journal/coverAssets";
 import { DIARY_BOOK_ENTRY_V2_USE_COMPANION_OVERLAY } from "@/lib/journal/diaryBookEntryPrintLayout";
 
-const DIARY_BOOK_IMAGE_CACHE_VERSION = "22";
+const DIARY_BOOK_IMAGE_CACHE_VERSION = "23";
 
 function withCache(path: string): string {
   return `${path}?v=${DIARY_BOOK_IMAGE_CACHE_VERSION}`;
@@ -74,8 +74,8 @@ export function diaryBookPreBackCoverIllustrationImagePath(): string {
 
 /**
  * 日記ブック本文テンプレ（水彩 scrapbook 背景・キャラ別・724×1024）。
- * 未配置キャラはフクロウ（drfukuro）にフォールバック。
- * 旧 `-plain-` 系は `public/images/` に参照用で残置。
+ * フクロウ先生基準で位置合わせ済みのキャラ込み1枚 PNG。
+ * `diary-book-body-design-base.png` はキャラなし版（将来のキャラ追加用）。
  */
 /** `public/images/diary-book-body-design-*.png` が置いてある slug */
 const DIARY_BOOK_BODY_DESIGN_TEMPLATE_AVAILABLE = new Set([

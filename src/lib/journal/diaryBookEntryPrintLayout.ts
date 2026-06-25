@@ -1,7 +1,8 @@
 /**
  * 日記ブック本文ページ v2 レイアウト（724×1024 設計座標）。
- * 背景: `public/images/diary-book-body-design-{slug}.png`（装飾のみ・キャラ別）。
- * 動的テキスト・写真は固定座標で重ねる（テンプレ PNG の 1〜3px ゆらぎに追従しない）。
+ * 背景: `public/images/diary-book-body-design-{slug}.png`（フクロウ基準・キャラ込み1枚）。
+ * キャラなし版は `diary-book-body-design-base.png`（将来のキャラ追加用に温存）。
+ * 動的テキスト・写真は固定座標で重ねる。
  *
  * 座標出典: デザイン設計（1055×1491 → 724×1024 換算）。5キャラ共通。
  */
@@ -17,24 +18,21 @@ export const DIARY_BOOK_ENTRY_V2_USE_DESIGN_BACKGROUND = true as const;
 /** 写真枠オーバーレイ PNG（テープ等）を重ねる。新テンプレは1枚完結のため off */
 export const DIARY_BOOK_ENTRY_V2_USE_PHOTO_OVERLAY = false as const;
 
-/** 共通背景 + 伴走キャラ PNG 合成（`diary-book-entry-companion-*.png`） */
-export const DIARY_BOOK_ENTRY_V2_USE_COMPANION_OVERLAY = true as const;
+/** キャラ込み1枚テンプレをそのまま使う（別 PNG 合成は使わない） */
+export const DIARY_BOOK_ENTRY_V2_USE_COMPANION_OVERLAY = false as const;
 
 export const DIARY_BOOK_ENTRY_V2_COMPANION = {
-  /** 現行フクロウ表示枠（object-fit: contain・左下基準） */
+  /** 将来 overlay 復帰時の表示枠（object-fit: contain・左下基準） */
   leftPx: 509,
   topPx: 726,
   widthPx: 277,
   heightPx: 295,
 } as const;
 
-/** 伴走キャラ slug ごとの表示枠微調整（基準は DIARY_BOOK_ENTRY_V2_COMPANION） */
+/** @deprecated キャラ込み1枚テンプレ使用時は未使用 */
 export const DIARY_BOOK_ENTRY_V2_COMPANION_OFFSET_BY_SLUG: Partial<
   Record<string, { leftPx?: number; topPx?: number }>
-> = {
-  kerosion: { topPx: -10 },
-  harinezumi: { topPx: 8 },
-};
+> = {};
 
 export const DIARY_BOOK_ENTRY_V2_COLORS = {
   text: "#5F5143",
