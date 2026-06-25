@@ -1,5 +1,6 @@
 "use client";
 
+import type { ReactNode } from "react";
 import Image from "next/image";
 import Link from "next/link";
 
@@ -33,6 +34,8 @@ type Props = {
   canEdit?: boolean;
   /** 数字の意味ページから戻る先（このプレビュー URL） */
   meaningsReturnTo?: string | null;
+  /** 「〇〇より」カード直下（伴走キャラ変更など） */
+  afterCommentSlot?: ReactNode;
 };
 
 function PencilEditLink({
@@ -84,6 +87,7 @@ export function JournalReadablePreview({
   profileId,
   canEdit = true,
   meaningsReturnTo,
+  afterCommentSlot,
 }: Props) {
   const previewDate = new Date(createdAt);
   const dateLabel = formatJournalPreviewDateHeading(previewDate);
@@ -142,6 +146,8 @@ export function JournalReadablePreview({
           </p>
         </section>
       ) : null}
+
+      {afterCommentSlot ? <div>{afterCommentSlot}</div> : null}
 
       {diaryNumbers ? (
         <DiaryNumbersHintSection

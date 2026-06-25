@@ -223,6 +223,21 @@ function JournalPreviewPageContent() {
     }
   }
 
+  const companionSwitcherBlock =
+    canEditJournal && entry ? (
+      <div className="space-y-2">
+        <JournalPreviewCompanionSwitcher
+          value={entry.companionType}
+          disabled={loading || deleting}
+          switching={companionSwitching}
+          onChange={(next) => void handleCompanionChange(next)}
+        />
+        {companionSwitchError ? (
+          <p className="text-sm text-red-700">{companionSwitchError}</p>
+        ) : null}
+      </div>
+    ) : null;
+
   async function handleDeleteEntry() {
     if (!entry || deleting) return;
     const ok = window.confirm("この日記を本当に削除しますか？");
@@ -285,17 +300,6 @@ function JournalPreviewPageContent() {
             {JOURNAL_BOOK_PREVIEW_NOTICE}
           </InlineHelpButton>
         </div>
-        {canEditJournal && entry ? (
-          <JournalPreviewCompanionSwitcher
-            value={entry.companionType}
-            disabled={loading || deleting}
-            switching={companionSwitching}
-            onChange={(next) => void handleCompanionChange(next)}
-          />
-        ) : null}
-        {companionSwitchError ? (
-          <p className="text-sm text-red-700">{companionSwitchError}</p>
-        ) : null}
       </div>
 
       <div
@@ -329,6 +333,7 @@ function JournalPreviewPageContent() {
             profileId={effectiveProfileId || entry.profileId}
             canEdit={canEditJournal}
             meaningsReturnTo={meaningsReturnTo}
+            afterCommentSlot={companionSwitcherBlock}
           />
         ) : (
           <div className="space-y-3">
@@ -353,6 +358,7 @@ function JournalPreviewPageContent() {
                 returnTo?.startsWith("/orders/calendar") ? "カレンダーへ戻る" : "一覧に戻る"
               }
             />
+            {companionSwitcherBlock}
           </div>
         )}
       </div>
