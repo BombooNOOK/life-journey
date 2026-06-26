@@ -10,6 +10,7 @@ import {
   dailyNumberPersonalTemplatePath,
   DAILY_NUMBER_TEMPLATE_SIZE,
 } from "./assetPaths";
+import { prepareCompositeOverlay } from "./renderSvgOverlay";
 import {
   DAILY_NUMBER_CLOSING_VARIANT_LABELS,
   type DailyNumberClosingVariant,
@@ -157,8 +158,9 @@ async function compositeTemplate(
   if (!overlay || overlay.byteLength === 0) {
     return base.png().toBuffer();
   }
+  const overlayPng = await prepareCompositeOverlay(overlay);
   return base
-    .composite([{ input: overlay, top: 0, left: 0 }])
+    .composite([{ input: overlayPng, top: 0, left: 0 }])
     .png()
     .toBuffer();
 }

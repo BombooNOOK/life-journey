@@ -10,7 +10,7 @@ const nextConfig: NextConfig = {
   /** iPhone 等から LAN IP で dev する際の _next 静的アセット用 */
   allowedDevOrigins: ["127.0.0.1", "localhost", lanDevHost],
   /** Prisma をバンドルに取り込まない（クライアント不整合・検証エラー回避） */
-  serverExternalPackages: ["@prisma/client", "@react-pdf/renderer"],
+  serverExternalPackages: ["@prisma/client", "@react-pdf/renderer", "@resvg/resvg-js", "sharp"],
   /**
    * Firebase `signInWithPopup` が親ページの COOP 厳しめ設定で黙って失敗することがある（特に iOS Safari）。
    * ログイン画面だけポップアップ完了を許容する値にする。
