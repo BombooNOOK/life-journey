@@ -47,6 +47,18 @@ const links: { href: string; label: string; note?: string; highlight?: boolean }
     label: "鑑定書アセット：PDF ↔ PNG 対応表",
     note: "デザイン元 PDF をクリックすると本番 PNG を表示（npm run dev 中のみ）",
   },
+  {
+    href: "/preview/post-atelier",
+    label: "BambooNOOK 投稿アトリエ（確認ハブ）",
+    note: "今日のこころ予報含む。管理者ログイン後に各画面へ。npm run dev 中のみ",
+    highlight: true,
+  },
+  {
+    href: "/preview/post-atelier/daily-number-layout",
+    label: "こころ予報・画像レイアウト定規",
+    note: "819×1024 を 1:1 表示。グリッド・座標クリック・配置確認。npm run dev 中のみ",
+    highlight: true,
+  },
   { href: "/verify", label: "数値の突合（コア5・ローマ字）", note: "旧鑑定書・Excel との照合用" },
   { href: "/preview/all-bodies", label: "鑑定本文まとめ（全データ・1ページ）", note: "LP〜ブリッジ・PY/PM/PD まで一括" },
   {

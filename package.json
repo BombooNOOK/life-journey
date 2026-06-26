@@ -27,6 +27,8 @@
     "build:vercel": "prisma generate && prisma migrate deploy && next build",
     "postinstall": "prisma generate && patch-package && node scripts/copy-pdfjs-worker.mjs",
     "test": "vitest run",
+    "daily-number:data:build": "npx tsx scripts/build-daily-number-data.ts",
+    "daily-number:data:validate": "npx tsx scripts/build-daily-number-data.ts --validate",
     "verify:print": "npx tsx scripts/print-numerology.ts",
     "dump:bodies": "npx tsx scripts/dump-numerology-body-text.ts",
     "dump:bridge-comments": "npx tsx scripts/dump-bridge-score-comments.ts",

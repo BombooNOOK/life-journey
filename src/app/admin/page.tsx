@@ -672,6 +672,12 @@ export default async function AdminPage({ searchParams }: Props) {
           >
             対面紹介用カード →
           </Link>
+          <Link
+            href="/admin/post-atelier"
+            className="text-sm font-medium text-violet-900 underline-offset-2 hover:underline"
+          >
+            BambooNOOK 投稿アトリエ →
+          </Link>
         </p>
       </div>
 

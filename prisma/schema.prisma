@@ -267,6 +267,71 @@ model SupportInquiryMessage {
   @@index([inquiryId, createdAt])
 }
 
+/// BambooNOOK 投稿アトリエ：SNS 投稿案（管理者専用・API 連携なし）
+model SocialPostDraft {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  /// 最終更新した管理者メール
+  authorEmail String
+
+  /// テーマ（企画名・題材など）
+  theme String @default("")
+
+  /// companionOptions の id（owl | hedgehog | squirrel | sloth | frog）
+  companionType String @default("owl")
+
+  /// 投稿先（instagram | x | threads | facebook | note | other）
+  platform String @default("instagram")
+
+  /// 予定投稿日 YYYY-MM-DD（空文字 = 未設定）
+  scheduledDate String @default("")
+
+  /// 投稿予定日のユニバーサルデイ（1〜9）。scheduledDate からサーバー側で算出して保存
+  todayNumber Int?
+
+  /// 投稿文案
+  bodyText String @default("") @db.Text
+
+  /// ハッシュタグ（改行またはスペース区切り）
+  hashtags String @default("") @db.Text
+
+  /// 画像メモ（素材案・キャプション補足など）
+  imageMemo String @default("") @db.Text
+
+  /// リンク URL
+  linkUrl String @default("")
+
+  /// 運用メモ（非公開）
+  internalMemo String @default("") @db.Text
+
+  /// draft | ready | scheduled | posted | archived
+  status String @default("draft")
+
+  /// generic | daily_number（今日のこころ予報）
+  postType String @default("generic")
+
+  /// daily_number 用 messageType（base 等）
+  messageType String @default("base")
+
+  /// daily_number 用 JSON（表紙・個別ページ等）
+  generatedPayload String @default("") @db.Text
+
+  /// Instagram キャプション用
+  captionText String @default("") @db.Text
+
+  /// 将来 SocialPostTemplate 参照用（MVP では未使用）
+  templateId String?
+
+  @@index([status, scheduledDate])
+  @@index([platform, scheduledDate])
+  @@index([updatedAt])
+}
+
+/// 将来用：投稿テンプレート（MVP ではテーブル未作成・SocialPostDraft.templateId のみ予約）
+/// model SocialPostTemplate { ... }
+
 /// 1アカウント配下のプロフィール（ニックネーム表示用）
 model Profile {
   id        String   @id @default(cuid())
