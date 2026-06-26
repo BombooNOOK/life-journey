@@ -98,24 +98,8 @@ function personalBlockSvgParts(
           fontSize: layout.body.fontSize,
           lineHeight: layout.body.lineHeight,
           maxLines: layout.body.maxLines,
-          ...("lineRules" in layout.body && layout.body.lineRules
-            ? {
-                lineRules: layout.body.lineRules,
-                ...("continuationLineRule" in layout.body && layout.body.continuationLineRule
-                  ? { continuationLineRule: layout.body.continuationLineRule }
-                  : {}),
-                ...("compactFromLine" in layout.body && layout.body.compactFromLine != null
-                  ? {
-                      compactFromLine: layout.body.compactFromLine,
-                      compactLineHeight: layout.body.compactLineHeight,
-                    }
-                  : {}),
-              }
-            : {
-                maxCharsPerLine: layout.body.maxCharsPerLine,
-                indentFromLine: layout.body.indentFromLine,
-                indentChars: layout.body.indentChars,
-              }),
+          lineRules: layout.body.lineRules,
+          continuationLineRule: layout.body.continuationLineRule,
         },
         multiline: true,
       },

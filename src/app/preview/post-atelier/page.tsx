@@ -5,7 +5,7 @@ import { prisma } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
 
-const ROUTES = [
+const ROUTES: Array<{ href: string; label: string; highlight?: boolean }> = [
   { href: "/admin/post-atelier", label: "投稿アトリエ トップ" },
   {
     href: "/admin/post-atelier/daily-number/new",
@@ -20,7 +20,7 @@ const ROUTES = [
   { href: "/admin/post-atelier/new", label: "汎用・新規投稿案" },
   { href: "/admin/post-atelier/posts", label: "投稿一覧（絞り込み）" },
   { href: "/admin/post-atelier/calendar", label: "予定カレンダー" },
-] as const;
+];
 
 const CHECKLIST = [
   "DB 接続 OK（SocialPostDraft + daily_number カラム）",
@@ -29,7 +29,7 @@ const CHECKLIST = [
   "予定日 2026-06-24 → 「データ準備中」表示（クラッシュしない）",
   "Canva貼り付け用 / Instagramキャプションをコピーできる",
   "生成して保存 → daily-number/[id] で再表示できる",
-  "編集画面で Instagram用画像プレビュー・ZIPダウンロード（8枚）",
+  "編集画面で Instagram用画像プレビュー・ZIPダウンロード（9枚）",
   "汎用 /admin/post-atelier/new が従来どおり動く",
   "非 admin で notFound（404）になる",
 ] as const;

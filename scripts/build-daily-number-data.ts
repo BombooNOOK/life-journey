@@ -277,8 +277,6 @@ function buildMessagesTs(rows: MessageRow[]): string {
     messageType: "base",
     subTheme: "",
     variant: ${tsStringLiteral(r.variant)},
-    displayName: "",
-    subtitle: "",
     body: ${tsStringLiteral(r.body)},
     colorName: ${tsStringLiteral(r.colorName)},
     actions: [${tsStringLiteral(r.action1)}, ${tsStringLiteral(r.action2)}] as [string, string],
