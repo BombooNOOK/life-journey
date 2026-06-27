@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 
+import { JournalSocialPostImageDownloadButton } from "@/components/journal/JournalSocialPostImageDownloadButton";
 import { extractSocialPostBodyText } from "@/lib/journal/social-post-image/textExtract";
 import {
   JOURNAL_SOCIAL_POST_TEMPLATES,
@@ -106,15 +107,9 @@ export function JournalSocialPostImagePanel({ entryId, content }: Props) {
       </div>
 
       <div className="space-y-3">
-        <div className="flex flex-wrap items-center justify-between gap-2">
+        <div className="flex flex-wrap items-start justify-between gap-3">
           <h2 className="text-base font-semibold text-stone-900">投稿画像プレビュー</h2>
-          <a
-            href={downloadUrl}
-            download
-            className="inline-flex min-h-[44px] items-center rounded-lg bg-emerald-800 px-4 py-2.5 text-sm font-medium text-white hover:bg-emerald-700"
-          >
-            画像を保存
-          </a>
+          <JournalSocialPostImageDownloadButton href={downloadUrl} />
         </div>
 
         <div className="relative mx-auto w-full max-w-md overflow-hidden rounded-xl border border-stone-200 bg-[#faf8f5] shadow-sm">

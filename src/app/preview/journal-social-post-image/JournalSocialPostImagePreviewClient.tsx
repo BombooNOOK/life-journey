@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 
+import { JournalSocialPostImageDownloadButton } from "@/components/journal/JournalSocialPostImageDownloadButton";
 import { buildJournalSocialPostLayoutRulerHref } from "@/lib/journal/social-post-image/layoutRulerUrls";
 import { extractSocialPostBodyText } from "@/lib/journal/social-post-image/textExtract";
 import {
@@ -108,15 +109,9 @@ export function JournalSocialPostImagePreviewClient() {
       </div>
 
       <div className="space-y-3">
-        <div className="flex flex-wrap items-center justify-between gap-2">
+        <div className="flex flex-wrap items-start justify-between gap-3">
           <h2 className="text-base font-semibold text-stone-900">プレビュー</h2>
-          <a
-            href={downloadUrl}
-            download
-            className="rounded-lg bg-emerald-800 px-4 py-2.5 text-sm font-medium text-white"
-          >
-            画像を保存
-          </a>
+          <JournalSocialPostImageDownloadButton href={downloadUrl} />
         </div>
 
         <div className="relative overflow-hidden rounded-xl border border-stone-200 bg-[#faf8f5]">
