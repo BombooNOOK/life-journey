@@ -7,6 +7,7 @@ import {
   CAPTION_HASHTAGS,
   CAPTION_HOW_TO_READ,
   CAPTION_INTRO_CLOSING,
+  CAPTION_SECTION_DIVIDER,
   CAPTION_TITLE_LINES,
 } from "./instagramCaptionCopy";
 
@@ -82,6 +83,8 @@ export function buildInstagramCaption(payload: DailyNumberGeneratedPayload): str
     ...blockSections.flatMap((section, index) =>
       index < blockSections.length - 1 ? [section, ""] : [section],
     ),
+    "",
+    CAPTION_SECTION_DIVIDER,
     "",
     CAPTION_DIARY_INVITE,
     "",

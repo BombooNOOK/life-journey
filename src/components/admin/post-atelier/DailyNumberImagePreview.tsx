@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 
+import { DailyNumberZipDownloadButton } from "@/components/admin/post-atelier/DailyNumberZipDownloadButton";
 import {
   buildDailyNumberLayoutRulerHref,
   carouselIndexToLayoutSlide,
@@ -11,6 +12,7 @@ import {
 type Props = {
   draftId: string;
   publishReady: boolean;
+  suggestedZipFileName?: string;
 };
 
 const SLIDES = [
@@ -25,7 +27,11 @@ const SLIDES = [
   { index: 9, label: "9. ラストページ" },
 ] as const;
 
-export function DailyNumberImagePreview({ draftId, publishReady }: Props) {
+export function DailyNumberImagePreview({
+  draftId,
+  publishReady,
+  suggestedZipFileName,
+}: Props) {
   const zipHref = `/api/admin/post-atelier/daily-number/${draftId}/images`;
   const editPath = dailyNumberEditPath(draftId);
   const rulerHref =
@@ -54,19 +60,19 @@ export function DailyNumberImagePreview({ draftId, publishReady }: Props) {
           ) : null}
         </div>
         {publishReady ? (
-          <a
+          <DailyNumberZipDownloadButton
             href={zipHref}
-            className="inline-flex rounded-md bg-emerald-700 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-600"
-          >
-            ZIPダウンロード（画像9枚＋キャプション）
-          </a>
+            suggestedFileName={
+              suggestedZipFileName ? `${suggestedZipFileName}.zip` : undefined
+            }
+          />
         ) : (
-          <span
-            className="inline-flex cursor-not-allowed rounded-md bg-stone-300 px-4 py-2 text-sm font-medium text-stone-600"
-            title="キャラ別の個別文案が揃うまでZIPはダウンロードできません"
-          >
-            ZIPダウンロード（キャラ別文案待ち）
-          </span>
+          <DailyNumberZipDownloadButton
+            href={zipHref}
+            label="ZIPダウンロード（キャラ別文案待ち）"
+            disabled
+            disabledTitle="キャラ別の個別文案が揃うまでZIPはダウンロードできません"
+          />
         )}
       </div>
 

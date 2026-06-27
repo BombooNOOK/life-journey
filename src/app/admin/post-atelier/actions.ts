@@ -14,7 +14,7 @@ const POST_ATELIER_PATHS = [
   "/admin/post-atelier/calendar",
 ] as const;
 
-function revalidatePostAtelierPaths(draftId?: string): void {
+function revalidatePostAtelierPaths(draftId?: string, postType?: string): void {
   for (const path of POST_ATELIER_PATHS) {
     try {
       revalidatePath(path);
@@ -27,6 +27,13 @@ function revalidatePostAtelierPaths(draftId?: string): void {
       revalidatePath(`/admin/post-atelier/${draftId}`);
     } catch (e) {
       console.warn("[post-atelier] revalidatePath draft", draftId, e);
+    }
+    if (postType === "daily_number") {
+      try {
+        revalidatePath(`/admin/post-atelier/daily-number/${draftId}`);
+      } catch (e) {
+        console.warn("[post-atelier] revalidatePath daily-number", draftId, e);
+      }
     }
   }
 }
@@ -91,4 +98,26 @@ export async function updateSocialPostDraft(formData: FormData) {
 
   revalidatePostAtelierPaths(id);
   redirect(`/admin/post-atelier/${id}?saved=1`);
+}
+
+export async function deleteSocialPostDraft(formData: FormData) {
+  const id = formData.get("id")?.toString() ?? "";
+  if (!id) {
+    redirectWithError("/admin/post-atelier/posts", "ID が不正です。");
+  }
+
+  await requireAdminOrRedirect("/admin/post-atelier/posts");
+
+  const existing = await prisma.socialPostDraft.findUnique({
+    where: { id },
+    select: { id: true, postType: true },
+  });
+  if (!existing) {
+    redirectWithError("/admin/post-atelier/posts", "投稿案が見つかりません。");
+  }
+
+  await prisma.socialPostDraft.delete({ where: { id } });
+
+  revalidatePostAtelierPaths(id, existing.postType);
+  redirect("/admin/post-atelier/posts?deleted=1");
 }

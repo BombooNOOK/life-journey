@@ -11,6 +11,7 @@ import { DailyNumberPostPreview } from "@/components/admin/post-atelier/DailyNum
 import { DailyNumberImagePreview } from "@/components/admin/post-atelier/DailyNumberImagePreview";
 import { resolveDailyNumberPost } from "@/lib/admin/post-atelier/daily-number/resolveDailyNumberPost";
 import { formatDailyNumberMessageFallbackNotice } from "@/lib/admin/post-atelier/daily-number/messagePublishPolicy";
+import { dailyNumberZipBasename } from "@/lib/admin/post-atelier/daily-number/zipBasename";
 import {
   SOCIAL_POST_DRAFT_STATUSES,
   SOCIAL_POST_DRAFT_STATUS_LABELS,
@@ -340,7 +341,11 @@ export function DailyNumberPostEditor({ mode, draftId, initialValues }: Props) {
           <DailyNumberPostPreview payload={resolved.payload} />
 
           {mode === "edit" && draftId ? (
-            <DailyNumberImagePreview draftId={draftId} publishReady={resolved.publishReady} />
+            <DailyNumberImagePreview
+              draftId={draftId}
+              publishReady={resolved.publishReady}
+              suggestedZipFileName={dailyNumberZipBasename(resolved.payload)}
+            />
           ) : null}
 
           <section className="grid gap-4 lg:grid-cols-2">

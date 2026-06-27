@@ -33,6 +33,7 @@ import type {
 } from "./types";
 import { buildInstagramCaption } from "./buildCopyText";
 import { DAILY_NUMBER_INSTAGRAM_CAPTION_FILENAME } from "./instagramCaptionCopy";
+import { dailyNumberZipBasename } from "./zipBasename";
 
 export type DailyNumberCompositeSlide = {
   /** 1-based carousel index */
@@ -222,10 +223,7 @@ export async function compositeDailyNumberCarousel(
   return slides;
 }
 
-export function dailyNumberZipBasename(payload: DailyNumberGeneratedPayload): string {
-  const date = payload.scheduledDate || "undated";
-  return `kokoro-yoho_${date}_ud${payload.todayNumber}_${payload.character}`;
-}
+export { dailyNumberZipBasename } from "./zipBasename";
 
 export async function buildDailyNumberZipBuffer(
   payload: DailyNumberGeneratedPayload,

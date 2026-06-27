@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import { DeletePostDraftButton } from "@/components/admin/post-atelier/DeletePostDraftButton";
 import { getViewerEmailFromCookie } from "@/lib/auth/viewer";
 import { isAdminEmail } from "@/lib/admin/access";
 import { listSocialPostDrafts } from "@/lib/admin/post-atelier/queries";
@@ -15,7 +16,7 @@ import { getCompanionLabel } from "@/lib/journal/meta";
 export const dynamic = "force-dynamic";
 
 type Props = {
-  searchParams: Promise<{ status?: string; platform?: string }>;
+  searchParams: Promise<{ status?: string; platform?: string; deleted?: string }>;
 };
 
 export default async function PostAtelierPostsPage({ searchParams }: Props) {
@@ -27,6 +28,7 @@ export default async function PostAtelierPostsPage({ searchParams }: Props) {
   const params = await searchParams;
   const statusFilter = params.status?.trim() ?? "";
   const platformFilter = params.platform?.trim() ?? "";
+  const deleted = params.deleted === "1";
 
   const rows = await listSocialPostDrafts({
     status: statusFilter,
@@ -42,6 +44,12 @@ export default async function PostAtelierPostsPage({ searchParams }: Props) {
         <h1 className="mt-2 text-2xl font-bold text-stone-900">投稿一覧</h1>
         <p className="mt-1 text-sm text-stone-600">保存済みの投稿案を検索・編集します。</p>
       </div>
+
+      {deleted ? (
+        <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-950">
+          投稿案を削除しました。
+        </div>
+      ) : null}
 
       <form
         action="/admin/post-atelier/posts"
@@ -140,16 +148,19 @@ export default async function PostAtelierPostsPage({ searchParams }: Props) {
                     {row.updatedAt.toLocaleString("ja-JP")}
                   </td>
                   <td className="px-4 py-3">
-                    <Link
-                      href={
-                        row.postType === "daily_number"
-                          ? `/admin/post-atelier/daily-number/${row.id}`
-                          : `/admin/post-atelier/${row.id}`
-                      }
-                      className="text-violet-800 underline-offset-2 hover:underline"
-                    >
-                      編集
-                    </Link>
+                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                      <Link
+                        href={
+                          row.postType === "daily_number"
+                            ? `/admin/post-atelier/daily-number/${row.id}`
+                            : `/admin/post-atelier/${row.id}`
+                        }
+                        className="text-violet-800 underline-offset-2 hover:underline"
+                      >
+                        編集
+                      </Link>
+                      <DeletePostDraftButton draftId={row.id} />
+                    </div>
                   </td>
                 </tr>
               ))

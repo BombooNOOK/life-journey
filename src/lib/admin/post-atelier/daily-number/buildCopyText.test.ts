@@ -7,6 +7,7 @@ import {
   CAPTION_DIARY_INVITE,
   CAPTION_HASHTAGS,
   CAPTION_HOW_TO_READ,
+  CAPTION_SECTION_DIVIDER,
   CAPTION_TITLE_LINES,
 } from "./instagramCaptionCopy";
 import { resolveDailyNumberPost } from "./resolveDailyNumberPost";
@@ -62,5 +63,15 @@ describe("buildInstagramCaption", () => {
     const tags = caption.match(/#[^\s#]+/g) ?? [];
     expect(tags).toEqual([...CAPTION_HASHTAGS]);
     expect(tags).toHaveLength(5);
+  });
+
+  it("最後の個別メッセージと LJD 紹介の間に区切り線がある", () => {
+    const caption = buildInstagramCaption(ud8OwlPayload());
+    expect(caption).toContain(CAPTION_SECTION_DIVIDER);
+    const dividerIndex = caption.indexOf(CAPTION_SECTION_DIVIDER);
+    const diaryIndex = caption.indexOf(CAPTION_DIARY_INVITE);
+    expect(dividerIndex).toBeGreaterThan(-1);
+    expect(diaryIndex).toBeGreaterThan(dividerIndex);
+    expect(caption.slice(dividerIndex, diaryIndex)).toContain(CAPTION_SECTION_DIVIDER);
   });
 });

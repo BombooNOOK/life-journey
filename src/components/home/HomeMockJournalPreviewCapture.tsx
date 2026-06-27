@@ -28,7 +28,7 @@ export function HomeMockJournalPreviewCapture() {
             type="button"
             className="min-h-[44px] rounded-md border border-stone-300 bg-white px-3 py-2 text-base text-stone-700"
           >
-            製本イメージ
+            投稿画像
           </button>
         </div>
       </div>

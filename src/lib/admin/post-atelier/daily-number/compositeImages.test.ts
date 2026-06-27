@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 
 import { buildDailyNumberZipBuffer, compositeDailyNumberCarousel } from "./compositeImages";
 import { resolveDailyNumberPost } from "./resolveDailyNumberPost";
+import { dailyNumberZipBasename } from "./zipBasename";
+import { resolveDailyNumberPost } from "./resolveDailyNumberPost";
 import { DAILY_NUMBER_TEMPLATE_SIZE } from "./assetPaths";
 
 describe("compositeDailyNumberCarousel", () => {

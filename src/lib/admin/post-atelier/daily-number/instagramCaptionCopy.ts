@@ -29,6 +29,9 @@ export const CAPTION_HOW_TO_READ = [
   "残してみるのもおすすめです。",
 ].join("\n");
 
+/** 個別メッセージブロックと LJD 紹介の境目 */
+export const CAPTION_SECTION_DIVIDER = "ーーーーーーーーー";
+
 export const CAPTION_DIARY_INVITE = [
   "今日のことばの中で、",
   "少し心に残ったものがあれば、",

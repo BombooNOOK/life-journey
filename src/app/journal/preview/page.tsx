@@ -5,18 +5,16 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { JournalPreviewCompanionSwitcher } from "@/components/journal/JournalPreviewCompanionSwitcher";
 import { JournalPreviewDayNav } from "@/components/journal/JournalPreviewDayNav";
-import { JournalPreviewSpread } from "@/components/journal/JournalPreviewSpread";
 import { JournalReadablePreview } from "@/components/journal/JournalReadablePreview";
+import { JournalSocialPostImagePanel } from "@/components/journal/JournalSocialPostImagePanel";
 import { ActiveProfileLabel } from "@/components/profile/ActiveProfileLabel";
-import { InlineHelpButton } from "@/components/ui/InlineHelpButton";
 import { useEnsureServerAuthSession } from "@/hooks/useEnsureServerAuthSession";
 import { useEnsureActiveViewerProfile } from "@/hooks/useEnsureActiveViewerProfile";
 import { useEntitlement } from "@/components/entitlement/useEntitlement";
-import { JOURNAL_BOOK_PREVIEW_NOTICE } from "@/lib/journal/journalDiaryNumbersHelpCopy";
+import { normalizeContentFontMode } from "@/lib/journal/contentFontMode";
 import { consumeJournalPreviewPrefetch, peekJournalPreviewPrefetch } from "@/lib/journal/journalPreviewPrefetch";
 import { journalEditPath } from "@/lib/journal/journalNav";
-import { normalizeContentFontMode } from "@/lib/journal/contentFontMode";
-import { getDiaryDesignLabel, normalizeCompanionType, normalizeDiaryDesignTheme, type CompanionType, type DiaryDesignId } from "@/lib/journal/meta";
+import { normalizeCompanionType, normalizeDiaryDesignTheme, type CompanionType, type DiaryDesignId } from "@/lib/journal/meta";
 import type { JournalPreviewNeighbors } from "@/lib/journal/journalPreviewNeighbors";
 
 type PreviewEntry = {
@@ -42,7 +40,7 @@ type PreviewEntry = {
   kanteiOrderExists?: boolean;
 };
 
-type ViewMode = "readable" | "book";
+type ViewMode = "readable" | "social";
 
 function toDateInputValueUtc(date: Date): string {
   const y = date.getUTCFullYear();
@@ -286,29 +284,20 @@ function JournalPreviewPageContent() {
           </button>
           <button
             type="button"
-            onClick={() => setViewMode("book")}
+            onClick={() => setViewMode("social")}
             className={[
               "min-h-[44px] rounded-md border px-3 py-2 text-base",
-              viewMode === "book"
+              viewMode === "social"
                 ? "border-stone-700 bg-stone-800 text-white"
                 : "border-stone-300 bg-white text-stone-700 hover:bg-stone-50",
             ].join(" ")}
           >
-            製本イメージ
+            投稿画像
           </button>
-          <InlineHelpButton ariaLabel="製本イメージについて" panelZIndexClass="z-50">
-            {JOURNAL_BOOK_PREVIEW_NOTICE}
-          </InlineHelpButton>
         </div>
       </div>
 
-      <div
-        className={
-          viewMode === "book"
-            ? "sm:rounded-xl sm:border sm:border-stone-200 sm:bg-white sm:p-4 sm:shadow-sm"
-            : ""
-        }
-      >
+      <div>
         {loading ? (
           <p className="text-base text-stone-500">プレビューを読み込み中…</p>
         ) : error ? (
@@ -335,32 +324,9 @@ function JournalPreviewPageContent() {
             meaningsReturnTo={meaningsReturnTo}
             afterCommentSlot={companionSwitcherBlock}
           />
-        ) : (
-          <div className="space-y-3">
-            <p className="hidden text-sm text-stone-600 sm:block">
-              デザイン: {getDiaryDesignLabel(designTheme)}
-            </p>
-            <JournalPreviewSpread
-              designTheme={designTheme}
-              companionType={entry.companionType}
-              mood={entry.mood}
-              activity={entry.activity}
-              content={entry.content}
-              comment={entry.generatedComment}
-              photoDataUrl={entry.photoDataUrl}
-              photoSrc={entry.photoSrc ?? null}
-              previewDate={new Date(entry.createdAt)}
-              diaryNumbers={entry.diaryNumbers}
-              contentFontMode={entry.contentFontMode}
-              kanteiOrderExists={kanteiOrderExists}
-              returnTo={returnTo}
-              returnHomeLabel={
-                returnTo?.startsWith("/orders/calendar") ? "カレンダーへ戻る" : "一覧に戻る"
-              }
-            />
-            {companionSwitcherBlock}
-          </div>
-        )}
+        ) : viewMode === "social" ? (
+          <JournalSocialPostImagePanel entryId={entry.id} content={entry.content} />
+        ) : null}
       </div>
 
       {entry && (neighbors.prev || neighbors.next) ? (
