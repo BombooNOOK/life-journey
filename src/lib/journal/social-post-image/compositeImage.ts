@@ -179,7 +179,7 @@ export async function compositeJournalSocialPostImage(
   options?: { createdAt?: Date },
 ): Promise<JournalSocialPostImageResult> {
   const layout = JOURNAL_SOCIAL_POST_TEMPLATES[input.templateId];
-  const background = loadJournalSocialPostTemplateBackground(input.templateId);
+  const background = loadJournalSocialPostTemplateBackground(input.templateId, input.companionType);
   const photoOverlay = await loadJournalSocialPostTemplatePhotoOverlay(input.templateId);
   const photoLayer = await buildPhotoLayer(input.photoBuffer, layout.photo);
   const faceLayer = layout.companionFace

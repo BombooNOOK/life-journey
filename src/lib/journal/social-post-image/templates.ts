@@ -1,3 +1,5 @@
+import { companionTypeToTemplateSlug } from "@/lib/journal/coverAssets";
+
 /** テンプレ PNG の元サイズ（4:5） */
 export const JOURNAL_SOCIAL_POST_TEMPLATE_SIZE = {
   widthPx: 819,
@@ -38,7 +40,10 @@ export type JournalSocialPostCompanionFaceStyle = {
 export type JournalSocialPostTemplateLayout = {
   id: JournalSocialPostTemplateId;
   label: string;
+  /** 伴走キャラ未指定・未対応時の下地 */
   backgroundFile: string;
+  /** 伴走キャラ slug ごとの下地（sns02 など） */
+  backgroundFilesByCompanion?: Partial<Record<string, string>>;
   /** 写真の上に重ねる透明 PNG（付箋など） */
   photoOverlayFile?: string;
   photo: JournalSocialPostPhotoStyle;
@@ -68,7 +73,14 @@ export const JOURNAL_SOCIAL_POST_TEMPLATES: Record<
   sns02: {
     id: "sns02",
     label: "角丸横長",
-    backgroundFile: "sns02-template-base.png",
+    backgroundFile: "sns02-template-base-drfukuro.png",
+    backgroundFilesByCompanion: {
+      drfukuro: "sns02-template-base-drfukuro.png",
+      harinezumi: "sns02-template-base-harinezumi.png",
+      namakemono: "sns02-template-base-namakemono.png",
+      risu: "sns02-template-base-risu.png",
+      kerosion: "sns02-template-base-kerosion.png",
+    },
     photoOverlayFile: "sns02-template-photo-overlay.png",
     photo: { x: 42, y: 46, width: 733, height: 469, fit: "cover", borderRadiusPx: 24 },
     dateRibbonYear: {
@@ -253,6 +265,16 @@ export function normalizeJournalSocialPostTemplateId(
   raw: string | null | undefined,
 ): JournalSocialPostTemplateId {
   return raw === "sns03" ? "sns03" : "sns02";
+}
+
+export function resolveJournalSocialPostBackgroundFile(
+  templateId: JournalSocialPostTemplateId,
+  companionType: string,
+): string {
+  const layout = JOURNAL_SOCIAL_POST_TEMPLATES[templateId];
+  const slug = companionTypeToTemplateSlug(companionType);
+  const companionFile = layout.backgroundFilesByCompanion?.[slug];
+  return companionFile ?? layout.backgroundFile;
 }
 
 export const JOURNAL_SOCIAL_POST_TEMPLATE_IDS = ["sns02", "sns03"] as const;

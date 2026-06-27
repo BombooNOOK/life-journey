@@ -52,4 +52,24 @@ describe("compositeJournalSocialPostImage", () => {
     const { buffer } = await compositeJournalSocialPostImage(input, { createdAt });
     expect(buffer.byteLength).toBeGreaterThan(50_000);
   });
+
+  it("sns02 でケロシオン選択時にキャラ別 base を合成する", async () => {
+    const createdAt = new Date("2026-06-19T00:00:00.000Z");
+    const input = buildJournalSocialPostImageInput({
+      templateId: "sns02",
+      title: "テスト",
+      bodyExcerpt: "本文",
+      todayNumber: 4,
+      monthNumber: 3,
+      yearNumber: 6,
+      moodLabel: "ふつう",
+      commentExcerpt: "ケロシオンのひとこと",
+      photoBuffer: null,
+      companionType: "frog",
+      createdAt,
+    });
+
+    const { buffer } = await compositeJournalSocialPostImage(input, { createdAt });
+    expect(buffer.byteLength).toBeGreaterThan(50_000);
+  });
 });

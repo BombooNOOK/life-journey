@@ -25,7 +25,7 @@ export const JOURNAL_SOCIAL_POST_LAYOUT_SLIDES: {
   label: string;
   templateFile: string;
 }[] = [
-  { id: "sns02", label: "角丸横長（sns02）", templateFile: "sns02-template-base.png" },
+  { id: "sns02", label: "角丸横長（sns02）", templateFile: "sns02-template-base-drfukuro.png" },
   { id: "sns03", label: "スクエア・ポラロイド（sns03）", templateFile: "sns03-template-blank.png" },
 ];
 

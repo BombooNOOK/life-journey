@@ -3,18 +3,19 @@ import path from "node:path";
 
 import {
   JOURNAL_SOCIAL_POST_TEMPLATES,
+  resolveJournalSocialPostBackgroundFile,
   type JournalSocialPostTemplateId,
 } from "./templates";
 import { prepareJournalSocialPostPhotoOverlay } from "./photoOverlayPrepare";
 
 export function journalSocialPostTemplateBackgroundPath(
   templateId: JournalSocialPostTemplateId,
+  companionType?: string,
 ): string {
-  return path.join(
-    process.cwd(),
-    "public/images/journal-social-post",
-    JOURNAL_SOCIAL_POST_TEMPLATES[templateId].backgroundFile,
-  );
+  const backgroundFile = companionType
+    ? resolveJournalSocialPostBackgroundFile(templateId, companionType)
+    : JOURNAL_SOCIAL_POST_TEMPLATES[templateId].backgroundFile;
+  return path.join(process.cwd(), "public/images/journal-social-post", backgroundFile);
 }
 
 export function journalSocialPostTemplatePhotoOverlayPath(
@@ -27,8 +28,9 @@ export function journalSocialPostTemplatePhotoOverlayPath(
 
 export function loadJournalSocialPostTemplateBackground(
   templateId: JournalSocialPostTemplateId,
+  companionType?: string,
 ): Buffer {
-  const filePath = journalSocialPostTemplateBackgroundPath(templateId);
+  const filePath = journalSocialPostTemplateBackgroundPath(templateId, companionType);
   if (!fs.existsSync(filePath)) {
     throw new Error(`テンプレートが見つかりません: ${filePath}`);
   }
