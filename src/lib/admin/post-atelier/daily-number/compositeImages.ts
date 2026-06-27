@@ -16,17 +16,23 @@ import {
   type DailyNumberClosingVariant,
 } from "./closingVariant";
 import {
-  DAILY_NUMBER_COVER_LAYOUT,
-  DAILY_NUMBER_PERSONAL_CARD_TOPS,
-  dailyNumberPersonalBlockLayout,
+  dailyNumberPersonalBlockLayoutV2,
+  dailyNumberPersonalPageLayout,
   DAILY_NUMBER_TEXT_COLOR,
 } from "./imageLayout";
-import { buildActionLinesSvg, buildSvgFromInnerMarkup, buildSvgTextOverlay } from "./svgText";
+import { formatCharmColorForImage } from "./charmColorDisplay";
+import { dailyNumberCharmColorSvgPosition } from "./charmColorLayout";
+import { extractImageBody } from "./messageTextSplit";
+import { wrapDailyNumberImageBody } from "./imageBodyWrap";
+import { buildSvgFromInnerMarkup, buildSvgTextOverlay } from "./svgText";
 import type {
   DailyNumberGeneratedPayload,
   DailyNumberMessage,
   DailyNumberPagePreview,
+  DailyNumberTodayValue,
 } from "./types";
+import { buildInstagramCaption } from "./buildCopyText";
+import { DAILY_NUMBER_INSTAGRAM_CAPTION_FILENAME } from "./instagramCaptionCopy";
 
 export type DailyNumberCompositeSlide = {
   /** 1-based carousel index */
@@ -36,81 +42,47 @@ export type DailyNumberCompositeSlide = {
   buffer: Buffer;
 };
 
-function buildCoverOverlay(payload: DailyNumberGeneratedPayload): Buffer {
-  const layout = DAILY_NUMBER_COVER_LAYOUT;
-  return buildSvgTextOverlay({
-    width: DAILY_NUMBER_TEMPLATE_SIZE.widthPx,
-    height: DAILY_NUMBER_TEMPLATE_SIZE.heightPx,
-    color: DAILY_NUMBER_TEXT_COLOR,
-    items: [
-      {
-        text: String(payload.todayNumber),
-        style: {
-          x: layout.number.cx,
-          y: layout.number.y,
-          fontSize: layout.number.fontSize,
-          fontWeight: layout.number.fontWeight,
-          textAnchor: "middle",
-        },
-      },
-      {
-        text: payload.cover.title,
-        style: {
-          x: layout.title.cx,
-          y: layout.title.y,
-          fontSize: layout.title.fontSize,
-          fontWeight: layout.title.fontWeight,
-          textAnchor: "middle",
-        },
-      },
-      {
-        text: payload.cover.summaryMessage,
-        style: {
-          x: layout.summary.x,
-          y: layout.summary.y,
-          fontSize: layout.summary.fontSize,
-          lineHeight: layout.summary.lineHeight,
-          maxCharsPerLine: layout.summary.maxCharsPerLine,
-          maxLines: layout.summary.maxLines,
-        },
-        multiline: true,
-      },
-    ],
-  });
-}
-
 function personalBlockSvgParts(
   block: DailyNumberMessage,
+  pageIndex1Based: number,
   blockIndex: number,
 ): string[] {
-  const cardTop =
-    DAILY_NUMBER_PERSONAL_CARD_TOPS[blockIndex] ?? DAILY_NUMBER_PERSONAL_CARD_TOPS[0];
-  const layout = dailyNumberPersonalBlockLayout(blockIndex);
+  const layout = dailyNumberPersonalBlockLayoutV2(pageIndex1Based, blockIndex);
+  const imageBody = extractImageBody(block.body);
+  const charmColorText = formatCharmColorForImage(block.colorName);
+  const charmColorPos = dailyNumberCharmColorSvgPosition(
+    layout.color.cx,
+    layout.color.fontSize,
+    charmColorText,
+  );
   const bodyOverlay = buildSvgTextOverlay({
     width: DAILY_NUMBER_TEMPLATE_SIZE.widthPx,
     height: DAILY_NUMBER_TEMPLATE_SIZE.heightPx,
     color: DAILY_NUMBER_TEXT_COLOR,
     items: [
       {
-        text: block.body,
+        text: imageBody,
         style: {
           x: layout.body.x,
-          y: cardTop + layout.body.y,
+          y: layout.body.y,
           fontSize: layout.body.fontSize,
           lineHeight: layout.body.lineHeight,
           maxLines: layout.body.maxLines,
-          lineRules: layout.body.lineRules,
-          continuationLineRule: layout.body.continuationLineRule,
+          wrappedLines: wrapDailyNumberImageBody(imageBody, {
+            continuationMaxCharsPerLine: layout.body.imageBodyContinuationMaxCharsPerLine,
+            maxLines: layout.body.maxLines,
+          }),
         },
         multiline: true,
       },
       {
-        text: block.colorName,
+        text: charmColorText,
         style: {
-          x: layout.color.x,
-          y: cardTop + layout.color.y,
+          x: charmColorPos.x,
+          y: layout.color.y,
           fontSize: layout.color.fontSize,
-          textAnchor: "middle",
+          fontWeight: layout.color.fontWeight,
+          textAnchor: charmColorPos.textAnchor,
         },
       },
     ],
@@ -122,24 +94,45 @@ function personalBlockSvgParts(
     .replace(/<\/svg>/, "")
     .trim();
 
-  return [
-    inner,
-    buildActionLinesSvg({
-      actions: block.actions,
-      x: layout.actions.x,
-      y: cardTop + layout.actions.y,
-      fontSize: layout.actions.fontSize,
-      lineHeight: layout.actions.lineHeight,
-      maxCharsPerLine: layout.actions.maxCharsPerLine,
-      fill: DAILY_NUMBER_TEXT_COLOR,
-    }),
-  ];
+  return [inner];
 }
 
-function buildPersonalPageOverlay(page: DailyNumberPagePreview): Buffer {
+function buildPersonalPageOverlay(
+  page: DailyNumberPagePreview,
+  todayNumber: DailyNumberTodayValue,
+): Buffer {
+  const pageIndex1Based = page.pageIndex + 1;
+  const pageLayout = dailyNumberPersonalPageLayout(pageIndex1Based);
   const parts: string[] = [];
+
+  const headerOverlay = buildSvgTextOverlay({
+    width: DAILY_NUMBER_TEMPLATE_SIZE.widthPx,
+    height: DAILY_NUMBER_TEMPLATE_SIZE.heightPx,
+    color: DAILY_NUMBER_TEXT_COLOR,
+    items: [
+      {
+        text: String(todayNumber),
+        style: {
+          x: pageLayout.header.todayNumber.cx,
+          y: pageLayout.header.todayNumber.y,
+          fontSize: pageLayout.header.todayNumber.fontSize,
+          fontWeight: pageLayout.header.todayNumber.fontWeight,
+          textAnchor: "middle",
+        },
+      },
+    ],
+  });
+
+  parts.push(
+    headerOverlay
+      .toString("utf8")
+      .replace(/<\?xml[\s\S]*?<defs>[\s\S]*?<\/defs>/, "")
+      .replace(/<\/svg>/, "")
+      .trim(),
+  );
+
   page.blocks.forEach((block, blockIndex) => {
-    parts.push(...personalBlockSvgParts(block, blockIndex));
+    parts.push(...personalBlockSvgParts(block, pageIndex1Based, blockIndex));
   });
 
   return buildSvgFromInnerMarkup({
@@ -194,16 +187,13 @@ export async function compositeDailyNumberCarousel(
     index: 1,
     filename: "01-cover.png",
     label: "表紙",
-    buffer: await compositeTemplate(
-      dailyNumberCoverTemplatePath(character),
-      buildCoverOverlay(payload),
-    ),
+    buffer: await compositeTemplate(dailyNumberCoverTemplatePath(character), null),
   });
 
   slides.push({
     index: 2,
     filename: "02-explain.png",
-    label: "説明",
+    label: "今日のこころ予報の見方",
     buffer: await compositeTemplate(dailyNumberExplainTemplatePath(character), null),
   });
 
@@ -216,7 +206,7 @@ export async function compositeDailyNumberCarousel(
       label: personalSlideLabel(page),
       buffer: await compositeTemplate(
         dailyNumberPersonalTemplatePath(pageNo),
-        buildPersonalPageOverlay(page),
+        buildPersonalPageOverlay(page, payload.todayNumber),
       ),
     });
   }
@@ -255,13 +245,22 @@ export async function buildDailyNumberZipBuffer(
       `今日のすうじ: ${payload.todayNumber}`,
       `キャラ: ${payload.character}`,
       "",
-      "01-cover.png … 表紙",
-      "02-explain.png … 説明（固定）",
+      "01-cover.png … 表紙（キャラ別・完成画像）",
+      "02-explain.png … 今日のこころ予報の見方（キャラ別・完成画像）",
       "03〜08 … 個別ページ（page_01〜06）",
       "09-closing-*.png … ラストページ（4種からランダム）",
+      `${DAILY_NUMBER_INSTAGRAM_CAPTION_FILENAME} … Instagramキャプション（コピー用）`,
       "",
-      "Instagram カルーセルは 01 から順に投稿してください。",
+      "【Instagram 投稿の手順】",
+      "1. カルーセルは 01 から順に投稿してください",
+      "2. キャプションは instagram-caption.txt を開き、全文をコピーして貼り付け",
+      "   （iPhone: ファイルアプリ → ZIPを解凍 → キャプションファイルを長押しで全選択 → コピー）",
+      "3. 予約投稿は Instagram アプリから行えます",
     ].join("\n"),
+  );
+
+  entries[DAILY_NUMBER_INSTAGRAM_CAPTION_FILENAME] = new TextEncoder().encode(
+    buildInstagramCaption(payload),
   );
 
   const buffer = Buffer.from(zipSync(entries, { level: 0 }));

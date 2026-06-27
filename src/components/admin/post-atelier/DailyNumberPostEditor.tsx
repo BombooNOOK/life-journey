@@ -10,6 +10,7 @@ import { formatUniversalDayBreakdown, universalDayForScheduledDate } from "@/lib
 import { DailyNumberPostPreview } from "@/components/admin/post-atelier/DailyNumberPostPreview";
 import { DailyNumberImagePreview } from "@/components/admin/post-atelier/DailyNumberImagePreview";
 import { resolveDailyNumberPost } from "@/lib/admin/post-atelier/daily-number/resolveDailyNumberPost";
+import { formatDailyNumberMessageFallbackNotice } from "@/lib/admin/post-atelier/daily-number/messagePublishPolicy";
 import {
   SOCIAL_POST_DRAFT_STATUSES,
   SOCIAL_POST_DRAFT_STATUS_LABELS,
@@ -273,7 +274,8 @@ export function DailyNumberPostEditor({ mode, draftId, initialValues }: Props) {
         <div className="flex flex-wrap gap-2">
           <button
             type="submit"
-            className="rounded-md bg-violet-800 px-4 py-2 text-sm font-medium text-white hover:bg-violet-700"
+            disabled={resolved.ok && !resolved.publishReady}
+            className="rounded-md bg-violet-800 px-4 py-2 text-sm font-medium text-white hover:bg-violet-700 disabled:cursor-not-allowed disabled:bg-stone-400"
           >
             {mode === "create" ? "生成して保存" : "再生成して保存"}
           </button>
@@ -284,7 +286,7 @@ export function DailyNumberPostEditor({ mode, draftId, initialValues }: Props) {
         <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-950">
           <p className="font-medium">この今日のすうじのデータは準備中です</p>
           <p className="mt-2 leading-relaxed">
-            現在はフクロウ先生 × base の UD1〜9（文体 A/B/C）のみプレビュー・保存できます。
+            今日のすうじ × base の表紙文案・個別ページデータが揃っていません。
             {todayNumber != null ? (
               <>
                 <br />
@@ -295,6 +297,15 @@ export function DailyNumberPostEditor({ mode, draftId, initialValues }: Props) {
         </div>
       ) : (
         <>
+          {!resolved.publishReady ? (
+            <div className="rounded-xl border border-amber-300 bg-amber-50 p-4 text-sm text-amber-950">
+              <p className="font-medium">プレビューのみ（保存・ZIP不可）</p>
+              <p className="mt-2 leading-relaxed">
+                {formatDailyNumberMessageFallbackNotice(companionType)}
+              </p>
+            </div>
+          ) : null}
+
           <div className="rounded-xl border border-emerald-200 bg-emerald-50/60 px-4 py-3 text-sm font-medium text-emerald-950">
             {closingUsageLabel}
           </div>
@@ -329,7 +340,7 @@ export function DailyNumberPostEditor({ mode, draftId, initialValues }: Props) {
           <DailyNumberPostPreview payload={resolved.payload} />
 
           {mode === "edit" && draftId ? (
-            <DailyNumberImagePreview draftId={draftId} />
+            <DailyNumberImagePreview draftId={draftId} publishReady={resolved.publishReady} />
           ) : null}
 
           <section className="grid gap-4 lg:grid-cols-2">

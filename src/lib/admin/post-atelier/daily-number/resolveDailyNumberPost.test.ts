@@ -89,11 +89,40 @@ describe("resolveDailyNumberPost", () => {
     expect(result.payload.closingVariant).toBe("animal_friends");
   });
 
-  it("データ未整備のキャラは data_not_ready", () => {
+  it("ケロシオンは表紙・説明テンプレ＋フクロウ文案フォールバックで生成できる", () => {
     const result = resolveDailyNumberPost({
       scheduledDate: "2026-06-19",
       todayNumber: 8,
       character: "frog",
+      messageType: "base",
+    });
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.payload.character).toBe("frog");
+    expect(result.messageSource).toBe("fallback_owl");
+    expect(result.publishReady).toBe(false);
+    expect(result.payload.pages).toHaveLength(6);
+    expect(result.payload.pages[0]?.blocks).toHaveLength(2);
+  });
+
+  it("フクロウ先生は publishReady", () => {
+    const result = resolveDailyNumberPost({
+      scheduledDate: "2026-06-19",
+      todayNumber: 8,
+      character: "owl",
+      messageType: "base",
+    });
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.messageSource).toBe("exact");
+    expect(result.publishReady).toBe(true);
+  });
+
+  it("未対応キャラは data_not_ready", () => {
+    const result = resolveDailyNumberPost({
+      scheduledDate: "2026-06-19",
+      todayNumber: 8,
+      character: "unknown" as "owl",
       messageType: "base",
     });
     expect(result.ok).toBe(false);
@@ -110,9 +139,26 @@ describe("buildCopyText", () => {
     });
     if (!resolved.ok) throw new Error("expected ok");
     const text = buildCanvaCopyText(resolved.payload);
-    expect(text).toContain("すうじ1のあなたへ");
+    expect(text).toContain("すうじ1");
     expect(text).toContain("おすすめのすごしかた");
+    expect(text.match(/おまもりカラー/g)?.length).toBe(1);
+  });
+
+  it("キャプションは LJD 形式・おまもりカラーなし", () => {
+    const resolved = resolveDailyNumberPost({
+      scheduledDate: "2026-06-19",
+      todayNumber: 8,
+      character: "owl",
+      messageType: "base",
+    });
+    if (!resolved.ok) throw new Error("expected ok");
     const caption = buildInstagramCaption(resolved.payload);
-    expect(caption).toContain("今日のすうじは「8」");
+    expect(caption).toContain("あなたのすうじで読む");
+    expect(caption).toContain("【すうじ1のあなたへ】");
+    expect(caption).toContain("おすすめのすごしかた");
+    expect(caption).not.toContain("おまもりカラー");
+    const firstBlock = resolved.payload.pages[0]?.blocks[0];
+    if (!firstBlock) throw new Error("expected block");
+    expect(caption).toContain(firstBlock.body);
   });
 });

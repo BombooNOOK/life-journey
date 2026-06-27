@@ -17,12 +17,12 @@ describe("layoutTextValidation", () => {
     expect(personalBodyBlockIndexForLifePath(33)).toBe(1);
   });
 
-  it("上段は81文字で切れる", () => {
-    const top = DAILY_NUMBER_PERSONAL_BLOCK_LAYOUTS[0]!.body;
-    const text = "あ".repeat(81);
+  it("v2 画像用1文目は最大4行分で切れる", () => {
+    const prefix = "今日の「7」の空気は、";
+    const text = prefix + "あ".repeat(50);
     const issue = validatePersonalBodyText(text, 0);
     expect(issue).not.toBeNull();
-    expect(issue?.shown).toBe(80);
+    expect(issue?.shown).toBe(prefix.length + 13 * 3);
   });
 
   it("下段は86文字で切れる", () => {

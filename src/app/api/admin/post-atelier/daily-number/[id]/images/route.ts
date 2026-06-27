@@ -9,6 +9,10 @@ import {
   getDailyNumberDraftById,
   loadPayloadFromDraft,
 } from "@/lib/admin/post-atelier/daily-number/draftQueries";
+import {
+  formatDailyNumberPublishBlockedError,
+  isDailyNumberPublishReady,
+} from "@/lib/admin/post-atelier/daily-number/messagePublishPolicy";
 import { getViewerEmailFromCookie } from "@/lib/auth/viewer";
 
 export const runtime = "nodejs";
@@ -51,40 +55,55 @@ export async function GET(
     const url = new URL(req.url);
     const slideParam = url.searchParams.get("slide");
 
-    if (slideParam) {
-      const slideIndex = Number.parseInt(slideParam, 10);
-      if (!Number.isFinite(slideIndex) || slideIndex < 1 || slideIndex > 9) {
+    if (!slideParam) {
+      if (
+        !isDailyNumberPublishReady({
+          todayNumber: payload.todayNumber,
+          character: payload.character,
+          messageType: payload.messageType,
+          variantMode: payload.variantMode,
+          lockedVariant: payload.variantMode === "random" ? payload.variant : null,
+        })
+      ) {
         return NextResponse.json(
-          { error: "slide は 1〜9 を指定してください。" },
-          { status: 400, headers: CACHE_HEADERS },
+          { error: formatDailyNumberPublishBlockedError(payload.character) },
+          { status: 403, headers: CACHE_HEADERS },
         );
       }
 
-      const slides = await compositeDailyNumberCarousel(payload);
-      const slide = slides.find((s) => s.index === slideIndex);
-      if (!slide) {
-        return NextResponse.json(
-          { error: "スライドを生成できませんでした。" },
-          { status: 500, headers: CACHE_HEADERS },
-        );
-      }
-
-      return new NextResponse(new Uint8Array(slide.buffer), {
+      const { buffer, basename } = await buildDailyNumberZipBuffer(payload);
+      return new NextResponse(new Uint8Array(buffer), {
         status: 200,
         headers: {
-          "Content-Type": "image/png",
-          "Content-Disposition": `inline; filename="${slide.filename}"`,
+          "Content-Type": "application/zip",
+          "Content-Disposition": `attachment; filename="${basename}.zip"`,
           ...CACHE_HEADERS,
         },
       });
     }
 
-    const { buffer, basename } = await buildDailyNumberZipBuffer(payload);
-    return new NextResponse(new Uint8Array(buffer), {
+    const slides = await compositeDailyNumberCarousel(payload);
+    const slideIndex = Number.parseInt(slideParam, 10);
+    if (!Number.isFinite(slideIndex) || slideIndex < 1 || slideIndex > 9) {
+      return NextResponse.json(
+        { error: "slide は 1〜9 を指定してください。" },
+        { status: 400, headers: CACHE_HEADERS },
+      );
+    }
+
+    const slide = slides.find((s) => s.index === slideIndex);
+    if (!slide) {
+      return NextResponse.json(
+        { error: "スライドを生成できませんでした。" },
+        { status: 500, headers: CACHE_HEADERS },
+      );
+    }
+
+    return new NextResponse(new Uint8Array(slide.buffer), {
       status: 200,
       headers: {
-        "Content-Type": "application/zip",
-        "Content-Disposition": `attachment; filename="${basename}.zip"`,
+        "Content-Type": "image/png",
+        "Content-Disposition": `inline; filename="${slide.filename}"`,
         ...CACHE_HEADERS,
       },
     });

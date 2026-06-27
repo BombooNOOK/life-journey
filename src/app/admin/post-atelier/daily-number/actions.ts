@@ -8,6 +8,7 @@ import { getViewerEmailFromCookie } from "@/lib/auth/viewer";
 import { prisma } from "@/lib/db";
 import { DAILY_NUMBER_SERIES_TITLE } from "@/lib/admin/post-atelier/daily-number/pageLayout";
 import { resolveDailyNumberPost } from "@/lib/admin/post-atelier/daily-number/resolveDailyNumberPost";
+import { formatDailyNumberPublishBlockedError } from "@/lib/admin/post-atelier/daily-number/messagePublishPolicy";
 import { parseDailyNumberDraftFormData } from "@/lib/admin/post-atelier/daily-number/validation";
 
 function revalidateDailyNumberPaths(draftId?: string): void {
@@ -68,7 +69,14 @@ export async function createDailyNumberPost(formData: FormData) {
   if (!resolved.ok) {
     redirectWithError(
       "/admin/post-atelier/daily-number/new",
-      "この今日のすうじのデータは準備中です。フクロウ先生 × base の表紙・個別ページが揃っているか確認してください。",
+      "この今日のすうじのデータは準備中です。今日のすうじ × base の表紙文案・個別ページが揃っているか確認してください。",
+    );
+  }
+
+  if (!resolved.publishReady) {
+    redirectWithError(
+      "/admin/post-atelier/daily-number/new",
+      formatDailyNumberPublishBlockedError(parsed.data.companionType),
     );
   }
 
@@ -130,7 +138,14 @@ export async function updateDailyNumberPost(formData: FormData) {
   if (!resolved.ok) {
     redirectWithError(
       `/admin/post-atelier/daily-number/${id}`,
-      "この今日のすうじのデータは準備中です。フクロウ先生 × base の表紙・個別ページが揃っているか確認してください。",
+      "この今日のすうじのデータは準備中です。今日のすうじ × base の表紙文案・個別ページが揃っているか確認してください。",
+    );
+  }
+
+  if (!resolved.publishReady) {
+    redirectWithError(
+      `/admin/post-atelier/daily-number/${id}`,
+      formatDailyNumberPublishBlockedError(parsed.data.companionType),
     );
   }
 

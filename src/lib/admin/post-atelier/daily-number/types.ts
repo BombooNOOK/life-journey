@@ -125,6 +125,10 @@ export type DailyNumberLookupResult =
       payload: DailyNumberGeneratedPayload;
       canvaCopyText: string;
       captionText: string;
+      /** 個別文案が選択キャラの入稿データか、フクロウ先生へのフォールバックか */
+      messageSource: import("./messagePublishPolicy").DailyNumberMessageSource;
+      /** キャラ別文案が揃っているため保存・ZIP可能 */
+      publishReady: boolean;
     }
   | {
       ok: false;

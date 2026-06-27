@@ -10,11 +10,12 @@ import {
 
 type Props = {
   draftId: string;
+  publishReady: boolean;
 };
 
 const SLIDES = [
   { index: 1, label: "1. 表紙" },
-  { index: 2, label: "2. 説明" },
+  { index: 2, label: "2. 今日のこころ予報の見方" },
   { index: 3, label: "3. すうじ1・2" },
   { index: 4, label: "4. すうじ3・4" },
   { index: 5, label: "5. すうじ5・6" },
@@ -24,7 +25,7 @@ const SLIDES = [
   { index: 9, label: "9. ラストページ" },
 ] as const;
 
-export function DailyNumberImagePreview({ draftId }: Props) {
+export function DailyNumberImagePreview({ draftId, publishReady }: Props) {
   const zipHref = `/api/admin/post-atelier/daily-number/${draftId}/images`;
   const editPath = dailyNumberEditPath(draftId);
   const rulerHref =
@@ -38,7 +39,8 @@ export function DailyNumberImagePreview({ draftId }: Props) {
         <div>
           <h2 className="text-sm font-semibold text-stone-900">Instagram用画像（合成プレビュー）</h2>
           <p className="mt-1 text-xs leading-relaxed text-stone-600">
-            テンプレートに文案を流し込んだ 4:5 画像です。カルーセルは 1 枚目から順に投稿してください。
+            テンプレートに文案を流し込んだ 4:5 画像です。カルーセルは 1 枚目から順に投稿してください。ZIP
+            には Instagram キャプション全文（instagram-caption.txt）も入っています。
           </p>
           {rulerHref ? (
             <p className="mt-2">
@@ -51,12 +53,21 @@ export function DailyNumberImagePreview({ draftId }: Props) {
             </p>
           ) : null}
         </div>
-        <a
-          href={zipHref}
-          className="inline-flex rounded-md bg-emerald-700 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-600"
-        >
-          ZIPダウンロード（9枚）
-        </a>
+        {publishReady ? (
+          <a
+            href={zipHref}
+            className="inline-flex rounded-md bg-emerald-700 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-600"
+          >
+            ZIPダウンロード（画像9枚＋キャプション）
+          </a>
+        ) : (
+          <span
+            className="inline-flex cursor-not-allowed rounded-md bg-stone-300 px-4 py-2 text-sm font-medium text-stone-600"
+            title="キャラ別の個別文案が揃うまでZIPはダウンロードできません"
+          >
+            ZIPダウンロード（キャラ別文案待ち）
+          </span>
+        )}
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">

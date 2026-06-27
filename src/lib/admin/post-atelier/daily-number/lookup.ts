@@ -23,6 +23,18 @@ import { resolveDailyNumberCoverVariant } from "./variantMode";
 import type { DailyNumberClosingVariant } from "./closingVariant";
 import { resolveDailyNumberClosingVariant } from "./closingVariant";
 
+/** 表紙・説明 PNG が揃っているキャラ（個別文案は当面 owl にフォールバック） */
+export const DAILY_NUMBER_CAROUSEL_CHARACTERS: readonly DailyNumberCharacter[] = [
+  "owl",
+  "hedgehog",
+  "squirrel",
+  "frog",
+  "sloth",
+] as const;
+
+/** 個別ページ文案のフォールバック元（Phase 4: exact → owl → base） */
+export const DAILY_NUMBER_MESSAGE_FALLBACK_CHARACTER: DailyNumberCharacter = "owl";
+
 export { selectTodayNumberCover, getTodayNumberColorName, hasTodayNumberBaseCover };
 
 function variantsToValidate(variantMode: DailyNumberVariantMode): DailyNumberCoverVariant[] {
@@ -36,7 +48,8 @@ export function isDailyNumberDataReady(
   variantMode: DailyNumberVariantMode = "A",
 ): boolean {
   if (todayNumber == null) return false;
-  if (character !== "owl" || messageType !== "base") return false;
+  if (messageType !== "base") return false;
+  if (!DAILY_NUMBER_CAROUSEL_CHARACTERS.includes(character)) return false;
 
   return variantsToValidate(variantMode).every((variant) => {
     if (!hasTodayNumberBaseCover(TODAY_NUMBER_COVER_VARIANTS, todayNumber as DailyNumberTodayValue, variant)) {
@@ -69,20 +82,34 @@ export function getPersonalNumberMaster(
   return PERSONAL_NUMBER_MASTERS.find((m) => m.lifePathNumber === lifePathNumber) ?? null;
 }
 
-export function listDailyNumberMessages(input: {
-  todayNumber: DailyNumberTodayValue;
-  character: DailyNumberCharacter;
-  messageType: DailyNumberMessageType;
-  variant?: DailyNumberCoverVariant;
-}): DailyNumberMessage[] {
+export function listDailyNumberMessages(
+  input: {
+    todayNumber: DailyNumberTodayValue;
+    character: DailyNumberCharacter;
+    messageType: DailyNumberMessageType;
+    variant?: DailyNumberCoverVariant;
+  },
+  options?: { allowFallback?: boolean },
+): DailyNumberMessage[] {
   const variant = input.variant ?? "A";
-  return DAILY_NUMBER_MESSAGES.filter(
-    (m) =>
-      m.todayNumber === input.todayNumber &&
-      m.character === input.character &&
-      m.messageType === input.messageType &&
-      (m.variant ?? "A") === variant,
-  );
+  const allowFallback = options?.allowFallback ?? true;
+  const matches = (character: DailyNumberCharacter) =>
+    DAILY_NUMBER_MESSAGES.filter(
+      (m) =>
+        m.todayNumber === input.todayNumber &&
+        m.character === character &&
+        m.messageType === input.messageType &&
+        (m.variant ?? "A") === variant,
+    );
+
+  const exact = matches(input.character);
+  if (exact.length > 0) return exact;
+
+  if (!allowFallback || input.character === DAILY_NUMBER_MESSAGE_FALLBACK_CHARACTER) {
+    return exact;
+  }
+
+  return matches(DAILY_NUMBER_MESSAGE_FALLBACK_CHARACTER);
 }
 
 function findMessage(

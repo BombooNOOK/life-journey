@@ -147,6 +147,8 @@ type SvgTextStyle = {
   lineRules?: readonly MultilineLineRule[];
   /** lineRules 超過行の折り返し（未指定時は最後の rule を継続） */
   continuationLineRule?: MultilineLineRule;
+  /** 指定時は内部折り返しをせずこの行配列をそのまま描画 */
+  wrappedLines?: WrappedMultilineLine[];
   /** この行番号（1始まり）以降の行間（上段の6行目以降の逃がし用） */
   compactFromLine?: number;
   compactLineHeight?: number;
@@ -176,13 +178,18 @@ export function buildSvgTextOverlay(input: {
     if (item.multiline) {
       const lineHeight = style.lineHeight ?? Math.round(style.fontSize * 1.45);
 
-      if (style.lineRules?.length) {
-        const lines = wrapTextWithLineRules(
-          item.text,
-          style.lineRules,
-          style.maxLines ?? style.lineRules.length,
-          style.continuationLineRule,
-        );
+      const lines =
+        style.wrappedLines ??
+        (style.lineRules?.length
+          ? wrapTextWithLineRules(
+              item.text,
+              style.lineRules,
+              style.maxLines ?? style.lineRules.length,
+              style.continuationLineRule,
+            )
+          : null);
+
+      if (lines) {
         parts.push(
           `<text x="${style.x}" y="${style.y}" ${anchorAttr} font-family="DailyNumberKlee" font-size="${style.fontSize}" font-weight="${weight}" fill="${itemFill}">`,
         );
@@ -204,7 +211,7 @@ export function buildSvgTextOverlay(input: {
         continue;
       }
 
-      const lines = wrapTextLines(
+      const plainLines = wrapTextLines(
         item.text,
         style.maxCharsPerLine ?? 20,
         style.maxLines ?? 4,
@@ -215,12 +222,12 @@ export function buildSvgTextOverlay(input: {
       parts.push(
         `<text x="${style.x}" y="${style.y}" ${anchorAttr} font-family="DailyNumberKlee" font-size="${style.fontSize}" font-weight="${weight}" fill="${itemFill}">`,
       );
-      for (let i = 0; i < lines.length; i += 1) {
+      for (let i = 0; i < plainLines.length; i += 1) {
         const dy = i === 0 ? 0 : lineHeight;
         const lineNumber = i + 1;
         const x =
           lineNumber >= indentFromLine ? style.x + indentPx : style.x;
-        parts.push(`<tspan x="${x}" dy="${dy}">${escapeXml(lines[i]!)}</tspan>`);
+        parts.push(`<tspan x="${x}" dy="${dy}">${escapeXml(plainLines[i]!)}</tspan>`);
       }
       parts.push("</text>");
       continue;

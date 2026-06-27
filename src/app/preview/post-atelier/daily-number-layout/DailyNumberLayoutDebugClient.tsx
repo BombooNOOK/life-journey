@@ -13,10 +13,15 @@ import {
   DAILY_NUMBER_LAYOUT_RULER_SQUARE_PX,
   DAILY_NUMBER_LAYOUT_SLIDES,
   layoutAnchorsForSlide,
+  layoutSlideToPageIndex,
   personalLayoutAnchors,
+  personalLayoutSampleTexts,
   type DailyNumberLayoutSlide,
 } from "@/lib/admin/post-atelier/daily-number/layoutDebug";
-import { DAILY_NUMBER_TEMPLATE_SIZE } from "@/lib/admin/post-atelier/daily-number/imageLayout";
+import {
+  DAILY_NUMBER_TEMPLATE_SIZE,
+  DAILY_NUMBER_TEXT_COLOR,
+} from "@/lib/admin/post-atelier/daily-number/imageLayout";
 
 const TEMPLATE_BASE = "/images/post-atelier/daily-number";
 
@@ -32,6 +37,7 @@ export function DailyNumberLayoutDebugClient({
   const [slide, setSlide] = useState<DailyNumberLayoutSlide>(initialSlide);
   const [showGrid, setShowGrid] = useState(true);
   const [showAnchors, setShowAnchors] = useState(true);
+  const [showSampleText, setShowSampleText] = useState(true);
   const [cursor, setCursor] = useState<{ x: number; y: number } | null>(null);
   const [pin, setPin] = useState<{ x: number; y: number } | null>(null);
   const [copyState, setCopyState] = useState<"idle" | "ok" | "fail">("idle");
@@ -39,6 +45,11 @@ export function DailyNumberLayoutDebugClient({
   const slideMeta = DAILY_NUMBER_LAYOUT_SLIDES.find((s) => s.id === slide)!;
   const templateSrc = `${TEMPLATE_BASE}/${slideMeta.templateFile}`;
   const anchors = useMemo(() => layoutAnchorsForSlide(slide), [slide]);
+  const pageIndex = layoutSlideToPageIndex(slide);
+  const sampleTexts = useMemo(
+    () => (pageIndex != null ? personalLayoutSampleTexts(pageIndex) : []),
+    [pageIndex],
+  );
 
   const gridDataUrl = useMemo(() => {
     const svg = buildLayoutGridSvg();
@@ -88,8 +99,10 @@ export function DailyNumberLayoutDebugClient({
           <li>クリックで座標をコピーし、ピンクの {DAILY_NUMBER_LAYOUT_RULER_SQUARE_PX}px 正方形を置けます。</li>
           <li>紫のグリッドは 10px 細線・50px 太線（数値ラベル付き）です。</li>
           <li>オレンジの丸は <code className="rounded bg-white/70 px-1">imageLayout.ts</code> の現在値です。</li>
+          <li>緑のサンプル文字は合成プレビューと同じ Klee One ではありませんが、位置確認用です。</li>
           <li>
-            <strong>個別ページ</strong>は上の「スライド」プルダウンで 3〜8 枚目（page_01〜06）を選ぶか、編集画面の各画像から直接開けます。
+            <strong>個別ページ</strong>は page_01,03,05 が左 / page_02,04,06 が右テンプレです。座標は{" "}
+            <code className="rounded bg-white/70 px-1">imageLayout.ts</code> の PERSONAL_V2_LEFT / RIGHT を編集します。
           </li>
         </ul>
       </div>
@@ -141,6 +154,16 @@ export function DailyNumberLayoutDebugClient({
           <input type="checkbox" checked={showAnchors} onChange={(e) => setShowAnchors(e.target.checked)} />
           配置アンカー
         </label>
+        {pageIndex != null ? (
+          <label className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              checked={showSampleText}
+              onChange={(e) => setShowSampleText(e.target.checked)}
+            />
+            サンプル文字
+          </label>
+        ) : null}
       </div>
 
       <div className="flex flex-wrap items-center gap-4 font-mono text-xs text-stone-700">
@@ -162,10 +185,10 @@ export function DailyNumberLayoutDebugClient({
             2,
           )}
         </pre>
-      ) : slide.startsWith("personal-") ? (
+      ) : slide.startsWith("personal-") && pageIndex != null ? (
         <pre className="overflow-x-auto rounded-lg border border-stone-200 bg-stone-50 p-3 font-mono text-[11px] text-stone-800">
           {JSON.stringify(
-            personalLayoutAnchors().map((a) => ({ id: a.id, x: a.x, y: a.y })),
+            personalLayoutAnchors(pageIndex).map((a) => ({ id: a.id, x: a.x, y: a.y })),
             null,
             2,
           )}
@@ -226,6 +249,27 @@ export function DailyNumberLayoutDebugClient({
                       ({anchor.x}, {anchor.y})
                     </span>
                   </div>
+                </div>
+              ))
+            : null}
+
+          {showSampleText && pageIndex != null
+            ? sampleTexts.map((sample) => (
+                <div
+                  key={sample.id}
+                  className="pointer-events-none absolute max-w-[360px]"
+                  style={{
+                    left: `${sample.x}px`,
+                    top: `${sample.y}px`,
+                    color: DAILY_NUMBER_TEXT_COLOR,
+                    fontSize: `${sample.fontSize}px`,
+                    fontWeight: sample.fontWeight ?? 400,
+                    lineHeight: 1.45,
+                    transform: sample.kind === "point" ? "translate(-50%, -50%)" : undefined,
+                    textAlign: sample.kind === "point" ? "center" : "left",
+                  }}
+                >
+                  {sample.text}
                 </div>
               ))
             : null}

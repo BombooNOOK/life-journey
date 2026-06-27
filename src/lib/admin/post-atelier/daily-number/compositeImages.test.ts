@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { compositeDailyNumberCarousel } from "./compositeImages";
+import { buildDailyNumberZipBuffer, compositeDailyNumberCarousel } from "./compositeImages";
 import { resolveDailyNumberPost } from "./resolveDailyNumberPost";
 import { DAILY_NUMBER_TEMPLATE_SIZE } from "./assetPaths";
 
@@ -43,5 +43,27 @@ describe("compositeDailyNumberCarousel", () => {
     const meta = await sharp(slides[0]!.buffer).metadata();
     expect(meta.width).toBe(DAILY_NUMBER_TEMPLATE_SIZE.widthPx);
     expect(meta.height).toBe(DAILY_NUMBER_TEMPLATE_SIZE.heightPx);
+  });
+
+  it("ZIP に instagram-caption.txt を含む", async () => {
+    const resolved = resolveDailyNumberPost({
+      scheduledDate: "2026-06-19",
+      todayNumber: 8,
+      character: "owl",
+      messageType: "base",
+    });
+    if (!resolved.ok) throw new Error("expected ok");
+
+    const { buffer } = await buildDailyNumberZipBuffer(resolved.payload);
+    const { unzipSync } = await import("fflate");
+    const files = unzipSync(new Uint8Array(buffer));
+    const captionBytes = files["instagram-caption.txt"];
+    expect(captionBytes).toBeDefined();
+
+    const caption = new TextDecoder().decode(captionBytes!);
+    expect(caption).toContain("あなたのすうじで読む");
+    expect(caption).toContain("#BambooNOOK");
+    expect(caption).toContain("【すうじ1のあなたへ】");
+    expect(caption).toContain("プロフィール欄のリンクから");
   });
 });

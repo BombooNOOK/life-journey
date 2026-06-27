@@ -1,15 +1,15 @@
-import { DAILY_NUMBER_COVER_LAYOUT, DAILY_NUMBER_PERSONAL_BLOCK_LAYOUTS } from "./imageLayout";
+import { DAILY_NUMBER_COVER_LAYOUT, DAILY_NUMBER_PERSONAL_BLOCK_LAYOUTS, dailyNumberPersonalBlockLayoutV2 } from "./imageLayout";
 import { DAILY_NUMBER_PERSONAL_PAGE_GROUPS } from "./pageLayout";
+import { extractImageBody } from "./messageTextSplit";
+import { countDailyNumberImageBodyShownChars } from "./imageBodyWrap";
 import type { DailyNumberLifePathValue } from "./types";
 import {
   wrapBulletActionLines,
   wrapTextLines,
-  wrapTextWithLineRules,
-  type MultilineLineRule,
 } from "./svgText";
 
-/** フクロウ先生 v1 基準の推奨上限（上段は実データ最大がこの付近） */
-export const DAILY_NUMBER_PERSONAL_BODY_RECOMMENDED_MAX_CHARS = 78 as const;
+/** v2 画像用本文（1文目）の推奨上限 */
+export const DAILY_NUMBER_PERSONAL_BODY_RECOMMENDED_MAX_CHARS = 52 as const;
 
 export type LayoutTextField = "body" | "action1" | "action2" | "summaryMessage";
 
@@ -23,29 +23,12 @@ export type LayoutTextIssue = {
   blockLabel?: "上段" | "下段";
 };
 
-type BodyLayoutConfig = {
-  lineRules: readonly MultilineLineRule[];
-  maxLines: number;
-  continuationLineRule: MultilineLineRule;
-};
-
-function bodyLayoutConfig(blockIndex: 0 | 1): BodyLayoutConfig {
-  const body = DAILY_NUMBER_PERSONAL_BLOCK_LAYOUTS[blockIndex]!.body;
+function bodyLayoutConfig(blockIndex: 0 | 1) {
+  const body = dailyNumberPersonalBlockLayoutV2(1, blockIndex).body;
   return {
-    lineRules: body.lineRules,
     maxLines: body.maxLines,
-    continuationLineRule: body.continuationLineRule,
+    continuationMaxCharsPerLine: body.imageBodyContinuationMaxCharsPerLine,
   };
-}
-
-function countWrappedChars(
-  text: string,
-  rules: readonly MultilineLineRule[],
-  maxLines: number,
-  continuationRule: MultilineLineRule,
-): number {
-  const lines = wrapTextWithLineRules(text, rules, maxLines, continuationRule);
-  return lines.reduce((sum, line) => sum + line.text.length, 0);
 }
 
 export function personalBodyBlockIndexForLifePath(lifePathNumber: number): 0 | 1 {
@@ -60,11 +43,14 @@ export function validatePersonalBodyText(
   body: string,
   blockIndex: 0 | 1,
 ): LayoutTextIssue | null {
-  const normalized = body.replace(/\s+/g, " ").trim();
+  const normalized = extractImageBody(body);
   if (!normalized) return null;
 
-  const { lineRules, maxLines, continuationLineRule } = bodyLayoutConfig(blockIndex);
-  const shown = countWrappedChars(normalized, lineRules, maxLines, continuationLineRule);
+  const { maxLines, continuationMaxCharsPerLine } = bodyLayoutConfig(blockIndex);
+  const shown = countDailyNumberImageBodyShownChars(normalized, {
+    continuationMaxCharsPerLine,
+    maxLines,
+  });
   if (shown >= normalized.length) return null;
 
   const blockLabel = blockIndex === 0 ? "上段" : "下段";
@@ -75,7 +61,7 @@ export function validatePersonalBodyText(
     length: normalized.length,
     shown,
     message:
-      `個別本文（${blockLabel}）が画像レイアウトに収まりません（${normalized.length}文字中${shown}文字まで表示・最大${maxLines}行）。` +
+      `個別画像本文（${blockLabel}・1文目）がレイアウトに収まりません（${normalized.length}文字中${shown}文字まで表示・最大${maxLines}行）。` +
       ` 推奨は${DAILY_NUMBER_PERSONAL_BODY_RECOMMENDED_MAX_CHARS}文字以内です。`,
   };
 }

@@ -1,9 +1,11 @@
 import {
   DAILY_NUMBER_COVER_LAYOUT,
-  DAILY_NUMBER_PERSONAL_CARD_TOPS,
-  dailyNumberPersonalBlockLayout,
+  DAILY_NUMBER_LAYOUT_SAMPLE,
+  dailyNumberPersonalPageLayout,
+  dailyNumberPersonalPageSide,
   DAILY_NUMBER_TEMPLATE_SIZE,
 } from "./imageLayout";
+import { dailyNumberCharmColorSvgPosition } from "./charmColorLayout";
 
 /** 日記プレビューと同じ考え方：テンプレート設計座標（819×1024）上の 1 辺 */
 export const DAILY_NUMBER_LAYOUT_RULER_SQUARE_PX = 5;
@@ -23,14 +25,14 @@ export const DAILY_NUMBER_LAYOUT_SLIDES: {
   label: string;
   templateFile: string;
 }[] = [
-  { id: "cover", label: "1. 表紙", templateFile: "daily-number-cover-owl.png" },
-  { id: "explain", label: "2. 説明", templateFile: "daily-number-explain-owl.png" },
-  { id: "personal-01", label: "3. 個別 page_01", templateFile: "daily-number-personal-page_01.png" },
-  { id: "personal-02", label: "4. 個別 page_02", templateFile: "daily-number-personal-page_02.png" },
-  { id: "personal-03", label: "5. 個別 page_03", templateFile: "daily-number-personal-page_03.png" },
-  { id: "personal-04", label: "6. 個別 page_04", templateFile: "daily-number-personal-page_04.png" },
-  { id: "personal-05", label: "7. 個別 page_05", templateFile: "daily-number-personal-page_05.png" },
-  { id: "personal-06", label: "8. 個別 page_06", templateFile: "daily-number-personal-page_06.png" },
+  { id: "cover", label: "1. 表紙（完成 PNG）", templateFile: "daily-number-cover-owl.png" },
+  { id: "explain", label: "2. 今日のこころ予報の見方", templateFile: "daily-number-explain-owl.png" },
+  { id: "personal-01", label: "3. 個別 page_01（左）", templateFile: "daily-number-personal-page_01.png" },
+  { id: "personal-02", label: "4. 個別 page_02（右）", templateFile: "daily-number-personal-page_02.png" },
+  { id: "personal-03", label: "5. 個別 page_03（左）", templateFile: "daily-number-personal-page_03.png" },
+  { id: "personal-04", label: "6. 個別 page_04（右）", templateFile: "daily-number-personal-page_04.png" },
+  { id: "personal-05", label: "7. 個別 page_05（左）", templateFile: "daily-number-personal-page_05.png" },
+  { id: "personal-06", label: "8. 個別 page_06（右）", templateFile: "daily-number-personal-page_06.png" },
 ];
 
 export type LayoutAnchor = {
@@ -40,6 +42,12 @@ export type LayoutAnchor = {
   y: number;
   kind: "point" | "topleft";
 };
+
+export function layoutSlideToPageIndex(slide: DailyNumberLayoutSlide): number | null {
+  const match = slide.match(/^personal-(\d{2})$/);
+  if (!match) return null;
+  return Number.parseInt(match[1]!, 10);
+}
 
 export function coverLayoutAnchors(): LayoutAnchor[] {
   const layout = DAILY_NUMBER_COVER_LAYOUT;
@@ -56,43 +64,126 @@ export function coverLayoutAnchors(): LayoutAnchor[] {
   ];
 }
 
-export function personalLayoutAnchors(): LayoutAnchor[] {
-  const anchors: LayoutAnchor[] = [];
+export function personalLayoutAnchors(pageIndex1Based = 1): LayoutAnchor[] {
+  const page = dailyNumberPersonalPageLayout(pageIndex1Based);
+  const sideLabel = dailyNumberPersonalPageSide(pageIndex1Based) === "left" ? "左" : "右";
+  const anchors: LayoutAnchor[] = [
+    {
+      id: "todayNumber",
+      label: `ヘッダー・今日のすうじ（${sideLabel}）`,
+      x: page.header.todayNumber.cx,
+      y: page.header.todayNumber.y,
+      kind: "point",
+    },
+  ];
+
   for (let blockIndex = 0; blockIndex < 2; blockIndex += 1) {
-    const cardTop = DAILY_NUMBER_PERSONAL_CARD_TOPS[blockIndex] ?? DAILY_NUMBER_PERSONAL_CARD_TOPS[0];
-    const layout = dailyNumberPersonalBlockLayout(blockIndex);
+    const layout = page.blocks[blockIndex]!;
     const prefix = blockIndex === 0 ? "上段" : "下段";
+    const colorPos = dailyNumberCharmColorSvgPosition(
+      layout.color.cx,
+      layout.color.fontSize,
+      DAILY_NUMBER_LAYOUT_SAMPLE.colorName,
+    );
     anchors.push(
       {
         id: `body-${blockIndex}`,
-        label: `${prefix}・本文`,
+        label: `${prefix}・本文（1文目）`,
         x: layout.body.x,
-        y: cardTop + layout.body.y,
+        y: layout.body.y,
         kind: "topleft",
       },
       {
         id: `color-${blockIndex}`,
-        label: `${prefix}・おまもりカラー`,
-        x: layout.color.x,
-        y: cardTop + layout.color.y,
-        kind: "point",
-      },
-      {
-        id: `actions-${blockIndex}`,
-        label: `${prefix}・すごしかた`,
-        x: layout.actions.x,
-        y: cardTop + layout.actions.y,
+        label: `${prefix}・おまもりカラー（左端）`,
+        x: colorPos.x,
+        y: layout.color.y,
         kind: "topleft",
       },
     );
   }
+
   return anchors;
 }
 
 export function layoutAnchorsForSlide(slide: DailyNumberLayoutSlide): LayoutAnchor[] {
   if (slide === "cover") return coverLayoutAnchors();
-  if (slide.startsWith("personal-")) return personalLayoutAnchors();
+  const pageIndex = layoutSlideToPageIndex(slide);
+  if (pageIndex != null) return personalLayoutAnchors(pageIndex);
   return [];
+}
+
+export function personalLayoutSampleTexts(pageIndex1Based = 1): Array<{
+  id: string;
+  label: string;
+  text: string;
+  x: number;
+  y: number;
+  kind: "point" | "topleft";
+  fontSize: number;
+  fontWeight?: 400 | 600;
+}> {
+  const page = dailyNumberPersonalPageLayout(pageIndex1Based);
+  const colorTopPos = dailyNumberCharmColorSvgPosition(
+    page.blocks[0]!.color.cx,
+    page.blocks[0]!.color.fontSize,
+    DAILY_NUMBER_LAYOUT_SAMPLE.colorName,
+  );
+  const colorBottomPos = dailyNumberCharmColorSvgPosition(
+    page.blocks[1]!.color.cx,
+    page.blocks[1]!.color.fontSize,
+    DAILY_NUMBER_LAYOUT_SAMPLE.colorName,
+  );
+  return [
+    {
+      id: "todayNumber",
+      label: "今日のすうじ",
+      text: DAILY_NUMBER_LAYOUT_SAMPLE.todayNumber,
+      x: page.header.todayNumber.cx,
+      y: page.header.todayNumber.y,
+      kind: "point",
+      fontSize: page.header.todayNumber.fontSize,
+      fontWeight: page.header.todayNumber.fontWeight,
+    },
+    {
+      id: "body-top",
+      label: "上段・本文",
+      text: DAILY_NUMBER_LAYOUT_SAMPLE.body,
+      x: page.blocks[0]!.body.x,
+      y: page.blocks[0]!.body.y,
+      kind: "topleft",
+      fontSize: page.blocks[0]!.body.fontSize,
+    },
+    {
+      id: "color-top",
+      label: "上段・カラー",
+      text: DAILY_NUMBER_LAYOUT_SAMPLE.colorName,
+      x: colorTopPos.x,
+      y: page.blocks[0]!.color.y,
+      kind: "topleft",
+      fontSize: page.blocks[0]!.color.fontSize,
+      fontWeight: page.blocks[0]!.color.fontWeight,
+    },
+    {
+      id: "body-bottom",
+      label: "下段・本文",
+      text: DAILY_NUMBER_LAYOUT_SAMPLE.body,
+      x: page.blocks[1]!.body.x,
+      y: page.blocks[1]!.body.y,
+      kind: "topleft",
+      fontSize: page.blocks[1]!.body.fontSize,
+    },
+    {
+      id: "color-bottom",
+      label: "下段・カラー",
+      text: DAILY_NUMBER_LAYOUT_SAMPLE.colorName,
+      x: colorBottomPos.x,
+      y: page.blocks[1]!.color.y,
+      kind: "topleft",
+      fontSize: page.blocks[1]!.color.fontSize,
+      fontWeight: page.blocks[1]!.color.fontWeight,
+    },
+  ];
 }
 
 /** 設計座標用のグリッド SVG（合成にも流用可） */

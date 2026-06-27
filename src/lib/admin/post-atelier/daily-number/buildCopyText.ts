@@ -1,18 +1,44 @@
 import type { DailyNumberGeneratedPayload, DailyNumberMessage } from "./types";
-import { DAILY_NUMBER_SERIES_TITLE } from "./pageLayout";
+import { buildBlockCaptionText } from "./messageTextSplit";
+import {
+  CAPTION_ABOUT_KOKORO_YOHO,
+  CAPTION_APP_INVITE,
+  CAPTION_DIARY_INVITE,
+  CAPTION_HASHTAGS,
+  CAPTION_HOW_TO_READ,
+  CAPTION_INTRO_CLOSING,
+  CAPTION_TITLE_LINES,
+} from "./instagramCaptionCopy";
 
-function formatBlockCopy(block: DailyNumberMessage, label: string): string {
+function formatCanvaBlockCopy(block: DailyNumberMessage, label: string): string {
+  const caption = buildBlockCaptionText(block, block.todayNumber);
   const lines = [
     `【${label}】`,
     block.displayName,
     block.subtitle,
-    block.body,
-    `おまもりカラー：${block.colorName}`,
+    caption.fullBody,
     "おすすめのすごしかた：",
     `・${block.actions[0]}`,
     `・${block.actions[1]}`,
   ];
   return lines.join("\n");
+}
+
+function formatInstagramBlockSection(block: DailyNumberMessage): string {
+  const caption = buildBlockCaptionText(block, block.todayNumber);
+  return [
+    `【すうじ${caption.number}のあなたへ】`,
+    caption.fullBody,
+    "",
+    "おすすめのすごしかた",
+    `・${block.actions[0]}`,
+    `・${block.actions[1]}`,
+  ].join("\n");
+}
+
+function buildCaptionIntro(payload: DailyNumberGeneratedPayload): string {
+  const moodLines = [payload.cover.title.trim(), payload.cover.summaryMessage.trim()].filter(Boolean);
+  return [...moodLines, "", CAPTION_INTRO_CLOSING].join("\n");
 }
 
 export function buildCanvaCopyText(payload: DailyNumberGeneratedPayload): string {
@@ -31,7 +57,7 @@ export function buildCanvaCopyText(payload: DailyNumberGeneratedPayload): string
         page.blocks.length === 2
           ? `すうじ${block.lifePathNumber}（ページ${page.pageIndex + 1}-${blockIndex + 1}）`
           : `すうじ${block.lifePathNumber}`;
-      parts.push(formatBlockCopy(block, label));
+      parts.push(formatCanvaBlockCopy(block, label));
       parts.push("");
     });
   }
@@ -40,33 +66,27 @@ export function buildCanvaCopyText(payload: DailyNumberGeneratedPayload): string
 }
 
 export function buildInstagramCaption(payload: DailyNumberGeneratedPayload): string {
-  const hashtags = [
-    "#BambooNOOK",
-    "#LifeJourneyDiary",
-    "#今日のこころ予報",
-    "#今日のすうじ",
-    "#あなたのすうじ",
-    "#数秘術",
-    "#日記",
-  ].join(" ");
+  const blockSections = payload.pages.flatMap((page) =>
+    page.blocks.map((block) => formatInstagramBlockSection(block)),
+  );
 
   return [
-    DAILY_NUMBER_SERIES_TITLE,
+    ...CAPTION_TITLE_LINES,
     "",
-    `今日のすうじは「${payload.todayNumber}」`,
-    payload.cover.title,
-    payload.cover.summaryMessage,
+    buildCaptionIntro(payload),
     "",
-    "今日のすうじは、日付から読む「今日全体の空気」。",
-    "あなたのすうじは、生年月日から読む「あなたらしさ」。",
-    "この2つを合わせて、今日のこころ予報として読んでいます。",
+    CAPTION_ABOUT_KOKORO_YOHO,
     "",
-    "カルーセルでは、あなたのすうじごとのメッセージも載せています。",
-    "自分のすうじのページを見て、今日をやさしく整えてみてください。",
+    CAPTION_HOW_TO_READ,
     "",
-    "Life Journey Diary では、日記を書く日に「今日のすうじ」もお伝えしています。",
-    "今日の記録に残してみませんか。",
+    ...blockSections.flatMap((section, index) =>
+      index < blockSections.length - 1 ? [section, ""] : [section],
+    ),
     "",
-    hashtags,
+    CAPTION_DIARY_INVITE,
+    "",
+    CAPTION_APP_INVITE,
+    "",
+    CAPTION_HASHTAGS.join(" "),
   ].join("\n");
 }

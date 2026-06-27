@@ -5,6 +5,10 @@ import {
   buildDailyNumberGeneratedPayload,
   isDailyNumberDataReady,
 } from "./lookup";
+import {
+  getDailyNumberMessageSource,
+  isDailyNumberPublishReady,
+} from "./messagePublishPolicy";
 import type {
   DailyNumberCharacter,
   DailyNumberClosingVariant,
@@ -61,6 +65,20 @@ export function resolveDailyNumberPost(input: {
     payload,
     canvaCopyText: buildCanvaCopyText(payload),
     captionText: buildInstagramCaption(payload),
+    messageSource: getDailyNumberMessageSource({
+      todayNumber: payload.todayNumber,
+      character: payload.character,
+      messageType: payload.messageType,
+      variantMode: payload.variantMode,
+      lockedVariant: payload.variantMode === "random" ? payload.variant : null,
+    }),
+    publishReady: isDailyNumberPublishReady({
+      todayNumber: payload.todayNumber,
+      character: payload.character,
+      messageType: payload.messageType,
+      variantMode: payload.variantMode,
+      lockedVariant: payload.variantMode === "random" ? payload.variant : null,
+    }),
   };
 }
 
