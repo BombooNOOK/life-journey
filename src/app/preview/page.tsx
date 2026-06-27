@@ -13,6 +13,18 @@ const links: { href: string; label: string; note?: string; highlight?: boolean }
     note: "npm run dev 中のみ。初回は 1〜2 分かかることがあります",
   },
   {
+    href: "/preview/journal-social-post-image",
+    label: "日記・投稿画像（SNS用）",
+    note: "ログイン不要。Cursor内ブラウザ用。npm run dev 中のみ",
+    highlight: true,
+  },
+  {
+    href: "/preview/journal-social-post-image/layout?template=sns02",
+    label: "日記・投稿画像レイアウト定規",
+    note: "819×1024 を 1:1 表示。グリッド・座標クリック・配置確認。npm run dev 中のみ",
+    highlight: true,
+  },
+  {
     href: "/preview/journal-local-draft",
     label: "日記オフライン下書き（バナー UI 確認）",
     note: "npm run dev 中のみ。Simple Browser 用。ログイン不要",
@@ -37,10 +49,15 @@ const links: { href: string; label: string; note?: string; highlight?: boolean }
     highlight: true,
   },
   {
-    href: "/preview/numerology-numbers",
-    label: "数字の意味辞書（1〜9）",
-    note: "「数字の意味を見る」の内容確認。ログイン不要",
+    href: "/preview/numerology-numbers?today=8&month=3&year=6",
+    label: "すうじの意味辞書（1〜9）",
+    note: "カード＋すうじ3つ表示＋1〜9一覧で探す。ログイン不要",
     highlight: true,
+  },
+  {
+    href: "/help/numerology-numbers?today=8&month=3&year=6",
+    label: "すうじの意味（本番 /help）",
+    note: "デプロイ後と同じURL。npm run dev 中も確認可",
   },
   {
     href: "/preview/pdf-design-map",

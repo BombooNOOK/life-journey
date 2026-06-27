@@ -26,12 +26,14 @@ export async function GET(req: Request, { params }: RouteParams) {
     const { entryId } = await params;
     const url = new URL(req.url);
     const title = url.searchParams.get("title") ?? "";
+    const template = url.searchParams.get("template");
     const download = url.searchParams.get("download") === "1";
 
     const context = await loadJournalSocialPostImageContext({
       entryId,
       viewerEmail,
       title,
+      templateId: template,
     });
     if (!context) {
       return NextResponse.json(

@@ -3,25 +3,40 @@
 import { useEffect, useMemo, useState } from "react";
 
 import { extractSocialPostBodyText } from "@/lib/journal/social-post-image/textExtract";
+import {
+  JOURNAL_SOCIAL_POST_TEMPLATES,
+  type JournalSocialPostTemplateId,
+} from "@/lib/journal/social-post-image/templates";
 
 type Props = {
   entryId: string;
   content: string;
 };
 
-function buildPreviewUrl(entryId: string, title: string, cacheKey: number): string {
-  const params = new URLSearchParams({ title, t: String(cacheKey) });
+function buildPreviewUrl(
+  entryId: string,
+  title: string,
+  templateId: JournalSocialPostTemplateId,
+  cacheKey: number,
+): string {
+  const params = new URLSearchParams({ title, template: templateId, t: String(cacheKey) });
   return `/api/journal/entries/${encodeURIComponent(entryId)}/social-post-image?${params.toString()}`;
 }
 
-function buildDownloadUrl(entryId: string, title: string): string {
-  const params = new URLSearchParams({ title, download: "1" });
+function buildDownloadUrl(
+  entryId: string,
+  title: string,
+  templateId: JournalSocialPostTemplateId,
+): string {
+  const params = new URLSearchParams({ title, template: templateId, download: "1" });
   return `/api/journal/entries/${encodeURIComponent(entryId)}/social-post-image?${params.toString()}`;
 }
 
 export function JournalSocialPostImagePanel({ entryId, content }: Props) {
   const [title, setTitle] = useState("");
+  const [templateId, setTemplateId] = useState<JournalSocialPostTemplateId>("sns02");
   const [debouncedTitle, setDebouncedTitle] = useState("");
+  const [debouncedTemplateId, setDebouncedTemplateId] = useState<JournalSocialPostTemplateId>("sns02");
   const [cacheKey, setCacheKey] = useState(0);
   const [loadingPreview, setLoadingPreview] = useState(true);
   const [previewError, setPreviewError] = useState<string | null>(null);
@@ -31,20 +46,44 @@ export function JournalSocialPostImagePanel({ entryId, content }: Props) {
   useEffect(() => {
     const timer = window.setTimeout(() => {
       setDebouncedTitle(title);
+      setDebouncedTemplateId(templateId);
       setCacheKey((value) => value + 1);
       setLoadingPreview(true);
       setPreviewError(null);
     }, 400);
     return () => window.clearTimeout(timer);
-  }, [title]);
+  }, [title, templateId]);
 
-  const previewUrl = buildPreviewUrl(entryId, debouncedTitle, cacheKey);
-  const downloadUrl = buildDownloadUrl(entryId, debouncedTitle);
+  const previewUrl = buildPreviewUrl(entryId, debouncedTitle, debouncedTemplateId, cacheKey);
+  const downloadUrl = buildDownloadUrl(entryId, debouncedTitle, debouncedTemplateId);
 
   return (
     <div className="space-y-5">
       <div className="rounded-xl border border-stone-200 bg-white p-4 sm:p-5">
-        <label className="block space-y-2">
+        <fieldset className="space-y-2">
+          <legend className="text-sm font-medium text-stone-800">デザイン</legend>
+          <div className="flex flex-wrap gap-2">
+            {(Object.keys(JOURNAL_SOCIAL_POST_TEMPLATES) as JournalSocialPostTemplateId[]).map(
+              (id) => (
+                <button
+                  key={id}
+                  type="button"
+                  onClick={() => setTemplateId(id)}
+                  className={[
+                    "min-h-[44px] rounded-md border px-3 py-2 text-sm",
+                    templateId === id
+                      ? "border-stone-700 bg-stone-800 text-white"
+                      : "border-stone-300 bg-white text-stone-700 hover:bg-stone-50",
+                  ].join(" ")}
+                >
+                  {JOURNAL_SOCIAL_POST_TEMPLATES[id].label}
+                </button>
+              ),
+            )}
+          </div>
+        </fieldset>
+
+        <label className="mt-4 block space-y-2">
           <span className="text-sm font-medium text-stone-800">投稿画像用タイトル</span>
           <input
             type="text"
@@ -81,8 +120,10 @@ export function JournalSocialPostImagePanel({ entryId, content }: Props) {
         <div className="relative mx-auto w-full max-w-md overflow-hidden rounded-xl border border-stone-200 bg-[#faf8f5] shadow-sm">
           <div className="relative aspect-[4/5] w-full">
             {loadingPreview ? (
-              <div className="absolute inset-0 flex items-center justify-center bg-stone-100/80 text-sm text-stone-500">
-                生成中…
+              <div className="absolute inset-0 flex items-center justify-center bg-stone-100/80 px-4 text-center text-sm text-stone-600">
+                画像を作っています…
+                <br />
+                初回は10秒ほどかかることがあります
               </div>
             ) : null}
             {previewError ? (
@@ -107,9 +148,6 @@ export function JournalSocialPostImagePanel({ entryId, content }: Props) {
             />
           </div>
         </div>
-        <p className="text-center text-xs text-stone-500">
-          1080×1350（4:5）・背景 PNG は後から差し替え可能です
-        </p>
       </div>
     </div>
   );

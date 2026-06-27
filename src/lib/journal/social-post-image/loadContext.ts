@@ -1,20 +1,25 @@
 import { isAdminEmail } from "@/lib/admin/access";
 import { prisma } from "@/lib/db";
 import { findKanteiOrderForProfile } from "@/lib/profile/orderPerProfile";
-import { formatJournalPreviewDateHeading } from "@/lib/journal/journalRecordDateDisplay";
 import {
   getJournalEntryPhotoRecordForViewer,
   type JournalEntryPhotoRecord,
 } from "@/lib/journal/journalEntryPhoto";
 import { loadJournalEntryPhotoPayload } from "@/lib/journal/journalEntryPhotoResolve";
 import { sanitizeJournalCommentForResponse } from "@/lib/journal/kanteiCommentEligibility";
-import { getCompanionLabel, getMoodMeta, normalizeCompanionType } from "@/lib/journal/meta";
+import { getMoodMeta, normalizeCompanionType } from "@/lib/journal/meta";
 import { buildDiaryNumbers } from "@/lib/journal/numbers";
 
+import {
+  buildJournalSocialPostImageInput,
+} from "./compositeImage";
 import {
   extractSocialPostBodyText,
   extractSocialPostCommentText,
 } from "./textExtract";
+import {
+  normalizeJournalSocialPostTemplateId,
+} from "./templates";
 import type { JournalSocialPostImageInput } from "./types";
 
 const entrySelect = {
@@ -63,6 +68,7 @@ export async function loadJournalSocialPostImageContext(params: {
   entryId: string;
   viewerEmail: string;
   title: string;
+  templateId?: string | null;
 }): Promise<JournalSocialPostImageContext | null> {
   const entry = await findEntryForViewer(params.entryId, params.viewerEmail);
   if (!entry) return null;
@@ -102,21 +108,24 @@ export async function loadJournalSocialPostImageContext(params: {
   });
   const photoBuffer = await resolvePhotoBuffer(photoRecord);
 
-  const companionType = normalizeCompanionType(entry.companionType);
   const moodMeta = getMoodMeta(entry.mood);
+  const templateId = normalizeJournalSocialPostTemplateId(params.templateId);
 
   return {
     entryId: entry.id,
     createdAt: entry.createdAt,
-    input: {
+    input: buildJournalSocialPostImageInput({
+      templateId,
       title: params.title,
-      dateLabel: formatJournalPreviewDateHeading(entry.createdAt),
       bodyExcerpt: extractSocialPostBodyText(entry.content),
       todayNumber: diaryNumbers.today,
+      monthNumber: diaryNumbers.month,
+      yearNumber: diaryNumbers.year,
       moodLabel: moodMeta.label,
       commentExcerpt: commentRaw ? extractSocialPostCommentText(commentRaw) : "",
-      companionLabel: getCompanionLabel(companionType),
       photoBuffer,
-    },
+      companionType: normalizeCompanionType(entry.companionType),
+      createdAt: entry.createdAt,
+    }),
   };
 }
