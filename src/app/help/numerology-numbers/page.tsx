@@ -5,6 +5,7 @@ import { NumerologyNumbersDictionaryView } from "@/components/journal/Numerology
 import { NUMEROLOGY_NUMBERS_PAGE_TITLE } from "@/lib/journal/numerologyNumberMeanings";
 import {
   numerologyNumbersBackLink,
+  parsePersonalDiaryNumbersFromSearchParams,
   parseSafeNumerologyNumbersReturnTo,
 } from "@/lib/journal/numerologyNumbersNav";
 
@@ -13,12 +14,13 @@ export const metadata: Metadata = {
 };
 
 type Props = {
-  searchParams: Promise<{ returnTo?: string }>;
+  searchParams: Promise<{ returnTo?: string; today?: string; month?: string; year?: string }>;
 };
 
 export default async function NumerologyNumbersHelpPage({ searchParams }: Props) {
   const params = await searchParams;
   const safeReturnTo = parseSafeNumerologyNumbersReturnTo(params.returnTo);
+  const personalDiaryNumbers = parsePersonalDiaryNumbersFromSearchParams(params);
   const backLink = numerologyNumbersBackLink(safeReturnTo);
 
   return (
@@ -26,7 +28,7 @@ export default async function NumerologyNumbersHelpPage({ searchParams }: Props)
       <Link href={backLink.href} className="text-sm text-stone-600 hover:text-stone-900">
         ← {backLink.label}
       </Link>
-      <NumerologyNumbersDictionaryView />
+      <NumerologyNumbersDictionaryView personalDiaryNumbers={personalDiaryNumbers} />
     </div>
   );
 }

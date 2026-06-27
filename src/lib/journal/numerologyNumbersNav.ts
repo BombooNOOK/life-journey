@@ -25,11 +25,45 @@ export function parseSafeNumerologyNumbersReturnTo(raw: string | null | undefine
   return decoded;
 }
 
-export function numerologyNumberMeaningsHref(returnTo?: string | null): string {
+export type PersonalDiaryNumbersQuery = {
+  today: number;
+  month: number;
+  year: number;
+};
+
+function parseDiaryNumberQueryValue(raw: string | null | undefined): number | null {
+  const value = Number.parseInt(String(raw ?? "").trim(), 10);
+  if (!Number.isFinite(value) || value < 1 || value > 9) return null;
+  return value;
+}
+
+/** 日記プレビューから渡す today / month / year（1〜9） */
+export function parsePersonalDiaryNumbersFromSearchParams(input: {
+  today?: string | null;
+  month?: string | null;
+  year?: string | null;
+}): PersonalDiaryNumbersQuery | null {
+  const today = parseDiaryNumberQueryValue(input.today);
+  const month = parseDiaryNumberQueryValue(input.month);
+  const year = parseDiaryNumberQueryValue(input.year);
+  if (today == null || month == null || year == null) return null;
+  return { today, month, year };
+}
+
+export function numerologyNumberMeaningsHref(
+  returnTo?: string | null,
+  diaryNumbers?: PersonalDiaryNumbersQuery | null,
+): string {
+  const qs = new URLSearchParams();
   const safe = parseSafeNumerologyNumbersReturnTo(returnTo);
-  if (!safe) return NUMEROLOGY_NUMBER_MEANINGS_PATH;
-  const qs = new URLSearchParams({ returnTo: safe });
-  return `${NUMEROLOGY_NUMBER_MEANINGS_PATH}?${qs.toString()}`;
+  if (safe) qs.set("returnTo", safe);
+  if (diaryNumbers) {
+    qs.set("today", String(diaryNumbers.today));
+    qs.set("month", String(diaryNumbers.month));
+    qs.set("year", String(diaryNumbers.year));
+  }
+  const query = qs.toString();
+  return query ? `${NUMEROLOGY_NUMBER_MEANINGS_PATH}?${query}` : NUMEROLOGY_NUMBER_MEANINGS_PATH;
 }
 
 export function numerologyNumbersBackLink(returnTo: string | null): {

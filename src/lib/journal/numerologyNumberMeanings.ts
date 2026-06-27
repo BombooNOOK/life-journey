@@ -18,7 +18,7 @@ export const DIARY_NUMBER_VALUES: readonly DiaryNumberValue[] = [
 export const NUMEROLOGY_NUMBER_MEANINGS: Record<DiaryNumberValue, NumerologyNumberMeaningEntry> = {
   1: {
     number: 1,
-    title: "始まりの数字",
+    title: "始まりのすうじ",
     keywords: ["新しい一歩", "流れの切り替え", "自分から動く"],
     description:
       "「1」は、新しい流れが立ち上がりやすいテーマです。大きく変える必要はなく、小さな始まりや、気になっていたことへの一歩が意味を持ちやすい数字です。",
@@ -27,7 +27,7 @@ export const NUMEROLOGY_NUMBER_MEANINGS: Record<DiaryNumberValue, NumerologyNumb
   },
   2: {
     number: 2,
-    title: "つながりの数字",
+    title: "つながりのすうじ",
     keywords: ["やり取り", "相手の気持ち", "やわらかな関係"],
     description:
       "「2」は、ひとりで進むより、人とのあいだにある流れが大切になりやすいテーマです。聞くこと、待つこと、気配りが助けになる日です。",
@@ -36,7 +36,7 @@ export const NUMEROLOGY_NUMBER_MEANINGS: Record<DiaryNumberValue, NumerologyNumb
   },
   3: {
     number: 3,
-    title: "表現の数字",
+    title: "表現のすうじ",
     keywords: ["楽しさ", "創造", "心が動くこと"],
     description:
       "「3」は、肩の力を少し抜いて、自分らしい表現や楽しさを大切にしたいテーマです。軽やかな気持ちが、意外とよいヒントになることがあります。",
@@ -45,7 +45,7 @@ export const NUMEROLOGY_NUMBER_MEANINGS: Record<DiaryNumberValue, NumerologyNumb
   },
   4: {
     number: 4,
-    title: "足もとを整える数字",
+    title: "足もとを整えるすうじ",
     keywords: ["安定", "積み重ね", "現実的な見直し"],
     description:
       "「4」は、大きく動くより、今あるものを整えたり、続けられる形にしたりすることに向いているテーマです。地味でも、あとから効く働きをします。",
@@ -54,7 +54,7 @@ export const NUMEROLOGY_NUMBER_MEANINGS: Record<DiaryNumberValue, NumerologyNumb
   },
   5: {
     number: 5,
-    title: "変化の数字",
+    title: "変化のすうじ",
     keywords: ["新しい体験", "柔軟さ", "ちょっとした冒険"],
     description:
       "「5」は、いつもと少し違う選択や、新しい風を取り入れやすいテーマです。予定外の出来事も、別の視点を連れてくることがあります。",
@@ -63,7 +63,7 @@ export const NUMEROLOGY_NUMBER_MEANINGS: Record<DiaryNumberValue, NumerologyNumb
   },
   6: {
     number: 6,
-    title: "育てる・支える数字",
+    title: "育てる・支えるすうじ",
     keywords: ["家族や身近な人", "責任", "あたたかさ"],
     description:
       "「6」は、自分だけでなく、誰かのために力を使う場面が増えやすいテーマです。支えることと、抱え込みすぎないことのバランスが大切です。",
@@ -72,7 +72,7 @@ export const NUMEROLOGY_NUMBER_MEANINGS: Record<DiaryNumberValue, NumerologyNumb
   },
   7: {
     number: 7,
-    title: "見つめ直す数字",
+    title: "見つめ直すすうじ",
     keywords: ["内省", "学び", "立ち止まる時間"],
     description:
       "「7」は、外へ広げるより、少し立ち止まって自分の内側を見つめ直したいテーマです。静かな時間や学びが、次の一歩を支えます。",
@@ -81,7 +81,7 @@ export const NUMEROLOGY_NUMBER_MEANINGS: Record<DiaryNumberValue, NumerologyNumb
   },
   8: {
     number: 8,
-    title: "形にする数字",
+    title: "形にするすうじ",
     keywords: ["達成", "現実", "力を通す"],
     description:
       "「8」は、積み重ねてきたものが現実の中で形になりやすいテーマです。目標や成果に意識が向きやすく、力を通しやすい日でもあります。",
@@ -90,7 +90,7 @@ export const NUMEROLOGY_NUMBER_MEANINGS: Record<DiaryNumberValue, NumerologyNumb
   },
   9: {
     number: 9,
-    title: "区切りの数字",
+    title: "区切りのすうじ",
     keywords: ["整理", "手放す", "ひとつの流れの完了"],
     description:
       "「9」は、ひとつの流れをまとめたり、区切りをつけたりすることに向いているテーマです。手放すことも、次へ進むための準備になります。",
@@ -103,10 +103,15 @@ export const NUMEROLOGY_NUMBER_MEANINGS: Record<DiaryNumberValue, NumerologyNumb
 export const NUMEROLOGY_NUMBER_MEANING_ENTRIES: NumerologyNumberMeaningEntry[] =
   DIARY_NUMBER_VALUES.map((n) => NUMEROLOGY_NUMBER_MEANINGS[n]);
 
-export const NUMEROLOGY_NUMBERS_PAGE_TITLE = "数字の意味を見る";
+export function lookupNumerologyNumberMeaning(value: number): NumerologyNumberMeaningEntry | null {
+  if (!Number.isInteger(value) || value < 1 || value > 9) return null;
+  return NUMEROLOGY_NUMBER_MEANINGS[value as DiaryNumberValue];
+}
+
+export const NUMEROLOGY_NUMBERS_PAGE_TITLE = "すうじの意味を見る";
 
 export const NUMEROLOGY_NUMBERS_PAGE_INTRO =
-  "Life Journey Diary では、日記を書く日に「今日のすうじ」として、今日・今月・今年の数字をお伝えしています。ここでは、1〜9 それぞれがどんなテーマを表すのかをまとめています。";
+  "Life Journey Diary では、日記を書く日に「今日のすうじ」として、今日・今月・今年のすうじをお伝えしています。ここでは、1〜9 それぞれがどんなテーマを表すのかをまとめています。";
 
 export const NUMEROLOGY_NUMBERS_PAGE_FOOTNOTE =
   "未来を決めるものではなく、日々を振り返るヒントです。";
@@ -114,7 +119,7 @@ export const NUMEROLOGY_NUMBERS_PAGE_FOOTNOTE =
 /** 日記ブック最終付近の早見表タイトル */
 export const DIARY_BOOK_NUMEROLOGY_QUICK_REFERENCE_TITLE = "今日のすうじ 早見表";
 
-/** 早見表1行（数字・テーマ名・短いキーワード） */
+/** 早見表1行（すうじ・テーマ名・短いキーワード） */
 export function numerologyNumberQuickReferenceLine(entry: NumerologyNumberMeaningEntry): string {
   const keyword = entry.keywords[0] ?? "";
   return `${entry.number}　${entry.title}　─　${keyword}`;

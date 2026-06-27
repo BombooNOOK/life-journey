@@ -1,16 +1,23 @@
+import { NumerologyPersonalNumbersSection } from "@/components/journal/NumerologyPersonalNumbersSection";
 import {
   NUMEROLOGY_NUMBER_MEANING_ENTRIES,
   NUMEROLOGY_NUMBERS_PAGE_FOOTNOTE,
   NUMEROLOGY_NUMBERS_PAGE_INTRO,
   NUMEROLOGY_NUMBERS_PAGE_TITLE,
 } from "@/lib/journal/numerologyNumberMeanings";
+import type { PersonalDiaryNumbersQuery } from "@/lib/journal/numerologyNumbersNav";
 
 type Props = {
   /** 校正プレビュー用にタイトル上の余白を詰める */
   compact?: boolean;
+  /** 日記プレビューから渡された今日・月・年のすうじ */
+  personalDiaryNumbers?: PersonalDiaryNumbersQuery | null;
 };
 
-export function NumerologyNumbersDictionaryView({ compact = false }: Props) {
+export function NumerologyNumbersDictionaryView({
+  compact = false,
+  personalDiaryNumbers = null,
+}: Props) {
   return (
     <div className={compact ? "space-y-5" : "space-y-6"}>
       <div>
@@ -27,9 +34,13 @@ export function NumerologyNumbersDictionaryView({ compact = false }: Props) {
         <p className="mt-2 text-xs leading-relaxed text-stone-500">{NUMEROLOGY_NUMBERS_PAGE_FOOTNOTE}</p>
       </div>
 
+      {personalDiaryNumbers ? (
+        <NumerologyPersonalNumbersSection diaryNumbers={personalDiaryNumbers} />
+      ) : null}
+
       <section aria-labelledby="numerology-numbers-list-heading" className="space-y-3">
         <h2 id="numerology-numbers-list-heading" className="text-base font-semibold text-stone-900">
-          1〜9の数字一覧
+          1〜9のすうじ一覧
         </h2>
         <ul className="grid gap-3 sm:grid-cols-2">
           {NUMEROLOGY_NUMBER_MEANING_ENTRIES.map((entry) => (
