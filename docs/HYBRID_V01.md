@@ -41,7 +41,15 @@ npm run cap:open:android
 
 URL を変えたら **必ず** `CAPACITOR_SERVER_URL=... npm run cap:sync` を再実行してください。
 
-## v0.1 確認チェックリスト
+## 実機・シミュレータ確認（次のステップ）
+
+**v0.1 環境構築は完了。動作確認は未完了。**
+
+詳しい手順・チェックリスト・エラー報告フォーマット:
+
+👉 **[HYBRID_V01_VERIFICATION.md](./HYBRID_V01_VERIFICATION.md)**
+
+## v0.1 確認チェックリスト（概要）
 
 - [ ] アプリ起動
 - [ ] Firebase ログイン
