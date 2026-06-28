@@ -27,6 +27,7 @@ export async function GET(req: Request, { params }: RouteParams) {
     const { entryId } = await params;
     const url = new URL(req.url);
     const title = url.searchParams.get("title") ?? "";
+    const subtitle = url.searchParams.get("subtitle");
     const template = url.searchParams.get("template");
     const download = url.searchParams.get("download") === "1";
 
@@ -36,6 +37,7 @@ export async function GET(req: Request, { params }: RouteParams) {
       entryId,
       viewerEmail,
       title,
+      subtitle,
       templateId: template,
       photoAdjust,
     });

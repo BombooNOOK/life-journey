@@ -149,10 +149,17 @@ type SvgTextStyle = {
   continuationLineRule?: MultilineLineRule;
   /** 指定時は内部折り返しをせずこの行配列をそのまま描画 */
   wrappedLines?: WrappedMultilineLine[];
+  /** 時計回りが正。textAnchor の基準点 (x,y) を中心に回転 */
+  rotateDeg?: number;
   /** この行番号（1始まり）以降の行間（上段の6行目以降の逃がし用） */
   compactFromLine?: number;
   compactLineHeight?: number;
 };
+
+function svgRotateTransform(deg: number | undefined, x: number, y: number): string {
+  if (deg == null || deg === 0) return "";
+  return ` transform="rotate(${deg}, ${x}, ${y})"`;
+}
 
 export function buildSvgTextOverlay(input: {
   width: number;
@@ -168,6 +175,7 @@ export function buildSvgTextOverlay(input: {
     const anchor = style.textAnchor ?? "start";
     const weight = style.fontWeight ?? 400;
     const itemFill = style.fill ?? fill;
+    const rotateTransform = svgRotateTransform(style.rotateDeg, style.x, style.y);
     const anchorAttr =
       anchor === "middle"
         ? `text-anchor="middle"`
@@ -191,7 +199,7 @@ export function buildSvgTextOverlay(input: {
 
       if (lines) {
         parts.push(
-          `<text x="${style.x}" y="${style.y}" ${anchorAttr} font-family="DailyNumberKlee" font-size="${style.fontSize}" font-weight="${weight}" fill="${itemFill}">`,
+          `<text x="${style.x}" y="${style.y}"${rotateTransform} ${anchorAttr} font-family="DailyNumberKlee" font-size="${style.fontSize}" font-weight="${weight}" fill="${itemFill}">`,
         );
         for (let i = 0; i < lines.length; i += 1) {
           const line = lines[i]!;
@@ -220,7 +228,7 @@ export function buildSvgTextOverlay(input: {
       const indentChars = style.indentChars ?? 0;
       const indentPx = indentChars * style.fontSize;
       parts.push(
-        `<text x="${style.x}" y="${style.y}" ${anchorAttr} font-family="DailyNumberKlee" font-size="${style.fontSize}" font-weight="${weight}" fill="${itemFill}">`,
+        `<text x="${style.x}" y="${style.y}"${rotateTransform} ${anchorAttr} font-family="DailyNumberKlee" font-size="${style.fontSize}" font-weight="${weight}" fill="${itemFill}">`,
       );
       for (let i = 0; i < plainLines.length; i += 1) {
         const dy = i === 0 ? 0 : lineHeight;
@@ -234,7 +242,7 @@ export function buildSvgTextOverlay(input: {
     }
 
     parts.push(
-      `<text x="${style.x}" y="${style.y}" ${anchorAttr} font-family="DailyNumberKlee" font-size="${style.fontSize}" font-weight="${weight}" fill="${itemFill}">${escapeXml(item.text)}</text>`,
+      `<text x="${style.x}" y="${style.y}"${rotateTransform} ${anchorAttr} font-family="DailyNumberKlee" font-size="${style.fontSize}" font-weight="${weight}" fill="${itemFill}">${escapeXml(item.text)}</text>`,
     );
   }
 

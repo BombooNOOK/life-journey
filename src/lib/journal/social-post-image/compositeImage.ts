@@ -15,14 +15,17 @@ import { loadJournalSocialPostTemplateBackground, loadJournalSocialPostTemplateP
 import {
   JOURNAL_SOCIAL_POST_TEMPLATE_SIZE,
   JOURNAL_SOCIAL_POST_TEMPLATES,
+  resolveJournalSocialPostPhotoRenderSize,
   type JournalSocialPostTemplateId,
   type JournalSocialPostTextStyle,
 } from "./templates";
 import {
-  computeSquarePhotoCropRect,
   DEFAULT_JOURNAL_SOCIAL_POST_PHOTO_ADJUST,
+  computeSquarePhotoCropRect,
   type JournalSocialPostPhotoAdjust,
 } from "./photoAdjust";
+import { rotatePhotoLayerAroundTopLeft, journalSocialPostPhotoCompositePosition } from "./photoRotate";
+import { DEFAULT_JOURNAL_SOCIAL_POST_SUBTITLE } from "./textExtract";
 import { JOURNAL_SOCIAL_POST_IMAGE_SIZE } from "./types";
 import type { JournalSocialPostImageInput, JournalSocialPostImageResult } from "./types";
 
@@ -33,10 +36,14 @@ async function buildPhotoLayer(
     height: number;
     fit: "cover" | "contain";
     borderRadiusPx?: number;
+    rotateDeg?: number;
+    displayScale?: number;
   },
   photoAdjust: JournalSocialPostPhotoAdjust = DEFAULT_JOURNAL_SOCIAL_POST_PHOTO_ADJUST,
 ): Promise<Buffer | null> {
   if (!photoBuffer) return null;
+
+  const renderSize = resolveJournalSocialPostPhotoRenderSize(photo);
 
   const rotated = sharp(photoBuffer).rotate();
   const meta = await rotated.metadata();
@@ -46,19 +53,19 @@ async function buildPhotoLayer(
   const crop = computeSquarePhotoCropRect({
     sourceWidth,
     sourceHeight,
-    targetWidth: photo.width,
-    targetHeight: photo.height,
+    targetWidth: renderSize.width,
+    targetHeight: renderSize.height,
     adjust: photoAdjust,
   });
 
   let pipeline = sharp(photoBuffer).rotate().extract(crop);
   if (photo.fit === "contain") {
-    pipeline = pipeline.resize(photo.width, photo.height, {
+    pipeline = pipeline.resize(renderSize.width, renderSize.height, {
       fit: "contain",
       background: { r: 255, g: 255, b: 255, alpha: 0 },
     });
   } else {
-    pipeline = pipeline.resize(photo.width, photo.height);
+    pipeline = pipeline.resize(renderSize.width, renderSize.height);
   }
 
   let layer = await pipeline.ensureAlpha().png().toBuffer();
@@ -66,14 +73,24 @@ async function buildPhotoLayer(
   const radius = photo.borderRadiusPx;
   if (radius && radius > 0) {
     const mask = Buffer.from(
-      `<svg xmlns="http://www.w3.org/2000/svg" width="${photo.width}" height="${photo.height}">
-        <rect x="0" y="0" width="${photo.width}" height="${photo.height}" rx="${radius}" ry="${radius}" fill="white"/>
+      `<svg xmlns="http://www.w3.org/2000/svg" width="${renderSize.width}" height="${renderSize.height}">
+        <rect x="0" y="0" width="${renderSize.width}" height="${renderSize.height}" rx="${radius}" ry="${radius}" fill="white"/>
       </svg>`,
     );
     layer = await sharp(layer)
       .composite([{ input: mask, blend: "dest-in" }])
       .png()
       .toBuffer();
+  }
+
+  const rotateDeg = photo.rotateDeg ?? 0;
+  if (rotateDeg !== 0) {
+    layer = await rotatePhotoLayerAroundTopLeft(
+      layer,
+      renderSize.width,
+      renderSize.height,
+      rotateDeg,
+    );
   }
 
   return layer;
@@ -95,6 +112,7 @@ function textItem(
       fontWeight: style.fontWeight ?? 400,
       fill: style.fill ?? "#4a3728",
       textAnchor: style.textAnchor ?? "start",
+      rotateDeg: style.rotateDeg,
       maxCharsPerLine: style.maxCharsPerLine,
       maxLines: style.maxLines,
     },
@@ -106,8 +124,6 @@ function buildTextOverlay(
   templateId: JournalSocialPostTemplateId,
 ): Buffer {
   const layout = JOURNAL_SOCIAL_POST_TEMPLATES[templateId];
-  const titleText = input.title.trim() || "（タイトル未入力）";
-  const bodyText = input.bodyExcerpt.trim();
   const moodText = input.moodLabel.trim() || "—";
   const commentText = input.commentExcerpt.trim();
 
@@ -130,10 +146,26 @@ function buildTextOverlay(
     items.push(textItem(input.dateScrapbook, layout.dateScrapbook));
   }
 
-  items.push(textItem(titleText, layout.title, true));
-
-  if (bodyText) {
-    items.push(textItem(bodyText, layout.body, true));
+  if (templateId === "sns02") {
+    const titleText = input.title.trim() || "（タイトル未入力）";
+    items.push(textItem(titleText, layout.title, true));
+    const bodyText = input.bodyExcerpt.trim();
+    if (bodyText) {
+      items.push(textItem(bodyText, layout.body, true));
+    }
+  } else {
+    const titleText = input.title.trim();
+    if (titleText) {
+      items.push(textItem(titleText, layout.title, true));
+    }
+    if (layout.subtitle) {
+      const subtitleText = input.subtitle.trim() || DEFAULT_JOURNAL_SOCIAL_POST_SUBTITLE;
+      items.push(textItem(subtitleText, layout.subtitle, true));
+    }
+    const bodyText = input.bodyExcerpt.trim();
+    if (bodyText) {
+      items.push(textItem(bodyText, layout.body, true));
+    }
   }
 
   for (let i = 0; i < 3; i += 1) {
@@ -157,6 +189,7 @@ export function buildJournalSocialPostImageInput(params: {
   templateId: JournalSocialPostTemplateId;
   title: string;
   bodyExcerpt: string;
+  subtitle: string;
   todayNumber: number | null;
   monthNumber: number | null;
   yearNumber: number | null;
@@ -172,6 +205,7 @@ export function buildJournalSocialPostImageInput(params: {
     templateId: params.templateId,
     title: params.title,
     bodyExcerpt: params.bodyExcerpt,
+    subtitle: params.subtitle,
     todayNumber: params.todayNumber,
     monthNumber: params.monthNumber,
     yearNumber: params.yearNumber,
@@ -199,14 +233,18 @@ export function journalSocialPostImageBasename(date: Date, templateId: JournalSo
 
 export async function compositeJournalSocialPostImage(
   input: JournalSocialPostImageInput,
-  options?: { createdAt?: Date },
+  options?: { createdAt?: Date; photoRotateDeg?: number },
 ): Promise<JournalSocialPostImageResult> {
   const layout = JOURNAL_SOCIAL_POST_TEMPLATES[input.templateId];
+  const photoStyle = {
+    ...layout.photo,
+    rotateDeg: options?.photoRotateDeg ?? layout.photo.rotateDeg ?? 0,
+  };
   const background = loadJournalSocialPostTemplateBackground(input.templateId, input.companionType);
   const photoOverlay = await loadJournalSocialPostTemplatePhotoOverlay(input.templateId);
   const photoLayer = await buildPhotoLayer(
     input.photoBuffer,
-    layout.photo,
+    photoStyle,
     input.photoAdjust ?? DEFAULT_JOURNAL_SOCIAL_POST_PHOTO_ADJUST,
   );
   const faceLayer = layout.companionFace
@@ -217,10 +255,16 @@ export async function compositeJournalSocialPostImage(
 
   const composites: sharp.OverlayOptions[] = [];
   if (photoLayer) {
+    const rotateDeg = photoStyle.rotateDeg ?? 0;
+    const renderSize = resolveJournalSocialPostPhotoRenderSize(photoStyle);
+    const pos = journalSocialPostPhotoCompositePosition(
+      { ...layout.photo, width: renderSize.width, height: renderSize.height },
+      rotateDeg,
+    );
     composites.push({
       input: photoLayer,
-      top: layout.photo.y,
-      left: layout.photo.x,
+      top: pos.top,
+      left: pos.left,
     });
   }
   if (photoOverlay) {

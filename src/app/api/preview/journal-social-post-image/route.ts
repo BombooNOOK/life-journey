@@ -8,7 +8,16 @@ import {
   compositeJournalSocialPostImage,
 } from "@/lib/journal/social-post-image/compositeImage";
 import { parseJournalSocialPostPhotoAdjustFromSearchParams } from "@/lib/journal/social-post-image/photoAdjust";
-import { extractSocialPostBodyText, extractSocialPostCommentText } from "@/lib/journal/social-post-image/textExtract";
+import {
+  clampJournalSocialPostTitle,
+  extractSocialPostBodyText,
+  extractSocialPostCommentText,
+  resolveJournalSocialPostSubtitle,
+} from "@/lib/journal/social-post-image/textExtract";
+import {
+  JOURNAL_SOCIAL_POST_PREVIEW_DEMO_COMMENT,
+  JOURNAL_SOCIAL_POST_PREVIEW_DEMO_CONTENT,
+} from "@/lib/journal/social-post-image/previewDemoContent";
 import { normalizeJournalSocialPostTemplateId } from "@/lib/journal/social-post-image/templates";
 
 export const runtime = "nodejs";
@@ -18,11 +27,6 @@ const DEMO_PHOTO_PATH = path.join(
   "public/images/home-mock/demo-journal-photo.png",
 );
 
-const DEMO_CONTENT =
-  "今日はモグの病院最終日。おでかけ前の、かわいいひとコマ。";
-
-const DEMO_COMMENT = "動いたことが、やさしく次の流れにつながる日。";
-
 /** 開発中だけ：ログインなしで投稿画像の見た目を確認 */
 export async function GET(req: Request) {
   if (process.env.NODE_ENV !== "development") {
@@ -31,9 +35,14 @@ export async function GET(req: Request) {
 
   try {
     const url = new URL(req.url);
-    const title = url.searchParams.get("title") ?? "イスの下からこんにちは";
     const templateId = normalizeJournalSocialPostTemplateId(url.searchParams.get("template"));
+    const rawTitle = url.searchParams.get("title") ?? "イスの下からこんに";
+    const title = clampJournalSocialPostTitle(rawTitle, templateId);
+    const subtitle = resolveJournalSocialPostSubtitle(url.searchParams.get("subtitle"));
     const download = url.searchParams.get("download") === "1";
+    const photoRotateRaw = url.searchParams.get("photoRotate");
+    const photoRotateDeg =
+      photoRotateRaw != null && photoRotateRaw !== "" ? Number(photoRotateRaw) : undefined;
 
     const photoBuffer = fs.existsSync(DEMO_PHOTO_PATH)
       ? fs.readFileSync(DEMO_PHOTO_PATH)
@@ -45,19 +54,23 @@ export async function GET(req: Request) {
     const input = buildJournalSocialPostImageInput({
       templateId,
       title,
-      bodyExcerpt: extractSocialPostBodyText(DEMO_CONTENT),
+      bodyExcerpt: extractSocialPostBodyText(JOURNAL_SOCIAL_POST_PREVIEW_DEMO_CONTENT, templateId),
+      subtitle,
       todayNumber: 4,
       monthNumber: 3,
       yearNumber: 6,
       moodLabel: "移動・おでかけをした",
-      commentExcerpt: extractSocialPostCommentText(DEMO_COMMENT),
+      commentExcerpt: extractSocialPostCommentText(JOURNAL_SOCIAL_POST_PREVIEW_DEMO_COMMENT),
       photoBuffer,
       photoAdjust,
       companionType: "owl",
       createdAt,
     });
 
-    const { buffer, basename } = await compositeJournalSocialPostImage(input, { createdAt });
+    const { buffer, basename } = await compositeJournalSocialPostImage(input, {
+      createdAt,
+      photoRotateDeg: Number.isFinite(photoRotateDeg) ? photoRotateDeg : undefined,
+    });
 
     return new NextResponse(new Uint8Array(buffer), {
       status: 200,

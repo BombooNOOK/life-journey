@@ -16,6 +16,8 @@ import {
 import {
   extractSocialPostBodyText,
   extractSocialPostCommentText,
+  clampJournalSocialPostTitle,
+  resolveJournalSocialPostSubtitle,
 } from "./textExtract";
 import {
   normalizeJournalSocialPostTemplateId,
@@ -69,6 +71,7 @@ export async function loadJournalSocialPostImageContext(params: {
   entryId: string;
   viewerEmail: string;
   title: string;
+  subtitle?: string | null;
   templateId?: string | null;
   photoAdjust?: JournalSocialPostPhotoAdjust;
 }): Promise<JournalSocialPostImageContext | null> {
@@ -118,8 +121,9 @@ export async function loadJournalSocialPostImageContext(params: {
     createdAt: entry.createdAt,
     input: buildJournalSocialPostImageInput({
       templateId,
-      title: params.title,
-      bodyExcerpt: extractSocialPostBodyText(entry.content),
+      title: clampJournalSocialPostTitle(params.title, templateId),
+      bodyExcerpt: extractSocialPostBodyText(entry.content, templateId),
+      subtitle: resolveJournalSocialPostSubtitle(params.subtitle),
       todayNumber: diaryNumbers.today,
       monthNumber: diaryNumbers.month,
       yearNumber: diaryNumbers.year,

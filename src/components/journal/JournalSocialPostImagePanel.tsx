@@ -17,7 +17,12 @@ import {
   getDefaultOrStoredPhotoAdjust,
   writeJournalSocialPostPhotoAdjustToStorage,
 } from "@/lib/journal/social-post-image/photoAdjustStorage";
-import { extractSocialPostBodyText } from "@/lib/journal/social-post-image/textExtract";
+import {
+  DEFAULT_JOURNAL_SOCIAL_POST_SUBTITLE,
+  extractSocialPostBodyText,
+  SOCIAL_POST_SUBTITLE_MAX_CHARS,
+  socialPostTitleMaxChars,
+} from "@/lib/journal/social-post-image/textExtract";
 import {
   JOURNAL_SOCIAL_POST_TEMPLATES,
   type JournalSocialPostTemplateId,
@@ -30,14 +35,28 @@ type Props = {
   photoSrc?: string | null;
 };
 
+function appendTextParams(
+  params: URLSearchParams,
+  title: string,
+  subtitle: string,
+  templateId: JournalSocialPostTemplateId,
+): void {
+  params.set("title", title);
+  if (templateId === "sns03") {
+    params.set("subtitle", subtitle);
+  }
+}
+
 function buildPreviewUrl(
   entryId: string,
   title: string,
+  subtitle: string,
   templateId: JournalSocialPostTemplateId,
   photoAdjust: JournalSocialPostPhotoAdjust,
   cacheKey: number,
 ): string {
-  const params = new URLSearchParams({ title, template: templateId, t: String(cacheKey) });
+  const params = new URLSearchParams({ template: templateId, t: String(cacheKey) });
+  appendTextParams(params, title, subtitle, templateId);
   appendJournalSocialPostPhotoAdjustToSearchParams(params, photoAdjust);
   return `/api/journal/entries/${encodeURIComponent(entryId)}/social-post-image?${params.toString()}`;
 }
@@ -45,10 +64,12 @@ function buildPreviewUrl(
 function buildDownloadUrl(
   entryId: string,
   title: string,
+  subtitle: string,
   templateId: JournalSocialPostTemplateId,
   photoAdjust: JournalSocialPostPhotoAdjust,
 ): string {
-  const params = new URLSearchParams({ title, template: templateId, download: "1" });
+  const params = new URLSearchParams({ template: templateId, download: "1" });
+  appendTextParams(params, title, subtitle, templateId);
   appendJournalSocialPostPhotoAdjustToSearchParams(params, photoAdjust);
   return `/api/journal/entries/${encodeURIComponent(entryId)}/social-post-image?${params.toString()}`;
 }
@@ -60,6 +81,7 @@ export function JournalSocialPostImagePanel({
   photoSrc,
 }: Props) {
   const [title, setTitle] = useState("");
+  const [subtitle, setSubtitle] = useState(DEFAULT_JOURNAL_SOCIAL_POST_SUBTITLE);
   const [templateId, setTemplateId] = useState<JournalSocialPostTemplateId>("sns02");
   const [photoAdjustDraft, setPhotoAdjustDraft] = useState<JournalSocialPostPhotoAdjust>(
     DEFAULT_JOURNAL_SOCIAL_POST_PHOTO_ADJUST,
@@ -68,20 +90,27 @@ export function JournalSocialPostImagePanel({
     DEFAULT_JOURNAL_SOCIAL_POST_PHOTO_ADJUST,
   );
   const [debouncedTitle, setDebouncedTitle] = useState("");
+  const [debouncedSubtitle, setDebouncedSubtitle] = useState(DEFAULT_JOURNAL_SOCIAL_POST_SUBTITLE);
   const [debouncedTemplateId, setDebouncedTemplateId] = useState<JournalSocialPostTemplateId>("sns02");
-  const [cacheKey, setCacheKey] = useState(0);
+  const [cacheKey, setCacheKey] = useState(() => Date.now());
   const [loadingPreview, setLoadingPreview] = useState(true);
   const [previewError, setPreviewError] = useState<string | null>(null);
 
-  const bodyPreview = useMemo(() => extractSocialPostBodyText(content), [content]);
+  const bodyPreview = useMemo(
+    () => extractSocialPostBodyText(content, templateId),
+    [content, templateId],
+  );
   const photoDisplaySrc = photoSrc?.trim() ?? "";
   const showPhotoAdjust = hasPhoto && photoDisplaySrc.length > 0;
   const templatePhoto = JOURNAL_SOCIAL_POST_TEMPLATES[templateId].photo;
   const hasPendingPhotoApply = !journalSocialPostPhotoAdjustEquals(photoAdjustDraft, appliedPhotoAdjust);
+  const isSns03 = templateId === "sns03";
+  const titleMaxChars = socialPostTitleMaxChars(templateId);
 
   const previewUrl = buildPreviewUrl(
     entryId,
     debouncedTitle,
+    debouncedSubtitle,
     debouncedTemplateId,
     appliedPhotoAdjust,
     cacheKey,
@@ -89,6 +118,7 @@ export function JournalSocialPostImagePanel({
   const downloadUrl = buildDownloadUrl(
     entryId,
     debouncedTitle,
+    debouncedSubtitle,
     debouncedTemplateId,
     appliedPhotoAdjust,
   );
@@ -108,11 +138,12 @@ export function JournalSocialPostImagePanel({
   useEffect(() => {
     const timer = window.setTimeout(() => {
       setDebouncedTitle(title);
+      setDebouncedSubtitle(subtitle);
       setDebouncedTemplateId(templateId);
       setCacheKey((value) => value + 1);
     }, 400);
     return () => window.clearTimeout(timer);
-  }, [title, templateId]);
+  }, [title, subtitle, templateId]);
 
   useEffect(() => {
     setLoadingPreview(true);
@@ -156,26 +187,68 @@ export function JournalSocialPostImagePanel({
           </div>
         </fieldset>
 
-        <label className="mt-4 block space-y-2">
-          <span className="text-sm font-medium text-stone-800">投稿画像用タイトル</span>
-          <input
-            type="text"
-            value={title}
-            onChange={(event) => setTitle(event.target.value)}
-            placeholder="SNS用のタイトルを入力"
-            maxLength={40}
-            className="w-full rounded-md border border-stone-300 px-3 py-2 text-base text-stone-900"
-          />
-        </label>
-        <p className="mt-2 text-xs leading-relaxed text-stone-500">
-          日記本体には保存されません。Instagram などに載せる見出しとして使います。
-        </p>
-        <div className="mt-4 rounded-lg border border-dashed border-stone-200 bg-stone-50/80 px-3 py-3">
-          <p className="text-xs font-medium text-stone-600">本文（画像に載る抜粋・自動）</p>
-          <p className="mt-1 text-sm leading-relaxed text-stone-800">
-            {bodyPreview || "（本文なし）"}
-          </p>
-        </div>
+        {isSns03 ? (
+          <>
+            <label className="mt-4 block space-y-2">
+              <span className="text-sm font-medium text-stone-800">タイトル</span>
+              <input
+                type="text"
+                value={title}
+                onChange={(event) => setTitle(event.target.value)}
+                placeholder="画像上部の大見出し"
+                maxLength={titleMaxChars}
+                className="w-full rounded-md border border-stone-300 px-3 py-2 text-base text-stone-900"
+              />
+            </label>
+            <p className="mt-2 text-xs leading-relaxed text-stone-500">
+              画像上部の大見出しです。空欄のままだと載せません。最大 {titleMaxChars} 文字（1行）。
+            </p>
+
+            <label className="mt-4 block space-y-2">
+              <span className="text-sm font-medium text-stone-800">サブタイトル</span>
+              <input
+                type="text"
+                value={subtitle}
+                onChange={(event) => setSubtitle(event.target.value)}
+                placeholder={DEFAULT_JOURNAL_SOCIAL_POST_SUBTITLE}
+                maxLength={SOCIAL_POST_SUBTITLE_MAX_CHARS}
+                className="w-full rounded-md border border-stone-300 px-3 py-2 text-base text-stone-900"
+              />
+            </label>
+            <p className="mt-2 text-xs leading-relaxed text-stone-500">
+              緑の帯に載る短い一文です。空欄のままだと「{DEFAULT_JOURNAL_SOCIAL_POST_SUBTITLE}」が使われます。
+            </p>
+            <div className="mt-4 rounded-lg border border-dashed border-stone-200 bg-stone-50/80 px-3 py-3">
+              <p className="text-xs font-medium text-stone-600">本文（画像に載る抜粋・自動）</p>
+              <p className="mt-1 text-sm leading-relaxed text-stone-800">
+                {bodyPreview || "（本文なし）"}
+              </p>
+            </div>
+          </>
+        ) : (
+          <>
+            <label className="mt-4 block space-y-2">
+              <span className="text-sm font-medium text-stone-800">投稿画像用タイトル</span>
+              <input
+                type="text"
+                value={title}
+                onChange={(event) => setTitle(event.target.value)}
+                placeholder="SNS用のタイトルを入力"
+                maxLength={titleMaxChars}
+                className="w-full rounded-md border border-stone-300 px-3 py-2 text-base text-stone-900"
+              />
+            </label>
+            <p className="mt-2 text-xs leading-relaxed text-stone-500">
+              日記本体には保存されません。最大 {titleMaxChars} 文字（1行）。
+            </p>
+            <div className="mt-4 rounded-lg border border-dashed border-stone-200 bg-stone-50/80 px-3 py-3">
+              <p className="text-xs font-medium text-stone-600">本文（画像に載る抜粋・自動）</p>
+              <p className="mt-1 text-sm leading-relaxed text-stone-800">
+                {bodyPreview || "（本文なし）"}
+              </p>
+            </div>
+          </>
+        )}
 
         {showPhotoAdjust ? (
           <div className="mt-4">

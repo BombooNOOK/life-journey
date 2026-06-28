@@ -7,6 +7,7 @@ import {
   parseJournalSocialPostLayoutRulerReturnTo,
   parseJournalSocialPostLayoutTemplate,
 } from "@/lib/journal/social-post-image/layoutRulerUrls";
+import { JOURNAL_SOCIAL_POST_TEMPLATES } from "@/lib/journal/social-post-image/templates";
 
 type Props = {
   searchParams: Promise<{ returnTo?: string; template?: string }>;
@@ -56,13 +57,13 @@ export default async function JournalSocialPostImageLayoutPage({ searchParams }:
             href={buildJournalSocialPostLayoutRulerHref({ template: "sns02" })}
             className="text-stone-600 underline hover:text-stone-900"
           >
-            sns02
+            {JOURNAL_SOCIAL_POST_TEMPLATES.sns02.label}
           </Link>
           <Link
             href={buildJournalSocialPostLayoutRulerHref({ template: "sns03" })}
             className="text-stone-600 underline hover:text-stone-900"
           >
-            sns03
+            {JOURNAL_SOCIAL_POST_TEMPLATES.sns03.label}
           </Link>
           <Link href="/preview" className="text-stone-600 underline hover:text-stone-900">
             校正メニューへ

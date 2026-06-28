@@ -16,6 +16,8 @@ export type JournalSocialPostTextStyle = {
   fontWeight?: 400 | 600;
   fill?: string;
   textAnchor?: "start" | "middle" | "end";
+  /** 時計回りが正。textAnchor の基準点 (x,y) を中心に回転 */
+  rotateDeg?: number;
   maxCharsPerLine?: number;
   maxLines?: number;
 };
@@ -28,7 +30,24 @@ export type JournalSocialPostPhotoStyle = {
   fit: "cover" | "contain";
   /** 角丸（px）。テンプレの写真枠に合わせる */
   borderRadiusPx?: number;
+  /** 時計回りが正（sharp.rotate と同じ）。スロット左上を固定して回転 */
+  rotateDeg?: number;
+  /** スロット左上 (x,y) を基準に描画サイズを拡縮（1 = 等倍） */
+  displayScale?: number;
 };
+
+export function resolveJournalSocialPostPhotoRenderSize(
+  photo: Pick<JournalSocialPostPhotoStyle, "width" | "height" | "displayScale">,
+): { width: number; height: number } {
+  const scale = photo.displayScale ?? 1;
+  if (scale === 1) {
+    return { width: photo.width, height: photo.height };
+  }
+  return {
+    width: Math.round(photo.width * scale),
+    height: Math.round(photo.height * scale),
+  };
+}
 
 export type JournalSocialPostCompanionFaceStyle = {
   x: number;
@@ -49,6 +68,8 @@ export type JournalSocialPostTemplateLayout = {
   photo: JournalSocialPostPhotoStyle;
   title: JournalSocialPostTextStyle;
   body: JournalSocialPostTextStyle;
+  /** sns03: 上部の緑帯サブタイトル */
+  subtitle?: JournalSocialPostTextStyle;
   /** 日・月・年の3つのすうじ（テンプレ上の丸位置） */
   numberSlots: [JournalSocialPostTextStyle, JournalSocialPostTextStyle, JournalSocialPostTextStyle];
   mood: JournalSocialPostTextStyle;
@@ -66,13 +87,22 @@ export type JournalSocialPostTemplateLayout = {
 const TEXT_PRIMARY = "#4a3728";
 const TEXT_SECONDARY = "#5c4a38";
 
+/** sns02 本文：角丸エリア中央の左揃えブロック */
+const SNS02_BODY_TEXT_BLOCK = {
+  centerX: 410,
+  widthPx: 560,
+} as const;
+
+const SNS02_BODY_TEXT_LEFT_X =
+  SNS02_BODY_TEXT_BLOCK.centerX - SNS02_BODY_TEXT_BLOCK.widthPx / 2;
+
 export const JOURNAL_SOCIAL_POST_TEMPLATES: Record<
   JournalSocialPostTemplateId,
   JournalSocialPostTemplateLayout
 > = {
   sns02: {
     id: "sns02",
-    label: "角丸横長",
+    label: "ひだまりフォト（横長）",
     backgroundFile: "sns02-template-base-drfukuro.png",
     backgroundFilesByCompanion: {
       drfukuro: "sns02-template-base-drfukuro.png",
@@ -111,12 +141,12 @@ export const JOURNAL_SOCIAL_POST_TEMPLATES: Record<
       maxLines: 1,
     },
     body: {
-      x: 410,
+      x: SNS02_BODY_TEXT_LEFT_X,
       y: 640,
       fontSize: 22,
       lineHeight: 32,
       fill: TEXT_PRIMARY,
-      textAnchor: "middle",
+      textAnchor: "start",
       maxCharsPerLine: 24,
       maxLines: 2,
     },
@@ -176,61 +206,88 @@ export const JOURNAL_SOCIAL_POST_TEMPLATES: Record<
   },
   sns03: {
     id: "sns03",
-    label: "スクエア（ポラロイド）",
-    backgroundFile: "sns03-template-blank.png",
-    photo: { x: 82, y: 318, width: 400, height: 400, fit: "cover" },
+    label: "森のスクラップ（スクエア）",
+    backgroundFile: "sns03-template-base-drfukuro.png",
+    backgroundFilesByCompanion: {
+      drfukuro: "sns03-template-base-drfukuro.png",
+      harinezumi: "sns03-template-base-harinezumi.png",
+      namakemono: "sns03-template-base-namakemono.png",
+      risu: "sns03-template-base-risu.png",
+      kerosion: "sns03-template-base-kerosion.png",
+    },
+    photo: {
+      x: 68,
+      y: 302,
+      width: 400,
+      height: 400,
+      fit: "cover",
+      rotateDeg: -5.2,
+      displayScale: 1.01,
+    },
     dateScrapbook: {
-      x: 555,
-      y: 312,
+      x: 625,
+      y: 395,
       fontSize: 22,
       lineHeight: 30,
       fontWeight: 600,
       fill: TEXT_PRIMARY,
       textAnchor: "middle",
+      rotateDeg: 4,
       maxCharsPerLine: 16,
       maxLines: 1,
     },
     title: {
       x: 410,
-      y: 168,
-      fontSize: 32,
-      lineHeight: 42,
+      y: 130,
+      fontSize: 48,
+      lineHeight: 56,
       fontWeight: 600,
       fill: TEXT_PRIMARY,
       textAnchor: "middle",
-      maxCharsPerLine: 14,
+      maxCharsPerLine: 10,
+      maxLines: 1,
+    },
+    subtitle: {
+      x: 410,
+      y: 190,
+      fontSize: 22,
+      lineHeight: 30,
+      fontWeight: 600,
+      fill: TEXT_PRIMARY,
+      textAnchor: "middle",
+      maxCharsPerLine: 18,
       maxLines: 1,
     },
     body: {
-      x: 108,
-      y: 592,
+      x: 50,
+      y: 780,
       fontSize: 20,
       lineHeight: 30,
       fill: TEXT_PRIMARY,
       textAnchor: "start",
-      maxCharsPerLine: 18,
-      maxLines: 4,
+      maxCharsPerLine: 16,
+      maxLines: 6,
     },
     numberSlots: [
       {
-        x: 518,
-        y: 398,
+        x: 555,
+        y: 470,
         fontSize: 26,
         fontWeight: 600,
         fill: TEXT_PRIMARY,
         textAnchor: "middle",
       },
       {
-        x: 588,
-        y: 398,
+        x: 638,
+        y: 476,
         fontSize: 26,
         fontWeight: 600,
         fill: TEXT_PRIMARY,
         textAnchor: "middle",
       },
       {
-        x: 658,
-        y: 398,
+        x: 710,
+        y: 480,
         fontSize: 26,
         fontWeight: 600,
         fill: TEXT_PRIMARY,
@@ -238,25 +295,25 @@ export const JOURNAL_SOCIAL_POST_TEMPLATES: Record<
       },
     ],
     mood: {
-      x: 555,
-      y: 468,
+      x: 615,
+      y: 620,
       fontSize: 20,
       lineHeight: 28,
       fontWeight: 600,
       fill: TEXT_PRIMARY,
       textAnchor: "middle",
-      maxCharsPerLine: 12,
-      maxLines: 1,
+      maxCharsPerLine: 6,
+      maxLines: 2,
     },
     comment: {
-      x: 448,
-      y: 848,
+      x: 435,
+      y: 850,
       fontSize: 18,
       lineHeight: 28,
       fill: TEXT_PRIMARY,
       textAnchor: "start",
-      maxCharsPerLine: 14,
-      maxLines: 2,
+      maxCharsPerLine: 13,
+      maxLines: 4,
     },
   },
 };

@@ -25,13 +25,14 @@ export const JOURNAL_SOCIAL_POST_LAYOUT_SLIDES: {
   label: string;
   templateFile: string;
 }[] = [
-  { id: "sns02", label: "角丸横長（sns02）", templateFile: "sns02-template-base-drfukuro.png" },
-  { id: "sns03", label: "スクエア・ポラロイド（sns03）", templateFile: "sns03-template-blank.png" },
+  { id: "sns02", label: "ひだまりフォト（横長）", templateFile: "sns02-template-base-drfukuro.png" },
+  { id: "sns03", label: "森のスクラップ（スクエア）", templateFile: "sns03-template-base-drfukuro.png" },
 ];
 
 const SAMPLE = {
   title: "イスの下からこんにちは",
   body: "今日はモグの病院最終日。",
+  subtitle: "なんでもない今日の、かわいい記録",
   numbers: ["4", "3", "6"] as const,
   mood: "移動・おでかけをした",
   comment: "動いたことが、やさしく次の流れにつながる日。",
@@ -71,8 +72,11 @@ export function layoutAnchorsForTemplate(templateId: JournalSocialPostTemplateId
     anchors.push(anchorFromStyle("date", "日付（方眼紙）", layout.dateScrapbook));
   }
 
+  anchors.push(anchorFromStyle("title", "タイトル", layout.title));
+  if (templateId === "sns03" && layout.subtitle) {
+    anchors.push(anchorFromStyle("subtitle", "サブタイトル（緑帯）", layout.subtitle));
+  }
   anchors.push(
-    anchorFromStyle("title", "タイトル", layout.title),
     anchorFromStyle("body", "本文抜粋", layout.body),
     anchorFromStyle("number-day", "今日のすうじ（日）", layout.numberSlots[0]!),
     anchorFromStyle("number-month", "今日のすうじ（月）", layout.numberSlots[1]!),
@@ -134,7 +138,14 @@ export function layoutSampleTextsForTemplate(templateId: JournalSocialPostTempla
   if (layout.dateScrapbook) push("date", SAMPLE.dateScrapbook, layout.dateScrapbook);
 
   push("title", SAMPLE.title, layout.title);
-  push("body", SAMPLE.body, layout.body);
+  if (templateId === "sns03" && layout.subtitle) {
+    push("subtitle", SAMPLE.subtitle, layout.subtitle);
+  }
+  push(
+    "body",
+    templateId === "sns03" ? SAMPLE.body : SAMPLE.body,
+    layout.body,
+  );
   push("number-day", SAMPLE.numbers[0], layout.numberSlots[0]!);
   push("number-month", SAMPLE.numbers[1], layout.numberSlots[1]!);
   push("number-year", SAMPLE.numbers[2], layout.numberSlots[2]!);

@@ -167,4 +167,26 @@ describe("buildSvgTextOverlay", () => {
     expect(svg).toContain('<tspan x="166"');
     expect(svg).toContain('<tspan x="210"');
   });
+
+  it("rotateDeg を textAnchor 基準点を中心に適用する", () => {
+    const svg = buildSvgTextOverlay({
+      width: 100,
+      height: 100,
+      items: [
+        {
+          text: "2026.6.19",
+          style: {
+            x: 625,
+            y: 395,
+            fontSize: 22,
+            textAnchor: "middle",
+            rotateDeg: 2,
+          },
+        },
+      ],
+    }).toString("utf8");
+
+    expect(svg).toContain('transform="rotate(2, 625, 395)"');
+    expect(svg).toContain('text-anchor="middle"');
+  });
 });

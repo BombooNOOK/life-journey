@@ -8,8 +8,12 @@ export const JOURNAL_SOCIAL_POST_IMAGE_SIZE = {
 
 export type JournalSocialPostImageInput = {
   templateId: JournalSocialPostTemplateId;
+  /** 上部の大見出し（sns03）／投稿用タイトル（sns02） */
   title: string;
+  /** sns02: 日記本文の自動抜粋 */
   bodyExcerpt: string;
+  /** sns03: 緑帯のサブタイトル（未指定時は既定文） */
+  subtitle: string;
   todayNumber: number | null;
   monthNumber: number | null;
   yearNumber: number | null;

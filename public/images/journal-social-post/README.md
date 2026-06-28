@@ -9,9 +9,22 @@
 | `sns02-template-base-kerosion.png` | 角丸横長・下地（ケロシオン） |
 | `sns02-template-photo-overlay.png` | 角丸横長・写真上装飾（付箋・**全キャラ共通**・透明 PNG） |
 | `sns02-template-base.png` | 旧名（drfukuro と同内容・互換用） |
-| `sns03-template-blank.png` | スクエア・ポラロイド（819×1024） |
+| `sns03-template-base-drfukuro.png` | スクエア・ポラロイド・下地（フクロウ先生） |
+| `sns03-template-base-harinezumi.png` | スクエア・ポラロイド・下地（ハリネズミくん） |
+| `sns03-template-base-namakemono.png` | スクエア・ポラロイド・下地（ナマケモノくん） |
+| `sns03-template-base-risu.png` | スクエア・ポラロイド・下地（リスくん） |
+| `sns03-template-base-kerosion.png` | スクエア・ポラロイド・下地（ケロシオン） |
+| `sns03-template-blank.png` | 旧・共通下地（互換用・drfukuro と同内容） |
 | `sns02-template-sample.png` | 文字入り参考（sns02） |
 | `sns03-template-sample.png` | 文字入り参考（sns03） |
+
+## sns03 の合成順
+
+1. `sns03-template-base-{キャラslug}.png`（下地・伴走キャラで自動切替）
+2. ユーザーの写真（正方形 400×400）
+3. 文字（コード側）
+
+写真枠は正方形のため、sns02 と違い photo-overlay はありません。
 
 ## sns02 の合成順
 
