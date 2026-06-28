@@ -1,3 +1,4 @@
+import type { JournalSocialPostPhotoAdjust } from "./photoAdjust";
 import type { JournalSocialPostTemplateId } from "./templates";
 
 export const JOURNAL_SOCIAL_POST_IMAGE_SIZE = {
@@ -15,6 +16,8 @@ export type JournalSocialPostImageInput = {
   moodLabel: string;
   commentExcerpt: string;
   photoBuffer: Buffer | null;
+  /** 保存済み正方形写真の SNS 枠内トリミング（日記には保存しない） */
+  photoAdjust?: JournalSocialPostPhotoAdjust;
   companionType: string;
   /** sns02 リボン用 */
   dateRibbonYear: string;

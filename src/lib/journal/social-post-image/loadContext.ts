@@ -20,6 +20,7 @@ import {
 import {
   normalizeJournalSocialPostTemplateId,
 } from "./templates";
+import type { JournalSocialPostPhotoAdjust } from "./photoAdjust";
 import type { JournalSocialPostImageInput } from "./types";
 
 const entrySelect = {
@@ -69,6 +70,7 @@ export async function loadJournalSocialPostImageContext(params: {
   viewerEmail: string;
   title: string;
   templateId?: string | null;
+  photoAdjust?: JournalSocialPostPhotoAdjust;
 }): Promise<JournalSocialPostImageContext | null> {
   const entry = await findEntryForViewer(params.entryId, params.viewerEmail);
   if (!entry) return null;
@@ -124,6 +126,7 @@ export async function loadJournalSocialPostImageContext(params: {
       moodLabel: moodMeta.label,
       commentExcerpt: commentRaw ? extractSocialPostCommentText(commentRaw) : "",
       photoBuffer,
+      photoAdjust: params.photoAdjust,
       companionType: normalizeCompanionType(entry.companionType),
       createdAt: entry.createdAt,
     }),

@@ -18,6 +18,11 @@ import {
   type JournalSocialPostTemplateId,
   type JournalSocialPostTextStyle,
 } from "./templates";
+import {
+  computeSquarePhotoCropRect,
+  DEFAULT_JOURNAL_SOCIAL_POST_PHOTO_ADJUST,
+  type JournalSocialPostPhotoAdjust,
+} from "./photoAdjust";
 import { JOURNAL_SOCIAL_POST_IMAGE_SIZE } from "./types";
 import type { JournalSocialPostImageInput, JournalSocialPostImageResult } from "./types";
 
@@ -29,18 +34,34 @@ async function buildPhotoLayer(
     fit: "cover" | "contain";
     borderRadiusPx?: number;
   },
+  photoAdjust: JournalSocialPostPhotoAdjust = DEFAULT_JOURNAL_SOCIAL_POST_PHOTO_ADJUST,
 ): Promise<Buffer | null> {
   if (!photoBuffer) return null;
 
-  let layer = await sharp(photoBuffer)
-    .rotate()
-    .resize(photo.width, photo.height, {
-      fit: photo.fit,
-      position: "centre",
-    })
-    .ensureAlpha()
-    .png()
-    .toBuffer();
+  const rotated = sharp(photoBuffer).rotate();
+  const meta = await rotated.metadata();
+  const sourceWidth = meta.width ?? 720;
+  const sourceHeight = meta.height ?? 720;
+
+  const crop = computeSquarePhotoCropRect({
+    sourceWidth,
+    sourceHeight,
+    targetWidth: photo.width,
+    targetHeight: photo.height,
+    adjust: photoAdjust,
+  });
+
+  let pipeline = sharp(photoBuffer).rotate().extract(crop);
+  if (photo.fit === "contain") {
+    pipeline = pipeline.resize(photo.width, photo.height, {
+      fit: "contain",
+      background: { r: 255, g: 255, b: 255, alpha: 0 },
+    });
+  } else {
+    pipeline = pipeline.resize(photo.width, photo.height);
+  }
+
+  let layer = await pipeline.ensureAlpha().png().toBuffer();
 
   const radius = photo.borderRadiusPx;
   if (radius && radius > 0) {
@@ -142,6 +163,7 @@ export function buildJournalSocialPostImageInput(params: {
   moodLabel: string;
   commentExcerpt: string;
   photoBuffer: Buffer | null;
+  photoAdjust?: JournalSocialPostPhotoAdjust;
   companionType: string;
   createdAt: Date;
 }): JournalSocialPostImageInput {
@@ -156,6 +178,7 @@ export function buildJournalSocialPostImageInput(params: {
     moodLabel: params.moodLabel,
     commentExcerpt: params.commentExcerpt,
     photoBuffer: params.photoBuffer,
+    photoAdjust: params.photoAdjust,
     companionType: params.companionType,
     dateRibbonYear: ribbon.year,
     dateRibbonMonthDay: ribbon.monthDay,
@@ -181,7 +204,11 @@ export async function compositeJournalSocialPostImage(
   const layout = JOURNAL_SOCIAL_POST_TEMPLATES[input.templateId];
   const background = loadJournalSocialPostTemplateBackground(input.templateId, input.companionType);
   const photoOverlay = await loadJournalSocialPostTemplatePhotoOverlay(input.templateId);
-  const photoLayer = await buildPhotoLayer(input.photoBuffer, layout.photo);
+  const photoLayer = await buildPhotoLayer(
+    input.photoBuffer,
+    layout.photo,
+    input.photoAdjust ?? DEFAULT_JOURNAL_SOCIAL_POST_PHOTO_ADJUST,
+  );
   const faceLayer = layout.companionFace
     ? await buildCompanionFaceLayer(input.companionType, layout.companionFace)
     : null;

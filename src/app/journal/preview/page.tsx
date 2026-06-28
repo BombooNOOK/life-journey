@@ -325,7 +325,12 @@ function JournalPreviewPageContent() {
             afterCommentSlot={companionSwitcherBlock}
           />
         ) : viewMode === "social" ? (
-          <JournalSocialPostImagePanel entryId={entry.id} content={entry.content} />
+          <JournalSocialPostImagePanel
+            entryId={entry.id}
+            content={entry.content}
+            hasPhoto={entry.hasPhoto}
+            photoSrc={entry.photoSrc}
+          />
         ) : null}
       </div>
 

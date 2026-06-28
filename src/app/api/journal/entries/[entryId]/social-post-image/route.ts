@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { getViewerEmailFromCookie } from "@/lib/auth/viewer";
 import { compositeJournalSocialPostImage } from "@/lib/journal/social-post-image/compositeImage";
 import { loadJournalSocialPostImageContext } from "@/lib/journal/social-post-image/loadContext";
+import { parseJournalSocialPostPhotoAdjustFromSearchParams } from "@/lib/journal/social-post-image/photoAdjust";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -29,11 +30,14 @@ export async function GET(req: Request, { params }: RouteParams) {
     const template = url.searchParams.get("template");
     const download = url.searchParams.get("download") === "1";
 
+    const photoAdjust = parseJournalSocialPostPhotoAdjustFromSearchParams(url.searchParams);
+
     const context = await loadJournalSocialPostImageContext({
       entryId,
       viewerEmail,
       title,
       templateId: template,
+      photoAdjust,
     });
     if (!context) {
       return NextResponse.json(

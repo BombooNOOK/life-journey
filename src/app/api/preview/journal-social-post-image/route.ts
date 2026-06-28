@@ -7,6 +7,7 @@ import {
   buildJournalSocialPostImageInput,
   compositeJournalSocialPostImage,
 } from "@/lib/journal/social-post-image/compositeImage";
+import { parseJournalSocialPostPhotoAdjustFromSearchParams } from "@/lib/journal/social-post-image/photoAdjust";
 import { extractSocialPostBodyText, extractSocialPostCommentText } from "@/lib/journal/social-post-image/textExtract";
 import { normalizeJournalSocialPostTemplateId } from "@/lib/journal/social-post-image/templates";
 
@@ -38,6 +39,8 @@ export async function GET(req: Request) {
       ? fs.readFileSync(DEMO_PHOTO_PATH)
       : null;
 
+    const photoAdjust = parseJournalSocialPostPhotoAdjustFromSearchParams(url.searchParams);
+
     const createdAt = new Date("2026-06-19T00:00:00.000Z");
     const input = buildJournalSocialPostImageInput({
       templateId,
@@ -49,6 +52,7 @@ export async function GET(req: Request) {
       moodLabel: "移動・おでかけをした",
       commentExcerpt: extractSocialPostCommentText(DEMO_COMMENT),
       photoBuffer,
+      photoAdjust,
       companionType: "owl",
       createdAt,
     });

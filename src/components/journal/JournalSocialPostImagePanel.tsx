@@ -1,8 +1,22 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { JournalSocialPostImageDownloadButton } from "@/components/journal/JournalSocialPostImageDownloadButton";
+import {
+  DEFAULT_JOURNAL_SOCIAL_POST_PHOTO_ADJUST,
+  JournalSocialPostImagePhotoAdjustEditor,
+} from "@/components/journal/JournalSocialPostImagePhotoAdjustEditor";
+import {
+  appendJournalSocialPostPhotoAdjustToSearchParams,
+  journalSocialPostPhotoAdjustEquals,
+  type JournalSocialPostPhotoAdjust,
+} from "@/lib/journal/social-post-image/photoAdjust";
+import {
+  clearJournalSocialPostPhotoAdjustFromStorage,
+  getDefaultOrStoredPhotoAdjust,
+  writeJournalSocialPostPhotoAdjustToStorage,
+} from "@/lib/journal/social-post-image/photoAdjustStorage";
 import { extractSocialPostBodyText } from "@/lib/journal/social-post-image/textExtract";
 import {
   JOURNAL_SOCIAL_POST_TEMPLATES,
@@ -12,15 +26,19 @@ import {
 type Props = {
   entryId: string;
   content: string;
+  hasPhoto?: boolean;
+  photoSrc?: string | null;
 };
 
 function buildPreviewUrl(
   entryId: string,
   title: string,
   templateId: JournalSocialPostTemplateId,
+  photoAdjust: JournalSocialPostPhotoAdjust,
   cacheKey: number,
 ): string {
   const params = new URLSearchParams({ title, template: templateId, t: String(cacheKey) });
+  appendJournalSocialPostPhotoAdjustToSearchParams(params, photoAdjust);
   return `/api/journal/entries/${encodeURIComponent(entryId)}/social-post-image?${params.toString()}`;
 }
 
@@ -28,14 +46,27 @@ function buildDownloadUrl(
   entryId: string,
   title: string,
   templateId: JournalSocialPostTemplateId,
+  photoAdjust: JournalSocialPostPhotoAdjust,
 ): string {
   const params = new URLSearchParams({ title, template: templateId, download: "1" });
+  appendJournalSocialPostPhotoAdjustToSearchParams(params, photoAdjust);
   return `/api/journal/entries/${encodeURIComponent(entryId)}/social-post-image?${params.toString()}`;
 }
 
-export function JournalSocialPostImagePanel({ entryId, content }: Props) {
+export function JournalSocialPostImagePanel({
+  entryId,
+  content,
+  hasPhoto = false,
+  photoSrc,
+}: Props) {
   const [title, setTitle] = useState("");
   const [templateId, setTemplateId] = useState<JournalSocialPostTemplateId>("sns02");
+  const [photoAdjustDraft, setPhotoAdjustDraft] = useState<JournalSocialPostPhotoAdjust>(
+    DEFAULT_JOURNAL_SOCIAL_POST_PHOTO_ADJUST,
+  );
+  const [appliedPhotoAdjust, setAppliedPhotoAdjust] = useState<JournalSocialPostPhotoAdjust>(
+    DEFAULT_JOURNAL_SOCIAL_POST_PHOTO_ADJUST,
+  );
   const [debouncedTitle, setDebouncedTitle] = useState("");
   const [debouncedTemplateId, setDebouncedTemplateId] = useState<JournalSocialPostTemplateId>("sns02");
   const [cacheKey, setCacheKey] = useState(0);
@@ -43,20 +74,61 @@ export function JournalSocialPostImagePanel({ entryId, content }: Props) {
   const [previewError, setPreviewError] = useState<string | null>(null);
 
   const bodyPreview = useMemo(() => extractSocialPostBodyText(content), [content]);
+  const photoDisplaySrc = photoSrc?.trim() ?? "";
+  const showPhotoAdjust = hasPhoto && photoDisplaySrc.length > 0;
+  const templatePhoto = JOURNAL_SOCIAL_POST_TEMPLATES[templateId].photo;
+  const hasPendingPhotoApply = !journalSocialPostPhotoAdjustEquals(photoAdjustDraft, appliedPhotoAdjust);
+
+  const previewUrl = buildPreviewUrl(
+    entryId,
+    debouncedTitle,
+    debouncedTemplateId,
+    appliedPhotoAdjust,
+    cacheKey,
+  );
+  const downloadUrl = buildDownloadUrl(
+    entryId,
+    debouncedTitle,
+    debouncedTemplateId,
+    appliedPhotoAdjust,
+  );
+
+  useEffect(() => {
+    if (!showPhotoAdjust) {
+      setPhotoAdjustDraft(DEFAULT_JOURNAL_SOCIAL_POST_PHOTO_ADJUST);
+      setAppliedPhotoAdjust(DEFAULT_JOURNAL_SOCIAL_POST_PHOTO_ADJUST);
+      return;
+    }
+    const stored = getDefaultOrStoredPhotoAdjust(entryId, templateId);
+    setPhotoAdjustDraft(stored);
+    setAppliedPhotoAdjust(stored);
+    setCacheKey((value) => value + 1);
+  }, [entryId, templateId, showPhotoAdjust]);
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
       setDebouncedTitle(title);
       setDebouncedTemplateId(templateId);
       setCacheKey((value) => value + 1);
-      setLoadingPreview(true);
-      setPreviewError(null);
     }, 400);
     return () => window.clearTimeout(timer);
   }, [title, templateId]);
 
-  const previewUrl = buildPreviewUrl(entryId, debouncedTitle, debouncedTemplateId, cacheKey);
-  const downloadUrl = buildDownloadUrl(entryId, debouncedTitle, debouncedTemplateId);
+  useEffect(() => {
+    setLoadingPreview(true);
+    setPreviewError(null);
+  }, [previewUrl]);
+
+  const handlePhotoAdjustReset = () => {
+    setPhotoAdjustDraft(DEFAULT_JOURNAL_SOCIAL_POST_PHOTO_ADJUST);
+    clearJournalSocialPostPhotoAdjustFromStorage(entryId, templateId);
+  };
+
+  const handleApplyPhotoAdjust = useCallback(() => {
+    setAppliedPhotoAdjust(photoAdjustDraft);
+    writeJournalSocialPostPhotoAdjustToStorage(entryId, templateId, photoAdjustDraft);
+    setCacheKey((value) => value + 1);
+  }, [entryId, photoAdjustDraft, templateId]);
 
   return (
     <div className="space-y-5">
@@ -104,6 +176,22 @@ export function JournalSocialPostImagePanel({ entryId, content }: Props) {
             {bodyPreview || "（本文なし）"}
           </p>
         </div>
+
+        {showPhotoAdjust ? (
+          <div className="mt-4">
+            <JournalSocialPostImagePhotoAdjustEditor
+              photoSrc={photoDisplaySrc}
+              targetWidth={templatePhoto.width}
+              targetHeight={templatePhoto.height}
+              adjust={photoAdjustDraft}
+              onChange={setPhotoAdjustDraft}
+              onReset={handlePhotoAdjustReset}
+              onApply={handleApplyPhotoAdjust}
+              hasPendingApply={hasPendingPhotoApply}
+              applyingPreview={loadingPreview && !hasPendingPhotoApply}
+            />
+          </div>
+        ) : null}
       </div>
 
       <div className="space-y-3">
@@ -115,14 +203,14 @@ export function JournalSocialPostImagePanel({ entryId, content }: Props) {
         <div className="relative mx-auto w-full max-w-md overflow-hidden rounded-xl border border-stone-200 bg-[#faf8f5] shadow-sm">
           <div className="relative aspect-[4/5] w-full">
             {loadingPreview ? (
-              <div className="absolute inset-0 flex items-center justify-center bg-stone-100/80 px-4 text-center text-sm text-stone-600">
+              <div className="absolute inset-0 z-10 flex items-center justify-center bg-stone-100/80 px-4 text-center text-sm text-stone-600">
                 画像を作っています…
                 <br />
                 初回は10秒ほどかかることがあります
               </div>
             ) : null}
             {previewError ? (
-              <div className="absolute inset-0 flex items-center justify-center bg-red-50 px-4 text-center text-sm text-red-700">
+              <div className="absolute inset-0 z-10 flex items-center justify-center bg-red-50 px-4 text-center text-sm text-red-700">
                 {previewError}
               </div>
             ) : null}

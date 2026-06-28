@@ -1,10 +1,24 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { JournalSocialPostImageDownloadButton } from "@/components/journal/JournalSocialPostImageDownloadButton";
+import {
+  DEFAULT_JOURNAL_SOCIAL_POST_PHOTO_ADJUST,
+  JournalSocialPostImagePhotoAdjustEditor,
+} from "@/components/journal/JournalSocialPostImagePhotoAdjustEditor";
 import { buildJournalSocialPostLayoutRulerHref } from "@/lib/journal/social-post-image/layoutRulerUrls";
+import {
+  appendJournalSocialPostPhotoAdjustToSearchParams,
+  journalSocialPostPhotoAdjustEquals,
+  type JournalSocialPostPhotoAdjust,
+} from "@/lib/journal/social-post-image/photoAdjust";
+import {
+  clearJournalSocialPostPhotoAdjustFromStorage,
+  getDefaultOrStoredPhotoAdjust,
+  writeJournalSocialPostPhotoAdjustToStorage,
+} from "@/lib/journal/social-post-image/photoAdjustStorage";
 import { extractSocialPostBodyText } from "@/lib/journal/social-post-image/textExtract";
 import {
   JOURNAL_SOCIAL_POST_TEMPLATES,
@@ -14,23 +28,39 @@ import {
 const DEMO_CONTENT =
   "今日はモグの病院最終日。おでかけ前の、かわいいひとコマ。";
 
+const DEMO_ENTRY_ID = "preview-demo";
+const DEMO_PHOTO_SRC = "/images/home-mock/demo-journal-photo.png";
+
 function buildPreviewUrl(
   title: string,
   templateId: JournalSocialPostTemplateId,
+  photoAdjust: JournalSocialPostPhotoAdjust,
   cacheKey: number,
 ): string {
   const params = new URLSearchParams({ title, template: templateId, t: String(cacheKey) });
+  appendJournalSocialPostPhotoAdjustToSearchParams(params, photoAdjust);
   return `/api/preview/journal-social-post-image?${params.toString()}`;
 }
 
-function buildDownloadUrl(title: string, templateId: JournalSocialPostTemplateId): string {
+function buildDownloadUrl(
+  title: string,
+  templateId: JournalSocialPostTemplateId,
+  photoAdjust: JournalSocialPostPhotoAdjust,
+): string {
   const params = new URLSearchParams({ title, template: templateId, download: "1" });
+  appendJournalSocialPostPhotoAdjustToSearchParams(params, photoAdjust);
   return `/api/preview/journal-social-post-image?${params.toString()}`;
 }
 
 export function JournalSocialPostImagePreviewClient() {
   const [title, setTitle] = useState("イスの下からこんにちは");
   const [templateId, setTemplateId] = useState<JournalSocialPostTemplateId>("sns02");
+  const [photoAdjustDraft, setPhotoAdjustDraft] = useState<JournalSocialPostPhotoAdjust>(
+    DEFAULT_JOURNAL_SOCIAL_POST_PHOTO_ADJUST,
+  );
+  const [appliedPhotoAdjust, setAppliedPhotoAdjust] = useState<JournalSocialPostPhotoAdjust>(
+    DEFAULT_JOURNAL_SOCIAL_POST_PHOTO_ADJUST,
+  );
   const [debouncedTitle, setDebouncedTitle] = useState(title);
   const [debouncedTemplateId, setDebouncedTemplateId] = useState<JournalSocialPostTemplateId>("sns02");
   const [cacheKey, setCacheKey] = useState(0);
@@ -38,20 +68,43 @@ export function JournalSocialPostImagePreviewClient() {
   const [previewError, setPreviewError] = useState<string | null>(null);
 
   const bodyPreview = useMemo(() => extractSocialPostBodyText(DEMO_CONTENT), []);
+  const templatePhoto = JOURNAL_SOCIAL_POST_TEMPLATES[templateId].photo;
+  const hasPendingPhotoApply = !journalSocialPostPhotoAdjustEquals(photoAdjustDraft, appliedPhotoAdjust);
+
+  const previewUrl = buildPreviewUrl(debouncedTitle, debouncedTemplateId, appliedPhotoAdjust, cacheKey);
+  const downloadUrl = buildDownloadUrl(debouncedTitle, debouncedTemplateId, appliedPhotoAdjust);
+
+  useEffect(() => {
+    const stored = getDefaultOrStoredPhotoAdjust(DEMO_ENTRY_ID, templateId);
+    setPhotoAdjustDraft(stored);
+    setAppliedPhotoAdjust(stored);
+    setCacheKey((value) => value + 1);
+  }, [templateId]);
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
       setDebouncedTitle(title);
       setDebouncedTemplateId(templateId);
       setCacheKey((value) => value + 1);
-      setLoadingPreview(true);
-      setPreviewError(null);
     }, 400);
     return () => window.clearTimeout(timer);
   }, [title, templateId]);
 
-  const previewUrl = buildPreviewUrl(debouncedTitle, debouncedTemplateId, cacheKey);
-  const downloadUrl = buildDownloadUrl(debouncedTitle, debouncedTemplateId);
+  useEffect(() => {
+    setLoadingPreview(true);
+    setPreviewError(null);
+  }, [previewUrl]);
+
+  const handlePhotoAdjustReset = () => {
+    setPhotoAdjustDraft(DEFAULT_JOURNAL_SOCIAL_POST_PHOTO_ADJUST);
+    clearJournalSocialPostPhotoAdjustFromStorage(DEMO_ENTRY_ID, templateId);
+  };
+
+  const handleApplyPhotoAdjust = useCallback(() => {
+    setAppliedPhotoAdjust(photoAdjustDraft);
+    writeJournalSocialPostPhotoAdjustToStorage(DEMO_ENTRY_ID, templateId, photoAdjustDraft);
+    setCacheKey((value) => value + 1);
+  }, [photoAdjustDraft, templateId]);
 
   return (
     <div className="mx-auto max-w-lg space-y-5 px-4 py-8">
@@ -105,6 +158,19 @@ export function JournalSocialPostImagePreviewClient() {
         <div className="mt-4 rounded-lg border border-dashed border-stone-200 bg-stone-50/80 px-3 py-3">
           <p className="text-xs font-medium text-stone-600">本文（自動）</p>
           <p className="mt-1 text-sm text-stone-800">{bodyPreview}</p>
+        </div>
+        <div className="mt-4">
+          <JournalSocialPostImagePhotoAdjustEditor
+            photoSrc={DEMO_PHOTO_SRC}
+            targetWidth={templatePhoto.width}
+            targetHeight={templatePhoto.height}
+            adjust={photoAdjustDraft}
+            onChange={setPhotoAdjustDraft}
+            onReset={handlePhotoAdjustReset}
+            onApply={handleApplyPhotoAdjust}
+            hasPendingApply={hasPendingPhotoApply}
+            applyingPreview={loadingPreview && !hasPendingPhotoApply}
+          />
         </div>
       </div>
 
