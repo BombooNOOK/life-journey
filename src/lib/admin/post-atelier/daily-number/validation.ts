@@ -20,6 +20,11 @@ import {
   isDailyNumberClosingVariant,
   type DailyNumberClosingVariant,
 } from "./closingVariant";
+import {
+  isDailyNumberMessageSeason,
+  parseDailyNumberMessageSeasonMode,
+  type DailyNumberMessageSeasonMode,
+} from "./messageSeasonMode";
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -49,7 +54,9 @@ export type ParseDailyNumberDraftResult =
         companionType: ReturnType<typeof normalizeDailyNumberCharacter>;
         messageType: DailyNumberMessageType;
         coverVariantMode: DailyNumberVariantMode;
+        messageSeasonMode: DailyNumberMessageSeasonMode;
         lockedVariant: DailyNumberCoverVariant | null;
+        lockedMessageSeason: import("./types").DailyNumberCoverSeason | null;
         lockedClosingVariant: DailyNumberClosingVariant | null;
         status: SocialPostDraftStatus;
         internalMemo: string;
@@ -72,14 +79,30 @@ function parseLockedClosingVariant(raw: string): DailyNumberClosingVariant | nul
   return raw;
 }
 
+function parseLockedMessageSeason(
+  raw: string,
+  messageSeasonMode: DailyNumberMessageSeasonMode,
+): import("./types").DailyNumberCoverSeason | null {
+  if (messageSeasonMode !== "random") return null;
+  if (!raw || !isDailyNumberMessageSeason(raw)) return null;
+  return raw;
+}
+
 export function parseDailyNumberDraftFormData(formData: FormData): ParseDailyNumberDraftResult {
   const scheduledDate = trimOrEmpty(formData.get("scheduledDate"));
   const companionType = normalizeDailyNumberCharacter(trimOrEmpty(formData.get("companionType")));
   const messageType = parseMessageType(trimOrEmpty(formData.get("messageType")) || "base");
   const coverVariantMode = parseDailyNumberVariantMode(trimOrEmpty(formData.get("coverVariantMode")));
+  const messageSeasonMode = parseDailyNumberMessageSeasonMode(
+    trimOrEmpty(formData.get("messageSeasonMode")),
+  );
   const lockedVariant = parseLockedVariant(
     trimOrEmpty(formData.get("resolvedVariant")),
     coverVariantMode,
+  );
+  const lockedMessageSeason = parseLockedMessageSeason(
+    trimOrEmpty(formData.get("lockedMessageSeason")),
+    messageSeasonMode,
   );
   const lockedClosingVariant = parseLockedClosingVariant(
     trimOrEmpty(formData.get("resolvedClosingVariant")),
@@ -106,7 +129,9 @@ export function parseDailyNumberDraftFormData(formData: FormData): ParseDailyNum
       companionType,
       messageType,
       coverVariantMode,
+      messageSeasonMode,
       lockedVariant,
+      lockedMessageSeason,
       lockedClosingVariant,
       status,
       internalMemo,

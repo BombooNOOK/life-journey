@@ -65,6 +65,11 @@ export default async function DailyNumberEditPage({ params, searchParams }: Prop
           companionType: draft.companionType,
           messageType: draft.messageType,
           coverVariantMode: savedPayload?.variantMode ?? "A",
+          messageSeasonMode: savedPayload?.messageSeasonMode ?? "base",
+          lockedMessageSeason:
+            savedPayload?.messageSeasonMode === "random"
+              ? savedPayload.messageSeason
+              : undefined,
           resolvedVariant:
             savedPayload?.variantMode === "random" ? savedPayload.variant : undefined,
           resolvedClosingVariant: savedPayload?.closingVariant,

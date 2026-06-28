@@ -62,7 +62,9 @@ export async function createDailyNumberPost(formData: FormData) {
     character: parsed.data.companionType,
     messageType: parsed.data.messageType,
     coverVariantMode: parsed.data.coverVariantMode,
+    messageSeasonMode: parsed.data.messageSeasonMode,
     lockedVariant: parsed.data.lockedVariant,
+    lockedMessageSeason: parsed.data.lockedMessageSeason,
     lockedClosingVariant: parsed.data.lockedClosingVariant,
   });
 
@@ -131,7 +133,9 @@ export async function updateDailyNumberPost(formData: FormData) {
     character: parsed.data.companionType,
     messageType: parsed.data.messageType,
     coverVariantMode: parsed.data.coverVariantMode,
+    messageSeasonMode: parsed.data.messageSeasonMode,
     lockedVariant: parsed.data.lockedVariant,
+    lockedMessageSeason: parsed.data.lockedMessageSeason,
     lockedClosingVariant: parsed.data.lockedClosingVariant,
   });
 

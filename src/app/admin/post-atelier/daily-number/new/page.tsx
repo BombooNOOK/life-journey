@@ -17,6 +17,7 @@ const DEFAULT_VALUES: DailyNumberDraftFormValues = {
   companionType: "owl",
   messageType: "base",
   coverVariantMode: "A",
+  messageSeasonMode: "base",
   status: "draft",
   internalMemo: "",
 };

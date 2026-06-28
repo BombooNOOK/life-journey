@@ -26,6 +26,14 @@ import {
   pickRandomDailyNumberClosingVariant,
 } from "@/lib/admin/post-atelier/daily-number/closingVariant";
 import {
+  DAILY_NUMBER_MESSAGE_SEASON_MODES,
+  DAILY_NUMBER_MESSAGE_SEASON_MODE_LABELS,
+  formatDailyNumberMessageSeasonUsageLabel,
+  pickRandomDailyNumberMessageSeason,
+  summerMessageSeasonRequiresVariantA,
+  type DailyNumberMessageSeasonMode,
+} from "@/lib/admin/post-atelier/daily-number/messageSeasonMode";
+import {
   DAILY_NUMBER_VARIANT_MODES,
   DAILY_NUMBER_VARIANT_MODE_LABELS,
   formatDailyNumberVariantUsageLabel,
@@ -55,6 +63,26 @@ function initialResolvedClosingVariant(
   return values.resolvedClosingVariant ?? pickRandomDailyNumberClosingVariant();
 }
 
+function editorCoverVariant(values: DailyNumberDraftFormValues): DailyNumberCoverVariant {
+  if (values.coverVariantMode !== "random") {
+    return values.coverVariantMode;
+  }
+  return values.resolvedVariant ?? pickRandomDailyNumberCoverVariant();
+}
+
+function initialLockedMessageSeason(
+  values: DailyNumberDraftFormValues,
+  todayNumber: number | null,
+): import("@/lib/admin/post-atelier/daily-number/types").DailyNumberCoverSeason | undefined {
+  if (values.messageSeasonMode !== "random") return undefined;
+  if (values.lockedMessageSeason) return values.lockedMessageSeason;
+  if (todayNumber == null) return "base";
+  return pickRandomDailyNumberMessageSeason(
+    todayNumber as import("@/lib/admin/post-atelier/daily-number/types").DailyNumberTodayValue,
+    editorCoverVariant(values),
+  );
+}
+
 export function DailyNumberPostEditor({ mode, draftId, initialValues }: Props) {
   const [scheduledDate, setScheduledDate] = useState(initialValues.scheduledDate);
   const [companionType, setCompanionType] = useState(initialValues.companionType);
@@ -62,8 +90,19 @@ export function DailyNumberPostEditor({ mode, draftId, initialValues }: Props) {
   const [coverVariantMode, setCoverVariantMode] = useState<DailyNumberVariantMode>(
     initialValues.coverVariantMode,
   );
+  const [messageSeasonMode, setMessageSeasonMode] = useState<DailyNumberMessageSeasonMode>(
+    initialValues.messageSeasonMode ?? "base",
+  );
   const [resolvedVariant, setResolvedVariant] = useState<DailyNumberCoverVariant | undefined>(() =>
     initialResolvedVariant(initialValues),
+  );
+  const [lockedMessageSeason, setLockedMessageSeason] = useState<
+    import("@/lib/admin/post-atelier/daily-number/types").DailyNumberCoverSeason | undefined
+  >(() =>
+    initialLockedMessageSeason(
+      initialValues,
+      universalDayForScheduledDate(initialValues.scheduledDate),
+    ),
   );
   const [resolvedClosingVariant, setResolvedClosingVariant] = useState<DailyNumberClosingVariant>(
     () => initialResolvedClosingVariant(initialValues),
@@ -81,6 +120,11 @@ export function DailyNumberPostEditor({ mode, draftId, initialValues }: Props) {
     [scheduledDate],
   );
 
+  const effectiveVariant = useMemo((): DailyNumberCoverVariant => {
+    if (coverVariantMode !== "random") return coverVariantMode;
+    return resolvedVariant ?? pickRandomDailyNumberCoverVariant();
+  }, [coverVariantMode, resolvedVariant]);
+
   const resolved = useMemo(
     () =>
       resolveDailyNumberPost({
@@ -89,7 +133,9 @@ export function DailyNumberPostEditor({ mode, draftId, initialValues }: Props) {
         character: companionType,
         messageType,
         coverVariantMode,
+        messageSeasonMode,
         lockedVariant: coverVariantMode === "random" ? resolvedVariant : null,
+        lockedMessageSeason: messageSeasonMode === "random" ? lockedMessageSeason : null,
         lockedClosingVariant: resolvedClosingVariant,
       }),
     [
@@ -98,7 +144,9 @@ export function DailyNumberPostEditor({ mode, draftId, initialValues }: Props) {
       companionType,
       messageType,
       coverVariantMode,
+      messageSeasonMode,
       resolvedVariant,
+      lockedMessageSeason,
       resolvedClosingVariant,
     ],
   );
@@ -109,6 +157,20 @@ export function DailyNumberPostEditor({ mode, draftId, initialValues }: Props) {
       setResolvedVariant(pickRandomDailyNumberCoverVariant());
     } else {
       setResolvedVariant(undefined);
+    }
+  }
+
+  function handleMessageSeasonModeChange(mode: DailyNumberMessageSeasonMode) {
+    setMessageSeasonMode(mode);
+    if (mode === "random" && todayNumber != null) {
+      setLockedMessageSeason(
+        pickRandomDailyNumberMessageSeason(
+          todayNumber as import("@/lib/admin/post-atelier/daily-number/types").DailyNumberTodayValue,
+          effectiveVariant,
+        ),
+      );
+    } else {
+      setLockedMessageSeason(undefined);
     }
   }
 
@@ -123,19 +185,57 @@ export function DailyNumberPostEditor({ mode, draftId, initialValues }: Props) {
     ? formatDailyNumberClosingVariantUsageLabel(resolved.payload.closingVariant)
     : formatDailyNumberClosingVariantUsageLabel(resolvedClosingVariant);
 
+  const messageSeasonUsageLabel = resolved.ok
+    ? formatDailyNumberMessageSeasonUsageLabel({
+        messageSeasonMode: resolved.payload.messageSeasonMode,
+        messageSeason: resolved.payload.messageSeason,
+      })
+    : `個別文案：${DAILY_NUMBER_MESSAGE_SEASON_MODE_LABELS[messageSeasonMode]}`;
+
+  const summerVariantNote =
+    resolved.ok &&
+    summerMessageSeasonRequiresVariantA(
+      resolved.payload.messageSeasonMode,
+      resolved.payload.variant,
+    )
+      ? "夏の森の個別文案は文体 A のみ入稿済みです。B/C では個別ページは通常文案になります。"
+      : null;
+
+  async function copyTextToClipboard(text: string): Promise<boolean> {
+    try {
+      await navigator.clipboard.writeText(text);
+      return true;
+    } catch {
+      try {
+        const textarea = document.createElement("textarea");
+        textarea.value = text;
+        textarea.setAttribute("readonly", "");
+        textarea.style.position = "fixed";
+        textarea.style.left = "-9999px";
+        document.body.appendChild(textarea);
+        textarea.select();
+        const ok = document.execCommand("copy");
+        document.body.removeChild(textarea);
+        return ok;
+      } catch {
+        return false;
+      }
+    }
+  }
+
   async function handleCopy(kind: "canva" | "caption") {
     if (!resolved.ok) {
       setCopyState("failed");
       return;
     }
     const text = kind === "canva" ? resolved.canvaCopyText : resolved.captionText;
-    try {
-      await navigator.clipboard.writeText(text);
-      setCopyState(kind);
-      window.setTimeout(() => setCopyState("idle"), 2000);
-    } catch {
+    const ok = await copyTextToClipboard(text);
+    if (!ok) {
       setCopyState("failed");
+      return;
     }
+    setCopyState(kind);
+    window.setTimeout(() => setCopyState("idle"), 2000);
   }
 
   const saveAction = mode === "create" ? createDailyNumberPost : updateDailyNumberPost;
@@ -146,8 +246,12 @@ export function DailyNumberPostEditor({ mode, draftId, initialValues }: Props) {
         {mode === "edit" && draftId ? <input type="hidden" name="id" value={draftId} /> : null}
         <input type="hidden" name="messageType" value={messageType} />
         <input type="hidden" name="coverVariantMode" value={coverVariantMode} />
+        <input type="hidden" name="messageSeasonMode" value={messageSeasonMode} />
         {coverVariantMode === "random" && resolvedVariant ? (
           <input type="hidden" name="resolvedVariant" value={resolvedVariant} />
+        ) : null}
+        {messageSeasonMode === "random" && lockedMessageSeason ? (
+          <input type="hidden" name="lockedMessageSeason" value={lockedMessageSeason} />
         ) : null}
         <input type="hidden" name="resolvedClosingVariant" value={resolvedClosingVariant} />
 
@@ -212,6 +316,49 @@ export function DailyNumberPostEditor({ mode, draftId, initialValues }: Props) {
               ))}
             </select>
           </label>
+
+          <label className="space-y-1">
+            <span className={labelClassName}>個別文案（季節・通常）</span>
+            <select
+              value={messageSeasonMode}
+              onChange={(e) =>
+                handleMessageSeasonModeChange(e.target.value as DailyNumberMessageSeasonMode)
+              }
+              className={inputClassName}
+            >
+              {DAILY_NUMBER_MESSAGE_SEASON_MODES.map((mode) => (
+                <option key={mode} value={mode}>
+                  {DAILY_NUMBER_MESSAGE_SEASON_MODE_LABELS[mode]}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <div className="space-y-1">
+            <span className={labelClassName}>個別文案の選択結果</span>
+            <div className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm font-medium text-amber-950">
+              {messageSeasonUsageLabel}
+            </div>
+            {messageSeasonMode === "random" && todayNumber != null ? (
+              <button
+                type="button"
+                onClick={() =>
+                  setLockedMessageSeason(
+                    pickRandomDailyNumberMessageSeason(
+                      todayNumber as import("@/lib/admin/post-atelier/daily-number/types").DailyNumberTodayValue,
+                      effectiveVariant,
+                    ),
+                  )
+                }
+                className="text-xs font-medium text-amber-900 underline hover:text-amber-950"
+              >
+                別の季節文案を抽選
+              </button>
+            ) : null}
+            {summerVariantNote ? (
+              <p className="text-xs leading-relaxed text-amber-900">{summerVariantNote}</p>
+            ) : null}
+          </div>
 
           <div className="space-y-1">
             <span className={labelClassName}>ラストページ</span>
@@ -311,6 +458,10 @@ export function DailyNumberPostEditor({ mode, draftId, initialValues }: Props) {
             {closingUsageLabel}
           </div>
 
+          <div className="rounded-xl border border-amber-200 bg-amber-50/60 px-4 py-3 text-sm font-medium text-amber-950">
+            {messageSeasonUsageLabel}
+          </div>
+
           <div className="rounded-xl border border-violet-200 bg-violet-50/60 px-4 py-3 text-sm font-medium text-violet-950">
             {formatDailyNumberVariantUsageLabel({
               variantMode: resolved.payload.variantMode,
@@ -325,13 +476,6 @@ export function DailyNumberPostEditor({ mode, draftId, initialValues }: Props) {
               className="rounded-md border border-stone-300 bg-white px-3 py-1.5 text-xs font-medium text-stone-800 hover:bg-stone-50"
             >
               {copyState === "canva" ? "Canva用コピー済み" : "Canva貼り付け用をコピー"}
-            </button>
-            <button
-              type="button"
-              onClick={() => handleCopy("caption")}
-              className="rounded-md border border-stone-300 bg-white px-3 py-1.5 text-xs font-medium text-stone-800 hover:bg-stone-50"
-            >
-              {copyState === "caption" ? "キャプションコピー済み" : "Instagramキャプションをコピー"}
             </button>
             {copyState === "failed" ? (
               <span className="text-xs text-red-600">コピーに失敗しました</span>
@@ -355,12 +499,27 @@ export function DailyNumberPostEditor({ mode, draftId, initialValues }: Props) {
                 {resolved.canvaCopyText}
               </pre>
             </div>
-            <div className="rounded-xl border border-stone-200 bg-stone-50 p-4">
-              <h3 className="text-sm font-semibold text-stone-900">Instagramキャプション（プレビュー）</h3>
-              <pre className="mt-3 max-h-64 overflow-auto whitespace-pre-wrap text-xs leading-relaxed text-stone-800">
+            <button
+              type="button"
+              onClick={() => handleCopy("caption")}
+              aria-label="Instagramキャプションを全文コピー"
+              className={[
+                "w-full rounded-xl border p-4 text-left transition",
+                copyState === "caption"
+                  ? "border-emerald-400 bg-emerald-50/70"
+                  : "border-stone-200 bg-stone-50 hover:border-emerald-300 hover:bg-emerald-50/40 active:bg-emerald-50/60",
+              ].join(" ")}
+            >
+              <div className="flex items-start justify-between gap-3">
+                <h3 className="text-sm font-semibold text-stone-900">Instagramキャプション</h3>
+                <span className="shrink-0 rounded-full bg-emerald-100 px-2.5 py-1 text-[11px] font-semibold text-emerald-900">
+                  {copyState === "caption" ? "コピーしました" : "タップで全文コピー"}
+                </span>
+              </div>
+              <pre className="pointer-events-none mt-3 max-h-64 overflow-auto whitespace-pre-wrap text-xs leading-relaxed text-stone-800">
                 {resolved.captionText}
               </pre>
-            </div>
+            </button>
           </section>
         </>
       )}

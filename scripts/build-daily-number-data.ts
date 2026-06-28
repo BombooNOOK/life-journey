@@ -20,6 +20,7 @@ import {
 
 const COVER_CSV = "daily-number-today-cover-owl.csv";
 const MESSAGES_CSV = "daily-number-messages-owl-base.csv";
+const MESSAGES_SUMMER_CSV = "daily-number-messages-owl-summer.csv";
 const LIFE_PATHS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 11, 22, 33] as const;
 const TODAY_NUMBERS = [1, 2, 3, 4, 5, 6, 7, 8, 9] as const;
 const COVER_VARIANTS = ["A", "B", "C"] as const;
@@ -57,6 +58,7 @@ type MessageRow = {
   character: string;
   messageType: string;
   variant: (typeof COVER_VARIANTS)[number];
+  season: (typeof COVER_SEASONS)[number];
   colorName: string;
   body: string;
   action1: string;
@@ -64,8 +66,13 @@ type MessageRow = {
   notes: string;
 };
 
-function messageRowKey(row: Pick<MessageRow, "todayNumber" | "lifePathNumber" | "character" | "messageType" | "variant">): string {
-  return `${row.todayNumber}:${row.lifePathNumber}:${row.character}:${row.messageType}:${row.variant}`;
+function messageRowKey(
+  row: Pick<
+    MessageRow,
+    "todayNumber" | "lifePathNumber" | "character" | "messageType" | "variant" | "season"
+  >,
+): string {
+  return `${row.todayNumber}:${row.lifePathNumber}:${row.character}:${row.messageType}:${row.season}:${row.variant}`;
 }
 
 function isFilled(...values: string[]): boolean {
@@ -148,56 +155,85 @@ function parseCoverRows(): CoverRow[] {
   });
 }
 
-function parseMessageRows(): MessageRow[] {
-  const records = readCsvRecords(MESSAGES_CSV);
-  const rows: MessageRow[] = [];
-
-  for (const record of records) {
-    const todayNumber = Number(record.todayNumber);
-    const lifePathNumber = Number(record.lifePathNumber);
-    if (!TODAY_NUMBERS.includes(todayNumber as (typeof TODAY_NUMBERS)[number])) {
-      throw new Error(`${MESSAGES_CSV}: todayNumber が不正です: ${record.todayNumber}`);
-    }
-    if (!LIFE_PATHS.includes(lifePathNumber as (typeof LIFE_PATHS)[number])) {
-      throw new Error(`${MESSAGES_CSV}: lifePathNumber が不正です: ${record.lifePathNumber}`);
-    }
-    const variantRaw = (record.variant ?? "A").trim() || "A";
-    if (!COVER_VARIANTS.includes(variantRaw as (typeof COVER_VARIANTS)[number])) {
-      throw new Error(`${MESSAGES_CSV}: variant が不正です: ${variantRaw}`);
-    }
-    rows.push({
-      todayNumber,
-      lifePathNumber,
-      character: record.character ?? "",
-      messageType: record.messageType ?? "",
-      variant: variantRaw as (typeof COVER_VARIANTS)[number],
-      colorName: record.colorName ?? "",
-      body: record.body ?? "",
-      action1: record.action1 ?? "",
-      action2: record.action2 ?? "",
-      notes: record.notes ?? "",
-    });
+function parseMessageRecord(record: Record<string, string>, sourceCsv: string): MessageRow {
+  const todayNumber = Number(record.todayNumber);
+  const lifePathNumber = Number(record.lifePathNumber);
+  if (!TODAY_NUMBERS.includes(todayNumber as (typeof TODAY_NUMBERS)[number])) {
+    throw new Error(`${sourceCsv}: todayNumber が不正です: ${record.todayNumber}`);
   }
+  if (!LIFE_PATHS.includes(lifePathNumber as (typeof LIFE_PATHS)[number])) {
+    throw new Error(`${sourceCsv}: lifePathNumber が不正です: ${record.lifePathNumber}`);
+  }
+  const variantRaw = (record.variant ?? "A").trim() || "A";
+  if (!COVER_VARIANTS.includes(variantRaw as (typeof COVER_VARIANTS)[number])) {
+    throw new Error(`${sourceCsv}: variant が不正です: ${variantRaw}`);
+  }
+  const seasonRaw = (record.season ?? "base").trim() || "base";
+  if (!COVER_SEASONS.includes(seasonRaw as (typeof COVER_SEASONS)[number])) {
+    throw new Error(`${sourceCsv}: season が不正です: ${seasonRaw}`);
+  }
+  return {
+    todayNumber,
+    lifePathNumber,
+    character: record.character ?? "",
+    messageType: record.messageType ?? "",
+    variant: variantRaw as (typeof COVER_VARIANTS)[number],
+    season: seasonRaw as (typeof COVER_SEASONS)[number],
+    colorName: record.colorName ?? "",
+    body: record.body ?? "",
+    action1: record.action1 ?? "",
+    action2: record.action2 ?? "",
+    notes: record.notes ?? "",
+  };
+}
+
+function parseMessageRowsFromCsv(csvName: string, options?: { expectedCount?: number }): MessageRow[] {
+  const records = readCsvRecords(csvName);
+  const rows = records.map((record) => parseMessageRecord(record, csvName));
 
   const keys = new Set<string>();
   for (const row of rows) {
     const key = messageRowKey(row);
     if (keys.has(key)) {
-      throw new Error(`${MESSAGES_CSV}: キーが重複しています: ${key}`);
+      throw new Error(`${csvName}: キーが重複しています: ${key}`);
     }
     keys.add(key);
     if (row.character !== "owl" || row.messageType !== "base") {
       throw new Error(
-        `${MESSAGES_CSV}: Phase 2 は character=owl / messageType=base のみです (${key})`,
+        `${csvName}: Phase 2 は character=owl / messageType=base のみです (${key})`,
       );
+    }
+  }
+
+  if (options?.expectedCount != null && rows.length !== options.expectedCount) {
+    throw new Error(
+      `${csvName}: 行数は ${options.expectedCount} 件である必要があります（現在 ${rows.length} 件）`,
+    );
+  }
+
+  return rows;
+}
+
+function parseMessageRows(): MessageRow[] {
+  const baseRows = parseMessageRowsFromCsv(MESSAGES_CSV, { expectedCount: 324 });
+  const summerRows = parseMessageRowsFromCsv(MESSAGES_SUMMER_CSV, { expectedCount: 108 });
+
+  for (const row of baseRows) {
+    if (row.season !== "base") {
+      throw new Error(`${MESSAGES_CSV}: base CSV は season=base のみです`);
+    }
+  }
+  for (const row of summerRows) {
+    if (row.season !== "summer" || row.variant !== "A") {
+      throw new Error(`${MESSAGES_SUMMER_CSV}: summer CSV は season=summer / variant=A のみです`);
     }
   }
 
   for (const todayNumber of TODAY_NUMBERS) {
     for (const lifePathNumber of LIFE_PATHS) {
       for (const variant of COVER_VARIANTS) {
-        const key = `${todayNumber}:${lifePathNumber}:owl:base:${variant}`;
-        if (!keys.has(key)) {
+        const key = `${todayNumber}:${lifePathNumber}:owl:base:base:${variant}`;
+        if (!baseRows.some((r) => messageRowKey(r) === key)) {
           throw new Error(
             `${MESSAGES_CSV}: スロットが不足しています (UD${todayNumber} LP${lifePathNumber} variant ${variant})`,
           );
@@ -206,11 +242,23 @@ function parseMessageRows(): MessageRow[] {
     }
   }
 
-  if (rows.length !== 324) {
-    throw new Error(`${MESSAGES_CSV}: 行数は 324 件である必要があります（現在 ${rows.length} 件）`);
+  for (const todayNumber of TODAY_NUMBERS) {
+    for (const lifePathNumber of LIFE_PATHS) {
+      const key = `${todayNumber}:${lifePathNumber}:owl:base:summer:A`;
+      if (!summerRows.some((r) => messageRowKey(r) === key)) {
+        throw new Error(
+          `${MESSAGES_SUMMER_CSV}: スロットが不足しています (UD${todayNumber} LP${lifePathNumber})`,
+        );
+      }
+    }
   }
 
-  return rows;
+  return [...baseRows, ...summerRows].sort((a, b) => {
+    if (a.todayNumber !== b.todayNumber) return a.todayNumber - b.todayNumber;
+    if (a.lifePathNumber !== b.lifePathNumber) return a.lifePathNumber - b.lifePathNumber;
+    if (a.season !== b.season) return a.season.localeCompare(b.season);
+    return a.variant.localeCompare(b.variant);
+  });
 }
 
 function reportCompleteness(coverRows: CoverRow[], messageRows: MessageRow[]): void {
@@ -276,6 +324,7 @@ function buildMessagesTs(rows: MessageRow[]): string {
     character: "owl",
     messageType: "base",
     subTheme: "",
+    season: ${tsStringLiteral(r.season)},
     variant: ${tsStringLiteral(r.variant)},
     body: ${tsStringLiteral(r.body)},
     colorName: ${tsStringLiteral(r.colorName)},
@@ -302,7 +351,7 @@ const RAW_MESSAGES: Array<Omit<DailyNumberMessage, "displayName" | "subtitle">> 
 ${items},
 ];
 
-/** Generated from docs/${MESSAGES_CSV}. Do not edit by hand. */
+/** Generated from docs/${MESSAGES_CSV} + docs/${MESSAGES_SUMMER_CSV}. Do not edit by hand. */
 export const DAILY_NUMBER_MESSAGES: DailyNumberMessage[] = RAW_MESSAGES.map(attachPersonalMeta);
 `;
 }

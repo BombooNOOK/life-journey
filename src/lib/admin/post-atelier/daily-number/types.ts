@@ -82,6 +82,8 @@ export type DailyNumberMessage = {
   character: DailyNumberCharacter;
   messageType: DailyNumberMessageType;
   variant?: DailyNumberCoverVariant;
+  /** 未指定は base。季節版は variant A のみ入稿想定 */
+  season?: DailyNumberCoverSeason;
   subTheme?: string;
   displayName: string;
   subtitle: string;
@@ -113,6 +115,9 @@ export type DailyNumberGeneratedPayload = {
   variant: DailyNumberCoverVariant;
   /** ラストページ（4種からランダム選択・投稿単位で固定） */
   closingVariant: DailyNumberClosingVariant;
+  /** 個別ページの季節文案（通常 / 夏の森 等）。表紙は従来どおり base */
+  messageSeasonMode: import("./messageSeasonMode").DailyNumberMessageSeasonMode;
+  messageSeason: DailyNumberCoverSeason;
   seriesTitle: string;
   cover: TodayNumberMaster;
   pages: DailyNumberPagePreview[];
@@ -143,6 +148,9 @@ export type DailyNumberDraftFormValues = {
   companionType: DailyNumberCharacter;
   messageType: DailyNumberMessageType;
   coverVariantMode: import("./variantMode").DailyNumberVariantMode;
+  messageSeasonMode: import("./messageSeasonMode").DailyNumberMessageSeasonMode;
+  /** random 季節のとき投稿単位で固定 */
+  lockedMessageSeason?: DailyNumberCoverSeason;
   /** ランダム選択時に投稿単位で固定する resolved variant */
   resolvedVariant?: DailyNumberCoverVariant;
   /** ラストページのランダム選択結果（投稿単位で固定） */

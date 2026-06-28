@@ -25,6 +25,7 @@ export type DailyNumberDraftRecord = Omit<
 export async function getDailyNumberDraftById(id: string): Promise<DailyNumberDraftRecord | null> {
   const row = await prisma.socialPostDraft.findUnique({ where: { id } });
   if (!row || row.postType !== "daily_number") return null;
+  const savedPayload = parseDailyNumberGeneratedPayload(row.generatedPayload);
   return {
     id: row.id,
     authorEmail: row.authorEmail,
@@ -35,6 +36,9 @@ export async function getDailyNumberDraftById(id: string): Promise<DailyNumberDr
     messageType: (DAILY_NUMBER_MESSAGE_TYPES as readonly string[]).includes(row.messageType)
       ? (row.messageType as DailyNumberMessageType)
       : "base",
+    messageSeasonMode: savedPayload?.messageSeasonMode ?? "base",
+    lockedMessageSeason:
+      savedPayload?.messageSeasonMode === "random" ? savedPayload.messageSeason : undefined,
     status: (SOCIAL_POST_DRAFT_STATUSES as readonly string[]).includes(row.status)
       ? (row.status as SocialPostDraftStatus)
       : "draft",

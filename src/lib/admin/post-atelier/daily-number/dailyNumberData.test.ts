@@ -11,11 +11,24 @@ describe("daily number CSV data", () => {
     expect(records).toHaveLength(324);
   });
 
-  it("variant A は UD1〜9 それぞれ 12 件入っている", () => {
+  it("variant A は UD1〜9 それぞれ base 12 件 + summer 12 件入っている", () => {
     for (let ud = 1; ud <= 9; ud += 1) {
       expect(
         DAILY_NUMBER_MESSAGES.filter(
-          (m) => m.todayNumber === ud && m.character === "owl" && m.variant === "A",
+          (m) =>
+            m.todayNumber === ud &&
+            m.character === "owl" &&
+            m.variant === "A" &&
+            (m.season ?? "base") === "base",
+        ),
+      ).toHaveLength(12);
+      expect(
+        DAILY_NUMBER_MESSAGES.filter(
+          (m) =>
+            m.todayNumber === ud &&
+            m.character === "owl" &&
+            m.variant === "A" &&
+            m.season === "summer",
         ),
       ).toHaveLength(12);
     }
@@ -25,7 +38,11 @@ describe("daily number CSV data", () => {
     expect(hasTodayNumberBaseCover(TODAY_NUMBER_COVER_VARIANTS, 8)).toBe(true);
     expect(
       DAILY_NUMBER_MESSAGES.filter(
-        (m) => m.todayNumber === 8 && m.character === "owl" && m.variant === "A",
+        (m) =>
+          m.todayNumber === 8 &&
+          m.character === "owl" &&
+          m.variant === "A" &&
+          (m.season ?? "base") === "base",
       ),
     ).toHaveLength(12);
   });
@@ -45,7 +62,26 @@ describe("daily number CSV data", () => {
     expect(row?.body).toContain("始める力");
   });
 
-  it("入稿済み messages は画像レイアウトの文字数チェックを通過する", () => {
+  it("summer CSV は 108 行ある（UD×LP×variant A）", () => {
+    const records = readCsvRecords("daily-number-messages-owl-summer.csv");
+    expect(records).toHaveLength(108);
+  });
+
+  it("入稿済み summer messages は画像レイアウトの文字数チェックを通過する", () => {
+    const records = readCsvRecords("daily-number-messages-owl-summer.csv");
+    assertDailyNumberMessageLayoutsValid(
+      records.map((r) => ({
+        todayNumber: Number(r.todayNumber),
+        lifePathNumber: Number(r.lifePathNumber),
+        variant: r.variant ?? "A",
+        body: r.body ?? "",
+        action1: r.action1 ?? "",
+        action2: r.action2 ?? "",
+      })),
+    );
+  });
+
+  it("入稿済み base messages は画像レイアウトの文字数チェックを通過する", () => {
     const records = readCsvRecords("daily-number-messages-owl-base.csv");
     const filled = records.filter((r) => r.body?.trim() && r.action1?.trim() && r.action2?.trim());
     expect(filled.length).toBeGreaterThan(0);

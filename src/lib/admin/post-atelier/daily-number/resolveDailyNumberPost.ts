@@ -18,6 +18,8 @@ import type {
   DailyNumberTodayValue,
 } from "./types";
 import type { DailyNumberVariantMode } from "./variantMode";
+import type { DailyNumberMessageSeasonMode } from "./messageSeasonMode";
+import type { DailyNumberCoverSeason } from "./types";
 
 export function resolveDailyNumberPost(input: {
   scheduledDate: string;
@@ -25,10 +27,13 @@ export function resolveDailyNumberPost(input: {
   character: DailyNumberCharacter;
   messageType: DailyNumberMessageType;
   coverVariantMode?: DailyNumberVariantMode;
+  messageSeasonMode?: DailyNumberMessageSeasonMode;
   lockedVariant?: DailyNumberCoverVariant | null;
+  lockedMessageSeason?: DailyNumberCoverSeason | null;
   lockedClosingVariant?: DailyNumberClosingVariant | null;
 }): DailyNumberLookupResult {
   const variantMode = input.coverVariantMode ?? "A";
+  const messageSeasonMode = input.messageSeasonMode ?? "base";
 
   if (!isDailyNumberDataReady(input.todayNumber, input.character, input.messageType, variantMode)) {
     return {
@@ -46,7 +51,9 @@ export function resolveDailyNumberPost(input: {
     character: input.character,
     messageType: input.messageType,
     variantMode,
+    messageSeasonMode,
     lockedVariant: input.lockedVariant,
+    lockedMessageSeason: input.lockedMessageSeason,
     lockedClosingVariant: input.lockedClosingVariant,
   });
 

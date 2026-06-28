@@ -18,6 +18,12 @@ import {
   hasTodayNumberBaseCover,
   selectTodayNumberCover,
 } from "./selectTodayNumberCover";
+import { selectDailyNumberMessages } from "./selectDailyNumberMessages";
+import {
+  resolveDailyNumberMessageSeason,
+  type DailyNumberMessageSeasonMode,
+} from "./messageSeasonMode";
+import type { DailyNumberCoverSeason } from "./types";
 import type { DailyNumberVariantMode } from "./variantMode";
 import { resolveDailyNumberCoverVariant } from "./variantMode";
 import type { DailyNumberClosingVariant } from "./closingVariant";
@@ -88,28 +94,25 @@ export function listDailyNumberMessages(
     character: DailyNumberCharacter;
     messageType: DailyNumberMessageType;
     variant?: DailyNumberCoverVariant;
+    season?: import("./types").DailyNumberCoverSeason;
   },
   options?: { allowFallback?: boolean },
 ): DailyNumberMessage[] {
-  const variant = input.variant ?? "A";
   const allowFallback = options?.allowFallback ?? true;
-  const matches = (character: DailyNumberCharacter) =>
-    DAILY_NUMBER_MESSAGES.filter(
-      (m) =>
-        m.todayNumber === input.todayNumber &&
-        m.character === character &&
-        m.messageType === input.messageType &&
-        (m.variant ?? "A") === variant,
-    );
-
-  const exact = matches(input.character);
-  if (exact.length > 0) return exact;
-
-  if (!allowFallback || input.character === DAILY_NUMBER_MESSAGE_FALLBACK_CHARACTER) {
-    return exact;
-  }
-
-  return matches(DAILY_NUMBER_MESSAGE_FALLBACK_CHARACTER);
+  return selectDailyNumberMessages(
+    DAILY_NUMBER_MESSAGES,
+    {
+      todayNumber: input.todayNumber,
+      character: input.character,
+      messageType: input.messageType,
+      variant: input.variant,
+      season: input.season,
+    },
+    {
+      allowFallback,
+      fallbackCharacter: DAILY_NUMBER_MESSAGE_FALLBACK_CHARACTER,
+    },
+  );
 }
 
 function findMessage(
@@ -138,6 +141,8 @@ export function buildDailyNumberGeneratedPayload(input: {
   variantMode: DailyNumberVariantMode;
   lockedVariant?: DailyNumberCoverVariant | null;
   lockedClosingVariant?: DailyNumberClosingVariant | null;
+  messageSeasonMode?: DailyNumberMessageSeasonMode;
+  lockedMessageSeason?: DailyNumberCoverSeason | null;
 }): DailyNumberGeneratedPayload | null {
   const variant = resolveDailyNumberCoverVariant({
     variantMode: input.variantMode,
@@ -145,6 +150,13 @@ export function buildDailyNumberGeneratedPayload(input: {
   });
   const closingVariant = resolveDailyNumberClosingVariant({
     lockedClosingVariant: input.lockedClosingVariant,
+  });
+  const messageSeasonMode = input.messageSeasonMode ?? "base";
+  const messageSeason = resolveDailyNumberMessageSeason({
+    messageSeasonMode,
+    todayNumber: input.todayNumber,
+    variant,
+    lockedMessageSeason: input.lockedMessageSeason,
   });
 
   const cover = getTodayNumberMaster(input.todayNumber, { variant });
@@ -155,6 +167,7 @@ export function buildDailyNumberGeneratedPayload(input: {
     character: input.character,
     messageType: input.messageType,
     variant,
+    season: messageSeason,
   });
   if (messages.length === 0) return null;
 
@@ -170,6 +183,8 @@ export function buildDailyNumberGeneratedPayload(input: {
     variantMode: input.variantMode,
     variant,
     closingVariant,
+    messageSeasonMode,
+    messageSeason,
     seriesTitle: DAILY_NUMBER_SERIES_TITLE,
     cover,
     pages,
@@ -185,11 +200,15 @@ function normalizeLegacyPayload(parsed: DailyNumberGeneratedPayload): DailyNumbe
   const variantMode = parsed.variantMode ?? variant;
   const closingVariant =
     parsed.closingVariant ?? ("diary_entry" as DailyNumberClosingVariant);
+  const messageSeasonMode = parsed.messageSeasonMode ?? "base";
+  const messageSeason = parsed.messageSeason ?? "base";
   return {
     ...parsed,
     variantMode,
     variant,
     closingVariant,
+    messageSeasonMode,
+    messageSeason,
     cover: { ...parsed.cover, variant },
   };
 }
