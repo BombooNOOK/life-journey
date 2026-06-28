@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Life Journey Diary</string>
+    <string name="title_activity_main">Life Journey Diary</string>
+    <string name="package_name">app.bamboonook.ljd</string>
+    <string name="custom_url_scheme">app.bamboonook.ljd</string>
+</resources>

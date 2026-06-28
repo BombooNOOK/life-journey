@@ -49,3 +49,14 @@ next-env.d.ts
 
 # ローカル Python venv
 /.venv/
+
+# Capacitor / native build artifacts
+ios/App/build/
+ios/App/DerivedData/
+ios/App/Pods/
+android/.gradle/
+android/app/build/
+android/local.properties
+android/.idea/
+*.xcuserstate
+*.xcworkspace/xcuserdata/

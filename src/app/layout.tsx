@@ -1,6 +1,7 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 
 import { FirebaseAuthProvider } from "@/components/auth/FirebaseAuthProvider";
+import { CapacitorShellInit } from "@/components/capacitor/CapacitorShellInit";
 import { ConditionalSiteChrome } from "@/components/layout/ConditionalSiteChrome";
 import { ReadingFontSizeProvider } from "@/components/reading/ReadingFontSizeContext";
 import {
@@ -47,6 +48,12 @@ export const metadata: Metadata = {
   },
 };
 
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
+};
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -55,6 +62,7 @@ export default function RootLayout({
   return (
     <html lang="ja">
       <body className="flex min-h-screen flex-col antialiased">
+        <CapacitorShellInit />
         <FirebaseAuthProvider>
           <ReadingFontSizeProvider>
             <ConditionalSiteChrome>{children}</ConditionalSiteChrome>
