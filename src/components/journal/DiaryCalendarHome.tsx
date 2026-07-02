@@ -1,9 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
+import { CompanionWritingCalendarCompleteCard } from "@/components/journal/companion-writing/CompanionWritingCalendarCompleteCard";
+import { CompanionWritingCalendarRevealOverlay } from "@/components/journal/companion-writing/CompanionWritingCalendarRevealOverlay";
 import { DiarySyncDebugPanel } from "@/components/journal/DiarySyncDebugPanel";
 import {
   DiaryMonthCalendar,
@@ -29,6 +31,14 @@ import {
 } from "@/lib/journal/journalNav";
 import { MoodOwlIcon } from "@/components/journal/MoodOwlIcon";
 import { getActivityMeta, getMoodMeta } from "@/lib/journal/meta";
+import { readCompanionWritingCalendarComplete } from "@/lib/journal/companionWriting/session";
+import type { CompanionWritingCalendarCompletePayload } from "@/lib/journal/companionWriting/session";
+import {
+  COMPANION_WRITING_CALENDAR_GUIDE_QUERY,
+  COMPANION_WRITING_CALENDAR_REVEAL_MS,
+  parseCompanionWritingCalendarGuidePhase,
+  type CompanionWritingCalendarGuidePhase,
+} from "@/lib/journal/companionWriting/types";
 import { TrialStatusBanner } from "@/components/entitlement/TrialStatusBanner";
 import type { SerializedUserEntitlement } from "@/lib/entitlement/resolveUserEntitlement";
 
@@ -103,6 +113,7 @@ export function DiaryCalendarHome({
     entitlement.canUseContinuedFeatures || entitlement.canCreateFirstJournal;
   const canEditJournal = entitlement.canUseContinuedFeatures;
   const router = useRouter();
+  const pathname = usePathname();
   const searchParams = useSearchParams();
   const listRef = useRef<HTMLDivElement>(null);
   const authSession = useEnsureServerAuthSession();
@@ -129,7 +140,34 @@ export function DiaryCalendarHome({
   const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showProfilePanel, setShowProfilePanel] = useState(false);
+  const [companionComplete, setCompanionComplete] =
+    useState<CompanionWritingCalendarCompletePayload | null>(null);
   const fetchGenerationRef = useRef(0);
+
+  const buildCalendarHref = useCallback(
+    (cwGuide?: CompanionWritingCalendarGuidePhase | null) => {
+      const qs = new URLSearchParams(searchParams.toString());
+      if (cwGuide) qs.set(COMPANION_WRITING_CALENDAR_GUIDE_QUERY, cwGuide);
+      else qs.delete(COMPANION_WRITING_CALENDAR_GUIDE_QUERY);
+      const q = qs.toString();
+      return q ? `${pathname}?${q}` : pathname;
+    },
+    [pathname, searchParams],
+  );
+
+  const companionGuidePhase = useMemo((): CompanionWritingCalendarGuidePhase | null => {
+    if (!companionComplete) return null;
+    return parseCompanionWritingCalendarGuidePhase(
+      searchParams.get(COMPANION_WRITING_CALENDAR_GUIDE_QUERY),
+    ) ?? "intro";
+  }, [companionComplete, searchParams]);
+
+  const dismissCompanionGuide = useCallback(() => {
+    setCompanionComplete(null);
+    if (searchParams.get(COMPANION_WRITING_CALENDAR_GUIDE_QUERY)) {
+      router.replace(buildCalendarHref(null), { scroll: false });
+    }
+  }, [buildCalendarHref, router, searchParams]);
 
   const monthKey = useMemo(() => toMonthKey(viewMonth), [viewMonth]);
   const calendarLoadingLabel = !hasLoadedOnce
@@ -145,6 +183,34 @@ export function DiaryCalendarHome({
     const q = qs.toString();
     return q ? `/orders/calendar?${q}` : "/orders/calendar";
   }, [viewMonth, selectedDay]);
+
+  useEffect(() => {
+    const payload = readCompanionWritingCalendarComplete();
+    if (!payload) return;
+    setCompanionComplete(payload);
+    const day = parseDayParam(payload.entryDateYmd);
+    if (day) {
+      setViewMonth(new Date(day.year, day.monthIndex, 1));
+      setSelectedDay(day.day);
+    }
+    if (
+      !parseCompanionWritingCalendarGuidePhase(
+        searchParams.get(COMPANION_WRITING_CALENDAR_GUIDE_QUERY),
+      )
+    ) {
+      router.replace(buildCalendarHref("intro"), { scroll: false });
+    }
+    // 伴走完了の初回表示だけ URL を整える
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    if (companionGuidePhase !== "calendar") return;
+    const timer = window.setTimeout(() => {
+      router.replace(buildCalendarHref("actions"), { scroll: false });
+    }, COMPANION_WRITING_CALENDAR_REVEAL_MS);
+    return () => window.clearTimeout(timer);
+  }, [buildCalendarHref, companionGuidePhase, router]);
 
   useEffect(() => {
     setEffectiveProfileId(activeProfileId);
@@ -281,7 +347,43 @@ export function DiaryCalendarHome({
 
   return (
     <div>
-      <div className="space-y-1.5 sm:space-y-4">
+      {companionComplete && companionGuidePhase === "intro" ? (
+        <CompanionWritingCalendarCompleteCard
+          payload={companionComplete}
+          phase="intro"
+          calendarReturnTo={returnToBase}
+          onIntroComplete={() => router.push(buildCalendarHref("calendar"), { scroll: false })}
+          onDismiss={dismissCompanionGuide}
+        />
+      ) : null}
+
+      {companionComplete && companionGuidePhase === "calendar" ? (
+        <CompanionWritingCalendarRevealOverlay
+          cursorMonth={viewMonth}
+          entries={entries}
+          selectedDay={selectedDay}
+          isFetching={isFetching}
+        />
+      ) : null}
+
+      {companionComplete && companionGuidePhase === "actions" ? (
+        <CompanionWritingCalendarCompleteCard
+          payload={companionComplete}
+          phase="actions"
+          calendarReturnTo={returnToBase}
+          onIntroComplete={() => router.push(buildCalendarHref("calendar"), { scroll: false })}
+          onDismiss={dismissCompanionGuide}
+        />
+      ) : null}
+
+      <div
+        className={
+          companionComplete && companionGuidePhase === "calendar"
+            ? "pointer-events-none select-none opacity-0"
+            : "space-y-1.5 sm:space-y-4"
+        }
+        aria-hidden={companionComplete && companionGuidePhase === "calendar" ? true : undefined}
+      >
         <div className="max-sm:pt-0 sm:space-y-2">
           <Link
             href="/orders"
@@ -342,7 +444,7 @@ export function DiaryCalendarHome({
           />
         ) : null}
 
-        <div className="space-y-2">
+        <div className="relative space-y-2">
           <DiaryMonthCalendar
             cursorMonth={viewMonth}
             entries={entries}

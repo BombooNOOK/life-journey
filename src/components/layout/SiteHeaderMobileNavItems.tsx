@@ -101,8 +101,8 @@ export function SiteHeaderMobileNavItems({ onNavigate }: Props) {
         </MobileMenuNavButton>
       )}
 
-      <MobileMenuNavButton href="/guide" router={router}>
-        使い方
+      <MobileMenuNavButton href="/help/ljd" router={router}>
+        LJDの歩き方
       </MobileMenuNavButton>
 
       {showAuthenticatedNav ? (

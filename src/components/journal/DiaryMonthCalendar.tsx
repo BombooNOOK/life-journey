@@ -29,6 +29,8 @@ type Props = {
   onSelectDay: (day: number) => void;
   onPrevMonth: () => void;
   onNextMonth: () => void;
+  /** 伴走完了後の足あと確認：操作不可・月送りなし */
+  revealMode?: boolean;
 };
 
 const monthNavButtonClass =
@@ -58,6 +60,7 @@ export function DiaryMonthCalendar({
   onSelectDay,
   onPrevMonth,
   onNextMonth,
+  revealMode = false,
 }: Props) {
   const year = cursorMonth.getFullYear();
   const monthIndex = cursorMonth.getMonth();
@@ -78,37 +81,48 @@ export function DiaryMonthCalendar({
 
   return (
     <div
-      className="rounded-2xl border border-emerald-100 bg-white p-2.5 shadow-sm sm:p-4"
+      className={[
+        "rounded-2xl border border-emerald-100 bg-white shadow-sm",
+        revealMode ? "p-3 sm:p-5" : "p-2.5 sm:p-4",
+      ].join(" ")}
       aria-busy={isFetching}
     >
       <div className="flex items-center justify-between rounded-xl border border-stone-100 bg-stone-50/80 px-2 py-2">
-        <button
-          type="button"
-          onClick={onPrevMonth}
-          disabled={isFetching}
-          aria-busy={isFetching}
-          className={monthNavButtonClass}
-          aria-label="前の月"
-        >
-          ←
-        </button>
+        {revealMode ? (
+          <div className="w-11" aria-hidden />
+        ) : (
+          <button
+            type="button"
+            onClick={onPrevMonth}
+            disabled={isFetching}
+            aria-busy={isFetching}
+            className={monthNavButtonClass}
+            aria-label="前の月"
+          >
+            ←
+          </button>
+        )}
         <p
           className={`text-sm font-semibold text-stone-800 transition-opacity duration-150 ease-out ${
             isFetching ? "opacity-70" : "opacity-100"
-          }`}
+          } ${revealMode ? "text-base" : ""}`}
         >
           {monthLabel(cursorMonth)}
         </p>
-        <button
-          type="button"
-          onClick={onNextMonth}
-          disabled={isFetching}
-          aria-busy={isFetching}
-          className={monthNavButtonClass}
-          aria-label="次の月"
-        >
-          →
-        </button>
+        {revealMode ? (
+          <div className="w-11" aria-hidden />
+        ) : (
+          <button
+            type="button"
+            onClick={onNextMonth}
+            disabled={isFetching}
+            aria-busy={isFetching}
+            className={monthNavButtonClass}
+            aria-label="次の月"
+          >
+            →
+          </button>
+        )}
       </div>
 
       <div className="relative mt-3">
@@ -151,7 +165,7 @@ export function DiaryMonthCalendar({
               <button
                 key={`day-${day}`}
                 type="button"
-                disabled={isFetching}
+                disabled={isFetching || revealMode}
                 onClick={() => onSelectDay(day)}
                 className={[
                   "relative flex min-h-[2.85rem] flex-col overflow-hidden rounded-lg border text-xs transition-colors duration-150 outline-none ring-0",

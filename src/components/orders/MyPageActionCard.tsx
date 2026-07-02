@@ -48,7 +48,7 @@ const toneClass: Record<
 
 type Props = {
   illustration: Illustration;
-  title: string;
+  title: ReactNode;
   description: string;
   tone?: Tone;
   emphasis?: boolean;

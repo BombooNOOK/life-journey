@@ -1,3 +1,4 @@
+import { COMPANION_WRITING_CALENDAR_GUIDE_QUERY } from "@/lib/journal/companionWriting/types";
 import { normalizeDiaryDesignTheme } from "@/lib/journal/meta";
 
 /** 日本時間の暦日（YYYY-MM-DD） */
@@ -156,4 +157,46 @@ export function journalNewEntryPath(
   });
   if (profileId?.trim()) qs.set("profile", profileId.trim());
   return `/journal?${qs.toString()}`;
+}
+
+/** どうぶつ鑑定士といっしょに書く（v0 ウィザード） */
+export function journalWithCompanionPath(
+  returnTo: string,
+  profileId?: string,
+  dateYmd?: string,
+): string {
+  const qs = new URLSearchParams({ returnTo });
+  if (profileId?.trim()) qs.set("profile", profileId.trim());
+  if (dateYmd?.trim()) qs.set("date", dateYmd.trim());
+  return `/journal/with-companion?${qs.toString()}`;
+}
+
+/** 保存済み日記の続き（写真追加・本文追記） */
+export function journalEditContinuePath(params: {
+  entryId: string;
+  focus: "photo" | "body";
+  profileId?: string;
+  returnTo?: string;
+}): string {
+  const qs = new URLSearchParams({
+    edit: params.entryId.trim(),
+    focus: params.focus,
+  });
+  if (params.profileId?.trim()) qs.set("profile", params.profileId.trim());
+  if (params.returnTo?.trim()) qs.set("returnTo", params.returnTo.trim());
+  return `/journal?${qs.toString()}`;
+}
+
+/** 伴走保存後：カレンダーで足あと＋完了カードを見せる */
+export function journalCalendarAfterCompanionSavePath(params: {
+  entryDateYmd: string;
+  profileId?: string;
+}): string {
+  const monthKey = resolveJournalEntryMonthKey({ entryDateYmd: params.entryDateYmd });
+  const qs = new URLSearchParams();
+  if (monthKey) qs.set("month", monthKey);
+  qs.set("day", params.entryDateYmd.trim());
+  qs.set(COMPANION_WRITING_CALENDAR_GUIDE_QUERY, "intro");
+  if (params.profileId?.trim()) qs.set("profile", params.profileId.trim());
+  return `/orders/calendar?${qs.toString()}`;
 }

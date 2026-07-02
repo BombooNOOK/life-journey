@@ -46,6 +46,7 @@ import {
   preloadSaveTransitionOpeningAssets,
 } from "@/lib/journal/saveTransitionAssets";
 import {
+  journalCalendarAfterCompanionSavePath,
   journalCalendarPathForMonth,
   journalListPathForMonth,
   journalPreviewPath,
@@ -78,6 +79,16 @@ import {
   readJournalCompanionPreference,
   writeJournalCompanionPreference,
 } from "@/lib/journal/journalCompanionPreference";
+import {
+  clearLegacyJournalCompanionHandoff,
+  clearCompanionWritingEditSession,
+  readCompanionWritingEditSession,
+  readLegacyJournalCompanionHandoff,
+  writeCompanionWritingCalendarComplete,
+  type CompanionWritingEditSession,
+} from "@/lib/journal/companionWriting/session";
+import { CompanionWritingJournalGuide } from "@/components/journal/companion-writing/CompanionWritingJournalGuide";
+import { CompanionWritingZoneHint } from "@/components/journal/companion-writing/CompanionWritingZoneHint";
 import { OwlLoadingInline } from "@/components/ui/OwlLoadingInline";
 import { TrialStatusBanner } from "@/components/entitlement/TrialStatusBanner";
 import { useEntitlement } from "@/components/entitlement/useEntitlement";
@@ -186,6 +197,7 @@ function JournalPageContent() {
     (editingId ? canEditJournal : canWriteJournal);
   const profileId = (searchParams.get("profile") ?? "").trim();
   const dateFromQuery = searchParams.get("date");
+  const focusFromQuery = searchParams.get("focus");
   const showNumerologyDebug = searchParams.get("numerologyDebug") === "1";
   const showSyncDebug = searchParams.get("syncDebug") === "1";
   const showAuthDebug =
@@ -395,6 +407,45 @@ function JournalPageContent() {
     }
     setEntryDate(dateFromQuery);
   }, [editingId, dateFromQuery]);
+
+  useEffect(() => {
+    if (!editingId || loadingEdit) return;
+    const legacyHandoff = readLegacyJournalCompanionHandoff();
+    const focus =
+      focusFromQuery === "photo" || focusFromQuery === "body"
+        ? focusFromQuery
+        : legacyHandoff?.focus;
+    if (!focus) return;
+    clearLegacyJournalCompanionHandoff();
+    const targetId =
+      focus === "photo" ? "journal-photo-section" : "journal-body-section";
+    requestAnimationFrame(() => {
+      document.getElementById(targetId)?.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+    });
+  }, [editingId, focusFromQuery, loadingEdit]);
+
+  const [companionEditSession, setCompanionEditSession] =
+    useState<CompanionWritingEditSession | null>(null);
+  const [companionGuideDismissed, setCompanionGuideDismissed] = useState(false);
+
+  useEffect(() => {
+    if (!editingId || loadingEdit) {
+      setCompanionEditSession(null);
+      setCompanionGuideDismissed(false);
+      return;
+    }
+    const session = readCompanionWritingEditSession();
+    if (session?.entryId === editingId) {
+      setCompanionEditSession(session);
+      setCompanionGuideDismissed(false);
+    } else {
+      setCompanionEditSession(null);
+      setCompanionGuideDismissed(false);
+    }
+  }, [editingId, loadingEdit]);
 
   useLayoutEffect(() => {
     if (editingId) {
@@ -653,6 +704,29 @@ function JournalPageContent() {
       }
 
       localDraft.clearDraftAfterSuccessfulSave();
+
+      const companionEdit = editingId ? readCompanionWritingEditSession() : null;
+      const isCompanionEditSave =
+        companionEdit != null && companionEdit.entryId === editingId;
+
+      if (isCompanionEditSave) {
+        writeCompanionWritingCalendarComplete({
+          version: 1,
+          entryId: savedId,
+          entryDateYmd: entryDate,
+          companionType: companionEdit.companionType,
+          profileId: effectiveProfileId,
+          designTheme,
+        });
+        clearCompanionWritingEditSession();
+        router.push(
+          journalCalendarAfterCompanionSavePath({
+            entryDateYmd: entryDate,
+            profileId: effectiveProfileId,
+          }),
+        );
+        return;
+      }
 
       const monthKey = resolveJournalEntryMonthKey({ entryDateYmd: entryDate });
       const listFallback = monthKey ? journalListPathForMonth(monthKey) : "/orders/list";
@@ -986,6 +1060,28 @@ function JournalPageContent() {
           </div>
         ) : null}
 
+        {companionEditSession && !companionGuideDismissed ? (
+          <CompanionWritingJournalGuide
+            companionType={companionEditSession.companionType}
+            emphasis={companionEditSession.emphasis}
+            onDismiss={() => setCompanionGuideDismissed(true)}
+          />
+        ) : null}
+
+        <div
+          id="journal-body-section"
+          className={
+            companionEditSession?.emphasis === "body"
+              ? "rounded-xl ring-2 ring-emerald-200/55 ring-offset-2"
+              : undefined
+          }
+        >
+        {companionEditSession ? (
+          <CompanionWritingZoneHint
+            kind="body"
+            emphasized={companionEditSession.emphasis === "body"}
+          />
+        ) : null}
         <JournalWritingComposer
           label={
             <FieldLabelWithHelp
@@ -1012,6 +1108,7 @@ function JournalPageContent() {
           bodyOverflows={bodyOverflows}
           commentOverflows={commentOverflows}
         />
+        </div>
 
         <fieldset className="hidden rounded-lg border border-stone-200/80 bg-stone-50/60 px-3 py-2.5 sm:block">
           <legend className="sr-only">文字サイズ</legend>
@@ -1054,7 +1151,21 @@ function JournalPageContent() {
           commentOverflows={commentOverflows}
         />
 
-        <div className="space-y-2 rounded-lg border border-dashed border-stone-200/90 bg-[#faf8f5]/50 px-3 py-3">
+        <div
+          id="journal-photo-section"
+          className={[
+            "space-y-2 rounded-lg border border-dashed border-stone-200/90 bg-[#faf8f5]/50 px-3 py-3",
+            companionEditSession?.emphasis === "photo"
+              ? "ring-2 ring-emerald-200/55 ring-offset-2"
+              : "",
+          ].join(" ")}
+        >
+          {companionEditSession ? (
+            <CompanionWritingZoneHint
+              kind="photo"
+              emphasized={companionEditSession.emphasis === "photo"}
+            />
+          ) : null}
           <label className="lj-read-desc block font-medium text-stone-700" htmlFor="journal-photo">
             この日の写真（任意）
           </label>
