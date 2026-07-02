@@ -48,6 +48,14 @@ export const COMPANION_SAVE_FOREST_FRAME_PATHS = [
 /** 完了カードのメイン文言 */
 export const COMPANION_WRITING_COMPLETE_CARD_MESSAGE = "今日の1ページ、森に届きました！";
 
+/** 伴走保存〜カレンダー表示までのフクロウ文言 */
+export const COMPANION_WRITING_SAVE_LOADING_LABEL =
+  "フクロウ先生が日記のあしあとを確認しています…";
+
+/** 森への届け演出カード内テキスト */
+export const COMPANION_WRITING_FOREST_DELIVERY_CARD_TEXT =
+  "今日の1ページが、森へ向かっています…";
+
 /** カレンダー表示中の仮ギミック文言（本番用は後で差し替え可） */
 export const COMPANION_WRITING_CALENDAR_REVEAL_STATUS =
   "カレンダーに、今日のしるしがのこりました";

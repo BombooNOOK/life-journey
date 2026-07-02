@@ -37,6 +37,7 @@ import {
   COMPANION_WRITING_APPRAISER_PICK_HEADING,
   COMPANION_WRITING_APPRAISER_PICK_HINT,
   COMPANION_WRITING_FORMAL_TITLE,
+  COMPANION_WRITING_SAVE_LOADING_LABEL,
   type CompanionWritingWizardStep,
 } from "@/lib/journal/companionWriting/types";
 import { DEFAULT_CONTENT_FONT_MODE } from "@/lib/journal/contentFontMode";
@@ -230,7 +231,6 @@ export function CompanionWritingPage() {
       window.location.assign(calendarPath);
     } catch (e) {
       setError(e instanceof Error ? e.message : "保存に失敗しました。");
-    } finally {
       setSaving(false);
     }
   }, [
@@ -282,7 +282,21 @@ export function CompanionWritingPage() {
   }
 
   return (
-    <div className="mx-auto max-w-lg space-y-5 px-5 py-5 sm:space-y-4 sm:px-4 sm:py-8">
+    <div className="relative mx-auto max-w-lg space-y-5 px-5 py-5 sm:space-y-4 sm:px-4 sm:py-8">
+      {step === "write" && saving ? (
+        <div
+          className="fixed inset-0 z-[70] flex items-center justify-center bg-[#faf8f5]/92 backdrop-blur-[2px]"
+          aria-live="polite"
+          aria-busy="true"
+          role="status"
+        >
+          <OwlLoadingInline
+            label={COMPANION_WRITING_SAVE_LOADING_LABEL}
+            size="md"
+            className="rounded-xl border border-stone-200 bg-white px-5 py-4 text-sm text-stone-700 shadow-sm"
+          />
+        </div>
+      ) : null}
       <header className="space-y-2">
         <p className="text-sm">
           <Link

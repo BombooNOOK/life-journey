@@ -7,7 +7,7 @@ import {
   COMPANION_SAVE_FOREST_FRAME_STEP_MS,
 } from "@/lib/journal/companionWriting/companionSaveForestAssets";
 
-/** 伴走保存後：日記ブック3枚が左・中・右へ順番に現れる */
+/** 伴走保存後：日記ブック3枚が左・中・右へ順番に現れる（きのこ演出と同サイズ） */
 export function CompanionSaveForestDeliveryIndicator() {
   const [visibleCount, setVisibleCount] = useState(0);
 
@@ -42,7 +42,7 @@ export function CompanionSaveForestDeliveryIndicator() {
 
   return (
     <div
-      className="mx-auto flex h-20 w-[min(100%,20rem)] items-end justify-center gap-4 sm:h-24 sm:w-[min(100%,24rem)] sm:gap-5"
+      className="mx-auto flex h-16 w-[min(100%,13.5rem)] items-end justify-center gap-3 sm:gap-4"
       aria-hidden
     >
       {COMPANION_SAVE_FOREST_FRAMES.map((frame, index) => {
@@ -50,7 +50,7 @@ export function CompanionSaveForestDeliveryIndicator() {
         return (
           <div
             key={frame.key}
-            className={`flex h-[11.5rem] w-[9.5rem] shrink-0 items-end justify-center sm:h-[13.5rem] sm:w-[11rem] ${
+            className={`flex h-14 w-14 shrink-0 items-end justify-center ${
               visible ? "opacity-100" : "opacity-0"
             }`}
           >
@@ -58,10 +58,10 @@ export function CompanionSaveForestDeliveryIndicator() {
             <img
               src={frame.src}
               alt=""
-              width={220}
-              height={220}
+              width={56}
+              height={56}
               decoding="sync"
-              className="max-h-[11.5rem] max-w-[9.5rem] object-contain object-bottom sm:max-h-[13.5rem] sm:max-w-[11rem]"
+              className="max-h-14 max-w-14 object-contain object-bottom"
             />
           </div>
         );

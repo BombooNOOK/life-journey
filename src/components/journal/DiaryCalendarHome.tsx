@@ -42,6 +42,7 @@ import {
   COMPANION_WRITING_CALENDAR_GUIDE_QUERY,
   COMPANION_WRITING_CALENDAR_REVEAL_MS,
   COMPANION_WRITING_FOREST_DELIVERY_MS,
+  COMPANION_WRITING_SAVE_LOADING_LABEL,
   parseCompanionWritingCalendarGuidePhase,
   type CompanionWritingCalendarGuidePhase,
 } from "@/lib/journal/companionWriting/types";
@@ -179,9 +180,9 @@ export function DiaryCalendarHome({
   const monthKey = useMemo(() => toMonthKey(viewMonth), [viewMonth]);
   const calendarLoadingLabel = !hasLoadedOnce
     ? "カレンダーを読み込み中です…"
-    : "フクロウ先生が日記の足跡を確認しています…";
+    : COMPANION_WRITING_SAVE_LOADING_LABEL;
   const CALENDAR_FETCH_ERROR =
-    "日記の足跡を読み込めませんでした。時間をおいて再度お試しください。";
+    "日記のあしあとを読み込めませんでした。時間をおいて再度お試しください。";
   const returnToBase = useMemo(() => {
     const qs = new URLSearchParams();
     if (selectedDay !== null) {

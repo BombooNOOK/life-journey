@@ -12,6 +12,12 @@ export const myPageActionIllustrations = {
     height: 1024,
     alt: "",
   },
+  logHouse: {
+    src: "/images/mypage/mypage_loghouse.png?v=1",
+    width: 1024,
+    height: 1024,
+    alt: "",
+  },
   readDiary: {
     src: "/images/mypage/mypage_action_read_diary.png?v=2",
     width: 609,
