@@ -6,6 +6,12 @@ export const myPageActionIllustrations = {
     height: 532,
     alt: "",
   },
+  writeCompanion: {
+    src: "/images/mypage/mypage_action_write_companion.png?v=1",
+    width: 1024,
+    height: 1024,
+    alt: "",
+  },
   readDiary: {
     src: "/images/mypage/mypage_action_read_diary.png?v=2",
     width: 609,

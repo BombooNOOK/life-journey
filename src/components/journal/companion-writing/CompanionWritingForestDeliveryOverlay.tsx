@@ -1,18 +1,30 @@
 "use client";
 
 import Image from "next/image";
-import { useLayoutEffect } from "react";
+import { useLayoutEffect, useState } from "react";
 
 import { CompanionSaveForestDeliveryIndicator } from "@/components/journal/companion-writing/CompanionSaveForestDeliveryIndicator";
+import { OwlLoadingInline } from "@/components/ui/OwlLoadingInline";
 import { preloadCompanionSaveForestAssets } from "@/lib/journal/companionWriting/companionSaveForestAssets";
 import {
   SAVE_TRANSITION_FOREST_BG_DESKTOP_SRC,
   SAVE_TRANSITION_FOREST_BG_MOBILE_SRC,
 } from "@/lib/journal/saveTransitionAssets";
 
+const COMPANION_FOREST_DELIVERY_LOADING_LABEL =
+  "フクロウ先生が、森への届け先を確認しています…";
+
 export function CompanionWritingForestDeliveryOverlay() {
+  const [assetsReady, setAssetsReady] = useState(false);
+
   useLayoutEffect(() => {
-    void preloadCompanionSaveForestAssets();
+    let cancelled = false;
+    void preloadCompanionSaveForestAssets().then(() => {
+      if (!cancelled) setAssetsReady(true);
+    });
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   return (
@@ -41,8 +53,18 @@ export function CompanionWritingForestDeliveryOverlay() {
         />
       </div>
 
-      <div className="relative z-10 w-full max-w-lg">
-        <CompanionSaveForestDeliveryIndicator />
+      <div className="relative z-10 w-full max-w-3xl px-2">
+        {assetsReady ? (
+          <CompanionSaveForestDeliveryIndicator />
+        ) : (
+          <div className="flex justify-center py-10">
+            <OwlLoadingInline
+              label={COMPANION_FOREST_DELIVERY_LOADING_LABEL}
+              size="md"
+              className="text-sm text-stone-700"
+            />
+          </div>
+        )}
       </div>
     </div>
   );

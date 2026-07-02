@@ -63,7 +63,7 @@ export function MyPageMainActions({
             className={navButtonClass}
           >
             <MyPageActionCard
-              illustration={myPageActionIllustrations.writeDiary}
+              illustration={myPageActionIllustrations.writeCompanion}
               title={<CompanionWritingButtonLabel />}
               description="今日の気分から、短く書き始めます"
               tone="emerald"

@@ -120,8 +120,8 @@ export function CompanionWritingPage() {
   );
 
   const acknowledgmentLine = useMemo(
-    () => buildCompanionAcknowledgmentLine(mood, activity),
-    [activity, mood],
+    () => buildCompanionAcknowledgmentLine(activity),
+    [activity],
   );
 
   const companionShortLine = useMemo(

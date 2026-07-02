@@ -1,17 +1,16 @@
 import Image from "next/image";
 
 /**
- * マイページ見出し右上のフクロウ先生挿絵。
- * 外すときは orders/page.tsx からこの import と利用箇所を削除するだけでOK。
+ * ログハウス見出し右上のフクロウ先生挿絵（どうぶつ鑑定士といっしょに書く）。
  */
 export function MyPageHeaderIllustration() {
   return (
     <Image
-      src="/decorations/owl-sensei-my-page-header.png?v=3"
+      src="/images/mypage/mypage_action_write_companion.png?v=1"
       alt=""
       aria-hidden
-      width={610}
-      height={751}
+      width={1024}
+      height={1024}
       className="h-[3.25rem] w-auto select-none object-contain sm:h-[4.25rem]"
       priority
     />
