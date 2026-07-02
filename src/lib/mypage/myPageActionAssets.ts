@@ -13,7 +13,7 @@ export const myPageActionIllustrations = {
     alt: "",
   },
   logHouse: {
-    src: "/images/mypage/mypage_loghouse.png?v=1",
+    src: "/images/mypage/mypage_loghouse.png?v=2",
     width: 1024,
     height: 1024,
     alt: "",

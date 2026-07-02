@@ -147,9 +147,21 @@ export function DiaryCalendarHome({
   const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showProfilePanel, setShowProfilePanel] = useState(false);
+  const companionGuideFromUrl = useMemo(
+    () =>
+      parseCompanionWritingCalendarGuidePhase(
+        searchParams.get(COMPANION_WRITING_CALENDAR_GUIDE_QUERY),
+      ),
+    [searchParams],
+  );
+
   const [companionComplete, setCompanionComplete] =
-    useState<CompanionWritingCalendarCompletePayload | null>(null);
+    useState<CompanionWritingCalendarCompletePayload | null>(() => {
+      if (!companionGuideFromUrl) return null;
+      return readCompanionWritingCalendarComplete();
+    });
   const fetchGenerationRef = useRef(0);
+  const calendarRevealStartedAtRef = useRef<number | null>(null);
 
   const buildCalendarHref = useCallback(
     (cwGuide?: CompanionWritingCalendarGuidePhase | null) => {
@@ -193,40 +205,46 @@ export function DiaryCalendarHome({
   }, [viewMonth, selectedDay]);
 
   useEffect(() => {
-    const payload = readCompanionWritingCalendarComplete();
-    const guideFromUrl = parseCompanionWritingCalendarGuidePhase(
-      searchParams.get(COMPANION_WRITING_CALENDAR_GUIDE_QUERY),
-    );
-
-    if (!payload) return;
-
-    // 伴走保存直後のみ cwGuide 付きで遷移する。通常カレンダーでは古い session を無視する。
-    if (!guideFromUrl) {
+    if (!companionGuideFromUrl) {
       clearCompanionWritingCalendarComplete();
+      setCompanionComplete(null);
       return;
     }
 
-    setCompanionComplete(payload);
+    const payload = readCompanionWritingCalendarComplete();
+    if (!payload) return;
+
+    setCompanionComplete((current) => current ?? payload);
     void preloadCompanionSaveForestAssets();
     const day = parseDayParam(payload.entryDateYmd);
     if (day) {
       setViewMonth(new Date(day.year, day.monthIndex, 1));
       setSelectedDay(day.day);
     }
-    // 伴走完了の初回表示だけ URL を整える
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [companionGuideFromUrl]);
 
   const companionCalendarRevealReady =
     companionGuidePhase === "calendar" && !isFetching;
 
   useEffect(() => {
+    if (companionGuidePhase !== "calendar") {
+      calendarRevealStartedAtRef.current = null;
+      return;
+    }
     if (!companionCalendarRevealReady) return;
+
+    if (calendarRevealStartedAtRef.current === null) {
+      calendarRevealStartedAtRef.current = Date.now();
+    }
+
+    const elapsed = Date.now() - calendarRevealStartedAtRef.current;
+    const remaining = Math.max(0, COMPANION_WRITING_CALENDAR_REVEAL_MS - elapsed);
+
     const timer = window.setTimeout(() => {
       router.replace(buildCalendarHref("forest"), { scroll: false });
-    }, COMPANION_WRITING_CALENDAR_REVEAL_MS);
+    }, remaining);
     return () => window.clearTimeout(timer);
-  }, [buildCalendarHref, companionCalendarRevealReady, router]);
+  }, [buildCalendarHref, companionCalendarRevealReady, companionGuidePhase, router]);
 
   useEffect(() => {
     if (companionGuidePhase !== "forest") return;
@@ -259,10 +277,13 @@ export function DiaryCalendarHome({
   }, [authSession.ready, authSession.firebaseEmail]);
 
   const loadMonthFor = useCallback(
-    async (targetMonth: Date, opts?: { clearSelection?: boolean }) => {
+    async (
+      targetMonth: Date,
+      opts?: { clearSelection?: boolean; quiet?: boolean },
+    ) => {
       const generation = ++fetchGenerationRef.current;
       const key = toMonthKey(targetMonth);
-      setIsFetching(true);
+      if (!opts?.quiet) setIsFetching(true);
       setError(null);
       try {
         const list = await fetchJournalMonth(key, effectiveProfileId);
@@ -283,15 +304,30 @@ export function DiaryCalendarHome({
     [effectiveProfileId],
   );
 
+  const companionGuideQuietFetch =
+    companionGuideFromUrl !== null || companionGuidePhase !== null;
+
   useEffect(() => {
     if (!authSession.ready) return;
-    void loadMonthFor(viewMonth, { clearSelection: false });
-  }, [authSession.ready, effectiveProfileId, loadMonthFor, viewMonth]);
+    void loadMonthFor(viewMonth, {
+      clearSelection: false,
+      quiet: companionGuideQuietFetch,
+    });
+  }, [
+    authSession.ready,
+    companionGuideQuietFetch,
+    effectiveProfileId,
+    loadMonthFor,
+    viewMonth,
+  ]);
 
   useEffect(() => {
     const reload = () => {
       if (!authSession.ready) return;
-      void loadMonthFor(viewMonth, { clearSelection: false });
+      void loadMonthFor(viewMonth, {
+        clearSelection: false,
+        quiet: companionGuideQuietFetch,
+      });
     };
     const onVisibility = () => {
       if (document.visibilityState === "visible") reload();
@@ -304,7 +340,7 @@ export function DiaryCalendarHome({
       window.removeEventListener("pageshow", reload);
       document.removeEventListener("visibilitychange", onVisibility);
     };
-  }, [authSession.ready, loadMonthFor, viewMonth]);
+  }, [authSession.ready, companionGuideQuietFetch, loadMonthFor, viewMonth]);
 
   const shiftMonth = useCallback(
     (delta: -1 | 1) => {
@@ -369,18 +405,23 @@ export function DiaryCalendarHome({
   const writeTodayButtonClass = `${writeButtonBase} border border-[#E7C66A] bg-[#D8A93A] text-white hover:bg-[#C99A2E]`;
   const writeSelectedDayButtonClass = `${writeButtonBase} border border-emerald-300/80 bg-emerald-700 text-white hover:border-emerald-400 hover:bg-emerald-800`;
 
+  const awaitingCompanionBootstrap =
+    companionGuideFromUrl !== null && companionComplete === null;
+
   const companionGuideBlocksCalendar =
-    companionComplete &&
-    (companionGuidePhase === "calendar" || companionGuidePhase === "forest");
+    awaitingCompanionBootstrap ||
+    (companionComplete !== null &&
+      (companionGuidePhase === "calendar" || companionGuidePhase === "forest"));
 
   return (
     <div>
-      {companionComplete && companionGuidePhase === "calendar" ? (
+      {(companionComplete && companionGuidePhase === "calendar") ||
+      (awaitingCompanionBootstrap && companionGuideFromUrl === "calendar") ? (
         <CompanionWritingCalendarRevealOverlay
           cursorMonth={viewMonth}
           entries={entries}
           selectedDay={selectedDay}
-          isFetching={isFetching}
+          isFetching={isFetching || awaitingCompanionBootstrap}
         />
       ) : null}
 

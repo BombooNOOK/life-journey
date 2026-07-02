@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
@@ -9,10 +10,8 @@ import { CompanionWritingAppraiserPicker } from "@/components/journal/companion-
 import {
   companionWritingWizardStepBodyClass,
   companionWritingWizardStepClass,
-  companionWritingWizardStepHeadingClass,
 } from "@/components/journal/companion-writing/companionWritingGuideStyles";
 import { MoodOwlIcon } from "@/components/journal/MoodOwlIcon";
-import { ActiveProfileLabel } from "@/components/profile/ActiveProfileLabel";
 import { TrialStatusBanner } from "@/components/entitlement/TrialStatusBanner";
 import { useEntitlement } from "@/components/entitlement/useEntitlement";
 import { OwlLoadingInline } from "@/components/ui/OwlLoadingInline";
@@ -37,10 +36,14 @@ import {
   COMPANION_WRITING_APPRAISER_PICK_HEADING,
   COMPANION_WRITING_APPRAISER_PICK_HINT,
   COMPANION_WRITING_FORMAL_TITLE,
+  COMPANION_WRITING_MOOD_PICK_HEADING,
   COMPANION_WRITING_SAVE_LOADING_LABEL,
+  COMPANION_WRITING_WRITE_HEADING,
+  COMPANION_WRITING_WRITE_HINT,
   type CompanionWritingWizardStep,
 } from "@/lib/journal/companionWriting/types";
 import { DEFAULT_CONTENT_FONT_MODE } from "@/lib/journal/contentFontMode";
+import { diaryBookEntryCompanionImagePath } from "@/lib/journal/diaryBookEntryAssets";
 import {
   journalCalendarAfterCompanionSavePath,
   journalNewEntryPath,
@@ -76,11 +79,10 @@ function isValidDateInput(value: string): boolean {
   );
 }
 
-const stepLabels: Record<CompanionWritingWizardStep, string> = {
-  companion: "鑑定士",
-  mood: "気分",
-  activity: "一日",
-  write: "書く",
+const stepHeadingByStep: Partial<Record<CompanionWritingWizardStep, string>> = {
+  mood: COMPANION_WRITING_MOOD_PICK_HEADING,
+  activity: COMPANION_WRITING_ACTIVITY_HEADING,
+  write: COMPANION_WRITING_WRITE_HEADING,
 };
 
 export function CompanionWritingPage() {
@@ -132,6 +134,11 @@ export function CompanionWritingPage() {
 
   const companionName = useMemo(
     () => getAppraiserDisplayName(companionType),
+    [companionType],
+  );
+
+  const companionIllustrationPath = useMemo(
+    () => diaryBookEntryCompanionImagePath(companionType),
     [companionType],
   );
 
@@ -324,18 +331,19 @@ export function CompanionWritingPage() {
               </p>
             </div>
           </>
-        ) : (
+        ) : step === "mood" || step === "activity" || step === "write" ? (
           <>
-            <h1 className="text-xl font-bold leading-snug text-stone-900 sm:text-2xl">
-              {COMPANION_WRITING_FORMAL_TITLE}
-            </h1>
-            <ActiveProfileLabel nickname={profileState.activeProfileNickname} />
-            {entitlement ? <TrialStatusBanner entitlement={entitlement} /> : null}
-            <p className="text-xs text-stone-500" aria-live="polite">
-              {stepLabels[step]} — 短く書くだけで大丈夫です
+            <p className="text-xs leading-snug text-stone-500">
+              プロフィール：
+              <span className="font-medium text-stone-700">
+                {profileState.activeProfileNickname}
+              </span>
             </p>
+            <h1 className="text-xl font-bold leading-snug text-stone-900 sm:text-2xl">
+              {stepHeadingByStep[step]}
+            </h1>
           </>
-        )}
+        ) : null}
       </header>
 
       {step === "companion" ? (
@@ -374,11 +382,8 @@ export function CompanionWritingPage() {
               今日の案内役：{getAppraiserDisplayName(omakaseResolved)}
             </p>
           ) : null}
-          <p className={companionWritingWizardStepBodyClass}>今日の気分を選んでください。</p>
           <fieldset>
-            <legend className={`mb-2 block ${companionWritingWizardStepHeadingClass}`}>
-              今日の気分
-            </legend>
+            <legend className="sr-only">今日の気分</legend>
             <div
               className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 sm:gap-2"
               role="radiogroup"
@@ -428,15 +433,12 @@ export function CompanionWritingPage() {
 
       {step === "activity" ? (
         <section className={companionWritingWizardStepClass}>
-          <label
-            className={`block ${companionWritingWizardStepHeadingClass}`}
-            htmlFor="companion-writing-activity"
-          >
-            {COMPANION_WRITING_ACTIVITY_HEADING}
-          </label>
-          <p className={`mt-1.5 mb-3 ${companionWritingWizardStepBodyClass}`}>
+          <p className={`mb-3 ${companionWritingWizardStepBodyClass}`}>
             いちばん近いものを選んでください。
           </p>
+          <label className="sr-only" htmlFor="companion-writing-activity">
+            {COMPANION_WRITING_ACTIVITY_HEADING}
+          </label>
           <select
             id="companion-writing-activity"
             value={activity}
@@ -478,15 +480,25 @@ export function CompanionWritingPage() {
           <p className={`leading-relaxed text-stone-800 ${companionWritingWizardStepBodyClass}`}>
             {acknowledgmentLine}
           </p>
-          <div className="space-y-1 rounded-lg border border-emerald-100 bg-emerald-50/60 px-4 py-3.5 sm:py-3">
-            <p className="text-sm font-medium text-stone-800">{companionName}：</p>
-            <p className="text-base leading-7 text-stone-800 sm:text-sm">
-              「{companionShortLine}」
-            </p>
+          <div className="flex items-start gap-3 rounded-lg border border-emerald-100 bg-emerald-50/60 px-3 py-3.5 sm:px-4 sm:py-3">
+            <Image
+              src={companionIllustrationPath}
+              alt=""
+              width={682}
+              height={1024}
+              sizes="64px"
+              className="h-20 w-14 shrink-0 object-contain object-bottom sm:h-24 sm:w-16"
+            />
+            <div className="min-w-0 space-y-1">
+              <p className="text-sm font-medium text-stone-800">{companionName}：</p>
+              <p className="text-base leading-7 text-stone-800 sm:text-sm">
+                「{companionShortLine}」
+              </p>
+            </div>
           </div>
           <label className="block space-y-2" htmlFor="companion-writing-answer">
             <span className={companionWritingWizardStepBodyClass}>
-              あなたの言葉で、短く残してみてください
+              {COMPANION_WRITING_WRITE_HINT}
             </span>
             <textarea
               id="companion-writing-answer"

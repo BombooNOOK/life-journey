@@ -24,6 +24,14 @@ export const COMPANION_WRITING_APPRAISER_PICK_HEADING = "今日の案内役を�
 export const COMPANION_WRITING_APPRAISER_PICK_HINT =
   "気になる鑑定士をひとり選んでください。";
 
+/** 伴走ウィザード：気分選択 */
+export const COMPANION_WRITING_MOOD_PICK_HEADING = "今日の気分をえらぶ";
+
+/** 伴走ウィザード：日記入力 */
+export const COMPANION_WRITING_WRITE_HEADING = "あなたの言葉で残してみてください";
+
+export const COMPANION_WRITING_WRITE_HINT = "短くても大丈夫です";
+
 export const COMPANION_WRITING_OMAKASE_LABEL = "おまかせ";
 
 export const COMPANION_WRITING_CALENDAR_GUIDE_TITLE = "ここに、今日のあしあとが残りました";
