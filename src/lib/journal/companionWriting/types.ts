@@ -56,6 +56,10 @@ export const COMPANION_SAVE_FOREST_FRAME_PATHS = [
 /** 完了カードのメイン文言 */
 export const COMPANION_WRITING_COMPLETE_CARD_MESSAGE = "今日の1ページ、森に届きました！";
 
+export const COMPANION_WRITING_COMPLETE_GROW_LABEL = "今日のページをもう少し育てる";
+
+export const COMPANION_WRITING_COMPLETE_FINISH_LABEL = "確認しておしまい";
+
 /** 伴走保存〜カレンダー表示までのフクロウ文言 */
 export const COMPANION_WRITING_SAVE_LOADING_LABEL =
   "フクロウ先生が日記のあしあとを確認しています…";

@@ -13,10 +13,14 @@ import { COMPANION_WRITING_APPRAISER_FACE } from "@/lib/journal/companionWriting
 import { getCompanionWritingCalendarWhisper } from "@/lib/journal/companionWriting/guideWhispers";
 import {
   clearCompanionWritingCalendarComplete,
-  prepareCompanionWritingEditNavigation,
+  prepareCompanionWritingGrowNavigation,
   type CompanionWritingCalendarCompletePayload,
 } from "@/lib/journal/companionWriting/session";
-import { COMPANION_WRITING_COMPLETE_CARD_MESSAGE } from "@/lib/journal/companionWriting/types";
+import {
+  COMPANION_WRITING_COMPLETE_CARD_MESSAGE,
+  COMPANION_WRITING_COMPLETE_FINISH_LABEL,
+  COMPANION_WRITING_COMPLETE_GROW_LABEL,
+} from "@/lib/journal/companionWriting/types";
 import { journalPreviewPath } from "@/lib/journal/journalNav";
 import { getDecorationAsset } from "@/lib/decorations/catalog";
 import type { CompanionType } from "@/lib/journal/meta";
@@ -50,24 +54,11 @@ export function CompanionWritingCalendarCompleteCard({
     onDismiss();
   };
 
-  const goPhoto = () => {
-    const href = prepareCompanionWritingEditNavigation({
+  const goGrow = () => {
+    const href = prepareCompanionWritingGrowNavigation({
       entryId: payload.entryId,
       entryDateYmd: payload.entryDateYmd,
       companionType: payload.companionType,
-      focus: "photo",
-      profileId: payload.profileId,
-    });
-    dismissGuide();
-    router.push(href);
-  };
-
-  const goBody = () => {
-    const href = prepareCompanionWritingEditNavigation({
-      entryId: payload.entryId,
-      entryDateYmd: payload.entryDateYmd,
-      companionType: payload.companionType,
-      focus: "body",
       profileId: payload.profileId,
     });
     dismissGuide();
@@ -106,18 +97,15 @@ export function CompanionWritingCalendarCompleteCard({
         </div>
 
         <div className="mt-5 flex flex-col gap-2.5">
-          <button type="button" onClick={goPhoto} className={companionWritingGuideSecondaryButtonClass}>
-            今日の思い出の写真を選ぶ
-          </button>
-          <button type="button" onClick={goBody} className={companionWritingGuideSecondaryButtonClass}>
-            もっときもちを残す
+          <button type="button" onClick={goGrow} className={companionWritingGuideSecondaryButtonClass}>
+            {COMPANION_WRITING_COMPLETE_GROW_LABEL}
           </button>
           <a
             href={previewHref}
             onClick={dismissGuide}
             className={companionWritingGuidePrimaryButtonClass}
           >
-            今日の1ページを見ておしまい
+            {COMPANION_WRITING_COMPLETE_FINISH_LABEL}
           </a>
         </div>
       </CompanionWritingGuideCardShell>

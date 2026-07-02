@@ -125,14 +125,16 @@ export function prepareCompanionWritingEditNavigation(params: {
   entryDateYmd: string;
   companionType: CompanionType;
   focus: JournalCompanionHandoffFocus;
+  emphasis?: JournalCompanionHandoffFocus | "both";
   profileId?: string;
 }): string {
+  const emphasis = params.emphasis ?? params.focus;
   writeCompanionWritingEditSession({
     version: 1,
     entryId: params.entryId,
     entryDateYmd: params.entryDateYmd,
     companionType: params.companionType,
-    emphasis: params.focus,
+    emphasis,
     profileId: params.profileId,
   });
   return journalEditContinuePath({
@@ -143,6 +145,20 @@ export function prepareCompanionWritingEditNavigation(params: {
       entryDateYmd: params.entryDateYmd,
       profileId: params.profileId,
     }),
+  });
+}
+
+/** 完了カード「育てる」→ 編集画面で写真・本文の両方を案内 */
+export function prepareCompanionWritingGrowNavigation(params: {
+  entryId: string;
+  entryDateYmd: string;
+  companionType: CompanionType;
+  profileId?: string;
+}): string {
+  return prepareCompanionWritingEditNavigation({
+    ...params,
+    focus: "body",
+    emphasis: "both",
   });
 }
 
