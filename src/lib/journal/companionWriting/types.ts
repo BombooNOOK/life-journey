@@ -48,9 +48,9 @@ export const COMPANION_WRITING_CALENDAR_REVEAL_MS = 3000;
 export const COMPANION_WRITING_FOREST_DELIVERY_MS = 3000;
 
 export const COMPANION_SAVE_FOREST_FRAME_PATHS = [
-  "/images/ljd/companion-save/companion_save_forest_01_book_start.png",
-  "/images/ljd/companion-save/companion_save_forest_02_book_flying.png",
-  "/images/ljd/companion-save/companion_save_forest_03_book_arrived.png",
+  "/images/ljd/companion-save/companion_save_forest_01_book_start.png?v=2",
+  "/images/ljd/companion-save/companion_save_forest_02_book_flying.png?v=2",
+  "/images/ljd/companion-save/companion_save_forest_03_book_arrived.png?v=2",
 ] as const;
 
 /** 完了カードのメイン文言 */
