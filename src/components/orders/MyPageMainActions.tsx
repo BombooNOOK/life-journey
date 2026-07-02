@@ -3,16 +3,21 @@
 import Link from "next/link";
 
 import { MyPageActionCard } from "@/components/orders/MyPageActionCard";
+import { CompanionWritingButtonLabel } from "@/components/journal/companion-writing/CompanionWritingButtonLabel";
 import { FieldLabelWithHelp } from "@/components/ui/InlineHelpButton";
 import { ProfileSelectNavButton } from "@/components/profile/ProfileSelectNavButton";
 import { myPageActionIllustrations } from "@/lib/mypage/myPageActionAssets";
+import { COMPANION_WRITING_FORMAL_TITLE } from "@/lib/journal/companionWriting/types";
 import type { SerializedUserEntitlement } from "@/lib/entitlement/resolveUserEntitlement";
+import type { FirstVisitGuideState } from "@/lib/onboarding/firstVisitGuideState";
 
 type Props = {
   profileId: string;
   isActive: boolean;
   entitlement: SerializedUserEntitlement;
   kanteiOrderId: string | null;
+  firstVisitGuideState: FirstVisitGuideState;
+  companionWritingHref: string;
 };
 
 const navButtonClass =
@@ -24,18 +29,23 @@ export function MyPageMainActions({
   isActive,
   entitlement,
   kanteiOrderId,
+  firstVisitGuideState,
+  companionWritingHref,
 }: Props) {
   const canWriteJournal =
     entitlement.canUseContinuedFeatures || entitlement.canCreateFirstJournal;
   const journalEmphasis = entitlement.tier === "trial_not_started";
   const journalBlocked = entitlement.tier === "trial_expired" || !canWriteJournal;
+  const showCompanionWriting =
+    canWriteJournal && kanteiOrderId != null && firstVisitGuideState !== "needs_kantei";
+  const companionEmphasis = firstVisitGuideState === "ready_first_journal";
 
   return (
     <section id="main-actions" className="space-y-3">
       <FieldLabelWithHelp
         label="② やりたいことを選ぶ"
         labelClassName="text-lg font-semibold text-stone-900"
-        helpAriaLabel="マイページの操作説明"
+        helpAriaLabel="ログハウスの操作説明"
         help={
           <p>
             選んだプロフィールの日記を書いたり、記録や本棚・鑑定結果を開けます。
@@ -44,6 +54,24 @@ export function MyPageMainActions({
       />
 
       <div className="flex w-full flex-col gap-3">
+        {showCompanionWriting ? (
+          <ProfileSelectNavButton
+            profileId={profileId}
+            href={companionWritingHref}
+            directNav={isActive}
+            loadingLabel={`${COMPANION_WRITING_FORMAL_TITLE}画面を開いています…`}
+            className={navButtonClass}
+          >
+            <MyPageActionCard
+              illustration={myPageActionIllustrations.writeDiary}
+              title={<CompanionWritingButtonLabel />}
+              description="今日の気分から、短く書き始めます"
+              tone="emerald"
+              emphasis={companionEmphasis}
+            />
+          </ProfileSelectNavButton>
+        ) : null}
+
         {journalBlocked ? (
           <div className="space-y-2">
             <MyPageActionCard

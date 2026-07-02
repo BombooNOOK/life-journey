@@ -172,8 +172,8 @@ function SiteHeaderInner() {
                 </span>
               </>
             ) : null}
-            <Link href="/guide" className={navLinkClass}>
-              使い方
+            <Link href="/help/ljd" className={navLinkClass}>
+              LJDの歩き方
             </Link>
             {showAuthenticatedNav ? (
               <>

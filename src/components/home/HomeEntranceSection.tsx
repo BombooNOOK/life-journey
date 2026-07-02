@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 
+import { CompanionWritingFarewellBanner } from "@/components/journal/companion-writing/CompanionWritingFarewellBanner";
 import { HomeHeroSubNavLink } from "@/components/home/HomeHeroSubNavLink";
 import { ReadingFontSizeControl } from "@/components/reading/ReadingFontSizeControl";
 import {
@@ -70,6 +71,7 @@ export function HomeEntranceSection() {
       </div>
 
       <div className="relative z-20 mx-auto w-full max-w-3xl px-4 pb-3 pt-10 sm:px-6 sm:pt-11 lg:py-12">
+        <CompanionWritingFarewellBanner />
         {/* スマホ：右下のフクロウ */}
         <Image
           src={HOME_HERO_OWL_TEACHER_SRC}

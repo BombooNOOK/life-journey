@@ -46,7 +46,7 @@ export default function DiaryGuidePage() {
         tone="diary"
         decoration="owl-md"
         title="Life Journey Diaryの歩き方"
-        backLink={{ href: "/orders", label: "← マイページ" }}
+        backLink={{ href: "/orders", label: "← ログハウス（マイページ）" }}
         description={
           <>
             <p>ここは、数字で紡ぐ人生の旅を、鑑定書と日記のふたつで支える場所です。</p>

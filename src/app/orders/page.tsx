@@ -1,5 +1,10 @@
 import Link from "next/link";
 
+import {
+  FirstVisitGuidePanel,
+  ReturningUserGuideHint,
+} from "@/components/guide/FirstVisitGuidePanel";
+import { MyPageGuideLink } from "@/components/guide/MyPageGuideLink";
 import { KanteiMissingBanner } from "@/components/orders/KanteiMissingBanner";
 import { LegalFooterLinks } from "@/components/legal/LegalFooterLinks";
 import { MyPageManageHub } from "@/components/orders/MyPageManageMenu";
@@ -18,6 +23,8 @@ import {
   serializeUserEntitlement,
   type SerializedUserEntitlement,
 } from "@/lib/entitlement/resolveUserEntitlement";
+import { calendarDayKeyInJapan, journalWithCompanionPath } from "@/lib/journal/journalNav";
+import { resolveFirstVisitGuideState } from "@/lib/onboarding/firstVisitGuideState";
 import { TrialStatusBanner } from "@/components/entitlement/TrialStatusBanner";
 
 export const dynamic = "force-dynamic";
@@ -43,6 +50,7 @@ export default async function OrdersListPage() {
   let fetchError: string | null = null;
   let hasKanteiOrder = true;
   let activeKanteiOrderId: string | null = null;
+  let journalEntryCount = 0;
   let entitlement: SerializedUserEntitlement = {
     tier: "trial_not_started",
     showTrialBanner: false,
@@ -68,6 +76,7 @@ export default async function OrdersListPage() {
     const entitlementCtx = await withPrismaConnectionRetry(() =>
       loadEntitlementContext(viewerEmail),
     );
+    journalEntryCount = entitlementCtx.journalEntryCount;
     entitlement = serializeUserEntitlement(resolveUserEntitlement(entitlementCtx));
   } catch (e) {
     fetchError = e instanceof Error ? e.message : "一覧を取得できませんでした。";
@@ -105,6 +114,18 @@ export default async function OrdersListPage() {
   }
 
   const activeProfile = profiles.find((p) => p.id === activeProfileId) ?? null;
+  const firstVisitGuideState = resolveFirstVisitGuideState({
+    hasKanteiOrder,
+    journalEntryCount,
+  });
+  const companionWritingHref =
+    activeProfile != null
+      ? journalWithCompanionPath(
+          "/orders",
+          activeProfile.id,
+          calendarDayKeyInJapan(new Date()),
+        )
+      : journalWithCompanionPath("/orders");
 
   return (
       <div className="space-y-5 sm:space-y-6">
@@ -113,6 +134,16 @@ export default async function OrdersListPage() {
       <MyPageProfileList profiles={profiles} activeProfileId={activeProfileId} />
 
       <TrialStatusBanner entitlement={entitlement} />
+
+      {activeProfile ? (
+        <FirstVisitGuidePanel
+          state={firstVisitGuideState}
+          profileId={activeProfile.id}
+          companionWritingHref={companionWritingHref}
+        />
+      ) : null}
+
+      {firstVisitGuideState === "returning" ? <ReturningUserGuideHint /> : null}
 
       {activeProfile && !hasKanteiOrder ? (
         <KanteiMissingBanner
@@ -127,8 +158,12 @@ export default async function OrdersListPage() {
           isActive
           entitlement={entitlement}
           kanteiOrderId={activeKanteiOrderId}
+          firstVisitGuideState={firstVisitGuideState}
+          companionWritingHref={companionWritingHref}
         />
       ) : null}
+
+      <MyPageGuideLink />
 
       <MyPageManageHub activeProfileId={activeProfileId || null} />
 

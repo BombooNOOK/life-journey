@@ -59,7 +59,7 @@ export default function GuidePage() {
         <PageTitleWithAccent
           tone="guide"
           title="Life Journey Diaryの使い方"
-          backLink={{ href: "/orders", label: "← マイページ" }}
+          backLink={{ href: "/orders", label: "← ログハウス（マイページ）" }}
           description={`${APP_DISPLAY_NAME} で、無料鑑定から日記・製本までの流れをまとめました。実際の画面操作に沿った内容です。`}
           cornerAccents={["book", "leaf"]}
         />
