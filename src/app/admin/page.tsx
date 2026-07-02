@@ -13,6 +13,8 @@ import { getViewerEmailFromCookie, normalizeEmail } from "@/lib/auth/viewer";
 import { isAdminEmail } from "@/lib/admin/access";
 import { prisma } from "@/lib/db";
 import { formatAdminEffectiveProfileLimitLabel } from "@/lib/profile/effectiveProfileLimit";
+import { journalWithCompanionPath } from "@/lib/journal/journalNav";
+import { COMPANION_WRITING_FORMAL_TITLE } from "@/lib/journal/companionWriting/types";
 
 type Props = {
   searchParams: Promise<{ q?: string; saved?: string; err?: string }>;
@@ -600,6 +602,8 @@ export default async function AdminPage({ searchParams }: Props) {
   const q = (params.q ?? "").trim().toLowerCase();
   const flashSaved = params.saved;
   const flashErr = params.err;
+  const companionWritingHref = journalWithCompanionPath("/admin");
+  const loginToCompanionHref = `/login?returnTo=${encodeURIComponent(companionWritingHref)}`;
   let rows: UserRow[] = [];
   let loadError: string | null = null;
   try {
@@ -680,6 +684,44 @@ export default async function AdminPage({ searchParams }: Props) {
           </Link>
         </p>
       </div>
+
+      <section
+        className="rounded-xl border border-dashed border-emerald-300 bg-emerald-50/70 p-4"
+        aria-labelledby="admin-verification-shortcuts-heading"
+      >
+        <h2 id="admin-verification-shortcuts-heading" className="text-sm font-semibold text-emerald-950">
+          実機確認用ショートカット（検証中のみ）
+        </h2>
+        <p className="mt-1 text-xs leading-relaxed text-stone-600">
+          伴走導線の本番確認用です。公開 GO 前に削除予定。
+        </p>
+        <p className="mt-3 flex flex-wrap gap-x-4 gap-y-2 text-sm">
+          <Link
+            href={companionWritingHref}
+            className="font-medium text-emerald-900 underline-offset-2 hover:underline"
+          >
+            {COMPANION_WRITING_FORMAL_TITLE} →
+          </Link>
+          <Link
+            href="/orders/calendar"
+            className="font-medium text-emerald-900 underline-offset-2 hover:underline"
+          >
+            カレンダー →
+          </Link>
+          <Link
+            href="/orders"
+            className="font-medium text-emerald-900 underline-offset-2 hover:underline"
+          >
+            マイページ →
+          </Link>
+          <Link
+            href={loginToCompanionHref}
+            className="font-medium text-stone-700 underline-offset-2 hover:underline"
+          >
+            ログインして伴走へ →
+          </Link>
+        </p>
+      </section>
 
       <form action="/admin" className="flex flex-wrap items-center gap-2 rounded-xl border border-stone-200 bg-white p-4">
         <input
