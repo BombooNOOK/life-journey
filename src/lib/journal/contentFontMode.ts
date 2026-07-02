@@ -7,6 +7,9 @@ export type ContentFontMode = (typeof CONTENT_FONT_MODES)[number];
 
 export const DEFAULT_CONTENT_FONT_MODE: ContentFontMode = "standard";
 
+/** 伴走ウィザード保存時の既定（テンプレ本文込みでも長文警告が出にくい） */
+export const COMPANION_WRITING_DEFAULT_CONTENT_FONT_MODE: ContentFontMode = "generous";
+
 /** 製本1ページ目安（design 背景テンプレ本文枠 596×285 に基づく chars/行 × 最大行） */
 export const JOURNAL_CONTENT_SOFT_MAX_BY_MODE: Record<ContentFontMode, number> = {
   relaxed: 150,

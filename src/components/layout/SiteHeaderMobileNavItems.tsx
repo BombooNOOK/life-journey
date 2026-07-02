@@ -12,6 +12,7 @@ import {
   MYPAGE_CONTACT_FORM_LABEL,
   MYPAGE_CONTACT_FORM_PATH,
 } from "@/lib/legal/legalDocumentLinks";
+import { buildDisplaySettingsHref } from "@/lib/navigation/displaySettingsNav";
 import { scrollToGuestReadingFontSizeSection } from "@/lib/reading/guestReadingFontSizePages";
 
 const mobileMenuItemClass =
@@ -124,9 +125,16 @@ export function SiteHeaderMobileNavItems({ onNavigate }: Props) {
       ) : null}
 
       {showAuthenticatedNav ? (
-        <MobileMenuNavButton href="/orders/settings/display" router={router}>
+        <button
+          type="button"
+          className={mobileMenuItemClass}
+          onClick={() => {
+            onNavigate();
+            navigateFromMobileMenu(buildDisplaySettingsHref(), router);
+          }}
+        >
           文字の大きさ
-        </MobileMenuNavButton>
+        </button>
       ) : null}
 
       {showGuestNav ? (

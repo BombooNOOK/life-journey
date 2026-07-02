@@ -3,7 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { useSearchParams } from "next/navigation";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { useFirebaseAuth } from "@/components/auth/FirebaseAuthProvider";
 import { CompanionWritingAppraiserPicker } from "@/components/journal/companion-writing/CompanionWritingAppraiserPicker";
@@ -42,7 +42,7 @@ import {
   COMPANION_WRITING_WRITE_HINT,
   type CompanionWritingWizardStep,
 } from "@/lib/journal/companionWriting/types";
-import { DEFAULT_CONTENT_FONT_MODE } from "@/lib/journal/contentFontMode";
+import { COMPANION_WRITING_DEFAULT_CONTENT_FONT_MODE } from "@/lib/journal/contentFontMode";
 import { diaryBookEntryCompanionImagePath } from "@/lib/journal/diaryBookEntryAssets";
 import {
   journalCalendarAfterCompanionSavePath,
@@ -85,6 +85,22 @@ const stepHeadingByStep: Partial<Record<CompanionWritingWizardStep, string>> = {
   write: COMPANION_WRITING_WRITE_HEADING,
 };
 
+const COMPANION_WRITING_TEXTAREA_SCROLL_OFFSET_PX = 12;
+
+function scrollCompanionWritingTextareaIntoView(textarea: HTMLTextAreaElement) {
+  const alignTop = () => {
+    const top =
+      textarea.getBoundingClientRect().top +
+      window.scrollY -
+      COMPANION_WRITING_TEXTAREA_SCROLL_OFFSET_PX;
+    window.scrollTo({ top: Math.max(0, top), behavior: "smooth" });
+  };
+
+  alignTop();
+  window.requestAnimationFrame(alignTop);
+  window.setTimeout(alignTop, 300);
+}
+
 export function CompanionWritingPage() {
   const searchParams = useSearchParams();
   const { user, loading: authLoading } = useFirebaseAuth();
@@ -116,6 +132,7 @@ export function CompanionWritingPage() {
   const [entryDate, setEntryDate] = useState(() => toDateInputValue(new Date()));
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const answerTextareaRef = useRef<HTMLTextAreaElement>(null);
 
   const companionType = useMemo(
     () => resolveCompanionWritingChoice(companionChoice, omakaseResolved),
@@ -149,6 +166,16 @@ export function CompanionWritingPage() {
     }
     setEntryDate(dateFromQuery);
   }, [dateFromQuery]);
+
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+  }, [step]);
+
+  const handleAnswerTextareaFocus = useCallback(() => {
+    const textarea = answerTextareaRef.current;
+    if (!textarea) return;
+    scrollCompanionWritingTextareaIntoView(textarea);
+  }, []);
 
   const handleCompanionChoice = useCallback((next: CompanionWritingChoiceId) => {
     setCompanionChoice(next);
@@ -201,7 +228,7 @@ export function CompanionWritingPage() {
           activity: "record_anyway",
           companionType: resolvedCompanion,
           designTheme: "simple_plain",
-          contentFontMode: DEFAULT_CONTENT_FONT_MODE,
+          contentFontMode: COMPANION_WRITING_DEFAULT_CONTENT_FONT_MODE,
           entryDate,
           profileId: effectiveProfileId,
           effectiveProfileId,
@@ -501,13 +528,15 @@ export function CompanionWritingPage() {
               {COMPANION_WRITING_WRITE_HINT}
             </span>
             <textarea
+              ref={answerTextareaRef}
               id="companion-writing-answer"
               value={userAnswer}
               onChange={(e) => setUserAnswer(e.target.value)}
+              onFocus={handleAnswerTextareaFocus}
               rows={6}
               disabled={saving}
               placeholder="例）公園のベンチで少し休みながら、木漏れ日を眺めていた。"
-              className="w-full rounded-lg border border-stone-300 px-3 py-2.5 text-base leading-relaxed text-stone-900 outline-none ring-emerald-500 focus:ring-2"
+              className="w-full scroll-mt-3 rounded-lg border border-stone-300 px-3 py-2.5 text-base leading-relaxed text-stone-900 outline-none ring-emerald-500 focus:ring-2"
             />
           </label>
           <div className="flex gap-2">

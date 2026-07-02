@@ -16,7 +16,7 @@ export const COMPANION_SAVE_FOREST_FRAMES = [
   },
 ] as const;
 
-/** 1コマずつ切り替える間隔 */
+/** 左→中→右と1枚ずつ出す間隔 */
 export const COMPANION_SAVE_FOREST_FRAME_STEP_MS = 1000;
 
 function preloadImage(src: string): Promise<void> {

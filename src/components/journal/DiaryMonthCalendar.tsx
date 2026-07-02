@@ -83,7 +83,7 @@ export function DiaryMonthCalendar({
     <div
       className={[
         "rounded-2xl border border-emerald-100 bg-white shadow-sm",
-        revealMode ? "p-3 sm:p-5" : "p-2.5 sm:p-4",
+        revealMode ? "p-2 sm:p-4" : "p-2.5 sm:p-4",
       ].join(" ")}
       aria-busy={isFetching}
     >

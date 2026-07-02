@@ -1,9 +1,4 @@
-export function resolveSafeReturnTo(raw: string | null): string {
-  if (!raw) return "/orders";
-  if (!raw.startsWith("/")) return "/orders";
-  if (raw.startsWith("//")) return "/orders";
-  return raw;
-}
+export { resolveSafeReturnTo } from "@/lib/navigation/safeReturnTo";
 
 /** はじめての方（無料鑑定）か、既存会員のログインか */
 export function resolveLoginFlow(returnTo: string): "register" | "login" {

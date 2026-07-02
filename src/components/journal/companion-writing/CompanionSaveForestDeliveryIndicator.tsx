@@ -7,22 +7,20 @@ import {
   COMPANION_SAVE_FOREST_FRAME_STEP_MS,
 } from "@/lib/journal/companionWriting/companionSaveForestAssets";
 
-/** 伴走保存後：日記ブック3コマが順番に切り替わる */
+/** 伴走保存後：日記ブック3枚が左・中・右へ順番に現れる（きのこ演出と同型） */
 export function CompanionSaveForestDeliveryIndicator() {
-  const [frameIndex, setFrameIndex] = useState(-1);
+  const [visibleCount, setVisibleCount] = useState(0);
 
   useLayoutEffect(() => {
     let cancelled = false;
     const timers: number[] = [];
 
-    const showLastFrame = () => {
-      if (!cancelled) {
-        setFrameIndex(COMPANION_SAVE_FOREST_FRAMES.length - 1);
-      }
+    const revealAll = () => {
+      if (!cancelled) setVisibleCount(COMPANION_SAVE_FOREST_FRAMES.length);
     };
 
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-      showLastFrame();
+      revealAll();
       return () => {
         cancelled = true;
       };
@@ -31,7 +29,7 @@ export function CompanionSaveForestDeliveryIndicator() {
     COMPANION_SAVE_FOREST_FRAMES.forEach((_, index) => {
       timers.push(
         window.setTimeout(() => {
-          if (!cancelled) setFrameIndex(index);
+          if (!cancelled) setVisibleCount(index + 1);
         }, index * COMPANION_SAVE_FOREST_FRAME_STEP_MS),
       );
     });
@@ -44,15 +42,15 @@ export function CompanionSaveForestDeliveryIndicator() {
 
   return (
     <div
-      className="relative mx-auto h-44 w-full max-w-[18rem] sm:h-48 sm:max-w-[20rem]"
+      className="mx-auto flex h-24 w-full max-w-[21rem] items-end justify-center gap-1.5 sm:h-28 sm:max-w-[24rem] sm:gap-2"
       aria-hidden
     >
       {COMPANION_SAVE_FOREST_FRAMES.map((frame, index) => {
-        const visible = index === frameIndex;
+        const visible = index < visibleCount;
         return (
           <div
             key={frame.key}
-            className={`absolute inset-0 flex items-center justify-center transition-opacity duration-150 ${
+            className={`flex h-[5.5rem] w-[5.5rem] shrink-0 items-end justify-center sm:h-24 sm:w-24 ${
               visible ? "opacity-100" : "opacity-0"
             }`}
           >
@@ -63,7 +61,7 @@ export function CompanionSaveForestDeliveryIndicator() {
               width={752}
               height={752}
               decoding="sync"
-              className="max-h-full max-w-full object-contain"
+              className="max-h-full max-w-full object-contain object-bottom"
             />
           </div>
         );
