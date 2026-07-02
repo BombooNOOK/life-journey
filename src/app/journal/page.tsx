@@ -1121,7 +1121,7 @@ function JournalPageContent() {
         onSubmit={(e) => void onSubmit(e)}
         className={[
           "space-y-3 rounded-xl border border-stone-200 bg-white p-4 shadow-sm sm:p-5",
-          companionGuideMode === "dock" ? "pb-52" : "",
+          companionGuideMode === "dock" ? "pb-[calc(13rem+3.25rem+env(safe-area-inset-bottom,0px))]" : "",
         ]
           .filter(Boolean)
           .join(" ")}

@@ -434,6 +434,7 @@ export function DiaryCalendarHome({
           payload={companionComplete}
           calendarReturnTo={returnToBase}
           onDismiss={dismissCompanionGuide}
+          onCleared={() => setCompanionComplete(null)}
         />
       ) : null}
 

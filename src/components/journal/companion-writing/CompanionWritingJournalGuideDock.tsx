@@ -32,7 +32,7 @@ export function CompanionWritingJournalGuideDock({
 
   return (
     <div
-      className="fixed inset-x-0 bottom-0 z-40 border-t border-emerald-100/90 bg-[#fffbf5]/96 px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3 shadow-[0_-10px_36px_rgba(80,62,44,0.14)] backdrop-blur-sm"
+      className="fixed inset-x-0 bottom-[calc(3.25rem+env(safe-area-inset-bottom,0px))] z-50 border-t border-emerald-100/90 bg-[#fffbf5]/96 px-4 pb-3 pt-3 shadow-[0_-10px_36px_rgba(80,62,44,0.14)] backdrop-blur-sm"
       role="complementary"
       aria-label="今日のページを育てる案内"
     >

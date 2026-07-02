@@ -37,13 +37,17 @@ const COMPANION_FACE_TUNING: Record<CompanionType, { objectPosition: string; sca
 type Props = {
   payload: CompanionWritingCalendarCompletePayload;
   calendarReturnTo: string;
+  /** カレンダー上に留まるとき（育てる等） */
   onDismiss: () => void;
+  /** 別画面へ遷移するとき：オーバーレイ状態だけ片付ける（URL は触らない） */
+  onCleared: () => void;
 };
 
 export function CompanionWritingCalendarCompleteCard({
   payload,
   calendarReturnTo,
   onDismiss,
+  onCleared,
 }: Props) {
   const router = useRouter();
   const whisper = getCompanionWritingCalendarWhisper(payload.companionType);
@@ -73,6 +77,18 @@ export function CompanionWritingCalendarCompleteCard({
     payload.profileId,
   );
 
+  const goPreviewFinish = () => {
+    writeCompanionWritingPreviewGuide({
+      version: 1,
+      entryId: payload.entryId,
+      companionType: payload.companionType,
+      profileId: payload.profileId,
+    });
+    clearCompanionWritingCalendarComplete();
+    onCleared();
+    router.push(previewHref);
+  };
+
   return (
     <CompanionWritingGuideStage ariaLabel={COMPANION_WRITING_COMPLETE_CARD_MESSAGE}>
       <CompanionWritingGuideCardShell>
@@ -101,21 +117,9 @@ export function CompanionWritingCalendarCompleteCard({
           <button type="button" onClick={goGrow} className={companionWritingGuideSecondaryButtonClass}>
             {COMPANION_WRITING_COMPLETE_GROW_LABEL}
           </button>
-          <a
-            href={previewHref}
-            onClick={() => {
-              writeCompanionWritingPreviewGuide({
-                version: 1,
-                entryId: payload.entryId,
-                companionType: payload.companionType,
-                profileId: payload.profileId,
-              });
-              dismissGuide();
-            }}
-            className={companionWritingGuidePrimaryButtonClass}
-          >
+          <button type="button" onClick={goPreviewFinish} className={companionWritingGuidePrimaryButtonClass}>
             {COMPANION_WRITING_COMPLETE_FINISH_LABEL}
-          </a>
+          </button>
         </div>
       </CompanionWritingGuideCardShell>
     </CompanionWritingGuideStage>
