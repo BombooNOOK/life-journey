@@ -6,6 +6,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { CompanionWritingCalendarCompleteCard } from "@/components/journal/companion-writing/CompanionWritingCalendarCompleteCard";
 import { CompanionWritingCalendarRevealOverlay } from "@/components/journal/companion-writing/CompanionWritingCalendarRevealOverlay";
+import { CompanionWritingForestDeliveryOverlay } from "@/components/journal/companion-writing/CompanionWritingForestDeliveryOverlay";
 import { DiarySyncDebugPanel } from "@/components/journal/DiarySyncDebugPanel";
 import {
   DiaryMonthCalendar,
@@ -33,9 +34,11 @@ import { MoodOwlIcon } from "@/components/journal/MoodOwlIcon";
 import { getActivityMeta, getMoodMeta } from "@/lib/journal/meta";
 import { readCompanionWritingCalendarComplete } from "@/lib/journal/companionWriting/session";
 import type { CompanionWritingCalendarCompletePayload } from "@/lib/journal/companionWriting/session";
+import { preloadCompanionSaveForestAssets } from "@/lib/journal/companionWriting/companionSaveForestAssets";
 import {
   COMPANION_WRITING_CALENDAR_GUIDE_QUERY,
   COMPANION_WRITING_CALENDAR_REVEAL_MS,
+  COMPANION_WRITING_FOREST_DELIVERY_MS,
   parseCompanionWritingCalendarGuidePhase,
   type CompanionWritingCalendarGuidePhase,
 } from "@/lib/journal/companionWriting/types";
@@ -159,7 +162,7 @@ export function DiaryCalendarHome({
     if (!companionComplete) return null;
     return parseCompanionWritingCalendarGuidePhase(
       searchParams.get(COMPANION_WRITING_CALENDAR_GUIDE_QUERY),
-    ) ?? "intro";
+    ) ?? "calendar";
   }, [companionComplete, searchParams]);
 
   const dismissCompanionGuide = useCallback(() => {
@@ -188,6 +191,7 @@ export function DiaryCalendarHome({
     const payload = readCompanionWritingCalendarComplete();
     if (!payload) return;
     setCompanionComplete(payload);
+    void preloadCompanionSaveForestAssets();
     const day = parseDayParam(payload.entryDateYmd);
     if (day) {
       setViewMonth(new Date(day.year, day.monthIndex, 1));
@@ -198,17 +202,28 @@ export function DiaryCalendarHome({
         searchParams.get(COMPANION_WRITING_CALENDAR_GUIDE_QUERY),
       )
     ) {
-      router.replace(buildCalendarHref("intro"), { scroll: false });
+      router.replace(buildCalendarHref("calendar"), { scroll: false });
     }
     // 伴走完了の初回表示だけ URL を整える
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  const companionCalendarRevealReady =
+    companionGuidePhase === "calendar" && !isFetching;
+
   useEffect(() => {
-    if (companionGuidePhase !== "calendar") return;
+    if (!companionCalendarRevealReady) return;
+    const timer = window.setTimeout(() => {
+      router.replace(buildCalendarHref("forest"), { scroll: false });
+    }, COMPANION_WRITING_CALENDAR_REVEAL_MS);
+    return () => window.clearTimeout(timer);
+  }, [buildCalendarHref, companionCalendarRevealReady, router]);
+
+  useEffect(() => {
+    if (companionGuidePhase !== "forest") return;
     const timer = window.setTimeout(() => {
       router.replace(buildCalendarHref("actions"), { scroll: false });
-    }, COMPANION_WRITING_CALENDAR_REVEAL_MS);
+    }, COMPANION_WRITING_FOREST_DELIVERY_MS);
     return () => window.clearTimeout(timer);
   }, [buildCalendarHref, companionGuidePhase, router]);
 
@@ -345,18 +360,12 @@ export function DiaryCalendarHome({
   const writeTodayButtonClass = `${writeButtonBase} border border-[#E7C66A] bg-[#D8A93A] text-white hover:bg-[#C99A2E]`;
   const writeSelectedDayButtonClass = `${writeButtonBase} border border-emerald-300/80 bg-emerald-700 text-white hover:border-emerald-400 hover:bg-emerald-800`;
 
+  const companionGuideBlocksCalendar =
+    companionComplete &&
+    (companionGuidePhase === "calendar" || companionGuidePhase === "forest");
+
   return (
     <div>
-      {companionComplete && companionGuidePhase === "intro" ? (
-        <CompanionWritingCalendarCompleteCard
-          payload={companionComplete}
-          phase="intro"
-          calendarReturnTo={returnToBase}
-          onIntroComplete={() => router.push(buildCalendarHref("calendar"), { scroll: false })}
-          onDismiss={dismissCompanionGuide}
-        />
-      ) : null}
-
       {companionComplete && companionGuidePhase === "calendar" ? (
         <CompanionWritingCalendarRevealOverlay
           cursorMonth={viewMonth}
@@ -366,23 +375,25 @@ export function DiaryCalendarHome({
         />
       ) : null}
 
+      {companionComplete && companionGuidePhase === "forest" ? (
+        <CompanionWritingForestDeliveryOverlay />
+      ) : null}
+
       {companionComplete && companionGuidePhase === "actions" ? (
         <CompanionWritingCalendarCompleteCard
           payload={companionComplete}
-          phase="actions"
           calendarReturnTo={returnToBase}
-          onIntroComplete={() => router.push(buildCalendarHref("calendar"), { scroll: false })}
           onDismiss={dismissCompanionGuide}
         />
       ) : null}
 
       <div
         className={
-          companionComplete && companionGuidePhase === "calendar"
+          companionGuideBlocksCalendar
             ? "pointer-events-none select-none opacity-0"
             : "space-y-1.5 sm:space-y-4"
         }
-        aria-hidden={companionComplete && companionGuidePhase === "calendar" ? true : undefined}
+        aria-hidden={companionGuideBlocksCalendar ? true : undefined}
       >
         <div className="max-sm:pt-0 sm:space-y-2">
           <Link

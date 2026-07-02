@@ -360,7 +360,9 @@ export async function POST(req: Request) {
   const rawProfileId =
     typeof json === "object" && json !== null && "profileId" in json
       ? String((json as { profileId: unknown }).profileId)
-      : "";
+      : typeof json === "object" && json !== null && "effectiveProfileId" in json
+        ? String((json as { effectiveProfileId: unknown }).effectiveProfileId)
+        : "";
   const activeProfileId = await resolveActiveProfileId(viewerEmail);
   const profileId = rawProfileId.trim() || activeProfileId;
   if (profileId) {

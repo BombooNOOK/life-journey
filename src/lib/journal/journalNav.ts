@@ -196,7 +196,7 @@ export function journalCalendarAfterCompanionSavePath(params: {
   const qs = new URLSearchParams();
   if (monthKey) qs.set("month", monthKey);
   qs.set("day", params.entryDateYmd.trim());
-  qs.set(COMPANION_WRITING_CALENDAR_GUIDE_QUERY, "intro");
+  qs.set(COMPANION_WRITING_CALENDAR_GUIDE_QUERY, "calendar");
   if (params.profileId?.trim()) qs.set("profile", params.profileId.trim());
   return `/orders/calendar?${qs.toString()}`;
 }

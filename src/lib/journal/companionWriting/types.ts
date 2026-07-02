@@ -1,23 +1,14 @@
-import type { CompanionType, MoodId } from "@/lib/journal/meta";
+import type { ActivityId, CompanionType, MoodId } from "@/lib/journal/meta";
 
 export const COMPANION_WRITING_FORMAL_TITLE = "どうぶつ鑑定士といっしょに書く";
-
-export const companionWritingFeedbackOptions = [
-  { id: "perfect_fit", label: "近く感じた" },
-  { id: "somewhat", label: "少し響いた" },
-  { id: "different", label: "今は少しちがう" },
-  { id: "unsure", label: "まだわからない" },
-] as const;
-
-export type CompanionWritingFeedbackId =
-  (typeof companionWritingFeedbackOptions)[number]["id"];
 
 export type CompanionWritingWizardStep =
   | "companion"
   | "mood"
-  | "message"
-  | "feedback"
-  | "answer";
+  | "activity"
+  | "write";
+
+export const COMPANION_WRITING_ACTIVITY_HEADING = "今日はどんな1日でしたか？";
 
 export const COMPANION_WRITING_APPRAISER_HEADING =
   "どのどうぶつ鑑定士の話を聞きますか？";
@@ -26,6 +17,12 @@ export const COMPANION_WRITING_APPRAISER_HEADING_SHORT = "どうぶつ鑑定士�
 
 export const COMPANION_WRITING_APPRAISER_DESCRIPTION =
   "今日の気分に合わせて、話を聞いてみたいどうぶつ鑑定士を選んでください。";
+
+/** 伴走ウィザード最初の画面：案内役選択 */
+export const COMPANION_WRITING_APPRAISER_PICK_HEADING = "今日の案内役を選ぶ";
+
+export const COMPANION_WRITING_APPRAISER_PICK_HINT =
+  "気になる鑑定士をひとり選んでください。";
 
 export const COMPANION_WRITING_OMAKASE_LABEL = "おまかせ";
 
@@ -37,7 +34,19 @@ export const COMPANION_WRITING_CALENDAR_GUIDE_BODY =
 export const COMPANION_WRITING_CALENDAR_GUIDE_NEXT_LABEL = "つぎへ";
 
 /** 足あと確認：カレンダー全画面表示の秒数 */
-export const COMPANION_WRITING_CALENDAR_REVEAL_MS = 5000;
+export const COMPANION_WRITING_CALENDAR_REVEAL_MS = 3000;
+
+/** 森への届け演出：合計表示秒数（3枚×1秒） */
+export const COMPANION_WRITING_FOREST_DELIVERY_MS = 3000;
+
+export const COMPANION_SAVE_FOREST_FRAME_PATHS = [
+  "/images/ljd/companion-save/companion_save_forest_01_book_start.png",
+  "/images/ljd/companion-save/companion_save_forest_02_book_flying.png",
+  "/images/ljd/companion-save/companion_save_forest_03_book_arrived.png",
+] as const;
+
+/** 完了カードのメイン文言 */
+export const COMPANION_WRITING_COMPLETE_CARD_MESSAGE = "今日の1ページ、森に届きました！";
 
 /** カレンダー表示中の仮ギミック文言（本番用は後で差し替え可） */
 export const COMPANION_WRITING_CALENDAR_REVEAL_STATUS =
@@ -46,12 +55,17 @@ export const COMPANION_WRITING_CALENDAR_REVEAL_STATUS =
 /** 伴走完了ガイドの URL クエリ（ブラウザ戻るとフェーズ同期） */
 export const COMPANION_WRITING_CALENDAR_GUIDE_QUERY = "cwGuide";
 
-export type CompanionWritingCalendarGuidePhase = "intro" | "calendar" | "actions";
+export type CompanionWritingCalendarGuidePhase =
+  | "intro"
+  | "calendar"
+  | "forest"
+  | "actions";
 
 export function parseCompanionWritingCalendarGuidePhase(
   value: string | null,
 ): CompanionWritingCalendarGuidePhase | null {
-  if (value === "intro" || value === "calendar" || value === "actions") return value;
+  if (value === "intro") return "calendar";
+  if (value === "calendar" || value === "forest" || value === "actions") return value;
   return null;
 }
 
@@ -79,8 +93,8 @@ export const COMPANION_WRITING_FAREWELL_MESSAGE =
 export type CompanionWritingDraft = {
   mood: MoodId;
   companionType: CompanionType;
-  openingMessage: string;
-  feedback: CompanionWritingFeedbackId | null;
-  followUpQuestion: string;
+  activity: ActivityId;
+  companionName: string;
+  companionShortLine: string;
   userAnswer: string;
 };

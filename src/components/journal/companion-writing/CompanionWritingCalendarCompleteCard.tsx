@@ -9,41 +9,41 @@ import {
   companionWritingGuidePrimaryButtonClass,
   companionWritingGuideSecondaryButtonClass,
 } from "@/components/journal/companion-writing/companionWritingGuideStyles";
+import { COMPANION_WRITING_APPRAISER_FACE } from "@/lib/journal/companionWriting/appraiserFaces";
 import { getCompanionWritingCalendarWhisper } from "@/lib/journal/companionWriting/guideWhispers";
-import { diaryBookEntryCompanionImagePath } from "@/lib/journal/diaryBookEntryAssets";
 import {
   clearCompanionWritingCalendarComplete,
   prepareCompanionWritingEditNavigation,
   type CompanionWritingCalendarCompletePayload,
 } from "@/lib/journal/companionWriting/session";
-import {
-  COMPANION_WRITING_CALENDAR_GUIDE_BODY,
-  COMPANION_WRITING_CALENDAR_GUIDE_NEXT_LABEL,
-  COMPANION_WRITING_CALENDAR_GUIDE_TITLE,
-  type CompanionWritingCalendarGuidePhase,
-} from "@/lib/journal/companionWriting/types";
+import { COMPANION_WRITING_COMPLETE_CARD_MESSAGE } from "@/lib/journal/companionWriting/types";
 import { journalPreviewPath } from "@/lib/journal/journalNav";
+import { getDecorationAsset } from "@/lib/decorations/catalog";
+import type { CompanionType } from "@/lib/journal/meta";
 
-type CardPhase = Extract<CompanionWritingCalendarGuidePhase, "intro" | "actions">;
+const COMPANION_FACE_TUNING: Record<CompanionType, { objectPosition: string; scale: number }> = {
+  owl: { objectPosition: "50% 48%", scale: 1.08 },
+  hedgehog: { objectPosition: "50% 42%", scale: 1.02 },
+  sloth: { objectPosition: "50% 44%", scale: 1.14 },
+  squirrel: { objectPosition: "50% 36%", scale: 1.1 },
+  frog: { objectPosition: "50% 40%", scale: 1.12 },
+};
 
 type Props = {
   payload: CompanionWritingCalendarCompletePayload;
-  phase: CardPhase;
   calendarReturnTo: string;
-  onIntroComplete: () => void;
   onDismiss: () => void;
 };
 
 export function CompanionWritingCalendarCompleteCard({
   payload,
-  phase,
   calendarReturnTo,
-  onIntroComplete,
   onDismiss,
 }: Props) {
   const router = useRouter();
   const whisper = getCompanionWritingCalendarWhisper(payload.companionType);
-  const companionImagePath = diaryBookEntryCompanionImagePath(payload.companionType);
+  const faceAsset = getDecorationAsset(COMPANION_WRITING_APPRAISER_FACE[payload.companionType]);
+  const faceTuning = COMPANION_FACE_TUNING[payload.companionType];
 
   const dismissGuide = () => {
     clearCompanionWritingCalendarComplete();
@@ -81,42 +81,27 @@ export function CompanionWritingCalendarCompleteCard({
     payload.profileId,
   );
 
-  if (phase === "intro") {
-    return (
-      <CompanionWritingGuideStage ariaLabel={COMPANION_WRITING_CALENDAR_GUIDE_TITLE}>
-        <CompanionWritingGuideCardShell>
-          <p className="text-center text-base font-semibold leading-relaxed text-emerald-950 sm:text-lg">
-            {COMPANION_WRITING_CALENDAR_GUIDE_TITLE}
-          </p>
-          <p className="mt-2 text-center text-sm leading-relaxed text-stone-700">
-            {COMPANION_WRITING_CALENDAR_GUIDE_BODY}
-          </p>
-          <button
-            type="button"
-            onClick={onIntroComplete}
-            className={`${companionWritingGuidePrimaryButtonClass} mt-5`}
-          >
-            {COMPANION_WRITING_CALENDAR_GUIDE_NEXT_LABEL}
-          </button>
-        </CompanionWritingGuideCardShell>
-      </CompanionWritingGuideStage>
-    );
-  }
-
   return (
-    <CompanionWritingGuideStage>
+    <CompanionWritingGuideStage ariaLabel={COMPANION_WRITING_COMPLETE_CARD_MESSAGE}>
       <CompanionWritingGuideCardShell>
         <div className="flex flex-col items-center gap-3">
           <div className="relative h-20 w-20 overflow-hidden rounded-full border-2 border-emerald-100 bg-white shadow-sm">
             <Image
-              src={companionImagePath}
+              src={faceAsset.src}
               alt=""
-              fill
-              className="object-cover"
+              width={faceAsset.width}
+              height={faceAsset.height}
+              className="absolute inset-0 h-full w-full object-cover"
+              style={{
+                objectPosition: faceTuning.objectPosition,
+                transform: `scale(${faceTuning.scale})`,
+              }}
               sizes="80px"
             />
           </div>
-          <p className="text-center text-sm leading-relaxed text-stone-700">{whisper.message}</p>
+          <p className="text-center text-base font-semibold leading-relaxed text-emerald-950 sm:text-lg">
+            {COMPANION_WRITING_COMPLETE_CARD_MESSAGE}
+          </p>
           <p className="text-center text-xs font-semibold text-stone-600">{whisper.name}より</p>
         </div>
 

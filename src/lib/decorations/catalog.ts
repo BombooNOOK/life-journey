@@ -109,6 +109,12 @@ export const decorationAssets = {
     width: 96,
     height: 96,
   },
+  /** 伴走ウィザード「おまかせ」用（5人集合＋？） */
+  "character-omakase-face": {
+    src: "/decorations/characters/omakase-face.png",
+    width: 96,
+    height: 96,
+  },
 } as const satisfies Record<string, DecorationAssetEntry>;
 
 export type DecorationName = keyof typeof decorationAssets;

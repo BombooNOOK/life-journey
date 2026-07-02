@@ -1,18 +1,10 @@
 import { describe, expect, it } from "vitest";
 
-import {
-  assertCompanionWritingMessagesComplete,
-  getCompanionFollowUpQuestion,
-  getCompanionOpeningMessage,
-} from "./messages";
+import { getAppraiserDisplayName } from "./messages";
 
 describe("companionWriting messages", () => {
-  it("全気分×鑑定士のことばテンプレが揃っている", () => {
-    expect(() => assertCompanionWritingMessagesComplete()).not.toThrow();
-  });
-
-  it("気分とフィードバックに応じた一問を返す", () => {
-    expect(getCompanionOpeningMessage("owl", "tired")).toMatch(/つかれた/);
-    expect(getCompanionFollowUpQuestion("somewhat", "tired")).toMatch(/置いていきたい/);
+  it("鑑定士の表示名を返す", () => {
+    expect(getAppraiserDisplayName("owl")).toBe("フクロウ先生");
+    expect(getAppraiserDisplayName("frog")).toBe("ケロシオン");
   });
 });

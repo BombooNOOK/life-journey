@@ -1,23 +1,29 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { useFirebaseAuth } from "@/components/auth/FirebaseAuthProvider";
+import { CompanionWritingAppraiserPicker } from "@/components/journal/companion-writing/CompanionWritingAppraiserPicker";
+import {
+  companionWritingWizardStepBodyClass,
+  companionWritingWizardStepClass,
+  companionWritingWizardStepHeadingClass,
+} from "@/components/journal/companion-writing/companionWritingGuideStyles";
 import { MoodOwlIcon } from "@/components/journal/MoodOwlIcon";
 import { ActiveProfileLabel } from "@/components/profile/ActiveProfileLabel";
 import { TrialStatusBanner } from "@/components/entitlement/TrialStatusBanner";
 import { useEntitlement } from "@/components/entitlement/useEntitlement";
+import { OwlLoadingInline } from "@/components/ui/OwlLoadingInline";
 import { useEnsureActiveViewerProfile } from "@/hooks/useEnsureActiveViewerProfile";
 import { parseSafeJournalReturnTo } from "@/lib/journal/bookshelfReturnTo";
 import { buildCompanionWritingEntryContent } from "@/lib/journal/companionWriting/buildEntryContent";
-import { fetchCompanionWritingReadingFirstSentence } from "@/lib/journal/companionWriting/readingFirstSentence";
 import {
-  getAppraiserDisplayName,
-  getCompanionFollowUpQuestion,
-  getCompanionOpeningMessage,
-} from "@/lib/journal/companionWriting/messages";
+  buildCompanionAcknowledgmentLine,
+  pickCompanionShortLine,
+} from "@/lib/journal/companionWriting/companionPrompt";
+import { getAppraiserDisplayName } from "@/lib/journal/companionWriting/messages";
 import {
   COMPANION_WRITING_OMAKASE_ID,
   isOmakaseChoice,
@@ -27,12 +33,10 @@ import {
 } from "@/lib/journal/companionWriting/omakase";
 import { writeCompanionWritingCalendarComplete } from "@/lib/journal/companionWriting/session";
 import {
-  COMPANION_WRITING_APPRAISER_DESCRIPTION,
-  COMPANION_WRITING_APPRAISER_HEADING,
+  COMPANION_WRITING_ACTIVITY_HEADING,
+  COMPANION_WRITING_APPRAISER_PICK_HEADING,
+  COMPANION_WRITING_APPRAISER_PICK_HINT,
   COMPANION_WRITING_FORMAL_TITLE,
-  COMPANION_WRITING_OMAKASE_LABEL,
-  companionWritingFeedbackOptions,
-  type CompanionWritingFeedbackId,
   type CompanionWritingWizardStep,
 } from "@/lib/journal/companionWriting/types";
 import { DEFAULT_CONTENT_FONT_MODE } from "@/lib/journal/contentFontMode";
@@ -46,17 +50,12 @@ import {
 } from "@/lib/journal/journalCompanionPreference";
 import { LOG_HOUSE_BACK_LINK } from "@/lib/journal/logHouseLabels";
 import {
-  companionOptions,
+  activityOptions,
   moodOptions,
+  type ActivityId,
   type CompanionType,
   type MoodId,
 } from "@/lib/journal/meta";
-import { OwlLoadingInline } from "@/components/ui/OwlLoadingInline";
-import {
-  companionWritingWizardStepBodyClass,
-  companionWritingWizardStepClass,
-  companionWritingWizardStepHeadingClass,
-} from "@/components/journal/companion-writing/companionWritingGuideStyles";
 
 function toDateInputValue(date: Date): string {
   const y = date.getFullYear();
@@ -79,13 +78,11 @@ function isValidDateInput(value: string): boolean {
 const stepLabels: Record<CompanionWritingWizardStep, string> = {
   companion: "鑑定士",
   mood: "気分",
-  message: "ことば",
-  feedback: "近さ",
-  answer: "書く",
+  activity: "一日",
+  write: "書く",
 };
 
 export function CompanionWritingPage() {
-  const router = useRouter();
   const searchParams = useSearchParams();
   const { user, loading: authLoading } = useFirebaseAuth();
   const { entitlement, loading: entitlementLoading } = useEntitlement();
@@ -111,7 +108,7 @@ export function CompanionWritingPage() {
   );
   const [omakaseResolved, setOmakaseResolved] = useState<CompanionType | null>(null);
   const [mood, setMood] = useState<MoodId>("calm");
-  const [feedback, setFeedback] = useState<CompanionWritingFeedbackId | null>(null);
+  const [activity, setActivity] = useState<ActivityId>("record_anyway");
   const [userAnswer, setUserAnswer] = useState("");
   const [entryDate, setEntryDate] = useState(() => toDateInputValue(new Date()));
   const [saving, setSaving] = useState(false);
@@ -122,6 +119,21 @@ export function CompanionWritingPage() {
     [companionChoice, omakaseResolved],
   );
 
+  const acknowledgmentLine = useMemo(
+    () => buildCompanionAcknowledgmentLine(mood, activity),
+    [activity, mood],
+  );
+
+  const companionShortLine = useMemo(
+    () => pickCompanionShortLine(companionType, mood, activity),
+    [activity, companionType, mood],
+  );
+
+  const companionName = useMemo(
+    () => getAppraiserDisplayName(companionType),
+    [companionType],
+  );
+
   useEffect(() => {
     if (!dateFromQuery || !isValidDateInput(dateFromQuery)) {
       setEntryDate(toDateInputValue(new Date()));
@@ -129,18 +141,6 @@ export function CompanionWritingPage() {
     }
     setEntryDate(dateFromQuery);
   }, [dateFromQuery]);
-
-  const openingMessage = useMemo(
-    () => getCompanionOpeningMessage(companionType, mood),
-    [companionType, mood],
-  );
-
-  const followUpQuestion = useMemo(() => {
-    if (!feedback) return "";
-    return getCompanionFollowUpQuestion(feedback, mood, companionType);
-  }, [companionType, feedback, mood]);
-
-  const appraiserName = getAppraiserDisplayName(companionType);
 
   const handleCompanionChoice = useCallback((next: CompanionWritingChoiceId) => {
     setCompanionChoice(next);
@@ -159,7 +159,6 @@ export function CompanionWritingPage() {
   }, [companionChoice, omakaseResolved]);
 
   const saveEntry = useCallback(async () => {
-    if (!feedback) return;
     const answer = userAnswer.trim();
     if (!answer) {
       setError("ひとことでも、いまの気持ちを書いてみてください。");
@@ -175,19 +174,11 @@ export function CompanionWritingPage() {
     setError(null);
     setSaving(true);
     try {
-      const readingFirstSentence = effectiveProfileId
-        ? await fetchCompanionWritingReadingFirstSentence({
-            profileId: effectiveProfileId,
-            mood,
-            companionType: resolvedCompanion,
-            entryDateYmd: entryDate,
-          })
-        : null;
-
       const content = buildCompanionWritingEntryContent({
         mood,
-        feedback,
-        readingFirstSentence,
+        activity,
+        companionName: getAppraiserDisplayName(resolvedCompanion),
+        companionShortLine: pickCompanionShortLine(resolvedCompanion, mood, activity),
         userAnswer: answer,
       });
 
@@ -198,18 +189,28 @@ export function CompanionWritingPage() {
         body: JSON.stringify({
           content,
           mood,
+          // 伴走の18択は保存本文に残す。通常の読み解きロジックには渡さない。
           activity: "record_anyway",
           companionType: resolvedCompanion,
           designTheme: "simple_plain",
           contentFontMode: DEFAULT_CONTENT_FONT_MODE,
           entryDate,
+          profileId: effectiveProfileId,
           effectiveProfileId,
         }),
       });
 
-      const data = (await res.json()) as { entry?: { id: string }; error?: string };
-      if (!res.ok || !data.entry?.id) {
-        throw new Error(data.error ?? "保存に失敗しました。");
+      let data: { entry?: { id: string }; error?: string };
+      try {
+        data = (await res.json()) as { entry?: { id: string }; error?: string };
+      } catch {
+        throw new Error("サーバーからの応答を読み取れませんでした。");
+      }
+      if (!res.ok) {
+        throw new Error(data.error ?? `保存に失敗しました。（${res.status}）`);
+      }
+      if (!data.entry?.id) {
+        throw new Error("保存に失敗しました。日記IDを取得できませんでした。");
       }
 
       writeCompanionWritingCalendarComplete({
@@ -221,26 +222,25 @@ export function CompanionWritingPage() {
         designTheme: "simple_plain",
       });
 
-      router.push(
-        journalCalendarAfterCompanionSavePath({
-          entryDateYmd: entryDate,
-          profileId: effectiveProfileId,
-        }),
-      );
+      const calendarPath = journalCalendarAfterCompanionSavePath({
+        entryDateYmd: entryDate,
+        profileId: effectiveProfileId,
+      });
+      // 伴走保存後はフル遷移でカレンダー完了導線へ（開発中のクライアントルータ不調を避ける）
+      window.location.assign(calendarPath);
     } catch (e) {
       setError(e instanceof Error ? e.message : "保存に失敗しました。");
     } finally {
       setSaving(false);
     }
   }, [
+    activity,
     canWriteJournal,
     companionChoice,
     effectiveProfileId,
     entryDate,
-    feedback,
     mood,
     omakaseResolved,
-    router,
     userAnswer,
   ]);
 
@@ -292,62 +292,44 @@ export function CompanionWritingPage() {
             {safeReturnTo ? "戻る" : LOG_HOUSE_BACK_LINK.label}
           </Link>
         </p>
-        <h1 className="text-xl font-bold leading-snug text-stone-900 sm:text-2xl">
-          {COMPANION_WRITING_FORMAL_TITLE}
-        </h1>
-        <ActiveProfileLabel nickname={profileState.activeProfileNickname} />
-        {entitlement ? <TrialStatusBanner entitlement={entitlement} /> : null}
-        <p className="text-xs text-stone-500" aria-live="polite">
-          {stepLabels[step]} — 短く書くだけで大丈夫です
-        </p>
+        {step === "companion" ? (
+          <>
+            <p className="text-xs leading-snug text-stone-500">
+              プロフィール：
+              <span className="font-medium text-stone-700">
+                {profileState.activeProfileNickname}
+              </span>
+            </p>
+            {entitlement ? <TrialStatusBanner entitlement={entitlement} /> : null}
+            <div>
+              <h1 className="text-xl font-bold leading-snug text-stone-900 sm:text-2xl">
+                {COMPANION_WRITING_APPRAISER_PICK_HEADING}
+              </h1>
+              <p className="mt-1.5 text-sm leading-relaxed text-stone-600">
+                {COMPANION_WRITING_APPRAISER_PICK_HINT}
+              </p>
+            </div>
+          </>
+        ) : (
+          <>
+            <h1 className="text-xl font-bold leading-snug text-stone-900 sm:text-2xl">
+              {COMPANION_WRITING_FORMAL_TITLE}
+            </h1>
+            <ActiveProfileLabel nickname={profileState.activeProfileNickname} />
+            {entitlement ? <TrialStatusBanner entitlement={entitlement} /> : null}
+            <p className="text-xs text-stone-500" aria-live="polite">
+              {stepLabels[step]} — 短く書くだけで大丈夫です
+            </p>
+          </>
+        )}
       </header>
 
       {step === "companion" ? (
         <section className={companionWritingWizardStepClass}>
-          <div>
-            <h2 className={companionWritingWizardStepHeadingClass}>
-              {COMPANION_WRITING_APPRAISER_HEADING}
-            </h2>
-            <p className={`mt-1.5 ${companionWritingWizardStepBodyClass}`}>
-              {COMPANION_WRITING_APPRAISER_DESCRIPTION}
-            </p>
-          </div>
-          <div className="flex flex-wrap gap-2" role="radiogroup" aria-label={COMPANION_WRITING_APPRAISER_HEADING}>
-            {companionOptions.map((option) => {
-              const selected = companionChoice === option.id;
-              return (
-                <button
-                  key={option.id}
-                  type="button"
-                  role="radio"
-                  aria-checked={selected}
-                  onClick={() => handleCompanionChoice(option.id)}
-                  className={[
-                    "rounded-full border px-3 py-1.5 text-xs font-medium transition",
-                    selected
-                      ? "border-emerald-500 bg-emerald-50 text-emerald-900 ring-2 ring-emerald-300"
-                      : "border-stone-200 bg-white text-stone-700 hover:border-stone-300",
-                  ].join(" ")}
-                >
-                  {option.label}
-                </button>
-              );
-            })}
-            <button
-              type="button"
-              role="radio"
-              aria-checked={companionChoice === COMPANION_WRITING_OMAKASE_ID}
-              onClick={() => handleCompanionChoice(COMPANION_WRITING_OMAKASE_ID)}
-              className={[
-                "rounded-full border px-3 py-1.5 text-xs font-medium transition",
-                companionChoice === COMPANION_WRITING_OMAKASE_ID
-                  ? "border-emerald-500 bg-emerald-50 text-emerald-900 ring-2 ring-emerald-300"
-                  : "border-stone-200 bg-white text-stone-700 hover:border-stone-300",
-              ].join(" ")}
-            >
-              {COMPANION_WRITING_OMAKASE_LABEL}
-            </button>
-          </div>
+          <CompanionWritingAppraiserPicker
+            selected={companionChoice}
+            onSelect={handleCompanionChoice}
+          />
           <button
             type="button"
             onClick={advanceFromCompanionStep}
@@ -355,6 +337,19 @@ export function CompanionWritingPage() {
           >
             つぎへ
           </button>
+          <div className="space-y-1 pt-1 text-center">
+            <p className="text-xs text-stone-500">いつもどおり書く方はこちら</p>
+            <Link
+              href={journalNewEntryPath(
+                entryDate,
+                safeReturnTo ?? "/orders",
+                effectiveProfileId,
+              )}
+              className="text-sm font-medium text-emerald-900 underline-offset-2 hover:underline"
+            >
+              通常の日記入力へ
+            </Link>
+          </div>
         </section>
       ) : null}
 
@@ -365,9 +360,7 @@ export function CompanionWritingPage() {
               今日の案内役：{getAppraiserDisplayName(omakaseResolved)}
             </p>
           ) : null}
-          <p className={companionWritingWizardStepBodyClass}>
-            {appraiserName}のことばを聞く前に、今日の気分を選んでください。
-          </p>
+          <p className={companionWritingWizardStepBodyClass}>今日の気分を選んでください。</p>
           <fieldset>
             <legend className={`mb-2 block ${companionWritingWizardStepHeadingClass}`}>
               今日の気分
@@ -410,7 +403,7 @@ export function CompanionWritingPage() {
             </button>
             <button
               type="button"
-              onClick={() => setStep("message")}
+              onClick={() => setStep("activity")}
               className="min-h-[44px] flex-[2] rounded-lg bg-emerald-800 px-4 py-2.5 text-sm font-medium text-white hover:bg-emerald-900"
             >
               つぎへ
@@ -419,13 +412,30 @@ export function CompanionWritingPage() {
         </section>
       ) : null}
 
-      {step === "message" ? (
+      {step === "activity" ? (
         <section className={companionWritingWizardStepClass}>
-          <p className={companionWritingWizardStepBodyClass}>{appraiserName}より</p>
-          <blockquote className="rounded-lg border border-emerald-100 bg-emerald-50/60 px-4 py-3.5 text-base leading-7 text-stone-800 sm:py-3 sm:text-sm">
-            「{openingMessage}」
-          </blockquote>
-          <div className="flex gap-2">
+          <label
+            className={`block ${companionWritingWizardStepHeadingClass}`}
+            htmlFor="companion-writing-activity"
+          >
+            {COMPANION_WRITING_ACTIVITY_HEADING}
+          </label>
+          <p className={`mt-1.5 mb-3 ${companionWritingWizardStepBodyClass}`}>
+            いちばん近いものを選んでください。
+          </p>
+          <select
+            id="companion-writing-activity"
+            value={activity}
+            onChange={(e) => setActivity(e.target.value as ActivityId)}
+            className="w-full rounded-lg border border-stone-300 bg-white px-3 py-2.5 text-base text-stone-900 outline-none ring-emerald-500 focus:ring-2 sm:text-sm"
+          >
+            {activityOptions.map((option) => (
+              <option key={option.id} value={option.id}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+          <div className="flex gap-2 pt-1">
             <button
               type="button"
               onClick={() => setStep("mood")}
@@ -435,7 +445,7 @@ export function CompanionWritingPage() {
             </button>
             <button
               type="button"
-              onClick={() => setStep("feedback")}
+              onClick={() => setStep("write")}
               className="min-h-[44px] flex-[2] rounded-lg bg-emerald-800 px-4 py-2.5 text-sm font-medium text-white hover:bg-emerald-900"
             >
               つぎへ
@@ -444,51 +454,22 @@ export function CompanionWritingPage() {
         </section>
       ) : null}
 
-      {step === "feedback" ? (
+      {step === "write" ? (
         <section className={companionWritingWizardStepClass}>
-          <p className={`font-medium text-stone-800 ${companionWritingWizardStepHeadingClass}`}>
-            今日の数字からのことば、いまのあなたにどれくらい近いですか？
+          {error ? (
+            <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-800" role="alert">
+              {error}
+            </p>
+          ) : null}
+          <p className={`leading-relaxed text-stone-800 ${companionWritingWizardStepBodyClass}`}>
+            {acknowledgmentLine}
           </p>
-          <div className="grid gap-2.5 sm:grid-cols-2 sm:gap-2" role="radiogroup" aria-label="読み解きの受け取り方">
-            {companionWritingFeedbackOptions.map((option) => {
-              const selected = feedback === option.id;
-              return (
-                <button
-                  key={option.id}
-                  type="button"
-                  role="radio"
-                  aria-checked={selected}
-                  onClick={() => {
-                    setFeedback(option.id);
-                    setStep("answer");
-                  }}
-                  className={[
-                    "min-h-[48px] rounded-lg border px-3 py-3 text-base font-medium transition sm:min-h-[44px] sm:py-2.5 sm:text-sm",
-                    selected
-                      ? "border-emerald-500 bg-emerald-50 text-emerald-950 ring-2 ring-emerald-300"
-                      : "border-stone-200 bg-white text-stone-800 hover:border-stone-300 hover:bg-stone-50",
-                  ].join(" ")}
-                >
-                  {option.label}
-                </button>
-              );
-            })}
+          <div className="space-y-1 rounded-lg border border-emerald-100 bg-emerald-50/60 px-4 py-3.5 sm:py-3">
+            <p className="text-sm font-medium text-stone-800">{companionName}：</p>
+            <p className="text-base leading-7 text-stone-800 sm:text-sm">
+              「{companionShortLine}」
+            </p>
           </div>
-          <button
-            type="button"
-            onClick={() => setStep("message")}
-            className="min-h-[44px] w-full rounded-lg border border-stone-300 bg-white px-4 py-2.5 text-sm font-medium text-stone-700 hover:bg-stone-50"
-          >
-            もどる
-          </button>
-        </section>
-      ) : null}
-
-      {step === "answer" && feedback ? (
-        <section className={companionWritingWizardStepClass}>
-          <p className={`font-medium text-stone-800 ${companionWritingWizardStepHeadingClass}`}>
-            {followUpQuestion}
-          </p>
           <label className="block space-y-2" htmlFor="companion-writing-answer">
             <span className={companionWritingWizardStepBodyClass}>
               あなたの言葉で、短く残してみてください
@@ -499,7 +480,7 @@ export function CompanionWritingPage() {
               onChange={(e) => setUserAnswer(e.target.value)}
               rows={6}
               disabled={saving}
-              placeholder="例）今日は人に合わせることが多くて、少し疲れた。明日は自分のペースを大事にしたい。"
+              placeholder="例）公園のベンチで少し休みながら、木漏れ日を眺めていた。"
               className="w-full rounded-lg border border-stone-300 px-3 py-2.5 text-base leading-relaxed text-stone-900 outline-none ring-emerald-500 focus:ring-2"
             />
           </label>
@@ -507,7 +488,7 @@ export function CompanionWritingPage() {
             <button
               type="button"
               disabled={saving}
-              onClick={() => setStep("feedback")}
+              onClick={() => setStep("activity")}
               className="min-h-[44px] flex-1 rounded-lg border border-stone-300 bg-white px-4 py-2.5 text-sm font-medium text-stone-700 hover:bg-stone-50 disabled:opacity-60"
             >
               もどる
@@ -524,26 +505,28 @@ export function CompanionWritingPage() {
         </section>
       ) : null}
 
-      {error ? (
+      {error && step !== "write" ? (
         <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-800" role="alert">
           {error}
         </p>
       ) : null}
 
-      <p className="text-center text-xs text-stone-500">
-        いつもどおり書きたい方は
-        <Link
-          href={journalNewEntryPath(
-            entryDate,
-            safeReturnTo ?? "/orders",
-            effectiveProfileId,
-          )}
-          className="mx-1 text-emerald-900 underline-offset-2 hover:underline"
-        >
-          通常の日記入力
-        </Link>
-        からも始められます。
-      </p>
+      {step !== "companion" ? (
+        <p className="text-center text-xs text-stone-500">
+          いつもどおり書きたい方は
+          <Link
+            href={journalNewEntryPath(
+              entryDate,
+              safeReturnTo ?? "/orders",
+              effectiveProfileId,
+            )}
+            className="mx-1 text-emerald-900 underline-offset-2 hover:underline"
+          >
+            通常の日記入力
+          </Link>
+          からも始められます。
+        </p>
+      ) : null}
     </div>
   );
 }

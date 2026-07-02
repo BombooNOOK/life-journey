@@ -216,7 +216,7 @@ export function DiaryMonthCalendar({
           })}
         </div>
       </div>
-      {isFetching ? (
+      {isFetching && !revealMode ? (
         <div
           className="pointer-events-auto absolute inset-0 z-10 flex items-center justify-center rounded-xl bg-white/45 backdrop-blur-[1px]"
           aria-hidden
