@@ -83,43 +83,22 @@ export function CompanionWritingCalendarCompleteCard({
 
   if (phase === "intro") {
     return (
-      <CompanionWritingGuideStage
-        variant="intro"
-        ariaLabel={COMPANION_WRITING_CALENDAR_GUIDE_TITLE}
-      >
-        <div className="space-y-4 sm:hidden">
-          <p className="text-center text-lg font-semibold leading-relaxed text-emerald-950">
+      <CompanionWritingGuideStage ariaLabel={COMPANION_WRITING_CALENDAR_GUIDE_TITLE}>
+        <CompanionWritingGuideCardShell>
+          <p className="text-center text-base font-semibold leading-relaxed text-emerald-950 sm:text-lg">
             {COMPANION_WRITING_CALENDAR_GUIDE_TITLE}
           </p>
-          <p className="text-center text-base leading-relaxed text-stone-700">
+          <p className="mt-2 text-center text-sm leading-relaxed text-stone-700">
             {COMPANION_WRITING_CALENDAR_GUIDE_BODY}
           </p>
           <button
             type="button"
             onClick={onIntroComplete}
-            className={`${companionWritingGuidePrimaryButtonClass} mt-6`}
+            className={`${companionWritingGuidePrimaryButtonClass} mt-5`}
           >
             {COMPANION_WRITING_CALENDAR_GUIDE_NEXT_LABEL}
           </button>
-        </div>
-
-        <div className="hidden sm:block">
-          <CompanionWritingGuideCardShell>
-            <p className="text-center text-base font-semibold leading-relaxed text-emerald-950 sm:text-lg">
-              {COMPANION_WRITING_CALENDAR_GUIDE_TITLE}
-            </p>
-            <p className="mt-2 text-center text-sm leading-relaxed text-stone-700">
-              {COMPANION_WRITING_CALENDAR_GUIDE_BODY}
-            </p>
-            <button
-              type="button"
-              onClick={onIntroComplete}
-              className={`${companionWritingGuidePrimaryButtonClass} mt-5`}
-            >
-              {COMPANION_WRITING_CALENDAR_GUIDE_NEXT_LABEL}
-            </button>
-          </CompanionWritingGuideCardShell>
-        </div>
+        </CompanionWritingGuideCardShell>
       </CompanionWritingGuideStage>
     );
   }

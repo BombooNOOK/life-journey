@@ -52,6 +52,11 @@ import {
   type MoodId,
 } from "@/lib/journal/meta";
 import { OwlLoadingInline } from "@/components/ui/OwlLoadingInline";
+import {
+  companionWritingWizardStepBodyClass,
+  companionWritingWizardStepClass,
+  companionWritingWizardStepHeadingClass,
+} from "@/components/journal/companion-writing/companionWritingGuideStyles";
 
 function toDateInputValue(date: Date): string {
   const y = date.getFullYear();
@@ -277,7 +282,7 @@ export function CompanionWritingPage() {
   }
 
   return (
-    <div className="mx-auto max-w-lg space-y-4 px-4 py-6 sm:py-8">
+    <div className="mx-auto max-w-lg space-y-5 px-5 py-5 sm:space-y-4 sm:px-4 sm:py-8">
       <header className="space-y-2">
         <p className="text-sm">
           <Link
@@ -298,12 +303,12 @@ export function CompanionWritingPage() {
       </header>
 
       {step === "companion" ? (
-        <section className="space-y-4 rounded-xl border border-stone-200 bg-white p-4 shadow-sm sm:p-5">
+        <section className={companionWritingWizardStepClass}>
           <div>
-            <h2 className="text-sm font-medium text-stone-900">
+            <h2 className={companionWritingWizardStepHeadingClass}>
               {COMPANION_WRITING_APPRAISER_HEADING}
             </h2>
-            <p className="mt-1 text-sm leading-relaxed text-stone-600">
+            <p className={`mt-1.5 ${companionWritingWizardStepBodyClass}`}>
               {COMPANION_WRITING_APPRAISER_DESCRIPTION}
             </p>
           </div>
@@ -354,19 +359,21 @@ export function CompanionWritingPage() {
       ) : null}
 
       {step === "mood" ? (
-        <section className="space-y-4 rounded-xl border border-stone-200 bg-white p-4 shadow-sm sm:p-5">
+        <section className={companionWritingWizardStepClass}>
           {isOmakaseChoice(companionChoice) && omakaseResolved ? (
-            <p className="text-xs text-emerald-800">
+            <p className="text-sm text-emerald-800">
               今日の案内役：{getAppraiserDisplayName(omakaseResolved)}
             </p>
           ) : null}
-          <p className="text-sm text-stone-600">
+          <p className={companionWritingWizardStepBodyClass}>
             {appraiserName}のことばを聞く前に、今日の気分を選んでください。
           </p>
           <fieldset>
-            <legend className="mb-2 block text-sm font-medium text-stone-800">今日の気分</legend>
+            <legend className={`mb-2 block ${companionWritingWizardStepHeadingClass}`}>
+              今日の気分
+            </legend>
             <div
-              className="grid grid-cols-2 gap-2 sm:grid-cols-3"
+              className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 sm:gap-2"
               role="radiogroup"
               aria-label="今日の気分"
             >
@@ -380,7 +387,7 @@ export function CompanionWritingPage() {
                     aria-checked={selected}
                     onClick={() => setMood(option.id)}
                     className={[
-                      "flex flex-col items-center gap-1.5 rounded-lg border px-2 py-2.5 text-center transition",
+                      "flex flex-col items-center gap-1.5 rounded-lg border px-2 py-3 text-center transition sm:py-2.5",
                       selected
                         ? "border-emerald-500 bg-emerald-50 ring-2 ring-emerald-300"
                         : "border-stone-200 bg-white hover:border-stone-300 hover:bg-stone-50",
@@ -413,9 +420,9 @@ export function CompanionWritingPage() {
       ) : null}
 
       {step === "message" ? (
-        <section className="space-y-4 rounded-xl border border-stone-200 bg-white p-4 shadow-sm sm:p-5">
-          <p className="text-sm text-stone-600">{appraiserName}より</p>
-          <blockquote className="rounded-lg border border-emerald-100 bg-emerald-50/60 px-4 py-3 text-sm leading-7 text-stone-800">
+        <section className={companionWritingWizardStepClass}>
+          <p className={companionWritingWizardStepBodyClass}>{appraiserName}より</p>
+          <blockquote className="rounded-lg border border-emerald-100 bg-emerald-50/60 px-4 py-3.5 text-base leading-7 text-stone-800 sm:py-3 sm:text-sm">
             「{openingMessage}」
           </blockquote>
           <div className="flex gap-2">
@@ -438,11 +445,11 @@ export function CompanionWritingPage() {
       ) : null}
 
       {step === "feedback" ? (
-        <section className="space-y-4 rounded-xl border border-stone-200 bg-white p-4 shadow-sm sm:p-5">
-          <p className="text-sm font-medium text-stone-800">
+        <section className={companionWritingWizardStepClass}>
+          <p className={`font-medium text-stone-800 ${companionWritingWizardStepHeadingClass}`}>
             今日の数字からのことば、いまのあなたにどれくらい近いですか？
           </p>
-          <div className="grid gap-2 sm:grid-cols-2" role="radiogroup" aria-label="読み解きの受け取り方">
+          <div className="grid gap-2.5 sm:grid-cols-2 sm:gap-2" role="radiogroup" aria-label="読み解きの受け取り方">
             {companionWritingFeedbackOptions.map((option) => {
               const selected = feedback === option.id;
               return (
@@ -456,7 +463,7 @@ export function CompanionWritingPage() {
                     setStep("answer");
                   }}
                   className={[
-                    "min-h-[44px] rounded-lg border px-3 py-2.5 text-sm font-medium transition",
+                    "min-h-[48px] rounded-lg border px-3 py-3 text-base font-medium transition sm:min-h-[44px] sm:py-2.5 sm:text-sm",
                     selected
                       ? "border-emerald-500 bg-emerald-50 text-emerald-950 ring-2 ring-emerald-300"
                       : "border-stone-200 bg-white text-stone-800 hover:border-stone-300 hover:bg-stone-50",
@@ -478,10 +485,14 @@ export function CompanionWritingPage() {
       ) : null}
 
       {step === "answer" && feedback ? (
-        <section className="space-y-4 rounded-xl border border-stone-200 bg-white p-4 shadow-sm sm:p-5">
-          <p className="text-sm font-medium text-stone-800">{followUpQuestion}</p>
+        <section className={companionWritingWizardStepClass}>
+          <p className={`font-medium text-stone-800 ${companionWritingWizardStepHeadingClass}`}>
+            {followUpQuestion}
+          </p>
           <label className="block space-y-2" htmlFor="companion-writing-answer">
-            <span className="text-sm text-stone-600">あなたの言葉で、短く残してみてください</span>
+            <span className={companionWritingWizardStepBodyClass}>
+              あなたの言葉で、短く残してみてください
+            </span>
             <textarea
               id="companion-writing-answer"
               value={userAnswer}

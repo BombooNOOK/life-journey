@@ -36,3 +36,13 @@ export function companionWritingZoneHintClass(emphasized: boolean): string {
       : "border border-stone-200/80 bg-[#faf8f4]/95 text-stone-600",
   ].join(" ");
 }
+
+/** 伴走ウィザード各ステップ：スマホはカード枠なし、sm以上は白カード */
+export const companionWritingWizardStepClass =
+  "space-y-4 sm:rounded-xl sm:border sm:border-stone-200 sm:bg-white sm:p-5 sm:shadow-sm";
+
+export const companionWritingWizardStepHeadingClass =
+  "text-base font-medium text-stone-900 sm:text-sm";
+
+export const companionWritingWizardStepBodyClass =
+  "text-base leading-relaxed text-stone-600 sm:text-sm";
