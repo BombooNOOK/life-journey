@@ -104,10 +104,38 @@ export const COMPANION_WRITING_ZONE_PHOTO_LABEL = "ここから写真を追加�
 
 export const COMPANION_WRITING_ZONE_BODY_LABEL = "ここに、ことばを足せます";
 
+/** スポットライト表示中の案内（やや大きめ） */
+export const COMPANION_WRITING_ZONE_PHOTO_SPOTLIGHT_LABEL =
+  "ここから、思い出の写真を選べます";
+
+export const COMPANION_WRITING_ZONE_BODY_SPOTLIGHT_LABEL = "ここに、ことばを足せます";
+
+/** 伴走編集ドック：保存してプレビューへ */
+export const COMPANION_WRITING_EDIT_FINISH_LABEL = "今日の1ページを見ておしまい";
+
+/** 伴走編集ゾーンのスポットライト表示秒数 */
+export const COMPANION_WRITING_EDIT_ZONE_SPOTLIGHT_MS = 3200;
+
 export const COMPANION_WRITING_JOURNAL_GUIDE_DISMISS_LABEL = "わかりました";
 
 export const COMPANION_WRITING_FAREWELL_MESSAGE =
   "今日のページは、森にそっと残りました。また書きたくなった日に、ここへ戻ってきてください。";
+
+/** 伴走プレビュー：最下部到達後の案内（1枚目） */
+export const COMPANION_WRITING_PREVIEW_GUIDE_READ_TITLE = "書いた記録は、いつでも見返せます";
+
+export const COMPANION_WRITING_PREVIEW_GUIDE_READ_BODY =
+  "下のメニュー「日記一覧」や、ログハウスの「日記を読む」から、今日のページをまた開けます。";
+
+/** 伴走プレビュー：最下部到達後の案内（2枚目） */
+export const COMPANION_WRITING_PREVIEW_GUIDE_WRITE_TITLE = "また書きたくなったら";
+
+export const COMPANION_WRITING_PREVIEW_GUIDE_WRITE_BODY =
+  "ログハウスの「日記を書く」や「どうぶつ鑑定士といっしょに書く」から、いつでも新しい記録を始められます。";
+
+export const COMPANION_WRITING_PREVIEW_GUIDE_CLOSING = "また森で待っているね。";
+
+export const COMPANION_WRITING_PREVIEW_GUIDE_FINISH_LABEL = "トップへ";
 
 
 export type CompanionWritingDraft = {

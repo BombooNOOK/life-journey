@@ -28,12 +28,26 @@ export function companionWritingEmphasisChipClass(emphasized: boolean): string {
     : "rounded-full border border-stone-200/90 bg-white/80 px-3 py-1.5 text-xs font-medium text-stone-600";
 }
 
-export function companionWritingZoneHintClass(emphasized: boolean): string {
+export function companionWritingZoneHintClass(emphasized: boolean, spotlight = false): string {
+  if (spotlight) {
+    return [
+      "mb-3 flex w-full items-center gap-2 rounded-xl border border-emerald-400/90 bg-emerald-50 px-3 py-2.5",
+      "text-sm font-semibold leading-snug text-emerald-950 shadow-sm ring-2 ring-emerald-300/70 animate-pulse",
+    ].join(" ");
+  }
   return [
     "mb-2 inline-flex max-w-full items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium leading-snug",
     emphasized
       ? "border border-emerald-300/80 bg-emerald-50/95 text-emerald-950 ring-1 ring-emerald-200/60"
       : "border border-stone-200/80 bg-[#faf8f4]/95 text-stone-600",
+  ].join(" ");
+}
+
+export function companionWritingZoneSectionClass(active: boolean): string {
+  if (!active) return "";
+  return [
+    "rounded-xl bg-emerald-50/35 ring-2 ring-emerald-400/75 ring-offset-2",
+    "transition-[box-shadow,background-color] duration-300",
   ].join(" ");
 }
 

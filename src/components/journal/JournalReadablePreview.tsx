@@ -1,6 +1,6 @@
 "use client";
 
-import type { ReactNode } from "react";
+import type { ReactNode, Ref } from "react";
 import Image from "next/image";
 import Link from "next/link";
 
@@ -36,6 +36,8 @@ type Props = {
   meaningsReturnTo?: string | null;
   /** 「〇〇より」カード直下（伴走キャラ変更など） */
   afterCommentSlot?: ReactNode;
+  /** 伴走プレビュー案内：最下部到達の検知用 */
+  previewEndRef?: Ref<HTMLDivElement>;
 };
 
 function PencilEditLink({
@@ -88,6 +90,7 @@ export function JournalReadablePreview({
   canEdit = true,
   meaningsReturnTo,
   afterCommentSlot,
+  previewEndRef,
 }: Props) {
   const previewDate = new Date(createdAt);
   const dateLabel = formatJournalPreviewDateHeading(previewDate);
@@ -169,6 +172,7 @@ export function JournalReadablePreview({
         <h3 className="lj-read-desc mt-5 font-semibold text-stone-700">今日はどんな一日でしたか？</h3>
         <p className="lj-read-desc mt-2 font-medium text-stone-800">{activityMeta.label}</p>
       </section>
+      <div ref={previewEndRef} className="h-px w-full" aria-hidden />
     </article>
   );
 }

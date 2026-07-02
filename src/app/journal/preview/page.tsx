@@ -1,11 +1,12 @@
 "use client";
 
-import { Suspense, useEffect, useLayoutEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { JournalPreviewCompanionSwitcher } from "@/components/journal/JournalPreviewCompanionSwitcher";
 import { JournalPreviewDayNav } from "@/components/journal/JournalPreviewDayNav";
 import { JournalReadablePreview } from "@/components/journal/JournalReadablePreview";
+import { CompanionWritingPreviewFarewellGuide } from "@/components/journal/companion-writing/CompanionWritingPreviewFarewellGuide";
 import { JournalSocialPostImagePanel } from "@/components/journal/JournalSocialPostImagePanel";
 import { ActiveProfileLabel } from "@/components/profile/ActiveProfileLabel";
 import { useEnsureServerAuthSession } from "@/hooks/useEnsureServerAuthSession";
@@ -15,6 +16,7 @@ import { normalizeContentFontMode } from "@/lib/journal/contentFontMode";
 import { consumeJournalPreviewPrefetch, peekJournalPreviewPrefetch } from "@/lib/journal/journalPreviewPrefetch";
 import { journalEditPath } from "@/lib/journal/journalNav";
 import { normalizeCompanionType, normalizeDiaryDesignTheme, type CompanionType, type DiaryDesignId } from "@/lib/journal/meta";
+import { matchCompanionWritingPreviewGuide } from "@/lib/journal/companionWriting/session";
 import type { JournalPreviewNeighbors } from "@/lib/journal/journalPreviewNeighbors";
 
 type PreviewEntry = {
@@ -68,6 +70,11 @@ function JournalPreviewPageContent() {
   const [hydratedFromPrefetch, setHydratedFromPrefetch] = useState(false);
   const [companionSwitching, setCompanionSwitching] = useState(false);
   const [companionSwitchError, setCompanionSwitchError] = useState<string | null>(null);
+  const previewEndRef = useRef<HTMLDivElement>(null);
+  const [previewGuideSession, setPreviewGuideSession] = useState<{
+    companionType: CompanionType;
+  } | null>(null);
+  const [previewGuidePhase, setPreviewGuidePhase] = useState<"read" | "write" | null>(null);
   const authSession = useEnsureServerAuthSession();
   const { entitlement } = useEntitlement();
   const canEditJournal = entitlement?.canUseContinuedFeatures ?? true;
@@ -133,6 +140,43 @@ function JournalPreviewPageContent() {
       cancelled = true;
     };
   }, [entryId, authSession.ready, hydratedFromPrefetch]);
+
+  useEffect(() => {
+    if (!entry?.id) {
+      setPreviewGuideSession(null);
+      setPreviewGuidePhase(null);
+      return;
+    }
+    const payload = matchCompanionWritingPreviewGuide(entry.id);
+    if (!payload) {
+      setPreviewGuideSession(null);
+      setPreviewGuidePhase(null);
+      return;
+    }
+    setPreviewGuideSession({ companionType: payload.companionType });
+    setPreviewGuidePhase(null);
+  }, [entry?.id]);
+
+  useEffect(() => {
+    if (!previewGuideSession || previewGuidePhase !== null || viewMode !== "readable" || loading) {
+      return;
+    }
+    const node = previewEndRef.current;
+    if (!node) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((item) => item.isIntersecting)) {
+          setPreviewGuidePhase("read");
+          observer.disconnect();
+        }
+      },
+      { threshold: 0.25, rootMargin: "0px 0px -72px 0px" },
+    );
+
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [previewGuideSession, previewGuidePhase, viewMode, loading, entry?.id]);
 
   const designTheme: DiaryDesignId = useMemo(() => {
     if (themeParam?.trim()) return normalizeDiaryDesignTheme(themeParam);
@@ -323,6 +367,7 @@ function JournalPreviewPageContent() {
             canEdit={canEditJournal}
             meaningsReturnTo={meaningsReturnTo}
             afterCommentSlot={companionSwitcherBlock}
+            previewEndRef={previewEndRef}
           />
         ) : viewMode === "social" ? (
           <JournalSocialPostImagePanel
@@ -414,6 +459,14 @@ function JournalPreviewPageContent() {
           </>
         ) : null}
       </div>
+
+      {previewGuideSession && previewGuidePhase ? (
+        <CompanionWritingPreviewFarewellGuide
+          phase={previewGuidePhase}
+          companionType={previewGuideSession.companionType}
+          onNext={() => setPreviewGuidePhase("write")}
+        />
+      ) : null}
       </div>
   );
 }

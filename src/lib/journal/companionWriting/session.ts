@@ -12,6 +12,8 @@ export const COMPANION_WRITING_EDIT_SESSION_KEY = "lj-cw-edit-session:v1";
 
 export const COMPANION_WRITING_FAREWELL_KEY = "lj-cw-farewell:v1";
 
+export const COMPANION_WRITING_PREVIEW_GUIDE_KEY = "lj-cw-preview-guide:v1";
+
 /** @deprecated v1 scroll-only handoff — use edit session + focus query */
 export const JOURNAL_COMPANION_HANDOFF_STORAGE_KEY = "lj-journal-companion-handoff:v1";
 
@@ -33,6 +35,13 @@ export type CompanionWritingEditSession = {
   companionType: CompanionType;
   /** 案内カードの強調（両方表示しつつ、どちらを目立たせるか） */
   emphasis: JournalCompanionHandoffFocus | "both";
+  profileId?: string;
+};
+
+export type CompanionWritingPreviewGuidePayload = {
+  version: 1;
+  entryId: string;
+  companionType: CompanionType;
   profileId?: string;
 };
 
@@ -109,6 +118,14 @@ export function clearCompanionWritingEditSession(): void {
   removeKey(COMPANION_WRITING_EDIT_SESSION_KEY);
 }
 
+export function updateCompanionWritingEditSessionEmphasis(
+  emphasis: JournalCompanionHandoffFocus | "both",
+): void {
+  const session = readCompanionWritingEditSession();
+  if (!session) return;
+  writeCompanionWritingEditSession({ ...session, emphasis });
+}
+
 export function writeCompanionWritingFarewell(): void {
   writeJson(COMPANION_WRITING_FAREWELL_KEY, { version: 1, at: Date.now() });
 }
@@ -118,6 +135,35 @@ export function consumeCompanionWritingFarewell(): boolean {
   if (parsed?.version !== 1) return false;
   removeKey(COMPANION_WRITING_FAREWELL_KEY);
   return true;
+}
+
+export function writeCompanionWritingPreviewGuide(
+  payload: CompanionWritingPreviewGuidePayload,
+): void {
+  writeJson(COMPANION_WRITING_PREVIEW_GUIDE_KEY, payload);
+}
+
+export function readCompanionWritingPreviewGuide(): CompanionWritingPreviewGuidePayload | null {
+  const parsed = readJson<CompanionWritingPreviewGuidePayload>(COMPANION_WRITING_PREVIEW_GUIDE_KEY);
+  if (parsed?.version !== 1 || !parsed.entryId?.trim()) {
+    return null;
+  }
+  return {
+    ...parsed,
+    companionType: normalizeCompanionType(parsed.companionType),
+  };
+}
+
+export function matchCompanionWritingPreviewGuide(
+  entryId: string,
+): CompanionWritingPreviewGuidePayload | null {
+  const parsed = readCompanionWritingPreviewGuide();
+  if (!parsed || parsed.entryId !== entryId) return null;
+  return parsed;
+}
+
+export function clearCompanionWritingPreviewGuide(): void {
+  removeKey(COMPANION_WRITING_PREVIEW_GUIDE_KEY);
 }
 
 export function prepareCompanionWritingEditNavigation(params: {

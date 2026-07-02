@@ -14,6 +14,7 @@ import { getCompanionWritingCalendarWhisper } from "@/lib/journal/companionWriti
 import {
   clearCompanionWritingCalendarComplete,
   prepareCompanionWritingGrowNavigation,
+  writeCompanionWritingPreviewGuide,
   type CompanionWritingCalendarCompletePayload,
 } from "@/lib/journal/companionWriting/session";
 import {
@@ -102,7 +103,15 @@ export function CompanionWritingCalendarCompleteCard({
           </button>
           <a
             href={previewHref}
-            onClick={dismissGuide}
+            onClick={() => {
+              writeCompanionWritingPreviewGuide({
+                version: 1,
+                entryId: payload.entryId,
+                companionType: payload.companionType,
+                profileId: payload.profileId,
+              });
+              dismissGuide();
+            }}
             className={companionWritingGuidePrimaryButtonClass}
           >
             {COMPANION_WRITING_COMPLETE_FINISH_LABEL}

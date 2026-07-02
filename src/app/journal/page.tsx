@@ -46,7 +46,6 @@ import {
   preloadSaveTransitionOpeningAssets,
 } from "@/lib/journal/saveTransitionAssets";
 import {
-  journalCalendarAfterCompanionSavePath,
   journalCalendarPathForMonth,
   journalListPathForMonth,
   journalPreviewPath,
@@ -84,11 +83,17 @@ import {
   clearCompanionWritingEditSession,
   readCompanionWritingEditSession,
   readLegacyJournalCompanionHandoff,
-  writeCompanionWritingCalendarComplete,
+  updateCompanionWritingEditSessionEmphasis,
+  writeCompanionWritingPreviewGuide,
   type CompanionWritingEditSession,
+  type JournalCompanionHandoffFocus,
 } from "@/lib/journal/companionWriting/session";
 import { scrollJournalEditSectionIntoView } from "@/lib/journal/companionWriting/editSectionScroll";
+import { isCompanionEditZoneActive } from "@/lib/journal/companionWriting/editZoneHighlight";
+import { COMPANION_WRITING_EDIT_ZONE_SPOTLIGHT_MS } from "@/lib/journal/companionWriting/types";
 import { CompanionWritingJournalGuide } from "@/components/journal/companion-writing/CompanionWritingJournalGuide";
+import { CompanionWritingJournalGuideDock } from "@/components/journal/companion-writing/CompanionWritingJournalGuideDock";
+import { companionWritingZoneSectionClass } from "@/components/journal/companion-writing/companionWritingGuideStyles";
 import { CompanionWritingZoneHint } from "@/components/journal/companion-writing/CompanionWritingZoneHint";
 import { OwlLoadingInline } from "@/components/ui/OwlLoadingInline";
 import { TrialStatusBanner } from "@/components/entitlement/TrialStatusBanner";
@@ -251,12 +256,42 @@ function JournalPageContent() {
     useState<JournalLocalDraftFormSnapshot | null>(null);
   const [companionEditSession, setCompanionEditSession] =
     useState<CompanionWritingEditSession | null>(null);
-  const [companionGuideDismissed, setCompanionGuideDismissed] = useState(false);
+  const [companionGuideMode, setCompanionGuideMode] = useState<"overlay" | "dock" | null>(null);
+  const [companionActiveFocus, setCompanionActiveFocus] =
+    useState<JournalCompanionHandoffFocus | null>(null);
+  const [companionSpotlightFocus, setCompanionSpotlightFocus] =
+    useState<JournalCompanionHandoffFocus | null>(null);
 
   const photoInputRef = useRef<HTMLInputElement>(null);
   const editLoadGenerationRef = useRef(0);
   const saveTransitionStartedAtRef = useRef<number | null>(null);
   const saveTransitionAnimalShownAtRef = useRef<number | null>(null);
+  const companionSpotlightTimerRef = useRef<number | null>(null);
+
+  const focusCompanionSection = useCallback((focus: JournalCompanionHandoffFocus) => {
+    updateCompanionWritingEditSessionEmphasis(focus);
+    setCompanionEditSession((prev) => (prev ? { ...prev, emphasis: focus } : prev));
+    setCompanionActiveFocus(focus);
+    setCompanionGuideMode("dock");
+    setCompanionSpotlightFocus(focus);
+    scrollJournalEditSectionIntoView(focus);
+
+    if (focus === "photo") {
+      photoInputRef.current?.click();
+    } else {
+      window.setTimeout(() => {
+        document.getElementById("journal-content")?.focus({ preventScroll: true });
+      }, 320);
+    }
+
+    if (companionSpotlightTimerRef.current !== null) {
+      window.clearTimeout(companionSpotlightTimerRef.current);
+    }
+    companionSpotlightTimerRef.current = window.setTimeout(() => {
+      setCompanionSpotlightFocus(null);
+      companionSpotlightTimerRef.current = null;
+    }, COMPANION_WRITING_EDIT_ZONE_SPOTLIGHT_MS);
+  }, []);
 
   const resetJournalFormState = useCallback(() => {
     setContent("");
@@ -415,22 +450,28 @@ function JournalPageContent() {
   useEffect(() => {
     if (!editingId || loadingEdit) {
       setCompanionEditSession(null);
-      setCompanionGuideDismissed(false);
+      setCompanionGuideMode(null);
+      setCompanionActiveFocus(null);
+      setCompanionSpotlightFocus(null);
       return;
     }
     const session = readCompanionWritingEditSession();
     if (session?.entryId === editingId) {
       setCompanionEditSession(session);
-      setCompanionGuideDismissed(false);
+      setCompanionGuideMode("overlay");
+      setCompanionActiveFocus(null);
+      setCompanionSpotlightFocus(null);
     } else {
       setCompanionEditSession(null);
-      setCompanionGuideDismissed(false);
+      setCompanionGuideMode(null);
+      setCompanionActiveFocus(null);
+      setCompanionSpotlightFocus(null);
     }
   }, [editingId, loadingEdit]);
 
   useEffect(() => {
     if (!editingId || loadingEdit) return;
-    if (companionEditSession && !companionGuideDismissed) return;
+    if (companionEditSession && companionGuideMode === "overlay") return;
     const legacyHandoff = readLegacyJournalCompanionHandoff();
     const focus =
       focusFromQuery === "photo" || focusFromQuery === "body"
@@ -441,11 +482,20 @@ function JournalPageContent() {
     scrollJournalEditSectionIntoView(focus);
   }, [
     companionEditSession,
-    companionGuideDismissed,
+    companionGuideMode,
     editingId,
     focusFromQuery,
     loadingEdit,
   ]);
+
+  useEffect(
+    () => () => {
+      if (companionSpotlightTimerRef.current !== null) {
+        window.clearTimeout(companionSpotlightTimerRef.current);
+      }
+    },
+    [],
+  );
 
   useLayoutEffect(() => {
     if (editingId) {
@@ -613,7 +663,9 @@ function JournalPageContent() {
     }
   }
 
-  async function saveEntry(redirectMode: "preview" | "returnTo" = "preview") {
+  async function saveEntry(
+    redirectMode: "preview" | "returnTo" | "stay" | "companionFinish" = "preview",
+  ) {
     setError(null);
 
     if (editingId && !canEditJournal) {
@@ -705,29 +757,6 @@ function JournalPageContent() {
 
       localDraft.clearDraftAfterSuccessfulSave();
 
-      const companionEdit = editingId ? readCompanionWritingEditSession() : null;
-      const isCompanionEditSave =
-        companionEdit != null && companionEdit.entryId === editingId;
-
-      if (isCompanionEditSave) {
-        writeCompanionWritingCalendarComplete({
-          version: 1,
-          entryId: savedId,
-          entryDateYmd: entryDate,
-          companionType: companionEdit.companionType,
-          profileId: effectiveProfileId,
-          designTheme,
-        });
-        clearCompanionWritingEditSession();
-        router.push(
-          journalCalendarAfterCompanionSavePath({
-            entryDateYmd: entryDate,
-            profileId: effectiveProfileId,
-          }),
-        );
-        return;
-      }
-
       const monthKey = resolveJournalEntryMonthKey({ entryDateYmd: entryDate });
       const listFallback = monthKey ? journalListPathForMonth(monthKey) : "/orders/list";
       const previewReturnTo = safeReturnTo ?? listFallback;
@@ -768,6 +797,28 @@ function JournalPageContent() {
         setNavigatingToPreview(true);
         router.push(journalPreviewPath(savedId, designTheme, previewReturnTo, effectiveProfileId));
       };
+
+      if (redirectMode === "stay") {
+        return;
+      }
+
+      if (redirectMode === "companionFinish") {
+        clearCompanionWritingEditSession();
+        setCompanionEditSession(null);
+        setCompanionGuideMode(null);
+        setCompanionActiveFocus(null);
+        setCompanionSpotlightFocus(null);
+        if (savedId) {
+          writeCompanionWritingPreviewGuide({
+            version: 1,
+            entryId: savedId,
+            companionType,
+            profileId: effectiveProfileId || undefined,
+          });
+        }
+        goToPreview();
+        return;
+      }
 
       if (!editingId || redirectMode === "preview") {
         goToPreview();
@@ -849,6 +900,10 @@ function JournalPageContent() {
 
   async function onSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    if (companionEditSession) {
+      await saveEntry("stay");
+      return;
+    }
     await saveEntry();
   }
 
@@ -912,6 +967,23 @@ function JournalPageContent() {
   );
   const showPhotoDraftNotice =
     localDraft.isOffline || (hasPhotoSelection && localDraft.hasActiveLocalDraft);
+
+  const companionBodyZoneActive =
+    companionEditSession != null &&
+    isCompanionEditZoneActive(
+      "body",
+      companionSpotlightFocus,
+      companionActiveFocus,
+      companionEditSession.emphasis,
+    );
+  const companionPhotoZoneActive =
+    companionEditSession != null &&
+    isCompanionEditZoneActive(
+      "photo",
+      companionSpotlightFocus,
+      companionActiveFocus,
+      companionEditSession.emphasis,
+    );
 
   return (
     <div className="relative space-y-3">
@@ -1045,7 +1117,15 @@ function JournalPageContent() {
           </p>
         </div>
       ) : (
-      <form onSubmit={(e) => void onSubmit(e)} className="space-y-3 rounded-xl border border-stone-200 bg-white p-4 shadow-sm sm:p-5">
+      <form
+        onSubmit={(e) => void onSubmit(e)}
+        className={[
+          "space-y-3 rounded-xl border border-stone-200 bg-white p-4 shadow-sm sm:p-5",
+          companionGuideMode === "dock" ? "pb-52" : "",
+        ]
+          .filter(Boolean)
+          .join(" ")}
+      >
         {editingId ? (
           <div className="flex flex-col gap-2 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 sm:flex-row sm:items-center sm:justify-between">
             <p className="lj-read-caption text-amber-900">編集モードです。内容を更新できます。</p>
@@ -1060,11 +1140,21 @@ function JournalPageContent() {
           </div>
         ) : null}
 
-        {companionEditSession && !companionGuideDismissed ? (
+        {companionEditSession && companionGuideMode === "overlay" ? (
           <CompanionWritingJournalGuide
             companionType={companionEditSession.companionType}
-            emphasis={companionEditSession.emphasis}
-            onDismiss={() => setCompanionGuideDismissed(true)}
+            activeFocus={companionActiveFocus}
+            onFocusSection={focusCompanionSection}
+          />
+        ) : null}
+
+        {companionEditSession && companionGuideMode === "dock" ? (
+          <CompanionWritingJournalGuideDock
+            companionType={companionEditSession.companionType}
+            activeFocus={companionActiveFocus}
+            saving={saving}
+            onFocusSection={focusCompanionSection}
+            onFinish={() => void saveEntry("companionFinish")}
           />
         ) : null}
 
@@ -1072,9 +1162,7 @@ function JournalPageContent() {
           id="journal-body-section"
           className={[
             "scroll-mt-16",
-            companionEditSession?.emphasis === "body"
-              ? "rounded-xl ring-2 ring-emerald-200/55 ring-offset-2"
-              : "",
+            companionWritingZoneSectionClass(companionBodyZoneActive),
           ]
             .filter(Boolean)
             .join(" ")}
@@ -1082,7 +1170,8 @@ function JournalPageContent() {
         {companionEditSession ? (
           <CompanionWritingZoneHint
             kind="body"
-            emphasized={companionEditSession.emphasis === "body"}
+            emphasized={companionBodyZoneActive && companionSpotlightFocus !== "body"}
+            spotlight={companionSpotlightFocus === "body"}
           />
         ) : null}
         <JournalWritingComposer
@@ -1158,15 +1247,16 @@ function JournalPageContent() {
           id="journal-photo-section"
           className={[
             "scroll-mt-16 space-y-2 rounded-lg border border-dashed border-stone-200/90 bg-[#faf8f5]/50 px-3 py-3",
-            companionEditSession?.emphasis === "photo"
-              ? "ring-2 ring-emerald-200/55 ring-offset-2"
-              : "",
-          ].join(" ")}
+            companionWritingZoneSectionClass(companionPhotoZoneActive),
+          ]
+            .filter(Boolean)
+            .join(" ")}
         >
           {companionEditSession ? (
             <CompanionWritingZoneHint
               kind="photo"
-              emphasized={companionEditSession.emphasis === "photo"}
+              emphasized={companionPhotoZoneActive && companionSpotlightFocus !== "photo"}
+              spotlight={companionSpotlightFocus === "photo"}
             />
           ) : null}
           <label className="lj-read-desc block font-medium text-stone-700" htmlFor="journal-photo">
