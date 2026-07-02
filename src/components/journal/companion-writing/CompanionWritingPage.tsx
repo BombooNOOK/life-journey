@@ -12,6 +12,7 @@ import { useEntitlement } from "@/components/entitlement/useEntitlement";
 import { useEnsureActiveViewerProfile } from "@/hooks/useEnsureActiveViewerProfile";
 import { parseSafeJournalReturnTo } from "@/lib/journal/bookshelfReturnTo";
 import { buildCompanionWritingEntryContent } from "@/lib/journal/companionWriting/buildEntryContent";
+import { fetchCompanionWritingReadingFirstSentence } from "@/lib/journal/companionWriting/readingFirstSentence";
 import {
   getAppraiserDisplayName,
   getCompanionFollowUpQuestion,
@@ -169,12 +170,19 @@ export function CompanionWritingPage() {
     setError(null);
     setSaving(true);
     try {
+      const readingFirstSentence = effectiveProfileId
+        ? await fetchCompanionWritingReadingFirstSentence({
+            profileId: effectiveProfileId,
+            mood,
+            companionType: resolvedCompanion,
+            entryDateYmd: entryDate,
+          })
+        : null;
+
       const content = buildCompanionWritingEntryContent({
         mood,
-        companionType: resolvedCompanion,
-        openingMessage,
         feedback,
-        followUpQuestion,
+        readingFirstSentence,
         userAnswer: answer,
       });
 
@@ -225,10 +233,8 @@ export function CompanionWritingPage() {
     effectiveProfileId,
     entryDate,
     feedback,
-    followUpQuestion,
     mood,
     omakaseResolved,
-    openingMessage,
     router,
     userAnswer,
   ]);
@@ -434,9 +440,9 @@ export function CompanionWritingPage() {
       {step === "feedback" ? (
         <section className="space-y-4 rounded-xl border border-stone-200 bg-white p-4 shadow-sm sm:p-5">
           <p className="text-sm font-medium text-stone-800">
-            このことば、今日のあなたに近かった？
+            今日の数字からのことば、いまのあなたにどれくらい近いですか？
           </p>
-          <div className="grid gap-2 sm:grid-cols-2" role="radiogroup" aria-label="ことばの近さ">
+          <div className="grid gap-2 sm:grid-cols-2" role="radiogroup" aria-label="読み解きの受け取り方">
             {companionWritingFeedbackOptions.map((option) => {
               const selected = feedback === option.id;
               return (

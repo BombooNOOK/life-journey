@@ -3,9 +3,9 @@ import type { CompanionType, MoodId } from "@/lib/journal/meta";
 export const COMPANION_WRITING_FORMAL_TITLE = "どうぶつ鑑定士といっしょに書く";
 
 export const companionWritingFeedbackOptions = [
-  { id: "perfect_fit", label: "ぴったりきた" },
+  { id: "perfect_fit", label: "近く感じた" },
   { id: "somewhat", label: "少し響いた" },
-  { id: "different", label: "今日はちがった" },
+  { id: "different", label: "今は少しちがう" },
   { id: "unsure", label: "まだわからない" },
 ] as const;
 
