@@ -32,7 +32,10 @@ import {
 } from "@/lib/journal/journalNav";
 import { MoodOwlIcon } from "@/components/journal/MoodOwlIcon";
 import { getActivityMeta, getMoodMeta } from "@/lib/journal/meta";
-import { readCompanionWritingCalendarComplete } from "@/lib/journal/companionWriting/session";
+import {
+  clearCompanionWritingCalendarComplete,
+  readCompanionWritingCalendarComplete,
+} from "@/lib/journal/companionWriting/session";
 import type { CompanionWritingCalendarCompletePayload } from "@/lib/journal/companionWriting/session";
 import { preloadCompanionSaveForestAssets } from "@/lib/journal/companionWriting/companionSaveForestAssets";
 import {
@@ -162,10 +165,11 @@ export function DiaryCalendarHome({
     if (!companionComplete) return null;
     return parseCompanionWritingCalendarGuidePhase(
       searchParams.get(COMPANION_WRITING_CALENDAR_GUIDE_QUERY),
-    ) ?? "calendar";
+    );
   }, [companionComplete, searchParams]);
 
   const dismissCompanionGuide = useCallback(() => {
+    clearCompanionWritingCalendarComplete();
     setCompanionComplete(null);
     if (searchParams.get(COMPANION_WRITING_CALENDAR_GUIDE_QUERY)) {
       router.replace(buildCalendarHref(null), { scroll: false });
@@ -189,20 +193,24 @@ export function DiaryCalendarHome({
 
   useEffect(() => {
     const payload = readCompanionWritingCalendarComplete();
+    const guideFromUrl = parseCompanionWritingCalendarGuidePhase(
+      searchParams.get(COMPANION_WRITING_CALENDAR_GUIDE_QUERY),
+    );
+
     if (!payload) return;
+
+    // 伴走保存直後のみ cwGuide 付きで遷移する。通常カレンダーでは古い session を無視する。
+    if (!guideFromUrl) {
+      clearCompanionWritingCalendarComplete();
+      return;
+    }
+
     setCompanionComplete(payload);
     void preloadCompanionSaveForestAssets();
     const day = parseDayParam(payload.entryDateYmd);
     if (day) {
       setViewMonth(new Date(day.year, day.monthIndex, 1));
       setSelectedDay(day.day);
-    }
-    if (
-      !parseCompanionWritingCalendarGuidePhase(
-        searchParams.get(COMPANION_WRITING_CALENDAR_GUIDE_QUERY),
-      )
-    ) {
-      router.replace(buildCalendarHref("calendar"), { scroll: false });
     }
     // 伴走完了の初回表示だけ URL を整える
     // eslint-disable-next-line react-hooks/exhaustive-deps
