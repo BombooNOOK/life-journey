@@ -156,10 +156,10 @@ export const HOME_FOREST_SIGN_LAYOUT: Record<HomeForestSignViewport, HomeForestS
     },
     loginNote: {
       x: 177,
-      y: 645,
+      y: 628,
       textAnchor: "center",
       textAlign: "center",
-      fontSize: 14,
+      fontSize: 12,
       fontWeight: 600,
       color: WOOD_TEXT,
       maxWidth: 320,
@@ -231,7 +231,7 @@ export const HOME_FOREST_SIGN_LAYOUT: Record<HomeForestSignViewport, HomeForestS
       lineHeight: 1.3,
     },
     loginNote: {
-      x: 450,
+      x: 543,
       y: 310,
       textAnchor: "center",
       textAlign: "center",
