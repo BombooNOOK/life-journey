@@ -76,6 +76,12 @@ const links: { href: string; label: string; note?: string; highlight?: boolean }
     note: "819×1024 を 1:1 表示。グリッド・座標クリック・配置確認。npm run dev 中のみ",
     highlight: true,
   },
+  {
+    href: "/preview/home-forest-sign/layout?viewport=mobile",
+    label: "トップ・森の案内板レイアウト定規",
+    note: "485×1024 / 1024×576 を 1:1 表示。看板テキストの座標調整。npm run dev 中のみ",
+    highlight: true,
+  },
   { href: "/verify", label: "数値の突合（コア5・ローマ字）", note: "旧鑑定書・Excel との照合用" },
   { href: "/preview/all-bodies", label: "鑑定本文まとめ（全データ・1ページ）", note: "LP〜ブリッジ・PY/PM/PD まで一括" },
   {

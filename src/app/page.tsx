@@ -1,5 +1,5 @@
-import { HomeEntranceSection } from "@/components/home/HomeEntranceSection";
+import { HomeForestSignEntrance } from "@/components/home/HomeForestSignEntrance";
 
 export default function HomePage() {
-  return <HomeEntranceSection />;
+  return <HomeForestSignEntrance />;
 }
