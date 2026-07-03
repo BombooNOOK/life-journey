@@ -1,5 +1,6 @@
 /** SNS 投稿画像用テキスト抜粋（クライアントでも利用可） */
 
+import { stripTagsFromContent } from "@/lib/journal/diaryTags";
 import type { JournalSocialPostTemplateId } from "./templates";
 
 /** @deprecated SOCIAL_POST_BODY_MAX_CHARS_SNS02 を使用 */
@@ -95,7 +96,7 @@ export function extractSocialPostBodyText(
   content: string,
   templateId: JournalSocialPostTemplateId = "sns02",
 ): string {
-  const normalized = normalizeSocialPostText(content);
+  const normalized = normalizeSocialPostText(stripTagsFromContent(content));
   if (templateId === "sns03") {
     const excerpt = extractSentenceExcerpt(
       normalized,

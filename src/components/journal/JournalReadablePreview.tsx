@@ -1,6 +1,6 @@
 "use client";
 
-import type { ReactNode, Ref } from "react";
+import { useMemo, type ReactNode, type Ref } from "react";
 import Image from "next/image";
 import Link from "next/link";
 
@@ -8,6 +8,7 @@ import { MoodOwlIcon } from "@/components/journal/MoodOwlIcon";
 import { DiaryNumbersHintSection } from "@/components/journal/DiaryNumbersHintSection";
 import { JOURNAL_OWL_COMMENT_KANTEI_REQUIRED_MESSAGE } from "@/lib/journal/kanteiCommentCopy";
 import { formatJournalPreviewDateHeading } from "@/lib/journal/journalRecordDateDisplay";
+import { stripTagsFromContent } from "@/lib/journal/diaryTags";
 import { journalEditPath } from "@/lib/journal/journalNav";
 import { getActivityMeta, getCompanionLabel, getMoodMeta, normalizeCompanionType } from "@/lib/journal/meta";
 
@@ -92,6 +93,7 @@ export function JournalReadablePreview({
   afterCommentSlot,
   previewEndRef,
 }: Props) {
+  const displayContent = useMemo(() => stripTagsFromContent(content), [content]);
   const previewDate = new Date(createdAt);
   const dateLabel = formatJournalPreviewDateHeading(previewDate);
   const moodMeta = getMoodMeta(mood);
@@ -137,7 +139,7 @@ export function JournalReadablePreview({
 
       <section className="rounded-xl border border-stone-200/90 bg-white px-4 py-4 shadow-sm sm:px-5 sm:py-5">
         <p className="lj-read-body whitespace-pre-wrap break-words text-stone-800">
-          {content.trim() || "（本文なし）"}
+          {displayContent.trim() || "（本文なし）"}
         </p>
       </section>
 

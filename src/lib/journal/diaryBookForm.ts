@@ -102,3 +102,40 @@ export function parseDiaryBookPreviewFields(json: unknown): DiaryBookFormParseRe
     },
   };
 }
+
+export type DiaryBookPeriodFields = {
+  startDate: string;
+  endDate: string;
+};
+
+export type DiaryBookPeriodParseResult =
+  | { ok: true; data: DiaryBookPeriodFields }
+  | { ok: false; status: number; code: string; error: string };
+
+export function parseDiaryBookPeriodFields(json: unknown): DiaryBookPeriodParseResult {
+  if (typeof json !== "object" || json === null) {
+    return { ok: false, status: 400, code: "BAD_JSON", error: "JSONが不正です。" };
+  }
+
+  const rawStart =
+    "startDate" in json ? String((json as { startDate: unknown }).startDate) : "";
+  const rawEnd = "endDate" in json ? String((json as { endDate: unknown }).endDate) : "";
+
+  const dateRange = parseDiaryBookDateRange(rawStart, rawEnd);
+  if (!dateRange) {
+    return {
+      ok: false,
+      status: 400,
+      code: "BAD_DATE_RANGE",
+      error: "開始日・終了日の形式が不正です。",
+    };
+  }
+
+  return {
+    ok: true,
+    data: {
+      startDate: dateRange.startDate,
+      endDate: dateRange.endDate,
+    },
+  };
+}

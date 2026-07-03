@@ -7,6 +7,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { ProfileSwitcher } from "@/components/profile/ProfileSwitcher";
 import { ActiveProfileLabel } from "@/components/profile/ActiveProfileLabel";
+import { DiaryPastTagButtons } from "@/components/journal/DiaryPastTagButtons";
+import { DiaryTagInputField } from "@/components/journal/DiaryTagInput";
 import { InlineHelpButton } from "@/components/ui/InlineHelpButton";
 import { OwlLoadingInline } from "@/components/ui/OwlLoadingInline";
 import { JOURNAL_LIST_HELP_TEXT } from "@/lib/journal/journalDiaryNumbersHelpCopy";
@@ -43,16 +45,36 @@ const listSelectStyle = {
     "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12' fill='none'%3E%3Cpath d='M3 4.5L6 7.5L9 4.5' stroke='%2378716c' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E\")",
 } as const;
 
-async function fetchJournalListMonth(
-  profileId: string,
-  monthKey: string,
-): Promise<JournalListEntry[]> {
+type JournalSearchScope = "month" | "year" | "all";
+
+async function fetchJournalList(params: {
+  profileId: string;
+  monthKey: string;
+  year: number;
+  searchScope: JournalSearchScope;
+  keyword: string;
+  tag: string;
+}): Promise<JournalListEntry[]> {
   const qs = new URLSearchParams({
-    profileId,
+    profileId: params.profileId,
     view: "list",
-    month: monthKey,
     _: String(Date.now()),
   });
+
+  const hasSearch = Boolean(params.keyword.trim() || params.tag.trim());
+  if (hasSearch) {
+    qs.set("searchScope", params.searchScope);
+    if (params.searchScope === "month") {
+      qs.set("month", params.monthKey);
+    } else if (params.searchScope === "year") {
+      qs.set("year", String(params.year));
+    }
+    if (params.keyword.trim()) qs.set("q", params.keyword.trim());
+    if (params.tag.trim()) qs.set("tag", params.tag.trim());
+  } else {
+    qs.set("month", params.monthKey);
+  }
+
   const res = await fetch(`/api/journal?${qs.toString()}`, {
     cache: "no-store",
     credentials: "same-origin",
@@ -79,6 +101,13 @@ export function DiaryJournalListHome({
   const [loading, setLoading] = useState(true);
   const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [searchScope, setSearchScope] = useState<JournalSearchScope>("month");
+  const [keywordQuery, setKeywordQuery] = useState("");
+  const [tagQuery, setTagQuery] = useState("");
+  const [appliedKeyword, setAppliedKeyword] = useState("");
+  const [appliedTag, setAppliedTag] = useState("");
+  const [appliedSearchScope, setAppliedSearchScope] = useState<JournalSearchScope>("month");
+  const [isSearchActive, setIsSearchActive] = useState(false);
   const fetchGenerationRef = useRef(0);
 
   const monthKey = useMemo(() => monthKeyFromDateAnchor(viewMonth), [viewMonth]);
@@ -106,26 +135,85 @@ export function DiaryJournalListHome({
     [entries],
   );
 
-  const loadMonth = useCallback(async (targetMonth: Date, profileId: string) => {
-    const generation = ++fetchGenerationRef.current;
-    const key = monthKeyFromDateAnchor(targetMonth);
-    setLoading(true);
-    setError(null);
-    try {
-      const rows = await fetchJournalListMonth(profileId, key);
-      if (generation !== fetchGenerationRef.current) return;
-      setEntries(rows);
-      setHasLoadedOnce(true);
-    } catch (e) {
-      if (generation !== fetchGenerationRef.current) return;
-      setError(e instanceof Error ? e.message : "日記一覧の取得に失敗しました。");
-      setEntries([]);
-    } finally {
-      if (generation === fetchGenerationRef.current) {
-        setLoading(false);
+  const loadEntries = useCallback(
+    async (targetMonth: Date, profileId: string, search: {
+      active: boolean;
+      keyword: string;
+      tag: string;
+      scope: JournalSearchScope;
+    }) => {
+      const generation = ++fetchGenerationRef.current;
+      const key = monthKeyFromDateAnchor(targetMonth);
+      setLoading(true);
+      setError(null);
+      try {
+        const rows = await fetchJournalList({
+          profileId,
+          monthKey: key,
+          year: targetMonth.getFullYear(),
+          searchScope: search.active ? search.scope : "month",
+          keyword: search.active ? search.keyword : "",
+          tag: search.active ? search.tag : "",
+        });
+        if (generation !== fetchGenerationRef.current) return;
+        setEntries(rows);
+        setHasLoadedOnce(true);
+      } catch (e) {
+        if (generation !== fetchGenerationRef.current) return;
+        setError(e instanceof Error ? e.message : "日記一覧の取得に失敗しました。");
+        setEntries([]);
+      } finally {
+        if (generation === fetchGenerationRef.current) {
+          setLoading(false);
+        }
       }
+    },
+    [],
+  );
+
+  const applySearch = useCallback(() => {
+    const nextKeyword = keywordQuery.trim();
+    const nextTag = tagQuery.trim();
+    if (!nextKeyword && !nextTag) {
+      setIsSearchActive(false);
+      setAppliedKeyword("");
+      setAppliedTag("");
+      setAppliedSearchScope("month");
+      void loadEntries(viewMonth, effectiveProfileId, {
+        active: false,
+        keyword: "",
+        tag: "",
+        scope: "month",
+      });
+      return;
     }
-  }, []);
+    setIsSearchActive(true);
+    setAppliedKeyword(nextKeyword);
+    setAppliedTag(nextTag);
+    setAppliedSearchScope(searchScope);
+    void loadEntries(viewMonth, effectiveProfileId, {
+      active: true,
+      keyword: nextKeyword,
+      tag: nextTag,
+      scope: searchScope,
+    });
+  }, [effectiveProfileId, keywordQuery, loadEntries, searchScope, tagQuery, viewMonth]);
+
+  const clearSearch = useCallback(() => {
+    setKeywordQuery("");
+    setTagQuery("");
+    setIsSearchActive(false);
+    setAppliedKeyword("");
+    setAppliedTag("");
+    setAppliedSearchScope("month");
+    setSearchScope("month");
+    void loadEntries(viewMonth, effectiveProfileId, {
+      active: false,
+      keyword: "",
+      tag: "",
+      scope: "month",
+    });
+  }, [effectiveProfileId, loadEntries, viewMonth]);
 
   const syncMonthInUrl = useCallback(
     (key: string) => {
@@ -152,8 +240,21 @@ export function DiaryJournalListHome({
 
   useEffect(() => {
     if (!effectiveProfileId) return;
-    void loadMonth(viewMonth, effectiveProfileId);
-  }, [effectiveProfileId, loadMonth, viewMonth]);
+    void loadEntries(viewMonth, effectiveProfileId, {
+      active: isSearchActive,
+      keyword: appliedKeyword,
+      tag: appliedTag,
+      scope: appliedSearchScope,
+    });
+  }, [
+    appliedKeyword,
+    appliedSearchScope,
+    appliedTag,
+    effectiveProfileId,
+    isSearchActive,
+    loadEntries,
+    viewMonth,
+  ]);
 
   useEffect(() => {
     const urlMonth = parseMonthKeyParam(searchParams.get("month"));
@@ -166,6 +267,17 @@ export function DiaryJournalListHome({
   }, [searchParams]);
 
   const loadingLabel = !hasLoadedOnce ? "日記一覧を読み込み中…" : "日記を読み込み中…";
+
+  const emptyMessage = isSearchActive
+    ? "条件に合う日記は見つかりませんでした。"
+    : "この月の日記はまだありません。";
+
+  const searchScopeLabel =
+    appliedSearchScope === "all"
+      ? "全期間"
+      : appliedSearchScope === "year"
+        ? `${selectedYear}年`
+        : `${selectedYear}年${selectedMonth}月`;
 
   return (
     <div>
@@ -235,6 +347,91 @@ export function DiaryJournalListHome({
               </select>
             </label>
           </div>
+
+          <fieldset className="mt-3 border-t border-stone-100 pt-3">
+            <legend className="text-sm font-medium text-stone-800">日記を探す</legend>
+            <div className="mt-2 flex flex-wrap gap-2">
+              {(
+                [
+                  { id: "month" as const, label: "この月" },
+                  { id: "year" as const, label: "この年" },
+                  { id: "all" as const, label: "全期間" },
+                ] as const
+              ).map((option) => (
+                <label
+                  key={option.id}
+                  className={[
+                    "inline-flex min-h-[40px] cursor-pointer items-center rounded-lg border px-3 py-2 text-sm",
+                    searchScope === option.id
+                      ? "border-emerald-600 bg-emerald-50 text-emerald-950"
+                      : "border-stone-200 bg-white text-stone-700",
+                  ].join(" ")}
+                >
+                  <input
+                    type="radio"
+                    name="journal-list-search-scope"
+                    value={option.id}
+                    checked={searchScope === option.id}
+                    onChange={() => setSearchScope(option.id)}
+                    className="sr-only"
+                  />
+                  {option.label}
+                </label>
+              ))}
+            </div>
+            <label className="mt-3 block">
+              <span className="sr-only">キーワード</span>
+              <input
+                type="search"
+                value={keywordQuery}
+                onChange={(e) => setKeywordQuery(e.target.value)}
+                placeholder="キーワード（本文）"
+                autoComplete="off"
+                className="w-full rounded-lg border border-stone-300 px-3 py-2.5 text-base text-stone-900 placeholder:text-stone-400 outline-none ring-stone-400 focus:ring-2"
+              />
+            </label>
+            <div className="mt-2">
+              <label htmlFor="journal-list-tag-search" className="sr-only">
+                タグ
+              </label>
+              <DiaryTagInputField
+                id="journal-list-tag-search"
+                value={tagQuery}
+                onChange={setTagQuery}
+                inputType="search"
+              />
+            </div>
+            <DiaryPastTagButtons
+              profileId={effectiveProfileId}
+              onSelectTag={setTagQuery}
+              className="mt-3"
+            />
+            <div className="mt-3 flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={() => applySearch()}
+                className="min-h-[44px] rounded-lg bg-emerald-800 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-900"
+              >
+                検索
+              </button>
+              {isSearchActive ? (
+                <button
+                  type="button"
+                  onClick={() => clearSearch()}
+                  className="min-h-[44px] rounded-lg border border-stone-300 bg-white px-4 py-2 text-sm font-medium text-stone-700 hover:bg-stone-50"
+                >
+                  検索をクリア
+                </button>
+              ) : null}
+            </div>
+            {isSearchActive ? (
+              <p className="mt-2 text-xs text-stone-500">
+                {searchScopeLabel}で検索中
+                {appliedKeyword ? ` · キーワード「${appliedKeyword}」` : ""}
+                {appliedTag ? ` · タグ「${appliedTag}」` : ""}
+              </p>
+            ) : null}
+          </fieldset>
         </div>
 
         {loading ? (
@@ -245,14 +442,20 @@ export function DiaryJournalListHome({
           <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800">{error}</p>
         ) : sortedEntries.length === 0 ? (
           <div className="lj-read-desc rounded-xl border border-stone-200 bg-white p-5 text-stone-600 shadow-sm">
-            <p>この月の日記はまだありません。</p>
-            <p className="mt-2 lj-read-caption text-stone-500">上の年・月を変えると、別の月の日記を表示できます。</p>
-            <Link
-              href="/orders/calendar"
-              className="mt-3 inline-flex min-h-[44px] items-center text-base font-medium text-emerald-900 underline-offset-2 hover:underline"
-            >
-              カレンダーから日記を書く
-            </Link>
+            <p>{emptyMessage}</p>
+            {!isSearchActive ? (
+              <p className="mt-2 lj-read-caption text-stone-500">
+                上の年・月を変えると、別の月の日記を表示できます。
+              </p>
+            ) : null}
+            {!isSearchActive ? (
+              <Link
+                href="/orders/calendar"
+                className="mt-3 inline-flex min-h-[44px] items-center text-base font-medium text-emerald-900 underline-offset-2 hover:underline"
+              >
+                カレンダーから日記を書く
+              </Link>
+            ) : null}
           </div>
         ) : (
           <ul className="divide-y divide-stone-100 rounded-xl border border-stone-200 bg-white shadow-sm">

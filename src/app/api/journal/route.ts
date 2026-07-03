@@ -33,6 +33,7 @@ import {
 } from "@/lib/journal/kanteiCommentEligibility";
 import { findKanteiOrderForProfile } from "@/lib/profile/orderPerProfile";
 import { resolveContentFontModeFromRequest } from "@/lib/journal/contentFontMode";
+import { matchTag, matchesDiaryKeyword } from "@/lib/journal/diaryTags";
 import { formatJournalEntryForApiResponse } from "@/lib/journal/journalEntryApiSerialize";
 import { loadJournalEntryHasPhotoFlags } from "@/lib/journal/journalEntryHasPhoto";
 import {
@@ -120,8 +121,34 @@ export async function GET(req: Request) {
     const yearFilter = parseYear(url.searchParams.get("year"));
     const monthFilter = yearFilter ? null : parseMonth(url.searchParams.get("month"));
     const viewList = url.searchParams.get("view") === "list";
-    const rangeFilter = yearFilter ?? monthFilter;
-    const takeLimit = viewList ? 200 : yearFilter ? 500 : monthFilter ? 400 : 120;
+    const searchQ = (url.searchParams.get("q") ?? "").trim();
+    const searchTag = (url.searchParams.get("tag") ?? "").trim();
+    const searchScope = url.searchParams.get("searchScope") ?? "";
+    const hasSearch = Boolean(searchQ || searchTag);
+    let rangeFilter = yearFilter ?? monthFilter;
+    let takeLimit = viewList ? 200 : yearFilter ? 500 : monthFilter ? 400 : 120;
+    if (hasSearch) {
+      if (searchScope === "all") {
+        rangeFilter = null;
+        takeLimit = viewList ? 2000 : 500;
+      } else if (searchScope === "year") {
+        if (!yearFilter) {
+          return NextResponse.json(
+            { error: "年を指定してください。", code: "BAD_SEARCH_YEAR" },
+            { status: 400, ...JSON_NO_STORE },
+          );
+        }
+        takeLimit = viewList ? 500 : 200;
+      } else if (searchScope === "month") {
+        if (!monthFilter) {
+          return NextResponse.json(
+            { error: "月を指定してください。", code: "BAD_SEARCH_MONTH" },
+            { status: 400, ...JSON_NO_STORE },
+          );
+        }
+        takeLimit = viewList ? 400 : 200;
+      }
+    }
     /** 本棚年次フリップ（`?year=`）のみ photoDataUrl 本文を返す。一覧・カレンダーは hasPhoto のみ */
     const includePhotoBodyInResponse = Boolean(yearFilter);
     const profileIds = journalProfileIdsForQuery(profileId, viewerEmail);
@@ -221,6 +248,13 @@ export async function GET(req: Request) {
         take: takeLimit,
         select: entrySelectFallback,
       })) as JournalRow[];
+    }
+
+    if (hasSearch) {
+      rows = rows.filter(
+        (row) =>
+          matchesDiaryKeyword(row.content, searchQ) && matchTag(row.content, searchTag),
+      );
     }
 
     const hasPhotoById = includePhotoBodyInResponse

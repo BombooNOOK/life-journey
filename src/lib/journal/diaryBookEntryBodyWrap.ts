@@ -1,4 +1,5 @@
 import { getDiaryBookEntryV2BodyFontLayout } from "@/lib/journal/diaryBookEntryBodyFontLayout";
+import { stripTagsFromContent } from "@/lib/journal/diaryTags";
 import { splitFixedWidthJapaneseLines } from "@/lib/pdf/splitFixedWidthJapaneseLines";
 
 function normalizeJournalContentNewlines(content: string): string {
@@ -20,7 +21,7 @@ export function getDiaryBookEntryV2BodyLayoutLinesAll(
   content: string,
   contentFontMode?: string | null,
 ): string[] {
-  const normalized = normalizeJournalContentNewlines(content);
+  const normalized = normalizeJournalContentNewlines(stripTagsFromContent(content));
   if (!normalized.trim()) return [];
 
   const { maxCharsPerLine } = getDiaryBookEntryV2BodyFontLayout(contentFontMode);

@@ -7,6 +7,7 @@ import { getViewerEmailFromCookie, normalizeEmail } from "@/lib/auth/viewer";
 import { findDiaryBookRowForViewerOrAdmin } from "@/lib/journal/diaryBookAdminAccess";
 import { parseSafeJournalReturnTo } from "@/lib/journal/bookshelfReturnTo";
 import { getDiaryBookMetaForViewer } from "@/lib/journal/listDiaryBookEntries";
+import { loadDiaryBookPeriodEditEligibility } from "@/lib/journal/diaryBookPeriodEdit";
 
 type Props = {
   params: Promise<{ bookId: string }>;
@@ -63,6 +64,13 @@ export default async function DiaryBookReadPage({ params, searchParams }: Props)
   const { book, profileId } = payload;
   const rangeLabel = `${book.startDate.replace(/-/g, "/")} 〜 ${book.endDate.replace(/-/g, "/")}`;
 
+  const periodEditEligibility =
+    !adminBrowse && row
+      ? await loadDiaryBookPeriodEditEligibility({ bookId, viewerEmail })
+      : null;
+  const showEditPeriod =
+    periodEditEligibility?.ok === true && periodEditEligibility.canEditPeriod;
+
   return (
     <div className="space-y-4">
       {adminBrowse ? (
@@ -86,6 +94,7 @@ export default async function DiaryBookReadPage({ params, searchParams }: Props)
           entryCount={book.entryCount}
           initialNeedsContentRefresh={book.needsContentRefresh === true}
           showEditIncludes={!adminBrowse}
+          showEditPeriod={showEditPeriod}
         />
       </div>
     </div>

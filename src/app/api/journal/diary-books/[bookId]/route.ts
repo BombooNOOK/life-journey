@@ -2,12 +2,19 @@ import { NextResponse } from "next/server";
 
 import { getViewerEmailFromCookie } from "@/lib/auth/viewer";
 import { prisma } from "@/lib/db";
+import { assertFullAccessForApi } from "@/lib/entitlement/requireFullAccess";
 import { serializeDiaryBook } from "@/lib/journal/diaryBookDto";
+import { parseDiaryBookPeriodFields } from "@/lib/journal/diaryBookForm";
 import {
   deleteDiaryBookForViewer,
   loadDiaryBookDeleteEligibility,
 } from "@/lib/journal/deleteDiaryBook";
-import { countJournalEntriesInDiaryBookPeriod } from "@/lib/journal/diaryBookPeriod";
+import {
+  countJournalEntriesInDiaryBookPeriod,
+  NO_INCLUDED_ENTRIES_IN_DIARY_BOOK_PERIOD_MESSAGE,
+} from "@/lib/journal/diaryBookPeriod";
+import { loadDiaryBookPeriodEditEligibility } from "@/lib/journal/diaryBookPeriodEdit";
+import { countDiaryBookSnapshotEntries } from "@/lib/journal/diaryBookSnapshot";
 
 const JSON_NO_STORE = {
   headers: {
@@ -70,6 +77,95 @@ export async function GET(_: Request, { params }: RouteParams) {
                 message: deleteEligibility.reason.message,
               }
             : { canDelete: false as const, code: "UNKNOWN", message: "削除可否を確認できませんでした。" },
+      code: "OK",
+    },
+    JSON_NO_STORE,
+  );
+}
+
+export async function PATCH(req: Request, { params }: RouteParams) {
+  const viewerEmail = await getViewerEmailFromCookie();
+  if (!viewerEmail) {
+    return NextResponse.json(
+      { error: "ログイン情報を確認できませんでした。", code: "AUTH_REQUIRED" },
+      { status: 401, ...JSON_NO_STORE },
+    );
+  }
+
+  const denied = await assertFullAccessForApi(viewerEmail);
+  if (denied) return denied;
+
+  const { bookId } = await params;
+  const eligibility = await loadDiaryBookPeriodEditEligibility({
+    bookId,
+    viewerEmail,
+  });
+  if (!eligibility.ok) {
+    return NextResponse.json(
+      { error: eligibility.message, code: eligibility.code },
+      { status: 404, ...JSON_NO_STORE },
+    );
+  }
+  if (!eligibility.canEditPeriod) {
+    return NextResponse.json(
+      { error: eligibility.message, code: eligibility.code },
+      { status: 409, ...JSON_NO_STORE },
+    );
+  }
+
+  let json: unknown;
+  try {
+    json = await req.json();
+  } catch {
+    return NextResponse.json(
+      { error: "JSONが不正です。", code: "BAD_JSON" },
+      { status: 400, ...JSON_NO_STORE },
+    );
+  }
+
+  const parsed = parseDiaryBookPeriodFields(json);
+  if (!parsed.ok) {
+    return NextResponse.json(
+      { error: parsed.error, code: parsed.code },
+      { status: parsed.status, ...JSON_NO_STORE },
+    );
+  }
+
+  const includedCount = await countJournalEntriesInDiaryBookPeriod({
+    email: viewerEmail,
+    profileId: eligibility.book.profileId,
+    startDate: parsed.data.startDate,
+    endDate: parsed.data.endDate,
+  });
+  if (includedCount < 1) {
+    return NextResponse.json(
+      {
+        error: NO_INCLUDED_ENTRIES_IN_DIARY_BOOK_PERIOD_MESSAGE,
+        code: "NO_INCLUDED_ENTRIES_IN_PERIOD",
+      },
+      { status: 422, ...JSON_NO_STORE },
+    );
+  }
+
+  const updated = await prisma.diaryBook.update({
+    where: { id: eligibility.book.id },
+    data: {
+      startDate: parsed.data.startDate,
+      endDate: parsed.data.endDate,
+    },
+  });
+
+  const entryCount = await countDiaryBookSnapshotEntries({
+    email: updated.email,
+    profileId: updated.profileId,
+    startDate: updated.startDate,
+    endDate: updated.endDate,
+    bookUpdatedAt: updated.updatedAt,
+  });
+
+  return NextResponse.json(
+    {
+      book: serializeDiaryBook(updated, entryCount),
       code: "OK",
     },
     JSON_NO_STORE,

@@ -9,6 +9,7 @@ import {
   journalEntryCreatedAtRangeForBookPeriod,
   parseDiaryBookDateRange,
 } from "@/lib/journal/diaryBookPeriod";
+import { matchTag, stripTagsFromContent } from "@/lib/journal/diaryTags";
 import { journalEntryDateToIsoDateInput } from "@/lib/journal/referenceDateParts";
 
 export type DiaryBookIncludePickerEntryDto = {
@@ -24,7 +25,7 @@ export type DiaryBookIncludePickerEntryDto = {
 const EXCERPT_MAX = 36;
 
 export function journalEntryContentExcerpt(content: string, maxLen = EXCERPT_MAX): string {
-  const normalized = content.replace(/\s+/g, " ").trim();
+  const normalized = stripTagsFromContent(content).replace(/\s+/g, " ").trim();
   if (!normalized) return "（本文なし）";
   if (normalized.length <= maxLen) return normalized;
   return `${normalized.slice(0, maxLen)}…`;
@@ -122,4 +123,61 @@ export async function listJournalEntriesForDiaryBookIncludePicker(params: {
       lengthFlag: journalEntryContentLengthFlag(row.contentFontMode, charLength),
     };
   });
+}
+
+/** 期間内の日記を末尾タグで絞り込む（includeInBook の件数も返す） */
+export async function countDiaryBookPeriodEntriesWithOptionalTag(params: {
+  email: string;
+  profileId: string;
+  startDate: string;
+  endDate: string;
+  tag?: string;
+}): Promise<{ totalCount: number; includedCount: number }> {
+  const range = parseDiaryBookDateRange(params.startDate, params.endDate);
+  if (!range) return { totalCount: 0, includedCount: 0 };
+
+  const tagQuery = params.tag?.trim() ?? "";
+  const createdAt = journalEntryCreatedAtRangeForBookPeriod(range);
+  const rows = await prisma.journalEntry.findMany({
+    where: {
+      email: params.email,
+      profileId: params.profileId,
+      createdAt,
+    },
+    select: { content: true, includeInBook: true },
+  });
+
+  const filtered = tagQuery
+    ? rows.filter((row) => matchTag(row.content, tagQuery))
+    : rows;
+
+  return {
+    totalCount: filtered.length,
+    includedCount: filtered.filter((row) => row.includeInBook !== false).length,
+  };
+}
+
+/** ピッカー一覧を末尾タグで絞り込む */
+export async function filterDiaryBookPickerEntriesByTag(params: {
+  email: string;
+  profileId: string;
+  entries: DiaryBookIncludePickerEntryDto[];
+  tag?: string;
+}): Promise<DiaryBookIncludePickerEntryDto[]> {
+  const tagQuery = params.tag?.trim() ?? "";
+  if (!tagQuery || params.entries.length === 0) return params.entries;
+
+  const rows = await prisma.journalEntry.findMany({
+    where: {
+      email: params.email,
+      profileId: params.profileId,
+      id: { in: params.entries.map((entry) => entry.id) },
+    },
+    select: { id: true, content: true },
+  });
+
+  const matchingIds = new Set(
+    rows.filter((row) => matchTag(row.content, tagQuery)).map((row) => row.id),
+  );
+  return params.entries.filter((entry) => matchingIds.has(entry.id));
 }

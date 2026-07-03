@@ -3,9 +3,12 @@ import { NextResponse } from "next/server";
 import { getViewerEmailFromCookie } from "@/lib/auth/viewer";
 import { assertFullAccessForApi } from "@/lib/entitlement/requireFullAccess";
 import { parseDiaryBookPreviewFields } from "@/lib/journal/diaryBookForm";
-import { listJournalEntriesForDiaryBookIncludePicker } from "@/lib/journal/diaryBookIncludePicker";
 import {
-  countJournalEntriesInDiaryBookPeriod,
+  countDiaryBookPeriodEntriesWithOptionalTag,
+  filterDiaryBookPickerEntriesByTag,
+  listJournalEntriesForDiaryBookIncludePicker,
+} from "@/lib/journal/diaryBookIncludePicker";
+import {
   NO_ENTRIES_IN_DIARY_BOOK_PERIOD_MESSAGE,
   NO_INCLUDED_ENTRIES_IN_DIARY_BOOK_PERIOD_MESSAGE,
 } from "@/lib/journal/diaryBookPeriod";
@@ -59,12 +62,18 @@ export async function POST(req: Request) {
     );
   }
 
-  const [entryCount, pickerEntries] = await Promise.all([
-    countJournalEntriesInDiaryBookPeriod({
+  const rawTag =
+    typeof json === "object" && json !== null && "tag" in json
+      ? String((json as { tag: unknown }).tag).trim()
+      : "";
+
+  const [counts, pickerEntriesAll] = await Promise.all([
+    countDiaryBookPeriodEntriesWithOptionalTag({
       email: viewerEmail,
       profileId: profileResult.profileId,
       startDate: parsed.data.startDate,
       endDate: parsed.data.endDate,
+      tag: rawTag || undefined,
     }),
     listJournalEntriesForDiaryBookIncludePicker({
       email: viewerEmail,
@@ -74,7 +83,15 @@ export async function POST(req: Request) {
     }),
   ]);
 
-  const totalEntryCount = pickerEntries.length;
+  const pickerEntries = await filterDiaryBookPickerEntriesByTag({
+    email: viewerEmail,
+    profileId: profileResult.profileId,
+    entries: pickerEntriesAll,
+    tag: rawTag || undefined,
+  });
+
+  const entryCount = counts.includedCount;
+  const totalEntryCount = counts.totalCount;
   const canCreate = entryCount > 0;
   const message = canCreate
     ? undefined

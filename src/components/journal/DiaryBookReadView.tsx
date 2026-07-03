@@ -4,6 +4,7 @@ import { Suspense, useState } from "react";
 
 import { DiaryBookFlipReader } from "@/components/journal/DiaryBookFlipReader";
 import { BookshelfEditIncludesNavButton } from "@/components/orders/BookshelfEditIncludesNavButton";
+import { BookshelfEditPeriodNavButton } from "@/components/orders/BookshelfEditPeriodNavButton";
 import { DiaryBookDeleteButton } from "@/components/orders/DiaryBookDeleteButton";
 
 type Props = {
@@ -17,6 +18,7 @@ type Props = {
   entryCount: number;
   initialNeedsContentRefresh: boolean;
   showEditIncludes: boolean;
+  showEditPeriod?: boolean;
 };
 
 export function DiaryBookReadView({
@@ -30,6 +32,7 @@ export function DiaryBookReadView({
   entryCount,
   initialNeedsContentRefresh,
   showEditIncludes,
+  showEditPeriod = false,
 }: Props) {
   const [needsContentRefresh, setNeedsContentRefresh] = useState(initialNeedsContentRefresh);
 
@@ -45,6 +48,9 @@ export function DiaryBookReadView({
       </p>
       {showEditIncludes ? (
         <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-2">
+          {showEditPeriod ? (
+            <BookshelfEditPeriodNavButton bookId={bookId} />
+          ) : null}
           <BookshelfEditIncludesNavButton
             bookId={bookId}
             className="text-sm font-medium text-emerald-800 underline-offset-2 hover:underline"

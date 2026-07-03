@@ -5,6 +5,7 @@ import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 
 import { DiaryBookIncludeInBookMonthList } from "@/components/journal/DiaryBookIncludeInBookMonthList";
+import { TAG_INPUT_PLACEHOLDER } from "@/components/journal/DiaryTagInput";
 import {
   diaryCoverImagePath,
   diaryCoverStyleOptions,
@@ -66,7 +67,7 @@ export function DiaryBookCreateForm({ blockContinuedFeatures = false }: Props) {
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState(today);
   const [coverTheme, setCoverTheme] = useState<DiaryCoverStyleId>("casual");
-
+  const [tagFilter, setTagFilter] = useState("");
   const [checking, setChecking] = useState(false);
   const [entryCount, setEntryCount] = useState<number | null>(null);
   const [canCreate, setCanCreate] = useState<boolean>(false);
@@ -108,6 +109,7 @@ export function DiaryBookCreateForm({ blockContinuedFeatures = false }: Props) {
           startDate,
           endDate,
           coverTheme,
+          tag: tagFilter.trim() || undefined,
         }),
       });
       const data = (await res.json()) as PreviewResponse;
@@ -143,6 +145,7 @@ export function DiaryBookCreateForm({ blockContinuedFeatures = false }: Props) {
     setStartDate("");
     setEndDate(today);
     setCoverTheme("casual");
+    setTagFilter("");
     setEntryCount(null);
     setCanCreate(false);
     setPreviewMessage(null);
@@ -352,6 +355,28 @@ export function DiaryBookCreateForm({ blockContinuedFeatures = false }: Props) {
               />
             </label>
           </div>
+
+          <label className="block text-sm">
+            <span className="mb-1 block text-stone-700">タグで絞り込む（任意）</span>
+            <input
+              type="text"
+              value={tagFilter}
+              onChange={(e) => {
+                setTagFilter(e.target.value);
+                setPeriodChecked(false);
+                setPickerEntries(null);
+                setEntryCount(null);
+                setCanCreate(false);
+                setPreviewMessage(null);
+              }}
+              placeholder={TAG_INPUT_PLACEHOLDER}
+              autoComplete="off"
+              className="w-full rounded-md border border-stone-300 px-3 py-2 text-sm placeholder:text-stone-400"
+            />
+            <span className="mt-1 block text-xs text-stone-500">
+              期間内の日記のうち、指定タグが付いた日記だけを一覧に表示します。
+            </span>
+          </label>
 
           <div className="rounded-lg border border-stone-200 bg-stone-50 px-3 py-2 text-sm text-stone-700">
             {entryCount == null ? (

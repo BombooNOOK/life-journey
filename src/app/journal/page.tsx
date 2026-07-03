@@ -27,6 +27,7 @@ import {
 } from "@/lib/journal/journalRecordDateDisplay";
 import { JournalWritingComposer } from "@/components/journal/JournalWritingComposer";
 import { JournalContentLengthAlerts } from "@/components/journal/JournalContentLengthAlerts";
+import { DiaryTagInput } from "@/components/journal/DiaryTagInput";
 import {
   JournalLocalDraftBanner,
   JOURNAL_LOCAL_DRAFT_PHOTO_NOTICE,
@@ -74,6 +75,11 @@ import {
   type DiaryDesignId,
   type MoodId,
 } from "@/lib/journal/meta";
+import {
+  extractTagsFromContent,
+  formatDiaryTagsForInput,
+  mergeTagsIntoContent,
+} from "@/lib/journal/diaryTags";
 import {
   readJournalCompanionPreference,
   writeJournalCompanionPreference,
@@ -216,6 +222,7 @@ function JournalPageContent() {
   );
   const returnToIsCalendar = safeReturnTo?.startsWith("/orders/calendar") ?? false;
   const [content, setContent] = useState("");
+  const [tagInput, setTagInput] = useState("");
   const [entryDate, setEntryDate] = useState(() => toDateInputValue(new Date()));
   const [mood, setMood] = useState<MoodId>("calm");
   const [activity, setActivity] = useState<ActivityId>("record_anyway");
@@ -295,6 +302,7 @@ function JournalPageContent() {
 
   const resetJournalFormState = useCallback(() => {
     setContent("");
+    setTagInput("");
     setMood("calm");
     setActivity("record_anyway");
     setCompanionType(readJournalCompanionPreference());
@@ -552,8 +560,10 @@ function JournalPageContent() {
         const loadedMood = (data.entry.mood ?? "calm") as MoodId;
         const loadedActivity = (data.entry.activity ?? "record_anyway") as ActivityId;
         const loadedContent = data.entry.content ?? "";
+        const { body: loadedBody, tags: loadedTags } = extractTagsFromContent(loadedContent);
         const loadedFontMode = normalizeContentFontMode(data.entry.contentFontMode);
-        setContent(loadedContent);
+        setContent(loadedBody);
+        setTagInput(formatDiaryTagsForInput(loadedTags));
         setMood(loadedMood);
         setActivity(loadedActivity);
         setCompanionType(normalizeCompanionType(data.entry.companionType));
@@ -572,7 +582,7 @@ function JournalPageContent() {
           entryDate: loadedEntryDate,
           mood: loadedMood,
           activity: loadedActivity,
-          content: loadedContent,
+          content: loadedBody,
           contentFontMode: loadedFontMode,
         });
         setEditLoadFailed(false);
@@ -682,6 +692,11 @@ function JournalPageContent() {
       setError("本文を入力してください。");
       return;
     }
+    const mergedContent = mergeTagsIntoContent(text, tagInput);
+    if (mergedContent.length > 2000) {
+      setError("本文とタグを合わせて2000文字以内にしてください。");
+      return;
+    }
     if (!isValidDateInput(entryDate)) {
       setError("記録日を正しく入力してください。");
       return;
@@ -719,7 +734,7 @@ function JournalPageContent() {
         credentials: "same-origin",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          content: text,
+          content: mergedContent,
           mood,
           activity,
           companionType,
@@ -850,6 +865,11 @@ function JournalPageContent() {
       setError("本文を入力してください。");
       return;
     }
+    const mergedContent = mergeTagsIntoContent(text, tagInput);
+    if (mergedContent.length > 2000) {
+      setError("本文とタグを合わせて2000文字以内にしてください。");
+      return;
+    }
     if (!isValidDateInput(entryDate)) {
       setError("記録日を正しく入力してください。");
       return;
@@ -863,7 +883,7 @@ function JournalPageContent() {
         credentials: "same-origin",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          content: text,
+          content: mergedContent,
           mood,
           activity,
           companionType,
@@ -1448,6 +1468,12 @@ function JournalPageContent() {
           ))}
         </select>
         </div>
+
+        <DiaryTagInput
+          value={tagInput}
+          onChange={setTagInput}
+          disabled={saving || loadingEdit || processingPhoto}
+        />
 
         <div className="flex flex-col gap-2 border-t border-stone-100 pt-3 sm:flex-row sm:flex-wrap sm:justify-end">
             <button

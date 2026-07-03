@@ -7,6 +7,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { useFirebaseAuth } from "@/components/auth/FirebaseAuthProvider";
 import { CompanionWritingAppraiserPicker } from "@/components/journal/companion-writing/CompanionWritingAppraiserPicker";
+import { DiaryTagInput } from "@/components/journal/DiaryTagInput";
 import {
   companionWritingWizardStepBodyClass,
   companionWritingWizardStepClass,
@@ -46,6 +47,7 @@ import {
   type CompanionWritingWizardStep,
 } from "@/lib/journal/companionWriting/types";
 import { COMPANION_WRITING_DEFAULT_CONTENT_FONT_MODE } from "@/lib/journal/contentFontMode";
+import { mergeTagsIntoContent } from "@/lib/journal/diaryTags";
 import { diaryBookEntryCompanionImagePath } from "@/lib/journal/diaryBookEntryAssets";
 import {
   journalCalendarAfterCompanionSavePath,
@@ -130,6 +132,7 @@ export function CompanionWritingPage() {
   const [answer1, setAnswer1] = useState("");
   const [answer2, setAnswer2] = useState("");
   const [entryDate, setEntryDate] = useState(() => toDateInputValue(new Date()));
+  const [tagInput, setTagInput] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const answer1InputRef = useRef<HTMLInputElement>(null);
@@ -182,6 +185,11 @@ export function CompanionWritingPage() {
   }, [dateFromQuery]);
 
   useEffect(() => {
+    if (step !== "write" || questionSet) return;
+    setQuestionSet(pickOwlQuestionSet(activity));
+  }, [activity, questionSet, step]);
+
+  useEffect(() => {
     window.scrollTo({ top: 0, left: 0, behavior: "auto" });
   }, [step]);
 
@@ -229,18 +237,34 @@ export function CompanionWritingPage() {
       setError("無料お試し期間が終了したため、新しい記録の作成はできません。");
       return;
     }
+    if (!effectiveProfileId) {
+      setError("プロフィールを確認できませんでした。ページを再読み込みしてください。");
+      return;
+    }
+    if (!isValidDateInput(entryDate)) {
+      setError("記録日を正しく入力してください。");
+      return;
+    }
 
-    setError(null);
-    setSaving(true);
-    try {
-      const content = buildCompanionWritingEntryContent({
+    const content = mergeTagsIntoContent(
+      buildCompanionWritingEntryContent({
         mood,
         activity,
         companionName: getAppraiserDisplayName(companionType),
         companionShortLine: pickCompanionShortLine(companionType, mood, activity),
         generatedBody: composeOwlGeneratedBody(questionSet, { answer1, answer2 }),
-      });
+      }),
+      tagInput,
+    );
 
+    if (content.length > 2000) {
+      setError("本文とタグを合わせて2000文字以内にしてください。");
+      return;
+    }
+
+    setError(null);
+    setSaving(true);
+    try {
       const res = await fetch("/api/journal", {
         method: "POST",
         credentials: "same-origin",
@@ -301,6 +325,7 @@ export function CompanionWritingPage() {
     entryDate,
     mood,
     questionSet,
+    tagInput,
   ]);
 
   if (authLoading || entitlementLoading || !profileState.ready) {
@@ -556,8 +581,8 @@ export function CompanionWritingPage() {
               onChange={(e) => setAnswer1(e.target.value)}
               onFocus={(e) => handleAnswerInputFocus(e.currentTarget)}
               disabled={saving}
-              placeholder="短い言葉で大丈夫です"
-              className="w-full scroll-mt-3 rounded-lg border border-stone-300 px-3 py-2.5 text-base leading-relaxed text-stone-900 outline-none ring-emerald-500 focus:ring-2"
+              placeholder={questionSet.q1Placeholder}
+              className="w-full scroll-mt-3 rounded-lg border border-stone-300 px-3 py-2.5 text-base leading-relaxed text-stone-900 placeholder:text-stone-400 outline-none ring-emerald-500 focus:ring-2"
             />
           </label>
           <label className="block space-y-2" htmlFor="companion-writing-answer-2">
@@ -571,8 +596,8 @@ export function CompanionWritingPage() {
               onChange={(e) => setAnswer2(e.target.value)}
               onFocus={(e) => handleAnswerInputFocus(e.currentTarget)}
               disabled={saving}
-              placeholder="短い言葉で大丈夫です"
-              className="w-full scroll-mt-3 rounded-lg border border-stone-300 px-3 py-2.5 text-base leading-relaxed text-stone-900 outline-none ring-emerald-500 focus:ring-2"
+              placeholder={questionSet.q2Placeholder}
+              className="w-full scroll-mt-3 rounded-lg border border-stone-300 px-3 py-2.5 text-base leading-relaxed text-stone-900 placeholder:text-stone-400 outline-none ring-emerald-500 focus:ring-2"
             />
           </label>
           <div className="flex gap-2">
@@ -608,7 +633,12 @@ export function CompanionWritingPage() {
               {previewContent}
             </p>
           </div>
-          <div className="flex gap-2">
+          <DiaryTagInput
+            value={tagInput}
+            onChange={setTagInput}
+            disabled={saving}
+          />
+          <div className="flex gap-2 border-t border-stone-100 pt-3">
             <button
               type="button"
               disabled={saving}

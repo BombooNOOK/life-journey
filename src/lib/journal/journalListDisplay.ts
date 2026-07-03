@@ -1,3 +1,4 @@
+import { stripTagsFromContent } from "@/lib/journal/diaryTags";
 import { entryMonthKeyFromCreatedAt } from "@/lib/journal/journalNav";
 
 export type JournalListEntry = {
@@ -16,7 +17,7 @@ export type JournalListMonthGroup = {
 
 /** 一覧用：本文の先頭1行を短く表示 */
 export function journalEntryListPreviewLine(content: string, maxLength = 52): string {
-  const firstLine = content.trim().split(/\r?\n/)[0]?.trim() ?? "";
+  const firstLine = stripTagsFromContent(content).trim().split(/\r?\n/)[0]?.trim() ?? "";
   if (!firstLine) return "（本文なし）";
   if (firstLine.length <= maxLength) return firstLine;
   return `${firstLine.slice(0, maxLength)}…`;
