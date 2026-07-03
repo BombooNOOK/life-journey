@@ -19,7 +19,7 @@ import {
   homeForestSignPlacementStyle,
   type HomeForestSignViewport,
 } from "@/lib/home/homeForestSignLayout";
-import { HomeForestSignOverlay } from "@/components/home/HomeForestSignOverlay";
+import { HomeForestSignLoginNote, HomeForestSignOverlay } from "@/components/home/HomeForestSignOverlay";
 
 const PREVIEW_NAV_BY_ID = {
   loghouse: { id: "loghouse", href: "/orders", label: HOME_FOREST_SIGN_NAV_LABELS.loghouse },
@@ -361,13 +361,20 @@ export function HomeForestSignLayoutDebugClient({
               : null}
 
             {showLiveOverlay ? (
-              <HomeForestSignOverlay
-                viewport={viewport}
-                navById={PREVIEW_NAV_BY_ID}
-                primaryNavId="first"
-                isLoggedIn={false}
-                preview
-              />
+              <>
+                <HomeForestSignOverlay
+                  viewport={viewport}
+                  navById={PREVIEW_NAV_BY_ID}
+                  primaryNavId="first"
+                  isLoggedIn={false}
+                  preview
+                />
+                <HomeForestSignLoginNote
+                  viewport={viewport}
+                  isLoggedIn={false}
+                  preview
+                />
+              </>
             ) : null}
           </div>
 

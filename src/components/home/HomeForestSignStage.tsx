@@ -3,7 +3,7 @@
 import Image from "next/image";
 import { useLayoutEffect, useRef, useState } from "react";
 
-import { HomeForestSignOverlay } from "@/components/home/HomeForestSignOverlay";
+import { HomeForestSignLoginNote, HomeForestSignOverlay } from "@/components/home/HomeForestSignOverlay";
 import {
   computeObjectCoverLayout,
   HOME_FOREST_SIGN_OBJECT_POSITION,
@@ -96,6 +96,11 @@ export function HomeForestSignStage({
         viewport={viewport}
         navById={navById}
         primaryNavId={primaryNavId}
+        isLoggedIn={isLoggedIn}
+        coverLayout={coverLayout}
+      />
+      <HomeForestSignLoginNote
+        viewport={viewport}
         isLoggedIn={isLoggedIn}
         coverLayout={coverLayout}
       />

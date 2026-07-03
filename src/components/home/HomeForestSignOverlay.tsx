@@ -5,6 +5,7 @@ import Link from "next/link";
 
 import { buildLoginHref } from "@/app/login/loginFlow";
 import { HOME_FOREST_SIGN_OWL_TEACHER_SRC } from "@/lib/home/homeForestSignAssets";
+import { HOME_HERO_OWL_TEACHER_SRC } from "@/lib/home/homeHeroAssets";
 import {
   HOME_FOREST_SIGN_LOGIN_NOTE_LINE,
   HOME_FOREST_SIGN_LOGIN_NOTE_LINK,
@@ -134,6 +135,58 @@ function ForestSignSignLink({
   );
 }
 
+/** ログイン案内（看板オーバーレイより上のレイヤーに載せる） */
+export function HomeForestSignLoginNote({
+  viewport,
+  isLoggedIn,
+  coverLayout = null,
+  preview = false,
+}: {
+  viewport: HomeForestSignViewport;
+  isLoggedIn: boolean;
+  coverLayout?: ObjectCoverLayout | null;
+  preview?: boolean;
+}) {
+  const layout = homeForestSignLayoutFor(viewport);
+  const { heightPx } = homeForestSignDesignSize(viewport);
+  const loginHref = buildLoginHref("/orders");
+  const usePercentFont = !coverLayout;
+
+  if (isLoggedIn || !layout.loginNote) return null;
+
+  return (
+    <div
+      className="pointer-events-none"
+      style={{
+        position: "absolute",
+        inset: 0,
+        zIndex: 19,
+        ...(usePercentFont ? { fontSize: `${heightPx}px` } : {}),
+      }}
+    >
+      <div
+        className="pointer-events-auto whitespace-pre-wrap text-center [text-shadow:0_1px_2px_rgba(255,251,245,0.95),0_0_1px_rgba(255,251,245,0.85)]"
+        style={placementStyle(layout.loginNote, viewport, coverLayout)}
+      >
+        {preview ? (
+          <span className="text-[color:inherit]">{HOME_FOREST_SIGN_LOGIN_NOTE_PREVIEW_TEXT}</span>
+        ) : (
+          <>
+            <span className="text-[color:inherit]">{HOME_FOREST_SIGN_LOGIN_NOTE_LINE}</span>
+            <br />
+            <Link
+              href={loginHref}
+              className="font-semibold text-[color:inherit] underline-offset-2 hover:underline"
+            >
+              {HOME_FOREST_SIGN_LOGIN_NOTE_LINK}
+            </Link>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
 /** 案内板 PNG 上にタイトル・導線テキストを重ねる */
 export function HomeForestSignOverlay({
   viewport,
@@ -145,8 +198,9 @@ export function HomeForestSignOverlay({
 }: Props) {
   const layout = homeForestSignLayoutFor(viewport);
   const { widthPx, heightPx } = homeForestSignDesignSize(viewport);
-  const loginHref = buildLoginHref("/orders");
   const usePercentFont = !coverLayout;
+  const owlTeacherSrc =
+    viewport === "mobile" ? HOME_HERO_OWL_TEACHER_SRC : HOME_FOREST_SIGN_OWL_TEACHER_SRC;
 
   return (
     <div
@@ -154,7 +208,7 @@ export function HomeForestSignOverlay({
       style={{
         position: "absolute",
         inset: 0,
-        zIndex: 1,
+        zIndex: 15,
         ...(usePercentFont ? { fontSize: `${heightPx}px` } : {}),
       }}
       aria-label="森の案内板"
@@ -172,7 +226,7 @@ export function HomeForestSignOverlay({
         aria-hidden
       >
         <Image
-          src={HOME_FOREST_SIGN_OWL_TEACHER_SRC}
+          src={owlTeacherSrc}
           alt=""
           width={682}
           height={1024}
@@ -226,28 +280,6 @@ export function HomeForestSignOverlay({
           />
         );
       })}
-
-      {!isLoggedIn && layout.loginNote ? (
-        <div
-          className="pointer-events-auto z-[3] whitespace-pre-wrap text-center [text-shadow:0_1px_0_rgba(255,251,245,0.75)]"
-          style={placementStyle(layout.loginNote, viewport, coverLayout)}
-        >
-          {preview ? (
-            <span className="text-[color:inherit]">{HOME_FOREST_SIGN_LOGIN_NOTE_PREVIEW_TEXT}</span>
-          ) : (
-            <>
-              <span className="text-[color:inherit]">{HOME_FOREST_SIGN_LOGIN_NOTE_LINE}</span>
-              <br />
-              <Link
-                href={loginHref}
-                className="font-semibold text-[color:inherit] underline-offset-2 hover:underline"
-              >
-                {HOME_FOREST_SIGN_LOGIN_NOTE_LINK}
-              </Link>
-            </>
-          )}
-        </div>
-      ) : null}
 
       <span className="sr-only">
         設計サイズ {widthPx}×{heightPx}
