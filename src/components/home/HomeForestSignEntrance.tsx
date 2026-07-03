@@ -7,7 +7,7 @@ import { CompanionWritingFarewellBanner } from "@/components/journal/companion-w
 import { HomeForestSignStage } from "@/components/home/HomeForestSignStage";
 import { ReadingFontSizeControl } from "@/components/reading/ReadingFontSizeControl";
 import { isLjLoggedInOnClient } from "@/lib/auth/clientCookies";
-import { HOME_FOREST_SIGN_NAV_LABELS } from "@/lib/home/homeForestSignLayout";
+import { HOME_FOREST_SIGN_NAV_LABELS, type HomeForestSignViewport } from "@/lib/home/homeForestSignLayout";
 
 const NAV_ITEMS = [
   {
