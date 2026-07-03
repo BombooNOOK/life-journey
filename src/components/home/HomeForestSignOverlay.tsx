@@ -140,7 +140,7 @@ export function HomeForestSignOverlay({
 
   return (
     <div
-      className={`absolute inset-0 ${preview ? "pointer-events-none" : ""}`}
+      className={`absolute inset-0 z-[1] ${preview ? "pointer-events-none" : ""}`}
       style={usePercentFont ? { fontSize: `${heightPx}px` } : undefined}
       aria-label="森の案内板"
     >
@@ -205,18 +205,18 @@ export function HomeForestSignOverlay({
 
       {!isLoggedIn && layout.loginNote ? (
         <div
-          className="absolute whitespace-pre-wrap text-center"
+          className="pointer-events-auto absolute z-[3] whitespace-pre-wrap text-center [text-shadow:0_1px_0_rgba(255,251,245,0.75)]"
           style={placementStyle(layout.loginNote, viewport, coverLayout)}
         >
           {preview ? (
-            <span>{HOME_FOREST_SIGN_LOGIN_NOTE_PREVIEW_TEXT}</span>
+            <span className="text-[color:inherit]">{HOME_FOREST_SIGN_LOGIN_NOTE_PREVIEW_TEXT}</span>
           ) : (
             <>
-              {HOME_FOREST_SIGN_LOGIN_NOTE_LINE}
+              <span className="text-[color:inherit]">{HOME_FOREST_SIGN_LOGIN_NOTE_LINE}</span>
               <br />
               <Link
                 href={loginHref}
-                className="font-semibold text-[#6b5d4a] underline-offset-2 hover:underline"
+                className="font-semibold text-[color:inherit] underline-offset-2 hover:underline"
               >
                 {HOME_FOREST_SIGN_LOGIN_NOTE_LINK}
               </Link>

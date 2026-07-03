@@ -32,10 +32,16 @@ const NAV_ITEMS = [
   },
 ] as const;
 
+const topChromeClass =
+  "pointer-events-none absolute inset-x-0 top-0 z-20 mx-auto w-full max-w-3xl px-4 pt-10 sm:px-6 sm:pt-11 lg:py-12";
+
 const mobileFontSizeBandClass =
-  "relative z-20 mx-auto w-full max-w-[min(17rem,78vw)] border-t border-stone-300/40 px-1 pb-2.5 pt-2.5 sm:max-w-[17rem]";
+  "relative mx-auto w-full max-w-[min(17rem,78vw)] border-t border-stone-300/40 px-1 pb-2.5 pt-2.5 sm:max-w-[17rem]";
 
 const pcFontSizeBandClass = "w-full border-t border-stone-300/40 pb-2.5 pt-2";
+
+const bottomChromeClass =
+  "pointer-events-none absolute inset-x-0 bottom-0 z-20 mx-auto w-full max-w-3xl px-4 pb-3 sm:px-6";
 
 /** BambooNOOKの森の入口：1画面・案内板背景＋看板上のテキストリンク */
 export function HomeForestSignEntrance() {
@@ -65,23 +71,21 @@ export function HomeForestSignEntrance() {
         className="hidden lg:block"
       />
 
-      <div className="pointer-events-none relative z-20 mx-auto flex min-h-[100dvh] w-full max-w-3xl flex-col px-4 pb-3 pt-10 sm:px-6 sm:pt-11 lg:py-12">
+      <div className={topChromeClass}>
         <div className="pointer-events-auto">
           <CompanionWritingFarewellBanner />
         </div>
+      </div>
 
-        <div className="flex min-h-0 flex-1 flex-col lg:hidden">
-          <div className="mt-auto pb-1 pt-6 sm:pt-8">
-            <div className={`${mobileFontSizeBandClass} pointer-events-auto`}>
-              <ReadingFontSizeControl variant="hero" comfortable />
-            </div>
-          </div>
+      <div className={`${bottomChromeClass} lg:hidden`}>
+        <div className={`${mobileFontSizeBandClass} pointer-events-auto`}>
+          <ReadingFontSizeControl variant="hero" comfortable />
         </div>
+      </div>
 
-        <div className="mt-auto hidden pb-1 lg:block">
-          <div className={`${pcFontSizeBandClass} pointer-events-auto max-w-[17rem]`}>
-            <ReadingFontSizeControl variant="hero" comfortable />
-          </div>
+      <div className={`${bottomChromeClass} hidden lg:block`}>
+        <div className={`${pcFontSizeBandClass} pointer-events-auto max-w-[17rem]`}>
+          <ReadingFontSizeControl variant="hero" comfortable />
         </div>
       </div>
     </section>

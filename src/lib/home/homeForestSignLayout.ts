@@ -159,7 +159,7 @@ export const HOME_FOREST_SIGN_LAYOUT: Record<HomeForestSignViewport, HomeForestS
       y: 630,
       textAnchor: "center",
       textAlign: "center",
-      fontSize: 11,
+      fontSize: 13,
       fontWeight: 400,
       color: WOOD_TEXT_SOFT,
       maxWidth: 320,
