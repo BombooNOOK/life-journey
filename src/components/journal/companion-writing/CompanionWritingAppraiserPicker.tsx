@@ -9,7 +9,11 @@ import {
   COMPANION_WRITING_OMAKASE_ID,
   type CompanionWritingChoiceId,
 } from "@/lib/journal/companionWriting/omakase";
-import { COMPANION_WRITING_OMAKASE_LABEL } from "@/lib/journal/companionWriting/types";
+import {
+  COMPANION_WRITING_APPRAISER_COMING_SOON_LABEL,
+  COMPANION_WRITING_AVAILABLE_COMPANION,
+  COMPANION_WRITING_OMAKASE_LABEL,
+} from "@/lib/journal/companionWriting/types";
 import { companionOptions } from "@/lib/journal/meta";
 
 type FaceTuning = {
@@ -26,7 +30,17 @@ const FACE_TUNING: Record<string, FaceTuning> = {
   "character-omakase-face": { objectPosition: "50% 50%", scale: 1 },
 };
 
-function AppraiserFaceIcon({ choiceId }: { choiceId: CompanionWritingChoiceId }) {
+function isCompanionWritingChoiceAvailable(choiceId: CompanionWritingChoiceId): boolean {
+  return choiceId === COMPANION_WRITING_AVAILABLE_COMPANION;
+}
+
+function AppraiserFaceIcon({
+  choiceId,
+  dimmed,
+}: {
+  choiceId: CompanionWritingChoiceId;
+  dimmed: boolean;
+}) {
   const faceName = companionWritingChoiceFace(choiceId);
   const asset = getDecorationAsset(faceName);
   const tuning = FACE_TUNING[faceName] ?? { objectPosition: "50% 50%", scale: 1 };
@@ -36,7 +50,10 @@ function AppraiserFaceIcon({ choiceId }: { choiceId: CompanionWritingChoiceId })
     return (
       <span
         aria-hidden
-        className="mx-auto flex h-[4.5rem] w-[4.5rem] items-center justify-center rounded-full border border-stone-200/70 bg-[#faf6ef] text-2xl text-stone-400 sm:h-20 sm:w-20"
+        className={[
+          "mx-auto flex h-[4.5rem] w-[4.5rem] items-center justify-center rounded-full border border-stone-200/70 bg-[#faf6ef] text-2xl text-stone-400 sm:h-20 sm:w-20",
+          dimmed ? "opacity-60" : "",
+        ].join(" ")}
       >
         ?
       </span>
@@ -46,7 +63,10 @@ function AppraiserFaceIcon({ choiceId }: { choiceId: CompanionWritingChoiceId })
   return (
     <span
       aria-hidden
-      className="relative mx-auto block h-[4.5rem] w-[4.5rem] overflow-hidden rounded-full border border-stone-200/55 bg-[#faf6ef] shadow-[0_2px_8px_rgba(107,90,74,0.08)] sm:h-20 sm:w-20"
+      className={[
+        "relative mx-auto block h-[4.5rem] w-[4.5rem] overflow-hidden rounded-full border border-stone-200/55 bg-[#faf6ef] shadow-[0_2px_8px_rgba(107,90,74,0.08)] sm:h-20 sm:w-20",
+        dimmed ? "opacity-55 grayscale" : "",
+      ].join(" ")}
     >
       <Image
         src={asset.src}
@@ -82,23 +102,42 @@ export function CompanionWritingAppraiserPicker({ selected, onSelect }: Props) {
       aria-label="今日の案内役"
     >
       {choices.map((choice) => {
-        const isSelected = selected === choice.id;
+        const available = isCompanionWritingChoiceAvailable(choice.id);
+        const isSelected = available && selected === choice.id;
         return (
           <button
             key={choice.id}
             type="button"
             role="radio"
             aria-checked={isSelected}
-            onClick={() => onSelect(choice.id)}
+            aria-disabled={!available}
+            disabled={!available}
+            onClick={() => {
+              if (available) onSelect(choice.id);
+            }}
             className={[
               "flex min-h-[8.5rem] flex-col items-center justify-center gap-2.5 rounded-2xl border px-2 py-3.5 text-center transition sm:min-h-[9rem] sm:py-4",
-              isSelected
-                ? "border-emerald-400 bg-emerald-50/90 ring-2 ring-emerald-300/80"
-                : "border-stone-200/90 bg-white/90 hover:border-emerald-200 hover:bg-emerald-50/35",
+              available
+                ? isSelected
+                  ? "border-emerald-400 bg-emerald-50/90 ring-2 ring-emerald-300/80"
+                  : "border-stone-200/90 bg-white/90 hover:border-emerald-200 hover:bg-emerald-50/35"
+                : "cursor-not-allowed border-stone-200/70 bg-stone-50/80 opacity-80",
             ].join(" ")}
           >
-            <AppraiserFaceIcon choiceId={choice.id} />
-            <span className="text-sm font-medium leading-snug text-stone-800">{choice.label}</span>
+            <AppraiserFaceIcon choiceId={choice.id} dimmed={!available} />
+            <span
+              className={[
+                "text-sm font-medium leading-snug",
+                available ? "text-stone-800" : "text-stone-400",
+              ].join(" ")}
+            >
+              {choice.label}
+            </span>
+            {!available ? (
+              <span className="rounded-full bg-stone-200/80 px-2 py-0.5 text-[0.6875rem] font-medium text-stone-500">
+                {COMPANION_WRITING_APPRAISER_COMING_SOON_LABEL}
+              </span>
+            ) : null}
           </button>
         );
       })}

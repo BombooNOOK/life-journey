@@ -6,7 +6,8 @@ export type CompanionWritingWizardStep =
   | "companion"
   | "mood"
   | "activity"
-  | "write";
+  | "write"
+  | "confirm";
 
 export const COMPANION_WRITING_ACTIVITY_HEADING = "今日はどんな1日でしたか？";
 
@@ -31,6 +32,20 @@ export const COMPANION_WRITING_MOOD_PICK_HEADING = "今日の気分をえらぶ"
 export const COMPANION_WRITING_WRITE_HEADING = "あなたの言葉で残してみてください";
 
 export const COMPANION_WRITING_WRITE_HINT = "短くても大丈夫です";
+
+/** 伴走ウィザード：質問穴埋め */
+export const COMPANION_WRITING_QUESTIONS_HEADING = "フクロウ先生の質問に答えてみてください";
+
+export const COMPANION_WRITING_QUESTIONS_HINT = "短い言葉で大丈夫です";
+
+/** 伴走ウィザード：保存前確認 */
+export const COMPANION_WRITING_CONFIRM_HEADING = "こんな感じで残しますか？";
+
+/** 案内役選択：未実装キャラ */
+export const COMPANION_WRITING_APPRAISER_COMING_SOON_LABEL = "準備中";
+
+/** 現時点で選択可能な案内役 */
+export const COMPANION_WRITING_AVAILABLE_COMPANION: CompanionType = "owl";
 
 export const COMPANION_WRITING_OMAKASE_LABEL = "おまかせ";
 
@@ -144,5 +159,5 @@ export type CompanionWritingDraft = {
   activity: ActivityId;
   companionName: string;
   companionShortLine: string;
-  userAnswer: string;
+  generatedBody: string;
 };

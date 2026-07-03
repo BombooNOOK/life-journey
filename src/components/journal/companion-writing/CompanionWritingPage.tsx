@@ -24,10 +24,11 @@ import {
 } from "@/lib/journal/companionWriting/companionPrompt";
 import { getAppraiserDisplayName } from "@/lib/journal/companionWriting/messages";
 import {
-  COMPANION_WRITING_OMAKASE_ID,
-  isOmakaseChoice,
-  pickOmakaseCompanion,
-  resolveCompanionWritingChoice,
+  composeOwlGeneratedBody,
+  pickOwlQuestionSet,
+  type OwlQuestionSet,
+} from "@/lib/journal/companionWriting/owlQuestionSets";
+import {
   type CompanionWritingChoiceId,
 } from "@/lib/journal/companionWriting/omakase";
 import { writeCompanionWritingCalendarComplete } from "@/lib/journal/companionWriting/session";
@@ -35,11 +36,13 @@ import {
   COMPANION_WRITING_ACTIVITY_HEADING,
   COMPANION_WRITING_APPRAISER_PICK_HEADING,
   COMPANION_WRITING_APPRAISER_PICK_HINT,
+  COMPANION_WRITING_AVAILABLE_COMPANION,
+  COMPANION_WRITING_CONFIRM_HEADING,
   COMPANION_WRITING_FORMAL_TITLE,
   COMPANION_WRITING_MOOD_PICK_HEADING,
+  COMPANION_WRITING_QUESTIONS_HEADING,
+  COMPANION_WRITING_QUESTIONS_HINT,
   COMPANION_WRITING_SAVE_LOADING_LABEL,
-  COMPANION_WRITING_WRITE_HEADING,
-  COMPANION_WRITING_WRITE_HINT,
   type CompanionWritingWizardStep,
 } from "@/lib/journal/companionWriting/types";
 import { COMPANION_WRITING_DEFAULT_CONTENT_FONT_MODE } from "@/lib/journal/contentFontMode";
@@ -48,16 +51,11 @@ import {
   journalCalendarAfterCompanionSavePath,
   journalNewEntryPath,
 } from "@/lib/journal/journalNav";
-import {
-  readJournalCompanionPreference,
-  writeJournalCompanionPreference,
-} from "@/lib/journal/journalCompanionPreference";
 import { LOG_HOUSE_BACK_LINK } from "@/lib/journal/logHouseLabels";
 import {
   activityOptions,
   moodOptions,
   type ActivityId,
-  type CompanionType,
   type MoodId,
 } from "@/lib/journal/meta";
 
@@ -82,17 +80,18 @@ function isValidDateInput(value: string): boolean {
 const stepHeadingByStep: Partial<Record<CompanionWritingWizardStep, string>> = {
   mood: COMPANION_WRITING_MOOD_PICK_HEADING,
   activity: COMPANION_WRITING_ACTIVITY_HEADING,
-  write: COMPANION_WRITING_WRITE_HEADING,
+  write: COMPANION_WRITING_QUESTIONS_HEADING,
+  confirm: COMPANION_WRITING_CONFIRM_HEADING,
 };
 
-const COMPANION_WRITING_TEXTAREA_SCROLL_OFFSET_PX = 12;
+const COMPANION_WRITING_INPUT_SCROLL_OFFSET_PX = 12;
 
-function scrollCompanionWritingTextareaIntoView(textarea: HTMLTextAreaElement) {
+function scrollCompanionWritingInputIntoView(element: HTMLElement) {
   const alignTop = () => {
     const top =
-      textarea.getBoundingClientRect().top +
+      element.getBoundingClientRect().top +
       window.scrollY -
-      COMPANION_WRITING_TEXTAREA_SCROLL_OFFSET_PX;
+      COMPANION_WRITING_INPUT_SCROLL_OFFSET_PX;
     window.scrollTo({ top: Math.max(0, top), behavior: "smooth" });
   };
 
@@ -123,21 +122,19 @@ export function CompanionWritingPage() {
 
   const [step, setStep] = useState<CompanionWritingWizardStep>("companion");
   const [companionChoice, setCompanionChoice] = useState<CompanionWritingChoiceId>(
-    () => readJournalCompanionPreference(),
+    COMPANION_WRITING_AVAILABLE_COMPANION,
   );
-  const [omakaseResolved, setOmakaseResolved] = useState<CompanionType | null>(null);
   const [mood, setMood] = useState<MoodId>("calm");
   const [activity, setActivity] = useState<ActivityId>("record_anyway");
-  const [userAnswer, setUserAnswer] = useState("");
+  const [questionSet, setQuestionSet] = useState<OwlQuestionSet | null>(null);
+  const [answer1, setAnswer1] = useState("");
+  const [answer2, setAnswer2] = useState("");
   const [entryDate, setEntryDate] = useState(() => toDateInputValue(new Date()));
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const answerTextareaRef = useRef<HTMLTextAreaElement>(null);
+  const answer1InputRef = useRef<HTMLInputElement>(null);
 
-  const companionType = useMemo(
-    () => resolveCompanionWritingChoice(companionChoice, omakaseResolved),
-    [companionChoice, omakaseResolved],
-  );
+  const companionType = COMPANION_WRITING_AVAILABLE_COMPANION;
 
   const acknowledgmentLine = useMemo(
     () => buildCompanionAcknowledgmentLine(activity),
@@ -152,6 +149,23 @@ export function CompanionWritingPage() {
   const companionName = useMemo(
     () => getAppraiserDisplayName(companionType),
     [companionType],
+  );
+
+  const generatedBody = useMemo(() => {
+    if (!questionSet) return "";
+    return composeOwlGeneratedBody(questionSet, { answer1, answer2 });
+  }, [answer1, answer2, questionSet]);
+
+  const previewContent = useMemo(
+    () =>
+      buildCompanionWritingEntryContent({
+        mood,
+        activity,
+        companionName,
+        companionShortLine,
+        generatedBody,
+      }),
+    [activity, companionName, companionShortLine, generatedBody, mood],
   );
 
   const companionIllustrationPath = useMemo(
@@ -171,32 +185,44 @@ export function CompanionWritingPage() {
     window.scrollTo({ top: 0, left: 0, behavior: "auto" });
   }, [step]);
 
-  const handleAnswerTextareaFocus = useCallback(() => {
-    const textarea = answerTextareaRef.current;
-    if (!textarea) return;
-    scrollCompanionWritingTextareaIntoView(textarea);
+  const handleAnswerInputFocus = useCallback((element: HTMLElement) => {
+    scrollCompanionWritingInputIntoView(element);
   }, []);
 
   const handleCompanionChoice = useCallback((next: CompanionWritingChoiceId) => {
+    if (next !== COMPANION_WRITING_AVAILABLE_COMPANION) return;
     setCompanionChoice(next);
-    if (!isOmakaseChoice(next)) {
-      setOmakaseResolved(null);
-      writeJournalCompanionPreference(next);
-    }
   }, []);
 
+  const beginQuestionStep = useCallback(() => {
+    setQuestionSet(pickOwlQuestionSet(activity));
+    setAnswer1("");
+    setAnswer2("");
+    setError(null);
+    setStep("write");
+  }, [activity]);
+
   const advanceFromCompanionStep = useCallback(() => {
-    if (isOmakaseChoice(companionChoice)) {
-      const picked = omakaseResolved ?? pickOmakaseCompanion();
-      setOmakaseResolved(picked);
+    if (companionChoice !== COMPANION_WRITING_AVAILABLE_COMPANION) {
+      setError("現在はフクロウ先生のみ選べます。");
+      return;
     }
+    setError(null);
     setStep("mood");
-  }, [companionChoice, omakaseResolved]);
+  }, [companionChoice]);
+
+  const advanceToConfirmStep = useCallback(() => {
+    if (!answer1.trim() || !answer2.trim()) {
+      setError("2つの質問に、短い言葉で答えてみてください。");
+      return;
+    }
+    setError(null);
+    setStep("confirm");
+  }, [answer1, answer2]);
 
   const saveEntry = useCallback(async () => {
-    const answer = userAnswer.trim();
-    if (!answer) {
-      setError("ひとことでも、いまの気持ちを書いてみてください。");
+    if (!questionSet || !answer1.trim() || !answer2.trim()) {
+      setError("2つの質問に、短い言葉で答えてみてください。");
       return;
     }
     if (!canWriteJournal) {
@@ -204,17 +230,15 @@ export function CompanionWritingPage() {
       return;
     }
 
-    const resolvedCompanion = resolveCompanionWritingChoice(companionChoice, omakaseResolved);
-
     setError(null);
     setSaving(true);
     try {
       const content = buildCompanionWritingEntryContent({
         mood,
         activity,
-        companionName: getAppraiserDisplayName(resolvedCompanion),
-        companionShortLine: pickCompanionShortLine(resolvedCompanion, mood, activity),
-        userAnswer: answer,
+        companionName: getAppraiserDisplayName(companionType),
+        companionShortLine: pickCompanionShortLine(companionType, mood, activity),
+        generatedBody: composeOwlGeneratedBody(questionSet, { answer1, answer2 }),
       });
 
       const res = await fetch("/api/journal", {
@@ -226,7 +250,7 @@ export function CompanionWritingPage() {
           mood,
           // 伴走の18択は保存本文に残す。通常の読み解きロジックには渡さない。
           activity: "record_anyway",
-          companionType: resolvedCompanion,
+          companionType,
           designTheme: "simple_plain",
           contentFontMode: COMPANION_WRITING_DEFAULT_CONTENT_FONT_MODE,
           entryDate,
@@ -252,7 +276,7 @@ export function CompanionWritingPage() {
         version: 1,
         entryId: data.entry.id,
         entryDateYmd: entryDate,
-        companionType: resolvedCompanion,
+        companionType,
         profileId: effectiveProfileId,
         designTheme: "simple_plain",
       });
@@ -269,13 +293,14 @@ export function CompanionWritingPage() {
     }
   }, [
     activity,
+    answer1,
+    answer2,
     canWriteJournal,
-    companionChoice,
+    companionType,
     effectiveProfileId,
     entryDate,
     mood,
-    omakaseResolved,
-    userAnswer,
+    questionSet,
   ]);
 
   if (authLoading || entitlementLoading || !profileState.ready) {
@@ -317,7 +342,7 @@ export function CompanionWritingPage() {
 
   return (
     <div className="relative mx-auto max-w-lg space-y-5 px-5 py-5 sm:space-y-4 sm:px-4 sm:py-8">
-      {step === "write" && saving ? (
+      {(step === "write" || step === "confirm") && saving ? (
         <div
           className="fixed inset-0 z-[70] flex items-center justify-center bg-[#faf8f5]/92 backdrop-blur-[2px]"
           aria-live="polite"
@@ -358,7 +383,7 @@ export function CompanionWritingPage() {
               </p>
             </div>
           </>
-        ) : step === "mood" || step === "activity" || step === "write" ? (
+        ) : step === "mood" || step === "activity" || step === "write" || step === "confirm" ? (
           <>
             <p className="text-xs leading-snug text-stone-500">
               プロフィール：
@@ -404,11 +429,6 @@ export function CompanionWritingPage() {
 
       {step === "mood" ? (
         <section className={companionWritingWizardStepClass}>
-          {isOmakaseChoice(companionChoice) && omakaseResolved ? (
-            <p className="text-sm text-emerald-800">
-              今日の案内役：{getAppraiserDisplayName(omakaseResolved)}
-            </p>
-          ) : null}
           <fieldset>
             <legend className="sr-only">今日の気分</legend>
             <div
@@ -488,7 +508,7 @@ export function CompanionWritingPage() {
             </button>
             <button
               type="button"
-              onClick={() => setStep("write")}
+              onClick={beginQuestionStep}
               className="min-h-[44px] flex-[2] rounded-lg bg-emerald-800 px-4 py-2.5 text-sm font-medium text-white hover:bg-emerald-900"
             >
               つぎへ
@@ -497,7 +517,7 @@ export function CompanionWritingPage() {
         </section>
       ) : null}
 
-      {step === "write" ? (
+      {step === "write" && questionSet ? (
         <section className={companionWritingWizardStepClass}>
           {error ? (
             <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-800" role="alert">
@@ -523,19 +543,35 @@ export function CompanionWritingPage() {
               </p>
             </div>
           </div>
-          <label className="block space-y-2" htmlFor="companion-writing-answer">
-            <span className={companionWritingWizardStepBodyClass}>
-              {COMPANION_WRITING_WRITE_HINT}
+          <p className={companionWritingWizardStepBodyClass}>{COMPANION_WRITING_QUESTIONS_HINT}</p>
+          <label className="block space-y-2" htmlFor="companion-writing-answer-1">
+            <span className="text-sm font-medium leading-relaxed text-stone-800">
+              {questionSet.q1}
             </span>
-            <textarea
-              ref={answerTextareaRef}
-              id="companion-writing-answer"
-              value={userAnswer}
-              onChange={(e) => setUserAnswer(e.target.value)}
-              onFocus={handleAnswerTextareaFocus}
-              rows={6}
+            <input
+              ref={answer1InputRef}
+              id="companion-writing-answer-1"
+              type="text"
+              value={answer1}
+              onChange={(e) => setAnswer1(e.target.value)}
+              onFocus={(e) => handleAnswerInputFocus(e.currentTarget)}
               disabled={saving}
-              placeholder="例）公園のベンチで少し休みながら、木漏れ日を眺めていた。"
+              placeholder="短い言葉で大丈夫です"
+              className="w-full scroll-mt-3 rounded-lg border border-stone-300 px-3 py-2.5 text-base leading-relaxed text-stone-900 outline-none ring-emerald-500 focus:ring-2"
+            />
+          </label>
+          <label className="block space-y-2" htmlFor="companion-writing-answer-2">
+            <span className="text-sm font-medium leading-relaxed text-stone-800">
+              {questionSet.q2}
+            </span>
+            <input
+              id="companion-writing-answer-2"
+              type="text"
+              value={answer2}
+              onChange={(e) => setAnswer2(e.target.value)}
+              onFocus={(e) => handleAnswerInputFocus(e.currentTarget)}
+              disabled={saving}
+              placeholder="短い言葉で大丈夫です"
               className="w-full scroll-mt-3 rounded-lg border border-stone-300 px-3 py-2.5 text-base leading-relaxed text-stone-900 outline-none ring-emerald-500 focus:ring-2"
             />
           </label>
@@ -544,6 +580,39 @@ export function CompanionWritingPage() {
               type="button"
               disabled={saving}
               onClick={() => setStep("activity")}
+              className="min-h-[44px] flex-1 rounded-lg border border-stone-300 bg-white px-4 py-2.5 text-sm font-medium text-stone-700 hover:bg-stone-50 disabled:opacity-60"
+            >
+              もどる
+            </button>
+            <button
+              type="button"
+              disabled={saving}
+              onClick={advanceToConfirmStep}
+              className="min-h-[44px] flex-[2] rounded-lg bg-emerald-800 px-4 py-2.5 text-sm font-medium text-white hover:bg-emerald-900 disabled:opacity-60"
+            >
+              つぎへ
+            </button>
+          </div>
+        </section>
+      ) : null}
+
+      {step === "confirm" ? (
+        <section className={companionWritingWizardStepClass}>
+          {error ? (
+            <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-800" role="alert">
+              {error}
+            </p>
+          ) : null}
+          <div className="rounded-xl border border-stone-200 bg-[#faf8f5] px-4 py-4">
+            <p className="whitespace-pre-wrap break-words text-base leading-relaxed text-stone-800">
+              {previewContent}
+            </p>
+          </div>
+          <div className="flex gap-2">
+            <button
+              type="button"
+              disabled={saving}
+              onClick={() => setStep("write")}
               className="min-h-[44px] flex-1 rounded-lg border border-stone-300 bg-white px-4 py-2.5 text-sm font-medium text-stone-700 hover:bg-stone-50 disabled:opacity-60"
             >
               もどる
@@ -560,7 +629,7 @@ export function CompanionWritingPage() {
         </section>
       ) : null}
 
-      {error && step !== "write" ? (
+      {error && step !== "write" && step !== "confirm" ? (
         <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-800" role="alert">
           {error}
         </p>

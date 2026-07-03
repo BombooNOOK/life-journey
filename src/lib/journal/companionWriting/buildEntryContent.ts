@@ -7,7 +7,7 @@ export type BuildCompanionWritingContentInput = {
   activity: ActivityId;
   companionName: string;
   companionShortLine: string;
-  userAnswer: string;
+  generatedBody: string;
 };
 
 /** 既存 JournalEntry.content にそのまま保存できる自然な日記文 */
@@ -16,7 +16,7 @@ export function buildCompanionWritingEntryContent(
 ): string {
   const moodLabel = getCompanionMoodLabel(input.mood);
   const dayLabel = getCompanionDayLabel(input.activity);
-  const answer = input.userAnswer.trim();
+  const body = input.generatedBody.trim();
   const companionName = input.companionName.trim();
   const companionShortLine = input.companionShortLine.trim();
 
@@ -26,7 +26,7 @@ export function buildCompanionWritingEntryContent(
     "",
     `${companionName}に「${companionShortLine}」と言われた。`,
     "",
-    answer,
+    body,
   ];
 
   return paragraphs.join("\n").trim();
