@@ -1,7 +1,7 @@
 "use client";
 
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useState, type CSSProperties, type ReactNode } from "react";
 
 import { OwlLoadingInline } from "@/components/ui/OwlLoadingInline";
 import { OwlSpinIndicator } from "@/components/ui/OwlSpinIndicator";
@@ -18,6 +18,7 @@ type Props = {
   compactLoading?: boolean;
   /** 遷移完了判定（未指定時は href のパスと完全一致） */
   matchPathname?: (pathname: string) => boolean;
+  style?: CSSProperties;
 };
 
 const BUSY_CLASS =
@@ -39,6 +40,7 @@ export function OwlNavButton({
   openInNewTab = false,
   compactLoading = false,
   matchPathname,
+  style,
 }: Props) {
   const router = useRouter();
   const pathname = usePathname();
@@ -82,6 +84,7 @@ export function OwlNavButton({
       disabled={busy}
       aria-busy={busy}
       onClick={handleNavigate}
+      style={style}
       className={[className, busy ? BUSY_CLASS : IDLE_CLASS].filter(Boolean).join(" ")}
     >
       {busy ? (

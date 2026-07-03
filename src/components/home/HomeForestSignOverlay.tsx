@@ -1,14 +1,15 @@
 "use client";
 
 import Image from "next/image";
-import Link from "next/link";
 
 import { buildLoginHref } from "@/app/login/loginFlow";
+import { OwlNavButton } from "@/components/ui/OwlNavButton";
 import { HOME_FOREST_SIGN_OWL_TEACHER_SRC } from "@/lib/home/homeForestSignAssets";
 import { HOME_HERO_OWL_TEACHER_SRC } from "@/lib/home/homeHeroAssets";
 import {
   HOME_FOREST_SIGN_LOG_HOUSE_NOTE,
   HOME_FOREST_SIGN_LOGIN_NOTE_PREVIEW_TEXT,
+  HOME_FOREST_SIGN_NAV_LOADING_LABELS,
   HOME_FOREST_SIGN_SLOT_NAV_IDS,
   HOME_FOREST_SIGN_SUBTITLE_TEXT,
   HOME_FOREST_SIGN_TITLE_TEXT,
@@ -124,13 +125,19 @@ function ForestSignSignLink({
   }
 
   return (
-    <Link
+    <OwlNavButton
       href={item.href}
+      loadingLabel={
+        HOME_FOREST_SIGN_NAV_LOADING_LABELS[
+          item.id as keyof typeof HOME_FOREST_SIGN_NAV_LOADING_LABELS
+        ] ?? "ページを開いています…"
+      }
+      compactLoading
       className={`${signLinkClass} ${whitespaceClass} ${primary ? "font-bold decoration-[#8a7563]" : ""}`}
       style={style}
     >
       {item.label}
-    </Link>
+    </OwlNavButton>
   );
 }
 
@@ -168,12 +175,14 @@ export function HomeForestSignLoginNote({
         {preview ? (
           <span className="text-[color:inherit]">{HOME_FOREST_SIGN_LOGIN_NOTE_PREVIEW_TEXT}</span>
         ) : (
-          <Link
+          <OwlNavButton
             href={loginHref}
-            className="font-semibold text-[color:inherit] underline-offset-2 hover:underline"
+            loadingLabel={HOME_FOREST_SIGN_NAV_LOADING_LABELS.loginNote}
+            compactLoading
+            className="inline font-semibold text-[color:inherit] underline-offset-2 hover:underline"
           >
             {HOME_FOREST_SIGN_LOG_HOUSE_NOTE}
-          </Link>
+          </OwlNavButton>
         )}
       </div>
     </div>

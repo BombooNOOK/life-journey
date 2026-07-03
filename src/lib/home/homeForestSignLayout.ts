@@ -85,6 +85,18 @@ export const HOME_FOREST_SIGN_NAV_LABELS = {
   "ljd-help": "LJDの歩き方",
 } as const;
 
+/** 看板リンク押下時のフクロウ表示文言 */
+export const HOME_FOREST_SIGN_NAV_LOADING_LABELS: Record<
+  keyof typeof HOME_FOREST_SIGN_NAV_LABELS | "loginNote",
+  string
+> = {
+  first: "ガイドを開いています…",
+  loghouse: "ログハウスを開いています…",
+  companion: "日記を書くページを開いています…",
+  "ljd-help": "LJDの歩き方を開いています…",
+  loginNote: "ログハウスを開いています…",
+};
+
 export const HOME_FOREST_SIGN_LOG_HOUSE_NOTE = "日記を書く・読むはこちらから";
 /** @deprecated preview 定規用。 {@link HOME_FOREST_SIGN_LOG_HOUSE_NOTE} と同じ文言 */
 export const HOME_FOREST_SIGN_LOGIN_NOTE_PREVIEW_TEXT = HOME_FOREST_SIGN_LOG_HOUSE_NOTE;
