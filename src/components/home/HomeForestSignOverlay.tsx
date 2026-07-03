@@ -138,12 +138,10 @@ function ForestSignSignLink({
 /** ログイン案内（看板オーバーレイより上のレイヤーに載せる） */
 export function HomeForestSignLoginNote({
   viewport,
-  isLoggedIn,
   coverLayout = null,
   preview = false,
 }: {
   viewport: HomeForestSignViewport;
-  isLoggedIn: boolean;
   coverLayout?: ObjectCoverLayout | null;
   preview?: boolean;
 }) {
@@ -152,7 +150,7 @@ export function HomeForestSignLoginNote({
   const loginHref = buildLoginHref("/orders");
   const usePercentFont = !coverLayout;
 
-  if (isLoggedIn || !layout.loginNote) return null;
+  if (!layout.loginNote) return null;
 
   return (
     <div

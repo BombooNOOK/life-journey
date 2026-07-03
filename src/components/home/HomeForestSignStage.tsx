@@ -99,11 +99,7 @@ export function HomeForestSignStage({
         isLoggedIn={isLoggedIn}
         coverLayout={coverLayout}
       />
-      <HomeForestSignLoginNote
-        viewport={viewport}
-        isLoggedIn={isLoggedIn}
-        coverLayout={coverLayout}
-      />
+      <HomeForestSignLoginNote viewport={viewport} coverLayout={coverLayout} />
     </div>
   );
 }

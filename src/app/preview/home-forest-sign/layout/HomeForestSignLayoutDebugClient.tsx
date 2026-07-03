@@ -369,11 +369,7 @@ export function HomeForestSignLayoutDebugClient({
                   isLoggedIn={false}
                   preview
                 />
-                <HomeForestSignLoginNote
-                  viewport={viewport}
-                  isLoggedIn={false}
-                  preview
-                />
+                <HomeForestSignLoginNote viewport={viewport} preview />
               </>
             ) : null}
           </div>
