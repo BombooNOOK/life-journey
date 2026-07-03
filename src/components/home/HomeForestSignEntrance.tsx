@@ -37,25 +37,26 @@ const mobileFontSizeBandClass =
 
 const pcFontSizeBandClass = "w-full border-t border-stone-300/40 pb-2.5 pt-2";
 
-function useForestSignDesktopViewport(): boolean {
-  const [isDesktop, setIsDesktop] = useState(false);
+function useForestSignViewport(): HomeForestSignViewport | null {
+  const [viewport, setViewport] = useState<HomeForestSignViewport | null>(null);
 
   useLayoutEffect(() => {
     const media = window.matchMedia("(min-width: 1024px)");
-    const sync = () => setIsDesktop(media.matches);
+    const sync = () => setViewport(media.matches ? "desktop" : "mobile");
     sync();
     media.addEventListener("change", sync);
     return () => media.removeEventListener("change", sync);
   }, []);
 
-  return isDesktop;
+  return viewport;
 }
 
 /** BambooNOOKの森の入口：1画面・案内板背景＋看板上のテキストリンク */
 export function HomeForestSignEntrance() {
   const { user } = useFirebaseAuth();
   const isLoggedIn = Boolean(user) || isLjLoggedInOnClient();
-  const isDesktop = useForestSignDesktopViewport();
+  const viewport = useForestSignViewport();
+  const isDesktop = viewport === "desktop";
 
   const navById = useMemo(
     () => Object.fromEntries(NAV_ITEMS.map((item) => [item.id, item])),
@@ -65,12 +66,15 @@ export function HomeForestSignEntrance() {
 
   return (
     <section className="home-read-scope relative flex min-h-[100dvh] flex-col overflow-hidden bg-[#f3efe4]">
-      <HomeForestSignStage
-        viewport={isDesktop ? "desktop" : "mobile"}
-        navById={navById}
-        primaryNavId={primaryNavId}
-        isLoggedIn={isLoggedIn}
-      />
+      {viewport ? (
+        <HomeForestSignStage
+          key={viewport}
+          viewport={viewport}
+          navById={navById}
+          primaryNavId={primaryNavId}
+          isLoggedIn={isLoggedIn}
+        />
+      ) : null}
 
       <div
         className="pointer-events-none mx-auto w-full max-w-3xl px-4 pt-10 sm:px-6 sm:pt-11 lg:py-12"

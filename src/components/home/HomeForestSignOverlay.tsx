@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 
 import { buildLoginHref } from "@/app/login/loginFlow";
-import { HOME_HERO_OWL_TEACHER_SRC } from "@/lib/home/homeHeroAssets";
+import { HOME_FOREST_SIGN_OWL_TEACHER_SRC } from "@/lib/home/homeForestSignAssets";
 import {
   HOME_FOREST_SIGN_LOGIN_NOTE_LINE,
   HOME_FOREST_SIGN_LOGIN_NOTE_LINK,
@@ -47,7 +47,7 @@ const SIGN_SLOTS: HomeForestSignSignSlotId[] = [
 ];
 
 const signLinkClass = [
-  "block whitespace-pre-wrap rounded-sm",
+  "block rounded-sm",
   "underline-offset-[0.2em] decoration-[#9a826e]/55",
   "transition hover:underline hover:decoration-[#8a7563]",
   "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#6b5d4a]",
@@ -60,6 +60,13 @@ function placementStyle(
   coverLayout?: ObjectCoverLayout | null,
 ) {
   return homeForestSignPlacementStyle(placement, viewport, coverLayout);
+}
+
+function textAlignClass(placement: HomeForestSignTextPlacement): string {
+  const align = placement.textAlign ?? (placement.textAnchor === "center" ? "center" : "left");
+  if (align === "right") return "text-right";
+  if (align === "center") return "text-center";
+  return "text-left";
 }
 
 function ForestSignText({
@@ -92,6 +99,7 @@ function ForestSignSignLink({
   item,
   primary,
   preview = false,
+  nowrap = false,
 }: {
   placement: HomeForestSignTextPlacement;
   viewport: HomeForestSignViewport;
@@ -99,13 +107,15 @@ function ForestSignSignLink({
   item: NavItem;
   primary: boolean;
   preview?: boolean;
+  nowrap?: boolean;
 }) {
   const style = placementStyle(placement, viewport, coverLayout);
+  const whitespaceClass = nowrap ? "whitespace-nowrap" : "whitespace-pre-wrap";
 
   if (preview) {
     return (
       <span
-        className={`${signLinkClass} pointer-events-none ${primary ? "font-bold" : ""}`}
+        className={`${signLinkClass} ${whitespaceClass} pointer-events-none ${primary ? "font-bold" : ""}`}
         style={style}
       >
         {item.label}
@@ -116,7 +126,7 @@ function ForestSignSignLink({
   return (
     <Link
       href={item.href}
-      className={`${signLinkClass} ${primary ? "font-bold decoration-[#8a7563]" : ""}`}
+      className={`${signLinkClass} ${whitespaceClass} ${primary ? "font-bold decoration-[#8a7563]" : ""}`}
       style={style}
     >
       {item.label}
@@ -151,32 +161,40 @@ export function HomeForestSignOverlay({
     >
       <div
         className="pointer-events-none overflow-hidden"
-        style={homeForestSignImagePlacementStyle(
-          layout.owlTeacher,
-          viewport,
-          coverLayout,
-        )}
+        style={{
+          ...homeForestSignImagePlacementStyle(
+            layout.owlTeacher,
+            viewport,
+            coverLayout,
+          ),
+          zIndex: 2,
+        }}
         aria-hidden
       >
         <Image
-          src={HOME_HERO_OWL_TEACHER_SRC}
+          src={HOME_FOREST_SIGN_OWL_TEACHER_SRC}
           alt=""
           width={682}
           height={1024}
           sizes={viewport === "mobile" ? "46vw" : "224px"}
           className="h-full w-full object-contain object-bottom"
           priority
+          unoptimized
         />
       </div>
 
       <ForestSignText placement={layout.title} viewport={viewport} coverLayout={coverLayout}>
-        <h1 className="m-0 text-center text-[length:inherit] font-[inherit] leading-[inherit] text-[color:inherit]">
+        <h1
+          className={`m-0 text-[length:inherit] font-[inherit] leading-[inherit] text-[color:inherit] ${textAlignClass(layout.title)}`}
+        >
           {HOME_FOREST_SIGN_TITLE_TEXT}
         </h1>
       </ForestSignText>
 
       <ForestSignText placement={layout.subtitle} viewport={viewport} coverLayout={coverLayout}>
-        <p className="m-0 text-center text-[length:inherit] font-[inherit] leading-[inherit] text-[color:inherit]">
+        <p
+          className={`m-0 text-[length:inherit] font-[inherit] leading-[inherit] text-[color:inherit] ${textAlignClass(layout.subtitle)}`}
+        >
           {HOME_FOREST_SIGN_SUBTITLE_TEXT}
         </p>
       </ForestSignText>
@@ -204,6 +222,7 @@ export function HomeForestSignOverlay({
             item={item}
             primary={navId === primaryNavId}
             preview={preview}
+            nowrap={slotId === "sign-top-left"}
           />
         );
       })}

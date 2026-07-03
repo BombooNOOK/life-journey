@@ -100,7 +100,7 @@ export function HomeForestSignLayoutDebugClient({
   const [viewport, setViewport] = useState<HomeForestSignViewport>(initialViewport);
   const [showGrid, setShowGrid] = useState(true);
   const [showAnchors, setShowAnchors] = useState(true);
-  const [showSampleText, setShowSampleText] = useState(true);
+  const [showSampleText, setShowSampleText] = useState(false);
   const [showLiveOverlay, setShowLiveOverlay] = useState(true);
   const [cursor, setCursor] = useState<{ x: number; y: number } | null>(null);
   const [pin, setPin] = useState<{ x: number; y: number } | null>(initialPin);
