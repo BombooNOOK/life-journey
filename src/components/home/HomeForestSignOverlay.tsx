@@ -7,8 +7,7 @@ import { buildLoginHref } from "@/app/login/loginFlow";
 import { HOME_FOREST_SIGN_OWL_TEACHER_SRC } from "@/lib/home/homeForestSignAssets";
 import { HOME_HERO_OWL_TEACHER_SRC } from "@/lib/home/homeHeroAssets";
 import {
-  HOME_FOREST_SIGN_LOGIN_NOTE_LINE,
-  HOME_FOREST_SIGN_LOGIN_NOTE_LINK,
+  HOME_FOREST_SIGN_LOG_HOUSE_NOTE,
   HOME_FOREST_SIGN_LOGIN_NOTE_PREVIEW_TEXT,
   HOME_FOREST_SIGN_SLOT_NAV_IDS,
   HOME_FOREST_SIGN_SUBTITLE_TEXT,
@@ -169,16 +168,12 @@ export function HomeForestSignLoginNote({
         {preview ? (
           <span className="text-[color:inherit]">{HOME_FOREST_SIGN_LOGIN_NOTE_PREVIEW_TEXT}</span>
         ) : (
-          <>
-            <span className="text-[color:inherit]">{HOME_FOREST_SIGN_LOGIN_NOTE_LINE}</span>
-            <br />
-            <Link
-              href={loginHref}
-              className="font-semibold text-[color:inherit] underline-offset-2 hover:underline"
-            >
-              {HOME_FOREST_SIGN_LOGIN_NOTE_LINK}
-            </Link>
-          </>
+          <Link
+            href={loginHref}
+            className="font-semibold text-[color:inherit] underline-offset-2 hover:underline"
+          >
+            {HOME_FOREST_SIGN_LOG_HOUSE_NOTE}
+          </Link>
         )}
       </div>
     </div>

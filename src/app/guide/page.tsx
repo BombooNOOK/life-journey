@@ -6,6 +6,7 @@ import { LinkToDiaryGuide } from "@/components/guide/GuideCrossLinks";
 import { PageTitleWithAccent } from "@/components/ui/PageTitleWithAccent";
 import { SoftIllustrationAccent } from "@/components/ui/SoftIllustrationAccent";
 import { APP_DISPLAY_NAME } from "@/lib/branding/appDisplayName";
+import { LOG_HOUSE_BACK_LINK } from "@/lib/journal/logHouseLabels";
 
 export const dynamic = "force-static";
 
@@ -59,7 +60,7 @@ export default function GuidePage() {
         <PageTitleWithAccent
           tone="guide"
           title="Life Journey Diaryの使い方"
-          backLink={{ href: "/orders", label: "← ログハウス（マイページ）" }}
+          backLink={LOG_HOUSE_BACK_LINK}
           description={`${APP_DISPLAY_NAME} で、無料鑑定から日記・製本までの流れをまとめました。実際の画面操作に沿った内容です。`}
           cornerAccents={["book", "leaf"]}
         />
@@ -69,7 +70,7 @@ export default function GuidePage() {
         <li>
           <StepCard step="1" title="1. まずは無料鑑定から">
             <p>
-              生年月日などを入力して、コアナンバーの鑑定結果を受け取ります。結果はマイページに保存され、あとから本棚で読み返せます。
+              生年月日などを入力して、コアナンバーの鑑定結果を受け取ります。結果はログハウスに保存され、あとから本棚で読み返せます。
             </p>
             <p className="text-xs text-stone-500">
               ヘッダーの「はじめての方」からも同じ画面を開けます（無料鑑定フォームです）。
@@ -97,7 +98,7 @@ export default function GuidePage() {
         <li>
           <StepCard step="3" title="3. 今日の日記を書く">
             <p>
-              マイページやカレンダーから「今日の日記を書く」を選び、その日の気持ちや出来事を短く残せます。活動の種類（仕事・休息など）を選び、本文を書いて保存します。
+              ログハウスやカレンダーから「今日の日記を書く」を選び、その日の気持ちや出来事を短く残せます。活動の種類（仕事・休息など）を選び、本文を書いて保存します。
             </p>
             <GuideAppLink href="/journal" label="今日の日記を書く" />
           </StepCard>
@@ -124,9 +125,9 @@ export default function GuidePage() {
         <li>
           <StepCard step="6" title="6. カレンダーや月別一覧で振り返る">
             <p>
-              マイページの Life Journey Diary カードでは、月ごとのカレンダーで記録のある日を確認できます。本棚の日記（年ごとの本）では、月別一覧から各日のプレビューを開けます。
+              ログハウスの Life Journey Diary カードでは、月ごとのカレンダーで記録のある日を確認できます。本棚の日記（年ごとの本）では、月別一覧から各日のプレビューを開けます。
             </p>
-            <GuideAppLink href="/orders" label="マイページのカレンダーを見る" />
+            <GuideAppLink href="/orders" label="ログハウスのカレンダーを見る" />
             <GuideAppLink href="/orders/bookshelf" label="本棚から日記の年を開く" />
           </StepCard>
         </li>
@@ -150,7 +151,7 @@ export default function GuidePage() {
         </div>
         <p className="relative z-10 font-medium text-stone-900">はじめての流れ（まとめ）</p>
         <p className="relative z-10 mt-2 leading-6">
-          無料鑑定 → 本棚で鑑定書を読む → 日記を書く → 振り返り → 製本前確認、の順が基本です。迷ったらマイページから各機能へ進めます。
+          無料鑑定 → 本棚で鑑定書を読む → 日記を書く → 振り返り → 製本前確認、の順が基本です。迷ったらログハウスから各機能へ進めます。
         </p>
         <div className="relative z-10">
           <GuideAppLink href="/order" label="いま無料鑑定からはじめる" />

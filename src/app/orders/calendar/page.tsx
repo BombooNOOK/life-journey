@@ -11,6 +11,7 @@ import {
   resolveUserEntitlement,
   serializeUserEntitlement,
 } from "@/lib/entitlement/resolveUserEntitlement";
+import { LOG_HOUSE_BACK_LINK } from "@/lib/journal/logHouseLabels";
 
 export const dynamic = "force-dynamic";
 
@@ -37,7 +38,7 @@ export default async function OrdersCalendarPage() {
     return (
       <div className="space-y-4">
         <Link href="/orders" className="text-sm text-stone-600 hover:text-stone-900">
-          ← マイページ
+          {LOG_HOUSE_BACK_LINK.label}
         </Link>
         <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800">
           プロフィール情報を読み込めませんでした。しばらくしてから再度お試しください。

@@ -1,5 +1,7 @@
 import Link from "next/link";
 
+import { LOG_HOUSE_SHORT_LABEL } from "@/lib/journal/logHouseLabels";
+
 type Props = {
   title: string;
   description?: string;
@@ -11,7 +13,7 @@ export function MyPageSubpageHeader({
   title,
   description,
   backHref = "/orders",
-  backLabel = "マイページ",
+  backLabel = LOG_HOUSE_SHORT_LABEL,
 }: Props) {
   return (
     <div>

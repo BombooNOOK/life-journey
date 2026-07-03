@@ -3,6 +3,7 @@
 import Link from "next/link";
 
 import { useAboutPageCtaAudienceContext } from "@/components/about/AboutPageCtaAudienceProvider";
+import { LOG_HOUSE_BACK_LINK } from "@/lib/journal/logHouseLabels";
 
 /** /about 上部の戻りリンク（既存ユーザーはマイページへ） */
 export function AboutPageTopBar() {
@@ -19,7 +20,7 @@ export function AboutPageTopBar() {
   if (showReturningUserCtas) {
     return (
       <Link href="/orders" className="text-sm text-stone-600 hover:text-stone-900">
-        ← マイページ
+        {LOG_HOUSE_BACK_LINK.label}
       </Link>
     );
   }

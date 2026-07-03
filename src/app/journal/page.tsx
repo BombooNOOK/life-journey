@@ -36,6 +36,7 @@ import { JournalSaveStoryTransitionOverlay } from "@/components/journal/JournalS
 import { ActiveProfileLabel } from "@/components/profile/ActiveProfileLabel";
 import { useEnsureActiveViewerProfile } from "@/hooks/useEnsureActiveViewerProfile";
 import { parseSafeJournalReturnTo } from "@/lib/journal/bookshelfReturnTo";
+import { LOG_HOUSE_NAV_LABEL } from "@/lib/journal/logHouseLabels";
 import {
   pickSaveAfterAnimalMessage,
   waitForSaveTransitionMinimum,
@@ -1072,7 +1073,7 @@ function JournalPageContent() {
         ) : null}
         <p className="flex flex-wrap items-center gap-x-3 text-sm text-stone-500">
           <Link href="/orders" className="underline-offset-2 hover:text-stone-600 hover:underline">
-            マイページ
+            {LOG_HOUSE_NAV_LABEL}
           </Link>
           {safeReturnTo ? (
             returnToIsCalendar ? (

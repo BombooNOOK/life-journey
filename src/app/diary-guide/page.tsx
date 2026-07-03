@@ -7,6 +7,7 @@ import { RecommendedForSection } from "@/components/content/RecommendedForSectio
 import { PageTitleWithAccent } from "@/components/ui/PageTitleWithAccent";
 import { SoftIllustrationAccent } from "@/components/ui/SoftIllustrationAccent";
 import { SoftSectionDivider } from "@/components/ui/SoftSectionDivider";
+import { LOG_HOUSE_BACK_LINK } from "@/lib/journal/logHouseLabels";
 
 export const dynamic = "force-static";
 
@@ -46,7 +47,7 @@ export default function DiaryGuidePage() {
         tone="diary"
         decoration="owl-md"
         title="Life Journey Diaryの歩き方"
-        backLink={{ href: "/orders", label: "← ログハウス（マイページ）" }}
+        backLink={LOG_HOUSE_BACK_LINK}
         description={
           <>
             <p>ここは、数字で紡ぐ人生の旅を、鑑定書と日記のふたつで支える場所です。</p>

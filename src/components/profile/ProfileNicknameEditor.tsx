@@ -85,7 +85,7 @@ export function ProfileNicknameEditor({ profileId, initialNickname }: Props) {
         </button>
       </div>
       <p className="text-xs leading-relaxed text-stone-500">
-        40文字以内。マイページの一覧にも反映されます。
+        40文字以内。ログハウスの一覧にも反映されます。
       </p>
       {error ? (
         <p className="text-xs text-red-700" role="alert">

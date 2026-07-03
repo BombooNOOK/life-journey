@@ -88,7 +88,7 @@ export default function GuideFirstPage() {
           <p className="text-xs font-semibold text-emerald-800">STEP 4</p>
           <h2 className="mt-1 text-base font-semibold text-stone-900">困ったら LJDの歩き方へ</h2>
           <p className="mt-2 text-sm leading-6 text-stone-700">
-            ログハウス（マイページ）と本棚の違い、日記ブック、製本の流れなどは、目次から必要な項目だけ読めます。
+            ログハウスと本棚の違い、日記ブック、製本の流れなどは、目次から必要な項目だけ読めます。
           </p>
           <StepLink href="/help/ljd" label="LJDの歩き方（目次）" />
         </li>

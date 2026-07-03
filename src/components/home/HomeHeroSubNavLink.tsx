@@ -10,6 +10,10 @@ import {
   heroCtaContinueSubClass,
 } from "@/components/home/heroCtaStyles";
 import { OwlNavButton } from "@/components/ui/OwlNavButton";
+import {
+  LOG_HOUSE_LOADING_LABEL,
+  LOG_HOUSE_TO_LABEL,
+} from "@/lib/journal/logHouseLabels";
 import { isLjLoggedInOnClient } from "@/lib/auth/clientCookies";
 
 const MY_PAGE_HREF = "/orders";
@@ -39,13 +43,13 @@ export function HomeHeroSubNavLink({ className = "", variant = "default" }: Prop
 
   if (variant === "entrance") {
     const entranceClass = [entranceContinueButtonClass, className].filter(Boolean).join(" ");
-    const subLabel = isLoggedIn ? "マイページへ" : "ログイン";
+    const subLabel = isLoggedIn ? LOG_HOUSE_TO_LABEL : "ログイン";
 
     if (isLoggedIn) {
       return (
         <OwlNavButton
           href={MY_PAGE_HREF}
-          loadingLabel="マイページを開いています…"
+          loadingLabel={LOG_HOUSE_LOADING_LABEL}
           className={entranceClass}
         >
           <span className={entranceContinueLeadClass}>記録の続きはこちら</span>
@@ -68,11 +72,11 @@ export function HomeHeroSubNavLink({ className = "", variant = "default" }: Prop
     return (
       <OwlNavButton
         href={MY_PAGE_HREF}
-        loadingLabel="マイページを開いています…"
+        loadingLabel={LOG_HOUSE_LOADING_LABEL}
         className={continueClass}
       >
         <span className={heroCtaContinueLeadClass}>記録の続きはこちら</span>
-        <span className={heroCtaContinueSubClass}>マイページへ</span>
+        <span className={heroCtaContinueSubClass}>{LOG_HOUSE_TO_LABEL}</span>
       </OwlNavButton>
     );
   }

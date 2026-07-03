@@ -4,6 +4,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect } from "react";
 
 import { OwlNavButton } from "@/components/ui/OwlNavButton";
+import { LOG_HOUSE_LOADING_LABEL, LOG_HOUSE_NAV_LABEL } from "@/lib/journal/logHouseLabels";
 
 const TAB_CLASS =
   "flex min-h-[52px] flex-1 flex-col items-center justify-center gap-0.5 px-1 py-2 font-medium";
@@ -29,8 +30,8 @@ const NAV_ITEMS = [
   },
   {
     href: "/orders",
-    label: "マイページ",
-    loadingLabel: "マイページを開いています…",
+    label: LOG_HOUSE_NAV_LABEL,
+    loadingLabel: LOG_HOUSE_LOADING_LABEL,
     isActive: (pathname: string) => pathname === "/orders",
   },
 ] as const;

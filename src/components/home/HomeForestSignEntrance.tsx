@@ -35,7 +35,8 @@ const NAV_ITEMS = [
 const mobileFontSizeBandClass =
   "relative mx-auto w-full max-w-[min(17rem,78vw)] border-t border-stone-300/40 px-1 pb-2.5 pt-2.5 sm:max-w-[17rem]";
 
-const pcFontSizeBandClass = "w-full border-t border-stone-300/40 pb-2.5 pt-2";
+const pcFontSizeBandClass =
+  "w-full max-w-[17rem] border-t border-stone-300/40 bg-[#fffdf9]/75 px-3 pb-2.5 pt-2 backdrop-blur-[1px]";
 
 function useForestSignViewport(): HomeForestSignViewport | null {
   const [viewport, setViewport] = useState<HomeForestSignViewport | null>(null);
@@ -86,11 +87,17 @@ export function HomeForestSignEntrance() {
       </div>
 
       <div
-        className="pointer-events-none mx-auto w-full max-w-3xl px-4 pb-3 sm:px-6"
-        style={{ position: "absolute", right: 0, bottom: 0, left: 0, zIndex: 20 }}
+        className={[
+          "pointer-events-none absolute z-20 pb-3",
+          isDesktop ? "right-0 bottom-0 px-6" : "inset-x-0 bottom-0 px-4 sm:px-6",
+        ].join(" ")}
       >
         <div
-          className={`${isDesktop ? pcFontSizeBandClass : mobileFontSizeBandClass} pointer-events-auto ${isDesktop ? "max-w-[17rem]" : ""}`}
+          className={[
+            isDesktop ? pcFontSizeBandClass : mobileFontSizeBandClass,
+            "pointer-events-auto",
+            isDesktop ? "" : "mx-auto w-full max-w-3xl",
+          ].join(" ")}
         >
           <ReadingFontSizeControl variant="hero" comfortable />
         </div>

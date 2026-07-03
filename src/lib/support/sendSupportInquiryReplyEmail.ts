@@ -41,7 +41,7 @@ export async function sendSupportInquiryReplyEmail(
         ${safeBody}
       </div>
       <p style="font-size: 15px;">
-        マイページでも会話を続けられます。<br />
+        ログハウスでも会話を続けられます。<br />
         <a href="${escapeHtml(input.threadUrl)}" style="color: #065f46;">お問い合わせの詳細を開く</a>
       </p>
       <p style="font-size: 14px; color: #78716c;">BambooNOOK / Life Journey Diary</p>

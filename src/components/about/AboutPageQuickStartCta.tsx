@@ -9,6 +9,10 @@ import {
 } from "@/components/home/heroCtaStyles";
 import { OwlNavButton } from "@/components/ui/OwlNavButton";
 import { useAboutPageCtaAudienceContext } from "@/components/about/AboutPageCtaAudienceProvider";
+import {
+  LOG_HOUSE_BACK_TO_LABEL,
+  LOG_HOUSE_LOADING_LABEL,
+} from "@/lib/journal/logHouseLabels";
 
 const JOURNAL_LOGIN_HREF = buildLoginHref("/journal");
 
@@ -51,10 +55,10 @@ export function AboutPageQuickStartCta() {
           </OwlNavButton>
           <OwlNavButton
             href="/orders"
-            loadingLabel="マイページを開いています…"
+            loadingLabel={LOG_HOUSE_LOADING_LABEL}
             className={heroCtaSecondaryClass}
           >
-            マイページへ戻る
+            {LOG_HOUSE_BACK_TO_LABEL}
           </OwlNavButton>
         </div>
       </section>

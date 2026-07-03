@@ -3,12 +3,13 @@
 import { PageTitleWithAccent } from "@/components/ui/PageTitleWithAccent";
 import { useClientAuthNavState } from "@/hooks/useClientAuthNavState";
 import { APP_DISPLAY_NAME } from "@/lib/branding/appDisplayName";
+import { LOG_HOUSE_BACK_LINK } from "@/lib/journal/logHouseLabels";
 
 /** 未ログインはトップへ、ログイン済みはマイページへ戻る */
 export function HomeScreenHelpPageHeader() {
   const { isLoggedIn } = useClientAuthNavState();
   const backLink = isLoggedIn
-    ? { href: "/orders", label: "← マイページ" }
+    ? LOG_HOUSE_BACK_LINK
     : { href: "/", label: "← トップへ" };
 
   return (

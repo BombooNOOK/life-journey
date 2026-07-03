@@ -53,7 +53,7 @@ export function HomeMockJournalCapture() {
         </div>
         <ActiveProfileLabel nickname="メイン" className="sm:hidden" />
         <p className="flex flex-wrap items-center gap-x-3 text-sm text-stone-500">
-          <span className="underline-offset-2">マイページ</span>
+          <span className="underline-offset-2">ログハウス</span>
           <span className="text-emerald-800 underline-offset-2">カレンダーへ戻る</span>
         </p>
       </div>

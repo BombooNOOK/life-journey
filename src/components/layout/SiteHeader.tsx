@@ -16,6 +16,7 @@ import {
   MYPAGE_CONTACT_FORM_LABEL,
   MYPAGE_CONTACT_FORM_PATH,
 } from "@/lib/legal/legalDocumentLinks";
+import { LOG_HOUSE_LOADING_LABEL, LOG_HOUSE_NAV_LABEL } from "@/lib/journal/logHouseLabels";
 
 const navLinkClass = "shrink-0 whitespace-nowrap hover:text-stone-900";
 const navNavButtonClass = `${navLinkClass} cursor-pointer border-0 bg-transparent p-0 text-inherit font-inherit`;
@@ -162,10 +163,10 @@ function SiteHeaderInner() {
               <>
                 <OwlNavButton
                   href="/orders"
-                  loadingLabel="マイページを開いています…"
+                  loadingLabel={LOG_HOUSE_LOADING_LABEL}
                   className={navNavButtonClass}
                 >
-                  マイページ
+                  {LOG_HOUSE_NAV_LABEL}
                 </OwlNavButton>
                 <span className={navSepClass} aria-hidden>
                   |

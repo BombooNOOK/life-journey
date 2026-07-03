@@ -24,6 +24,7 @@ import {
   type SerializedUserEntitlement,
 } from "@/lib/entitlement/resolveUserEntitlement";
 import { calendarDayKeyInJapan, journalWithCompanionPath } from "@/lib/journal/journalNav";
+import { LOG_HOUSE_LOAD_ERROR_TITLE, LOG_HOUSE_PAGE_TITLE } from "@/lib/journal/logHouseLabels";
 import { resolveFirstVisitGuideState } from "@/lib/onboarding/firstVisitGuideState";
 import { TrialStatusBanner } from "@/components/entitlement/TrialStatusBanner";
 
@@ -34,7 +35,7 @@ export default async function OrdersListPage() {
   if (!viewerEmail) {
     return (
       <div className="space-y-4">
-        <h1 className="text-2xl font-bold text-stone-900">マイページ</h1>
+        <h1 className="text-2xl font-bold text-stone-900">{LOG_HOUSE_PAGE_TITLE}</h1>
         <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
           <p className="font-semibold">ログイン情報を確認できませんでした</p>
           <p className="mt-2">いちどログアウトして、もう一度ログインしてください。</p>
@@ -87,10 +88,10 @@ export default async function OrdersListPage() {
     return (
       <div className="space-y-4">
         <div>
-          <h1 className="text-2xl font-bold text-stone-900">マイページ</h1>
+          <h1 className="text-2xl font-bold text-stone-900">{LOG_HOUSE_PAGE_TITLE}</h1>
         </div>
         <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-900">
-          <p className="font-semibold">マイページを読み込めませんでした</p>
+          <p className="font-semibold">{LOG_HOUSE_LOAD_ERROR_TITLE}</p>
           <p className="mt-2 text-stone-800">
             まずは下の「詳細」を確認してください（ここに出ている内容が、実際の原因に近いです）。接続の一時切れのときは、数分あけてから再読み込みしてください。
           </p>

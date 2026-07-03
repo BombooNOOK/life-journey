@@ -16,7 +16,7 @@ export function AdminSupportInquiryThreadPanel({ inquiryId, messages, canReply }
       <div>
         <h2 className="text-sm font-semibold text-stone-900">会話</h2>
         <p className="mt-1 text-xs leading-relaxed text-stone-500">
-          ここから返信すると、ユーザーのマイページに表示され、メールでも通知されます。
+          ここから返信すると、ユーザーのログハウスに表示され、メールでも通知されます。
         </p>
       </div>
 

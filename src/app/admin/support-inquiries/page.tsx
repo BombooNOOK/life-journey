@@ -132,7 +132,7 @@ export default async function AdminSupportInquiriesPage({ searchParams }: Props)
         </Link>
         <h1 className="mt-2 text-2xl font-bold text-stone-900">お問い合わせ一覧</h1>
         <p className="mt-1 text-sm text-stone-600">
-          マイページから送信されたお問い合わせを確認します。ユーザーからの最新メッセージがある件は
+          ログハウスから送信されたお問い合わせを確認します。ユーザーからの最新メッセージがある件は
           <SupportInquiryAwaitingReplyBadge awaiting className="mx-1 align-middle" />
           が付きます。
         </p>

@@ -85,9 +85,9 @@ export const HOME_FOREST_SIGN_NAV_LABELS = {
   "ljd-help": "LJDの歩き方",
 } as const;
 
-export const HOME_FOREST_SIGN_LOGIN_NOTE_LINE = "すでにアカウントをお持ちの方は";
-export const HOME_FOREST_SIGN_LOGIN_NOTE_LINK = "こちらから";
-export const HOME_FOREST_SIGN_LOGIN_NOTE_PREVIEW_TEXT = `${HOME_FOREST_SIGN_LOGIN_NOTE_LINE}\n${HOME_FOREST_SIGN_LOGIN_NOTE_LINK}`;
+export const HOME_FOREST_SIGN_LOG_HOUSE_NOTE = "日記を書く・読むはこちらから";
+/** @deprecated preview 定規用。 {@link HOME_FOREST_SIGN_LOG_HOUSE_NOTE} と同じ文言 */
+export const HOME_FOREST_SIGN_LOGIN_NOTE_PREVIEW_TEXT = HOME_FOREST_SIGN_LOG_HOUSE_NOTE;
 
 /** 仮配置。`/preview/home-forest-sign/layout` で微調整してここを更新 */
 export const HOME_FOREST_SIGN_LAYOUT: Record<HomeForestSignViewport, HomeForestSignLayout> = {

@@ -14,7 +14,7 @@ export async function POST(req: Request) {
   if (viewerEmail) {
     return NextResponse.json(
       {
-        error: "ログイン中はマイページのお問い合わせをご利用ください。",
+        error: "ログイン中はログハウスのお問い合わせをご利用ください。",
         code: "USE_MYPAGE",
       },
       { status: 403, ...JSON_NO_STORE },

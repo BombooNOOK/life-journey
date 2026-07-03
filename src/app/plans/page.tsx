@@ -4,6 +4,7 @@ import { LegalFooterLinks } from "@/components/legal/LegalFooterLinks";
 import { PlanCards } from "@/components/plans/PlanCards";
 import { getViewerEmailFromCookie } from "@/lib/auth/viewer";
 import { SUBSCRIPTION_BILLING_SUMMARY } from "@/lib/stripe/subscriptionBillingCopy";
+import { LOG_HOUSE_BACK_LINK } from "@/lib/journal/logHouseLabels";
 
 export const dynamic = "force-dynamic";
 
@@ -14,7 +15,7 @@ export default async function PlansPage() {
     <div className="space-y-6">
       <div>
         <Link href="/orders" className="text-sm text-stone-600 hover:text-stone-900">
-          ← マイページ
+          {LOG_HOUSE_BACK_LINK.label}
         </Link>
         <h1 className="mt-2 text-2xl font-bold text-stone-900">プラン</h1>
         <p className="mt-1 text-sm text-stone-600">

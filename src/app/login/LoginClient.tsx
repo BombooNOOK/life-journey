@@ -32,6 +32,11 @@ import {
   isLjLoggedInOnClient,
 } from "@/lib/auth/clientCookies";
 import { getFirebaseAuth, waitForFirebaseAuthPersistence } from "@/lib/firebase/client";
+import {
+  LOG_HOUSE_GO_LABEL,
+  LOG_HOUSE_MOVING_LABEL,
+  LOG_HOUSE_SHORT_LABEL,
+} from "@/lib/journal/logHouseLabels";
 
 import { buildLoginHref, resolveLoginFlow, resolveSafeReturnTo } from "./loginFlow";
 
@@ -110,7 +115,7 @@ function PostLoginTransitionOverlay({
             : "mx-auto max-w-md space-y-3 rounded-xl border border-stone-200 bg-white p-8 text-center shadow-lg"
         }
       >
-        <p className="text-base font-semibold text-stone-900">マイページへ移動しています…</p>
+        <p className="text-base font-semibold text-stone-900">{LOG_HOUSE_MOVING_LABEL}</p>
         {isAlreadySignedIn ? (
           <p className="text-sm leading-relaxed text-stone-600">ログイン済みのため、自動で次の画面へ進みます。</p>
         ) : (
@@ -541,7 +546,7 @@ export function LoginClient({ returnToRaw }: { returnToRaw: string | null }) {
       <div className="mx-auto max-w-md space-y-4 rounded-xl border border-stone-200 bg-white p-8 text-center shadow-sm">
         <p className="text-base font-medium text-stone-900">Googleの認証を確認しています…</p>
         <p className="text-sm text-stone-600">
-          アカウントを選んだあと、まずこの画面のまま少しお待ちください。すぐにマイページへ進みます。
+          アカウントを選んだあと、まずこの画面のまま少しお待ちください。すぐに{LOG_HOUSE_GO_LABEL}。
         </p>
         <p className="text-xs text-stone-500" aria-hidden>
           読み込み中
@@ -567,7 +572,7 @@ export function LoginClient({ returnToRaw }: { returnToRaw: string | null }) {
               </>
             ) : (
               <>
-                <p>ログイン後は、マイページ（またはアクセスしようとしていたページ）へ移動します。</p>
+                <p>ログイン後は、{LOG_HOUSE_SHORT_LABEL}（またはアクセスしようとしていたページ）へ移動します。</p>
                 {LOGIN_BROWSER_HELP}
               </>
             )}

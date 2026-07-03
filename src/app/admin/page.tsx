@@ -15,6 +15,7 @@ import { prisma } from "@/lib/db";
 import { formatAdminEffectiveProfileLimitLabel } from "@/lib/profile/effectiveProfileLimit";
 import { journalWithCompanionPath } from "@/lib/journal/journalNav";
 import { COMPANION_WRITING_FORMAL_TITLE } from "@/lib/journal/companionWriting/types";
+import { LOG_HOUSE_SHORT_LABEL, LOG_HOUSE_TO_LABEL } from "@/lib/journal/logHouseLabels";
 
 type Props = {
   searchParams: Promise<{ q?: string; saved?: string; err?: string }>;
@@ -632,7 +633,7 @@ export default async function AdminPage({ searchParams }: Props) {
     <div className="space-y-6">
       <div>
         <Link href="/orders" className="text-sm text-stone-600 hover:text-stone-900">
-          ← マイページへ
+          ← {LOG_HOUSE_TO_LABEL}
         </Link>
         <h1 className="mt-2 text-2xl font-bold text-stone-900">管理者ページ</h1>
         <p className="mt-1 text-sm text-stone-600">
@@ -712,7 +713,7 @@ export default async function AdminPage({ searchParams }: Props) {
             href="/orders"
             className="font-medium text-emerald-900 underline-offset-2 hover:underline"
           >
-            マイページ →
+            {LOG_HOUSE_SHORT_LABEL} →
           </Link>
           <Link
             href={loginToCompanionHref}

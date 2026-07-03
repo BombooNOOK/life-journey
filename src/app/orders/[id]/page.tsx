@@ -9,6 +9,7 @@ import { personalYearCycleEntry } from "@/lib/numerology/data/personalYearCycleD
 import { personalYearNumber } from "@/lib/numerology/personalYearMonth";
 import { maturityNumberFromNumerology } from "@/lib/numerology/reduce";
 import { numerologyWithRefreshedLifePath } from "@/lib/order/numerologyDisplay";
+import { LOG_HOUSE_BACK_LINK } from "@/lib/journal/logHouseLabels";
 
 export const dynamic = "force-dynamic";
 
@@ -95,7 +96,7 @@ export default async function OrderDetailPage({ params }: Props) {
     <div className="space-y-6">
       <div>
         <Link href="/orders" className="text-sm text-stone-600 hover:text-stone-900">
-          ← マイページ
+          {LOG_HOUSE_BACK_LINK.label}
         </Link>
       </div>
 
@@ -153,7 +154,7 @@ export default async function OrderDetailPage({ params }: Props) {
             href="/orders"
             className="text-sm text-stone-600 underline-offset-2 hover:text-stone-900 hover:underline"
           >
-            ← マイページ
+            {LOG_HOUSE_BACK_LINK.label}
           </Link>
         </div>
       </section>

@@ -13,6 +13,7 @@ import { getViewerEmailFromCookie } from "@/lib/auth/viewer";
 import { prisma } from "@/lib/db";
 import { withPrismaConnectionRetry } from "@/lib/db/prismaRetry";
 import { profileHasKanteiOrder } from "@/lib/journal/kanteiCommentEligibility";
+import { LOG_HOUSE_BACK_TO_LINK_LABEL } from "@/lib/journal/logHouseLabels";
 import { listDiaryBooksForViewer } from "@/lib/journal/listDiaryBooks";
 import { diaryCoverImagePath, getDiaryCoverStyleLabel } from "@/lib/journal/coverAssets";
 import { listProfilesAndActiveProfileId } from "@/lib/profile/activeProfile";
@@ -238,7 +239,7 @@ export default async function BookshelfPage() {
     return (
       <div className="space-y-4 p-4">
         <Link href="/orders" className="text-sm text-stone-600 hover:text-stone-900">
-          ← マイページへ
+          {LOG_HOUSE_BACK_TO_LINK_LABEL}
         </Link>
         <div className="rounded-xl border border-red-200 bg-red-50 p-5 text-sm text-red-900">
           <p className="font-semibold">本棚を表示できませんでした</p>

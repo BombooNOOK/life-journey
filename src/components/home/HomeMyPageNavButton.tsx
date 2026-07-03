@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 
 import { heroCtaSecondaryClass } from "@/components/home/heroCtaStyles";
 import { OwlLoadingInline } from "@/components/ui/OwlLoadingInline";
+import { LOG_HOUSE_LOADING_LABEL, LOG_HOUSE_TO_LABEL } from "@/lib/journal/logHouseLabels";
 
 const MY_PAGE_HREF = "/orders";
 
@@ -35,7 +36,7 @@ export function HomeMyPageNavButton() {
         "transition-[transform,opacity] duration-75",
       ].join(" ")}
     >
-      {busy ? <OwlLoadingInline label="マイページを開いています…" size="sm" /> : "マイページへ"}
+      {busy ? <OwlLoadingInline label={LOG_HOUSE_LOADING_LABEL} size="sm" /> : LOG_HOUSE_TO_LABEL}
     </button>
   );
 }

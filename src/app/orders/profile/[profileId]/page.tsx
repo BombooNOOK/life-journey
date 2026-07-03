@@ -10,6 +10,7 @@ import {
 } from "@/lib/profile/activeProfile";
 import { parseProfileIdFromRouteParam } from "@/lib/profile/parseProfileIdFromRouteParam";
 import { getViewerEmailFromCookie } from "@/lib/auth/viewer";
+import { LOG_HOUSE_BACK_LINK } from "@/lib/journal/logHouseLabels";
 
 export const dynamic = "force-dynamic";
 
@@ -43,7 +44,7 @@ export default async function ProfileDetailPage({ params }: Props) {
       <ProfileDetailActiveSync profileId={profile.id} isActive={isActive} />
       <div>
         <Link href="/orders" className="text-sm text-stone-600 hover:text-stone-900">
-          ← マイページ
+          {LOG_HOUSE_BACK_LINK.label}
         </Link>
         <h1 className="mt-2 text-2xl font-bold text-stone-900">{profile.nickname}</h1>
         <p className="mt-1 text-sm text-stone-600">プロフィール名を変更できます。</p>

@@ -48,6 +48,7 @@ import {
 } from "@/lib/journal/companionWriting/types";
 import { TrialStatusBanner } from "@/components/entitlement/TrialStatusBanner";
 import type { SerializedUserEntitlement } from "@/lib/entitlement/resolveUserEntitlement";
+import { LOG_HOUSE_BACK_LINK } from "@/lib/journal/logHouseLabels";
 
 export type DiaryCalendarEntry = DiaryMonthCalendarEntry & {
   content: string;
@@ -451,7 +452,7 @@ export function DiaryCalendarHome({
             href="/orders"
             className="hidden text-sm text-stone-600 hover:text-stone-900 sm:inline"
           >
-            ← マイページ（従来）
+            {LOG_HOUSE_BACK_LINK.label}
           </Link>
           <h1 className="mt-0 hidden text-xl font-bold leading-snug text-stone-900 sm:mt-2 sm:block sm:text-2xl">
             <button

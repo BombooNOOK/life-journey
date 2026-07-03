@@ -37,9 +37,11 @@ const BG_SRC: Record<HomeForestSignViewport, string> = {
 
 function initialCoverLayout(viewport: HomeForestSignViewport): ObjectCoverLayout | null {
   if (typeof window === "undefined") return null;
+  const w = window.visualViewport?.width ?? window.innerWidth;
+  const h = window.visualViewport?.height ?? window.innerHeight;
   return computeObjectCoverLayout(
-    window.innerWidth,
-    window.innerHeight,
+    w,
+    h,
     viewport,
     HOME_FOREST_SIGN_OBJECT_POSITION[viewport],
   );

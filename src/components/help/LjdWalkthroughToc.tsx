@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useCallback, useState, type ReactNode } from "react";
 
 import { CompanionWritingButtonLabel } from "@/components/journal/companion-writing/CompanionWritingButtonLabel";
+import { LOG_HOUSE_OPEN_LABEL, LOG_HOUSE_SHORT_LABEL } from "@/lib/journal/logHouseLabels";
 
 type TocItem = {
   id: string;
@@ -40,12 +41,12 @@ const TOC_ITEMS: TocItem[] = [
     body: (
       <>
         <p>
-          <strong>ログハウス（マイページ）</strong>は、LJD の拠点です。プロフィールの選択、日記を書く・読む、本棚への入口があります。
+          <strong>{LOG_HOUSE_SHORT_LABEL}</strong>は、LJD の拠点です。プロフィールの選択、日記を書く・読む、本棚への入口があります。
         </p>
         <p className="mt-2">
           <strong>本棚</strong>は、プロフィールごとに、鑑定結果や日記ブックを保管・読み返す場所です。
         </p>
-        <GuideAppLink href="/orders" label="ログハウス（マイページ）を開く" />
+        <GuideAppLink href="/orders" label={LOG_HOUSE_OPEN_LABEL} />
         <GuideAppLink href="/orders/bookshelf" label="本棚を開く" />
       </>
     ),

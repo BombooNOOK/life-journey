@@ -13,6 +13,7 @@ import {
   MYPAGE_CONTACT_FORM_PATH,
 } from "@/lib/legal/legalDocumentLinks";
 import { buildDisplaySettingsHref } from "@/lib/navigation/displaySettingsNav";
+import { LOG_HOUSE_LOADING_LABEL, LOG_HOUSE_NAV_LABEL } from "@/lib/journal/logHouseLabels";
 import { scrollToGuestReadingFontSizeSection } from "@/lib/reading/guestReadingFontSizePages";
 
 const mobileMenuItemClass =
@@ -85,10 +86,10 @@ export function SiteHeaderMobileNavItems({ onNavigate }: Props) {
       {showAuthenticatedNav ? (
         <OwlNavButton
           href="/orders"
-          loadingLabel="マイページを開いています…"
+          loadingLabel={LOG_HOUSE_LOADING_LABEL}
           className={mobileMenuButtonClass}
         >
-          マイページ
+          {LOG_HOUSE_NAV_LABEL}
         </OwlNavButton>
       ) : null}
 

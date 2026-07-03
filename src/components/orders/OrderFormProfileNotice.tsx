@@ -42,7 +42,7 @@ export function OrderFormProfileNotice({ profileIdFromQuery }: Props) {
         保存先: {label ? `「${label}」` : "…"} プロフィール
       </p>
       <p className="mt-1 text-xs text-emerald-900/80">
-        マイページの切り替えと同じ保存先に入ります。別の人向けの鑑定は、先にプロフィールを切り替えてから始めてください。
+        ログハウスの切り替えと同じ保存先に入ります。別の人向けの鑑定は、先にプロフィールを切り替えてから始めてください。
       </p>
     </div>
   );
