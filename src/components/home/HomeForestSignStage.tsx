@@ -78,7 +78,11 @@ export function HomeForestSignStage({
   }, [viewport, objectPosition]);
 
   return (
-    <div ref={stageRef} className={`absolute inset-0 ${className}`}>
+    <div
+      ref={stageRef}
+      className={className}
+      style={{ position: "absolute", inset: 0 }}
+    >
       <Image
         src={BG_SRC[viewport]}
         alt=""

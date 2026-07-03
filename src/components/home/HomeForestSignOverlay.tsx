@@ -47,7 +47,7 @@ const SIGN_SLOTS: HomeForestSignSignSlotId[] = [
 ];
 
 const signLinkClass = [
-  "absolute block whitespace-pre-wrap rounded-sm",
+  "block whitespace-pre-wrap rounded-sm",
   "underline-offset-[0.2em] decoration-[#9a826e]/55",
   "transition hover:underline hover:decoration-[#8a7563]",
   "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#6b5d4a]",
@@ -77,7 +77,7 @@ function ForestSignText({
 }) {
   return (
     <div
-      className={`pointer-events-none absolute whitespace-pre-wrap ${className}`}
+      className={`pointer-events-none whitespace-pre-wrap ${className}`}
       style={placementStyle(placement, viewport, coverLayout)}
     >
       {children}
@@ -140,12 +140,17 @@ export function HomeForestSignOverlay({
 
   return (
     <div
-      className={`absolute inset-0 z-[1] ${preview ? "pointer-events-none" : ""}`}
-      style={usePercentFont ? { fontSize: `${heightPx}px` } : undefined}
+      className={preview ? "pointer-events-none" : ""}
+      style={{
+        position: "absolute",
+        inset: 0,
+        zIndex: 1,
+        ...(usePercentFont ? { fontSize: `${heightPx}px` } : {}),
+      }}
       aria-label="森の案内板"
     >
       <div
-        className="pointer-events-none absolute"
+        className="pointer-events-none overflow-hidden"
         style={homeForestSignImagePlacementStyle(
           layout.owlTeacher,
           viewport,
@@ -205,7 +210,7 @@ export function HomeForestSignOverlay({
 
       {!isLoggedIn && layout.loginNote ? (
         <div
-          className="pointer-events-auto absolute z-[3] whitespace-pre-wrap text-center [text-shadow:0_1px_0_rgba(255,251,245,0.75)]"
+          className="pointer-events-auto z-[3] whitespace-pre-wrap text-center [text-shadow:0_1px_0_rgba(255,251,245,0.75)]"
           style={placementStyle(layout.loginNote, viewport, coverLayout)}
         >
           {preview ? (

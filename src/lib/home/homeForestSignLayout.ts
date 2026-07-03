@@ -94,9 +94,9 @@ export const HOME_FOREST_SIGN_LAYOUT: Record<HomeForestSignViewport, HomeForestS
   mobile: {
     title: {
       x: 242,
-      y: 150,
+      y: 175,
       textAnchor: "center",
-      fontSize: 40,
+      fontSize: 45,
       fontWeight: 700,
       color: HOME_FOREST_SIGN_TEXT_COLORS.title,
       maxWidth: 440,
@@ -105,7 +105,7 @@ export const HOME_FOREST_SIGN_LAYOUT: Record<HomeForestSignViewport, HomeForestS
     },
     subtitle: {
       x: 242,
-      y: 250,
+      y: 300,
       textAnchor: "center",
       fontSize: 18,
       fontWeight: 600,
@@ -280,6 +280,7 @@ export function homeForestSignPlacementStyle(
     const y = coverLayout.offsetY + placement.y * coverLayout.scale;
 
     return {
+      position: "absolute",
       left: `${x}px`,
       top: `${y}px`,
       maxWidth: placement.maxWidth ? `${placement.maxWidth * coverLayout.scale}px` : undefined,
@@ -294,6 +295,7 @@ export function homeForestSignPlacementStyle(
   }
 
   return {
+    position: "absolute",
     left: `${(placement.x / widthPx) * 100}%`,
     top: `${(placement.y / heightPx) * 100}%`,
     maxWidth: placement.maxWidth ? `${(placement.maxWidth / widthPx) * 100}%` : undefined,
@@ -326,6 +328,7 @@ export function homeForestSignImagePlacementStyle(
     const y = coverLayout.offsetY + placement.y * coverLayout.scale;
 
     return {
+      position: "absolute",
       left: anchor === "bottomright" ? `${x - w}px` : `${x}px`,
       top: anchor === "bottomright" ? `${y - h}px` : `${y}px`,
       width: `${w}px`,
@@ -339,6 +342,7 @@ export function homeForestSignImagePlacementStyle(
   }
 
   return {
+    position: "absolute",
     left: `${(placement.x / designW) * 100}%`,
     top: `${(placement.y / designH) * 100}%`,
     width: `${(placement.widthPx / designW) * 100}%`,
