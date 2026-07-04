@@ -48,8 +48,6 @@ export const FIRST_VISIT_WELCOME_COPY_MOBILE = {
   body: [
     "ここでは、Life Journey Diary の始め方を",
     "ナビゲーターのフクロウ先生がご案内します。",
-    "ログハウスへたどりつくところまで、",
-    "しっかりお供しますのでご安心ください。",
     "",
     "それでは、森の中にお進みください！",
   ].join("\n"),
