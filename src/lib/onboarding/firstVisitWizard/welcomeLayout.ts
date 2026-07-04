@@ -90,7 +90,24 @@ export function firstVisitWelcomeContainLayout(
   };
 }
 
-/** @deprecated object-cover 用。テキスト重ね合わせは contain を使用 */
+/** 背景の fit とテキスト座標を揃える（モバイル=cover、PC=contain） */
+export function firstVisitWelcomeStageLayout(
+  containerWidth: number,
+  containerHeight: number,
+  viewport: FirstVisitWelcomeViewport,
+  objectPosition: { xPercent: number; yPercent: number },
+): ObjectCoverLayout {
+  if (viewport === "mobile") {
+    return firstVisitWelcomeCoverLayout(
+      containerWidth,
+      containerHeight,
+      viewport,
+      objectPosition,
+    );
+  }
+  return firstVisitWelcomeContainLayout(containerWidth, containerHeight, viewport);
+}
+
 export function firstVisitWelcomeCoverLayout(
   containerWidth: number,
   containerHeight: number,

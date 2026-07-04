@@ -4,9 +4,9 @@ import Image from "next/image";
 import Link from "next/link";
 import { useLayoutEffect, useRef, useState } from "react";
 
-import { ReadingFontSizeControl } from "@/components/reading/ReadingFontSizeControl";
 import { FIRST_VISIT_ROUTES } from "@/lib/onboarding/firstVisitWizard/routes";
 import {
+  FIRST_VISIT_WELCOME_BG_OBJECT_POSITION,
   FIRST_VISIT_WELCOME_COPY,
   firstVisitWelcomeBgSrc,
   firstVisitWelcomeCopyFor,
@@ -15,10 +15,11 @@ import {
 } from "@/lib/onboarding/firstVisitWizard/welcomeAssets";
 import {
   firstVisitWelcomeBlankLineGapPx,
-  firstVisitWelcomeContainLayout,
   firstVisitWelcomeMessageTextPlacement,
   firstVisitWelcomeMessageTextStyle,
   firstVisitWelcomeMessageTypography,
+  firstVisitWelcomeStageLayout,
+  objectPositionCss,
 } from "@/lib/onboarding/firstVisitWizard/welcomeLayout";
 import type { ObjectCoverLayout } from "@/lib/home/homeForestSignLayout";
 
@@ -40,7 +41,12 @@ function initialStageLayout(viewport: FirstVisitWelcomeViewport): ObjectCoverLay
   if (typeof window === "undefined") return null;
   const w = window.visualViewport?.width ?? window.innerWidth;
   const h = window.visualViewport?.height ?? window.innerHeight;
-  return firstVisitWelcomeContainLayout(w, h, viewport);
+  return firstVisitWelcomeStageLayout(
+    w,
+    h,
+    viewport,
+    FIRST_VISIT_WELCOME_BG_OBJECT_POSITION[viewport],
+  );
 }
 
 type MessageTextProps = {
@@ -148,10 +154,14 @@ export function FirstVisitWelcomePage() {
     const stage = stageRef.current;
     if (!stage) return;
 
+    const objectPosition = FIRST_VISIT_WELCOME_BG_OBJECT_POSITION[viewport];
+
     const update = () => {
       const rect = stage.getBoundingClientRect();
       if (rect.width <= 0 || rect.height <= 0) return;
-      setStageLayout(firstVisitWelcomeContainLayout(rect.width, rect.height, viewport));
+      setStageLayout(
+        firstVisitWelcomeStageLayout(rect.width, rect.height, viewport, objectPosition),
+      );
     };
 
     update();
@@ -161,25 +171,30 @@ export function FirstVisitWelcomePage() {
   }, [viewport]);
 
   const bgSrc = viewport ? firstVisitWelcomeBgSrc(viewport) : null;
+  const objectPosition = viewport ? FIRST_VISIT_WELCOME_BG_OBJECT_POSITION[viewport] : null;
+  const isMobile = viewport === "mobile";
 
   return (
     <section
-      className="home-read-scope relative flex min-h-[100dvh] flex-col overflow-hidden bg-[#ebe4d4]"
+      className="home-read-scope relative min-h-[100dvh] overflow-hidden bg-[#ebe4d4]"
       aria-labelledby="first-visit-welcome-heading"
     >
       <h1 id="first-visit-welcome-heading" className="sr-only">
         はじめての方へ — {firstVisitWelcomeCopyFor(viewport ?? "mobile").heading}
       </h1>
 
-      <div ref={stageRef} className="relative min-h-0 flex-1">
-        {viewport && bgSrc ? (
+      <div ref={stageRef} className="absolute inset-0">
+        {viewport && bgSrc && objectPosition ? (
           <>
             <Image
               src={bgSrc}
               alt=""
               fill
-              sizes={viewport === "mobile" ? "100vw" : "100vw"}
-              className="object-contain object-center"
+              sizes="100vw"
+              className={
+                isMobile ? "object-cover object-center" : "object-contain object-center"
+              }
+              style={isMobile ? { objectPosition: objectPositionCss(objectPosition) } : undefined}
               quality={100}
               priority
               unoptimized
@@ -189,16 +204,14 @@ export function FirstVisitWelcomePage() {
         ) : null}
       </div>
 
-      <div className="relative z-30 shrink-0 border-t border-stone-300/40 bg-[#fffdf9]/90 px-4 py-4 backdrop-blur-[1px] sm:px-6">
-        <div className="mx-auto flex w-full max-w-sm flex-col gap-3">
-          <Link
-            href={FIRST_VISIT_ROUTES.about}
-            className="inline-flex min-h-[48px] w-full items-center justify-center rounded-xl bg-emerald-800 px-5 py-3 text-base font-medium text-white shadow-sm transition hover:bg-emerald-900"
-          >
-            {FIRST_VISIT_WELCOME_COPY.nextLabel}
-          </Link>
-          <ReadingFontSizeControl variant="hero" comfortable />
-        </div>
+      {/* 看板テキストは固定サイズのため文字サイズ帯は非表示。地図上に半透明で次へ */}
+      <div className="pointer-events-none absolute inset-x-0 bottom-0 z-30 flex justify-center px-4 pb-[max(0.875rem,env(safe-area-inset-bottom))] pt-10">
+        <Link
+          href={FIRST_VISIT_ROUTES.about}
+          className="pointer-events-auto inline-flex min-h-[48px] w-full max-w-sm items-center justify-center rounded-xl border border-emerald-900/15 bg-emerald-800/82 px-5 py-3 text-base font-medium text-white shadow-[0_8px_28px_-8px_rgba(24,83,53,0.45)] backdrop-blur-[2px] transition hover:bg-emerald-900/88 active:bg-emerald-900/92"
+        >
+          {FIRST_VISIT_WELCOME_COPY.nextLabel}
+        </Link>
       </div>
     </section>
   );

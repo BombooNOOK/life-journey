@@ -33,6 +33,15 @@ export const FIRST_VISIT_WELCOME_COPY = {
   nextLabel: "次へ",
 } as const;
 
+/** モバイル object-cover 時のフォーカス（下部看板が見えるようやや下寄せ） */
+export const FIRST_VISIT_WELCOME_BG_OBJECT_POSITION: Record<
+  FirstVisitWelcomeViewport,
+  { xPercent: number; yPercent: number }
+> = {
+  mobile: { xPercent: 50, yPercent: 54 },
+  desktop: { xPercent: 50, yPercent: 50 },
+};
+
 /** モバイル：指定の改行位置（空白行は表示側で高さ調整） */
 export const FIRST_VISIT_WELCOME_COPY_MOBILE = {
   heading: FIRST_VISIT_WELCOME_COPY.heading,
