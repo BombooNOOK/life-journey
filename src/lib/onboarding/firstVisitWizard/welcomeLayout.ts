@@ -37,17 +37,17 @@ export const FIRST_VISIT_WELCOME_MESSAGE_TEXT: Record<
   FirstVisitWelcomeTextPlacement
 > = {
   mobile: {
-    x: 272,
+    x: 280,
     y: 878,
-    widthPx: 384,
+    widthPx: 416,
     heightPx: 172,
     paddingTopPx: 4,
     headingBodyGapPx: 2,
     paragraphGapPx: 1,
     blankLineHeightRatio: 0.5,
-    headingFontSize: 19,
-    bodyFontSize: 15,
-    lineHeight: 1.32,
+    headingFontSize: 21,
+    bodyFontSize: 17,
+    lineHeight: 1.3,
   },
   desktop: {
     x: 520,
