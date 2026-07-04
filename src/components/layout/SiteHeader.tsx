@@ -17,6 +17,7 @@ import {
   MYPAGE_CONTACT_FORM_PATH,
 } from "@/lib/legal/legalDocumentLinks";
 import { LOG_HOUSE_LOADING_LABEL, LOG_HOUSE_NAV_LABEL } from "@/lib/journal/logHouseLabels";
+import { FOREST_GUIDE_STATION_TITLE } from "@/lib/help/forestGuideStation";
 
 const navLinkClass = "shrink-0 whitespace-nowrap hover:text-stone-900";
 const navNavButtonClass = `${navLinkClass} cursor-pointer border-0 bg-transparent p-0 text-inherit font-inherit`;
@@ -174,7 +175,7 @@ function SiteHeaderInner() {
               </>
             ) : null}
             <Link href="/help/ljd" className={navLinkClass}>
-              LJDの歩き方
+              {FOREST_GUIDE_STATION_TITLE}
             </Link>
             {showAuthenticatedNav ? (
               <>

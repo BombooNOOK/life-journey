@@ -18,6 +18,13 @@ export const decorationAssets = {
     width: 72,
     height: 72,
   },
+  /** 森の案内所（/help/ljd）タイトル横 */
+  "forest-guide-station-md": {
+    src: "/decorations/forest-guide-station-md.webp",
+    placeholderSrc: "/decorations/forest-guide-station-md.png",
+    width: 96,
+    height: 96,
+  },
   "owl-sm": {
     src: "/decorations/owl-sensei-sm.webp",
     placeholderSrc: "/decorations/owl-sensei-sm.png",

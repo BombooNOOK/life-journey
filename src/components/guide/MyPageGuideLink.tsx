@@ -1,11 +1,12 @@
 import Link from "next/link";
 
+import { FOREST_GUIDE_STATION_TITLE } from "@/lib/help/forestGuideStation";
 import { FIRST_VISIT_ROUTES } from "@/lib/onboarding/firstVisitWizard/routes";
 
 const guideButtonClass =
   "inline-flex min-h-[44px] w-full items-center justify-center rounded-lg border border-emerald-200/80 bg-white/90 px-4 py-2.5 text-sm font-medium text-emerald-950 shadow-sm transition hover:border-emerald-300 hover:bg-emerald-50/90 active:bg-emerald-50/90 sm:w-auto";
 
-/** ログハウス上部の LJDの歩き方・初回ガイド導線 */
+/** ログハウス上部の 森の案内所・初回ガイド導線 */
 export function MyPageGuideLink() {
   return (
     <div className="rounded-2xl border border-emerald-100 bg-gradient-to-br from-emerald-50/70 via-white to-amber-50/40 p-4 shadow-sm sm:p-5">
@@ -24,12 +25,12 @@ export function MyPageGuideLink() {
           </Link>
         </div>
         <div className="rounded-xl border border-emerald-100/80 bg-white/60 p-3">
-          <p className="text-sm font-semibold text-stone-900">LJDの歩き方</p>
+          <p className="text-sm font-semibold text-stone-900">{FOREST_GUIDE_STATION_TITLE}</p>
           <p className="mt-1 text-xs leading-relaxed text-stone-600">
             目次から、必要な項目だけ読める
           </p>
           <Link href="/help/ljd" className={`${guideButtonClass} mt-3`}>
-            LJDの歩き方 →
+            {FOREST_GUIDE_STATION_TITLE} →
           </Link>
         </div>
       </div>

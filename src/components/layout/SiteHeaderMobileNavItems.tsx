@@ -14,6 +14,7 @@ import {
 } from "@/lib/legal/legalDocumentLinks";
 import { buildDisplaySettingsHref } from "@/lib/navigation/displaySettingsNav";
 import { LOG_HOUSE_LOADING_LABEL, LOG_HOUSE_NAV_LABEL } from "@/lib/journal/logHouseLabels";
+import { FOREST_GUIDE_STATION_TITLE } from "@/lib/help/forestGuideStation";
 import { scrollToGuestReadingFontSizeSection } from "@/lib/reading/guestReadingFontSizePages";
 
 const mobileMenuItemClass =
@@ -116,7 +117,7 @@ export function SiteHeaderMobileNavItems({ onNavigate }: Props) {
       )}
 
       <MobileMenuNavButton href="/help/ljd" router={router}>
-        LJDの歩き方
+        {FOREST_GUIDE_STATION_TITLE}
       </MobileMenuNavButton>
 
       {showAuthenticatedNav ? (

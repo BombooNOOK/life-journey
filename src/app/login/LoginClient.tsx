@@ -8,6 +8,7 @@ import {
   GoogleAuthProvider,
   type UserCredential,
   createUserWithEmailAndPassword,
+  getAdditionalUserInfo,
   signInWithEmailAndPassword,
   signInWithPopup,
   signInWithRedirect,
@@ -38,7 +39,9 @@ import {
   LOG_HOUSE_SHORT_LABEL,
 } from "@/lib/journal/logHouseLabels";
 
-import { buildLoginHref, resolveLoginFlow, resolveSafeReturnTo } from "./loginFlow";
+import { buildLoginHref, isFirstVisitLoghouseReturnTo, resolveLoginFlow, resolveSafeReturnTo } from "./loginFlow";
+import type { LoginFlowIntent } from "./loginFlow";
+import { setFirstVisitFromRegisterFlag } from "@/lib/onboarding/firstVisitWizard/session";
 
 const LOGIN_BROWSER_HELP = (
   <p className="mt-1.5">
@@ -173,7 +176,13 @@ function pickErrorMessage(e: unknown, fallback: string): string {
   return raw.trim() || fallback;
 }
 
-export function LoginClient({ returnToRaw }: { returnToRaw: string | null }) {
+export function LoginClient({
+  returnToRaw,
+  flowIntent = null,
+}: {
+  returnToRaw: string | null;
+  flowIntent?: LoginFlowIntent | null;
+}) {
   const router = useRouter();
   const { user, loading: authLoading } = useFirebaseAuth();
   const [error, setError] = useState<string | null>(null);
@@ -199,8 +208,9 @@ export function LoginClient({ returnToRaw }: { returnToRaw: string | null }) {
   const resetSectionRef = useRef<HTMLDivElement>(null);
 
   const returnTo = resolveSafeReturnTo(returnToRaw);
-  const loginFlow = resolveLoginFlow(returnTo);
+  const loginFlow = resolveLoginFlow(returnTo, flowIntent);
   const isRegisterFlow = loginFlow === "register";
+  const postRegisterDestination = isFirstVisitLoghouseReturnTo(returnTo) ? returnTo : "/orders";
   const cookieLoggedIn = isLjLoggedInOnClient();
   const isAlreadySignedIn = (Boolean(user) || cookieLoggedIn) && !oauthReturnHandoffUi;
 
@@ -318,6 +328,10 @@ export function LoginClient({ returnToRaw }: { returnToRaw: string | null }) {
           body: JSON.stringify({ email: cred.user.email ?? "" }),
           credentials: "same-origin",
         }).catch(() => {});
+        const isNewGoogleUser = getAdditionalUserInfo(cred)?.isNewUser === true;
+        if (isNewGoogleUser && isFirstVisitLoghouseReturnTo(returnTo)) {
+          setFirstVisitFromRegisterFlag();
+        }
         if (hardNavAfterSession) {
           await new Promise((r) => setTimeout(r, 400));
           window.location.assign(new URL(returnTo, window.location.origin).toString());
@@ -526,10 +540,13 @@ export function LoginClient({ returnToRaw }: { returnToRaw: string | null }) {
       <RegistrationCompletePanel
         welcomeEmailSent={registrationComplete.welcomeEmailSent}
         onGoMyPage={() => {
+          if (isFirstVisitLoghouseReturnTo(returnTo)) {
+            setFirstVisitFromRegisterFlag();
+          }
           if (browserWantsFullPagePostLoginNavigation()) {
-            window.location.assign("/orders");
+            window.location.assign(postRegisterDestination);
           } else {
-            router.push("/orders");
+            router.push(postRegisterDestination);
             router.refresh();
           }
         }}

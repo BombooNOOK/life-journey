@@ -82,7 +82,7 @@ export const HOME_FOREST_SIGN_NAV_LABELS = {
   first: "はじめての方",
   loghouse: "ログハウスへ",
   companion: "どうぶつ鑑定士と\nいっしょに書く",
-  "ljd-help": "LJDの歩き方",
+  "ljd-help": "森の案内所",
 } as const;
 
 /** 看板リンク押下時のフクロウ表示文言 */
@@ -93,7 +93,7 @@ export const HOME_FOREST_SIGN_NAV_LOADING_LABELS: Record<
   first: "ガイドを開いています…",
   loghouse: "ログハウスを開いています…",
   companion: "日記を書くページを開いています…",
-  "ljd-help": "LJDの歩き方を開いています…",
+  "ljd-help": "森の案内所を開いています…",
   loginNote: "ログハウスを開いています…",
 };
 

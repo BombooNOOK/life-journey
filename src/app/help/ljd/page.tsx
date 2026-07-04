@@ -1,14 +1,21 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 
+import { LjdFirstVisitFlowSteps } from "@/components/help/LjdFirstVisitFlowSteps";
 import { LjdWalkthroughToc } from "@/components/help/LjdWalkthroughToc";
 import { PageTitleWithAccent } from "@/components/ui/PageTitleWithAccent";
-import { LOG_HOUSE_BACK_LINK, LOG_HOUSE_TAGLINE } from "@/lib/journal/logHouseLabels";
+import {
+  FOREST_GUIDE_STATION_DESCRIPTION,
+  FOREST_GUIDE_STATION_SUBTITLE,
+  FOREST_GUIDE_STATION_TITLE,
+} from "@/lib/help/forestGuideStation";
+import { LOG_HOUSE_BACK_LINK } from "@/lib/journal/logHouseLabels";
+import { FIRST_VISIT_ROUTES } from "@/lib/onboarding/firstVisitWizard/routes";
 
 export const dynamic = "force-static";
 
 export const metadata: Metadata = {
-  title: "LJDの歩き方",
+  title: FOREST_GUIDE_STATION_TITLE,
 };
 
 export default function HelpLjdWalkthroughPage() {
@@ -16,15 +23,19 @@ export default function HelpLjdWalkthroughPage() {
     <div className="home-read-scope space-y-6">
       <PageTitleWithAccent
         tone="diary"
-        decoration="owl-md"
-        title="LJDの歩き方"
+        decoration="forest-guide-station-md"
+        title={FOREST_GUIDE_STATION_TITLE}
         backLink={LOG_HOUSE_BACK_LINK}
         description={
           <>
-            <p>{LOG_HOUSE_TAGLINE}</p>
-            <p className="mt-2">
-              必要な項目だけ開いて読める目次です。はじめての方は
-              <Link href="/guide/first/welcome" className="mx-1 font-medium text-emerald-900 underline-offset-2 hover:underline">
+            <p className="text-base font-medium text-stone-800">{FOREST_GUIDE_STATION_SUBTITLE}</p>
+            <p className="mt-2">{FOREST_GUIDE_STATION_DESCRIPTION}</p>
+            <p className="mt-2 text-sm text-stone-600">
+              初めての方は
+              <Link
+                href={FIRST_VISIT_ROUTES.welcome}
+                className="mx-1 font-medium text-emerald-900 underline-offset-2 hover:underline"
+              >
                 はじめての方へ
               </Link>
               から案内をご覧ください。
@@ -32,6 +43,8 @@ export default function HelpLjdWalkthroughPage() {
           </>
         }
       />
+
+      <LjdFirstVisitFlowSteps />
 
       <LjdWalkthroughToc />
 

@@ -2,8 +2,9 @@ import Link from "next/link";
 
 import { CompanionWritingButtonLabel } from "@/components/journal/companion-writing/CompanionWritingButtonLabel";
 import { LOG_HOUSE_TAGLINE } from "@/lib/journal/logHouseLabels";
-import { FIRST_VISIT_ROUTES } from "@/lib/onboarding/firstVisitWizard/routes";
+import { FOREST_GUIDE_STATION_TITLE } from "@/lib/help/forestGuideStation";
 import type { FirstVisitGuideState } from "@/lib/onboarding/firstVisitGuideState";
+import { FIRST_VISIT_ROUTES } from "@/lib/onboarding/firstVisitWizard/routes";
 
 const panelClass =
   "rounded-2xl border border-emerald-100 bg-gradient-to-br from-emerald-50/70 via-white to-amber-50/40 p-4 shadow-sm sm:p-5";
@@ -87,7 +88,7 @@ export function ReturningUserGuideHint() {
         href="/help/ljd"
         className="font-medium text-emerald-900 underline-offset-2 hover:underline"
       >
-        LJDの歩き方
+        {FOREST_GUIDE_STATION_TITLE}
       </Link>
       <span className="text-stone-500"> — 困ったときや、機能の全体像はこちら</span>
     </p>

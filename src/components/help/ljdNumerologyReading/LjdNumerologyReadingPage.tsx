@@ -3,6 +3,7 @@ import Link from "next/link";
 
 import { NumberGuideAccordionSection } from "@/components/help/ljdNumerologyReading/NumberGuideAccordionSection";
 import { NumerologyNumbersDictionaryView } from "@/components/journal/NumerologyNumbersDictionaryView";
+import { getDecorationAsset } from "@/lib/decorations/catalog";
 import {
   LJD_NUMEROLOGY_READING_BACK_HREF,
   LJD_NUMEROLOGY_READING_BACK_LABEL,
@@ -26,6 +27,8 @@ const SECTION_HEADING_CLASS =
 
 const SUBSECTION_HEADING_CLASS = "text-base font-semibold text-stone-800 sm:text-[1.05rem]";
 
+const forestGuideStationArt = getDecorationAsset("forest-guide-station-md");
+
 export function LjdNumerologyReadingPage() {
   return (
     <div className="home-read-scope space-y-14 pb-12 sm:space-y-16">
@@ -40,13 +43,15 @@ export function LjdNumerologyReadingPage() {
         <div className="flex items-start gap-3 sm:gap-4">
           <div className="lj-reading-exempt shrink-0">
             <Image
-              src="/decorations/owl-sensei-my-page-header.png"
+              src={
+                forestGuideStationArt.placeholderSrc ?? forestGuideStationArt.src
+              }
               alt=""
               aria-hidden
-              width={610}
-              height={751}
-              sizes="64px"
-              className="h-14 w-auto select-none object-contain sm:h-16"
+              width={forestGuideStationArt.width}
+              height={forestGuideStationArt.height}
+              sizes="72px"
+              className="h-14 w-14 select-none object-contain sm:h-[4.5rem] sm:w-[4.5rem]"
             />
           </div>
           <div className="min-w-0 pt-1">

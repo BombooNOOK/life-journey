@@ -6,6 +6,7 @@
 
 | ファイル | 用途 |
 |----------|------|
+| `forest-guide-station-md.webp` | `/help/ljd`（森の案内所）タイトル横 |
 | `owl-sensei-md.webp` | `/diary-guide` タイトル横 |
 | `owl-sensei-sm.webp` | マイページ「使い方を見る」カード |
 | `leaf-sm.webp` | `/diary-guide` 章区切り |

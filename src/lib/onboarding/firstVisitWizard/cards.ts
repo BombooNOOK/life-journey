@@ -34,6 +34,20 @@ export const FIRST_VISIT_KANTEI_READY_CARDS: FirstVisitGuideCard[] = [
   },
 ];
 
+/** 第5幕：ログハウス建築 */
+export const FIRST_VISIT_LOGHOUSE_BUILD_CARDS: FirstVisitGuideCard[] = [
+  {
+    id: "loghouse-build",
+    body: "あなただけのログハウスを建てています。\n日記や鑑定書をしまっておく、あなたの拠点です。",
+    buttons: [{ label: "次へ", action: "next", variant: "primary" }],
+  },
+  {
+    id: "loghouse-built",
+    body: "ログハウスができました。",
+    buttons: [{ label: "次へ", action: "next", variant: "primary" }],
+  },
+];
+
 /** 第6幕：ログハウス建築後 */
 export const FIRST_VISIT_KANTEI_PROCEED_CARD: FirstVisitGuideCard = {
   id: "kantei-proceed",

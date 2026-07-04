@@ -4,6 +4,11 @@ import Link from "next/link";
 import { useCallback, useState, type ReactNode } from "react";
 
 import { CompanionWritingButtonLabel } from "@/components/journal/companion-writing/CompanionWritingButtonLabel";
+import {
+  FOREST_GUIDE_STATION_NUMEROLOGY_READING_HREF,
+  FOREST_GUIDE_STATION_NUMEROLOGY_READING_LINK_LABEL,
+  FOREST_GUIDE_STATION_TITLE,
+} from "@/lib/help/forestGuideStation";
 import { LOG_HOUSE_OPEN_LABEL, LOG_HOUSE_SHORT_LABEL } from "@/lib/journal/logHouseLabels";
 
 type TocItem = {
@@ -61,7 +66,14 @@ const TOC_ITEMS: TocItem[] = [
           無料鑑定でコアナンバーの鑑定書を受け取ります。日記を保存したあとに届く「読み解きコメント」は、この鑑定を土台にしています。
         </p>
         <p className="mt-2 text-sm text-stone-600">
-          数秘術のくわしい説明はここでは省略します。まずは鑑定を受けて、本棚で結果を読み返してみてください。
+          数秘術のくわしい説明は
+          <Link
+            href={FOREST_GUIDE_STATION_NUMEROLOGY_READING_HREF}
+            className="mx-1 font-medium text-emerald-900 underline-offset-2 hover:underline"
+          >
+            {FOREST_GUIDE_STATION_NUMEROLOGY_READING_LINK_LABEL}
+          </Link>
+          をご覧ください。まずは鑑定を受けて、本棚で結果を読み返してみてください。
         </p>
         <GuideAppLink href="/order" label="無料鑑定をはじめる" />
       </>
@@ -209,7 +221,7 @@ export function LjdWalkthroughToc() {
   }, []);
 
   return (
-    <nav className="space-y-2" aria-label="LJDの歩き方 目次">
+    <nav className="space-y-2" aria-label={`${FOREST_GUIDE_STATION_TITLE} 目次`}>
       <ol className="space-y-2">
         {TOC_ITEMS.map((item, index) => {
           const isOpen = openId === item.id;

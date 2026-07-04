@@ -1,11 +1,26 @@
 export { resolveSafeReturnTo } from "@/lib/navigation/safeReturnTo";
 
+export type LoginFlowIntent = "login" | "register";
+
 /** はじめての方（無料鑑定）か、既存会員のログインか */
-export function resolveLoginFlow(returnTo: string): "register" | "login" {
+export function resolveLoginFlow(
+  returnTo: string,
+  flowIntent?: LoginFlowIntent | null,
+): LoginFlowIntent {
+  if (flowIntent === "register") return "register";
+  if (flowIntent === "login") return "login";
   if (returnTo === "/order" || returnTo.startsWith("/order/")) return "register";
+  if (returnTo.startsWith("/guide/first/loghouse")) return "register";
   return "login";
 }
 
-export function buildLoginHref(returnTo: string): string {
-  return `/login?returnTo=${encodeURIComponent(returnTo)}`;
+export function buildLoginHref(returnTo: string, flowIntent?: LoginFlowIntent): string {
+  const params = new URLSearchParams();
+  params.set("returnTo", returnTo);
+  if (flowIntent) params.set("flow", flowIntent);
+  return `/login?${params.toString()}`;
+}
+
+export function isFirstVisitLoghouseReturnTo(returnTo: string): boolean {
+  return returnTo === "/guide/first/loghouse" || returnTo.startsWith("/guide/first/loghouse?");
 }

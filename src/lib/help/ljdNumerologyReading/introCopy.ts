@@ -3,7 +3,7 @@ export const LJD_NUMEROLOGY_READING_PAGE_TITLE = "LJDで使っているすうじ
 export const LJD_NUMEROLOGY_READING_LEAD =
   "数字のテーマと、鑑定書で使うナンバーについて、くわしく説明しています。" as const;
 
-export const LJD_NUMEROLOGY_READING_BACK_LABEL = "LJDの歩き方へ戻る" as const;
+export const LJD_NUMEROLOGY_READING_BACK_LABEL = "森の案内所へ戻る" as const;
 
 export const LJD_NUMEROLOGY_READING_BACK_HREF = "/help/ljd" as const;
 

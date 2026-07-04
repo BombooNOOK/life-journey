@@ -4,14 +4,18 @@ import Image from "next/image";
 import Link from "next/link";
 import { useCallback, useRef, useState } from "react";
 
+import { buildLoginHref } from "@/app/login/loginFlow";
 import {
   FIRST_VISIT_ABOUT_VIDEO_NEXT_LABEL,
   FIRST_VISIT_ABOUT_VIDEO_POSTER_SRC,
   FIRST_VISIT_ABOUT_VIDEO_REPLAY_LABEL,
+  FIRST_VISIT_ABOUT_VIDEO_SKIP_LABEL,
+  FIRST_VISIT_ABOUT_VIDEO_SKIP_NOTE,
   FIRST_VISIT_ABOUT_VIDEO_SRC,
   FIRST_VISIT_ABOUT_VIDEO_START_LABEL,
 } from "@/lib/onboarding/firstVisitWizard/aboutVideo";
 import { FIRST_VISIT_ROUTES } from "@/lib/onboarding/firstVisitWizard/routes";
+import { setFirstVisitFromRegisterFlag } from "@/lib/onboarding/firstVisitWizard/session";
 
 type PlaybackPhase = "ready" | "playing" | "ended";
 
@@ -34,6 +38,8 @@ export function FirstVisitAboutPage() {
     video.currentTime = 0;
     void video.play();
   }, []);
+
+  const skipHref = buildLoginHref(FIRST_VISIT_ROUTES.loghouse, "register");
 
   return (
     <section
@@ -92,8 +98,21 @@ export function FirstVisitAboutPage() {
         </div>
       ) : null}
 
+      {phase === "ready" || phase === "ended" ? (
+        <div className="absolute inset-x-0 bottom-0 z-30 flex flex-col items-center gap-1 px-4 pb-[max(0.875rem,env(safe-area-inset-bottom))] pt-6 text-center">
+          <Link
+            href={skipHref}
+            onClick={() => setFirstVisitFromRegisterFlag()}
+            className="text-sm font-medium text-white/90 underline-offset-2 hover:text-white hover:underline"
+          >
+            {FIRST_VISIT_ABOUT_VIDEO_SKIP_LABEL}
+          </Link>
+          <p className="max-w-sm text-xs leading-relaxed text-white/70">{FIRST_VISIT_ABOUT_VIDEO_SKIP_NOTE}</p>
+        </div>
+      ) : null}
+
       {phase === "ended" ? (
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 z-30 flex flex-col items-center gap-3 px-4 pb-[max(0.875rem,env(safe-area-inset-bottom))] pt-10">
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 z-30 flex flex-col items-center gap-3 px-4 pb-[max(4.75rem,env(safe-area-inset-bottom))] pt-10">
           <button
             type="button"
             onClick={handleReplay}
