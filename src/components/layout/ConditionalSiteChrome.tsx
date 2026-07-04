@@ -9,11 +9,13 @@ type Props = {
   children: React.ReactNode;
 };
 
-/** トップ玄関・第1幕 welcome のみヘッダー・フッターなしの全画面表示 */
+/** トップ玄関・第1・2幕はヘッダー・フッターなしの全画面表示 */
 export function ConditionalSiteChrome({ children }: Props) {
   const pathname = usePathname();
   const isFullBleedEntrance =
-    pathname === "/" || pathname === "/guide/first/welcome";
+    pathname === "/" ||
+    pathname === "/guide/first/welcome" ||
+    pathname === "/guide/first/about";
 
   if (isFullBleedEntrance) {
     return <div className="flex min-h-[100dvh] flex-col">{children}</div>;
