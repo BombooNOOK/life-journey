@@ -2,6 +2,7 @@ import Link from "next/link";
 
 import { CompanionWritingButtonLabel } from "@/components/journal/companion-writing/CompanionWritingButtonLabel";
 import { LOG_HOUSE_TAGLINE } from "@/lib/journal/logHouseLabels";
+import { FIRST_VISIT_ROUTES } from "@/lib/onboarding/firstVisitWizard/routes";
 import type { FirstVisitGuideState } from "@/lib/onboarding/firstVisitGuideState";
 
 const panelClass =
@@ -38,10 +39,10 @@ export function FirstVisitGuidePanel({ state, profileId, companionWritingHref }:
             無料鑑定をはじめる
           </Link>
           <Link
-            href="/guide/first"
+            href={FIRST_VISIT_ROUTES.welcome}
             className="inline-flex min-h-[44px] items-center justify-center rounded-lg border border-emerald-200 bg-white px-4 py-2 text-sm font-medium text-emerald-950 hover:bg-emerald-50/80"
           >
-            初めての3分ガイド
+            はじめての方へ
           </Link>
         </div>
       </section>

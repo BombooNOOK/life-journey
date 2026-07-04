@@ -151,7 +151,7 @@ function SiteHeaderInner() {
           >
             {showGuestNav ? (
               <>
-                <Link href="/about" className={navLinkClass}>
+                <Link href="/guide/first/welcome" className={navLinkClass}>
                   はじめての方へ
                 </Link>
                 <span className={navSepClass} aria-hidden>

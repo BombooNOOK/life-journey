@@ -148,8 +148,8 @@ const TOC_ITEMS: TocItem[] = [
       <>
         <ul className="list-inside list-disc space-y-1 text-stone-700">
           <li>
-            <Link href="/guide/first" className="text-emerald-900 underline-offset-2 hover:underline">
-              初めての3分ガイド
+            <Link href="/guide/first/welcome" className="text-emerald-900 underline-offset-2 hover:underline">
+              はじめての方へ
             </Link>
           </li>
           <li>

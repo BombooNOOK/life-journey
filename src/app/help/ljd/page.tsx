@@ -24,10 +24,10 @@ export default function HelpLjdWalkthroughPage() {
             <p>{LOG_HOUSE_TAGLINE}</p>
             <p className="mt-2">
               必要な項目だけ開いて読める目次です。はじめての方は
-              <Link href="/guide/first" className="mx-1 font-medium text-emerald-900 underline-offset-2 hover:underline">
-                初めての3分ガイド
+              <Link href="/guide/first/welcome" className="mx-1 font-medium text-emerald-900 underline-offset-2 hover:underline">
+                はじめての方へ
               </Link>
-              からでも大丈夫です。
+              から案内をご覧ください。
             </p>
           </>
         }

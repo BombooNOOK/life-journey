@@ -93,6 +93,18 @@ export function SiteHeaderMobileNavItems({ onNavigate }: Props) {
         </OwlNavButton>
       ) : null}
 
+      {showGuestNav ? (
+        pathname === "/guide/first/welcome" || pathname.startsWith("/guide/first/") ? (
+          <span className={`${mobileMenuItemClass} text-stone-400`} aria-current="page">
+            はじめての方へ
+          </span>
+        ) : (
+          <MobileMenuNavButton href="/guide/first/welcome" router={router}>
+            はじめての方へ
+          </MobileMenuNavButton>
+        )
+      ) : null}
+
       {pathname === "/about" ? (
         <span className={`${mobileMenuItemClass} text-stone-400`} aria-current="page">
           Life Journey Diaryとは

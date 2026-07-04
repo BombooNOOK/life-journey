@@ -1,5 +1,7 @@
 import Link from "next/link";
 
+import { FIRST_VISIT_ROUTES } from "@/lib/onboarding/firstVisitWizard/routes";
+
 const guideButtonClass =
   "inline-flex min-h-[44px] w-full items-center justify-center rounded-lg border border-emerald-200/80 bg-white/90 px-4 py-2.5 text-sm font-medium text-emerald-950 shadow-sm transition hover:border-emerald-300 hover:bg-emerald-50/90 active:bg-emerald-50/90 sm:w-auto";
 
@@ -13,12 +15,12 @@ export function MyPageGuideLink() {
       </p>
       <div className="relative z-10 mt-4 grid gap-4 sm:grid-cols-2">
         <div className="rounded-xl border border-emerald-100/80 bg-white/60 p-3">
-          <p className="text-sm font-semibold text-stone-900">初めての3分ガイド</p>
+          <p className="text-sm font-semibold text-stone-900">はじめての方へ</p>
           <p className="mt-1 text-xs leading-relaxed text-stone-600">
-            これだけ知っておけば始められる、短い案内
+            BambooNOOKの森から、やさしく案内します
           </p>
-          <Link href="/guide/first" className={`${guideButtonClass} mt-3`}>
-            初めての3分ガイド →
+          <Link href={FIRST_VISIT_ROUTES.welcome} className={`${guideButtonClass} mt-3`}>
+            はじめての方へ →
           </Link>
         </div>
         <div className="rounded-xl border border-emerald-100/80 bg-white/60 p-3">
