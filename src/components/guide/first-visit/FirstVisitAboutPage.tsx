@@ -7,6 +7,7 @@ import { useCallback, useRef, useState } from "react";
 import {
   FIRST_VISIT_ABOUT_VIDEO_NEXT_LABEL,
   FIRST_VISIT_ABOUT_VIDEO_POSTER_SRC,
+  FIRST_VISIT_ABOUT_VIDEO_REPLAY_LABEL,
   FIRST_VISIT_ABOUT_VIDEO_SRC,
   FIRST_VISIT_ABOUT_VIDEO_START_LABEL,
 } from "@/lib/onboarding/firstVisitWizard/aboutVideo";
@@ -23,6 +24,14 @@ export function FirstVisitAboutPage() {
     const video = videoRef.current;
     if (!video) return;
     setPhase("playing");
+    void video.play();
+  }, []);
+
+  const handleReplay = useCallback(() => {
+    const video = videoRef.current;
+    if (!video) return;
+    setPhase("playing");
+    video.currentTime = 0;
     void video.play();
   }, []);
 
@@ -84,7 +93,14 @@ export function FirstVisitAboutPage() {
       ) : null}
 
       {phase === "ended" ? (
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 z-30 flex justify-center px-4 pb-[max(0.875rem,env(safe-area-inset-bottom))] pt-10">
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 z-30 flex flex-col items-center gap-3 px-4 pb-[max(0.875rem,env(safe-area-inset-bottom))] pt-10">
+          <button
+            type="button"
+            onClick={handleReplay}
+            className="pointer-events-auto inline-flex min-h-[48px] w-full max-w-sm items-center justify-center rounded-xl border border-white/25 bg-black/45 px-5 py-3 text-base font-medium text-white shadow-[0_8px_28px_-8px_rgba(0,0,0,0.35)] backdrop-blur-[2px] transition hover:bg-black/55 active:bg-black/65"
+          >
+            {FIRST_VISIT_ABOUT_VIDEO_REPLAY_LABEL}
+          </button>
           <Link
             href={FIRST_VISIT_ROUTES.owl}
             className="pointer-events-auto inline-flex min-h-[48px] w-full max-w-sm items-center justify-center rounded-xl border border-emerald-900/15 bg-emerald-800/82 px-5 py-3 text-base font-medium text-white shadow-[0_8px_28px_-8px_rgba(24,83,53,0.45)] backdrop-blur-[2px] transition hover:bg-emerald-900/88 active:bg-emerald-900/92"

@@ -10,4 +10,6 @@ export const FIRST_VISIT_ABOUT_VIDEO_POSTER_SRC =
 
 export const FIRST_VISIT_ABOUT_VIDEO_START_LABEL = "動画を見る";
 
+export const FIRST_VISIT_ABOUT_VIDEO_REPLAY_LABEL = "もう一度見る";
+
 export const FIRST_VISIT_ABOUT_VIDEO_NEXT_LABEL = "次へ";
