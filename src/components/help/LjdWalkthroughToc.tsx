@@ -141,6 +141,19 @@ const TOC_ITEMS: TocItem[] = [
     ),
   },
   {
+    id: "numerology-reading",
+    title: "LJDで使っているすうじの読み方",
+    summary: "数字のテーマとナンバーの意味",
+    body: (
+      <>
+        <p>
+          日記を見返すための数字テーマや、鑑定書で使うナンバーについて、くわしく説明しています。迷ったときや、詳しく知りたいときにご覧ください。
+        </p>
+        <GuideAppLink href="/help/ljd/numerology-reading" label="くわしく読む" />
+      </>
+    ),
+  },
+  {
     id: "help",
     title: "困ったとき",
     summary: "その他のヘルプ",
