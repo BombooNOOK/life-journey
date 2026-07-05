@@ -33,6 +33,11 @@ export function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
+  /** 未ログインでも案内ページを表示（ログイン画面へ即リダイレクトしない） */
+  if (pathname === "/orders") {
+    return NextResponse.next();
+  }
+
   const loggedIn = request.cookies.get("lj_logged_in")?.value === "1";
   if (loggedIn) {
     return NextResponse.next();

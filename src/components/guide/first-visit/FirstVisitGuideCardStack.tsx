@@ -1,5 +1,8 @@
 "use client";
 
+import Image from "next/image";
+import { useState } from "react";
+
 import {
   companionWritingGuideBodyClass,
   companionWritingGuidePrimaryButtonClass,
@@ -25,14 +28,54 @@ type Props = {
   onAction: (action: FirstVisitGuideCardAction, cardId: string) => void;
 };
 
+function FirstVisitGuideCardIllustration({ src }: { src: string }) {
+  const [hidden, setHidden] = useState(false);
+
+  if (hidden) return null;
+
+  return (
+    <div className="mb-4 flex justify-center">
+      <Image
+        src={src}
+        alt=""
+        aria-hidden
+        width={240}
+        height={160}
+        sizes="240px"
+        className="h-auto max-h-36 w-auto max-w-full select-none object-contain opacity-95"
+        onError={() => setHidden(true)}
+      />
+    </div>
+  );
+}
+
 /** 1カード1メッセージ・手動送り */
 export function FirstVisitGuideCardPanel({ card, onAction }: Props) {
   return (
     <FirstVisitGuideCardShell>
+      {card.illustrationSrc ? <FirstVisitGuideCardIllustration src={card.illustrationSrc} /> : null}
       {card.title ? <p className={companionWritingGuideTitleClass}>{card.title}</p> : null}
-      <p className={`whitespace-pre-line ${card.title ? "mt-2" : ""} ${companionWritingGuideBodyClass}`}>
-        {card.body}
-      </p>
+      {card.owlQuote ? (
+        <p
+          className={`whitespace-pre-line border-l-[3px] border-stone-400 pl-3.5 text-[0.95em] italic leading-relaxed text-stone-600 sm:pl-4 ${
+            card.title ? "mt-3" : ""
+          }`}
+        >
+          {card.owlQuote}
+        </p>
+      ) : null}
+      {card.body ? (
+        <p
+          className={`whitespace-pre-line ${card.title || card.owlQuote ? "mt-3" : ""} ${companionWritingGuideBodyClass}`}
+        >
+          {card.body}
+        </p>
+      ) : null}
+      {card.footnote ? (
+        <p className={`mt-3 text-xs leading-relaxed text-stone-500 ${companionWritingGuideBodyClass}`}>
+          {card.footnote}
+        </p>
+      ) : null}
       <div className="mt-5 flex flex-col gap-2.5">
         {card.buttons.map((button) => (
           <button

@@ -41,6 +41,14 @@ import {
 
 import { buildLoginHref, isFirstVisitLoghouseReturnTo, resolveLoginFlow, resolveSafeReturnTo } from "./loginFlow";
 import type { LoginFlowIntent } from "./loginFlow";
+import {
+  FIRST_VISIT_RESIDENT_REGISTRATION_BUTTON,
+  FIRST_VISIT_RESIDENT_REGISTRATION_NOTE,
+  FIRST_VISIT_RESIDENT_REGISTRATION_OWL_QUOTE,
+  FIRST_VISIT_RESIDENT_REGISTRATION_SUPPLEMENT,
+  FIRST_VISIT_RESIDENT_REGISTRATION_TITLE,
+} from "@/lib/onboarding/firstVisitWizard/residentRegistrationCopy";
+import { FIRST_VISIT_ROUTES } from "@/lib/onboarding/firstVisitWizard/routes";
 import { setFirstVisitFromRegisterFlag } from "@/lib/onboarding/firstVisitWizard/session";
 
 const LOGIN_BROWSER_HELP = (
@@ -210,6 +218,8 @@ export function LoginClient({
   const returnTo = resolveSafeReturnTo(returnToRaw);
   const loginFlow = resolveLoginFlow(returnTo, flowIntent);
   const isRegisterFlow = loginFlow === "register";
+  const isFirstVisitRegisterFlow =
+    isRegisterFlow && isFirstVisitLoghouseReturnTo(returnTo);
   const postRegisterDestination = isFirstVisitLoghouseReturnTo(returnTo) ? returnTo : "/orders";
   const cookieLoggedIn = isLjLoggedInOnClient();
   const isAlreadySignedIn = (Boolean(user) || cookieLoggedIn) && !oauthReturnHandoffUi;
@@ -539,6 +549,7 @@ export function LoginClient({
     return (
       <RegistrationCompletePanel
         welcomeEmailSent={registrationComplete.welcomeEmailSent}
+        variant={isFirstVisitLoghouseReturnTo(returnTo) ? "firstVisitResident" : "default"}
         onGoMyPage={() => {
           if (isFirstVisitLoghouseReturnTo(returnTo)) {
             setFirstVisitFromRegisterFlag();
@@ -577,12 +588,28 @@ export function LoginClient({
       <div>
         <div className="flex items-center gap-2">
           <h1 className={mobileReadable.pageTitle}>
-            {isRegisterFlow ? "アカウント作成" : "ログイン"}
+            {isFirstVisitRegisterFlow
+              ? FIRST_VISIT_RESIDENT_REGISTRATION_TITLE
+              : isRegisterFlow
+                ? "アカウント作成"
+                : "ログイン"}
           </h1>
           <InlineHelpButton
-            ariaLabel={isRegisterFlow ? "アカウント作成の説明" : "ログインの説明"}
+            ariaLabel={
+              isFirstVisitRegisterFlow
+                ? "森の住民登録の説明"
+                : isRegisterFlow
+                  ? "アカウント作成の説明"
+                  : "ログインの説明"
+            }
           >
-            {isRegisterFlow ? (
+            {isFirstVisitRegisterFlow ? (
+              <>
+                <p>ログハウスを建てる前に、森の住民登録（アカウント作成）を行います。</p>
+                <p className="mt-1.5">登録後はログハウス建築の案内へ進みます。</p>
+                {LOGIN_BROWSER_HELP}
+              </>
+            ) : isRegisterFlow ? (
               <>
                 <p>ログイン後は、無料鑑定の入力画面へ進みます。</p>
                 {LOGIN_BROWSER_HELP}
@@ -595,11 +622,18 @@ export function LoginClient({
             )}
           </InlineHelpButton>
         </div>
-        <p className={`mt-2 ${mobileReadable.bodyMuted}`}>
-          {isRegisterFlow
-            ? "無料鑑定へ進むために、アカウントを作成します。作成後はお名前と生年月日の入力画面へ進みます。"
-            : "登録済みの方は、メールアドレスとパスワードでログインしてください。"}
+        <p className={`mt-2 whitespace-pre-line ${mobileReadable.bodyMuted}`}>
+          {isFirstVisitRegisterFlow
+            ? `${FIRST_VISIT_RESIDENT_REGISTRATION_OWL_QUOTE}\n\n${FIRST_VISIT_RESIDENT_REGISTRATION_SUPPLEMENT}`
+            : isRegisterFlow
+              ? "無料鑑定へ進むために、アカウントを作成します。作成後はお名前と生年月日の入力画面へ進みます。"
+              : "登録済みの方は、メールアドレスとパスワードでログインしてください。"}
         </p>
+        {isFirstVisitRegisterFlow ? (
+          <p className={`mt-2 ${mobileReadable.helperMuted}`}>
+            {FIRST_VISIT_RESIDENT_REGISTRATION_NOTE}
+          </p>
+        ) : null}
       </div>
 
       {showGoogleReturnBanner ? (
@@ -718,7 +752,9 @@ export function LoginClient({
             disabled={busyEmail}
             className={mobileReadable.buttonPrimary}
           >
-            新規登録（次に生年月日入力）
+            {isFirstVisitRegisterFlow
+              ? FIRST_VISIT_RESIDENT_REGISTRATION_BUTTON
+              : "新規登録（次に生年月日入力）"}
           </button>
         ) : (
           <button
@@ -733,13 +769,19 @@ export function LoginClient({
           <p className={`text-center font-medium ${mobileReadable.bodyMuted}`}>処理中…</p>
         ) : null}
         <p className={mobileReadable.helperMuted}>
-          Enterキーで送信した場合は「{isRegisterFlow ? "新規登録" : "ログイン"}」として処理されます。
+          Enterキーで送信した場合は「
+          {isFirstVisitRegisterFlow ? "住民登録" : isRegisterFlow ? "新規登録" : "ログイン"}
+          」として処理されます。
         </p>
         <p className={`text-center ${mobileReadable.helper}`}>
           {isRegisterFlow ? (
             <>
               <Link
-                href={buildLoginHref("/orders")}
+                href={
+                  isFirstVisitRegisterFlow
+                    ? buildLoginHref(FIRST_VISIT_ROUTES.kantei, "login")
+                    : buildLoginHref("/orders")
+                }
                 className={mobileReadable.link}
               >
                 すでにアカウントをお持ちの方はログイン

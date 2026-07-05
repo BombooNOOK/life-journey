@@ -5,6 +5,7 @@ import {
   ReturningUserGuideHint,
 } from "@/components/guide/FirstVisitGuidePanel";
 import { MyPageGuideLink } from "@/components/guide/MyPageGuideLink";
+import { LogHouseGuestEntrance } from "@/components/orders/LogHouseGuestEntrance";
 import { KanteiMissingBanner } from "@/components/orders/KanteiMissingBanner";
 import { LegalFooterLinks } from "@/components/legal/LegalFooterLinks";
 import { MyPageManageHub } from "@/components/orders/MyPageManageMenu";
@@ -33,15 +34,7 @@ export const dynamic = "force-dynamic";
 export default async function OrdersListPage() {
   const viewerEmail = await getViewerEmailFromCookie();
   if (!viewerEmail) {
-    return (
-      <div className="space-y-4">
-        <h1 className="text-2xl font-bold text-stone-900">{LOG_HOUSE_PAGE_TITLE}</h1>
-        <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
-          <p className="font-semibold">ログイン情報を確認できませんでした</p>
-          <p className="mt-2">いちどログアウトして、もう一度ログインしてください。</p>
-        </div>
-      </div>
-    );
+    return <LogHouseGuestEntrance />;
   }
 
   const viewerIsAdmin = await isAdminEmail(viewerEmail);
