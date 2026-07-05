@@ -1,3 +1,5 @@
+import { buildReadingFontSizePagePath } from "@/lib/navigation/readingFontSizeNav";
+
 export type GuestReadingFontSizePageKey = "about" | "guide" | "contact";
 
 export type GuestReadingFontSizePage = {
@@ -38,24 +40,29 @@ export function findGuestReadingFontSizePageByPathname(
   return GUEST_READING_FONT_SIZE_PAGES.find((page) => page.pathname === pathname) ?? null;
 }
 
-export function guestReadingFontSizeHref(pathname: string): string {
+export function guestReadingFontSizeHref(pathname: string, search = ""): string {
   const page = findGuestReadingFontSizePageByPathname(pathname);
   if (page) return `${page.pathname}${page.hash}`;
-  return "/about#about-font-size";
+  return buildReadingFontSizePagePath(`${pathname}${search}`);
 }
 
 export function scrollToGuestReadingFontSizeSection(pathname: string): void {
   const page = findGuestReadingFontSizePageByPathname(pathname);
-  if (!page) {
-    window.location.assign("/about#about-font-size");
+  if (page) {
+    const section = document.getElementById(page.sectionId);
+    if (section) {
+      section.scrollIntoView({ behavior: "smooth", block: "center" });
+      return;
+    }
+    window.location.assign(`${page.pathname}${page.hash}`);
     return;
   }
 
-  const section = document.getElementById(page.sectionId);
-  if (section) {
-    section.scrollIntoView({ behavior: "smooth", block: "center" });
-    return;
-  }
-
-  window.location.assign(`${page.pathname}${page.hash}`);
+  window.location.assign(
+    buildReadingFontSizePagePath(
+      typeof window !== "undefined"
+        ? `${window.location.pathname}${window.location.search}`
+        : pathname,
+    ),
+  );
 }

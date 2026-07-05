@@ -1,6 +1,10 @@
 /** 初回導線：新規登録（世界観名＋機能説明） */
 export const FIRST_VISIT_RESIDENT_REGISTRATION_TITLE = "森の住民登録" as const;
 
+/** コメント枠 PNG 内に載せるフクロウ先生のことば */
+export const FIRST_VISIT_RESIDENT_REGISTRATION_OWL_FRAME_TEXT =
+  "おっと、まだ森の住民登録が\nお済みでないようですね。\n\n鑑定の前に森の住民登録\nをしましょう" as const;
+
 export const FIRST_VISIT_RESIDENT_REGISTRATION_OWL_QUOTE =
   "おっと、まだ森の住民登録が\nお済みでないようですね。\n\nログハウスを建てるために、\nまずは森の住民登録をしましょう。" as const;
 

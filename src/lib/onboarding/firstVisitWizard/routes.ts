@@ -4,6 +4,9 @@ export const FIRST_VISIT_ROUTES = {
   about: "/guide/first/about",
   owl: "/guide/first/owl",
   ready: "/guide/first/ready",
+  register: "/guide/first/register",
+  kanteiReady: "/guide/first/kantei-ready",
+  alreadyReady: "/guide/first/already-ready",
   loghouse: "/guide/first/loghouse",
   kantei: "/guide/first/kantei",
 } as const;

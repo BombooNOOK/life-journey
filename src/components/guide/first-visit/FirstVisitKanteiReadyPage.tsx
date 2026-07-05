@@ -7,60 +7,64 @@ import { useFirebaseAuth } from "@/components/auth/FirebaseAuthProvider";
 import { FirstVisitGuideCardPageLayout } from "@/components/guide/first-visit/FirstVisitGuideCardPageLayout";
 import { FirstVisitGuideCardPanel } from "@/components/guide/first-visit/FirstVisitGuideCardStack";
 import type { FirstVisitGuideCardAction } from "@/lib/onboarding/firstVisitWizard/cards";
-import { FIRST_VISIT_KANTEI_HALL_INTRO_CARD } from "@/lib/onboarding/firstVisitWizard/cards";
-import { firstVisitReadyNextHref } from "@/lib/onboarding/firstVisitWizard/readyNavigation";
+import { FIRST_VISIT_KANTEI_PROCEED_READY_CARD } from "@/lib/onboarding/firstVisitWizard/cards";
+import { FIRST_VISIT_ROUTES } from "@/lib/onboarding/firstVisitWizard/routes";
 import type { FirstVisitReadyBranch } from "@/lib/viewer/firstVisitReadyContext";
 import { OwlLoadingPanel } from "@/components/ui/OwlLoadingPanel";
 
-type ReadyContextState =
-  | { status: "loading" }
-  | { status: "ready"; branch: FirstVisitReadyBranch };
-
-/** 第4幕：鑑定のやかた案内 → 次で分岐ページへ */
-export function FirstVisitReadyPage() {
+/** 第4幕：ログイン済み・未鑑定ユーザー向け */
+export function FirstVisitKanteiReadyPage() {
   const router = useRouter();
   const { user, loading: authLoading } = useFirebaseAuth();
   const isLoggedIn = Boolean(user?.email?.trim());
-  const [readyContext, setReadyContext] = useState<ReadyContextState>({ status: "loading" });
+  const [redirecting, setRedirecting] = useState(true);
 
   useEffect(() => {
     if (authLoading) return;
 
     if (!isLoggedIn) {
-      setReadyContext({ status: "ready", branch: "guest" });
+      router.replace(FIRST_VISIT_ROUTES.register);
       return;
     }
 
     let cancelled = false;
+
     void fetch("/api/viewer/first-visit-ready-context", { credentials: "same-origin" })
       .then(async (res) => {
         if (!res.ok) throw new Error("context fetch failed");
         return (await res.json()) as { branch: FirstVisitReadyBranch };
       })
       .then((data) => {
-        if (!cancelled) setReadyContext({ status: "ready", branch: data.branch });
+        if (cancelled) return;
+        if (data.branch === "guest") {
+          router.replace(FIRST_VISIT_ROUTES.register);
+          return;
+        }
+        if (data.branch === "hasKantei") {
+          router.replace(FIRST_VISIT_ROUTES.alreadyReady);
+          return;
+        }
+        setRedirecting(false);
       })
       .catch(() => {
-        if (!cancelled) setReadyContext({ status: "ready", branch: "needsKantei" });
+        if (!cancelled) setRedirecting(false);
       });
 
     return () => {
       cancelled = true;
     };
-  }, [authLoading, isLoggedIn]);
+  }, [authLoading, isLoggedIn, router]);
 
   const handleAction = useCallback(
     (action: FirstVisitGuideCardAction, cardId: string) => {
-      if (action !== "next" || cardId !== "kantei-hall-intro") return;
-      if (readyContext.status !== "ready") return;
-      router.push(firstVisitReadyNextHref(readyContext.branch));
+      if (action === "next" && cardId === "kantei-proceed-ready") {
+        router.push(FIRST_VISIT_ROUTES.kantei);
+      }
     },
-    [readyContext, router],
+    [router],
   );
 
-  const pageLoading = authLoading || readyContext.status === "loading";
-
-  if (pageLoading) {
+  if (authLoading || redirecting || !isLoggedIn) {
     return (
       <OwlLoadingPanel
         layout="page"
@@ -71,8 +75,15 @@ export function FirstVisitReadyPage() {
   }
 
   return (
-    <FirstVisitGuideCardPageLayout stepLabel="鑑定のやかた" ariaLabel="鑑定のやかたへの案内">
-      <FirstVisitGuideCardPanel card={FIRST_VISIT_KANTEI_HALL_INTRO_CARD} onAction={handleAction} />
+    <FirstVisitGuideCardPageLayout
+      stepLabel="鑑定のやかたへ"
+      ariaLabel="鑑定のやかたへの案内"
+      backHref={FIRST_VISIT_ROUTES.ready}
+    >
+      <FirstVisitGuideCardPanel
+        card={FIRST_VISIT_KANTEI_PROCEED_READY_CARD}
+        onAction={handleAction}
+      />
     </FirstVisitGuideCardPageLayout>
   );
 }

@@ -3,64 +3,66 @@
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 
+import { buildLoginHref } from "@/app/login/loginFlow";
 import { useFirebaseAuth } from "@/components/auth/FirebaseAuthProvider";
 import { FirstVisitGuideCardPageLayout } from "@/components/guide/first-visit/FirstVisitGuideCardPageLayout";
 import { FirstVisitGuideCardPanel } from "@/components/guide/first-visit/FirstVisitGuideCardStack";
 import type { FirstVisitGuideCardAction } from "@/lib/onboarding/firstVisitWizard/cards";
-import { FIRST_VISIT_KANTEI_HALL_INTRO_CARD } from "@/lib/onboarding/firstVisitWizard/cards";
+import { FIRST_VISIT_RESIDENT_REGISTRATION_CARD } from "@/lib/onboarding/firstVisitWizard/cards";
 import { firstVisitReadyNextHref } from "@/lib/onboarding/firstVisitWizard/readyNavigation";
+import { FIRST_VISIT_ROUTES } from "@/lib/onboarding/firstVisitWizard/routes";
+import { setFirstVisitFromRegisterFlag } from "@/lib/onboarding/firstVisitWizard/session";
 import type { FirstVisitReadyBranch } from "@/lib/viewer/firstVisitReadyContext";
 import { OwlLoadingPanel } from "@/components/ui/OwlLoadingPanel";
 
-type ReadyContextState =
-  | { status: "loading" }
-  | { status: "ready"; branch: FirstVisitReadyBranch };
-
-/** 第4幕：鑑定のやかた案内 → 次で分岐ページへ */
-export function FirstVisitReadyPage() {
+/** 第4幕：森の住民登録（未ログイン向け） */
+export function FirstVisitRegisterPage() {
   const router = useRouter();
   const { user, loading: authLoading } = useFirebaseAuth();
   const isLoggedIn = Boolean(user?.email?.trim());
-  const [readyContext, setReadyContext] = useState<ReadyContextState>({ status: "loading" });
+  const [redirecting, setRedirecting] = useState(false);
 
   useEffect(() => {
-    if (authLoading) return;
-
-    if (!isLoggedIn) {
-      setReadyContext({ status: "ready", branch: "guest" });
-      return;
-    }
+    if (authLoading || !isLoggedIn) return;
 
     let cancelled = false;
+    setRedirecting(true);
+
     void fetch("/api/viewer/first-visit-ready-context", { credentials: "same-origin" })
       .then(async (res) => {
         if (!res.ok) throw new Error("context fetch failed");
         return (await res.json()) as { branch: FirstVisitReadyBranch };
       })
       .then((data) => {
-        if (!cancelled) setReadyContext({ status: "ready", branch: data.branch });
+        if (cancelled) return;
+        const href = firstVisitReadyNextHref(data.branch);
+        router.replace(href);
       })
       .catch(() => {
-        if (!cancelled) setReadyContext({ status: "ready", branch: "needsKantei" });
+        if (!cancelled) router.replace(FIRST_VISIT_ROUTES.kanteiReady);
       });
 
     return () => {
       cancelled = true;
     };
-  }, [authLoading, isLoggedIn]);
+  }, [authLoading, isLoggedIn, router]);
 
   const handleAction = useCallback(
-    (action: FirstVisitGuideCardAction, cardId: string) => {
-      if (action !== "next" || cardId !== "kantei-hall-intro") return;
-      if (readyContext.status !== "ready") return;
-      router.push(firstVisitReadyNextHref(readyContext.branch));
+    (action: FirstVisitGuideCardAction, _cardId: string) => {
+      if (action === "register") {
+        setFirstVisitFromRegisterFlag();
+        router.push(buildLoginHref(FIRST_VISIT_ROUTES.loghouse, "register"));
+        return;
+      }
+
+      if (action === "login") {
+        router.push(buildLoginHref(FIRST_VISIT_ROUTES.kantei, "login"));
+      }
     },
-    [readyContext, router],
+    [router],
   );
 
-  const pageLoading = authLoading || readyContext.status === "loading";
-
-  if (pageLoading) {
+  if (authLoading || redirecting || isLoggedIn) {
     return (
       <OwlLoadingPanel
         layout="page"
@@ -71,8 +73,15 @@ export function FirstVisitReadyPage() {
   }
 
   return (
-    <FirstVisitGuideCardPageLayout stepLabel="鑑定のやかた" ariaLabel="鑑定のやかたへの案内">
-      <FirstVisitGuideCardPanel card={FIRST_VISIT_KANTEI_HALL_INTRO_CARD} onAction={handleAction} />
+    <FirstVisitGuideCardPageLayout
+      stepLabel="森の住民登録"
+      ariaLabel="森の住民登録の案内"
+      backHref={FIRST_VISIT_ROUTES.ready}
+    >
+      <FirstVisitGuideCardPanel
+        card={FIRST_VISIT_RESIDENT_REGISTRATION_CARD}
+        onAction={handleAction}
+      />
     </FirstVisitGuideCardPageLayout>
   );
 }

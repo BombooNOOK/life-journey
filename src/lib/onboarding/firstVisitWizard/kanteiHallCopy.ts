@@ -18,3 +18,11 @@ export const FIRST_VISIT_KANTEI_PROCEED_BODY =
   "森の住民登録はできています。\n\nそれでは、あなたが持つ数字を見つけるために、\n鑑定のやかたへ進みましょう。" as const;
 
 export const FIRST_VISIT_KANTEI_PROCEED_BUTTON = "鑑定へ進む" as const;
+
+/** 第4幕：住民登録・鑑定済みのログイン済みユーザー向け */
+export const FIRST_VISIT_ALREADY_READY_OWL_QUOTE =
+  "「森の住民登録」も「鑑定」も\nお済みのようですね。" as const;
+
+export const FIRST_VISIT_ALREADY_READY_ORDERS_BUTTON = "ログハウスにいく" as const;
+
+export const FIRST_VISIT_ALREADY_READY_HOME_BUTTON = "トップへ" as const;

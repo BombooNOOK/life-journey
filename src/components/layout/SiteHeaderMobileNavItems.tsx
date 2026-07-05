@@ -13,9 +13,9 @@ import {
   MYPAGE_CONTACT_FORM_PATH,
 } from "@/lib/legal/legalDocumentLinks";
 import { buildDisplaySettingsHref } from "@/lib/navigation/displaySettingsNav";
+import { buildReadingFontSizePageHref } from "@/lib/navigation/readingFontSizeNav";
 import { LOG_HOUSE_LOADING_LABEL, LOG_HOUSE_NAV_LABEL } from "@/lib/journal/logHouseLabels";
 import { FOREST_GUIDE_STATION_TITLE } from "@/lib/help/forestGuideStation";
-import { scrollToGuestReadingFontSizeSection } from "@/lib/reading/guestReadingFontSizePages";
 
 const mobileMenuItemClass =
   "block w-full rounded-lg px-3 py-3 text-left text-base font-medium text-stone-700 transition hover:bg-emerald-50/90 active:bg-emerald-50";
@@ -157,7 +157,7 @@ export function SiteHeaderMobileNavItems({ onNavigate }: Props) {
           className={mobileMenuItemClass}
           onClick={() => {
             onNavigate();
-            scrollToGuestReadingFontSizeSection(pathname);
+            navigateFromMobileMenu(buildReadingFontSizePageHref(), router);
           }}
         >
           文字の大きさ

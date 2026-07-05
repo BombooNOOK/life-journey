@@ -12,6 +12,7 @@ import {
 } from "@/components/journal/companion-writing/companionWritingGuideStyles";
 import { FirstVisitGuideCardShell } from "@/components/guide/first-visit/FirstVisitGuideCardShell";
 import { ForestDirectionSignBoard } from "@/components/guide/ForestDirectionSignBoard";
+import { OwlCommentFrameBoard } from "@/components/guide/OwlCommentFrameBoard";
 import type {
   FirstVisitGuideCard,
   FirstVisitGuideCardAction,
@@ -76,10 +77,12 @@ function GuideCardButtons({
 function GuideCardTextBlocks({
   card,
   hasSign,
+  hasOwlComment,
   bare = false,
 }: {
   card: FirstVisitGuideCard;
   hasSign: boolean;
+  hasOwlComment?: boolean;
   bare?: boolean;
 }) {
   const bodyClass = bare
@@ -88,10 +91,10 @@ function GuideCardTextBlocks({
 
   return (
     <>
-      {!hasSign && card.title ? (
+      {!hasSign && !hasOwlComment && card.title ? (
         <p className={companionWritingGuideTitleClass}>{card.title}</p>
       ) : null}
-      {card.owlQuote ? (
+      {!hasOwlComment && card.owlQuote ? (
         <p
           className={`whitespace-pre-line border-l-[3px] border-stone-400 pl-3.5 text-[0.95em] italic leading-relaxed text-stone-600 sm:pl-4 ${
             hasSign || card.title ? "mt-3" : ""
@@ -102,13 +105,15 @@ function GuideCardTextBlocks({
       ) : null}
       {card.body ? (
         <p
-          className={`whitespace-pre-line ${hasSign || card.title || card.owlQuote ? "mt-3" : ""} ${card.bodyAlign === "center" ? "text-center" : ""} ${bodyClass}`}
+          className={`whitespace-pre-line ${hasSign || hasOwlComment || card.title || card.owlQuote ? "mt-3" : ""} ${card.bodyAlign === "center" ? "text-center" : ""} ${bodyClass}`}
         >
           {card.body}
         </p>
       ) : null}
       {card.footnote ? (
-        <p className={`mt-3 text-xs leading-relaxed text-stone-500 ${bodyClass}`}>
+        <p
+          className={`${hasOwlComment ? "text-center text-xs leading-relaxed text-stone-500" : `mt-3 text-xs leading-relaxed text-stone-500 ${bodyClass}`}`}
+        >
           {card.footnote}
         </p>
       ) : null}
@@ -120,13 +125,27 @@ function GuideCardTextBlocks({
 export function FirstVisitGuideCardPanel({ card, onAction }: Props) {
   const hasSign = Boolean(card.signLabel?.trim());
   const signLabel = card.signLabel?.trim() ?? "";
+  const hasOwlComment = Boolean(card.owlCommentLabel?.trim());
+  const owlCommentLabel = card.owlCommentLabel?.trim() ?? "";
+
+  if (card.bare && hasOwlComment) {
+    return (
+      <div className="flex w-full flex-col items-center gap-4">
+        <OwlCommentFrameBoard label={owlCommentLabel} className="max-w-none w-full" />
+        <div className="w-full space-y-3">
+          <GuideCardTextBlocks card={card} hasSign={hasSign} hasOwlComment={hasOwlComment} bare />
+          <GuideCardButtons card={card} onAction={onAction} />
+        </div>
+      </div>
+    );
+  }
 
   if (card.bare && hasSign) {
     return (
       <div className="flex w-full flex-col items-center gap-4">
         <ForestDirectionSignBoard label={signLabel} className="max-w-none w-full" />
         <div className="w-full space-y-3">
-          <GuideCardTextBlocks card={card} hasSign={hasSign} bare />
+          <GuideCardTextBlocks card={card} hasSign={hasSign} hasOwlComment={hasOwlComment} bare />
           <GuideCardButtons card={card} onAction={onAction} />
         </div>
       </div>
@@ -140,7 +159,7 @@ export function FirstVisitGuideCardPanel({ card, onAction }: Props) {
       ) : card.illustrationSrc ? (
         <FirstVisitGuideCardIllustration src={card.illustrationSrc} />
       ) : null}
-      <GuideCardTextBlocks card={card} hasSign={hasSign} />
+      <GuideCardTextBlocks card={card} hasSign={hasSign} hasOwlComment={hasOwlComment} />
       <div className="mt-5">
         <GuideCardButtons card={card} onAction={onAction} />
       </div>
