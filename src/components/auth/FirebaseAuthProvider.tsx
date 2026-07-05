@@ -9,13 +9,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import {
-  getRedirectResult,
-  onAuthStateChanged,
-  signOut,
-  type Auth,
-  type User,
-} from "firebase/auth";
+import { onAuthStateChanged, signOut, type Auth, type User } from "firebase/auth";
 
 import {
   clearGoogleOAuthRedirectFlow,
@@ -26,6 +20,7 @@ import {
   takeOAuthReturnTo,
 } from "@/lib/auth/clientCookies";
 import { getFirebaseAuth, waitForFirebaseAuthPersistence } from "@/lib/firebase/client";
+import { consumeRedirectResultOnce } from "@/lib/firebase/redirectResult";
 
 type FirebaseAuthContextValue = {
   user: User | null;
@@ -48,6 +43,8 @@ function safePostLoginTarget(t: string): string {
 
 /** サーバー Cookie 反映と描画の安定用。短すぎると「Googleで続ける」が一瞬戻って見えることがある */
 const OAUTH_SETTLE_BEFORE_NAV_MS = 600;
+/** OAuth 戻り後に currentUser の反映を待つ上限（LoginClient の失敗表示より短くする） */
+const OAUTH_CURRENT_USER_WAIT_MS = 20000;
 
 async function syncAuthCookiesOnServer(user: User | null) {
   try {
@@ -78,7 +75,7 @@ export function FirebaseAuthProvider({ children }: { children: ReactNode }) {
       let auth: Auth | null = null;
       try {
         auth = getFirebaseAuth({ deferPersistence: true });
-        let redirectCred: Awaited<ReturnType<typeof getRedirectResult>> = null;
+        let redirectCred: Awaited<ReturnType<typeof consumeRedirectResultOnce>> = null;
         try {
           /**
            * Chrome 等で IndexedDB へのリダイレクト結果の反映が数ティック遅れると getRedirectResult が空になることがある。
@@ -89,12 +86,12 @@ export function FirebaseAuthProvider({ children }: { children: ReactNode }) {
             window.location.pathname === "/login" &&
             (isGoogleOAuthFlowCookieActive() || readOAuthReturnPendingAgeMs() != null)
           ) {
-            await new Promise((r) => setTimeout(r, 220));
+            await new Promise((r) => setTimeout(r, 350));
           }
           if (typeof auth.authStateReady === "function") {
             await auth.authStateReady();
           }
-          redirectCred = await getRedirectResult(auth);
+          redirectCred = await consumeRedirectResultOnce(auth);
         } finally {
           await waitForFirebaseAuthPersistence(auth);
         }
@@ -155,7 +152,7 @@ export function FirebaseAuthProvider({ children }: { children: ReactNode }) {
           !auth.currentUser &&
           (isGoogleOAuthFlowCookieActive() || readOAuthReturnPendingAgeMs() != null)
         ) {
-          const deadline = Date.now() + 12000;
+          const deadline = Date.now() + OAUTH_CURRENT_USER_WAIT_MS;
           while (Date.now() < deadline && !cancelled) {
             await auth.authStateReady();
             if (auth.currentUser) {
@@ -178,8 +175,8 @@ export function FirebaseAuthProvider({ children }: { children: ReactNode }) {
             await new Promise((r) => setTimeout(r, 120));
           }
         }
-      } catch (e) {
-        console.error("[auth:getRedirectResult]", e);
+      } catch {
+        /* consumeRedirectResultOnce 側でログ済み */
       }
 
       if (cancelled) return;
