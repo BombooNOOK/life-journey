@@ -53,11 +53,12 @@ function FirstVisitGuideCardIllustration({ src }: { src: string }) {
 /** 1カード1メッセージ・手動送り */
 export function FirstVisitGuideCardPanel({ card, onAction }: Props) {
   const hasSign = Boolean(card.signLabel?.trim());
+  const signLabel = card.signLabel?.trim() ?? "";
 
-  return (
+  const cardBody = (
     <FirstVisitGuideCardShell>
       {hasSign ? (
-        <ForestDirectionSignBoard label={card.signLabel!.trim()} className="mb-4" />
+        <ForestDirectionSignBoard label={signLabel} className="mb-4 hidden sm:block" />
       ) : card.illustrationSrc ? (
         <FirstVisitGuideCardIllustration src={card.illustrationSrc} />
       ) : null}
@@ -98,6 +99,17 @@ export function FirstVisitGuideCardPanel({ card, onAction }: Props) {
         ))}
       </div>
     </FirstVisitGuideCardShell>
+  );
+
+  if (!hasSign) {
+    return cardBody;
+  }
+
+  return (
+    <div className="flex flex-col gap-3">
+      <ForestDirectionSignBoard label={signLabel} className="max-w-none sm:hidden" />
+      {cardBody}
+    </div>
   );
 }
 

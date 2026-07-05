@@ -71,8 +71,7 @@ export function forestDirectionSignLabelStyle(
     left: placement.x * scale,
     top: placement.y * scale,
     maxWidth: placement.maxWidth != null ? placement.maxWidth * scale : undefined,
-    /** 看板に対する文字サイズは画面 px 固定（森の案内板と同じ考え方） */
-    fontSize: placement.fontSize,
+    fontSize: placement.fontSize * scale,
     fontFamily: FOREST_DIRECTION_SIGN_LABEL_FONT_FAMILY,
     fontWeight: placement.fontWeight ?? 400,
     lineHeight: placement.lineHeight ?? 1,

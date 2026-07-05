@@ -83,7 +83,7 @@ export function ForestDirectionSignBoard({
         priority
       />
       <div
-        className="pointer-events-none absolute inset-0 [text-shadow:0_1px_0_rgba(255,251,245,0.7)]"
+        className="pointer-events-none absolute inset-0 overflow-hidden [text-shadow:0_1px_0_rgba(255,251,245,0.7)]"
         aria-hidden
       >
         <p

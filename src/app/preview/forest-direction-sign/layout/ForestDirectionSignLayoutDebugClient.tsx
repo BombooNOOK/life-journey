@@ -29,7 +29,7 @@ export function ForestDirectionSignLayoutDebugClient() {
           看板をクリックすると設計座標（1024 基準）が出ます。基準は{" "}
           <strong>「鑑」の字の左上</strong>（textAnchor: topleft）です。
         </p>
-        <div className="relative mx-auto mt-4 max-w-md">
+        <div className="relative mx-auto mt-4 max-w-sm">
           <ForestDirectionSignBoard
             label={SAMPLE_LABEL}
             className="max-w-none"
@@ -49,18 +49,23 @@ export function ForestDirectionSignLayoutDebugClient() {
       </div>
 
       <div>
-        <p className="text-sm font-medium text-stone-800">初回導線カードでの見え方</p>
-        <div className="mt-4 max-w-md">
-          <FirstVisitGuideCardShell>
-            <ForestDirectionSignBoard label={SAMPLE_LABEL} className="mb-4" />
-            <p className="whitespace-pre-line text-center text-sm leading-relaxed text-stone-700">{FIRST_VISIT_KANTEI_HALL_BODY}</p>
-            <button
-              type="button"
-              className="mt-5 w-full rounded-lg bg-emerald-800 px-4 py-2.5 text-sm font-medium text-white"
-            >
-              次へ
-            </button>
-          </FirstVisitGuideCardShell>
+        <p className="text-sm font-medium text-stone-800">初回導線（スマホ：看板はカード外）</p>
+        <div className="mt-4 max-w-sm">
+          <div className="flex flex-col gap-3">
+            <ForestDirectionSignBoard label={SAMPLE_LABEL} className="max-w-none sm:hidden" />
+            <FirstVisitGuideCardShell>
+              <ForestDirectionSignBoard label={SAMPLE_LABEL} className="mb-4 hidden sm:block" />
+              <p className="whitespace-pre-line text-center text-sm leading-relaxed text-stone-700">
+                {FIRST_VISIT_KANTEI_HALL_BODY}
+              </p>
+              <button
+                type="button"
+                className="mt-5 w-full rounded-lg bg-emerald-800 px-4 py-2.5 text-sm font-medium text-white"
+              >
+                次へ
+              </button>
+            </FirstVisitGuideCardShell>
+          </div>
         </div>
         <p className="mt-6 text-xs leading-relaxed text-stone-500">
           現在の label style（scale=1 想定）:{" "}
