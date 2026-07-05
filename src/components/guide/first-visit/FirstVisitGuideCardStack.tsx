@@ -11,6 +11,7 @@ import {
   companionWritingGuideTitleClass,
 } from "@/components/journal/companion-writing/companionWritingGuideStyles";
 import { FirstVisitGuideCardShell } from "@/components/guide/first-visit/FirstVisitGuideCardShell";
+import { ForestDirectionSignBoard } from "@/components/guide/ForestDirectionSignBoard";
 import type {
   FirstVisitGuideCard,
   FirstVisitGuideCardAction,
@@ -51,14 +52,22 @@ function FirstVisitGuideCardIllustration({ src }: { src: string }) {
 
 /** 1カード1メッセージ・手動送り */
 export function FirstVisitGuideCardPanel({ card, onAction }: Props) {
+  const hasSign = Boolean(card.signLabel?.trim());
+
   return (
     <FirstVisitGuideCardShell>
-      {card.illustrationSrc ? <FirstVisitGuideCardIllustration src={card.illustrationSrc} /> : null}
-      {card.title ? <p className={companionWritingGuideTitleClass}>{card.title}</p> : null}
+      {hasSign ? (
+        <ForestDirectionSignBoard label={card.signLabel!.trim()} className="mb-4" />
+      ) : card.illustrationSrc ? (
+        <FirstVisitGuideCardIllustration src={card.illustrationSrc} />
+      ) : null}
+      {!hasSign && card.title ? (
+        <p className={companionWritingGuideTitleClass}>{card.title}</p>
+      ) : null}
       {card.owlQuote ? (
         <p
           className={`whitespace-pre-line border-l-[3px] border-stone-400 pl-3.5 text-[0.95em] italic leading-relaxed text-stone-600 sm:pl-4 ${
-            card.title ? "mt-3" : ""
+            hasSign || card.title ? "mt-3" : ""
           }`}
         >
           {card.owlQuote}
@@ -66,7 +75,7 @@ export function FirstVisitGuideCardPanel({ card, onAction }: Props) {
       ) : null}
       {card.body ? (
         <p
-          className={`whitespace-pre-line ${card.title || card.owlQuote ? "mt-3" : ""} ${companionWritingGuideBodyClass}`}
+          className={`whitespace-pre-line ${hasSign || card.title || card.owlQuote ? "mt-3" : ""} ${card.bodyAlign === "center" ? "text-center" : ""} ${companionWritingGuideBodyClass}`}
         >
           {card.body}
         </p>

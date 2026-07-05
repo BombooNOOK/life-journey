@@ -1,8 +1,7 @@
 import {
   FIRST_VISIT_KANTEI_HALL_BODY,
   FIRST_VISIT_KANTEI_HALL_BUTTON,
-  FIRST_VISIT_KANTEI_HALL_ILLUSTRATION_SRC,
-  FIRST_VISIT_KANTEI_HALL_TITLE,
+  FIRST_VISIT_KANTEI_HALL_SIGN_LABEL,
   FIRST_VISIT_KANTEI_PROCEED_BODY,
   FIRST_VISIT_KANTEI_PROCEED_BUTTON,
   FIRST_VISIT_KANTEI_PROCEED_TITLE,
@@ -34,16 +33,20 @@ export type FirstVisitGuideCard = {
   /** フクロウ先生のことば（引用スタイル） */
   owlQuote?: string;
   footnote?: string;
+  /** 森の一本矢印看板に載せる行き先名（設定時は看板カード表示） */
+  signLabel?: string;
   illustrationSrc?: string;
+  /** 本文の揃え（既定: 左） */
+  bodyAlign?: "left" | "center";
   buttons: FirstVisitGuideCardButton[];
 };
 
 /** 第4幕：鑑定のやかた案内 */
 export const FIRST_VISIT_KANTEI_HALL_INTRO_CARD: FirstVisitGuideCard = {
   id: "kantei-hall-intro",
-  title: FIRST_VISIT_KANTEI_HALL_TITLE,
+  signLabel: FIRST_VISIT_KANTEI_HALL_SIGN_LABEL,
   body: FIRST_VISIT_KANTEI_HALL_BODY,
-  illustrationSrc: FIRST_VISIT_KANTEI_HALL_ILLUSTRATION_SRC,
+  bodyAlign: "center",
   buttons: [{ label: FIRST_VISIT_KANTEI_HALL_BUTTON, action: "next", variant: "primary" }],
 };
 
