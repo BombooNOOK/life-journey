@@ -35,6 +35,8 @@ export type FirstVisitGuideCard = {
   footnote?: string;
   /** 森の一本矢印看板に載せる行き先名（設定時は看板カード表示） */
   signLabel?: string;
+  /** true のときカード枠なし（看板＋本文をそのまま表示） */
+  bare?: boolean;
   illustrationSrc?: string;
   /** 本文の揃え（既定: 左） */
   bodyAlign?: "left" | "center";
@@ -47,6 +49,7 @@ export const FIRST_VISIT_KANTEI_HALL_INTRO_CARD: FirstVisitGuideCard = {
   signLabel: FIRST_VISIT_KANTEI_HALL_SIGN_LABEL,
   body: FIRST_VISIT_KANTEI_HALL_BODY,
   bodyAlign: "center",
+  bare: true,
   buttons: [{ label: FIRST_VISIT_KANTEI_HALL_BUTTON, action: "next", variant: "primary" }],
 };
 

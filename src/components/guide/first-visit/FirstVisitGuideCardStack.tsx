@@ -50,18 +50,44 @@ function FirstVisitGuideCardIllustration({ src }: { src: string }) {
   );
 }
 
-/** 1カード1メッセージ・手動送り */
-export function FirstVisitGuideCardPanel({ card, onAction }: Props) {
-  const hasSign = Boolean(card.signLabel?.trim());
-  const signLabel = card.signLabel?.trim() ?? "";
+function GuideCardButtons({
+  card,
+  onAction,
+}: {
+  card: FirstVisitGuideCard;
+  onAction: (action: FirstVisitGuideCardAction, cardId: string) => void;
+}) {
+  return (
+    <div className="flex w-full flex-col gap-2.5">
+      {card.buttons.map((button) => (
+        <button
+          key={`${card.id}-${button.label}`}
+          type="button"
+          className={buttonClassFor(button.variant ?? "primary")}
+          onClick={() => onAction(button.action, card.id)}
+        >
+          {button.label}
+        </button>
+      ))}
+    </div>
+  );
+}
 
-  const cardBody = (
-    <FirstVisitGuideCardShell>
-      {hasSign ? (
-        <ForestDirectionSignBoard label={signLabel} className="mb-4 hidden sm:block" />
-      ) : card.illustrationSrc ? (
-        <FirstVisitGuideCardIllustration src={card.illustrationSrc} />
-      ) : null}
+function GuideCardTextBlocks({
+  card,
+  hasSign,
+  bare = false,
+}: {
+  card: FirstVisitGuideCard;
+  hasSign: boolean;
+  bare?: boolean;
+}) {
+  const bodyClass = bare
+    ? "text-base leading-relaxed text-stone-700"
+    : companionWritingGuideBodyClass;
+
+  return (
+    <>
       {!hasSign && card.title ? (
         <p className={companionWritingGuideTitleClass}>{card.title}</p>
       ) : null}
@@ -76,40 +102,49 @@ export function FirstVisitGuideCardPanel({ card, onAction }: Props) {
       ) : null}
       {card.body ? (
         <p
-          className={`whitespace-pre-line ${hasSign || card.title || card.owlQuote ? "mt-3" : ""} ${card.bodyAlign === "center" ? "text-center" : ""} ${companionWritingGuideBodyClass}`}
+          className={`whitespace-pre-line ${hasSign || card.title || card.owlQuote ? "mt-3" : ""} ${card.bodyAlign === "center" ? "text-center" : ""} ${bodyClass}`}
         >
           {card.body}
         </p>
       ) : null}
       {card.footnote ? (
-        <p className={`mt-3 text-xs leading-relaxed text-stone-500 ${companionWritingGuideBodyClass}`}>
+        <p className={`mt-3 text-xs leading-relaxed text-stone-500 ${bodyClass}`}>
           {card.footnote}
         </p>
       ) : null}
-      <div className="mt-5 flex flex-col gap-2.5">
-        {card.buttons.map((button) => (
-          <button
-            key={`${card.id}-${button.label}`}
-            type="button"
-            className={buttonClassFor(button.variant ?? "primary")}
-            onClick={() => onAction(button.action, card.id)}
-          >
-            {button.label}
-          </button>
-        ))}
-      </div>
-    </FirstVisitGuideCardShell>
+    </>
   );
+}
 
-  if (!hasSign) {
-    return cardBody;
+/** 1カード1メッセージ・手動送り */
+export function FirstVisitGuideCardPanel({ card, onAction }: Props) {
+  const hasSign = Boolean(card.signLabel?.trim());
+  const signLabel = card.signLabel?.trim() ?? "";
+
+  if (card.bare && hasSign) {
+    return (
+      <div className="flex w-full flex-col items-center gap-4">
+        <ForestDirectionSignBoard label={signLabel} className="max-w-none w-full" />
+        <div className="w-full space-y-3">
+          <GuideCardTextBlocks card={card} hasSign={hasSign} bare />
+          <GuideCardButtons card={card} onAction={onAction} />
+        </div>
+      </div>
+    );
   }
 
   return (
-    <div className="flex flex-col gap-3">
-      <ForestDirectionSignBoard label={signLabel} className="max-w-none sm:hidden" />
-      {cardBody}
-    </div>
+    <FirstVisitGuideCardShell>
+      {hasSign ? (
+        <ForestDirectionSignBoard label={signLabel} className="mb-4 max-w-none w-full" />
+      ) : card.illustrationSrc ? (
+        <FirstVisitGuideCardIllustration src={card.illustrationSrc} />
+      ) : null}
+      <GuideCardTextBlocks card={card} hasSign={hasSign} />
+      <div className="mt-5">
+        <GuideCardButtons card={card} onAction={onAction} />
+      </div>
+    </FirstVisitGuideCardShell>
   );
 }
 

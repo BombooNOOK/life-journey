@@ -4,7 +4,6 @@ import Link from "next/link";
 import { useCallback, useState } from "react";
 
 import { ForestDirectionSignBoard } from "@/components/guide/ForestDirectionSignBoard";
-import { FirstVisitGuideCardShell } from "@/components/guide/first-visit/FirstVisitGuideCardShell";
 import {
   FOREST_DIRECTION_SIGN_LABEL_PLACEMENT,
   forestDirectionSignLabelStyle,
@@ -49,22 +48,21 @@ export function ForestDirectionSignLayoutDebugClient() {
       </div>
 
       <div>
-        <p className="text-sm font-medium text-stone-800">初回導線（スマホ：看板はカード外）</p>
+        <p className="text-sm font-medium text-stone-800">初回導線（カードなし）</p>
         <div className="mt-4 max-w-sm">
-          <div className="flex flex-col gap-3">
-            <ForestDirectionSignBoard label={SAMPLE_LABEL} className="max-w-none sm:hidden" />
-            <FirstVisitGuideCardShell>
-              <ForestDirectionSignBoard label={SAMPLE_LABEL} className="mb-4 hidden sm:block" />
-              <p className="whitespace-pre-line text-center text-sm leading-relaxed text-stone-700">
+          <div className="flex w-full flex-col items-center gap-4">
+            <ForestDirectionSignBoard label={SAMPLE_LABEL} className="max-w-none w-full" />
+            <div className="w-full space-y-3">
+              <p className="whitespace-pre-line text-center text-base leading-relaxed text-stone-700">
                 {FIRST_VISIT_KANTEI_HALL_BODY}
               </p>
               <button
                 type="button"
-                className="mt-5 w-full rounded-lg bg-emerald-800 px-4 py-2.5 text-sm font-medium text-white"
+                className="w-full rounded-lg bg-emerald-800 px-4 py-2.5 text-sm font-medium text-white"
               >
                 次へ
               </button>
-            </FirstVisitGuideCardShell>
+            </div>
           </div>
         </div>
         <p className="mt-6 text-xs leading-relaxed text-stone-500">

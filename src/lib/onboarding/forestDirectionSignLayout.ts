@@ -40,7 +40,7 @@ export const FOREST_DIRECTION_SIGN_LABEL_PLACEMENT: ForestDirectionSignLabelPlac
   y: 284,
   textAnchor: "topleft",
   textAlign: "left",
-  fontSize: 27,
+  fontSize: 88,
   fontWeight: 400,
   lineHeight: 1,
   maxWidth: 360,
@@ -71,6 +71,7 @@ export function forestDirectionSignLabelStyle(
     left: placement.x * scale,
     top: placement.y * scale,
     maxWidth: placement.maxWidth != null ? placement.maxWidth * scale : undefined,
+    /** 看板の表示幅に比例（1024 設計座標基準） */
     fontSize: placement.fontSize * scale,
     fontFamily: FOREST_DIRECTION_SIGN_LABEL_FONT_FAMILY,
     fontWeight: placement.fontWeight ?? 400,
