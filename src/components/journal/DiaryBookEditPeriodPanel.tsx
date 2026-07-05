@@ -279,7 +279,11 @@ export function DiaryBookEditPeriodPanel({
               onClick={() => void checkPreview()}
               className="min-h-[44px] rounded-lg border border-stone-300 bg-white px-4 py-2 text-sm font-medium text-stone-800 hover:bg-stone-100 disabled:opacity-50"
             >
-              {checking ? "確認中…" : "変更後の日記を確認"}
+              {checking ? (
+                <OwlLoadingInline label="確認中…" size="sm" />
+              ) : (
+                "変更後の日記を確認"
+              )}
             </button>
             <button
               type="button"

@@ -12,6 +12,7 @@ import type { FirstVisitGuideCardAction } from "@/lib/onboarding/firstVisitWizar
 import { FIRST_VISIT_KANTEI_PROCEED_CARD } from "@/lib/onboarding/firstVisitWizard/cards";
 import { FIRST_VISIT_ROUTES } from "@/lib/onboarding/firstVisitWizard/routes";
 import { setFirstVisitOrderGuideFlag } from "@/lib/onboarding/firstVisitWizard/session";
+import { OwlLoadingPanel } from "@/components/ui/OwlLoadingPanel";
 
 /** 第6幕：鑑定前説明 → /order へ */
 export function FirstVisitKanteiPage() {
@@ -37,9 +38,7 @@ export function FirstVisitKanteiPage() {
 
   if (loading || !isLoggedIn) {
     return (
-      <div className="home-read-scope flex min-h-[40vh] items-center justify-center px-4">
-        <p className="text-sm text-stone-600">読み込み中…</p>
-      </div>
+      <OwlLoadingPanel layout="page" label="ログイン状態を確認しています…" />
     );
   }
 

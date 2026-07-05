@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { getBookPlan, type BookPlanResult } from "@/lib/order/bookBindingPlan";
+import { OwlLoadingInline } from "@/components/ui/OwlLoadingInline";
 
 function PlanSummaryBlock({ plan }: { plan: BookPlanResult }) {
   if (plan.plan === "over_limit") {
@@ -459,11 +460,13 @@ export function BookshelfDiaryBindingOrder({
                     className="rounded-lg bg-emerald-800 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-900 disabled:cursor-not-allowed disabled:opacity-50"
                     onClick={() => void handleIssueCode()}
                   >
-                    {issueLoading
-                      ? "発行中…"
-                      : pendingBinding
-                        ? "製本申込コードを表示する"
-                        : "製本申込コードを発行する"}
+                    {issueLoading ? (
+                      <OwlLoadingInline label="発行中…" size="sm" />
+                    ) : pendingBinding ? (
+                      "製本申込コードを表示する"
+                    ) : (
+                      "製本申込コードを発行する"
+                    )}
                   </button>
                 </div>
                 {!checksComplete ? (

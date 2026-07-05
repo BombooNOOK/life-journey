@@ -3,6 +3,7 @@
 import { useState } from "react";
 
 import { deriveSubscriptionPlanLabel, type SubscriptionPlanId } from "@/lib/stripe/plans";
+import { OwlLoadingInline } from "@/components/ui/OwlLoadingInline";
 
 type CheckoutPlan = SubscriptionPlanId;
 
@@ -54,7 +55,11 @@ function PlanSubscribeButton({
         }}
         className={className}
       >
-        {busy ? "Stripeへ移動中…" : label}
+        {busy ? (
+          <OwlLoadingInline label="Stripeへ移動中…" size="sm" />
+        ) : (
+          label
+        )}
       </button>
       {error ? <p className="mt-2 text-xs text-red-700">{error}</p> : null}
     </div>

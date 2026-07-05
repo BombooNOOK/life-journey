@@ -4,6 +4,8 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
+import { OwlLoadingInline } from "@/components/ui/OwlLoadingInline";
+
 type Props = {
   profileCount: number;
   profileLimit: number;
@@ -109,7 +111,11 @@ export function ProfileAddCard({
               onClick={() => void createProfile()}
               className="rounded-md bg-stone-800 px-4 py-2 text-sm font-medium text-white hover:bg-stone-700 disabled:opacity-60"
             >
-              {busy ? "追加中…" : "追加する"}
+              {busy ? (
+                <OwlLoadingInline label="追加中…" size="sm" />
+              ) : (
+                "追加する"
+              )}
             </button>
           </div>
           {error ? <p className="mt-2 text-xs text-red-700">{error}</p> : null}

@@ -9,6 +9,7 @@ import { phraseForMonth } from "@/lib/journal/diaryPhrases";
 import Image from "next/image";
 
 import { MoodOwlIcon } from "@/components/journal/MoodOwlIcon";
+import { OwlLoadingInline } from "@/components/ui/OwlLoadingInline";
 import { diaryBookCalendarPawprintImagePath } from "@/lib/journal/diaryBookAssets";
 import { getMoodMeta } from "@/lib/journal/meta";
 
@@ -298,7 +299,7 @@ export function LifeJourneyDiaryCard() {
 
       <div className="rounded-xl border border-emerald-100 bg-emerald-50/60 p-3 text-sm text-stone-700">
         {loading ? (
-          <p>今月の日記を読み込み中…</p>
+          <OwlLoadingInline label="今月の日記を読み込んでいます…" size="sm" />
         ) : error ? (
           <p>今月の日記を取得できませんでした。</p>
         ) : (

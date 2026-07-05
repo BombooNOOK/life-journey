@@ -103,6 +103,7 @@ import { CompanionWritingJournalGuideDock } from "@/components/journal/companion
 import { companionWritingZoneSectionClass } from "@/components/journal/companion-writing/companionWritingGuideStyles";
 import { CompanionWritingZoneHint } from "@/components/journal/companion-writing/CompanionWritingZoneHint";
 import { OwlLoadingInline } from "@/components/ui/OwlLoadingInline";
+import { OwlSuspenseFallback } from "@/components/ui/OwlSuspenseFallback";
 import { TrialStatusBanner } from "@/components/entitlement/TrialStatusBanner";
 import { useEntitlement } from "@/components/entitlement/useEntitlement";
 import { useJournalLocalDraft } from "@/hooks/useJournalLocalDraft";
@@ -1026,9 +1027,11 @@ function JournalPageContent() {
           aria-live="polite"
           aria-busy="true"
         >
-          <p className="rounded-xl border border-stone-200 bg-white px-5 py-4 text-sm text-stone-700 shadow-sm">
-            プレビューを準備しています…
-          </p>
+          <OwlLoadingInline
+            label="プレビューを準備しています…"
+            size="md"
+            className="rounded-xl border border-stone-200 bg-white px-5 py-4 text-sm text-stone-700 shadow-sm"
+          />
         </div>
       ) : null}
       {navigatingToCalendar ? (
@@ -1057,7 +1060,7 @@ function JournalPageContent() {
               {diaryTargetLabel}
             </span>
           ) : !authLoading && user?.email ? (
-            <span className="text-[11px] text-stone-400">読み込み中…</span>
+            <OwlLoadingInline label="読み込み中…" size="sm" className="text-[11px] text-stone-400" />
           ) : null}
         </div>
         {diaryTargetLabel !== null ? (
@@ -1482,7 +1485,11 @@ function JournalPageContent() {
               disabled={saving || processingPhoto}
               className="min-h-[44px] whitespace-nowrap rounded-lg bg-stone-800 px-4 py-2.5 text-base font-medium text-white transition hover:bg-stone-700 disabled:opacity-60"
             >
-              {saving ? "保存中…" : "保存する"}
+              {saving ? (
+                <OwlLoadingInline label="保存中…" size="sm" />
+              ) : (
+                "保存する"
+              )}
             </button>
             {editingId ? (
               <>
@@ -1492,7 +1499,11 @@ function JournalPageContent() {
                   onClick={() => void saveEntry("returnTo")}
                   className="min-h-[44px] whitespace-nowrap rounded-lg border border-stone-300 bg-white px-4 py-2.5 text-base font-medium text-stone-700 transition hover:bg-stone-50 disabled:opacity-60"
                 >
-                  {saving ? "保存中…" : "保存して戻る"}
+                  {saving ? (
+                    <OwlLoadingInline label="保存中…" size="sm" />
+                  ) : (
+                    "保存して戻る"
+                  )}
                 </button>
                 <button
                   type="button"
@@ -1517,7 +1528,7 @@ function JournalPageContent() {
 
 export default function JournalPage() {
   return (
-    <Suspense fallback={<p className="text-sm text-stone-500">読み込み中…</p>}>
+    <Suspense fallback={<OwlSuspenseFallback label="読み込んでいます…" />}>
       <JournalPageContent />
     </Suspense>
   );

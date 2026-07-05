@@ -12,6 +12,8 @@ import {
 import { daysInMonth, toIsoDateString } from "@/lib/order/birthDate";
 import { romanizeFromKanaParts } from "@/lib/numerology/kanaToRomaji";
 import { OrderFormProfileNotice } from "@/components/orders/OrderFormProfileNotice";
+import { OwlLoadingInline } from "@/components/ui/OwlLoadingInline";
+import { OwlSuspenseFallback } from "@/components/ui/OwlSuspenseFallback";
 import { isHiraganaOnly } from "@/lib/validation/hiragana";
 
 const MIN_YEAR = 1870;
@@ -405,7 +407,11 @@ function OrderPageContent() {
               disabled={loading}
               className="w-full rounded-lg bg-stone-800 py-3 text-sm font-medium text-white hover:bg-stone-700 disabled:opacity-60"
             >
-              {loading ? "保存中…" : "この内容で保存する"}
+              {loading ? (
+                <OwlLoadingInline label="鑑定を保存しています…" size="sm" className="text-white" />
+              ) : (
+                "この内容で保存する"
+              )}
             </button>
           </div>
         </form>
@@ -416,7 +422,7 @@ function OrderPageContent() {
 
 export default function OrderPage() {
   return (
-    <Suspense fallback={<p className="text-sm text-stone-500">読み込み中…</p>}>
+    <Suspense fallback={<OwlSuspenseFallback label="鑑定フォームを読み込んでいます…" />}>
       <OrderPageContent />
     </Suspense>
   );

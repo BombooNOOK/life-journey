@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 import { useFirebaseAuth } from "@/components/auth/FirebaseAuthProvider";
+import { OwlLoadingInline } from "@/components/ui/OwlLoadingInline";
 import { ACCOUNT_DELETE_CONFIRMATION_WORD, ACCOUNT_DELETE_DATA_ITEMS } from "@/lib/account/accountDeleteTypes";
 import { mobileReadable } from "@/lib/auth/mobileReadableStyles";
 
@@ -105,7 +106,11 @@ export function AccountDeleteForm({ blockMessage = null }: Props) {
           onClick={() => void submitDelete()}
           className="inline-flex min-h-[44px] w-full items-center justify-center rounded-lg border border-red-300 bg-red-50 px-4 py-2.5 text-base font-medium text-red-900 hover:bg-red-100 disabled:opacity-50"
         >
-          {busy ? "削除中…" : "アカウントを削除する"}
+          {busy ? (
+            <OwlLoadingInline label="削除中…" size="sm" />
+          ) : (
+            "アカウントを削除する"
+          )}
         </button>
         <Link href="/orders/account" className={mobileReadable.buttonSecondary}>
           削除せずに戻る

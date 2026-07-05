@@ -3,6 +3,8 @@
 import { useRouter } from "next/navigation";
 import { FormEvent, useEffect, useState } from "react";
 
+import { OwlLoadingInline } from "@/components/ui/OwlLoadingInline";
+
 import {
   diaryCoverStyleOptions,
   normalizeDiaryCoverStyle,
@@ -168,7 +170,11 @@ export function DiaryBookshelfSettingsForm({
           disabled={saving}
           className="rounded-lg bg-stone-800 px-4 py-2 text-sm font-medium text-white hover:bg-stone-700 disabled:opacity-60"
         >
-          {saving ? "保存中…" : "設定を保存"}
+          {saving ? (
+            <OwlLoadingInline label="保存中…" size="sm" />
+          ) : (
+            "設定を保存"
+          )}
         </button>
         {message ? <p className="text-xs text-stone-600">{message}</p> : null}
       </form>

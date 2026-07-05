@@ -4,6 +4,8 @@ import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
+import { OwlLoadingPanel } from "@/components/ui/OwlLoadingPanel";
+
 import {
   DiaryBookBackCoverPage,
   DiaryBookFreeWritingPage,
@@ -502,7 +504,7 @@ export function DiaryBookFlipReader({
   }, [current, coverTheme, endDate, entries, getPhotoDataUrl, shouldShowPhotoLoading, startDate, title]);
 
   if (loading && entries.length === 0) {
-    return <p className="text-sm text-stone-500">日記ブックを読み込み中…</p>;
+    return <OwlLoadingPanel layout="section" label="日記ブックを読み込んでいます…" size="sm" />;
   }
 
   if (error) {

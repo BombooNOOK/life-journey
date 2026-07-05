@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { Suspense } from "react";
 
 import { DiaryJournalListHome } from "@/components/journal/DiaryJournalListHome";
+import { OwlSuspenseFallback } from "@/components/ui/OwlSuspenseFallback";
 import { getViewerEmailFromCookie } from "@/lib/auth/viewer";
 import { withPrismaConnectionRetry } from "@/lib/db/prismaRetry";
 import { listProfilesAndActiveProfileId } from "@/lib/profile/activeProfile";
@@ -9,7 +10,7 @@ import { listProfilesAndActiveProfileId } from "@/lib/profile/activeProfile";
 export const dynamic = "force-dynamic";
 
 function ListFallback() {
-  return <p className="text-sm text-stone-500">日記一覧を読み込み中…</p>;
+  return <OwlSuspenseFallback label="日記一覧を読み込んでいます…" />;
 }
 
 export default async function OrdersJournalListPage() {

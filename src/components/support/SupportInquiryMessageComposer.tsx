@@ -3,6 +3,8 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
+import { OwlLoadingInline } from "@/components/ui/OwlLoadingInline";
+
 import { SUPPORT_INQUIRY_MESSAGE_MAX_LENGTH } from "@/lib/support/supportInquiryTypes";
 
 type Props = {
@@ -92,7 +94,11 @@ export function SupportInquiryMessageComposer({
         onClick={() => void submitMessage()}
         className="inline-flex min-h-[44px] items-center rounded-lg bg-stone-800 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-stone-700 disabled:opacity-60"
       >
-        {busy ? "送信中…" : submitLabel}
+        {busy ? (
+          <OwlLoadingInline label="送信中…" size="sm" />
+        ) : (
+          submitLabel
+        )}
       </button>
     </div>
   );

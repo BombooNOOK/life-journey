@@ -15,6 +15,7 @@ import {
   clearFirstVisitFromRegisterFlag,
   readFirstVisitFromRegisterFlag,
 } from "@/lib/onboarding/firstVisitWizard/session";
+import { OwlLoadingPanel } from "@/components/ui/OwlLoadingPanel";
 
 /** 第5幕：ログハウス建築 */
 export function FirstVisitLoghousePage() {
@@ -55,9 +56,7 @@ export function FirstVisitLoghousePage() {
 
   if (loading || !isLoggedIn) {
     return (
-      <div className="home-read-scope flex min-h-[40vh] items-center justify-center px-4">
-        <p className="text-sm text-stone-600">読み込み中…</p>
-      </div>
+      <OwlLoadingPanel layout="page" label="ログイン状態を確認しています…" />
     );
   }
 

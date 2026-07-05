@@ -4,6 +4,8 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
+import { OwlLoadingInline } from "@/components/ui/OwlLoadingInline";
+
 import { mobileReadable } from "@/lib/auth/mobileReadableStyles";
 import { SUBSCRIPTION_BILLING_SUMMARY } from "@/lib/stripe/subscriptionBillingCopy";
 
@@ -64,7 +66,11 @@ export function AccountCancelPlanForm() {
           onClick={() => void submitCancel()}
           className={mobileReadable.buttonPrimary}
         >
-          {busy ? "送信中…" : "解約を申し込む"}
+          {busy ? (
+            <OwlLoadingInline label="送信中…" size="sm" />
+          ) : (
+            "解約を申し込む"
+          )}
         </button>
         <Link href="/orders/account" className={mobileReadable.buttonSecondary}>
           解約せずに戻る

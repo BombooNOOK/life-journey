@@ -2,7 +2,7 @@ import { notFound, redirect } from "next/navigation";
 import { Suspense } from "react";
 
 import { KanteiPdfReader } from "@/components/orders/KanteiPdfReader";
-import { OwlSpinIndicator } from "@/components/ui/OwlSpinIndicator";
+import { OwlLoadingPanel } from "@/components/ui/OwlLoadingPanel";
 import { getViewerEmailFromCookie, normalizeEmail } from "@/lib/auth/viewer";
 import { prisma } from "@/lib/db";
 import {
@@ -18,10 +18,12 @@ export const dynamic = "force-dynamic";
 
 function ReaderFallback() {
   return (
-    <div className="flex min-h-[50vh] flex-col items-center justify-center gap-3 py-12" role="status">
-      <OwlSpinIndicator size="md" />
-      <p className="text-sm text-stone-600">ビューアを読み込んでいます…</p>
-    </div>
+    <OwlLoadingPanel
+      layout="page"
+      label="鑑定書ビューアを読み込んでいます…"
+      hint="このあと鑑定書の準備が始まります。初回は30秒〜1分ほどかかることがあります。"
+      className="min-h-[50vh]"
+    />
   );
 }
 

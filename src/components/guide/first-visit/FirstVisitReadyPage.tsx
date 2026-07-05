@@ -17,6 +17,7 @@ import {
 import { FIRST_VISIT_ROUTES } from "@/lib/onboarding/firstVisitWizard/routes";
 import { setFirstVisitFromRegisterFlag } from "@/lib/onboarding/firstVisitWizard/session";
 import type { FirstVisitReadyBranch } from "@/lib/viewer/firstVisitReadyContext";
+import { OwlLoadingPanel } from "@/components/ui/OwlLoadingPanel";
 
 type ReadyContextState =
   | { status: "loading" }
@@ -120,9 +121,11 @@ export function FirstVisitReadyPage() {
 
   if (pageLoading) {
     return (
-      <div className="home-read-scope flex min-h-[40vh] items-center justify-center px-4">
-        <p className="text-sm text-stone-600">読み込み中…</p>
-      </div>
+      <OwlLoadingPanel
+        layout="page"
+        label="案内を読み込んでいます…"
+        hint="フクロウが回っているあいだはそのままお待ちください。"
+      />
     );
   }
 

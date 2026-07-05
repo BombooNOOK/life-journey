@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 
+import { OwlLoadingInline } from "@/components/ui/OwlLoadingInline";
 import { PRIVACY_POLICY_LABEL, PRIVACY_POLICY_PATH } from "@/lib/legal/legalDocumentLinks";
 import {
   GUEST_SUPPORT_INQUIRY_CATEGORIES,
@@ -151,7 +152,11 @@ export function GuestContactSection() {
           onClick={() => void submitInquiry()}
           className="inline-flex min-h-[44px] items-center rounded-lg bg-stone-800 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-stone-700 disabled:opacity-60"
         >
-          {busy ? "送信中…" : "送信する"}
+          {busy ? (
+            <OwlLoadingInline label="送信中…" size="sm" />
+          ) : (
+            "送信する"
+          )}
         </button>
       </div>
     </section>

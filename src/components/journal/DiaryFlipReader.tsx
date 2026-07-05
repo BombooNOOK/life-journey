@@ -5,6 +5,7 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { DiaryDesignPreview } from "@/components/journal/DiaryDesignPreview";
+import { OwlLoadingPanel } from "@/components/ui/OwlLoadingPanel";
 import {
   collectLongContentWarningEntries,
   JournalBindingContentWarnings,
@@ -395,7 +396,13 @@ export function DiaryFlipReader({ year, initialSettings, bookshelfProfileId }: P
   );
 
   if (loading) {
-    return <p className="text-sm text-stone-500">{year}年の日記を読み込み中…</p>;
+    return (
+      <OwlLoadingPanel
+        layout="section"
+        label={`${year}年の日記を読み込んでいます…`}
+        size="sm"
+      />
+    );
   }
 
   if (error) {

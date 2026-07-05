@@ -20,6 +20,9 @@ import {
   RegistrationCompletePanel,
 } from "@/components/auth/AuthSessionPanels";
 import { InlineHelpButton } from "@/components/ui/InlineHelpButton";
+import { OwlLoadingInline } from "@/components/ui/OwlLoadingInline";
+import { OwlLoadingPanel } from "@/components/ui/OwlLoadingPanel";
+import { OwlSpinIndicator } from "@/components/ui/OwlSpinIndicator";
 import { mobileReadable } from "@/lib/auth/mobileReadableStyles";
 import { getPasswordResetSentNotice } from "@/lib/auth/passwordResetCopy";
 import { sendLjPasswordResetEmail } from "@/lib/auth/sendPasswordResetEmailSafe";
@@ -132,17 +135,15 @@ function PostLoginTransitionOverlay({
             : "mx-auto max-w-md space-y-3 rounded-xl border border-stone-200 bg-white p-8 text-center shadow-lg"
         }
       >
+        <OwlSpinIndicator size="md" />
         <p className="text-base font-semibold text-stone-900">{LOG_HOUSE_MOVING_LABEL}</p>
         {isAlreadySignedIn ? (
           <p className="text-sm leading-relaxed text-stone-600">ログイン済みのため、自動で次の画面へ進みます。</p>
         ) : (
           <p className="text-sm leading-relaxed text-stone-600">
-            Google でのサインインから戻ってきたあと、一度この画面を経由します。ログインが取り込め次第、自動で次の画面へ進みます。このまま少しお待ちください。
+            Google でのサインインから戻ってきたあと、一度この画面を経由します。ログインが取り込め次第、自動で次の画面へ進みます。フクロウが回っているあいだはそのままお待ちください。
           </p>
         )}
-        <p className="text-xs text-stone-500" aria-hidden>
-          移動中
-        </p>
       </div>
     </div>
   );
@@ -625,15 +626,11 @@ export function LoginClient({
 
   if (authLoading) {
     return (
-      <div className="mx-auto max-w-md space-y-4 rounded-xl border border-stone-200 bg-white p-8 text-center shadow-sm">
-        <p className="text-base font-medium text-stone-900">Googleの認証を確認しています…</p>
-        <p className="text-sm text-stone-600">
-          アカウントを選んだあと、まずこの画面のまま少しお待ちください。すぐに{LOG_HOUSE_GO_LABEL}。
-        </p>
-        <p className="text-xs text-stone-500" aria-hidden>
-          読み込み中
-        </p>
-      </div>
+      <OwlLoadingPanel
+        layout="card"
+        label="Googleの認証を確認しています…"
+        hint={`アカウントを選んだあと、まずこの画面のまま少しお待ちください。すぐに${LOG_HOUSE_GO_LABEL}。`}
+      />
     );
   }
 
@@ -750,7 +747,11 @@ export function LoginClient({
         onClick={() => void handleGoogle()}
         className={`flex w-full items-center justify-center gap-2 rounded-lg border border-stone-300 bg-white px-4 py-2.5 ${mobileReadable.buttonSecondary}`}
       >
-        {busyGoogle ? "処理中…" : "Google で続ける"}
+        {busyGoogle ? (
+          <OwlLoadingInline label="Google に接続しています…" size="sm" />
+        ) : (
+          "Google で続ける"
+        )}
       </button>
 
       {busyGoogle ? (
@@ -819,9 +820,16 @@ export function LoginClient({
             disabled={busyEmail}
             className={mobileReadable.buttonPrimary}
           >
-            {isFirstVisitRegisterFlow
-              ? FIRST_VISIT_RESIDENT_REGISTRATION_BUTTON
-              : "新規登録（次に生年月日入力）"}
+            {busyEmail ? (
+              <OwlLoadingInline
+                label={isFirstVisitRegisterFlow ? "住民登録しています…" : "登録しています…"}
+                size="sm"
+              />
+            ) : isFirstVisitRegisterFlow ? (
+              FIRST_VISIT_RESIDENT_REGISTRATION_BUTTON
+            ) : (
+              "新規登録（次に生年月日入力）"
+            )}
           </button>
         ) : (
           <button
@@ -829,12 +837,13 @@ export function LoginClient({
             disabled={busyEmail}
             className={mobileReadable.buttonPrimary}
           >
-            ログイン
+            {busyEmail ? (
+              <OwlLoadingInline label="ログインしています…" size="sm" />
+            ) : (
+              "ログイン"
+            )}
           </button>
         )}
-        {busyEmail ? (
-          <p className={`text-center font-medium ${mobileReadable.bodyMuted}`}>処理中…</p>
-        ) : null}
         <p className={mobileReadable.helperMuted}>
           Enterキーで送信した場合は「
           {isFirstVisitRegisterFlow ? "住民登録" : isRegisterFlow ? "新規登録" : "ログイン"}

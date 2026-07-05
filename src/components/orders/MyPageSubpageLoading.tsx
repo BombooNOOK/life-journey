@@ -1,14 +1,22 @@
-import { OwlLoadingInline } from "@/components/ui/OwlLoadingInline";
+import { OwlLoadingPanel } from "@/components/ui/OwlLoadingPanel";
 
 type Props = {
   label?: string;
+  hint?: string;
 };
 
 /** マイページ配下のサブ画面：サーバー読み込み中のフクロウ表示 */
-export function MyPageSubpageLoading({ label = "読み込んでいます…" }: Props) {
+export function MyPageSubpageLoading({
+  label = "読み込んでいます…",
+  hint,
+}: Props) {
   return (
-    <div className="mx-auto flex w-full max-w-md justify-center px-4 py-20">
-      <OwlLoadingInline label={label} size="md" className="text-sm text-stone-600" />
-    </div>
+    <OwlLoadingPanel
+      label={label}
+      hint={hint}
+      layout="page"
+      size="md"
+      className="mx-auto w-full max-w-md min-h-[32vh]"
+    />
   );
 }

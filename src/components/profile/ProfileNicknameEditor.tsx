@@ -3,6 +3,8 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
+import { OwlLoadingInline } from "@/components/ui/OwlLoadingInline";
+
 type Props = {
   profileId: string;
   initialNickname: string;
@@ -81,7 +83,11 @@ export function ProfileNicknameEditor({ profileId, initialNickname }: Props) {
           onClick={() => void saveNickname()}
           className="inline-flex min-h-[44px] items-center justify-center rounded-md bg-stone-800 px-4 py-2 text-sm font-medium text-white hover:bg-stone-700 disabled:opacity-60"
         >
-          {busy ? "保存中…" : "変更を保存"}
+          {busy ? (
+            <OwlLoadingInline label="保存中…" size="sm" />
+          ) : (
+            "変更を保存"
+          )}
         </button>
       </div>
       <p className="text-xs leading-relaxed text-stone-500">

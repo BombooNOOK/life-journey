@@ -3,6 +3,8 @@
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 
+import { OwlLoadingInline } from "@/components/ui/OwlLoadingInline";
+
 import type { ExpectedCoreFivePartial } from "@/lib/verification/coreFive";
 
 type NullableKey = "destinyNumber" | "soulNumber" | "personalityNumber";
@@ -181,7 +183,11 @@ export function ExpectedVerificationForm({ orderId, initialExpected }: Props) {
           onClick={() => void save()}
           className="rounded-lg bg-stone-800 px-4 py-2 text-xs font-medium text-white hover:bg-stone-700 disabled:opacity-50"
         >
-          {loading ? "保存中…" : "期待値を保存"}
+          {loading ? (
+            <OwlLoadingInline label="保存中…" size="sm" />
+          ) : (
+            "期待値を保存"
+          )}
         </button>
         <button
           type="button"

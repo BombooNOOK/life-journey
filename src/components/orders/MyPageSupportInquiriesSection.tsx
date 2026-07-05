@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
+import { OwlLoadingInline } from "@/components/ui/OwlLoadingInline";
+
 type InquirySummary = {
   id: string;
   createdAt: string;
@@ -69,7 +71,9 @@ export function MyPageSupportInquiriesSection({ showHeader = true }: Props) {
         </div>
       ) : null}
 
-      {loading ? <p className="text-sm text-stone-500">読み込み中…</p> : null}
+      {loading ? (
+        <OwlLoadingInline label="読み込み中…" size="sm" className="text-sm text-stone-500" />
+      ) : null}
       {error ? <p className="text-sm text-red-700">{error}</p> : null}
 
       {!loading && !error && inquiries.length === 0 ? (

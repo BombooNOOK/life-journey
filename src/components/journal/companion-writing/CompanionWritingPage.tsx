@@ -653,7 +653,11 @@ export function CompanionWritingPage() {
               onClick={() => void saveEntry()}
               className="min-h-[44px] flex-[2] rounded-lg bg-emerald-800 px-4 py-2.5 text-sm font-medium text-white hover:bg-emerald-900 disabled:opacity-60"
             >
-              {saving ? "保存中…" : "今日のあしあとを残す"}
+              {saving ? (
+                <OwlLoadingInline label="保存中…" size="sm" />
+              ) : (
+                "今日のあしあとを残す"
+              )}
             </button>
           </div>
         </section>

@@ -1,5 +1,7 @@
 import { Suspense } from "react";
 
+import { OwlSuspenseFallback } from "@/components/ui/OwlSuspenseFallback";
+
 import { LoginGate } from "./LoginGate";
 
 export const metadata = {
@@ -7,11 +9,7 @@ export const metadata = {
 };
 
 function LoginLoading() {
-  return (
-    <div className="mx-auto max-w-md rounded-xl border border-stone-200 bg-white p-8 text-center shadow-sm">
-      <p className="text-sm text-stone-600">読み込み中…</p>
-    </div>
-  );
+  return <OwlSuspenseFallback label="ログイン画面を読み込んでいます…" />;
 }
 
 export default function LoginPage() {

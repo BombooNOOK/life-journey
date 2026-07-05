@@ -167,7 +167,9 @@ export function DiaryBookBindingOrderPanel({ bookId, pageCount, planId, orderabl
   }
 
   if (pendingLoading) {
-    return <p className="text-sm text-stone-500">申込状況を確認しています…</p>;
+    return (
+      <OwlLoadingInline label="申込状況を確認しています…" size="sm" className="text-sm text-stone-500" />
+    );
   }
 
   if (issued) {

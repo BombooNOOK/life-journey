@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { Suspense } from "react";
 
 import { DiaryCalendarHome } from "@/components/journal/DiaryCalendarHome";
+import { OwlSuspenseFallback } from "@/components/ui/OwlSuspenseFallback";
 import { getViewerEmailFromCookie } from "@/lib/auth/viewer";
 import { withPrismaConnectionRetry } from "@/lib/db/prismaRetry";
 import { listProfilesAndActiveProfileId } from "@/lib/profile/activeProfile";
@@ -16,7 +17,7 @@ import { LOG_HOUSE_BACK_LINK } from "@/lib/journal/logHouseLabels";
 export const dynamic = "force-dynamic";
 
 function CalendarFallback() {
-  return <p className="text-sm text-stone-500">カレンダーを読み込み中…</p>;
+  return <OwlSuspenseFallback label="カレンダーを読み込んでいます…" />;
 }
 
 export default async function OrdersCalendarPage() {

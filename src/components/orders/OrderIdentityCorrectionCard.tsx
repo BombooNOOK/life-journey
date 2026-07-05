@@ -3,6 +3,8 @@
 import { useRouter } from "next/navigation";
 import { useCallback, useMemo, useState } from "react";
 
+import { OwlLoadingInline } from "@/components/ui/OwlLoadingInline";
+
 import { formatYearOptionLabel } from "@/lib/date/japaneseEra";
 import { daysInMonth } from "@/lib/order/birthDate";
 import { isHiraganaOnly } from "@/lib/validation/hiragana";
@@ -222,7 +224,11 @@ export function OrderIdentityCorrectionCard({
               disabled={loading}
               className="rounded-lg bg-stone-800 px-4 py-2 text-sm font-medium text-white hover:bg-stone-700 disabled:opacity-60"
             >
-              {loading ? "保存中…" : "この内容で一度だけ保存"}
+              {loading ? (
+                <OwlLoadingInline label="保存中…" size="sm" />
+              ) : (
+                "この内容で一度だけ保存"
+              )}
             </button>
             <button
               type="button"

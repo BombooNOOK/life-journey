@@ -3,6 +3,7 @@
 import { useState } from "react";
 
 import { BASE_KANTEI_BOOK_URL } from "@/lib/commerce/baseUrls";
+import { OwlLoadingInline } from "@/components/ui/OwlLoadingInline";
 
 function openBaseShop(url: string) {
   window.open(url, "_blank", "noopener,noreferrer");
@@ -40,7 +41,11 @@ export function KanteiBookBindingConfirmButton({ orderId }: { orderId: string })
         disabled={loading}
         className="inline-flex rounded-lg border border-violet-300 bg-violet-50 px-5 py-2.5 text-sm font-medium text-violet-950 hover:bg-violet-100 disabled:opacity-60"
       >
-        {loading ? "記録中…" : "製本版を注文する"}
+        {loading ? (
+          <OwlLoadingInline label="記録中…" size="sm" />
+        ) : (
+          "製本版を注文する"
+        )}
       </button>
       {error ? <p className="text-xs text-red-700">{error}</p> : null}
     </div>

@@ -2,10 +2,12 @@
 
 import dynamic from "next/dynamic";
 
+import { OwlLoadingPanel } from "@/components/ui/OwlLoadingPanel";
+
 const VerifyClient = dynamic(() => import("./VerifyClient"), {
   ssr: false,
   loading: () => (
-    <p className="py-12 text-center text-sm text-stone-500">読み込み中…</p>
+    <OwlLoadingPanel layout="section" label="読み込んでいます…" size="sm" className="py-12" />
   ),
 });
 

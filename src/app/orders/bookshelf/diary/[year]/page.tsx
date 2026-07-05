@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { Suspense } from "react";
 
 import { DiaryFlipReader } from "@/components/journal/DiaryFlipReader";
+import { OwlSuspenseFallback } from "@/components/ui/OwlSuspenseFallback";
 import {
   DEFAULT_BOOKSHELF_BOOK_SETTINGS,
   type DiaryBookshelfBookClientSettings,
@@ -71,7 +72,9 @@ export default async function BookshelfDiaryYearPage({ params }: Props) {
         </p>
       </div>
       <Suspense
-        fallback={<p className="text-sm text-stone-500">{year}年の記録を読み込み中…</p>}
+        fallback={
+          <OwlSuspenseFallback label={`${year}年の記録を読み込んでいます…`} />
+        }
       >
         <DiaryFlipReader
           year={year}

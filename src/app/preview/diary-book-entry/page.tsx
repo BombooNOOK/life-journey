@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 
 import { DiaryBookEntryPreviewClient } from "@/app/preview/diary-book-entry/DiaryBookEntryPreviewClient";
+import { OwlSuspenseFallback } from "@/components/ui/OwlSuspenseFallback";
 
 export const metadata: Metadata = {
   title: "日記ブック本文テンプレ確認",
@@ -10,7 +11,13 @@ export const metadata: Metadata = {
 
 export default function DiaryBookEntryPreviewPage() {
   return (
-    <Suspense fallback={<p className="p-8 text-sm text-stone-500">読み込み中…</p>}>
+    <Suspense
+      fallback={
+        <div className="p-8">
+          <OwlSuspenseFallback label="読み込んでいます…" />
+        </div>
+      }
+    >
       <DiaryBookEntryPreviewClient />
     </Suspense>
   );

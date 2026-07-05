@@ -1,5 +1,6 @@
 "use client";
 
+import { OwlLoadingInline } from "@/components/ui/OwlLoadingInline";
 import type { CompanionType } from "@/lib/journal/meta";
 import type { JournalCompanionHandoffFocus } from "@/lib/journal/companionWriting/session";
 import { getCompanionWritingEditGuideWhisper } from "@/lib/journal/companionWriting/guideWhispers";
@@ -89,7 +90,11 @@ export function CompanionWritingJournalGuideDock({
           onClick={onFinish}
           className={companionWritingGuidePrimaryButtonClass}
         >
-          {saving ? "保存中…" : COMPANION_WRITING_EDIT_FINISH_LABEL}
+          {saving ? (
+            <OwlLoadingInline label="保存中…" size="sm" />
+          ) : (
+            COMPANION_WRITING_EDIT_FINISH_LABEL
+          )}
         </button>
       </div>
     </div>

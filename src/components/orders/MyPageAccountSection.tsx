@@ -4,6 +4,7 @@ import Link from "next/link";
 
 import { useFirebaseAuth } from "@/components/auth/FirebaseAuthProvider";
 import { MyPageAccountSectionCard } from "@/components/orders/MyPageAccountSectionCard";
+import { OwlLoadingInline } from "@/components/ui/OwlLoadingInline";
 import { mobileReadable } from "@/lib/auth/mobileReadableStyles";
 import { MYPAGE_CONTACT_FORM_PATH } from "@/lib/legal/legalDocumentLinks";
 import { formatMyPageProfileLimitLabel } from "@/lib/profile/effectiveProfileLimit";
@@ -103,7 +104,11 @@ export function MyPageAccountSection({
           <div>
             <p className="font-medium text-stone-900">パスワード</p>
             {authLoading ? (
-              <p className="mt-1.5 text-stone-600">ログイン方式を確認しています…</p>
+              <OwlLoadingInline
+                label="ログイン方式を確認しています…"
+                size="sm"
+                className="mt-1.5 text-stone-600"
+              />
             ) : googleOnly ? (
               <p className="mt-1.5 text-stone-700">
                 Googleアカウント側で管理されています。

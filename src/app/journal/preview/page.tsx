@@ -9,6 +9,8 @@ import { JournalReadablePreview } from "@/components/journal/JournalReadablePrev
 import { CompanionWritingPreviewFarewellGuide } from "@/components/journal/companion-writing/CompanionWritingPreviewFarewellGuide";
 import { JournalSocialPostImagePanel } from "@/components/journal/JournalSocialPostImagePanel";
 import { ActiveProfileLabel } from "@/components/profile/ActiveProfileLabel";
+import { OwlLoadingPanel } from "@/components/ui/OwlLoadingPanel";
+import { OwlSuspenseFallback } from "@/components/ui/OwlSuspenseFallback";
 import { useEnsureServerAuthSession } from "@/hooks/useEnsureServerAuthSession";
 import { useEnsureActiveViewerProfile } from "@/hooks/useEnsureActiveViewerProfile";
 import { useEntitlement } from "@/components/entitlement/useEntitlement";
@@ -343,7 +345,7 @@ function JournalPreviewPageContent() {
 
       <div>
         {loading ? (
-          <p className="text-base text-stone-500">プレビューを読み込み中…</p>
+          <OwlLoadingPanel layout="section" label="プレビューを読み込み中…" size="sm" />
         ) : error ? (
           <p className="text-base text-red-700">{error}</p>
         ) : !entry ? (
@@ -473,7 +475,7 @@ function JournalPreviewPageContent() {
 
 export default function JournalPreviewPage() {
   return (
-    <Suspense fallback={<p className="text-sm text-stone-500">読み込み中…</p>}>
+    <Suspense fallback={<OwlSuspenseFallback label="読み込んでいます…" />}>
       <JournalPreviewPageContent />
     </Suspense>
   );
