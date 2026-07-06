@@ -14,6 +14,7 @@ import { romanizeFromKanaParts } from "@/lib/numerology/kanaToRomaji";
 import { OrderFormProfileNotice } from "@/components/orders/OrderFormProfileNotice";
 import { OwlLoadingInline } from "@/components/ui/OwlLoadingInline";
 import { OwlSuspenseFallback } from "@/components/ui/OwlSuspenseFallback";
+import { FIRST_VISIT_KANTEI_HALL_SIGN_LABEL } from "@/lib/onboarding/firstVisitWizard/kanteiHallCopy";
 import { isHiraganaOnly } from "@/lib/validation/hiragana";
 
 const MIN_YEAR = 1870;
@@ -226,7 +227,7 @@ function OrderPageContent() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-stone-900">はじめての方はこちら</h1>
+        <h1 className="text-2xl font-bold text-stone-900">{FIRST_VISIT_KANTEI_HALL_SIGN_LABEL}</h1>
         <p className="mt-1 text-sm text-stone-600">
           お名前・ふりがな・生年月日を入力すると、無料の鑑定結果へ進みます。
         </p>
