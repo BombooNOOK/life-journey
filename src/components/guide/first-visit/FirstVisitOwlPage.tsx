@@ -11,7 +11,7 @@ import { FIRST_VISIT_ROUTES } from "@/lib/onboarding/firstVisitWizard/routes";
 /** 第3幕：フクロウ先生あいさつ（モバイル=通常ページ、PC=カード） */
 export function FirstVisitOwlPage() {
   return (
-    <div className="home-read-scope space-y-6 lg:space-y-6">
+    <div className="home-read-scope mx-auto w-full max-w-lg space-y-6 px-4 pb-8 pt-6 sm:px-6 sm:pt-8 lg:space-y-6">
       <FirstVisitWizardPageHeader
         stepLabel="フクロウ先生あいさつ"
         className="hidden lg:block"

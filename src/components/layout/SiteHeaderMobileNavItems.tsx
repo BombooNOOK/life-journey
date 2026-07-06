@@ -74,7 +74,7 @@ export function SiteHeaderMobileNavItems({ onNavigate }: Props) {
   const router = useRouter();
   const pathname = usePathname();
   const { signOutUser } = useFirebaseAuth();
-  const { showGuestNav, showAuthenticatedNav } = useClientAuthNavState();
+  const { showGuestNav, showGuestLoginNav, showAuthenticatedNav } = useClientAuthNavState();
 
   return (
     <div className="flex flex-col gap-0.5 p-2">
@@ -105,16 +105,6 @@ export function SiteHeaderMobileNavItems({ onNavigate }: Props) {
           </MobileMenuNavButton>
         )
       ) : null}
-
-      {pathname === "/about" ? (
-        <span className={`${mobileMenuItemClass} text-stone-400`} aria-current="page">
-          Life Journey Diaryとは
-        </span>
-      ) : (
-        <MobileMenuNavButton href="/about" router={router}>
-          Life Journey Diaryとは
-        </MobileMenuNavButton>
-      )}
 
       <MobileMenuNavButton href="/help/ljd" router={router}>
         {FOREST_GUIDE_STATION_TITLE}
@@ -181,7 +171,7 @@ export function SiteHeaderMobileNavItems({ onNavigate }: Props) {
         </button>
       ) : null}
 
-      {showGuestNav ? (
+      {showGuestLoginNav ? (
         pathname === "/login" ? (
           <span className={`${mobileMenuItemClass} text-stone-400`} aria-current="page">
             ログイン

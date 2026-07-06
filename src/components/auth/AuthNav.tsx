@@ -20,7 +20,7 @@ const authActionClass =
 export function AuthNav() {
   const router = useRouter();
   const { signOutUser } = useFirebaseAuth();
-  const { showGuestNav, showAuthenticatedNav } = useClientAuthNavState();
+  const { showGuestLoginNav, showAuthenticatedNav } = useClientAuthNavState();
 
   if (showAuthenticatedNav) {
     return (
@@ -43,7 +43,7 @@ export function AuthNav() {
     );
   }
 
-  if (showGuestNav) {
+  if (showGuestLoginNav) {
     return (
       <>
         <AuthSeparator />

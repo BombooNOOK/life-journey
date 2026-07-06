@@ -1,4 +1,5 @@
 const MAX_AGE_SECONDS = 60 * 60 * 24 * 30; // 30 日
+const LJ_HAD_ACCOUNT_LS_KEY = "lj_had_account";
 
 function secureSuffix(): string {
   if (typeof window === "undefined") return "";
@@ -17,6 +18,11 @@ export function syncLjAuthClientCookies(user: { email: string | null } | null): 
   document.cookie = `lj_logged_in=1; Path=/; Max-Age=${MAX_AGE_SECONDS}; SameSite=Lax${s}`;
   if (user.email) {
     document.cookie = `lj_user_email=${encodeURIComponent(user.email)}; Path=/; Max-Age=${MAX_AGE_SECONDS}; SameSite=Lax${s}`;
+    try {
+      localStorage.setItem(LJ_HAD_ACCOUNT_LS_KEY, "1");
+    } catch {
+      /* noop */
+    }
   } else {
     document.cookie = `lj_user_email=; Path=/; Max-Age=0; SameSite=Lax${s}`;
   }
@@ -30,6 +36,16 @@ export function clearLjAuthCookiesOnClient(): void {
 export function isLjLoggedInOnClient(): boolean {
   if (typeof document === "undefined") return false;
   return document.cookie.split(";").some((part) => part.trim() === "lj_logged_in=1");
+}
+
+/** 過去にログイン／登録した端末か（初回未登録のゲストにはログイン導線を出さない） */
+export function readLjHadAccountOnClient(): boolean {
+  if (typeof window === "undefined") return false;
+  try {
+    return localStorage.getItem(LJ_HAD_ACCOUNT_LS_KEY) === "1";
+  } catch {
+    return false;
+  }
 }
 
 /** ヘッダー・ログイン画面表示用。`lj_user_email` Cookie からメールを読む */
