@@ -72,8 +72,9 @@ describe("resolveUserEntitlement", () => {
     expect(e.tier).toBe("trial_not_started");
     expect(e.canCreateFirstJournal).toBe(true);
     expect(e.canUseContinuedFeatures).toBe(false);
-    expect(e.bannerVariant).toBe("not_started");
-    expect(e.denialMessage).not.toContain("終了");
+    expect(e.bannerVariant).toBe("none");
+    expect(e.showTrialBanner).toBe(false);
+    expect(e.denialCode).toBeNull();
   });
 
   it("returns trial_active for day 1 through 9", () => {

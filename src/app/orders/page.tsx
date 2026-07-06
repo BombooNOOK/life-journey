@@ -156,7 +156,7 @@ export default async function OrdersListPage() {
       {activeProfile && !hasKanteiOrder ? (
         <KanteiMissingBanner
           profileId={activeProfile.id}
-          blockNewKantei={!entitlement.canUseContinuedFeatures}
+          blockNewKantei={entitlement.tier === "trial_expired"}
         />
       ) : null}
 

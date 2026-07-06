@@ -234,6 +234,7 @@ export function LoginClient({
   /** 連打で途中状態が重なり「3回押すと入る」になるのを防ぐ */
   const googleSignInLock = useRef(false);
   const oauthReturnNavLock = useRef(false);
+  const registerNavLock = useRef(false);
   const emailInputRef = useRef<HTMLInputElement>(null);
   const feedbackRef = useRef<HTMLDivElement>(null);
   const resetSectionRef = useRef<HTMLDivElement>(null);
@@ -287,8 +288,10 @@ export function LoginClient({
 
   const navigateAfterFirstVisitRegister = useCallback(
     (welcomeEmailSent: boolean) => {
+      registerNavLock.current = true;
       setFirstVisitWelcomeEmailSentFlag(welcomeEmailSent);
       setFirstVisitFromRegisterFlag();
+      flushSync(() => setFullPagePostLoginPending(true));
       const dest = firstVisitPostRegisterDestination();
       if (browserWantsFullPagePostLoginNavigation()) {
         window.location.assign(new URL(dest, window.location.origin).toString());
@@ -571,7 +574,9 @@ export function LoginClient({
       console.error("[login:email]", e);
       setError(pickErrorMessage(e, "メールでの認証に失敗しました。"));
     } finally {
-      setBusyEmail(false);
+      if (!registerNavLock.current) {
+        setBusyEmail(false);
+      }
     }
   };
 

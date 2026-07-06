@@ -114,12 +114,12 @@ export function resolveUserEntitlement(input: ResolveUserEntitlementInput): User
       canUseContinuedFeatures: false,
       canCreateFirstJournal: true,
       tier: "trial_not_started",
-      showTrialBanner: true,
-      bannerVariant: "not_started",
+      showTrialBanner: false,
+      bannerVariant: "none",
       trialDaysRemaining: null,
       trialDayIndex: null,
-      denialCode: "FREE_TRIAL_NOT_STARTED",
-      denialMessage: TRIAL_COPY.not_started.body,
+      denialCode: null,
+      denialMessage: null,
     };
   }
 
@@ -169,8 +169,8 @@ export function serializeUserEntitlement(entitlement: UserEntitlement): Serializ
 }
 
 export function continuedFeaturesDeniedMessage(entitlement: UserEntitlement): string {
-  if (entitlement.denialCode === "FREE_TRIAL_NOT_STARTED") {
-    return entitlement.denialMessage ?? TRIAL_COPY.not_started.body;
+  if (entitlement.tier === "trial_not_started") {
+    return "この操作は、日記の無料お試し開始後にご利用いただけます。";
   }
   return entitlement.denialMessage ?? TRIAL_CONTINUED_FEATURES_DENIED_MESSAGE;
 }

@@ -10,6 +10,7 @@ import { OwlLoadingPanel } from "@/components/ui/OwlLoadingPanel";
 import type { ForestResidentCardData } from "@/lib/forestResident/forestResidentNumber";
 import { FIRST_VISIT_ROUTES } from "@/lib/onboarding/firstVisitWizard/routes";
 import {
+  readFirstVisitFromRegisterFlag,
   readFirstVisitWelcomeEmailSentFlag,
   setFirstVisitFromRegisterFlag,
 } from "@/lib/onboarding/firstVisitWizard/session";
@@ -54,11 +55,25 @@ export function FirstVisitResidentCardPage() {
   }, [router]);
 
   useEffect(() => {
-    if (authLoading) return;
-    if (!isLoggedIn) {
-      router.replace(buildLoginHref(FIRST_VISIT_ROUTES.residentCard, "login"));
-    }
+    if (authLoading || isLoggedIn) return;
+
+    // 登録直後は Firebase の反映が遅れることがあるため、すぐ /login へ飛ばさない
+    if (readFirstVisitFromRegisterFlag()) return;
+
+    router.replace(buildLoginHref(FIRST_VISIT_ROUTES.residentCard, "register"));
   }, [authLoading, isLoggedIn, router]);
+
+  useEffect(() => {
+    if (authLoading || isLoggedIn || !readFirstVisitFromRegisterFlag()) return;
+
+    const id = window.setTimeout(() => {
+      if (!user?.email?.trim()) {
+        router.replace(buildLoginHref(FIRST_VISIT_ROUTES.residentCard, "register"));
+      }
+    }, 8000);
+
+    return () => window.clearTimeout(id);
+  }, [authLoading, isLoggedIn, router, user]);
 
   if (authLoading || !isLoggedIn || (!card && !loadError)) {
     return (

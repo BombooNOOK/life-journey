@@ -8,3 +8,14 @@ export const FIRST_VISIT_LOGHOUSE_COMPLETE_BUTTON = "鑑定のやかたへ進む
 
 export const FIRST_VISIT_LOGHOUSE_COMPLETE_ILLUSTRATION_SRC =
   "/images/ljd/first-visit/loghouse-complete.jpg" as const;
+
+/** 完成イラストを先読み（テキストだけ先に出るのを防ぐ） */
+export function preloadFirstVisitLoghouseCompleteIllustration(): Promise<void> {
+  if (typeof window === "undefined") return Promise.resolve();
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => resolve();
+    img.onerror = () => resolve();
+    img.src = FIRST_VISIT_LOGHOUSE_COMPLETE_ILLUSTRATION_SRC;
+  });
+}

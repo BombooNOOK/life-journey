@@ -30,6 +30,20 @@ export async function requireFullAccess(viewerEmail: string): Promise<UserEntitl
   const ctx = await loadEntitlementContext(viewerEmail);
   const entitlement = resolveUserEntitlement(ctx);
   if (!entitlement.canUseContinuedFeatures) {
+    const code =
+      entitlement.tier === "trial_not_started"
+        ? "FREE_TRIAL_NOT_STARTED"
+        : (entitlement.denialCode ?? "FREE_TRIAL_EXPIRED");
+    throw new EntitlementDeniedError(code, continuedFeaturesDeniedMessage(entitlement));
+  }
+  return entitlement;
+}
+
+/** 無料鑑定の作成・氏名修正など、日記お試し前でも許可する操作 */
+export async function requireKanteiOrderAccess(viewerEmail: string): Promise<UserEntitlement> {
+  const ctx = await loadEntitlementContext(viewerEmail);
+  const entitlement = resolveUserEntitlement(ctx);
+  if (!entitlement.hasFullAccess) {
     const code = entitlement.denialCode ?? "FREE_TRIAL_EXPIRED";
     throw new EntitlementDeniedError(code, continuedFeaturesDeniedMessage(entitlement));
   }
@@ -77,6 +91,19 @@ export async function checkContinuedFeatures(viewerEmail: string): Promise<
 export async function assertFullAccessForApi(viewerEmail: string): Promise<NextResponse | null> {
   try {
     await requireFullAccess(viewerEmail);
+    return null;
+  } catch (e) {
+    if (e instanceof EntitlementDeniedError) {
+      return entitlementDeniedResponse(e);
+    }
+    throw e;
+  }
+}
+
+/** 鑑定Orderの作成・救済修正用。日記お試し前（trial_not_started）でも許可 */
+export async function assertKanteiOrderAccessForApi(viewerEmail: string): Promise<NextResponse | null> {
+  try {
+    await requireKanteiOrderAccess(viewerEmail);
     return null;
   } catch (e) {
     if (e instanceof EntitlementDeniedError) {

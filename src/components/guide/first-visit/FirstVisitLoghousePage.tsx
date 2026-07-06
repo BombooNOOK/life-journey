@@ -13,6 +13,7 @@ import {
   FIRST_VISIT_LOGHOUSE_BUILD_VIDEO_SRC,
   FIRST_VISIT_LOGHOUSE_BUILD_VIDEO_START_LABEL,
 } from "@/lib/onboarding/firstVisitWizard/loghouseBuildVideo";
+import { preloadFirstVisitLoghouseCompleteIllustration } from "@/lib/onboarding/firstVisitWizard/loghouseCompleteCopy";
 import { FIRST_VISIT_ROUTES } from "@/lib/onboarding/firstVisitWizard/routes";
 import { clearFirstVisitFromRegisterFlag } from "@/lib/onboarding/firstVisitWizard/session";
 
@@ -50,6 +51,7 @@ export function FirstVisitLoghousePage() {
 
   const handleNext = useCallback(() => {
     clearFirstVisitFromRegisterFlag();
+    void preloadFirstVisitLoghouseCompleteIllustration();
     router.push(FIRST_VISIT_ROUTES.kantei);
   }, [router]);
 

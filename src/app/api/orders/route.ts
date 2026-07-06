@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 
 import { getViewerEmailFromCookie } from "@/lib/auth/viewer";
 import { prisma } from "@/lib/db";
-import { assertFullAccessForApi } from "@/lib/entitlement/requireFullAccess";
+import { assertKanteiOrderAccessForApi } from "@/lib/entitlement/requireFullAccess";
 import { buildOrderPayload } from "@/lib/order/buildSnapshot";
 import { toIsoDateString } from "@/lib/order/birthDate";
 import { fetchAccountPdfDownloadLimitOrNull } from "@/lib/order/effectivePdfDownloadLimit";
@@ -48,7 +48,7 @@ export async function POST(req: Request) {
     );
   }
 
-  const denied = await assertFullAccessForApi(viewerEmail);
+  const denied = await assertKanteiOrderAccessForApi(viewerEmail);
   if (denied) return denied;
 
   let json: unknown;

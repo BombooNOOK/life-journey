@@ -12,7 +12,9 @@ export function resolveLoginFlow(
   if (returnTo === "/order" || returnTo.startsWith("/order/")) return "register";
   if (
     returnTo === "/guide/first/loghouse" ||
-    returnTo.startsWith("/guide/first/loghouse?")
+    returnTo.startsWith("/guide/first/loghouse?") ||
+    returnTo === "/guide/first/resident-card" ||
+    returnTo.startsWith("/guide/first/resident-card?")
   ) {
     return "register";
   }

@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 import { useFirebaseAuth } from "@/components/auth/FirebaseAuthProvider";
 import { buildLoginHref } from "@/app/login/loginFlow";
@@ -16,6 +16,7 @@ import {
   FIRST_VISIT_LOGHOUSE_COMPLETE_BUTTON,
   FIRST_VISIT_LOGHOUSE_COMPLETE_ILLUSTRATION_SRC,
   FIRST_VISIT_LOGHOUSE_COMPLETE_TITLE,
+  preloadFirstVisitLoghouseCompleteIllustration,
 } from "@/lib/onboarding/firstVisitWizard/loghouseCompleteCopy";
 import { FIRST_VISIT_ROUTES } from "@/lib/onboarding/firstVisitWizard/routes";
 import { setFirstVisitOrderGuideFlag } from "@/lib/onboarding/firstVisitWizard/session";
@@ -25,6 +26,17 @@ export function FirstVisitKanteiPage() {
   const router = useRouter();
   const { user, loading } = useFirebaseAuth();
   const isLoggedIn = Boolean(user?.email?.trim());
+  const [illustrationReady, setIllustrationReady] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    void preloadFirstVisitLoghouseCompleteIllustration().then(() => {
+      if (!cancelled) setIllustrationReady(true);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   useEffect(() => {
     if (loading) return;
@@ -38,8 +50,13 @@ export function FirstVisitKanteiPage() {
     router.push("/order");
   }, [router]);
 
-  if (loading || !isLoggedIn) {
-    return <OwlLoadingPanel layout="page" label="ログイン状態を確認しています…" />;
+  if (loading || !isLoggedIn || !illustrationReady) {
+    return (
+      <OwlLoadingPanel
+        layout="page"
+        label={loading || !isLoggedIn ? "ログイン状態を確認しています…" : "ログハウスの完成を読み込んでいます…"}
+      />
+    );
   }
 
   return (
