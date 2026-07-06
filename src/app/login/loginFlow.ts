@@ -10,7 +10,12 @@ export function resolveLoginFlow(
   if (flowIntent === "register") return "register";
   if (flowIntent === "login") return "login";
   if (returnTo === "/order" || returnTo.startsWith("/order/")) return "register";
-  if (returnTo.startsWith("/guide/first/loghouse")) return "register";
+  if (
+    returnTo === "/guide/first/loghouse" ||
+    returnTo.startsWith("/guide/first/loghouse?")
+  ) {
+    return "register";
+  }
   return "login";
 }
 
@@ -22,5 +27,17 @@ export function buildLoginHref(returnTo: string, flowIntent?: LoginFlowIntent): 
 }
 
 export function isFirstVisitLoghouseReturnTo(returnTo: string): boolean {
-  return returnTo === "/guide/first/loghouse" || returnTo.startsWith("/guide/first/loghouse?");
+  return (
+    returnTo === "/guide/first/loghouse" ||
+    returnTo.startsWith("/guide/first/loghouse?") ||
+    returnTo === "/guide/first/resident-card" ||
+    returnTo.startsWith("/guide/first/resident-card?")
+  );
+}
+
+import { FIRST_VISIT_ROUTES } from "@/lib/onboarding/firstVisitWizard/routes";
+
+/** 初回登録完了後の最初の行き先 */
+export function firstVisitPostRegisterDestination(): string {
+  return FIRST_VISIT_ROUTES.residentCard;
 }

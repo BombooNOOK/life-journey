@@ -3,6 +3,7 @@
 import Image from "next/image";
 import { useLayoutEffect, useRef, useState } from "react";
 
+import { OwlLoadingPanel } from "@/components/ui/OwlLoadingPanel";
 import "@/lib/journal/diaryPreviewLabelFont";
 import {
   FOREST_DIRECTION_SIGN_DESIGN_SIZE,
@@ -18,6 +19,9 @@ type Props = {
   ariaLabel?: string;
   onFigureClick?: (coords: { x: number; y: number }) => void;
   debugPin?: { x: number; y: number } | null;
+  onImageReady?: () => void;
+  /** true のとき看板ラベルで改行を保持 */
+  multiline?: boolean;
 };
 
 function useForestDirectionSignScale() {
@@ -52,10 +56,18 @@ export function ForestDirectionSignBoard({
   ariaLabel,
   onFigureClick,
   debugPin = null,
+  onImageReady,
+  multiline = false,
 }: Props) {
   const { widthPx, heightPx } = FOREST_DIRECTION_SIGN_DESIGN_SIZE;
-  const displayLabel = label.replace(/\n/g, "");
+  const displayLabel = multiline ? label : label.replace(/\n/g, "");
   const { ref, scale } = useForestDirectionSignScale();
+  const [imageReady, setImageReady] = useState(false);
+
+  const handleImageReady = () => {
+    setImageReady(true);
+    onImageReady?.();
+  };
 
   const handleFigureClick = (event: React.MouseEvent<HTMLElement>) => {
     if (!onFigureClick) return;
@@ -72,6 +84,16 @@ export function ForestDirectionSignBoard({
       aria-label={ariaLabel ?? `行き先：${displayLabel}`}
       onClick={onFigureClick ? handleFigureClick : undefined}
     >
+      {!imageReady ? (
+        <div className="absolute inset-0 flex items-center justify-center">
+          <OwlLoadingPanel
+            layout="section"
+            size="sm"
+            label="案内を準備しています…"
+            className="py-6"
+          />
+        </div>
+      ) : null}
       <Image
         src={FOREST_DIRECTION_SIGN_SRC}
         alt=""
@@ -79,40 +101,44 @@ export function ForestDirectionSignBoard({
         width={widthPx}
         height={heightPx}
         sizes="(max-width: 640px) 72vw, 320px"
-        className="h-full w-full select-none object-contain"
+        className={`h-full w-full select-none object-contain ${imageReady ? "" : "opacity-0"}`}
         priority
+        onLoad={handleImageReady}
+        onError={handleImageReady}
       />
-      <div
-        className="pointer-events-none absolute inset-0 overflow-hidden [text-shadow:0_1px_0_rgba(255,251,245,0.7)]"
-        aria-hidden
-      >
-        <p
-          className="m-0 whitespace-nowrap leading-[inherit] text-[color:inherit]"
-          style={forestDirectionSignLabelStyle(placement, scale)}
+      {imageReady ? (
+        <div
+          className="pointer-events-none absolute inset-0 overflow-hidden [text-shadow:0_1px_0_rgba(255,251,245,0.7)]"
+          aria-hidden
         >
-          {displayLabel}
-        </p>
-        {debugPin ? (
-          <>
-            <span
-              className="pointer-events-none absolute z-10 h-2.5 w-2.5 rounded-full bg-emerald-600 ring-2 ring-white"
-              style={{ left: debugPin.x * scale, top: debugPin.y * scale }}
-              aria-hidden
-            />
-            <span
-              className="pointer-events-none absolute z-10 rounded bg-stone-900/85 px-1.5 py-0.5 text-[10px] text-white"
-              style={{
-                left: debugPin.x * scale,
-                top: debugPin.y * scale,
-                transform: "translate(4px, 4px)",
-              }}
-              aria-hidden
-            >
-              {debugPin.x},{debugPin.y}
-            </span>
-          </>
-        ) : null}
-      </div>
+          <p
+            className={`m-0 leading-[inherit] text-[color:inherit] ${multiline ? "whitespace-pre-line" : "whitespace-nowrap"}`}
+            style={forestDirectionSignLabelStyle(placement, scale)}
+          >
+            {displayLabel}
+          </p>
+          {debugPin ? (
+            <>
+              <span
+                className="pointer-events-none absolute z-10 h-2.5 w-2.5 rounded-full bg-emerald-600 ring-2 ring-white"
+                style={{ left: debugPin.x * scale, top: debugPin.y * scale }}
+                aria-hidden
+              />
+              <span
+                className="pointer-events-none absolute z-10 rounded bg-stone-900/85 px-1.5 py-0.5 text-[10px] text-white"
+                style={{
+                  left: debugPin.x * scale,
+                  top: debugPin.y * scale,
+                  transform: "translate(4px, 4px)",
+                }}
+                aria-hidden
+              >
+                {debugPin.x},{debugPin.y}
+              </span>
+            </>
+          ) : null}
+        </div>
+      ) : null}
     </figure>
   );
 }

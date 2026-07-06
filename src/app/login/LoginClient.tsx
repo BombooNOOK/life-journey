@@ -23,6 +23,14 @@ import { InlineHelpButton } from "@/components/ui/InlineHelpButton";
 import { OwlLoadingInline } from "@/components/ui/OwlLoadingInline";
 import { OwlLoadingPanel } from "@/components/ui/OwlLoadingPanel";
 import { OwlSpinIndicator } from "@/components/ui/OwlSpinIndicator";
+import {
+  firstVisitResidentRegistrationExistingLinkClass,
+  firstVisitResidentRegistrationInputClass,
+  firstVisitResidentRegistrationLabelClass,
+  firstVisitResidentRegistrationSubmitClass,
+  firstVisitResidentRegistrationSupplementClass,
+  firstVisitResidentRegistrationTitleClass,
+} from "@/components/guide/first-visit/firstVisitResidentRegistrationStyles";
 import { mobileReadable } from "@/lib/auth/mobileReadableStyles";
 import { getPasswordResetSentNotice } from "@/lib/auth/passwordResetCopy";
 import { sendLjPasswordResetEmail } from "@/lib/auth/sendPasswordResetEmailSafe";
@@ -46,17 +54,19 @@ import {
   LOG_HOUSE_SHORT_LABEL,
 } from "@/lib/journal/logHouseLabels";
 
-import { buildLoginHref, isFirstVisitLoghouseReturnTo, resolveLoginFlow, resolveSafeReturnTo } from "./loginFlow";
+import { buildLoginHref, firstVisitPostRegisterDestination, isFirstVisitLoghouseReturnTo, resolveLoginFlow, resolveSafeReturnTo } from "./loginFlow";
 import type { LoginFlowIntent } from "./loginFlow";
 import {
-  FIRST_VISIT_RESIDENT_REGISTRATION_BUTTON,
+  FIRST_VISIT_RESIDENT_REGISTRATION_EXISTING_LOGIN_LINK,
+  FIRST_VISIT_RESIDENT_REGISTRATION_FORM_SUPPLEMENT,
+  FIRST_VISIT_RESIDENT_REGISTRATION_LOGIN_BUTTON,
   FIRST_VISIT_RESIDENT_REGISTRATION_NOTE,
   FIRST_VISIT_RESIDENT_REGISTRATION_OWL_QUOTE,
   FIRST_VISIT_RESIDENT_REGISTRATION_SUPPLEMENT,
   FIRST_VISIT_RESIDENT_REGISTRATION_TITLE,
 } from "@/lib/onboarding/firstVisitWizard/residentRegistrationCopy";
 import { FIRST_VISIT_ROUTES } from "@/lib/onboarding/firstVisitWizard/routes";
-import { setFirstVisitFromRegisterFlag } from "@/lib/onboarding/firstVisitWizard/session";
+import { setFirstVisitFromRegisterFlag, setFirstVisitWelcomeEmailSentFlag } from "@/lib/onboarding/firstVisitWizard/session";
 
 const OAUTH_LOGIN_FAILURE_TIMEOUT_MS = 30_000;
 
@@ -194,9 +204,11 @@ function pickErrorMessage(e: unknown, fallback: string): string {
 export function LoginClient({
   returnToRaw,
   flowIntent = null,
+  appearance = "default",
 }: {
   returnToRaw: string | null;
   flowIntent?: LoginFlowIntent | null;
+  appearance?: "default" | "firstVisitEmbedded";
 }) {
   const router = useRouter();
   const { user, loading: authLoading } = useFirebaseAuth();
@@ -231,7 +243,10 @@ export function LoginClient({
   const isRegisterFlow = loginFlow === "register";
   const isFirstVisitRegisterFlow =
     isRegisterFlow && isFirstVisitLoghouseReturnTo(returnTo);
-  const postRegisterDestination = isFirstVisitLoghouseReturnTo(returnTo) ? returnTo : "/orders";
+  const isFirstVisitEmbedded = appearance === "firstVisitEmbedded" && isFirstVisitRegisterFlow;
+  const postRegisterDestination = isFirstVisitLoghouseReturnTo(returnTo)
+    ? firstVisitPostRegisterDestination()
+    : "/orders";
   const cookieLoggedIn = isLjLoggedInOnClient();
   const isAlreadySignedIn = (Boolean(user) || cookieLoggedIn) && !oauthReturnHandoffUi;
 
@@ -270,6 +285,20 @@ export function LoginClient({
     [router],
   );
 
+  const navigateAfterFirstVisitRegister = useCallback(
+    (welcomeEmailSent: boolean) => {
+      setFirstVisitWelcomeEmailSentFlag(welcomeEmailSent);
+      setFirstVisitFromRegisterFlag();
+      const dest = firstVisitPostRegisterDestination();
+      if (browserWantsFullPagePostLoginNavigation()) {
+        window.location.assign(new URL(dest, window.location.origin).toString());
+        return;
+      }
+      navigateAfterLogin(dest);
+    },
+    [navigateAfterLogin],
+  );
+
   const finalizeGoogleLoginAndGo = useCallback(
     async (input: { email: string | null; isNewGoogleUser?: boolean; showTransition?: boolean }) => {
       if (oauthReturnNavLock.current) return;
@@ -289,13 +318,18 @@ export function LoginClient({
       }).catch(() => {});
       if (input.isNewGoogleUser && isFirstVisitLoghouseReturnTo(returnTo)) {
         setFirstVisitFromRegisterFlag();
+        setFirstVisitWelcomeEmailSentFlag(false);
       }
+      const destination =
+        input.isNewGoogleUser && isFirstVisitLoghouseReturnTo(returnTo)
+          ? firstVisitPostRegisterDestination()
+          : returnTo;
       if (hardNav) {
         await new Promise((r) => setTimeout(r, 400));
-        window.location.assign(new URL(returnTo, window.location.origin).toString());
+        window.location.assign(new URL(destination, window.location.origin).toString());
         return;
       }
-      navigateAfterLogin(returnTo);
+      navigateAfterLogin(destination);
     },
     [navigateAfterLogin, returnTo],
   );
@@ -513,6 +547,10 @@ export function LoginClient({
         } catch {
           /* 登録完了画面はメール送信成否に関わらず表示 */
         }
+        if (isFirstVisitRegisterFlow || isFirstVisitEmbedded) {
+          navigateAfterFirstVisitRegister(welcomeEmailSent);
+          return;
+        }
         setRegistrationComplete({ welcomeEmailSent });
         return;
       }
@@ -634,8 +672,102 @@ export function LoginClient({
     );
   }
 
+  if (isFirstVisitEmbedded) {
+    return (
+      <div className="space-y-5">
+        <div>
+          <h1 className={firstVisitResidentRegistrationTitleClass}>
+            {FIRST_VISIT_RESIDENT_REGISTRATION_TITLE}
+          </h1>
+          <p className={firstVisitResidentRegistrationSupplementClass}>
+            {FIRST_VISIT_RESIDENT_REGISTRATION_FORM_SUPPLEMENT}
+          </p>
+        </div>
+
+        {(error || notice) ? (
+          <div ref={feedbackRef} className="space-y-2">
+            {error ? <div className={mobileReadable.error}>{error}</div> : null}
+            {notice ? (
+              <div className={mobileReadable.notice} role="status" aria-live="polite">
+                {notice}
+              </div>
+            ) : null}
+          </div>
+        ) : null}
+
+        <form
+          className="space-y-4"
+          noValidate
+          onSubmit={(e) => {
+            e.preventDefault();
+            void handleEmailSubmit(new FormData(e.currentTarget), "register");
+          }}
+        >
+          <label className={firstVisitResidentRegistrationLabelClass}>
+            メールアドレス
+            <input
+              ref={emailInputRef}
+              name="email"
+              type="email"
+              inputMode="email"
+              autoComplete="email"
+              defaultValue=""
+              className={firstVisitResidentRegistrationInputClass}
+            />
+          </label>
+          <label className={firstVisitResidentRegistrationLabelClass}>
+            パスワード
+            <div className="relative mt-1.5">
+              <input
+                name="password"
+                type={showPassword ? "text" : "password"}
+                autoComplete="new-password"
+                defaultValue=""
+                className={`${firstVisitResidentRegistrationInputClass} pr-16`}
+              />
+              <button
+                type="button"
+                aria-label={showPassword ? "パスワードを隠す" : "パスワードを表示"}
+                className="absolute right-2 top-1/2 min-h-[44px] -translate-y-1/2 rounded-lg px-2 text-sm font-medium text-stone-600 hover:bg-stone-100 hover:text-stone-900"
+                onClick={() => setShowPassword((prev) => !prev)}
+              >
+                {showPassword ? "隠す" : "表示"}
+              </button>
+            </div>
+          </label>
+          <button
+            type="submit"
+            disabled={busyEmail}
+            className={firstVisitResidentRegistrationSubmitClass}
+          >
+            {busyEmail ? (
+              <OwlLoadingInline label="住民登録しています…" size="sm" />
+            ) : (
+              FIRST_VISIT_RESIDENT_REGISTRATION_LOGIN_BUTTON
+            )}
+          </button>
+        </form>
+
+        <p className="border-t border-stone-100 pt-4 text-center text-xs leading-relaxed text-stone-500">
+          <Link
+            href={buildLoginHref(FIRST_VISIT_ROUTES.loghouse, "login")}
+            className={firstVisitResidentRegistrationExistingLinkClass}
+          >
+            {FIRST_VISIT_RESIDENT_REGISTRATION_EXISTING_LOGIN_LINK}
+          </Link>
+        </p>
+      </div>
+    );
+  }
+
   return (
-    <div className="mx-auto max-w-md space-y-6 rounded-xl border border-stone-200 bg-white p-6 shadow-sm sm:p-7">
+    <div
+      className={
+        isFirstVisitEmbedded
+          ? "space-y-5"
+          : "mx-auto max-w-md space-y-6 rounded-xl border border-stone-200 bg-white p-6 shadow-sm sm:p-7"
+      }
+    >
       <div>
         <div className="flex items-center gap-2">
           <h1 className={mobileReadable.pageTitle}>
@@ -645,33 +777,35 @@ export function LoginClient({
                 ? "アカウント作成"
                 : "ログイン"}
           </h1>
-          <InlineHelpButton
-            ariaLabel={
-              isFirstVisitRegisterFlow
-                ? "森の住民登録の説明"
-                : isRegisterFlow
-                  ? "アカウント作成の説明"
-                  : "ログインの説明"
-            }
-          >
-            {isFirstVisitRegisterFlow ? (
-              <>
-                <p>ログハウスを建てる前に、森の住民登録（アカウント作成）を行います。</p>
-                <p className="mt-1.5">登録後はログハウス建築の案内へ進みます。</p>
-                {LOGIN_BROWSER_HELP}
-              </>
-            ) : isRegisterFlow ? (
-              <>
-                <p>ログイン後は、無料鑑定の入力画面へ進みます。</p>
-                {LOGIN_BROWSER_HELP}
-              </>
-            ) : (
-              <>
-                <p>ログイン後は、{LOG_HOUSE_SHORT_LABEL}（またはアクセスしようとしていたページ）へ移動します。</p>
-                {LOGIN_BROWSER_HELP}
-              </>
-            )}
-          </InlineHelpButton>
+          {!isFirstVisitEmbedded ? (
+            <InlineHelpButton
+              ariaLabel={
+                isFirstVisitRegisterFlow
+                  ? "森の住民登録の説明"
+                  : isRegisterFlow
+                    ? "アカウント作成の説明"
+                    : "ログインの説明"
+              }
+            >
+              {isFirstVisitRegisterFlow ? (
+                <>
+                  <p>ログハウスを建てる前に、森の住民登録（アカウント作成）を行います。</p>
+                  <p className="mt-1.5">登録後はログハウス建築の案内へ進みます。</p>
+                  {LOGIN_BROWSER_HELP}
+                </>
+              ) : isRegisterFlow ? (
+                <>
+                  <p>ログイン後は、無料鑑定の入力画面へ進みます。</p>
+                  {LOGIN_BROWSER_HELP}
+                </>
+              ) : (
+                <>
+                  <p>ログイン後は、{LOG_HOUSE_SHORT_LABEL}（またはアクセスしようとしていたページ）へ移動します。</p>
+                  {LOGIN_BROWSER_HELP}
+                </>
+              )}
+            </InlineHelpButton>
+          ) : null}
         </div>
         <p className={`mt-2 whitespace-pre-line ${mobileReadable.bodyMuted}`}>
           {isFirstVisitRegisterFlow
@@ -825,8 +959,8 @@ export function LoginClient({
                 label={isFirstVisitRegisterFlow ? "住民登録しています…" : "登録しています…"}
                 size="sm"
               />
-            ) : isFirstVisitRegisterFlow ? (
-              FIRST_VISIT_RESIDENT_REGISTRATION_BUTTON
+            ) : isFirstVisitEmbedded || isFirstVisitRegisterFlow ? (
+              FIRST_VISIT_RESIDENT_REGISTRATION_LOGIN_BUTTON
             ) : (
               "新規登録（次に生年月日入力）"
             )}
@@ -870,10 +1004,7 @@ export function LoginClient({
               </Link>
             </>
           ) : (
-            <Link
-              href={buildLoginHref("/order")}
-              className={mobileReadable.link}
-            >
+            <Link href={buildLoginHref("/order")} className={mobileReadable.link}>
               はじめての方はこちら
             </Link>
           )}
@@ -881,26 +1012,26 @@ export function LoginClient({
       </form>
 
       <div ref={resetSectionRef} className="space-y-2 border-t border-stone-100 pt-4">
-        {showResetFeedback && error ? (
-          <div className={mobileReadable.error} role="alert">
-            {error}
-          </div>
-        ) : null}
-        {showResetFeedback && notice ? (
-          <div className={mobileReadable.notice} role="status" aria-live="polite">
-            {notice}
-          </div>
-        ) : null}
-        <button
-          type="button"
-          disabled={busyReset || busyEmail}
-          className={mobileReadable.buttonSecondary}
-          onClick={() => void handlePasswordReset()}
-        >
-          {busyReset ? "再設定メールを送信中…" : "パスワード再設定メールを送る"}
-        </button>
-        <p className={mobileReadable.helperMuted}>
-          上のメールアドレス宛に、パスワード再設定用のリンクを送ります。
+          {showResetFeedback && error ? (
+            <div className={mobileReadable.error} role="alert">
+              {error}
+            </div>
+          ) : null}
+          {showResetFeedback && notice ? (
+            <div className={mobileReadable.notice} role="status" aria-live="polite">
+              {notice}
+            </div>
+          ) : null}
+          <button
+            type="button"
+            disabled={busyReset || busyEmail}
+            className={mobileReadable.buttonSecondary}
+            onClick={() => void handlePasswordReset()}
+          >
+            {busyReset ? "再設定メールを送信中…" : "パスワード再設定メールを送る"}
+          </button>
+          <p className={mobileReadable.helperMuted}>
+            上のメールアドレス宛に、パスワード再設定用のリンクを送ります。
         </p>
       </div>
 

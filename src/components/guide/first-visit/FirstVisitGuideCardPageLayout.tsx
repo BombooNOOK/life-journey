@@ -9,6 +9,7 @@ type Props = {
   stepLabel: string;
   ariaLabel: string;
   backHref?: string;
+  backLabel?: string;
   children: ReactNode;
 };
 
@@ -16,7 +17,13 @@ type Props = {
  * 初回導線の1枚カードページ。
  * スマホは手前に浮かせ、PC（lg+）は通常ページとして表示する。
  */
-export function FirstVisitGuideCardPageLayout({ stepLabel, ariaLabel, backHref, children }: Props) {
+export function FirstVisitGuideCardPageLayout({
+  stepLabel,
+  ariaLabel,
+  backHref,
+  backLabel = "もどる",
+  children,
+}: Props) {
   return (
     <div className="home-read-scope min-h-[100dvh] pb-10">
       <FirstVisitWizardPageHeader stepLabel={stepLabel} className="hidden px-4 pt-6 sm:px-6 lg:block" />
@@ -28,7 +35,7 @@ export function FirstVisitGuideCardPageLayout({ stepLabel, ariaLabel, backHref, 
               href={backHref}
               className="mb-3 inline-flex min-h-[44px] items-center text-sm font-medium text-stone-600 hover:text-stone-900"
             >
-              ← もどる
+              ← {backLabel}
             </Link>
           ) : null}
           {children}
@@ -38,7 +45,7 @@ export function FirstVisitGuideCardPageLayout({ stepLabel, ariaLabel, backHref, 
       <div className="mx-auto hidden w-full max-w-lg px-4 pt-8 sm:px-6 lg:block">
         {children}
         {backHref ? (
-          <FirstVisitWizardNav backHref={backHref} backLabel="もどる" showNext={false} />
+          <FirstVisitWizardNav backHref={backHref} backLabel={backLabel} showNext={false} />
         ) : null}
       </div>
     </div>

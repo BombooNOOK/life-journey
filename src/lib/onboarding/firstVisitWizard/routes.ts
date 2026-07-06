@@ -5,6 +5,8 @@ export const FIRST_VISIT_ROUTES = {
   owl: "/guide/first/owl",
   ready: "/guide/first/ready",
   register: "/guide/first/register",
+  residentCard: "/guide/first/resident-card",
+  loghouseSign: "/guide/first/loghouse-sign",
   kanteiReady: "/guide/first/kantei-ready",
   alreadyReady: "/guide/first/already-ready",
   loghouse: "/guide/first/loghouse",

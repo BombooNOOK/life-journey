@@ -14,6 +14,28 @@ export const FIRST_VISIT_RESIDENT_REGISTRATION_SUPPLEMENT =
 export const FIRST_VISIT_RESIDENT_REGISTRATION_NOTE =
   "メールアドレスとパスワードでアカウントを作成します。" as const;
 
+/** 住民登録フォーム上の説明カード（世界観） */
+export const FIRST_VISIT_RESIDENT_REGISTRATION_INTRO_LEAD = "森の住民登録をすると" as const;
+
+export const FIRST_VISIT_RESIDENT_REGISTRATION_INTRO_BODY =
+  "あなた専用の住民票カードが発行され、\n森の中にログハウスが建ちます。\n\nログハウスには、\nこれから届く鑑定書や\n日々書き残した日記がしまわれていきます。\n\nまずは、森の住民登録をしましょう。" as const;
+
+export const FIRST_VISIT_RESIDENT_REGISTRATION_INTRO_FOOTNOTE =
+  "登録には、メールアドレスとパスワードを使います。" as const;
+
+export const FIRST_VISIT_RESIDENT_REGISTRATION_INTRO_BUTTON = "次へ" as const;
+
+/** フォーム直上の実務向け補足 */
+export const FIRST_VISIT_RESIDENT_REGISTRATION_FORM_SUPPLEMENT =
+  "メールアドレスとパスワードを入力してください。\n次回からは、ログインしてあなたのログハウスへ戻れます。" as const;
+
+/** 住民登録フォーム下・既存ユーザー向け（控えめ） */
+export const FIRST_VISIT_RESIDENT_REGISTRATION_EXISTING_LOGIN_LINK =
+  "すでに森の住民登録がお済みの方はログイン" as const;
+
+/** ready ページ・フクロウ案内の既存ユーザー導線 */
+export const FIRST_VISIT_RESIDENT_REGISTRATION_OWL_PROMPT_LOGIN_BUTTON = "ログインして鑑定へ" as const;
+
 export const FIRST_VISIT_RESIDENT_REGISTRATION_BUTTON = "森の住民登録へ" as const;
 
 /** ログイン画面・スキップ導線用（ログハウス建築へ進む） */

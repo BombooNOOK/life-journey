@@ -80,6 +80,12 @@ export function ForestDirectionSignLayoutDebugLinks() {
       <Link href="/guide/first/ready" className="text-emerald-800 underline hover:text-emerald-950">
         ← 鑑定のやかた案内（本番）
       </Link>
+      <Link
+        href="/preview/first-visit-owl-frame/layout?preset=loghouse-sign"
+        className="text-emerald-800 underline hover:text-emerald-950"
+      >
+        ログハウス看板（フクロウ枠定規）
+      </Link>
       <Link href="/preview" className="text-stone-600 underline hover:text-stone-900">
         校正メニューへ
       </Link>

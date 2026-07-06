@@ -10,9 +10,12 @@ import {
   FIRST_VISIT_KANTEI_PROCEED_TITLE,
 } from "@/lib/onboarding/firstVisitWizard/kanteiHallCopy";
 import {
-  FIRST_VISIT_RESIDENT_REGISTRATION_NOTE,
+  FIRST_VISIT_LOGHOUSE_SIGN_BUTTON,
+  FIRST_VISIT_LOGHOUSE_SIGN_LABEL,
+} from "@/lib/onboarding/firstVisitWizard/residentCardCopy";
+import {
   FIRST_VISIT_RESIDENT_REGISTRATION_OWL_FRAME_TEXT,
-  FIRST_VISIT_RESIDENT_REGISTRATION_BUTTON,
+  FIRST_VISIT_RESIDENT_REGISTRATION_OWL_PROMPT_LOGIN_BUTTON,
 } from "@/lib/onboarding/firstVisitWizard/residentRegistrationCopy";
 
 export type FirstVisitGuideCardAction =
@@ -38,6 +41,8 @@ export type FirstVisitGuideCard = {
   footnote?: string;
   /** 森の一本矢印看板に載せる行き先名（設定時は看板カード表示） */
   signLabel?: string;
+  /** 看板テキストで改行を保持する */
+  signMultiline?: boolean;
   /** フクロウコメント枠 PNG 内に載せるテキスト */
   owlCommentLabel?: string;
   /** true のときカード枠なし（看板＋本文をそのまま表示） */
@@ -58,15 +63,18 @@ export const FIRST_VISIT_KANTEI_HALL_INTRO_CARD: FirstVisitGuideCard = {
   buttons: [{ label: FIRST_VISIT_KANTEI_HALL_BUTTON, action: "next", variant: "primary" }],
 };
 
-/** 第4幕：未登録ユーザー向け */
-export const FIRST_VISIT_RESIDENT_REGISTRATION_CARD: FirstVisitGuideCard = {
-  id: "auth-branch",
+/** 第4幕：未登録ユーザー向け（ready ページ・フクロウ案内のみ） */
+export const FIRST_VISIT_RESIDENT_OWL_PROMPT_CARD: FirstVisitGuideCard = {
+  id: "resident-owl-prompt",
   owlCommentLabel: FIRST_VISIT_RESIDENT_REGISTRATION_OWL_FRAME_TEXT,
-  footnote: FIRST_VISIT_RESIDENT_REGISTRATION_NOTE,
   bare: true,
   buttons: [
-    { label: FIRST_VISIT_RESIDENT_REGISTRATION_BUTTON, action: "register", variant: "primary" },
-    { label: "ログインして鑑定へ", action: "login", variant: "secondary" },
+    { label: "次へ", action: "next", variant: "primary" },
+    {
+      label: FIRST_VISIT_RESIDENT_REGISTRATION_OWL_PROMPT_LOGIN_BUTTON,
+      action: "login",
+      variant: "secondary",
+    },
   ],
 };
 
@@ -86,6 +94,14 @@ export const FIRST_VISIT_ALREADY_READY_CARD: FirstVisitGuideCard = {
     { label: FIRST_VISIT_ALREADY_READY_ORDERS_BUTTON, action: "orders", variant: "primary" },
     { label: FIRST_VISIT_ALREADY_READY_HOME_BUTTON, action: "home", variant: "secondary" },
   ],
+};
+
+/** 第5幕：ログハウス建築前の看板（フクロウ先生コメント枠） */
+export const FIRST_VISIT_LOGHOUSE_SIGN_CARD: FirstVisitGuideCard = {
+  id: "loghouse-sign",
+  owlCommentLabel: FIRST_VISIT_LOGHOUSE_SIGN_LABEL,
+  bare: true,
+  buttons: [{ label: FIRST_VISIT_LOGHOUSE_SIGN_BUTTON, action: "next", variant: "primary" }],
 };
 
 /** 第5幕：ログハウス建築 */

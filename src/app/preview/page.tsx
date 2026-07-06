@@ -82,6 +82,30 @@ const links: { href: string; label: string; note?: string; highlight?: boolean }
     note: "485×1024 / 1024×576 を 1:1 表示。看板テキストの座標調整。npm run dev 中のみ",
     highlight: true,
   },
+  {
+    href: "/preview/first-visit/resident-card",
+    label: "初回導線：住民票カード",
+    note: "サンプルデータで UI 確認。dev または本番の管理者ログイン後",
+    highlight: true,
+  },
+  {
+    href: "/preview/forest-resident-card/layout",
+    label: "森の住民票レイアウト定規",
+    note: "720×720 を 1:1 表示。顔・テキスト座標のクリック測定。npm run dev 中のみ",
+    highlight: true,
+  },
+  {
+    href: "/preview/first-visit/loghouse-sign",
+    label: "初回導線：ログハウス看板",
+    note: "サンプルデータで UI 確認。dev または本番の管理者ログイン後",
+    highlight: true,
+  },
+  {
+    href: "/preview/first-visit-owl-frame/layout?preset=loghouse-sign",
+    label: "ログハウス看板（フクロウ枠）定規",
+    note: "480×480 を 1:1 表示。枠内テキストの座標調整。npm run dev 中のみ",
+    highlight: true,
+  },
   { href: "/verify", label: "数値の突合（コア5・ローマ字）", note: "旧鑑定書・Excel との照合用" },
   { href: "/preview/all-bodies", label: "鑑定本文まとめ（全データ・1ページ）", note: "LP〜ブリッジ・PY/PM/PD まで一括" },
   {

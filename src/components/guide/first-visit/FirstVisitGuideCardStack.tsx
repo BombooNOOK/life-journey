@@ -13,6 +13,7 @@ import {
 import { FirstVisitGuideCardShell } from "@/components/guide/first-visit/FirstVisitGuideCardShell";
 import { ForestDirectionSignBoard } from "@/components/guide/ForestDirectionSignBoard";
 import { OwlCommentFrameBoard } from "@/components/guide/OwlCommentFrameBoard";
+import { FIRST_VISIT_LOGHOUSE_SIGN_OWL_FRAME_LABEL_PLACEMENT } from "@/lib/onboarding/firstVisitWizard/loghouseSignLayout";
 import type {
   FirstVisitGuideCard,
   FirstVisitGuideCardAction,
@@ -127,15 +128,26 @@ export function FirstVisitGuideCardPanel({ card, onAction }: Props) {
   const signLabel = card.signLabel?.trim() ?? "";
   const hasOwlComment = Boolean(card.owlCommentLabel?.trim());
   const owlCommentLabel = card.owlCommentLabel?.trim() ?? "";
+  const [illustrationReady, setIllustrationReady] = useState(false);
 
   if (card.bare && hasOwlComment) {
+    const owlPlacement =
+      card.id === "loghouse-sign" ? FIRST_VISIT_LOGHOUSE_SIGN_OWL_FRAME_LABEL_PLACEMENT : undefined;
+
     return (
       <div className="flex w-full flex-col items-center gap-4">
-        <OwlCommentFrameBoard label={owlCommentLabel} className="max-w-none w-full" />
-        <div className="w-full space-y-3">
-          <GuideCardTextBlocks card={card} hasSign={hasSign} hasOwlComment={hasOwlComment} bare />
-          <GuideCardButtons card={card} onAction={onAction} />
-        </div>
+        <OwlCommentFrameBoard
+          label={owlCommentLabel}
+          placement={owlPlacement}
+          className="max-w-none w-full"
+          onImageReady={() => setIllustrationReady(true)}
+        />
+        {illustrationReady ? (
+          <div className="w-full space-y-3">
+            <GuideCardTextBlocks card={card} hasSign={hasSign} hasOwlComment={hasOwlComment} bare />
+            <GuideCardButtons card={card} onAction={onAction} />
+          </div>
+        ) : null}
       </div>
     );
   }
@@ -143,11 +155,18 @@ export function FirstVisitGuideCardPanel({ card, onAction }: Props) {
   if (card.bare && hasSign) {
     return (
       <div className="flex w-full flex-col items-center gap-4">
-        <ForestDirectionSignBoard label={signLabel} className="max-w-none w-full" />
-        <div className="w-full space-y-3">
-          <GuideCardTextBlocks card={card} hasSign={hasSign} hasOwlComment={hasOwlComment} bare />
-          <GuideCardButtons card={card} onAction={onAction} />
-        </div>
+        <ForestDirectionSignBoard
+          label={signLabel}
+          multiline={card.signMultiline}
+          className="max-w-none w-full"
+          onImageReady={() => setIllustrationReady(true)}
+        />
+        {illustrationReady ? (
+          <div className="w-full space-y-3">
+            <GuideCardTextBlocks card={card} hasSign={hasSign} hasOwlComment={hasOwlComment} bare />
+            <GuideCardButtons card={card} onAction={onAction} />
+          </div>
+        ) : null}
       </div>
     );
   }

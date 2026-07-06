@@ -1,5 +1,6 @@
 const ORDER_GUIDE_FLAG = "ljd:firstGuide:orderGuide";
 const FROM_REGISTER_FLAG = "ljd:firstGuide:fromRegister";
+const WELCOME_EMAIL_SENT_FLAG = "ljd:firstGuide:welcomeEmailSent";
 
 function canUseSessionStorage(): boolean {
   return typeof window !== "undefined" && typeof window.sessionStorage !== "undefined";
@@ -35,4 +36,24 @@ export function setFirstVisitFromRegisterFlag(): void {
 export function clearFirstVisitFromRegisterFlag(): void {
   if (!canUseSessionStorage()) return;
   window.sessionStorage.removeItem(FROM_REGISTER_FLAG);
+}
+
+/** 登録完了メール送信の有無（住民票カードページの補足表示用） */
+export function readFirstVisitWelcomeEmailSentFlag(): boolean {
+  if (!canUseSessionStorage()) return false;
+  return window.sessionStorage.getItem(WELCOME_EMAIL_SENT_FLAG) === "1";
+}
+
+export function setFirstVisitWelcomeEmailSentFlag(sent: boolean): void {
+  if (!canUseSessionStorage()) return;
+  if (sent) {
+    window.sessionStorage.setItem(WELCOME_EMAIL_SENT_FLAG, "1");
+  } else {
+    window.sessionStorage.removeItem(WELCOME_EMAIL_SENT_FLAG);
+  }
+}
+
+export function clearFirstVisitWelcomeEmailSentFlag(): void {
+  if (!canUseSessionStorage()) return;
+  window.sessionStorage.removeItem(WELCOME_EMAIL_SENT_FLAG);
 }

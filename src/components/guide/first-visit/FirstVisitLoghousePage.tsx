@@ -35,7 +35,7 @@ export function FirstVisitLoghousePage() {
   useEffect(() => {
     if (loading) return;
     if (!isLoggedIn) {
-      router.replace(buildLoginHref(FIRST_VISIT_ROUTES.loghouse, "register"));
+      router.replace(buildLoginHref(FIRST_VISIT_ROUTES.loghouse, "login"));
     }
   }, [isLoggedIn, loading, router]);
 
