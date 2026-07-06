@@ -1,5 +1,9 @@
 import { normalizeEmail } from "@/lib/auth/viewer";
 import { isPaidSubscriber } from "@/lib/entitlement/resolveUserEntitlement";
+import {
+  deleteFirebaseAuthUserByEmail,
+  isFirebaseAdminConfigured,
+} from "@/lib/firebase/admin";
 import { deleteJournalEntryPhotoBlobWithResult } from "@/lib/journal/journalEntryPhotoBlob";
 import { deleteOrderPdfBlobWithResult } from "@/lib/pdf/orderPdfBlobCache";
 import { prisma } from "@/lib/db";
@@ -45,6 +49,18 @@ export type AccountDeleteResult = {
   failedKanteiPdfBlobCount: number;
 };
 
+const FIREBASE_ADMIN_NOT_CONFIGURED_MESSAGE =
+  "現在、アカウント削除を完了できません。しばらくしてから再度お試しいただくか、お問い合わせください。";
+
+function assertFirebaseAdminReadyForAccountDelete(): void {
+  if (process.env.NODE_ENV === "production" && !isFirebaseAdminConfigured()) {
+    throw new AccountDeleteError(
+      FIREBASE_ADMIN_NOT_CONFIGURED_MESSAGE,
+      "FIREBASE_ADMIN_NOT_CONFIGURED",
+    );
+  }
+}
+
 function parseConfirmationWord(raw: unknown): void {
   const word = typeof raw === "string" ? raw.trim() : "";
   if (word !== ACCOUNT_DELETE_CONFIRMATION_WORD) {
@@ -77,6 +93,18 @@ export async function buildAccountDeletePreview(emailInput: string): Promise<Acc
       canDelete: false,
       blockCode: "ADMIN_ACCOUNT",
       blockMessage: "管理者アカウントはここから削除できません。",
+      profileCount: 0,
+      journalEntryCount: 0,
+      orderCount: 0,
+    };
+  }
+
+  if (process.env.NODE_ENV === "production" && !isFirebaseAdminConfigured()) {
+    return {
+      email,
+      canDelete: false,
+      blockCode: "FIREBASE_ADMIN_NOT_CONFIGURED",
+      blockMessage: FIREBASE_ADMIN_NOT_CONFIGURED_MESSAGE,
       profileCount: 0,
       journalEntryCount: 0,
       orderCount: 0,
@@ -126,6 +154,7 @@ export async function deleteUserAccount(params: {
   }
 
   parseConfirmationWord(params.confirmationWord);
+  assertFirebaseAdminReadyForAccountDelete();
 
   const email = preview.email;
   const scope = { email };
@@ -195,11 +224,26 @@ export async function deleteUserAccount(params: {
     }
   }
 
+  if (isFirebaseAdminConfigured()) {
+    try {
+      await deleteFirebaseAuthUserByEmail(email);
+    } catch (error) {
+      console.error("[account-delete] firebase auth delete failed", { email, error });
+      throw new AccountDeleteError(
+        "データは削除しましたが、ログイン情報の削除に失敗しました。お問い合わせください。",
+        "FIREBASE_AUTH_DELETE_FAILED",
+      );
+    }
+  } else {
+    console.warn("[account-delete] skipping firebase auth delete (FIREBASE_SERVICE_ACCOUNT_JSON unset)");
+  }
+
   console.info("[account-delete] ok", {
     email,
     deletedProfileCount: deleted.deletedProfiles,
     deletedJournalEntryCount: deleted.deletedJournalEntries,
     deletedOrderCount: deleted.deletedOrders,
+    firebaseAuthDeleted: isFirebaseAdminConfigured(),
   });
 
   return {

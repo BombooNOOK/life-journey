@@ -53,8 +53,9 @@ export function AccountDeleteForm({ blockMessage = null }: Props) {
     <div className="space-y-6">
       <div className={`space-y-3 ${mobileReadable.body}`}>
         <p>
-          アカウントを削除すると、LJDに保存された日記・写真・鑑定結果などのデータは削除されます。
-          削除後は復元できません。
+          アカウントを削除すると、LJDに保存された日記・写真・鑑定結果などのデータに加え、
+          ログイン情報（メール・パスワード、Googleログインの紐づけ）も削除されます。
+          削除後は復元できず、同じメールで再ログインすることもできません。
         </p>
         <p>有料プランをご利用中の場合は、先に有料プランの解約が必要です。</p>
         <p>
