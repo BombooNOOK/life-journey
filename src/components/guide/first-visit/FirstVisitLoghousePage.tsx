@@ -1,36 +1,30 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
-import { useFirebaseAuth } from "@/components/auth/FirebaseAuthProvider";
 import { buildLoginHref } from "@/app/login/loginFlow";
-import { FirstVisitGuideCardStack } from "@/components/guide/first-visit/FirstVisitGuideCardStack";
-import { FirstVisitGuideStage } from "@/components/guide/first-visit/FirstVisitGuideStage";
-import { FirstVisitWizardPageHeader } from "@/components/guide/first-visit/FirstVisitWizardPageHeader";
-import type { FirstVisitGuideCardAction } from "@/lib/onboarding/firstVisitWizard/cards";
-import { FIRST_VISIT_LOGHOUSE_BUILD_CARDS } from "@/lib/onboarding/firstVisitWizard/cards";
-import { FIRST_VISIT_ROUTES } from "@/lib/onboarding/firstVisitWizard/routes";
-import {
-  clearFirstVisitFromRegisterFlag,
-  readFirstVisitFromRegisterFlag,
-} from "@/lib/onboarding/firstVisitWizard/session";
+import { useFirebaseAuth } from "@/components/auth/FirebaseAuthProvider";
 import { OwlLoadingPanel } from "@/components/ui/OwlLoadingPanel";
+import {
+  FIRST_VISIT_LOGHOUSE_BUILD_VIDEO_NEXT_LABEL,
+  FIRST_VISIT_LOGHOUSE_BUILD_VIDEO_POSTER_SRC,
+  FIRST_VISIT_LOGHOUSE_BUILD_VIDEO_REPLAY_LABEL,
+  FIRST_VISIT_LOGHOUSE_BUILD_VIDEO_SRC,
+  FIRST_VISIT_LOGHOUSE_BUILD_VIDEO_START_LABEL,
+} from "@/lib/onboarding/firstVisitWizard/loghouseBuildVideo";
+import { FIRST_VISIT_ROUTES } from "@/lib/onboarding/firstVisitWizard/routes";
+import { clearFirstVisitFromRegisterFlag } from "@/lib/onboarding/firstVisitWizard/session";
 
-/** 第5幕：ログハウス建築 */
+type PlaybackPhase = "ready" | "playing" | "ended";
+
+/** 第5幕：ログハウス建築（全画面動画） */
 export function FirstVisitLoghousePage() {
   const router = useRouter();
   const { user, loading } = useFirebaseAuth();
   const isLoggedIn = Boolean(user?.email?.trim());
-
-  const cards = useMemo(() => {
-    if (readFirstVisitFromRegisterFlag()) {
-      return FIRST_VISIT_LOGHOUSE_BUILD_CARDS;
-    }
-    return [FIRST_VISIT_LOGHOUSE_BUILD_CARDS[FIRST_VISIT_LOGHOUSE_BUILD_CARDS.length - 1]!];
-  }, []);
-
-  const [index, setIndex] = useState(0);
+  const [phase, setPhase] = useState<PlaybackPhase>("ready");
+  const videoRef = useRef<HTMLVideoElement>(null);
 
   useEffect(() => {
     if (loading) return;
@@ -39,33 +33,103 @@ export function FirstVisitLoghousePage() {
     }
   }, [isLoggedIn, loading, router]);
 
-  const handleAction = useCallback(
-    (action: FirstVisitGuideCardAction) => {
-      if (action !== "next") return;
+  const handleStart = useCallback(() => {
+    const video = videoRef.current;
+    if (!video) return;
+    setPhase("playing");
+    void video.play();
+  }, []);
 
-      if (index < cards.length - 1) {
-        setIndex((prev) => prev + 1);
-        return;
-      }
+  const handleReplay = useCallback(() => {
+    const video = videoRef.current;
+    if (!video) return;
+    setPhase("playing");
+    video.currentTime = 0;
+    void video.play();
+  }, []);
 
-      clearFirstVisitFromRegisterFlag();
-      router.push(FIRST_VISIT_ROUTES.kantei);
-    },
-    [cards.length, index, router],
-  );
+  const handleNext = useCallback(() => {
+    clearFirstVisitFromRegisterFlag();
+    router.push(FIRST_VISIT_ROUTES.kantei);
+  }, [router]);
 
   if (loading || !isLoggedIn) {
-    return (
-      <OwlLoadingPanel layout="page" label="ログイン状態を確認しています…" />
-    );
+    return <OwlLoadingPanel layout="page" label="ログイン状態を確認しています…" />;
   }
 
   return (
-    <div className="home-read-scope min-h-[100dvh] pb-10">
-      <FirstVisitWizardPageHeader stepLabel="ログハウスを建てる" className="px-4 pt-6 sm:px-6" />
-      <FirstVisitGuideStage ariaLabel="ログハウス建築の案内">
-        <FirstVisitGuideCardStack cards={cards} index={index} onAction={handleAction} />
-      </FirstVisitGuideStage>
-    </div>
+    <section
+      className="relative h-[100dvh] min-h-[100dvh] overflow-hidden bg-[#141210]"
+      aria-labelledby="first-visit-loghouse-heading"
+    >
+      <h1 id="first-visit-loghouse-heading" className="sr-only">
+        はじめての方へ — ログハウスを建てる
+      </h1>
+
+      <div className="absolute inset-0 flex items-center justify-center">
+        <div className="relative h-full w-full lg:h-full lg:w-auto lg:max-w-[min(100vw,calc(100dvh*9/16))]">
+          <video
+            ref={videoRef}
+            src={FIRST_VISIT_LOGHOUSE_BUILD_VIDEO_SRC}
+            poster={FIRST_VISIT_LOGHOUSE_BUILD_VIDEO_POSTER_SRC}
+            className={[
+              "h-full w-full object-cover object-center lg:object-contain",
+              phase === "ready" ? "invisible" : "visible",
+            ].join(" ")}
+            playsInline
+            preload="metadata"
+            onEnded={() => setPhase("ended")}
+          />
+          {phase === "ready" ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={FIRST_VISIT_LOGHOUSE_BUILD_VIDEO_POSTER_SRC}
+              alt=""
+              className="absolute inset-0 h-full w-full object-cover object-center lg:object-contain"
+            />
+          ) : null}
+        </div>
+      </div>
+
+      {phase === "ready" ? (
+        <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/20 px-6">
+          <button
+            type="button"
+            onClick={handleStart}
+            className="group flex flex-col items-center gap-3 rounded-2xl px-6 py-5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white"
+            aria-label={FIRST_VISIT_LOGHOUSE_BUILD_VIDEO_START_LABEL}
+          >
+            <span
+              className="flex h-16 w-16 items-center justify-center rounded-full bg-white/92 pl-1 text-xl text-emerald-800 shadow-[0_8px_28px_-8px_rgba(0,0,0,0.45)] ring-1 ring-white/60 transition group-hover:scale-105 group-active:scale-95"
+              aria-hidden
+            >
+              ▶
+            </span>
+            <span className="rounded-full bg-emerald-800/88 px-5 py-2 text-base font-medium text-white shadow-[0_8px_28px_-8px_rgba(24,83,53,0.45)] backdrop-blur-[2px] ring-1 ring-white/20">
+              {FIRST_VISIT_LOGHOUSE_BUILD_VIDEO_START_LABEL}
+            </span>
+          </button>
+        </div>
+      ) : null}
+
+      {phase === "ended" ? (
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 z-30 flex flex-col items-center gap-3 px-4 pb-[max(1.25rem,env(safe-area-inset-bottom))] pt-10">
+          <button
+            type="button"
+            onClick={handleReplay}
+            className="pointer-events-auto inline-flex min-h-[48px] w-full max-w-sm items-center justify-center rounded-xl border border-white/25 bg-black/45 px-5 py-3 text-base font-medium text-white shadow-[0_8px_28px_-8px_rgba(0,0,0,0.35)] backdrop-blur-[2px] transition hover:bg-black/55 active:bg-black/65"
+          >
+            {FIRST_VISIT_LOGHOUSE_BUILD_VIDEO_REPLAY_LABEL}
+          </button>
+          <button
+            type="button"
+            onClick={handleNext}
+            className="pointer-events-auto inline-flex min-h-[48px] w-full max-w-sm items-center justify-center rounded-xl border border-emerald-900/15 bg-emerald-800/82 px-5 py-3 text-base font-medium text-white shadow-[0_8px_28px_-8px_rgba(24,83,53,0.45)] backdrop-blur-[2px] transition hover:bg-emerald-900/88 active:bg-emerald-900/92"
+          >
+            {FIRST_VISIT_LOGHOUSE_BUILD_VIDEO_NEXT_LABEL}
+          </button>
+        </div>
+      ) : null}
+    </section>
   );
 }
