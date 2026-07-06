@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 
 import { BookshelfBookCard, type BookshelfBookDetailRow } from "@/components/orders/BookshelfBookCard";
 import { BookshelfEditIncludesNavButton } from "@/components/orders/BookshelfEditIncludesNavButton";
+import { BookshelfKanteiCompleteGuide } from "@/components/orders/BookshelfKanteiCompleteGuide";
 import { BookshelfPageHeader } from "@/components/orders/BookshelfPageHeader";
 import { DiaryBookCreateForm } from "@/components/orders/DiaryBookCreateForm";
 import { DiaryBookDeleteButton } from "@/components/orders/DiaryBookDeleteButton";
@@ -186,6 +187,7 @@ export default async function BookshelfPage() {
 
     return (
         <div className="space-y-5">
+        <BookshelfKanteiCompleteGuide activeProfileId={activeProfileId} />
         <BookshelfPageHeader
           activeProfileLabel={activeProfileLabel}
           deployRevision={process.env.VERCEL_GIT_COMMIT_SHA?.slice(0, 7) ?? null}

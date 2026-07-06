@@ -1,4 +1,5 @@
 const ORDER_GUIDE_FLAG = "ljd:firstGuide:orderGuide";
+const BOOKSHELF_KANTEI_GUIDE_FLAG = "ljd:firstGuide:bookshelfKanteiGuide";
 const FROM_REGISTER_FLAG = "ljd:firstGuide:fromRegister";
 const FROM_REGISTER_COOKIE = "lj_first_visit_from_register";
 const WELCOME_EMAIL_SENT_FLAG = "ljd:firstGuide:welcomeEmailSent";
@@ -44,6 +45,22 @@ export function setFirstVisitOrderGuideFlag(): void {
 export function clearFirstVisitOrderGuideFlag(): void {
   if (!canUseSessionStorage()) return;
   window.sessionStorage.removeItem(ORDER_GUIDE_FLAG);
+}
+
+/** 鑑定保存直後に本棚で2枚の案内カードを出すか */
+export function readBookshelfKanteiGuideFlag(): boolean {
+  if (!canUseSessionStorage()) return false;
+  return window.sessionStorage.getItem(BOOKSHELF_KANTEI_GUIDE_FLAG) === "1";
+}
+
+export function setBookshelfKanteiGuideFlag(): void {
+  if (!canUseSessionStorage()) return;
+  window.sessionStorage.setItem(BOOKSHELF_KANTEI_GUIDE_FLAG, "1");
+}
+
+export function clearBookshelfKanteiGuideFlag(): void {
+  if (!canUseSessionStorage()) return;
+  window.sessionStorage.removeItem(BOOKSHELF_KANTEI_GUIDE_FLAG);
 }
 
 /** アカウント作成直後にログハウス建築演出を出すか（sessionStorage + 短命 Cookie） */

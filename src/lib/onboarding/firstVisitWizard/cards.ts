@@ -23,6 +23,17 @@ import {
   FIRST_VISIT_RESIDENT_REGISTRATION_OWL_FRAME_TEXT,
   FIRST_VISIT_RESIDENT_REGISTRATION_OWL_PROMPT_LOGIN_BUTTON,
 } from "@/lib/onboarding/firstVisitWizard/residentRegistrationCopy";
+import {
+  BOOKSHELF_KANTEI_GUIDE_CARD1_BODY,
+  BOOKSHELF_KANTEI_GUIDE_CARD1_BUTTON,
+  BOOKSHELF_KANTEI_GUIDE_CARD1_ILLUSTRATION_SRC,
+  BOOKSHELF_KANTEI_GUIDE_CARD1_TITLE,
+  BOOKSHELF_KANTEI_GUIDE_CARD2_BODY,
+  BOOKSHELF_KANTEI_GUIDE_CARD2_ILLUSTRATION_SRC,
+  BOOKSHELF_KANTEI_GUIDE_CARD2_PRIMARY_BUTTON,
+  BOOKSHELF_KANTEI_GUIDE_CARD2_SECONDARY_BUTTON,
+  BOOKSHELF_KANTEI_GUIDE_CARD2_TITLE,
+} from "@/lib/onboarding/bookshelfKanteiGuideCopy";
 
 export type FirstVisitGuideCardAction =
   | "next"
@@ -30,7 +41,9 @@ export type FirstVisitGuideCardAction =
   | "register"
   | "login"
   | "orders"
-  | "home";
+  | "home"
+  | "companion_journal"
+  | "stay_bookshelf";
 
 export type FirstVisitGuideCardButton = {
   label: string;
@@ -153,5 +166,36 @@ export const FIRST_VISIT_ORDER_GUIDE_CARDS: FirstVisitGuideCard[] = [
     id: "order-result-hint",
     body: "鑑定が終わると、どうぶつ鑑定士からのことばが届きます",
     buttons: [{ label: "次へ", action: "dismiss", variant: "primary" }],
+  },
+];
+
+/** 鑑定完了直後：本棚で鑑定書が並んだあとの案内 */
+export const BOOKSHELF_KANTEI_COMPLETE_GUIDE_CARDS: FirstVisitGuideCard[] = [
+  {
+    id: "bookshelf-kantei-arrived",
+    title: BOOKSHELF_KANTEI_GUIDE_CARD1_TITLE,
+    body: BOOKSHELF_KANTEI_GUIDE_CARD1_BODY,
+    illustrationSrc: BOOKSHELF_KANTEI_GUIDE_CARD1_ILLUSTRATION_SRC,
+    illustrationLarge: true,
+    buttons: [{ label: BOOKSHELF_KANTEI_GUIDE_CARD1_BUTTON, action: "next", variant: "primary" }],
+  },
+  {
+    id: "bookshelf-kantei-journal",
+    title: BOOKSHELF_KANTEI_GUIDE_CARD2_TITLE,
+    body: BOOKSHELF_KANTEI_GUIDE_CARD2_BODY,
+    illustrationSrc: BOOKSHELF_KANTEI_GUIDE_CARD2_ILLUSTRATION_SRC,
+    illustrationLarge: true,
+    buttons: [
+      {
+        label: BOOKSHELF_KANTEI_GUIDE_CARD2_PRIMARY_BUTTON,
+        action: "companion_journal",
+        variant: "primary",
+      },
+      {
+        label: BOOKSHELF_KANTEI_GUIDE_CARD2_SECONDARY_BUTTON,
+        action: "stay_bookshelf",
+        variant: "secondary",
+      },
+    ],
   },
 ];

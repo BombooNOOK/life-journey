@@ -16,6 +16,7 @@ import { OwlLoadingInline } from "@/components/ui/OwlLoadingInline";
 import { OwlSuspenseFallback } from "@/components/ui/OwlSuspenseFallback";
 import { FIRST_VISIT_KANTEI_HALL_SIGN_LABEL } from "@/lib/onboarding/firstVisitWizard/kanteiHallCopy";
 import { selectViewerProfile } from "@/lib/profile/selectViewerProfile";
+import { setBookshelfKanteiGuideFlag } from "@/lib/onboarding/firstVisitWizard/session";
 import { isHiraganaOnly } from "@/lib/validation/hiragana";
 
 const MIN_YEAR = 1870;
@@ -224,6 +225,7 @@ function OrderPageContent() {
       if (data.profileId) {
         await selectViewerProfile(data.profileId);
       }
+      setBookshelfKanteiGuideFlag();
       router.push("/orders/bookshelf#bookshelf-kantei-books");
     } catch {
       setError("通信に失敗しました。ネットワークを確認してください。");
