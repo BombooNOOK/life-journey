@@ -2,6 +2,31 @@ import { normalizeEmail } from "@/lib/auth/viewer";
 import { prisma } from "@/lib/db";
 import { journalProfileIdsForQuery } from "@/lib/profile/activeProfile";
 
+const KANTEI_ORDER_CORE_SELECT = {
+  id: true,
+  birthMonth: true,
+  birthDay: true,
+  numerologyJson: true,
+} as const;
+
+export const KANTEI_ORDER_BOOKSHELF_SELECT = {
+  id: true,
+  kanteiCode: true,
+  fullNameDisplay: true,
+  fullNameRomanDisplay: true,
+  createdAt: true,
+  pdfDownloadCount: true,
+  pdfDownloadLimit: true,
+} as const;
+
+function viewerEmailWhere(email: string) {
+  return { email: { equals: email, mode: "insensitive" as const } };
+}
+
+async function countActiveProfiles(email: string): Promise<number> {
+  return prisma.profile.count({ where: { email, isArchived: false } });
+}
+
 /** 1プロフィール1鑑定: 同一スコープに既存 Order があるか（レガシー profileId="" 含む） */
 export async function findExistingOrderForProfile(params: {
   viewerEmail: string;
@@ -25,17 +50,57 @@ export async function findKanteiOrderForProfile(params: {
   if (!email) return null;
 
   const profileIds = journalProfileIdsForQuery(params.profileId, email);
-  return prisma.order.findFirst({
+  const scoped = await prisma.order.findFirst({
     where: {
-      email,
+      ...viewerEmailWhere(email),
       profileId: { in: profileIds },
     },
-    select: {
-      id: true,
-      birthMonth: true,
-      birthDay: true,
-      numerologyJson: true,
-    },
+    select: KANTEI_ORDER_CORE_SELECT,
     orderBy: { createdAt: "desc" },
   });
+  if (scoped) return scoped;
+
+  if ((await countActiveProfiles(email)) <= 1) {
+    return prisma.order.findFirst({
+      where: viewerEmailWhere(email),
+      select: KANTEI_ORDER_CORE_SELECT,
+      orderBy: { createdAt: "desc" },
+    });
+  }
+
+  return null;
+}
+
+/** 本棚に並べる鑑定書一覧（プロフィール紐づけのレガシー互換を含む） */
+export async function listKanteiOrdersForProfile(params: {
+  viewerEmail: string;
+  profileId: string;
+  take?: number;
+}) {
+  const email = normalizeEmail(params.viewerEmail);
+  if (!email) return [];
+
+  const take = params.take ?? 20;
+  const profileIds = journalProfileIdsForQuery(params.profileId, email);
+  const scoped = await prisma.order.findMany({
+    where: {
+      ...viewerEmailWhere(email),
+      profileId: { in: profileIds },
+    },
+    orderBy: { createdAt: "desc" },
+    take,
+    select: KANTEI_ORDER_BOOKSHELF_SELECT,
+  });
+  if (scoped.length > 0) return scoped;
+
+  if ((await countActiveProfiles(email)) <= 1) {
+    return prisma.order.findMany({
+      where: viewerEmailWhere(email),
+      orderBy: { createdAt: "desc" },
+      take,
+      select: KANTEI_ORDER_BOOKSHELF_SELECT,
+    });
+  }
+
+  return [];
 }

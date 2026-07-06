@@ -15,6 +15,7 @@ import { OrderFormProfileNotice } from "@/components/orders/OrderFormProfileNoti
 import { OwlLoadingInline } from "@/components/ui/OwlLoadingInline";
 import { OwlSuspenseFallback } from "@/components/ui/OwlSuspenseFallback";
 import { FIRST_VISIT_KANTEI_HALL_SIGN_LABEL } from "@/lib/onboarding/firstVisitWizard/kanteiHallCopy";
+import { selectViewerProfile } from "@/lib/profile/selectViewerProfile";
 import { isHiraganaOnly } from "@/lib/validation/hiragana";
 
 const MIN_YEAR = 1870;
@@ -177,6 +178,7 @@ function OrderPageContent() {
 
       let data: {
         id?: string;
+        profileId?: string;
         error?: string;
         hint?: string;
         code?: string;
@@ -197,6 +199,9 @@ function OrderPageContent() {
         if (res.status === 409 && data.code === "ORDER_EXISTS_FOR_PROFILE") {
           setError(data.error ?? "このプロフィールには既に鑑定書があります。");
           setExistingOrderId(data.existingOrderId ?? null);
+          if (data.existingOrderId) {
+            router.push("/orders/bookshelf#bookshelf-kantei-books");
+          }
           return;
         }
         const parts: string[] = [];
@@ -216,7 +221,10 @@ function OrderPageContent() {
         setError("保存には成功したように見えますが、注文IDを取得できませんでした。一覧から確認してください。");
         return;
       }
-      router.push(`/orders/${data.id}`);
+      if (data.profileId) {
+        await selectViewerProfile(data.profileId);
+      }
+      router.push("/orders/bookshelf#bookshelf-kantei-books");
     } catch {
       setError("通信に失敗しました。ネットワークを確認してください。");
     } finally {

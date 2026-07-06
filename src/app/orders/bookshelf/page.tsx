@@ -12,11 +12,11 @@ import { PdfDownloadButton } from "@/components/orders/PdfDownloadButton";
 import { getViewerEmailFromCookie } from "@/lib/auth/viewer";
 import { prisma } from "@/lib/db";
 import { withPrismaConnectionRetry } from "@/lib/db/prismaRetry";
-import { profileHasKanteiOrder } from "@/lib/journal/kanteiCommentEligibility";
 import { LOG_HOUSE_BACK_TO_LINK_LABEL } from "@/lib/journal/logHouseLabels";
 import { listDiaryBooksForViewer } from "@/lib/journal/listDiaryBooks";
 import { diaryCoverImagePath, getDiaryCoverStyleLabel } from "@/lib/journal/coverAssets";
 import { listProfilesAndActiveProfileId } from "@/lib/profile/activeProfile";
+import { listKanteiOrdersForProfile } from "@/lib/profile/orderPerProfile";
 import { combinePdfDownloadLimit, fetchAccountPdfDownloadLimitOrNull } from "@/lib/order/effectivePdfDownloadLimit";
 import { resolveKanteiPdfDownloadFilename } from "@/lib/order/kanteiCode";
 import { loadEntitlementContext } from "@/lib/entitlement/accountSettingsForEntitlement";
@@ -45,27 +45,17 @@ export default async function BookshelfPage() {
     const entitlement = serializeUserEntitlement(resolveUserEntitlement(entitlementCtx));
     const canUseContinuedFeatures = entitlement.canUseContinuedFeatures;
 
-    const [orders, diaryBookRows, hasKanteiOrder] = await Promise.all([
-      prisma.order.findMany({
-        where: { email: viewerEmail, profileId: activeProfileId },
-        orderBy: { createdAt: "desc" },
-        take: 20,
-        select: {
-          id: true,
-          kanteiCode: true,
-          fullNameDisplay: true,
-          fullNameRomanDisplay: true,
-          createdAt: true,
-          pdfDownloadCount: true,
-          pdfDownloadLimit: true,
-        },
+    const [orders, diaryBookRows] = await Promise.all([
+      listKanteiOrdersForProfile({
+        viewerEmail,
+        profileId: activeProfileId,
       }),
       listDiaryBooksForViewer({
         email: viewerEmail,
         profileId: activeProfileId,
       }),
-      profileHasKanteiOrder(viewerEmail, activeProfileId),
     ]);
+    const hasKanteiOrder = orders.length > 0;
 
     const diaryBookCards = diaryBookRows.map((book) => {
       const rangeLabel = `${book.startDate.replace(/-/g, "/")} 〜 ${book.endDate.replace(/-/g, "/")}`;
@@ -192,7 +182,7 @@ export default async function BookshelfPage() {
       };
     });
 
-    const books = [...diaryBookCards, ...reportCards];
+    const books = [...reportCards, ...diaryBookCards];
 
     return (
         <div className="space-y-5">
@@ -223,14 +213,16 @@ export default async function BookshelfPage() {
             </p>
           </div>
         ) : (
-          <ul
-            id="bookshelf-diary-books"
-            className="grid list-none gap-4 p-0 sm:grid-cols-2 lg:grid-cols-3"
-          >
-            {books.map((book) => (
-              <BookshelfBookCard key={book.id} {...book} />
-            ))}
-          </ul>
+          <div id="bookshelf-kantei-books" className="scroll-mt-4">
+            <ul
+              id="bookshelf-diary-books"
+              className="grid list-none gap-4 p-0 sm:grid-cols-2 lg:grid-cols-3"
+            >
+              {books.map((book) => (
+                <BookshelfBookCard key={book.id} {...book} />
+              ))}
+            </ul>
+          </div>
         )}
         </div>
     );

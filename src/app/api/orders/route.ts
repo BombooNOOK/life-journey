@@ -8,7 +8,7 @@ import { toIsoDateString } from "@/lib/order/birthDate";
 import { fetchAccountPdfDownloadLimitOrNull } from "@/lib/order/effectivePdfDownloadLimit";
 import { ensureOrderKanteiCode, formatKanteiCodeErrorDetail } from "@/lib/order/kanteiCode";
 import type { CustomerFormValues } from "@/lib/order/types";
-import { profileByIdForViewer, resolveActiveProfileId } from "@/lib/profile/activeProfile";
+import { profileByIdForViewer, resolveActiveProfileId, listProfilesAndActiveProfileId } from "@/lib/profile/activeProfile";
 import { findExistingOrderForProfile } from "@/lib/profile/orderPerProfile";
 import { isHiraganaOnly } from "@/lib/validation/hiragana";
 
@@ -76,7 +76,11 @@ export async function POST(req: Request) {
       ? String((json as { profileId: unknown }).profileId).trim()
       : "";
   const activeProfileId = await resolveActiveProfileId(viewerEmail);
-  const profileId = requestedProfileId || activeProfileId;
+  let profileId = requestedProfileId || activeProfileId;
+  if (!profileId) {
+    const loaded = await listProfilesAndActiveProfileId(viewerEmail);
+    profileId = loaded.activeProfileId;
+  }
   if (profileId) {
     const profile = await profileByIdForViewer(profileId, viewerEmail);
     if (!profile) {
@@ -206,7 +210,7 @@ export async function POST(req: Request) {
         error: formatKanteiCodeErrorDetail(e),
       });
     }
-    return NextResponse.json({ id: order.id, code: "OK" });
+    return NextResponse.json({ id: order.id, profileId: order.profileId, code: "OK" });
   } catch (err) {
     const desc = describeSaveError(err);
     console.error("[POST /api/orders] DB保存失敗:", desc.logLine);
