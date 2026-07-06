@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import { useState } from "react";
 
 import {
@@ -31,21 +30,29 @@ type Props = {
   onAction: (action: FirstVisitGuideCardAction, cardId: string) => void;
 };
 
-function FirstVisitGuideCardIllustration({ src }: { src: string }) {
+function FirstVisitGuideCardIllustration({
+  src,
+  large = false,
+}: {
+  src: string;
+  large?: boolean;
+}) {
   const [hidden, setHidden] = useState(false);
 
   if (hidden) return null;
 
   return (
-    <div className="mb-4 flex justify-center">
-      <Image
+    <div className={large ? "mb-5 flex justify-center" : "mb-4 flex justify-center"}>
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
         src={src}
         alt=""
         aria-hidden
-        width={240}
-        height={160}
-        sizes="240px"
-        className="h-auto max-h-36 w-auto max-w-full select-none object-contain opacity-95"
+        className={
+          large
+            ? "h-auto max-h-[min(52vw,18rem)] w-auto max-w-full select-none object-contain opacity-98 sm:max-h-80"
+            : "h-auto max-h-36 w-auto max-w-full select-none object-contain opacity-95"
+        }
         onError={() => setHidden(true)}
       />
     </div>
@@ -93,7 +100,11 @@ function GuideCardTextBlocks({
   return (
     <>
       {!hasSign && !hasOwlComment && card.title ? (
-        <p className={companionWritingGuideTitleClass}>{card.title}</p>
+        <p
+          className={`${companionWritingGuideTitleClass}${card.bodyAlign === "center" ? " text-center" : ""}`}
+        >
+          {card.title}
+        </p>
       ) : null}
       {!hasOwlComment && card.owlQuote ? (
         <p
@@ -176,7 +187,7 @@ export function FirstVisitGuideCardPanel({ card, onAction }: Props) {
       {hasSign ? (
         <ForestDirectionSignBoard label={signLabel} className="mb-4 max-w-none w-full" />
       ) : card.illustrationSrc ? (
-        <FirstVisitGuideCardIllustration src={card.illustrationSrc} />
+        <FirstVisitGuideCardIllustration src={card.illustrationSrc} large={card.illustrationLarge} />
       ) : null}
       <GuideCardTextBlocks card={card} hasSign={hasSign} hasOwlComment={hasOwlComment} />
       <div className="mt-5">

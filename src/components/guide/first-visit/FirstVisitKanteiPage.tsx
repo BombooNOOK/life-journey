@@ -5,16 +5,22 @@ import { useCallback, useEffect } from "react";
 
 import { useFirebaseAuth } from "@/components/auth/FirebaseAuthProvider";
 import { buildLoginHref } from "@/app/login/loginFlow";
-import { FirstVisitGuideCardStack } from "@/components/guide/first-visit/FirstVisitGuideCardStack";
-import { FirstVisitGuideStage } from "@/components/guide/first-visit/FirstVisitGuideStage";
-import { FirstVisitWizardPageHeader } from "@/components/guide/first-visit/FirstVisitWizardPageHeader";
-import type { FirstVisitGuideCardAction } from "@/lib/onboarding/firstVisitWizard/cards";
-import { FIRST_VISIT_KANTEI_PROCEED_CARD } from "@/lib/onboarding/firstVisitWizard/cards";
+import {
+  companionWritingGuideBodyClass,
+  companionWritingGuidePrimaryButtonClass,
+  companionWritingGuideTitleClass,
+} from "@/components/journal/companion-writing/companionWritingGuideStyles";
+import { OwlLoadingPanel } from "@/components/ui/OwlLoadingPanel";
+import {
+  FIRST_VISIT_LOGHOUSE_COMPLETE_BODY,
+  FIRST_VISIT_LOGHOUSE_COMPLETE_BUTTON,
+  FIRST_VISIT_LOGHOUSE_COMPLETE_ILLUSTRATION_SRC,
+  FIRST_VISIT_LOGHOUSE_COMPLETE_TITLE,
+} from "@/lib/onboarding/firstVisitWizard/loghouseCompleteCopy";
 import { FIRST_VISIT_ROUTES } from "@/lib/onboarding/firstVisitWizard/routes";
 import { setFirstVisitOrderGuideFlag } from "@/lib/onboarding/firstVisitWizard/session";
-import { OwlLoadingPanel } from "@/components/ui/OwlLoadingPanel";
 
-/** 第6幕：鑑定前説明 → /order へ */
+/** 第6幕：ログハウス完成 → 鑑定のやかたへ */
 export function FirstVisitKanteiPage() {
   const router = useRouter();
   const { user, loading } = useFirebaseAuth();
@@ -27,31 +33,42 @@ export function FirstVisitKanteiPage() {
     }
   }, [isLoggedIn, loading, router]);
 
-  const handleAction = useCallback(
-    (action: FirstVisitGuideCardAction) => {
-      if (action !== "next") return;
-      setFirstVisitOrderGuideFlag();
-      router.push("/order");
-    },
-    [router],
-  );
+  const handleProceed = useCallback(() => {
+    setFirstVisitOrderGuideFlag();
+    router.push("/order");
+  }, [router]);
 
   if (loading || !isLoggedIn) {
-    return (
-      <OwlLoadingPanel layout="page" label="ログイン状態を確認しています…" />
-    );
+    return <OwlLoadingPanel layout="page" label="ログイン状態を確認しています…" />;
   }
 
   return (
-    <div className="home-read-scope min-h-[100dvh] pb-10">
-      <FirstVisitWizardPageHeader stepLabel="鑑定へ進む" className="px-4 pt-6 sm:px-6" />
-      <FirstVisitGuideStage ariaLabel="鑑定前の案内">
-        <FirstVisitGuideCardStack
-          cards={[FIRST_VISIT_KANTEI_PROCEED_CARD]}
-          index={0}
-          onAction={handleAction}
-        />
-      </FirstVisitGuideStage>
-    </div>
+    <section
+      className="flex min-h-[100dvh] flex-col bg-gradient-to-b from-[#faf8f5] via-[#f7f4ef] to-[#f3efe8]"
+      aria-labelledby="first-visit-loghouse-complete-heading"
+    >
+      <div className="flex flex-1 flex-col items-center justify-center px-5 py-8 pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-[max(1.25rem,env(safe-area-inset-top))]">
+        <div className="w-full max-w-md">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={FIRST_VISIT_LOGHOUSE_COMPLETE_ILLUSTRATION_SRC}
+            alt=""
+            className="mx-auto mb-6 max-h-[min(52vh,22rem)] w-auto max-w-full object-contain"
+          />
+
+          <h1 id="first-visit-loghouse-complete-heading" className={`text-center ${companionWritingGuideTitleClass}`}>
+            {FIRST_VISIT_LOGHOUSE_COMPLETE_TITLE}
+          </h1>
+
+          <p className={`mt-4 whitespace-pre-line text-center leading-relaxed ${companionWritingGuideBodyClass}`}>
+            {FIRST_VISIT_LOGHOUSE_COMPLETE_BODY}
+          </p>
+
+          <button type="button" className={`mt-8 ${companionWritingGuidePrimaryButtonClass}`} onClick={handleProceed}>
+            {FIRST_VISIT_LOGHOUSE_COMPLETE_BUTTON}
+          </button>
+        </div>
+      </div>
+    </section>
   );
 }

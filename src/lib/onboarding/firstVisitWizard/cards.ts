@@ -10,6 +10,12 @@ import {
   FIRST_VISIT_KANTEI_PROCEED_TITLE,
 } from "@/lib/onboarding/firstVisitWizard/kanteiHallCopy";
 import {
+  FIRST_VISIT_LOGHOUSE_COMPLETE_BODY,
+  FIRST_VISIT_LOGHOUSE_COMPLETE_BUTTON,
+  FIRST_VISIT_LOGHOUSE_COMPLETE_ILLUSTRATION_SRC,
+  FIRST_VISIT_LOGHOUSE_COMPLETE_TITLE,
+} from "@/lib/onboarding/firstVisitWizard/loghouseCompleteCopy";
+import {
   FIRST_VISIT_LOGHOUSE_SIGN_BUTTON,
   FIRST_VISIT_LOGHOUSE_SIGN_LABEL,
 } from "@/lib/onboarding/firstVisitWizard/residentCardCopy";
@@ -48,6 +54,8 @@ export type FirstVisitGuideCard = {
   /** true のときカード枠なし（看板＋本文をそのまま表示） */
   bare?: boolean;
   illustrationSrc?: string;
+  /** true のときイラストをカード上部で大きめに表示 */
+  illustrationLarge?: boolean;
   /** 本文の揃え（既定: 左） */
   bodyAlign?: "left" | "center";
   buttons: FirstVisitGuideCardButton[];
@@ -121,8 +129,12 @@ export const FIRST_VISIT_LOGHOUSE_BUILD_CARDS: FirstVisitGuideCard[] = [
 /** 第6幕：ログハウス建築後 */
 export const FIRST_VISIT_KANTEI_PROCEED_CARD: FirstVisitGuideCard = {
   id: "kantei-proceed",
-  body: "それでは、鑑定に進みましょう",
-  buttons: [{ label: "次へ", action: "next", variant: "primary" }],
+  title: FIRST_VISIT_LOGHOUSE_COMPLETE_TITLE,
+  body: FIRST_VISIT_LOGHOUSE_COMPLETE_BODY,
+  illustrationSrc: FIRST_VISIT_LOGHOUSE_COMPLETE_ILLUSTRATION_SRC,
+  illustrationLarge: true,
+  bodyAlign: "center",
+  buttons: [{ label: FIRST_VISIT_LOGHOUSE_COMPLETE_BUTTON, action: "next", variant: "primary" }],
 };
 
 /** 第8幕：/order 工程案内（最小限） */

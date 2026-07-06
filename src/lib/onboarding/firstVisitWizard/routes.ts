@@ -20,6 +20,7 @@ export const FIRST_VISIT_FULL_BLEED_PATHS = [
   FIRST_VISIT_ROUTES.welcome,
   FIRST_VISIT_ROUTES.about,
   FIRST_VISIT_ROUTES.loghouse,
+  FIRST_VISIT_ROUTES.kantei,
 ] as const;
 
 export function isFirstVisitFullBleedPath(pathname: string): boolean {

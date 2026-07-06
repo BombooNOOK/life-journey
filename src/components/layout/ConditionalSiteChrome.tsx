@@ -10,7 +10,7 @@ type Props = {
   children: React.ReactNode;
 };
 
-/** トップ玄関・第1・2・5幕（動画）はヘッダー・フッターなしの全画面表示 */
+/** トップ玄関・動画・ログハウス完成画面はヘッダー・フッターなしの全画面表示 */
 export function ConditionalSiteChrome({ children }: Props) {
   const pathname = usePathname();
   const isFullBleedEntrance = pathname === "/" || isFirstVisitFullBleedPath(pathname);
