@@ -4,7 +4,6 @@ import Image from "next/image";
 import Link from "next/link";
 import { useCallback, useRef, useState } from "react";
 
-import { buildLoginHref } from "@/app/login/loginFlow";
 import {
   FIRST_VISIT_ABOUT_VIDEO_NEXT_LABEL,
   FIRST_VISIT_ABOUT_VIDEO_POSTER_SRC,
@@ -15,7 +14,6 @@ import {
   FIRST_VISIT_ABOUT_VIDEO_START_LABEL,
 } from "@/lib/onboarding/firstVisitWizard/aboutVideo";
 import { FIRST_VISIT_ROUTES } from "@/lib/onboarding/firstVisitWizard/routes";
-import { setFirstVisitFromRegisterFlag } from "@/lib/onboarding/firstVisitWizard/session";
 
 type PlaybackPhase = "ready" | "playing" | "ended";
 
@@ -39,7 +37,7 @@ export function FirstVisitAboutPage() {
     void video.play();
   }, []);
 
-  const skipHref = buildLoginHref(FIRST_VISIT_ROUTES.loghouse, "register");
+  const skipHref = FIRST_VISIT_ROUTES.owl;
 
   return (
     <section
@@ -102,8 +100,7 @@ export function FirstVisitAboutPage() {
         <div className="absolute inset-x-0 bottom-0 z-30 flex flex-col items-center gap-1 px-4 pb-[max(0.875rem,env(safe-area-inset-bottom))] pt-6 text-center">
           <Link
             href={skipHref}
-            onClick={() => setFirstVisitFromRegisterFlag()}
-            className="text-sm font-medium text-white/90 underline-offset-2 hover:text-white hover:underline"
+            className="text-xs text-white/65 underline-offset-2 hover:text-white/85 hover:underline"
           >
             {FIRST_VISIT_ABOUT_VIDEO_SKIP_LABEL}
           </Link>

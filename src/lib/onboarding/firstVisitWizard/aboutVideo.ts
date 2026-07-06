@@ -14,7 +14,7 @@ export const FIRST_VISIT_ABOUT_VIDEO_REPLAY_LABEL = "もう一度見る";
 
 export const FIRST_VISIT_ABOUT_VIDEO_NEXT_LABEL = "次へ";
 
-export const FIRST_VISIT_ABOUT_VIDEO_SKIP_LABEL = "先にログハウスを建てる";
+export const FIRST_VISIT_ABOUT_VIDEO_SKIP_LABEL = "≫ 動画を見ずに進む";
 
 export const FIRST_VISIT_ABOUT_VIDEO_SKIP_NOTE =
   "案内はあとから「森の案内所」で読めます";
