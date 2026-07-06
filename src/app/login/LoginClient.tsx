@@ -66,9 +66,10 @@ import {
   FIRST_VISIT_RESIDENT_REGISTRATION_TITLE,
 } from "@/lib/onboarding/firstVisitWizard/residentRegistrationCopy";
 import { FIRST_VISIT_ROUTES } from "@/lib/onboarding/firstVisitWizard/routes";
-import { setFirstVisitFromRegisterFlag, setFirstVisitWelcomeEmailSentFlag } from "@/lib/onboarding/firstVisitWizard/session";
+import { setFirstVisitFromRegisterFlag, readFirstVisitFromRegisterFlag, setFirstVisitWelcomeEmailSentFlag } from "@/lib/onboarding/firstVisitWizard/session";
 
 const OAUTH_LOGIN_FAILURE_TIMEOUT_MS = 30_000;
+const FIRST_VISIT_POST_REGISTER_SETTLE_MS = 400;
 
 const LOGIN_BROWSER_HELP = (
   <p className="mt-1.5">
@@ -287,20 +288,65 @@ export function LoginClient({
   );
 
   const navigateAfterFirstVisitRegister = useCallback(
-    (welcomeEmailSent: boolean) => {
+    async (welcomeEmailSent: boolean) => {
       registerNavLock.current = true;
       setFirstVisitWelcomeEmailSentFlag(welcomeEmailSent);
       setFirstVisitFromRegisterFlag();
       flushSync(() => setFullPagePostLoginPending(true));
       const dest = firstVisitPostRegisterDestination();
       if (browserWantsFullPagePostLoginNavigation()) {
-        window.location.assign(new URL(dest, window.location.origin).toString());
+        await new Promise((resolve) => setTimeout(resolve, FIRST_VISIT_POST_REGISTER_SETTLE_MS));
+        window.location.replace(new URL(dest, window.location.origin).toString());
         return;
       }
       navigateAfterLogin(dest);
     },
     [navigateAfterLogin],
   );
+
+  /** 登録直後に `/login` へ一瞬着地したとき、フォームを出さず住民票へ戻す */
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (window.location.pathname !== "/login") return;
+    if (!readFirstVisitFromRegisterFlag()) return;
+
+    registerNavLock.current = true;
+    flushSync(() => setFullPagePostLoginPending(true));
+
+    const dest = firstVisitPostRegisterDestination();
+    let cancelled = false;
+
+    void (async () => {
+      try {
+        const auth = getFirebaseAuth({ deferPersistence: true });
+        await waitForFirebaseAuthPersistence(auth);
+        if (typeof auth.authStateReady === "function") {
+          await auth.authStateReady();
+        }
+        const deadline = Date.now() + 15_000;
+        while (Date.now() < deadline && !cancelled) {
+          const signedEmail = user?.email?.trim() || auth.currentUser?.email?.trim();
+          if (signedEmail || isLjLoggedInOnClient()) {
+            await new Promise((resolve) => setTimeout(resolve, FIRST_VISIT_POST_REGISTER_SETTLE_MS));
+            if (!cancelled) {
+              window.location.replace(new URL(dest, window.location.origin).toString());
+            }
+            return;
+          }
+          await new Promise((resolve) => setTimeout(resolve, 120));
+          if (typeof auth.authStateReady === "function") {
+            await auth.authStateReady();
+          }
+        }
+      } catch {
+        /* noop */
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [user]);
 
   const finalizeGoogleLoginAndGo = useCallback(
     async (input: { email: string | null; isNewGoogleUser?: boolean; showTransition?: boolean }) => {
@@ -528,6 +574,12 @@ export function LoginClient({
       let cred;
       if (mode === "register") {
         cred = await createUserWithEmailAndPassword(a, email, password);
+        const isFirstVisitRegister = isFirstVisitRegisterFlow || isFirstVisitEmbedded;
+        if (isFirstVisitRegister) {
+          registerNavLock.current = true;
+          setFirstVisitFromRegisterFlag();
+          flushSync(() => setFullPagePostLoginPending(true));
+        }
         syncLjAuthClientCookies({ email: cred.user.email ?? null });
         await fetch("/api/auth/session", {
           method: "POST",
@@ -536,22 +588,39 @@ export function LoginClient({
           credentials: "same-origin",
         }).catch(() => {});
         let welcomeEmailSent = false;
-        try {
-          const welcomeRes = await fetch("/api/auth/welcome-email", {
+        if (isFirstVisitRegister) {
+          void fetch("/api/auth/welcome-email", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ email: cred.user.email ?? email }),
             credentials: "same-origin",
-          });
-          if (welcomeRes.ok) {
-            const welcomeData = (await welcomeRes.json()) as { sent?: boolean };
-            welcomeEmailSent = welcomeData.sent === true;
+          })
+            .then(async (welcomeRes) => {
+              if (!welcomeRes.ok) return;
+              const welcomeData = (await welcomeRes.json()) as { sent?: boolean };
+              if (welcomeData.sent === true) {
+                setFirstVisitWelcomeEmailSentFlag(true);
+              }
+            })
+            .catch(() => {});
+        } else {
+          try {
+            const welcomeRes = await fetch("/api/auth/welcome-email", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ email: cred.user.email ?? email }),
+              credentials: "same-origin",
+            });
+            if (welcomeRes.ok) {
+              const welcomeData = (await welcomeRes.json()) as { sent?: boolean };
+              welcomeEmailSent = welcomeData.sent === true;
+            }
+          } catch {
+            /* 登録完了画面はメール送信成否に関わらず表示 */
           }
-        } catch {
-          /* 登録完了画面はメール送信成否に関わらず表示 */
         }
-        if (isFirstVisitRegisterFlow || isFirstVisitEmbedded) {
-          navigateAfterFirstVisitRegister(welcomeEmailSent);
+        if (isFirstVisitRegister) {
+          await navigateAfterFirstVisitRegister(welcomeEmailSent);
           return;
         }
         setRegistrationComplete({ welcomeEmailSent });

@@ -1,9 +1,33 @@
 const ORDER_GUIDE_FLAG = "ljd:firstGuide:orderGuide";
 const FROM_REGISTER_FLAG = "ljd:firstGuide:fromRegister";
+const FROM_REGISTER_COOKIE = "lj_first_visit_from_register";
 const WELCOME_EMAIL_SENT_FLAG = "ljd:firstGuide:welcomeEmailSent";
+const FROM_REGISTER_COOKIE_MAX_AGE_SECONDS = 120;
 
 function canUseSessionStorage(): boolean {
   return typeof window !== "undefined" && typeof window.sessionStorage !== "undefined";
+}
+
+function cookieSecureSuffix(): string {
+  if (typeof window === "undefined") return "";
+  return window.location.protocol === "https:" ? "; Secure" : "";
+}
+
+function readFromRegisterCookie(): boolean {
+  if (typeof document === "undefined") return false;
+  return document.cookie.split(";").some((part) => part.trim() === `${FROM_REGISTER_COOKIE}=1`);
+}
+
+function writeFromRegisterCookie(): void {
+  if (typeof document === "undefined") return;
+  const s = cookieSecureSuffix();
+  document.cookie = `${FROM_REGISTER_COOKIE}=1; Path=/; Max-Age=${FROM_REGISTER_COOKIE_MAX_AGE_SECONDS}; SameSite=Lax${s}`;
+}
+
+function clearFromRegisterCookie(): void {
+  if (typeof document === "undefined") return;
+  const s = cookieSecureSuffix();
+  document.cookie = `${FROM_REGISTER_COOKIE}=; Path=/; Max-Age=0; SameSite=Lax${s}`;
 }
 
 /** /order 上の案内カードを表示するか */
@@ -22,20 +46,26 @@ export function clearFirstVisitOrderGuideFlag(): void {
   window.sessionStorage.removeItem(ORDER_GUIDE_FLAG);
 }
 
-/** アカウント作成直後にログハウス建築演出を出すか */
+/** アカウント作成直後にログハウス建築演出を出すか（sessionStorage + 短命 Cookie） */
 export function readFirstVisitFromRegisterFlag(): boolean {
-  if (!canUseSessionStorage()) return false;
-  return window.sessionStorage.getItem(FROM_REGISTER_FLAG) === "1";
+  if (canUseSessionStorage() && window.sessionStorage.getItem(FROM_REGISTER_FLAG) === "1") {
+    return true;
+  }
+  return readFromRegisterCookie();
 }
 
 export function setFirstVisitFromRegisterFlag(): void {
-  if (!canUseSessionStorage()) return;
-  window.sessionStorage.setItem(FROM_REGISTER_FLAG, "1");
+  if (canUseSessionStorage()) {
+    window.sessionStorage.setItem(FROM_REGISTER_FLAG, "1");
+  }
+  writeFromRegisterCookie();
 }
 
 export function clearFirstVisitFromRegisterFlag(): void {
-  if (!canUseSessionStorage()) return;
-  window.sessionStorage.removeItem(FROM_REGISTER_FLAG);
+  if (canUseSessionStorage()) {
+    window.sessionStorage.removeItem(FROM_REGISTER_FLAG);
+  }
+  clearFromRegisterCookie();
 }
 
 /** 登録完了メール送信の有無（住民票カードページの補足表示用） */

@@ -24,5 +24,5 @@ export const FIRST_VISIT_FULL_BLEED_PATHS = [
 ] as const;
 
 export function isFirstVisitFullBleedPath(pathname: string): boolean {
-  return (FIRST_VISIT_FULL_BLEED_PATHS as readonly string[]).includes(pathname);
+  return pathname.startsWith("/guide/first/");
 }

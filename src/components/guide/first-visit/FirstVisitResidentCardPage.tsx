@@ -4,9 +4,11 @@ import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 
 import { buildLoginHref } from "@/app/login/loginFlow";
+import { isLjLoggedInOnClient } from "@/lib/auth/clientCookies";
 import { useFirebaseAuth } from "@/components/auth/FirebaseAuthProvider";
 import { FirstVisitResidentCardContent } from "@/components/guide/first-visit/FirstVisitResidentCardContent";
 import { OwlLoadingPanel } from "@/components/ui/OwlLoadingPanel";
+import { getFirebaseAuth, waitForFirebaseAuthPersistence } from "@/lib/firebase/client";
 import type { ForestResidentCardData } from "@/lib/forestResident/forestResidentNumber";
 import { FIRST_VISIT_ROUTES } from "@/lib/onboarding/firstVisitWizard/routes";
 import {
@@ -15,6 +17,12 @@ import {
   setFirstVisitFromRegisterFlag,
 } from "@/lib/onboarding/firstVisitWizard/session";
 
+const AUTH_SETTLE_TIMEOUT_MS = 20_000;
+
+function hasRegisterHandoff(): boolean {
+  return readFirstVisitFromRegisterFlag() || isLjLoggedInOnClient();
+}
+
 /** 第5幕①：住民票カード発行 */
 export function FirstVisitResidentCardPage() {
   const router = useRouter();
@@ -22,6 +30,53 @@ export function FirstVisitResidentCardPage() {
   const isLoggedIn = Boolean(user?.email?.trim());
   const [card, setCard] = useState<ForestResidentCardData | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [authSettling, setAuthSettling] = useState(() => hasRegisterHandoff() && !isLoggedIn);
+
+  useEffect(() => {
+    if (isLoggedIn) {
+      setAuthSettling(false);
+      return;
+    }
+    if (!hasRegisterHandoff()) return;
+
+    let cancelled = false;
+    setAuthSettling(true);
+
+    void (async () => {
+      try {
+        const auth = getFirebaseAuth({ deferPersistence: true });
+        await waitForFirebaseAuthPersistence(auth);
+        if (typeof auth.authStateReady === "function") {
+          await auth.authStateReady();
+        }
+        const deadline = Date.now() + AUTH_SETTLE_TIMEOUT_MS;
+        while (Date.now() < deadline && !cancelled) {
+          if (auth.currentUser?.email?.trim()) {
+            if (!cancelled) setAuthSettling(false);
+            return;
+          }
+          await new Promise((resolve) => setTimeout(resolve, 150));
+          if (typeof auth.authStateReady === "function") {
+            await auth.authStateReady();
+          }
+        }
+      } catch {
+        /* noop */
+      }
+      if (!cancelled) setAuthSettling(false);
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isLoggedIn]);
+
+  useEffect(() => {
+    if (authLoading || isLoggedIn || authSettling) return;
+    if (hasRegisterHandoff()) return;
+
+    router.replace(buildLoginHref(FIRST_VISIT_ROUTES.residentCard, "register"));
+  }, [authLoading, authSettling, isLoggedIn, router]);
 
   useEffect(() => {
     if (authLoading || !isLoggedIn) return;
@@ -54,28 +109,7 @@ export function FirstVisitResidentCardPage() {
     router.push(FIRST_VISIT_ROUTES.loghouseSign);
   }, [router]);
 
-  useEffect(() => {
-    if (authLoading || isLoggedIn) return;
-
-    // 登録直後は Firebase の反映が遅れることがあるため、すぐ /login へ飛ばさない
-    if (readFirstVisitFromRegisterFlag()) return;
-
-    router.replace(buildLoginHref(FIRST_VISIT_ROUTES.residentCard, "register"));
-  }, [authLoading, isLoggedIn, router]);
-
-  useEffect(() => {
-    if (authLoading || isLoggedIn || !readFirstVisitFromRegisterFlag()) return;
-
-    const id = window.setTimeout(() => {
-      if (!user?.email?.trim()) {
-        router.replace(buildLoginHref(FIRST_VISIT_ROUTES.residentCard, "register"));
-      }
-    }, 8000);
-
-    return () => window.clearTimeout(id);
-  }, [authLoading, isLoggedIn, router, user]);
-
-  if (authLoading || !isLoggedIn || (!card && !loadError)) {
+  if (authLoading || authSettling || !isLoggedIn || (!card && !loadError)) {
     return (
       <OwlLoadingPanel
         layout="page"
