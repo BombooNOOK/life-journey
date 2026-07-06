@@ -14,3 +14,14 @@ export const FIRST_VISIT_ROUTES = {
 } as const;
 
 export type FirstVisitRouteKey = keyof typeof FIRST_VISIT_ROUTES;
+
+/** ヘッダー・フッターなしの全画面表示（動画・玄関など） */
+export const FIRST_VISIT_FULL_BLEED_PATHS = [
+  FIRST_VISIT_ROUTES.welcome,
+  FIRST_VISIT_ROUTES.about,
+  FIRST_VISIT_ROUTES.loghouse,
+] as const;
+
+export function isFirstVisitFullBleedPath(pathname: string): boolean {
+  return (FIRST_VISIT_FULL_BLEED_PATHS as readonly string[]).includes(pathname);
+}
