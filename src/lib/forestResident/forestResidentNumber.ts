@@ -1,6 +1,10 @@
 import { Prisma } from "@prisma/client";
 
 import { prisma } from "@/lib/db";
+import {
+  clampForestResidentDisplayName,
+  parseForestResidentDisplayNameInput,
+} from "@/lib/forestResident/forestResidentDisplayName";
 
 const RESIDENT_NUMBER_PREFIX = "BN-";
 /** 初回サンプル BN-000802079 から 1 ずつ採番 */
@@ -42,10 +46,18 @@ export function formatForestResidentRegisteredLabel(date: Date): string {
   }).format(date);
 }
 
-/** 表示名（将来: ユーザーが選んだキャラ名。現状は未設定時ウサギさん） */
-export function deriveForestResidentDisplayName(_email: string, nickname: string | null): string {
+/** 表示名（住民票専用名 → プロフィール名 → ウサギさん） */
+export function deriveForestResidentDisplayName(
+  nickname: string | null,
+  forestResidentDisplayName: string | null | undefined,
+): string {
+  const custom = forestResidentDisplayName?.trim() ?? "";
+  if (custom) return clampForestResidentDisplayName(custom);
+
   const trimmedNickname = nickname?.trim() ?? "";
-  if (trimmedNickname && trimmedNickname !== "メイン") return trimmedNickname;
+  if (trimmedNickname && trimmedNickname !== "メイン") {
+    return clampForestResidentDisplayName(trimmedNickname);
+  }
   return FOREST_RESIDENT_DEFAULT_DISPLAY_NAME;
 }
 
@@ -77,6 +89,7 @@ export async function ensureForestResidentForEmail(email: string): Promise<Fores
     select: {
       forestResidentNumber: true,
       forestResidentIssuedAt: true,
+      forestResidentDisplayName: true,
       createdAt: true,
     },
   });
@@ -85,6 +98,7 @@ export async function ensureForestResidentForEmail(email: string): Promise<Fores
     return loadForestResidentCardData(normalized, {
       forestResidentNumber: existing.forestResidentNumber,
       forestResidentIssuedAt: existing.forestResidentIssuedAt,
+      forestResidentDisplayName: existing.forestResidentDisplayName,
       createdAt: existing.createdAt,
     });
   }
@@ -104,12 +118,14 @@ export async function ensureForestResidentForEmail(email: string): Promise<Fores
           select: {
             forestResidentNumber: true,
             forestResidentIssuedAt: true,
+            forestResidentDisplayName: true,
             createdAt: true,
           },
         });
         return loadForestResidentCardData(normalized, {
           forestResidentNumber: updated.forestResidentNumber!,
           forestResidentIssuedAt: updated.forestResidentIssuedAt!,
+          forestResidentDisplayName: updated.forestResidentDisplayName,
           createdAt: updated.createdAt,
         });
       }
@@ -128,12 +144,14 @@ export async function ensureForestResidentForEmail(email: string): Promise<Fores
         select: {
           forestResidentNumber: true,
           forestResidentIssuedAt: true,
+          forestResidentDisplayName: true,
           createdAt: true,
         },
       });
       return loadForestResidentCardData(normalized, {
         forestResidentNumber: created.forestResidentNumber!,
         forestResidentIssuedAt: created.forestResidentIssuedAt!,
+        forestResidentDisplayName: created.forestResidentDisplayName,
         createdAt: created.createdAt,
       });
     } catch (e) {
@@ -143,6 +161,7 @@ export async function ensureForestResidentForEmail(email: string): Promise<Fores
           select: {
             forestResidentNumber: true,
             forestResidentIssuedAt: true,
+            forestResidentDisplayName: true,
             createdAt: true,
           },
         });
@@ -150,6 +169,7 @@ export async function ensureForestResidentForEmail(email: string): Promise<Fores
           return loadForestResidentCardData(normalized, {
             forestResidentNumber: retry.forestResidentNumber,
             forestResidentIssuedAt: retry.forestResidentIssuedAt,
+            forestResidentDisplayName: retry.forestResidentDisplayName,
             createdAt: retry.createdAt,
           });
         }
@@ -167,6 +187,7 @@ async function loadForestResidentCardData(
   row: {
     forestResidentNumber: string;
     forestResidentIssuedAt: Date;
+    forestResidentDisplayName: string | null;
     createdAt: Date;
   },
 ): Promise<ForestResidentCardData> {
@@ -178,10 +199,51 @@ async function loadForestResidentCardData(
 
   return {
     residentNumber: row.forestResidentNumber,
-    displayName: deriveForestResidentDisplayName(email, profile?.nickname ?? null),
+    displayName: deriveForestResidentDisplayName(
+      profile?.nickname ?? null,
+      row.forestResidentDisplayName,
+    ),
     registeredAtLabel: formatForestResidentRegisteredLabel(row.createdAt),
     faceIcon: "rabbit",
     badge: "green",
     issuedAt: row.forestResidentIssuedAt.toISOString(),
   };
+}
+
+/** 住民票のおなまえを更新（アカウント単位・最大10文字） */
+export async function updateForestResidentDisplayName(
+  email: string,
+  rawDisplayName: unknown,
+): Promise<ForestResidentCardData | { error: string }> {
+  const normalized = email.trim().toLowerCase();
+  if (!normalized) return { error: "email required" };
+
+  const parsed = parseForestResidentDisplayNameInput(rawDisplayName);
+  if (!parsed.ok) return { error: parsed.error };
+
+  const account = await prisma.accountSettings.findUnique({
+    where: { email: normalized },
+    select: {
+      forestResidentNumber: true,
+      forestResidentIssuedAt: true,
+      forestResidentDisplayName: true,
+      createdAt: true,
+    },
+  });
+
+  if (!account?.forestResidentNumber || !account.forestResidentIssuedAt) {
+    return { error: "住民票がまだ発行されていません。" };
+  }
+
+  await prisma.accountSettings.update({
+    where: { email: normalized },
+    data: { forestResidentDisplayName: parsed.value },
+  });
+
+  return loadForestResidentCardData(normalized, {
+    forestResidentNumber: account.forestResidentNumber,
+    forestResidentIssuedAt: account.forestResidentIssuedAt,
+    forestResidentDisplayName: parsed.value,
+    createdAt: account.createdAt,
+  });
 }

@@ -164,6 +164,8 @@ model AccountSettings {
   /// 森の住民番号（問い合わせ・注文照合用。メール変更後も不変）
   forestResidentNumber   String?   @unique
   forestResidentIssuedAt DateTime?
+  /// 住民票のおなまえ（プロフィール名とは別。最大10文字はアプリ側で検証）
+  forestResidentDisplayName String?
 }
 
 /// 鑑定書製本版（BASE単発）の申込予定・製本進捗（決済前は pending）

@@ -25,12 +25,12 @@ describe("forestResidentNumber", () => {
   });
 
   it("defaults display name to rabbit sample", () => {
-    expect(deriveForestResidentDisplayName("risu@example.com", "メイン")).toBe(
+    expect(deriveForestResidentDisplayName("メイン", null)).toBe(
       FOREST_RESIDENT_DEFAULT_DISPLAY_NAME,
     );
   });
 
   it("uses nickname when set and not default", () => {
-    expect(deriveForestResidentDisplayName("a@example.com", "りさ")).toBe("りさ");
+    expect(deriveForestResidentDisplayName("りさ", null)).toBe("りさ");
   });
 });
