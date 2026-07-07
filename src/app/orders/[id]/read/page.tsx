@@ -1,6 +1,7 @@
 import { notFound, redirect } from "next/navigation";
 import { Suspense } from "react";
 
+import { FirstVisitFlowBrowserBackGuard } from "@/components/orders/FirstVisitFlowBrowserBackGuard";
 import { KanteiPdfReader } from "@/components/orders/KanteiPdfReader";
 import { OwlLoadingPanel } from "@/components/ui/OwlLoadingPanel";
 import { getViewerEmailFromCookie, normalizeEmail } from "@/lib/auth/viewer";
@@ -64,6 +65,7 @@ export default async function KanteiReadPage({ params, searchParams }: Props) {
   return (
     <div className="mx-auto max-w-3xl sm:px-0 max-sm:px-0 max-sm:pb-0 max-sm:pt-0">
       <Suspense fallback={<ReaderFallback />}>
+        <FirstVisitFlowBrowserBackGuard kanteiFirstReadGuide={guideMode != null} />
         <KanteiPdfReader
           orderId={orderId}
           title={title}

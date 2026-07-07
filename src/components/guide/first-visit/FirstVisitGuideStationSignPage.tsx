@@ -16,7 +16,7 @@ export function FirstVisitGuideStationSignPage() {
   const handleAction = useCallback(
     (action: FirstVisitGuideCardAction, cardId: string) => {
       if (action === "next" && cardId === "guide-station-sign") {
-        router.push(FIRST_VISIT_ROUTES.guideStation);
+        router.replace(FIRST_VISIT_ROUTES.guideStation);
       }
     },
     [router],

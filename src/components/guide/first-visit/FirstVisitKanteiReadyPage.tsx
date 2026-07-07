@@ -57,21 +57,24 @@ export function FirstVisitKanteiReadyPage() {
     };
   }, [authLoading, isLoggedIn, router]);
 
+  const [navigating, setNavigating] = useState(false);
+
   const handleAction = useCallback(
     (action: FirstVisitGuideCardAction, cardId: string) => {
       if (action === "next" && cardId === "kantei-hall-intro") {
         setFirstVisitOrderGuideFlag();
-        router.push("/order");
+        setNavigating(true);
+        router.replace("/order");
       }
     },
     [router],
   );
 
-  if (authLoading || redirecting || !isLoggedIn) {
+  if (authLoading || redirecting || !isLoggedIn || navigating) {
     return (
       <OwlLoadingPanel
         layout="page"
-        label="案内を読み込んでいます…"
+        label={navigating ? "鑑定のへやから案内しています…" : "案内を読み込んでいます…"}
         hint="フクロウが回っているあいだはそのままお待ちください。"
       />
     );

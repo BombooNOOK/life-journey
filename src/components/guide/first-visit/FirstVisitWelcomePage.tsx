@@ -1,8 +1,9 @@
 "use client";
 
 import Image from "next/image";
-import Link from "next/link";
 import { useLayoutEffect, useRef, useState } from "react";
+
+import { FirstVisitWizardLink } from "@/components/guide/first-visit/FirstVisitWizardLink";
 
 import { FIRST_VISIT_ROUTES } from "@/lib/onboarding/firstVisitWizard/routes";
 import {
@@ -206,12 +207,12 @@ export function FirstVisitWelcomePage() {
 
       {/* 看板テキストは固定サイズのため文字サイズ帯は非表示。地図上に半透明で次へ */}
       <div className="pointer-events-none absolute inset-x-0 bottom-0 z-30 flex justify-center px-4 pb-[max(0.875rem,env(safe-area-inset-bottom))] pt-10">
-        <Link
+        <FirstVisitWizardLink
           href={FIRST_VISIT_ROUTES.about}
           className="pointer-events-auto inline-flex min-h-[48px] w-full max-w-sm items-center justify-center rounded-xl border border-emerald-900/15 bg-emerald-800/82 px-5 py-3 text-base font-medium text-white shadow-[0_8px_28px_-8px_rgba(24,83,53,0.45)] backdrop-blur-[2px] transition hover:bg-emerald-900/88 active:bg-emerald-900/92"
         >
           {FIRST_VISIT_WELCOME_COPY.nextLabel}
-        </Link>
+        </FirstVisitWizardLink>
       </div>
     </section>
   );

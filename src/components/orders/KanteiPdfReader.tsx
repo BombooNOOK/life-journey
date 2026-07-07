@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { PDFDocumentProxy } from "pdfjs-dist";
 
@@ -11,6 +12,7 @@ import { PdfDownloadButton } from "@/components/orders/PdfDownloadButton";
 import { BodyPortal, IMMERSIVE_OVERLAY_Z_CLASS } from "@/components/ui/BodyPortal";
 import { OwlSpinIndicator } from "@/components/ui/OwlSpinIndicator";
 import { useVisualViewportDock } from "@/hooks/useVisualViewportDock";
+import { useBlockBrowserBack } from "@/hooks/useBlockBrowserBack";
 import {
   type KanteiFirstReadGuideMode,
   kanteiLifePathFirstPdfIndex,
@@ -93,7 +95,9 @@ export function KanteiPdfReader({
   guideMode = null,
   activeProfileId,
 }: Props) {
+  const router = useRouter();
   const restrictedFirstRead = guideMode != null;
+  useBlockBrowserBack(restrictedFirstRead);
   const isCompact = useCompactReader();
   const touchStartRef = useRef<{ x: number; y: number; pointerId: number } | null>(null);
   const didSwipeRef = useRef(false);
@@ -416,6 +420,44 @@ export function KanteiPdfReader({
     : pdfIndex < pdfPageCount - 1;
   const showControls = !loading && !error && pdfDoc != null;
 
+  const handleBackToBookshelf = useCallback(() => {
+    router.replace(backHref);
+  }, [backHref, router]);
+
+  const compactBackControl = restrictedFirstRead ? (
+    <button
+      type="button"
+      onClick={handleBackToBookshelf}
+      className="pointer-events-auto shrink-0 rounded-lg bg-black/45 px-2.5 py-1.5 text-xs font-medium text-white backdrop-blur-sm hover:bg-black/55"
+    >
+      ← 本棚
+    </button>
+  ) : (
+    <Link
+      href={backHref}
+      className="pointer-events-auto shrink-0 rounded-lg bg-black/45 px-2.5 py-1.5 text-xs font-medium text-white backdrop-blur-sm"
+    >
+      ← 本棚
+    </Link>
+  );
+
+  const desktopBackControl = restrictedFirstRead ? (
+    <button
+      type="button"
+      onClick={handleBackToBookshelf}
+      className="shrink-0 rounded-lg px-2 py-1.5 text-sm font-medium text-stone-700 hover:bg-stone-100 hover:text-stone-900"
+    >
+      ← 本棚
+    </button>
+  ) : (
+    <Link
+      href={backHref}
+      className="shrink-0 rounded-lg px-2 py-1.5 text-sm font-medium text-stone-700 hover:bg-stone-100 hover:text-stone-900"
+    >
+      ← 本棚
+    </Link>
+  );
+
   const compactShellStyle = useMemo(() => {
     if (viewportDock.width > 0 && viewportDock.height > 0) {
       return {
@@ -528,12 +570,7 @@ export function KanteiPdfReader({
           {showControls ? (
             <>
               <div className="pointer-events-none absolute inset-x-0 top-0 z-30 flex items-center gap-2 px-2 py-2 pt-[max(0.35rem,env(safe-area-inset-top))]">
-                <Link
-                  href={backHref}
-                  className="pointer-events-auto shrink-0 rounded-lg bg-black/45 px-2.5 py-1.5 text-xs font-medium text-white backdrop-blur-sm"
-                >
-                  ← 本棚
-                </Link>
+                {compactBackControl}
                 <p className="pointer-events-none min-w-0 flex-1 truncate text-center text-xs font-medium text-white drop-shadow-sm">
                   {title}
                 </p>
@@ -604,12 +641,7 @@ export function KanteiPdfReader({
     <div className="flex min-h-[calc(100dvh-6rem)] flex-col">
       <header className="sticky top-0 z-20 -mx-4 border-b border-stone-200 bg-[#faf8f5]/95 px-4 py-2 backdrop-blur-sm sm:-mx-0 sm:rounded-t-xl sm:px-3">
         <div className="flex items-center gap-2">
-          <Link
-            href={backHref}
-            className="shrink-0 rounded-lg px-2 py-1.5 text-sm font-medium text-stone-700 hover:bg-stone-100 hover:text-stone-900"
-          >
-            ← 本棚
-          </Link>
+          {desktopBackControl}
           <p className="min-w-0 flex-1 truncate text-sm font-medium text-stone-900">{title}</p>
           <button
             type="button"

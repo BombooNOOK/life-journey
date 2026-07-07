@@ -1,5 +1,7 @@
+"use client";
+
+import { useRouter } from "next/navigation";
 import type { ReactNode } from "react";
-import Link from "next/link";
 
 import { FirstVisitGuideStage } from "@/components/guide/first-visit/FirstVisitGuideStage";
 import { FirstVisitWizardNav } from "@/components/guide/first-visit/FirstVisitWizardNav";
@@ -24,6 +26,8 @@ export function FirstVisitGuideCardPageLayout({
   backLabel = "もどる",
   children,
 }: Props) {
+  const router = useRouter();
+
   return (
     <div className="home-read-scope min-h-[100dvh] pb-10">
       <FirstVisitWizardPageHeader stepLabel={stepLabel} className="hidden px-4 pt-6 sm:px-6 lg:block" />
@@ -31,12 +35,13 @@ export function FirstVisitGuideCardPageLayout({
       <div className="lg:hidden">
         <FirstVisitGuideStage ariaLabel={ariaLabel}>
           {backHref ? (
-            <Link
-              href={backHref}
+            <button
+              type="button"
+              onClick={() => router.replace(backHref)}
               className="mb-3 inline-flex min-h-[44px] items-center text-sm font-medium text-stone-600 hover:text-stone-900"
             >
               ← {backLabel}
-            </Link>
+            </button>
           ) : null}
           {children}
         </FirstVisitGuideStage>

@@ -40,7 +40,7 @@ export function BookshelfKanteiCompleteGuide({ activeProfileId, kanteiOrderId }:
     (action: FirstVisitGuideCardAction, cardId: string) => {
       if (action === "open_life_path_reader" && kanteiOrderId) {
         finishGuide();
-        router.push(buildKanteiFirstReadHref(kanteiOrderId));
+        router.replace(buildKanteiFirstReadHref(kanteiOrderId));
         return;
       }
 
@@ -57,7 +57,7 @@ export function BookshelfKanteiCompleteGuide({ activeProfileId, kanteiOrderId }:
           activeProfileId,
           calendarDayKeyInJapan(new Date()),
         );
-        router.push(href);
+        router.replace(href);
         return;
       }
 

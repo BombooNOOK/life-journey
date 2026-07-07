@@ -45,15 +45,25 @@ export function FirstVisitKanteiPage() {
     }
   }, [isLoggedIn, loading, router]);
 
+  const [navigating, setNavigating] = useState(false);
+
   const handleProceed = useCallback(() => {
-    router.push(FIRST_VISIT_ROUTES.kanteiReady);
+    setNavigating(true);
+    router.replace(FIRST_VISIT_ROUTES.kanteiReady);
   }, [router]);
 
-  if (loading || !isLoggedIn || !illustrationReady) {
+  if (loading || !isLoggedIn || !illustrationReady || navigating) {
     return (
       <OwlLoadingPanel
         layout="page"
-        label={loading || !isLoggedIn ? "ログイン状態を確認しています…" : "ログハウスの完成を読み込んでいます…"}
+        label={
+          navigating
+            ? "鑑定のへやへ向かっています…"
+            : loading || !isLoggedIn
+              ? "ログイン状態を確認しています…"
+              : "ログハウスの完成を読み込んでいます…"
+        }
+        hint="フクロウが回っているあいだはそのままお待ちください。"
       />
     );
   }

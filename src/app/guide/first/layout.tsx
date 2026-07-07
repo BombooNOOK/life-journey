@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 
+import { FirstVisitBrowserBackGuard } from "@/components/guide/first-visit/FirstVisitBrowserBackGuard";
+
 export const metadata: Metadata = {
   title: "はじめての方へ",
   description:
@@ -7,5 +9,5 @@ export const metadata: Metadata = {
 };
 
 export default function FirstVisitLayout({ children }: { children: React.ReactNode }) {
-  return children;
+  return <FirstVisitBrowserBackGuard>{children}</FirstVisitBrowserBackGuard>;
 }

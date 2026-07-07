@@ -49,14 +49,23 @@ export function FirstVisitLoghousePage() {
     void video.play();
   }, []);
 
+  const [navigating, setNavigating] = useState(false);
+
   const handleNext = useCallback(() => {
     clearFirstVisitFromRegisterFlag();
     void preloadFirstVisitLoghouseCompleteIllustration();
-    router.push(FIRST_VISIT_ROUTES.kantei);
+    setNavigating(true);
+    router.replace(FIRST_VISIT_ROUTES.kantei);
   }, [router]);
 
-  if (loading || !isLoggedIn) {
-    return <OwlLoadingPanel layout="page" label="ログイン状態を確認しています…" />;
+  if (loading || !isLoggedIn || navigating) {
+    return (
+      <OwlLoadingPanel
+        layout="page"
+        label={navigating ? "ログハウス完成の案内を準備しています…" : "ログイン状態を確認しています…"}
+        hint="フクロウが回っているあいだはそのままお待ちください。"
+      />
+    );
   }
 
   return (

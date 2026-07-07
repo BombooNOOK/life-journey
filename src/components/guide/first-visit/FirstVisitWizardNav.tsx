@@ -1,4 +1,6 @@
-import Link from "next/link";
+"use client";
+
+import { useRouter } from "next/navigation";
 
 const primaryClass =
   "inline-flex min-h-[44px] flex-1 items-center justify-center rounded-xl bg-emerald-800 px-5 py-2.5 text-sm font-medium text-white shadow-sm transition hover:bg-emerald-900 sm:flex-none sm:min-w-[8.5rem]";
@@ -13,9 +15,11 @@ type Props = {
   nextLabel?: string;
   showBack?: boolean;
   showNext?: boolean;
+  onBack?: () => void;
+  onNext?: () => void;
 };
 
-/** 第2幕以降の単独ページ用：画面下の戻る / 次へ */
+/** 第2幕以降の単独ページ用：画面下の戻る / 次へ（replace で遷移） */
 export function FirstVisitWizardNav({
   backHref,
   backLabel = "戻る",
@@ -23,24 +27,42 @@ export function FirstVisitWizardNav({
   nextLabel = "次へ",
   showBack = true,
   showNext = true,
+  onBack,
+  onNext,
 }: Props) {
+  const router = useRouter();
+
   return (
     <nav
       className="mt-8 flex flex-col-reverse gap-3 border-t border-stone-200/80 pt-6 sm:flex-row sm:items-center sm:justify-between"
       aria-label="案内の進行"
     >
       {showBack && backHref ? (
-        <Link href={backHref} className={secondaryClass}>
+        <button
+          type="button"
+          className={secondaryClass}
+          onClick={() => {
+            onBack?.();
+            router.replace(backHref);
+          }}
+        >
           {backLabel}
-        </Link>
+        </button>
       ) : (
         <span className="hidden sm:block sm:flex-1" aria-hidden />
       )}
 
       {showNext && nextHref ? (
-        <Link href={nextHref} className={primaryClass}>
+        <button
+          type="button"
+          className={primaryClass}
+          onClick={() => {
+            onNext?.();
+            router.replace(nextHref);
+          }}
+        >
           {nextLabel}
-        </Link>
+        </button>
       ) : null}
     </nav>
   );

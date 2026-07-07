@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 import { buildLoginHref } from "@/app/login/loginFlow";
 import { useFirebaseAuth } from "@/components/auth/FirebaseAuthProvider";
@@ -25,16 +25,25 @@ export function FirstVisitLoghouseSignPage() {
     }
   }, [authLoading, isLoggedIn, router]);
 
+  const [navigating, setNavigating] = useState(false);
+
   const handleAction = useCallback(
     (action: FirstVisitGuideCardAction, cardId: string) => {
       if (action !== "next" || cardId !== "loghouse-sign") return;
-      router.push(FIRST_VISIT_ROUTES.loghouse);
+      setNavigating(true);
+      router.replace(FIRST_VISIT_ROUTES.loghouse);
     },
     [router],
   );
 
-  if (authLoading || !isLoggedIn) {
-    return <OwlLoadingPanel layout="page" label="案内を読み込んでいます…" />;
+  if (authLoading || !isLoggedIn || navigating) {
+    return (
+      <OwlLoadingPanel
+        layout="page"
+        label={navigating ? "ログハウス建築の準備をしています…" : "案内を読み込んでいます…"}
+        hint="フクロウが回っているあいだはそのままお待ちください。"
+      />
+    );
   }
 
   return (

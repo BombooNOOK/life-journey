@@ -1,9 +1,9 @@
 "use client";
 
 import Image from "next/image";
-import Link from "next/link";
 import { useCallback, useRef, useState } from "react";
 
+import { FirstVisitWizardLink } from "@/components/guide/first-visit/FirstVisitWizardLink";
 import {
   FIRST_VISIT_ABOUT_VIDEO_NEXT_LABEL,
   FIRST_VISIT_ABOUT_VIDEO_POSTER_SRC,
@@ -98,12 +98,12 @@ export function FirstVisitAboutPage() {
 
       {phase === "ready" || phase === "ended" ? (
         <div className="absolute inset-x-0 bottom-0 z-30 flex flex-col items-center gap-1 px-4 pb-[max(0.875rem,env(safe-area-inset-bottom))] pt-6 text-center">
-          <Link
+          <FirstVisitWizardLink
             href={skipHref}
             className="text-xs text-white/65 underline-offset-2 hover:text-white/85 hover:underline"
           >
             {FIRST_VISIT_ABOUT_VIDEO_SKIP_LABEL}
-          </Link>
+          </FirstVisitWizardLink>
           <p className="max-w-sm text-xs leading-relaxed text-white/70">{FIRST_VISIT_ABOUT_VIDEO_SKIP_NOTE}</p>
         </div>
       ) : null}
@@ -117,12 +117,12 @@ export function FirstVisitAboutPage() {
           >
             {FIRST_VISIT_ABOUT_VIDEO_REPLAY_LABEL}
           </button>
-          <Link
+          <FirstVisitWizardLink
             href={FIRST_VISIT_ROUTES.owl}
             className="pointer-events-auto inline-flex min-h-[48px] w-full max-w-sm items-center justify-center rounded-xl border border-emerald-900/15 bg-emerald-800/82 px-5 py-3 text-base font-medium text-white shadow-[0_8px_28px_-8px_rgba(24,83,53,0.45)] backdrop-blur-[2px] transition hover:bg-emerald-900/88 active:bg-emerald-900/92"
           >
             {FIRST_VISIT_ABOUT_VIDEO_NEXT_LABEL}
-          </Link>
+          </FirstVisitWizardLink>
         </div>
       ) : null}
     </section>

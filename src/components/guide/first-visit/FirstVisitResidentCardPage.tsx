@@ -105,15 +105,22 @@ export function FirstVisitResidentCardPage() {
     };
   }, [authLoading, isLoggedIn]);
 
+  const [navigating, setNavigating] = useState(false);
+
   const handleNext = useCallback(() => {
-    router.push(FIRST_VISIT_ROUTES.loghouseSign);
+    setNavigating(true);
+    router.replace(FIRST_VISIT_ROUTES.loghouseSign);
   }, [router]);
 
-  if (authLoading || authSettling || !isLoggedIn || (!card && !loadError)) {
+  if (authLoading || authSettling || !isLoggedIn || (!card && !loadError) || navigating) {
     return (
       <OwlLoadingPanel
         layout="page"
-        label="住民票カードを発行しています…"
+        label={
+          navigating
+            ? "ログハウスへの案内を準備しています…"
+            : "住民票カードを発行しています…"
+        }
         hint="フクロウが回っているあいだはそのままお待ちください。"
       />
     );

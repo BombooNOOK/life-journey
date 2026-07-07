@@ -12,6 +12,14 @@ import {
 import { daysInMonth, toIsoDateString } from "@/lib/order/birthDate";
 import { romanizeFromKanaParts } from "@/lib/numerology/kanaToRomaji";
 import { OrderFormProfileNotice } from "@/components/orders/OrderFormProfileNotice";
+import { FirstVisitFlowBrowserBackGuard } from "@/components/orders/FirstVisitFlowBrowserBackGuard";
+import { OwlLoadingPanel } from "@/components/ui/OwlLoadingPanel";
+import {
+  FIRST_VISIT_OWL_LOADING_HINT,
+  ORDER_NAVIGATING_BOOKSHELF_HINT,
+  ORDER_NAVIGATING_BOOKSHELF_LABEL,
+  ORDER_SUBMITTING_LABEL,
+} from "@/lib/onboarding/firstVisitWizard/loadingCopy";
 import { OwlLoadingInline } from "@/components/ui/OwlLoadingInline";
 import { OwlSuspenseFallback } from "@/components/ui/OwlSuspenseFallback";
 import { FIRST_VISIT_KANTEI_HALL_SIGN_LABEL } from "@/lib/onboarding/firstVisitWizard/kanteiHallCopy";
@@ -56,7 +64,7 @@ function OrderPageContent() {
   const profileId = searchParams.get("profile")?.trim() ?? "";
   const [form, setForm] = useState<FormState>(empty);
   const [step, setStep] = useState<1 | 2>(1);
-  const [loading, setLoading] = useState(false);
+  const [submitPhase, setSubmitPhase] = useState<"idle" | "submitting" | "navigating">("idle");
   const [error, setError] = useState<string | null>(null);
   const [existingOrderId, setExistingOrderId] = useState<string | null>(null);
 
@@ -158,7 +166,7 @@ function OrderPageContent() {
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     e.stopPropagation();
-    setLoading(true);
+    setSubmitPhase("submitting");
     setError(null);
     setExistingOrderId(null);
     try {
@@ -193,6 +201,7 @@ function OrderPageContent() {
             ? "サーバーからの応答が読み取れませんでした。しばらくしてから再度お試しください。"
             : `保存に失敗しました（HTTP ${res.status}・サーバーが JSON 以外を返している可能性。ターミナルログを確認）`,
         );
+        setSubmitPhase("idle");
         return;
       }
 
@@ -201,7 +210,10 @@ function OrderPageContent() {
           setError(data.error ?? "このプロフィールには既に鑑定書があります。");
           setExistingOrderId(data.existingOrderId ?? null);
           if (data.existingOrderId) {
-            router.push("/orders/bookshelf#bookshelf-kantei-books");
+            setSubmitPhase("navigating");
+            router.replace("/orders/bookshelf#bookshelf-kantei-books");
+          } else {
+            setSubmitPhase("idle");
           }
           return;
         }
@@ -216,28 +228,51 @@ function OrderPageContent() {
           );
         }
         setError(parts.join(" "));
+        setSubmitPhase("idle");
         return;
       }
       if (!data.id) {
         setError("保存には成功したように見えますが、注文IDを取得できませんでした。一覧から確認してください。");
+        setSubmitPhase("idle");
         return;
       }
       if (data.profileId) {
         await selectViewerProfile(data.profileId);
       }
       setBookshelfKanteiGuideFlag();
-      router.push("/orders/bookshelf#bookshelf-kantei-books");
+      setSubmitPhase("navigating");
+      router.replace("/orders/bookshelf#bookshelf-kantei-books");
     } catch {
       setError("通信に失敗しました。ネットワークを確認してください。");
-    } finally {
-      setLoading(false);
+      setSubmitPhase("idle");
     }
   }
 
+  if (submitPhase !== "idle") {
+    return (
+      <>
+        <FirstVisitFlowBrowserBackGuard />
+        <OwlLoadingPanel
+          layout="page"
+          label={
+            submitPhase === "navigating" ? ORDER_NAVIGATING_BOOKSHELF_LABEL : ORDER_SUBMITTING_LABEL
+          }
+          hint={
+            submitPhase === "navigating"
+              ? ORDER_NAVIGATING_BOOKSHELF_HINT
+              : FIRST_VISIT_OWL_LOADING_HINT
+          }
+        />
+      </>
+    );
+  }
+
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-stone-900">{FIRST_VISIT_KANTEI_HALL_SIGN_LABEL}</h1>
+    <>
+      <FirstVisitFlowBrowserBackGuard />
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-2xl font-bold text-stone-900">{FIRST_VISIT_KANTEI_HALL_SIGN_LABEL}</h1>
         <p className="mt-1 text-sm text-stone-600">
           お名前・ふりがな・生年月日を入力すると、無料の鑑定結果へ進みます。
         </p>
@@ -415,11 +450,11 @@ function OrderPageContent() {
             </button>
             <button
               type="submit"
-              disabled={loading}
+              disabled={submitPhase !== "idle"}
               className="w-full rounded-lg bg-stone-800 py-3 text-sm font-medium text-white hover:bg-stone-700 disabled:opacity-60"
             >
-              {loading ? (
-                <OwlLoadingInline label="鑑定を保存しています…" size="sm" className="text-white" />
+              {submitPhase === "submitting" ? (
+                <OwlLoadingInline label={ORDER_SUBMITTING_LABEL} size="sm" className="text-white" />
               ) : (
                 "この内容で保存する"
               )}
@@ -428,6 +463,7 @@ function OrderPageContent() {
         </form>
       )}
     </div>
+    </>
   );
 }
 
