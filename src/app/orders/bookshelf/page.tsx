@@ -187,7 +187,10 @@ export default async function BookshelfPage() {
 
     return (
         <div className="space-y-5">
-        <BookshelfKanteiCompleteGuide activeProfileId={activeProfileId} />
+        <BookshelfKanteiCompleteGuide
+          activeProfileId={activeProfileId}
+          kanteiOrderId={orders[0]?.id ?? null}
+        />
         <BookshelfPageHeader
           activeProfileLabel={activeProfileLabel}
           deployRevision={process.env.VERCEL_GIT_COMMIT_SHA?.slice(0, 7) ?? null}

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { PDFDocumentProxy } from "pdfjs-dist";
 
+import { KanteiFirstReadCompleteOverlay } from "@/components/orders/KanteiFirstReadCompleteOverlay";
 import { KanteiPdfCanvasView } from "@/components/orders/KanteiPdfCanvasView";
 import { KanteiPdfTocPanel } from "@/components/orders/KanteiPdfTocPanel";
 import { PdfDownloadButton } from "@/components/orders/PdfDownloadButton";
@@ -11,9 +12,10 @@ import { BodyPortal, IMMERSIVE_OVERLAY_Z_CLASS } from "@/components/ui/BodyPorta
 import { OwlSpinIndicator } from "@/components/ui/OwlSpinIndicator";
 import { useVisualViewportDock } from "@/hooks/useVisualViewportDock";
 import {
-  openKanteiPdfDocument,
-  resolveKanteiPdfNamedDestination,
-} from "@/lib/pdf/loadKanteiPdfJs";
+  type KanteiFirstReadGuideMode,
+  kanteiLifePathFirstPdfIndex,
+  kanteiLifePathLastPdfIndex,
+} from "@/lib/pdf/kanteiFirstReadGuide";
 import {
   clampPdfIndex,
   formatKanteiReaderPageIndicator,
@@ -21,6 +23,10 @@ import {
   KANTEI_PDF_PHYSICAL_PAGE_COUNT,
   parsePdfPageSearchParam,
 } from "@/lib/pdf/kanteiReaderPage";
+import {
+  openKanteiPdfDocument,
+  resolveKanteiPdfNamedDestination,
+} from "@/lib/pdf/loadKanteiPdfJs";
 
 const PDF_FETCH_TIMEOUT_MS = 310_000;
 const LOAD_HINT_MS = 60_000;
@@ -35,6 +41,8 @@ type Props = {
   pdfDownloadHref: string;
   downloadFileName: string;
   backHref?: string;
+  guideMode?: KanteiFirstReadGuideMode | null;
+  activeProfileId?: string;
 };
 
 function storageKey(orderId: string): string {
@@ -82,7 +90,10 @@ export function KanteiPdfReader({
   pdfDownloadHref,
   downloadFileName,
   backHref = "/orders/bookshelf",
+  guideMode = null,
+  activeProfileId,
 }: Props) {
+  const restrictedFirstRead = guideMode != null;
   const isCompact = useCompactReader();
   const touchStartRef = useRef<{ x: number; y: number; pointerId: number } | null>(null);
   const didSwipeRef = useRef(false);
@@ -99,6 +110,7 @@ export function KanteiPdfReader({
   const [tocOpen, setTocOpen] = useState(false);
   const [downloadOpen, setDownloadOpen] = useState(false);
   const [chromeVisible, setChromeVisible] = useState(false);
+  const [firstReadCompleteOpen, setFirstReadCompleteOpen] = useState(false);
   const isPdfZoomedRef = useRef(false);
 
   const handlePdfZoomedChange = useCallback((zoomed: boolean) => {
@@ -118,8 +130,22 @@ export function KanteiPdfReader({
     window.history.replaceState(null, "", qs ? `?${qs}` : window.location.pathname);
   }, []);
 
+  const tryOpenFirstReadComplete = useCallback(
+    (targetIndex: number) => {
+      if (!restrictedFirstRead || firstReadCompleteOpen) return false;
+      if (targetIndex > kanteiLifePathLastPdfIndex()) {
+        setFirstReadCompleteOpen(true);
+        return true;
+      }
+      return false;
+    },
+    [firstReadCompleteOpen, restrictedFirstRead],
+  );
+
   const applyPageIndex = useCallback(
     (nextIndex: number) => {
+      if (tryOpenFirstReadComplete(nextIndex)) return;
+
       const clamped = clampPdfIndex(nextIndex, pdfPageCount);
       setPdfIndex(clamped);
       syncUrl(clamped);
@@ -129,7 +155,7 @@ export function KanteiPdfReader({
         // ignore
       }
     },
-    [orderId, pdfPageCount, syncUrl],
+    [orderId, pdfPageCount, syncUrl, tryOpenFirstReadComplete],
   );
 
   const navigateTo = useCallback(
@@ -170,7 +196,9 @@ export function KanteiPdfReader({
 
       const initialPageParam = new URLSearchParams(window.location.search).get("p");
       let initial = parsePdfPageSearchParam(initialPageParam, KANTEI_PDF_PHYSICAL_PAGE_COUNT);
-      if (initial == null) {
+      if (restrictedFirstRead) {
+        initial = kanteiLifePathFirstPdfIndex();
+      } else if (initial == null) {
         try {
           const stored = sessionStorage.getItem(storageKey(orderId));
           initial =
@@ -266,7 +294,16 @@ export function KanteiPdfReader({
         pdfDocRef.current = null;
       }
     };
-  }, [orderId, pdfPreviewHref, reloadKey, syncUrl]);
+  }, [orderId, pdfPreviewHref, reloadKey, restrictedFirstRead, syncUrl]);
+
+  useEffect(() => {
+    if (!guideMode) return;
+    const params = new URLSearchParams(window.location.search);
+    if (!params.has("guide")) return;
+    params.delete("guide");
+    const qs = params.toString();
+    window.history.replaceState(null, "", qs ? `?${qs}` : window.location.pathname);
+  }, [guideMode]);
 
   useEffect(() => {
     if (!loading || error) return;
@@ -374,7 +411,9 @@ export function KanteiPdfReader({
 
   const pageIndicator = formatKanteiReaderPageIndicator(pdfIndex, pdfPageCount);
   const canGoPrev = pdfIndex > KANTEI_PDF_COVER_INDEX;
-  const canGoNext = pdfIndex < pdfPageCount - 1;
+  const canGoNext = restrictedFirstRead
+    ? pdfIndex >= kanteiLifePathFirstPdfIndex() && pdfIndex <= kanteiLifePathLastPdfIndex()
+    : pdfIndex < pdfPageCount - 1;
   const showControls = !loading && !error && pdfDoc != null;
 
   const compactShellStyle = useMemo(() => {
@@ -546,6 +585,15 @@ export function KanteiPdfReader({
               void navigateTo(nextIndex, destinationId);
               setChromeVisible(false);
             }}
+            restrictedFirstRead={restrictedFirstRead}
+          />
+
+          <KanteiFirstReadCompleteOverlay
+            open={firstReadCompleteOpen}
+            orderId={orderId}
+            activeProfileId={activeProfileId}
+            backHref={backHref}
+            onClose={() => setFirstReadCompleteOpen(false)}
           />
         </div>
       </BodyPortal>
@@ -621,6 +669,15 @@ export function KanteiPdfReader({
         currentPdfIndex={pdfIndex}
         onClose={() => setTocOpen(false)}
         onJump={(nextIndex, destinationId) => void navigateTo(nextIndex, destinationId)}
+        restrictedFirstRead={restrictedFirstRead}
+      />
+
+      <KanteiFirstReadCompleteOverlay
+        open={firstReadCompleteOpen}
+        orderId={orderId}
+        activeProfileId={activeProfileId}
+        backHref={backHref}
+        onClose={() => setFirstReadCompleteOpen(false)}
       />
     </div>
   );

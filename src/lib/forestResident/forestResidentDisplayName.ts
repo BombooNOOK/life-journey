@@ -1,5 +1,5 @@
-/** 住民票カードのおなまえ（表示・保存とも最大10文字） */
-export const FOREST_RESIDENT_DISPLAY_NAME_MAX_LENGTH = 10 as const;
+/** 住民票カードのおなまえ（表示・保存とも最大7文字） */
+export const FOREST_RESIDENT_DISPLAY_NAME_MAX_LENGTH = 7 as const;
 
 export function clampForestResidentDisplayName(value: string): string {
   return value.trim().slice(0, FOREST_RESIDENT_DISPLAY_NAME_MAX_LENGTH);

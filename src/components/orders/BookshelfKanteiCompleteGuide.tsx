@@ -3,8 +3,8 @@
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 
-import { FirstVisitGuideStage } from "@/components/guide/first-visit/FirstVisitGuideStage";
 import { FirstVisitGuideCardStack } from "@/components/guide/first-visit/FirstVisitGuideCardStack";
+import { FirstVisitGuideStage } from "@/components/guide/first-visit/FirstVisitGuideStage";
 import {
   BOOKSHELF_KANTEI_COMPLETE_GUIDE_CARDS,
   type FirstVisitGuideCardAction,
@@ -13,14 +13,16 @@ import {
   clearBookshelfKanteiGuideFlag,
   readBookshelfKanteiGuideFlag,
 } from "@/lib/onboarding/firstVisitWizard/session";
+import { buildKanteiFirstReadHref } from "@/lib/pdf/kanteiFirstReadGuide";
 import { calendarDayKeyInJapan, journalWithCompanionPath } from "@/lib/journal/journalNav";
 
 type Props = {
   activeProfileId: string;
+  kanteiOrderId: string | null;
 };
 
 /** 鑑定完了直後：本棚に鑑定書が並んだあと、2枚の案内カード */
-export function BookshelfKanteiCompleteGuide({ activeProfileId }: Props) {
+export function BookshelfKanteiCompleteGuide({ activeProfileId, kanteiOrderId }: Props) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [index, setIndex] = useState(0);
@@ -36,6 +38,12 @@ export function BookshelfKanteiCompleteGuide({ activeProfileId }: Props) {
 
   const handleAction = useCallback(
     (action: FirstVisitGuideCardAction, cardId: string) => {
+      if (action === "open_life_path_reader" && kanteiOrderId) {
+        finishGuide();
+        router.push(buildKanteiFirstReadHref(kanteiOrderId));
+        return;
+      }
+
       if (action === "next" && cardId === BOOKSHELF_KANTEI_COMPLETE_GUIDE_CARDS[0]?.id) {
         setIndex(1);
         return;
@@ -58,7 +66,7 @@ export function BookshelfKanteiCompleteGuide({ activeProfileId }: Props) {
         target?.scrollIntoView({ behavior: "smooth", block: "start" });
       }
     },
-    [activeProfileId, finishGuide, router],
+    [activeProfileId, finishGuide, kanteiOrderId, router],
   );
 
   if (!open) return null;

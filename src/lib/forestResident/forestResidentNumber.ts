@@ -210,7 +210,7 @@ async function loadForestResidentCardData(
   };
 }
 
-/** 住民票のおなまえを更新（アカウント単位・最大10文字） */
+/** 住民票のおなまえを更新（アカウント単位・最大7文字） */
 export async function updateForestResidentDisplayName(
   email: string,
   rawDisplayName: unknown,

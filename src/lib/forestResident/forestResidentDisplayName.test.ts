@@ -8,7 +8,7 @@ import {
 
 describe("forestResidentDisplayName", () => {
   it("clamps to max length", () => {
-    expect(clampForestResidentDisplayName("  あいうえおかきくけこさし  ")).toBe("あいうえおかきくけこ");
+    expect(clampForestResidentDisplayName("  あいうえおかきくけこさし  ")).toBe("あいうえおかき");
   });
 
   it("accepts valid input", () => {

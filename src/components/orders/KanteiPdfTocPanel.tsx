@@ -1,7 +1,9 @@
 "use client";
 
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
+import { KANTEI_FIRST_READ_TOC_LOCKED_HINT, KANTEI_FIRST_READ_TOC_PREVIEW_NOTE } from "@/lib/pdf/kanteiFirstReadGuideCopy";
+import { isPdfIndexInFirstReadRange } from "@/lib/pdf/kanteiFirstReadGuide";
 import { PDF_TOC_ENTRIES } from "@/lib/pdf/pdfTocEntries";
 import { buildTocJumpIndexByDestination } from "@/lib/pdf/kanteiReaderPage";
 
@@ -13,11 +15,20 @@ type Props = {
   currentPdfIndex: number;
   onClose: () => void;
   onJump: (pdfIndex: number, destinationId: string) => void;
+  /** 初回ガイド中はライフパス章だけジャンプ可 */
+  restrictedFirstRead?: boolean;
 };
 
-export function KanteiPdfTocPanel({ open, currentPdfIndex, onClose, onJump }: Props) {
+export function KanteiPdfTocPanel({
+  open,
+  currentPdfIndex,
+  onClose,
+  onJump,
+  restrictedFirstRead = false,
+}: Props) {
   const jumpMap = useMemo(() => buildTocJumpIndexByDestination(PDF_TOC_ENTRIES), []);
   const panelRef = useRef<HTMLDivElement>(null);
+  const [lockedHint, setLockedHint] = useState<string | null>(null);
 
   useEffect(() => {
     if (!open) return;
@@ -39,7 +50,23 @@ export function KanteiPdfTocPanel({ open, currentPdfIndex, onClose, onJump }: Pr
     return () => document.removeEventListener("pointerdown", onPointerDown);
   }, [onClose, open]);
 
+  useEffect(() => {
+    if (open) setLockedHint(null);
+  }, [open]);
+
   if (!open) return null;
+
+  const isJumpAllowed = (pdfIndex: number) =>
+    !restrictedFirstRead || isPdfIndexInFirstReadRange(pdfIndex);
+
+  const handleEntryClick = (pdfIndex: number, destinationId: string) => {
+    if (!isJumpAllowed(pdfIndex)) {
+      setLockedHint(KANTEI_FIRST_READ_TOC_LOCKED_HINT);
+      return;
+    }
+    onJump(pdfIndex, destinationId);
+    onClose();
+  };
 
   return (
     <div
@@ -62,53 +89,53 @@ export function KanteiPdfTocPanel({ open, currentPdfIndex, onClose, onJump }: Pr
             閉じる
           </button>
         </div>
+
+        {restrictedFirstRead ? (
+          <p className="border-b border-amber-100 bg-amber-50/70 px-4 py-2.5 text-xs leading-relaxed text-amber-950">
+            {KANTEI_FIRST_READ_TOC_PREVIEW_NOTE}
+          </p>
+        ) : null}
+
         <ul className="min-h-0 flex-1 list-none overflow-y-auto p-3">
           {PDF_TOC_ENTRIES.map((entry) => {
             const pdfIndex = jumpMap.get(entry.destinationId) ?? 0;
             const isActive = pdfIndex === currentPdfIndex;
-            if (entry.kind === "section") {
-              return (
-                <li key={entry.destinationId} className="mt-3 first:mt-0">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      onJump(pdfIndex, entry.destinationId);
-                      onClose();
-                    }}
-                    className={[
-                      "w-full rounded-lg px-2 py-2 text-left text-sm font-semibold text-stone-900 hover:bg-amber-50",
-                      isActive ? "bg-amber-100/80 ring-1 ring-amber-200" : "",
-                    ]
-                      .filter(Boolean)
-                      .join(" ")}
-                  >
-                    {entry.label}
-                  </button>
-                </li>
-              );
-            }
+            const locked = restrictedFirstRead && !isJumpAllowed(pdfIndex);
+            const buttonClass = [
+              "w-full rounded-lg px-2 py-2 text-left text-sm hover:bg-amber-50",
+              entry.kind === "section" ? "font-semibold text-stone-900" : "text-stone-800",
+              entry.kind === "item"
+                ? "flex items-baseline justify-between gap-3 py-1.5"
+                : "",
+              isActive ? "bg-amber-100/80 ring-1 ring-amber-200" : "",
+              locked ? "cursor-default opacity-45 hover:bg-transparent" : "",
+            ]
+              .filter(Boolean)
+              .join(" ");
+
             return (
-              <li key={entry.destinationId}>
+              <li key={entry.destinationId} className={entry.kind === "section" ? "mt-3 first:mt-0" : ""}>
                 <button
                   type="button"
-                  onClick={() => {
-                    onJump(pdfIndex, entry.destinationId);
-                    onClose();
-                  }}
-                  className={[
-                    "flex w-full items-baseline justify-between gap-3 rounded-lg px-2 py-1.5 text-left text-sm text-stone-800 hover:bg-amber-50/80",
-                    isActive ? "bg-amber-50 font-medium ring-1 ring-amber-200" : "",
-                  ]
-                    .filter(Boolean)
-                    .join(" ")}
+                  onClick={() => handleEntryClick(pdfIndex, entry.destinationId)}
+                  className={buttonClass}
+                  aria-disabled={locked || undefined}
                 >
                   <span className="min-w-0 flex-1">{entry.label}</span>
-                  <span className="shrink-0 tabular-nums text-xs text-stone-500">{entry.page}</span>
+                  {entry.kind === "item" ? (
+                    <span className="shrink-0 tabular-nums text-xs text-stone-500">{entry.page}</span>
+                  ) : null}
                 </button>
               </li>
             );
           })}
         </ul>
+
+        {lockedHint ? (
+          <p className="border-t border-amber-100 bg-amber-50/80 px-4 py-3 text-xs leading-relaxed text-amber-950">
+            {lockedHint}
+          </p>
+        ) : null}
       </div>
     </div>
   );

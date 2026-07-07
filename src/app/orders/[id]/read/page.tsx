@@ -9,9 +9,12 @@ import {
   resolveKanteiPdfDownloadFilename,
   resolveOrderKanteiCodeSafe,
 } from "@/lib/order/kanteiCode";
+import { listProfilesAndActiveProfileId } from "@/lib/profile/activeProfile";
+import { isKanteiFirstReadGuideMode } from "@/lib/pdf/kanteiFirstReadGuide";
 
 type Props = {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ guide?: string }>;
 };
 
 export const dynamic = "force-dynamic";
@@ -27,21 +30,26 @@ function ReaderFallback() {
   );
 }
 
-export default async function KanteiReadPage({ params }: Props) {
+export default async function KanteiReadPage({ params, searchParams }: Props) {
   const { id: orderId } = await params;
+  const { guide } = await searchParams;
   const viewerEmail = await getViewerEmailFromCookie();
   if (!viewerEmail) redirect(`/login?returnTo=${encodeURIComponent(`/orders/${orderId}/read`)}`);
 
-  const order = await prisma.order.findUnique({
-    where: { id: orderId },
-    select: {
-      id: true,
-      email: true,
-      fullNameDisplay: true,
-      fullNameRomanDisplay: true,
-      kanteiCode: true,
-    },
-  });
+  const [{ activeProfileId }, order] = await Promise.all([
+    listProfilesAndActiveProfileId(viewerEmail),
+    prisma.order.findUnique({
+      where: { id: orderId },
+      select: {
+        id: true,
+        email: true,
+        fullNameDisplay: true,
+        fullNameRomanDisplay: true,
+        kanteiCode: true,
+      },
+    }),
+  ]);
+
   if (!order) notFound();
   if (normalizeEmail(order.email) !== viewerEmail) notFound();
 
@@ -51,6 +59,7 @@ export default async function KanteiReadPage({ params }: Props) {
   const pdfPreviewHref = `/api/orders/${orderId}/pdf?download=0&quality=low`;
   const pdfDownloadHref = `/api/orders/${orderId}/pdf?download=1&quality=low`;
   const downloadFileName = resolveKanteiPdfDownloadFilename(order.id, kanteiCode, "preview");
+  const guideMode = isKanteiFirstReadGuideMode(guide) ? guide : null;
 
   return (
     <div className="mx-auto max-w-3xl sm:px-0 max-sm:px-0 max-sm:pb-0 max-sm:pt-0">
@@ -61,6 +70,8 @@ export default async function KanteiReadPage({ params }: Props) {
           pdfPreviewHref={pdfPreviewHref}
           pdfDownloadHref={pdfDownloadHref}
           downloadFileName={downloadFileName}
+          guideMode={guideMode}
+          activeProfileId={activeProfileId ?? undefined}
         />
       </Suspense>
     </div>

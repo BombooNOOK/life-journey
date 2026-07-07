@@ -19,6 +19,6 @@ describe("deriveForestResidentDisplayName", () => {
   });
 
   it("clamps long profile nickname", () => {
-    expect(deriveForestResidentDisplayName("とても長いプロフィール名です", null)).toBe("とても長いプロフィー");
+    expect(deriveForestResidentDisplayName("とても長いプロフィール名です", null)).toBe("とても長いプロ");
   });
 });

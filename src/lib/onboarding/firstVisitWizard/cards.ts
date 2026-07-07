@@ -25,8 +25,10 @@ import {
 } from "@/lib/onboarding/firstVisitWizard/residentRegistrationCopy";
 import {
   BOOKSHELF_KANTEI_GUIDE_CARD1_BODY,
-  BOOKSHELF_KANTEI_GUIDE_CARD1_BUTTON,
   BOOKSHELF_KANTEI_GUIDE_CARD1_ILLUSTRATION_SRC,
+  BOOKSHELF_KANTEI_GUIDE_CARD1_OWL_QUOTE,
+  BOOKSHELF_KANTEI_GUIDE_CARD1_PRIMARY_BUTTON,
+  BOOKSHELF_KANTEI_GUIDE_CARD1_SECONDARY_BUTTON,
   BOOKSHELF_KANTEI_GUIDE_CARD1_TITLE,
   BOOKSHELF_KANTEI_GUIDE_CARD2_BODY,
   BOOKSHELF_KANTEI_GUIDE_CARD2_ILLUSTRATION_SRC,
@@ -49,7 +51,8 @@ export type FirstVisitGuideCardAction =
   | "orders"
   | "home"
   | "companion_journal"
-  | "stay_bookshelf";
+  | "stay_bookshelf"
+  | "open_life_path_reader";
 
 export type FirstVisitGuideCardButton = {
   label: string;
@@ -194,10 +197,22 @@ export const BOOKSHELF_KANTEI_COMPLETE_GUIDE_CARDS: FirstVisitGuideCard[] = [
   {
     id: "bookshelf-kantei-arrived",
     title: BOOKSHELF_KANTEI_GUIDE_CARD1_TITLE,
+    owlQuote: BOOKSHELF_KANTEI_GUIDE_CARD1_OWL_QUOTE,
     body: BOOKSHELF_KANTEI_GUIDE_CARD1_BODY,
     illustrationSrc: BOOKSHELF_KANTEI_GUIDE_CARD1_ILLUSTRATION_SRC,
     illustrationLarge: true,
-    buttons: [{ label: BOOKSHELF_KANTEI_GUIDE_CARD1_BUTTON, action: "next", variant: "primary" }],
+    buttons: [
+      {
+        label: BOOKSHELF_KANTEI_GUIDE_CARD1_PRIMARY_BUTTON,
+        action: "open_life_path_reader",
+        variant: "primary",
+      },
+      {
+        label: BOOKSHELF_KANTEI_GUIDE_CARD1_SECONDARY_BUTTON,
+        action: "next",
+        variant: "secondary",
+      },
+    ],
   },
   {
     id: "bookshelf-kantei-journal",
