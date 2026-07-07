@@ -66,6 +66,10 @@ import {
   FIRST_VISIT_RESIDENT_REGISTRATION_TITLE,
 } from "@/lib/onboarding/firstVisitWizard/residentRegistrationCopy";
 import { FIRST_VISIT_ROUTES } from "@/lib/onboarding/firstVisitWizard/routes";
+import {
+  FIRST_VISIT_RESIDENT_CARD_LOADING_HINT,
+  FIRST_VISIT_RESIDENT_CARD_LOADING_LABEL,
+} from "@/lib/onboarding/firstVisitWizard/loadingCopy";
 import { setFirstVisitFromRegisterFlag, readFirstVisitFromRegisterFlag, setFirstVisitWelcomeEmailSentFlag } from "@/lib/onboarding/firstVisitWizard/session";
 
 const OAUTH_LOGIN_FAILURE_TIMEOUT_MS = 30_000;
@@ -120,6 +124,16 @@ function readLoginOAuthReturnLikely(): boolean {
   if (typeof window === "undefined") return false;
   if (window.location.pathname !== "/login") return false;
   return isGoogleOAuthFlowCookieActive() || readOAuthReturnPendingAgeMs() != null;
+}
+
+function FirstVisitResidentCardLoadingPanel({ layout = "page" }: { layout?: "page" | "card" }) {
+  return (
+    <OwlLoadingPanel
+      layout={layout}
+      label={FIRST_VISIT_RESIDENT_CARD_LOADING_LABEL}
+      hint={FIRST_VISIT_RESIDENT_CARD_LOADING_HINT}
+    />
+  );
 }
 
 function PostLoginTransitionOverlay({
@@ -292,16 +306,16 @@ export function LoginClient({
       registerNavLock.current = true;
       setFirstVisitWelcomeEmailSentFlag(welcomeEmailSent);
       setFirstVisitFromRegisterFlag();
-      flushSync(() => setFullPagePostLoginPending(true));
       const dest = firstVisitPostRegisterDestination();
       if (browserWantsFullPagePostLoginNavigation()) {
         await new Promise((resolve) => setTimeout(resolve, FIRST_VISIT_POST_REGISTER_SETTLE_MS));
         window.location.replace(new URL(dest, window.location.origin).toString());
         return;
       }
-      navigateAfterLogin(dest);
+      router.replace(dest);
+      router.refresh();
     },
-    [navigateAfterLogin],
+    [router],
   );
 
   /** 登録直後に `/login` へ一瞬着地したとき、フォームを出さず住民票へ戻す */
@@ -311,8 +325,6 @@ export function LoginClient({
     if (!readFirstVisitFromRegisterFlag()) return;
 
     registerNavLock.current = true;
-    flushSync(() => setFullPagePostLoginPending(true));
-
     const dest = firstVisitPostRegisterDestination();
     let cancelled = false;
 
@@ -353,7 +365,7 @@ export function LoginClient({
       if (oauthReturnNavLock.current) return;
       oauthReturnNavLock.current = true;
       const hardNav = browserWantsFullPagePostLoginNavigation();
-      if (input.showTransition && hardNav) {
+      if (input.showTransition && hardNav && !isFirstVisitLoghouseReturnTo(returnTo)) {
         flushSync(() => setFullPagePostLoginPending(true));
       }
       clearGoogleOAuthRedirectFlow();
@@ -375,7 +387,12 @@ export function LoginClient({
           : returnTo;
       if (hardNav) {
         await new Promise((r) => setTimeout(r, 400));
-        window.location.assign(new URL(destination, window.location.origin).toString());
+        window.location.replace(new URL(destination, window.location.origin).toString());
+        return;
+      }
+      if (isFirstVisitLoghouseReturnTo(returnTo) && destination === firstVisitPostRegisterDestination()) {
+        router.replace(destination);
+        router.refresh();
         return;
       }
       navigateAfterLogin(destination);
@@ -472,6 +489,9 @@ export function LoginClient({
     }
     googleSignInLock.current = true;
     setBusyGoogle(true);
+    if (isFirstVisitRegisterFlow) {
+      setFirstVisitFromRegisterFlag();
+    }
     try {
       setError(null);
       setNotice(null);
@@ -570,6 +590,9 @@ export function LoginClient({
     const a = auth();
     if (!a) return;
     setBusyEmail(true);
+    if (mode === "register" && isFirstVisitRegisterFlow) {
+      setFirstVisitFromRegisterFlag();
+    }
     try {
       let cred;
       if (mode === "register") {
@@ -706,10 +729,24 @@ export function LoginClient({
   };
 
   const showFullTransitionOverlay =
-    fullPagePostLoginPending || oauthReturnHandoffUi || (authLoading && Boolean(user));
+    !isFirstVisitRegisterFlow &&
+    (fullPagePostLoginPending || oauthReturnHandoffUi || (authLoading && Boolean(user)));
 
   if (showFullTransitionOverlay) {
     return <PostLoginTransitionOverlay variant="oauth-return" />;
+  }
+
+  if (
+    isFirstVisitRegisterFlow &&
+    (fullPagePostLoginPending ||
+      oauthReturnHandoffUi ||
+      readFirstVisitFromRegisterFlag() ||
+      busyGoogle ||
+      busyEmail)
+  ) {
+    return (
+      <FirstVisitResidentCardLoadingPanel layout={isFirstVisitEmbedded ? "page" : "page"} />
+    );
   }
 
   if (registrationComplete) {
@@ -737,6 +774,21 @@ export function LoginClient({
   }
 
   if (authLoading) {
+    if (
+      isFirstVisitRegisterFlow &&
+      (readFirstVisitFromRegisterFlag() ||
+        oauthReturnHandoffUi ||
+        readLoginOAuthReturnLikely() ||
+        busyGoogle ||
+        busyEmail)
+    ) {
+      return (
+        <FirstVisitResidentCardLoadingPanel layout={isFirstVisitEmbedded ? "page" : "card"} />
+      );
+    }
+    if (isFirstVisitRegisterFlow) {
+      return null;
+    }
     return (
       <OwlLoadingPanel
         layout="card"

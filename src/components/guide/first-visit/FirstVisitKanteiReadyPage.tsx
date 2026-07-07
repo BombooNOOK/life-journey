@@ -12,11 +12,13 @@ import { firstVisitReadyNextHref } from "@/lib/onboarding/firstVisitWizard/ready
 import { FIRST_VISIT_ROUTES } from "@/lib/onboarding/firstVisitWizard/routes";
 import { setFirstVisitOrderGuideFlag } from "@/lib/onboarding/firstVisitWizard/session";
 import type { FirstVisitReadyBranch } from "@/lib/viewer/firstVisitReadyContext";
+import { useTransitionNavigation } from "@/components/ui/TransitionNavigationProvider";
 import { OwlLoadingPanel } from "@/components/ui/OwlLoadingPanel";
 
 /** 第9幕：鑑定のへや（ログハウス完成の次） */
 export function FirstVisitKanteiReadyPage() {
   const router = useRouter();
+  const { replace } = useTransitionNavigation();
   const { user, loading: authLoading } = useFirebaseAuth();
   const isLoggedIn = Boolean(user?.email?.trim());
   const [redirecting, setRedirecting] = useState(true);
@@ -57,24 +59,21 @@ export function FirstVisitKanteiReadyPage() {
     };
   }, [authLoading, isLoggedIn, router]);
 
-  const [navigating, setNavigating] = useState(false);
-
   const handleAction = useCallback(
     (action: FirstVisitGuideCardAction, cardId: string) => {
       if (action === "next" && cardId === "kantei-hall-intro") {
         setFirstVisitOrderGuideFlag();
-        setNavigating(true);
-        router.replace("/order");
+        replace("/order");
       }
     },
-    [router],
+    [replace],
   );
 
-  if (authLoading || redirecting || !isLoggedIn || navigating) {
+  if (authLoading || redirecting || !isLoggedIn) {
     return (
       <OwlLoadingPanel
         layout="page"
-        label={navigating ? "鑑定のへやから案内しています…" : "案内を読み込んでいます…"}
+        label="案内を読み込んでいます…"
         hint="フクロウが回っているあいだはそのままお待ちください。"
       />
     );

@@ -101,7 +101,7 @@ export function FirstVisitRoadmapPage() {
 
             <p className="lj-read-desc m-0 mt-2 text-stone-700">{FIRST_VISIT_ROADMAP_INTRO}</p>
 
-            <ol className="lj-read-desc m-0 mt-2 w-full list-none space-y-1.5 p-0 text-left text-stone-700 lg:inline-block lg:w-auto">
+            <ol className="lj-read-desc m-0 mt-2 w-full list-none space-y-1.5 p-0 pl-2.5 text-left text-stone-700 sm:pl-3 lg:inline-block lg:w-auto lg:pl-4">
               {FIRST_VISIT_ROADMAP_STEPS.map((step, index) => (
                 <li key={step} className="m-0 flex gap-1 leading-relaxed">
                   <span className="shrink-0 font-semibold text-emerald-950">{index + 1}.</span>
@@ -112,9 +112,11 @@ export function FirstVisitRoadmapPage() {
               ))}
             </ol>
 
-            <p className="lj-read-desc m-0 mt-3 whitespace-pre-line leading-relaxed text-stone-700">
-              {FIRST_VISIT_ROADMAP_CLOSING}
-            </p>
+            {viewport === "desktop" ? (
+              <p className="lj-read-desc m-0 mt-3 whitespace-pre-line leading-relaxed text-stone-700">
+                {FIRST_VISIT_ROADMAP_CLOSING}
+              </p>
+            ) : null}
           </div>
         </figure>
       </section>

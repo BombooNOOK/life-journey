@@ -10,6 +10,7 @@ import {
   companionWritingGuidePrimaryButtonClass,
   companionWritingGuideTitleClass,
 } from "@/components/journal/companion-writing/companionWritingGuideStyles";
+import { useTransitionNavigation } from "@/components/ui/TransitionNavigationProvider";
 import { OwlLoadingPanel } from "@/components/ui/OwlLoadingPanel";
 import {
   FIRST_VISIT_LOGHOUSE_COMPLETE_BODY,
@@ -24,6 +25,7 @@ import { FIRST_VISIT_ROUTES } from "@/lib/onboarding/firstVisitWizard/routes";
 /** 第8幕：ログハウス完成 */
 export function FirstVisitKanteiPage() {
   const router = useRouter();
+  const { replace } = useTransitionNavigation();
   const { user, loading } = useFirebaseAuth();
   const isLoggedIn = Boolean(user?.email?.trim());
   const [illustrationReady, setIllustrationReady] = useState(false);
@@ -45,23 +47,18 @@ export function FirstVisitKanteiPage() {
     }
   }, [isLoggedIn, loading, router]);
 
-  const [navigating, setNavigating] = useState(false);
-
   const handleProceed = useCallback(() => {
-    setNavigating(true);
-    router.replace(FIRST_VISIT_ROUTES.kanteiReady);
-  }, [router]);
+    replace(FIRST_VISIT_ROUTES.kanteiReady);
+  }, [replace]);
 
-  if (loading || !isLoggedIn || !illustrationReady || navigating) {
+  if (loading || !isLoggedIn || !illustrationReady) {
     return (
       <OwlLoadingPanel
         layout="page"
         label={
-          navigating
-            ? "鑑定のへやへ向かっています…"
-            : loading || !isLoggedIn
-              ? "ログイン状態を確認しています…"
-              : "ログハウスの完成を読み込んでいます…"
+          loading || !isLoggedIn
+            ? "ログイン状態を確認しています…"
+            : "ログハウスの完成を読み込んでいます…"
         }
         hint="フクロウが回っているあいだはそのままお待ちください。"
       />

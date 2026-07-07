@@ -1,12 +1,12 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { useTransitionNavigation } from "@/components/ui/TransitionNavigationProvider";
 
 const primaryClass =
-  "inline-flex min-h-[44px] flex-1 items-center justify-center rounded-xl bg-emerald-800 px-5 py-2.5 text-sm font-medium text-white shadow-sm transition hover:bg-emerald-900 sm:flex-none sm:min-w-[8.5rem]";
+  "inline-flex min-h-[44px] flex-1 items-center justify-center rounded-xl bg-emerald-800 px-5 py-2.5 text-sm font-medium text-white shadow-sm transition hover:bg-emerald-900 active:scale-[0.98] sm:flex-none sm:min-w-[8.5rem]";
 
 const secondaryClass =
-  "inline-flex min-h-[44px] flex-1 items-center justify-center rounded-xl border border-emerald-200/90 bg-white px-5 py-2.5 text-sm font-medium text-emerald-950 shadow-sm transition hover:bg-emerald-50/80 sm:flex-none sm:min-w-[8.5rem]";
+  "inline-flex min-h-[44px] flex-1 items-center justify-center rounded-xl border border-emerald-200/90 bg-white px-5 py-2.5 text-sm font-medium text-emerald-950 shadow-sm transition hover:bg-emerald-50/80 active:scale-[0.98] sm:flex-none sm:min-w-[8.5rem]";
 
 type Props = {
   backHref?: string;
@@ -30,7 +30,7 @@ export function FirstVisitWizardNav({
   onBack,
   onNext,
 }: Props) {
-  const router = useRouter();
+  const { replace, isPending } = useTransitionNavigation();
 
   return (
     <nav
@@ -41,9 +41,10 @@ export function FirstVisitWizardNav({
         <button
           type="button"
           className={secondaryClass}
+          disabled={isPending}
           onClick={() => {
             onBack?.();
-            router.replace(backHref);
+            replace(backHref);
           }}
         >
           {backLabel}
@@ -56,9 +57,10 @@ export function FirstVisitWizardNav({
         <button
           type="button"
           className={primaryClass}
+          disabled={isPending}
           onClick={() => {
             onNext?.();
-            router.replace(nextHref);
+            replace(nextHref);
           }}
         >
           {nextLabel}

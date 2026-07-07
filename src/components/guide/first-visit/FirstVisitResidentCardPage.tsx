@@ -7,10 +7,16 @@ import { buildLoginHref } from "@/app/login/loginFlow";
 import { isLjLoggedInOnClient } from "@/lib/auth/clientCookies";
 import { useFirebaseAuth } from "@/components/auth/FirebaseAuthProvider";
 import { FirstVisitResidentCardContent } from "@/components/guide/first-visit/FirstVisitResidentCardContent";
+import { useTransitionNavigation } from "@/components/ui/TransitionNavigationProvider";
 import { OwlLoadingPanel } from "@/components/ui/OwlLoadingPanel";
+import { pinFirstVisitRegistrationHistory } from "@/hooks/useBlockBrowserBack";
 import { getFirebaseAuth, waitForFirebaseAuthPersistence } from "@/lib/firebase/client";
 import type { ForestResidentCardData } from "@/lib/forestResident/forestResidentNumber";
 import { FIRST_VISIT_ROUTES } from "@/lib/onboarding/firstVisitWizard/routes";
+import {
+  FIRST_VISIT_RESIDENT_CARD_LOADING_HINT,
+  FIRST_VISIT_RESIDENT_CARD_LOADING_LABEL,
+} from "@/lib/onboarding/firstVisitWizard/loadingCopy";
 import {
   readFirstVisitFromRegisterFlag,
   readFirstVisitWelcomeEmailSentFlag,
@@ -26,11 +32,18 @@ function hasRegisterHandoff(): boolean {
 /** 第5幕①：住民票カード発行 */
 export function FirstVisitResidentCardPage() {
   const router = useRouter();
+  const { replace } = useTransitionNavigation();
   const { user, loading: authLoading } = useFirebaseAuth();
   const isLoggedIn = Boolean(user?.email?.trim());
   const [card, setCard] = useState<ForestResidentCardData | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [authSettling, setAuthSettling] = useState(() => hasRegisterHandoff() && !isLoggedIn);
+
+  useEffect(() => {
+    if (hasRegisterHandoff()) {
+      pinFirstVisitRegistrationHistory();
+    }
+  }, []);
 
   useEffect(() => {
     if (isLoggedIn) {
@@ -105,23 +118,16 @@ export function FirstVisitResidentCardPage() {
     };
   }, [authLoading, isLoggedIn]);
 
-  const [navigating, setNavigating] = useState(false);
-
   const handleNext = useCallback(() => {
-    setNavigating(true);
-    router.replace(FIRST_VISIT_ROUTES.loghouseSign);
-  }, [router]);
+    replace(FIRST_VISIT_ROUTES.loghouseSign);
+  }, [replace]);
 
-  if (authLoading || authSettling || !isLoggedIn || (!card && !loadError) || navigating) {
+  if (authLoading || authSettling || !isLoggedIn || (!card && !loadError)) {
     return (
       <OwlLoadingPanel
         layout="page"
-        label={
-          navigating
-            ? "ログハウスへの案内を準備しています…"
-            : "住民票カードを発行しています…"
-        }
-        hint="フクロウが回っているあいだはそのままお待ちください。"
+        label={FIRST_VISIT_RESIDENT_CARD_LOADING_LABEL}
+        hint={FIRST_VISIT_RESIDENT_CARD_LOADING_HINT}
       />
     );
   }

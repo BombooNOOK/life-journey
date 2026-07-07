@@ -11,11 +11,13 @@ import { FIRST_VISIT_ALREADY_READY_CARD } from "@/lib/onboarding/firstVisitWizar
 import { firstVisitReadyNextHref } from "@/lib/onboarding/firstVisitWizard/readyNavigation";
 import { FIRST_VISIT_ROUTES } from "@/lib/onboarding/firstVisitWizard/routes";
 import type { FirstVisitReadyBranch } from "@/lib/viewer/firstVisitReadyContext";
+import { useTransitionNavigation } from "@/components/ui/TransitionNavigationProvider";
 import { OwlLoadingPanel } from "@/components/ui/OwlLoadingPanel";
 
 /** 第4幕：住民登録・鑑定済みユーザー向け */
 export function FirstVisitAlreadyReadyPage() {
   const router = useRouter();
+  const { push } = useTransitionNavigation();
   const { user, loading: authLoading } = useFirebaseAuth();
   const isLoggedIn = Boolean(user?.email?.trim());
   const [redirecting, setRedirecting] = useState(true);
@@ -55,15 +57,15 @@ export function FirstVisitAlreadyReadyPage() {
   const handleAction = useCallback(
     (action: FirstVisitGuideCardAction, _cardId: string) => {
       if (action === "orders") {
-        router.push("/orders");
+        push("/orders");
         return;
       }
 
       if (action === "home") {
-        router.push("/");
+        push("/");
       }
     },
-    [router],
+    [push],
   );
 
   if (authLoading || redirecting || !isLoggedIn) {

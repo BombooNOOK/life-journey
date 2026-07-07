@@ -1,27 +1,29 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { useRouter } from "next/navigation";
+
+import { useTransitionNavigation } from "@/components/ui/TransitionNavigationProvider";
 
 type Props = {
   href: string;
   className?: string;
   children: ReactNode;
-  /** replace 前に呼ぶ（遷移中ローディング表示など） */
+  /** replace 前に呼ぶ */
   onNavigate?: () => void;
 };
 
 /** 初回導線の進行リンク（history を積まず、スワイプ戻りと干渉しない） */
 export function FirstVisitWizardLink({ href, className, children, onNavigate }: Props) {
-  const router = useRouter();
+  const { replace, isPending } = useTransitionNavigation();
 
   return (
     <button
       type="button"
       className={className}
+      disabled={isPending}
       onClick={() => {
         onNavigate?.();
-        router.replace(href);
+        replace(href);
       }}
     >
       {children}

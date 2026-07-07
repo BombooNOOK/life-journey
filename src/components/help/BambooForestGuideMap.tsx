@@ -1,9 +1,11 @@
 "use client";
 
 import Image from "next/image";
-import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useLayoutEffect, useState } from "react";
 
+import { AppTransitionLink } from "@/components/ui/AppTransitionLink";
+import { OwlSpinIndicator } from "@/components/ui/OwlSpinIndicator";
+import { useDelayedBusy } from "@/hooks/useDelayedBusy";
 import {
   FOREST_GUIDE_MAP_BUILDINGS,
   type ForestGuideMapBuildingId,
@@ -23,10 +25,15 @@ type Props = {
   alt?: string;
 };
 
-function useGuideMapViewport(): FirstVisitWelcomeViewport | null {
-  const [viewport, setViewport] = useState<FirstVisitWelcomeViewport | null>(null);
+function readGuideMapViewport(): FirstVisitWelcomeViewport {
+  if (typeof window === "undefined") return "mobile";
+  return window.matchMedia("(min-width: 1024px)").matches ? "desktop" : "mobile";
+}
 
-  useEffect(() => {
+function useGuideMapViewport(): FirstVisitWelcomeViewport {
+  const [viewport, setViewport] = useState<FirstVisitWelcomeViewport>(readGuideMapViewport);
+
+  useLayoutEffect(() => {
     const mq = window.matchMedia("(min-width: 1024px)");
     const update = () => setViewport(mq.matches ? "desktop" : "mobile");
     update();
@@ -39,12 +46,15 @@ function useGuideMapViewport(): FirstVisitWelcomeViewport | null {
 
 function ForestGuideMapBuildingPanel({
   building,
-  onClose,
+  kanteiLinkLoading,
 }: {
   building: ForestGuideMapBuildingInfo;
-  onClose: () => void;
+  kanteiLinkLoading: boolean;
 }) {
   const buildingId = building.id;
+  const showKanteiLinkSpinner = useDelayedBusy(
+    buildingId === "kanteiHall" && kanteiLinkLoading,
+  );
 
   return (
     <div
@@ -59,14 +69,6 @@ function ForestGuideMapBuildingPanel({
         >
           {building.title}
         </h3>
-        <button
-          type="button"
-          onClick={onClose}
-          className="shrink-0 rounded-lg px-2 py-1 text-xs text-stone-500 hover:bg-stone-100 hover:text-stone-800"
-          aria-label="説明を閉じる"
-        >
-          閉じる
-        </button>
       </div>
       <p className="mt-2 text-sm leading-relaxed text-stone-600">{building.body}</p>
       {building.href && building.linkLabel ? (
@@ -76,26 +78,34 @@ function ForestGuideMapBuildingPanel({
               href={building.href}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex min-h-[44px] items-center text-sm font-medium text-emerald-900 underline-offset-2 hover:underline"
+              className="inline-flex min-h-[44px] items-center text-sm font-medium text-emerald-900 underline-offset-2 hover:underline active:opacity-70"
             >
               {building.linkLabel} ↗
             </a>
           ) : (
-            <Link
+            <AppTransitionLink
               href={building.href}
-              className="inline-flex min-h-[44px] items-center text-sm font-medium text-emerald-900 underline-offset-2 hover:underline"
+              className="inline-flex min-h-[44px] items-center text-sm font-medium text-emerald-900 underline-offset-2 hover:underline active:opacity-70"
             >
               {building.linkLabel} →
-            </Link>
+            </AppTransitionLink>
           )}
+        </p>
+      ) : buildingId === "kanteiHall" && showKanteiLinkSpinner ? (
+        <p className="mt-3 inline-flex min-h-[44px] items-center">
+          <OwlSpinIndicator size="sm" />
         </p>
       ) : null}
     </div>
   );
 }
 
-function useKanteiHallMapLink(): ForestGuideMapKanteiHallLink | null {
+function useKanteiHallMapLink(): {
+  link: ForestGuideMapKanteiHallLink | null;
+  loading: boolean;
+} {
   const [link, setLink] = useState<ForestGuideMapKanteiHallLink | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     let cancelled = false;
@@ -115,6 +125,9 @@ function useKanteiHallMapLink(): ForestGuideMapKanteiHallLink | null {
             linkLabel: "はじめての方の案内へ",
           });
         }
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
       });
 
     return () => {
@@ -122,7 +135,7 @@ function useKanteiHallMapLink(): ForestGuideMapKanteiHallLink | null {
     };
   }, []);
 
-  return link;
+  return { link, loading };
 }
 
 function resolveBuildingForPanel(
@@ -146,24 +159,12 @@ export function BambooForestGuideMap({
   alt = "BambooNOOKの森の案内図",
 }: Props) {
   const viewport = useGuideMapViewport();
-  const kanteiHallLink = useKanteiHallMapLink();
+  const { link: kanteiHallLink, loading: kanteiHallLinkLoading } = useKanteiHallMapLink();
   const [selectedId, setSelectedId] = useState<ForestGuideMapBuildingId | null>(null);
 
   useEffect(() => {
     setSelectedId(null);
   }, [viewport]);
-
-  if (!viewport) {
-    return (
-      <div
-        className={[
-          "aspect-[9/16] w-full max-w-md animate-pulse rounded-xl bg-stone-200/80 lg:aspect-video lg:max-w-2xl",
-          className,
-        ].join(" ")}
-        aria-hidden
-      />
-    );
-  }
 
   const intrinsic = BAMBOO_FOREST_GUIDE_MAP_INTRINSIC[viewport];
   const isDesktop = viewport === "desktop";
@@ -187,6 +188,7 @@ export function BambooForestGuideMap({
           className="object-contain"
           quality={100}
           unoptimized
+          priority
         />
 
         <div className="absolute inset-0" aria-hidden={false}>
@@ -201,11 +203,11 @@ export function BambooForestGuideMap({
                 aria-pressed={isSelected}
                 onClick={() => setSelectedId((current) => (current === spot.id ? null : spot.id))}
                 className={[
-                  "absolute rounded-lg border-2 transition",
+                  "absolute rounded-lg border-2 transition active:scale-[0.98]",
                   "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-700",
                   isSelected
                     ? "border-emerald-500/80 bg-emerald-200/25"
-                    : "border-transparent bg-white/0 hover:border-emerald-400/50 hover:bg-emerald-100/15",
+                    : "border-transparent bg-white/0 hover:border-emerald-400/50 hover:bg-emerald-100/15 active:bg-emerald-100/25",
                 ].join(" ")}
                 style={{
                   left: `${spot.x}%`,
@@ -225,7 +227,7 @@ export function BambooForestGuideMap({
         <div className="mt-3">
           <ForestGuideMapBuildingPanel
             building={resolveBuildingForPanel(selectedId, kanteiHallLink)}
-            onClose={() => setSelectedId(null)}
+            kanteiLinkLoading={selectedId === "kanteiHall" && kanteiHallLinkLoading}
           />
         </div>
       ) : (

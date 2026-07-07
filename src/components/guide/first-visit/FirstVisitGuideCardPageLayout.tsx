@@ -1,11 +1,11 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import type { ReactNode } from "react";
 
 import { FirstVisitGuideStage } from "@/components/guide/first-visit/FirstVisitGuideStage";
 import { FirstVisitWizardNav } from "@/components/guide/first-visit/FirstVisitWizardNav";
 import { FirstVisitWizardPageHeader } from "@/components/guide/first-visit/FirstVisitWizardPageHeader";
+import { useTransitionNavigation } from "@/components/ui/TransitionNavigationProvider";
 
 type Props = {
   stepLabel: string;
@@ -26,7 +26,7 @@ export function FirstVisitGuideCardPageLayout({
   backLabel = "もどる",
   children,
 }: Props) {
-  const router = useRouter();
+  const { replace, isPending } = useTransitionNavigation();
 
   return (
     <div className="home-read-scope min-h-[100dvh] pb-10">
@@ -37,8 +37,9 @@ export function FirstVisitGuideCardPageLayout({
           {backHref ? (
             <button
               type="button"
-              onClick={() => router.replace(backHref)}
-              className="mb-3 inline-flex min-h-[44px] items-center text-sm font-medium text-stone-600 hover:text-stone-900"
+              disabled={isPending}
+              onClick={() => replace(backHref)}
+              className="mb-3 inline-flex min-h-[44px] items-center text-sm font-medium text-stone-600 transition active:scale-[0.98] hover:text-stone-900"
             >
               ← {backLabel}
             </button>

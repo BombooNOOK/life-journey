@@ -1,12 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 
-import { BambooForestGuideMap } from "@/components/help/BambooForestGuideMap";
 import { ForestGuideStationHeader } from "@/components/help/ForestGuideStationHeader";
-import { LjdFirstVisitFlowSteps } from "@/components/help/LjdFirstVisitFlowSteps";
-import { LjdWalkthroughToc } from "@/components/help/LjdWalkthroughToc";
-import { FOREST_GUIDE_STATION_MAP_SECTION_TITLE, FOREST_GUIDE_STATION_TITLE } from "@/lib/help/forestGuideStation";
-import { FOREST_GUIDE_MAP_SECTION_HINT } from "@/lib/help/bambooForestGuideMapBuildings";
+import { ForestGuideStationInteractiveSections } from "@/components/help/ForestGuideStationInteractiveSections";
+import { FOREST_GUIDE_STATION_TITLE } from "@/lib/help/forestGuideStation";
 
 export const dynamic = "force-static";
 
@@ -19,22 +16,7 @@ export default function HelpLjdWalkthroughPage() {
     <div className="home-read-scope space-y-6">
       <ForestGuideStationHeader />
 
-      <section aria-labelledby="forest-guide-map-heading" className="space-y-3">
-        <div>
-          <h2
-            id="forest-guide-map-heading"
-            className="text-base font-semibold text-stone-900 sm:text-lg"
-          >
-            {FOREST_GUIDE_STATION_MAP_SECTION_TITLE}
-          </h2>
-          <p className="mt-1 text-sm leading-6 text-stone-600">{FOREST_GUIDE_MAP_SECTION_HINT}</p>
-        </div>
-        <BambooForestGuideMap />
-      </section>
-
-      <LjdFirstVisitFlowSteps />
-
-      <LjdWalkthroughToc />
+      <ForestGuideStationInteractiveSections />
 
       <div className="rounded-xl border border-stone-200 bg-stone-50/80 px-4 py-3 text-sm text-stone-600">
         <p>

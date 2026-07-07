@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useCallback, useState, type ReactNode } from "react";
 
+import { GuideAppLink } from "@/components/help/GuideAppLink";
 import { CompanionWritingButtonLabel } from "@/components/journal/companion-writing/CompanionWritingButtonLabel";
 import {
   FOREST_GUIDE_STATION_NUMEROLOGY_READING_HREF,
@@ -203,15 +204,6 @@ const TOC_ITEMS: TocItem[] = [
   },
 ];
 
-function GuideAppLink({ href, label }: { href: string; label: ReactNode }) {
-  return (
-    <p className="mt-3">
-      <Link href={href} className="font-medium text-emerald-900 underline-offset-2 hover:underline">
-        {label} →
-      </Link>
-    </p>
-  );
-}
 
 export function LjdWalkthroughToc() {
   const [openId, setOpenId] = useState<string | null>(null);

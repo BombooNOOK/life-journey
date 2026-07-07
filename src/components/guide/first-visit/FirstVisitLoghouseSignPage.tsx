@@ -1,12 +1,13 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect } from "react";
 
 import { buildLoginHref } from "@/app/login/loginFlow";
 import { useFirebaseAuth } from "@/components/auth/FirebaseAuthProvider";
 import { FirstVisitGuideCardPageLayout } from "@/components/guide/first-visit/FirstVisitGuideCardPageLayout";
 import { FirstVisitGuideCardPanel } from "@/components/guide/first-visit/FirstVisitGuideCardStack";
+import { useTransitionNavigation } from "@/components/ui/TransitionNavigationProvider";
 import type { FirstVisitGuideCardAction } from "@/lib/onboarding/firstVisitWizard/cards";
 import { FIRST_VISIT_LOGHOUSE_SIGN_CARD } from "@/lib/onboarding/firstVisitWizard/cards";
 import { FIRST_VISIT_ROUTES } from "@/lib/onboarding/firstVisitWizard/routes";
@@ -15,6 +16,7 @@ import { OwlLoadingPanel } from "@/components/ui/OwlLoadingPanel";
 /** 第5幕②：ログハウス建築前の看板 */
 export function FirstVisitLoghouseSignPage() {
   const router = useRouter();
+  const { replace } = useTransitionNavigation();
   const { user, loading: authLoading } = useFirebaseAuth();
   const isLoggedIn = Boolean(user?.email?.trim());
 
@@ -25,22 +27,19 @@ export function FirstVisitLoghouseSignPage() {
     }
   }, [authLoading, isLoggedIn, router]);
 
-  const [navigating, setNavigating] = useState(false);
-
   const handleAction = useCallback(
     (action: FirstVisitGuideCardAction, cardId: string) => {
       if (action !== "next" || cardId !== "loghouse-sign") return;
-      setNavigating(true);
-      router.replace(FIRST_VISIT_ROUTES.loghouse);
+      replace(FIRST_VISIT_ROUTES.loghouse);
     },
-    [router],
+    [replace],
   );
 
-  if (authLoading || !isLoggedIn || navigating) {
+  if (authLoading || !isLoggedIn) {
     return (
       <OwlLoadingPanel
         layout="page"
-        label={navigating ? "ログハウス建築の準備をしています…" : "案内を読み込んでいます…"}
+        label="案内を読み込んでいます…"
         hint="フクロウが回っているあいだはそのままお待ちください。"
       />
     );

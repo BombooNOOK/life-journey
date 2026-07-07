@@ -12,6 +12,7 @@ import {
 import { FirstVisitGuideCardShell } from "@/components/guide/first-visit/FirstVisitGuideCardShell";
 import { ForestDirectionSignBoard } from "@/components/guide/ForestDirectionSignBoard";
 import { OwlCommentFrameBoard } from "@/components/guide/OwlCommentFrameBoard";
+import { CharacterFaceIcon } from "@/components/home/CharacterFaceIcon";
 import { FIRST_VISIT_LOGHOUSE_SIGN_OWL_FRAME_LABEL_PLACEMENT } from "@/lib/onboarding/firstVisitWizard/loghouseSignLayout";
 import type {
   FirstVisitGuideCard,
@@ -72,7 +73,7 @@ function GuideCardButtons({
         <button
           key={`${card.id}-${button.label}`}
           type="button"
-          className={buttonClassFor(button.variant ?? "primary")}
+          className={[buttonClassFor(button.variant ?? "primary"), "active:scale-[0.98]"].join(" ")}
           onClick={() => onAction(button.action, card.id)}
         >
           {button.label}
@@ -107,13 +108,16 @@ function GuideCardTextBlocks({
         </p>
       ) : null}
       {!hasOwlComment && card.owlQuote ? (
-        <p
-          className={`whitespace-pre-line border-l-[3px] border-stone-400 pl-3.5 text-[0.95em] italic leading-relaxed text-stone-600 sm:pl-4 ${
+        <div
+          className={`flex items-start gap-2.5 sm:gap-3 ${
             hasSign || card.title ? "mt-3" : ""
           }`}
         >
-          {card.owlQuote}
-        </p>
+          <CharacterFaceIcon name="character-owl-face" />
+          <p className="min-w-0 flex-1 whitespace-pre-line text-[0.95em] leading-relaxed text-stone-600">
+            {card.owlQuote}
+          </p>
+        </div>
       ) : null}
       {card.body ? (
         <p

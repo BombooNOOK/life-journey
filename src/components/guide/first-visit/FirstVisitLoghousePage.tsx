@@ -5,6 +5,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 import { buildLoginHref } from "@/app/login/loginFlow";
 import { useFirebaseAuth } from "@/components/auth/FirebaseAuthProvider";
+import { useTransitionNavigation } from "@/components/ui/TransitionNavigationProvider";
 import { OwlLoadingPanel } from "@/components/ui/OwlLoadingPanel";
 import {
   FIRST_VISIT_LOGHOUSE_BUILD_VIDEO_NEXT_LABEL,
@@ -22,6 +23,7 @@ type PlaybackPhase = "ready" | "playing" | "ended";
 /** 第5幕：ログハウス建築（全画面動画） */
 export function FirstVisitLoghousePage() {
   const router = useRouter();
+  const { replace } = useTransitionNavigation();
   const { user, loading } = useFirebaseAuth();
   const isLoggedIn = Boolean(user?.email?.trim());
   const [phase, setPhase] = useState<PlaybackPhase>("ready");
@@ -49,20 +51,17 @@ export function FirstVisitLoghousePage() {
     void video.play();
   }, []);
 
-  const [navigating, setNavigating] = useState(false);
-
   const handleNext = useCallback(() => {
     clearFirstVisitFromRegisterFlag();
     void preloadFirstVisitLoghouseCompleteIllustration();
-    setNavigating(true);
-    router.replace(FIRST_VISIT_ROUTES.kantei);
-  }, [router]);
+    replace(FIRST_VISIT_ROUTES.kantei);
+  }, [replace]);
 
-  if (loading || !isLoggedIn || navigating) {
+  if (loading || !isLoggedIn) {
     return (
       <OwlLoadingPanel
         layout="page"
-        label={navigating ? "ログハウス完成の案内を準備しています…" : "ログイン状態を確認しています…"}
+        label="ログイン状態を確認しています…"
         hint="フクロウが回っているあいだはそのままお待ちください。"
       />
     );
