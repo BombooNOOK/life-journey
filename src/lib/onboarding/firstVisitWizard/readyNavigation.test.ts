@@ -4,7 +4,7 @@ import { firstVisitReadyNextHref } from "@/lib/onboarding/firstVisitWizard/ready
 
 describe("firstVisitReadyNextHref", () => {
   it("routes guests to the forest guide station", () => {
-    expect(firstVisitReadyNextHref("guest")).toBe("/guide/first/guide-station-sign");
+    expect(firstVisitReadyNextHref("guest")).toBe("/guide/first/roadmap");
   });
 
   it("routes logged-in users without kantei to resident card", () => {

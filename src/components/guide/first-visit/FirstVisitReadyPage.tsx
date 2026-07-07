@@ -19,7 +19,7 @@ export function FirstVisitReadyPage() {
     if (authLoading) return;
 
     if (!isLoggedIn) {
-      router.replace(FIRST_VISIT_ROUTES.guideStationSign);
+      router.replace(FIRST_VISIT_ROUTES.roadmap);
       return;
     }
 

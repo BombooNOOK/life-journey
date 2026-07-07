@@ -3,6 +3,7 @@ export const FIRST_VISIT_ROUTES = {
   welcome: "/guide/first/welcome",
   about: "/guide/first/about",
   owl: "/guide/first/owl",
+  roadmap: "/guide/first/roadmap",
   guideStationSign: "/guide/first/guide-station-sign",
   guideStation: "/guide/first/guide-station",
   ready: "/guide/first/ready",

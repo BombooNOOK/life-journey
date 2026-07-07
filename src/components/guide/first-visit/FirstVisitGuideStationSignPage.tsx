@@ -26,8 +26,8 @@ export function FirstVisitGuideStationSignPage() {
     <FirstVisitGuideCardPageLayout
       stepLabel="森の案内所へ"
       ariaLabel="森の案内所への案内"
-      backHref={FIRST_VISIT_ROUTES.owl}
-      backLabel="フクロウ先生へ戻る"
+      backHref={FIRST_VISIT_ROUTES.roadmap}
+      backLabel="今日の道のりへ戻る"
     >
       <FirstVisitGuideCardPanel card={FIRST_VISIT_GUIDE_STATION_SIGN_CARD} onAction={handleAction} />
     </FirstVisitGuideCardPageLayout>
