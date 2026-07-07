@@ -26,8 +26,8 @@ export function firstVisitWelcomeBgSrc(viewport: FirstVisitWelcomeViewport): str
 export const FIRST_VISIT_WELCOME_COPY = {
   heading: "BambooNOOKの森へようこそ",
   paragraphs: [
-    "ここでは、Life Journey Diary のはじめ方を\nナビゲーターのフクロウ先生がご案内します。",
-    "ログハウスへたどり着くところまで、\nしっかりお供しますので、ご安心ください。",
+    "ここでは、Life Journey Diaryのはじめ方を\nナビゲーターのフクロウ先生がご案内します。",
+    "写真と言葉で、今日の1ページを残すところまで\nしっかりお供しますので、ご安心ください。",
     "それでは、森の中へ進んでみましょう。",
   ],
   nextLabel: "次へ",
@@ -46,10 +46,10 @@ export const FIRST_VISIT_WELCOME_BG_OBJECT_POSITION: Record<
 export const FIRST_VISIT_WELCOME_COPY_MOBILE = {
   heading: FIRST_VISIT_WELCOME_COPY.heading,
   body: [
-    "ここでは、Life Journey Diary の始め方を",
+    "今日の1ページを残すところまで、",
     "ナビゲーターのフクロウ先生がご案内します。",
     "",
-    "それでは、森の中にお進みください！",
+    "森の中へ進んでみましょう。",
   ].join("\n"),
   nextLabel: FIRST_VISIT_WELCOME_COPY.nextLabel,
 } as const;

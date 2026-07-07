@@ -77,8 +77,8 @@ export function ForestDirectionSignLayoutDebugClient() {
 export function ForestDirectionSignLayoutDebugLinks() {
   return (
     <p className="mt-10 flex flex-wrap gap-4 text-sm">
-      <Link href="/guide/first/ready" className="text-emerald-800 underline hover:text-emerald-950">
-        ← 鑑定のやかた案内（本番）
+      <Link href="/guide/first/kantei-ready" className="text-emerald-800 underline hover:text-emerald-950">
+        ← 鑑定のへや案内（本番）
       </Link>
       <Link
         href="/preview/first-visit-owl-frame/layout?preset=loghouse-sign"

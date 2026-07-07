@@ -8,7 +8,7 @@ export type FirstVisitReadyContext = {
   branch: FirstVisitReadyBranch;
 };
 
-/** /guide/first/ready の「次へ」後分岐 */
+/** /guide/first/ready の旧URL保険導線 */
 export async function resolveFirstVisitReadyContext(
   viewerEmail: string | null | undefined,
 ): Promise<FirstVisitReadyContext> {

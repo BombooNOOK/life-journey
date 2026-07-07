@@ -7,13 +7,17 @@ import { OwlLoadingPanel } from "@/components/ui/OwlLoadingPanel";
 import "@/lib/journal/diaryPreviewLabelFont";
 import {
   FOREST_DIRECTION_SIGN_DESIGN_SIZE,
-  FOREST_DIRECTION_SIGN_SRC,
+  forestDirectionSignLabelPlacementForFacing,
   forestDirectionSignLabelStyle,
+  forestDirectionSignSrcForFacing,
+  type ForestDirectionSignFacing,
   type ForestDirectionSignLabelPlacement,
 } from "@/lib/onboarding/forestDirectionSignLayout";
 
 type Props = {
   label: string;
+  /** 看板の向き（既定: 右向き） */
+  facing?: ForestDirectionSignFacing;
   placement?: ForestDirectionSignLabelPlacement;
   className?: string;
   ariaLabel?: string;
@@ -51,6 +55,7 @@ function useForestDirectionSignScale() {
 /** 森の一本矢印看板：PNG 上に行き先名を重ねる */
 export function ForestDirectionSignBoard({
   label,
+  facing = "right",
   placement,
   className = "",
   ariaLabel,
@@ -61,6 +66,8 @@ export function ForestDirectionSignBoard({
 }: Props) {
   const { widthPx, heightPx } = FOREST_DIRECTION_SIGN_DESIGN_SIZE;
   const displayLabel = multiline ? label : label.replace(/\n/g, "");
+  const signSrc = forestDirectionSignSrcForFacing(facing);
+  const labelPlacement = placement ?? forestDirectionSignLabelPlacementForFacing(facing);
   const { ref, scale } = useForestDirectionSignScale();
   const [imageReady, setImageReady] = useState(false);
 
@@ -95,7 +102,7 @@ export function ForestDirectionSignBoard({
         </div>
       ) : null}
       <Image
-        src={FOREST_DIRECTION_SIGN_SRC}
+        src={signSrc}
         alt=""
         aria-hidden
         width={widthPx}
@@ -113,7 +120,7 @@ export function ForestDirectionSignBoard({
         >
           <p
             className={`m-0 leading-[inherit] text-[color:inherit] ${multiline ? "whitespace-pre-line" : "whitespace-nowrap"}`}
-            style={forestDirectionSignLabelStyle(placement, scale)}
+            style={forestDirectionSignLabelStyle(labelPlacement, scale)}
           >
             {displayLabel}
           </p>

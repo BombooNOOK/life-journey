@@ -4,7 +4,9 @@ export const FOREST_GUIDE_STATION_TITLE = "森の案内所" as const;
 export const FOREST_GUIDE_STATION_SUBTITLE = "Life Journey Diaryの歩き方" as const;
 
 export const FOREST_GUIDE_STATION_DESCRIPTION =
-  "ここは、Life Journey Diaryの森で迷ったときに立ち寄れる案内所です。はじめての方の流れや、日記の書き方、すうじの読み方を確認できます。" as const;
+  "ここは、Life Journey Diaryの森で迷ったときに立ち寄れる案内所です。森の案内図や、はじめての方の流れ、日記の書き方、すうじの読み方を確認できます。" as const;
+
+export const FOREST_GUIDE_STATION_MAP_SECTION_TITLE = "BambooNOOKの森の案内図" as const;
 
 export const FOREST_GUIDE_STATION_FIRST_VISIT_SECTION_TITLE = "はじめての方の流れ" as const;
 
@@ -24,17 +26,17 @@ export type ForestGuideFirstVisitStep = {
 export const FOREST_GUIDE_FIRST_VISIT_STEPS: ForestGuideFirstVisitStep[] = [
   {
     step: 1,
-    title: "森の案内を見る",
-    body: "LJDの世界観と、これから進む流れを知ります。",
+    title: "森へようこそ",
+    body: "BambooNOOKの森へようこそ。これから進む流れを、案内図で確認できます。",
   },
   {
     step: 2,
-    title: "Life Journey Diaryとはを知る",
+    title: "Life Journey Diaryとは",
     body: "写真と言葉で日々を残し、世界に一冊の日記ブックへ育てるサービスです。",
   },
   {
     step: 3,
-    title: "フクロウ先生の案内を読む",
+    title: "フクロウ先生の案内",
     body: "数字は毎日を決めるものではなく、日記を見返すための小さな手がかりです。",
     link: {
       href: FOREST_GUIDE_STATION_NUMEROLOGY_READING_HREF,
@@ -43,27 +45,47 @@ export const FOREST_GUIDE_FIRST_VISIT_STEPS: ForestGuideFirstVisitStep[] = [
   },
   {
     step: 4,
-    title: "ログハウスを建てる",
-    body: "あなたの日記や鑑定書をしまっておく場所を作ります。",
+    title: "森の案内所へ",
+    body: "迷ったときに戻ってこられる場所があることを、先に少しだけご案内します。",
   },
   {
     step: 5,
+    title: "森の住民登録",
+    body: "森で過ごす準備として、アカウントを作成します。",
+  },
+  {
+    step: 6,
+    title: "住民票カード発行",
+    body: "あなた専用の住民票カードを受け取ります。",
+  },
+  {
+    step: 7,
+    title: "ログハウス建築",
+    body: "日記や鑑定書をしまっておく、あなたの拠点を建てます。",
+  },
+  {
+    step: 8,
+    title: "ログハウス完成",
+    body: "ログハウスが完成し、これからの森の暮らしの拠点ができました。",
+  },
+  {
+    step: 9,
+    title: "鑑定のへや",
+    body: "あなたが持つ数字を見つける場所へ、フクロウ先生がご案内します。",
+  },
+  {
+    step: 10,
     title: "鑑定を受ける",
     body: "生年月日とお名前から、あなたが持つ数字を見つけます。",
   },
   {
-    step: 6,
-    title: "鑑定書を読む",
+    step: 11,
+    title: "ログハウスの本棚に鑑定書が届く",
     body: "どうぶつ鑑定士たちから、あなたの数字にまつわるメッセージが届きます。",
   },
   {
-    step: 7,
-    title: "どうぶつ鑑定士と日記を書く",
-    body: "写真とことばで、今日の1ページを残します。",
-  },
-  {
-    step: 8,
-    title: "日記ブックに育てる",
-    body: "残した日々は、あとから世界に一冊の日記ブックになります。",
+    step: 12,
+    title: "日記を書く / 今日はここまで",
+    body: "写真とことばで今日の1ページを残すか、また明日に続けます。",
   },
 ];

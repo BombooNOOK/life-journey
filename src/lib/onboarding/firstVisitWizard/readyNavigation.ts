@@ -1,9 +1,9 @@
 import { FIRST_VISIT_ROUTES } from "@/lib/onboarding/firstVisitWizard/routes";
 import type { FirstVisitReadyBranch } from "@/lib/viewer/firstVisitReadyContext";
 
-/** 鑑定のやかた案内（ready）で「次へ」を押したあとの行き先 */
+/** 旧 ready URL・ログイン済み保険導線の行き先 */
 export function firstVisitReadyNextHref(branch: FirstVisitReadyBranch): string {
-  if (branch === "guest") return FIRST_VISIT_ROUTES.register;
-  if (branch === "needsKantei") return FIRST_VISIT_ROUTES.kanteiReady;
+  if (branch === "guest") return FIRST_VISIT_ROUTES.guideStationSign;
+  if (branch === "needsKantei") return FIRST_VISIT_ROUTES.residentCard;
   return FIRST_VISIT_ROUTES.alreadyReady;
 }

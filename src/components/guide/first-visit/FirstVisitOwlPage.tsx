@@ -112,7 +112,7 @@ export function FirstVisitOwlPage() {
 
       <FirstVisitWizardNav
         backHref={FIRST_VISIT_ROUTES.about}
-        nextHref={FIRST_VISIT_ROUTES.ready}
+        nextHref={FIRST_VISIT_ROUTES.guideStationSign}
       />
     </div>
   );

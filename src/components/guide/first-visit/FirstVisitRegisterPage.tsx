@@ -53,7 +53,7 @@ export function FirstVisitRegisterPage() {
           router.replace(href);
         })
         .catch(() => {
-          if (!cancelled) router.replace(FIRST_VISIT_ROUTES.kanteiReady);
+          if (!cancelled) router.replace(FIRST_VISIT_ROUTES.residentCard);
         });
 
       return () => {
@@ -76,8 +76,8 @@ export function FirstVisitRegisterPage() {
     <FirstVisitGuideCardPageLayout
       stepLabel="森の住民登録"
       ariaLabel="森の住民登録"
-      backHref={FIRST_VISIT_ROUTES.ready}
-      backLabel="森の案内へ戻る"
+      backHref={FIRST_VISIT_ROUTES.guideStation}
+      backLabel="森の案内所へ戻る"
     >
       {showIntroOverlay ? (
         <FirstVisitResidentRegistrationIntroOverlay onNext={() => setShowIntroOverlay(false)} />

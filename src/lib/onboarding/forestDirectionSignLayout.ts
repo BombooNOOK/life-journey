@@ -2,8 +2,20 @@ import type { CSSProperties } from "react";
 
 import { DIARY_PREVIEW_LABEL_FONT_FAMILY } from "@/lib/journal/diaryBookEntryLabelFont";
 
+export type ForestDirectionSignFacing = "left" | "right";
+
 /** 一本矢印の森の看板 PNG（1024×1024） */
-export const FOREST_DIRECTION_SIGN_SRC = "/decorations/forest-direction-sign.png" as const;
+export const FOREST_DIRECTION_SIGN_SRC_BY_FACING = {
+  left: "/decorations/forest-direction-sign-left.png",
+  right: "/decorations/forest-direction-sign-right.png",
+} as const satisfies Record<ForestDirectionSignFacing, string>;
+
+/** 既定（鑑定のへや案内など） */
+export const FOREST_DIRECTION_SIGN_SRC = FOREST_DIRECTION_SIGN_SRC_BY_FACING.right;
+
+export function forestDirectionSignSrcForFacing(facing: ForestDirectionSignFacing): string {
+  return FOREST_DIRECTION_SIGN_SRC_BY_FACING[facing];
+}
 
 export const FOREST_DIRECTION_SIGN_DESIGN_SIZE = {
   widthPx: 1024,
@@ -35,18 +47,45 @@ export type ForestDirectionSignLabelPlacement = {
 };
 
 /** 1024×1024 設計座標。`/preview/forest-direction-sign/layout` で微調整 */
-export const FOREST_DIRECTION_SIGN_LABEL_PLACEMENT: ForestDirectionSignLabelPlacement = {
-  x: 294,
-  y: 284,
-  textAnchor: "topleft",
-  textAlign: "left",
-  fontSize: 88,
-  fontWeight: 400,
-  lineHeight: 1,
-  maxWidth: 360,
-  rotate: -3,
-  color: FOREST_DIRECTION_SIGN_LABEL_COLOR,
+export const FOREST_DIRECTION_SIGN_LABEL_PLACEMENT_BY_FACING: Record<
+  ForestDirectionSignFacing,
+  ForestDirectionSignLabelPlacement
+> = {
+  right: {
+    x: 294,
+    y: 284,
+    textAnchor: "topleft",
+    textAlign: "left",
+    fontSize: 88,
+    fontWeight: 400,
+    lineHeight: 1,
+    maxWidth: 360,
+    rotate: -3,
+    color: FOREST_DIRECTION_SIGN_LABEL_COLOR,
+  },
+  left: {
+    x: 294,
+    y: 284,
+    textAnchor: "topleft",
+    textAlign: "left",
+    fontSize: 88,
+    fontWeight: 400,
+    lineHeight: 1,
+    maxWidth: 360,
+    rotate: -3,
+    color: FOREST_DIRECTION_SIGN_LABEL_COLOR,
+  },
 };
+
+/** @deprecated facing 指定なしの互換用（右向き） */
+export const FOREST_DIRECTION_SIGN_LABEL_PLACEMENT =
+  FOREST_DIRECTION_SIGN_LABEL_PLACEMENT_BY_FACING.right;
+
+export function forestDirectionSignLabelPlacementForFacing(
+  facing: ForestDirectionSignFacing,
+): ForestDirectionSignLabelPlacement {
+  return FOREST_DIRECTION_SIGN_LABEL_PLACEMENT_BY_FACING[facing];
+}
 
 /**
  * 看板ラベル style。scale = 表示幅 / 1024。

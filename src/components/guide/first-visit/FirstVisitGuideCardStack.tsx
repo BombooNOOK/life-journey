@@ -168,6 +168,7 @@ export function FirstVisitGuideCardPanel({ card, onAction }: Props) {
       <div className="flex w-full flex-col items-center gap-4">
         <ForestDirectionSignBoard
           label={signLabel}
+          facing={card.signFacing}
           multiline={card.signMultiline}
           className="max-w-none w-full"
           onImageReady={() => setIllustrationReady(true)}
@@ -185,7 +186,7 @@ export function FirstVisitGuideCardPanel({ card, onAction }: Props) {
   return (
     <FirstVisitGuideCardShell>
       {hasSign ? (
-        <ForestDirectionSignBoard label={signLabel} className="mb-4 max-w-none w-full" />
+        <ForestDirectionSignBoard label={signLabel} facing={card.signFacing} className="mb-4 max-w-none w-full" />
       ) : card.illustrationSrc ? (
         <FirstVisitGuideCardIllustration src={card.illustrationSrc} large={card.illustrationLarge} />
       ) : null}

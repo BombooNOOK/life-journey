@@ -44,7 +44,7 @@ export function FirstVisitAlreadyReadyPage() {
         setRedirecting(false);
       })
       .catch(() => {
-        if (!cancelled) router.replace(FIRST_VISIT_ROUTES.kanteiReady);
+        if (!cancelled) router.replace(FIRST_VISIT_ROUTES.residentCard);
       });
 
     return () => {
@@ -78,9 +78,9 @@ export function FirstVisitAlreadyReadyPage() {
 
   return (
     <FirstVisitGuideCardPageLayout
-      stepLabel="鑑定のやかた"
+      stepLabel="鑑定済みの案内"
       ariaLabel="鑑定済みの案内"
-      backHref={FIRST_VISIT_ROUTES.ready}
+      backHref={FIRST_VISIT_ROUTES.guideStation}
     >
       <FirstVisitGuideCardPanel card={FIRST_VISIT_ALREADY_READY_CARD} onAction={handleAction} />
     </FirstVisitGuideCardPageLayout>

@@ -7,12 +7,14 @@ import { useFirebaseAuth } from "@/components/auth/FirebaseAuthProvider";
 import { FirstVisitGuideCardPageLayout } from "@/components/guide/first-visit/FirstVisitGuideCardPageLayout";
 import { FirstVisitGuideCardPanel } from "@/components/guide/first-visit/FirstVisitGuideCardStack";
 import type { FirstVisitGuideCardAction } from "@/lib/onboarding/firstVisitWizard/cards";
-import { FIRST_VISIT_KANTEI_PROCEED_READY_CARD } from "@/lib/onboarding/firstVisitWizard/cards";
+import { FIRST_VISIT_KANTEI_HALL_INTRO_CARD } from "@/lib/onboarding/firstVisitWizard/cards";
+import { firstVisitReadyNextHref } from "@/lib/onboarding/firstVisitWizard/readyNavigation";
 import { FIRST_VISIT_ROUTES } from "@/lib/onboarding/firstVisitWizard/routes";
+import { setFirstVisitOrderGuideFlag } from "@/lib/onboarding/firstVisitWizard/session";
 import type { FirstVisitReadyBranch } from "@/lib/viewer/firstVisitReadyContext";
 import { OwlLoadingPanel } from "@/components/ui/OwlLoadingPanel";
 
-/** 第4幕：ログイン済み・未鑑定ユーザー向け */
+/** 第9幕：鑑定のへや（ログハウス完成の次） */
 export function FirstVisitKanteiReadyPage() {
   const router = useRouter();
   const { user, loading: authLoading } = useFirebaseAuth();
@@ -23,7 +25,7 @@ export function FirstVisitKanteiReadyPage() {
     if (authLoading) return;
 
     if (!isLoggedIn) {
-      router.replace(FIRST_VISIT_ROUTES.register);
+      router.replace(FIRST_VISIT_ROUTES.guideStationSign);
       return;
     }
 
@@ -36,12 +38,12 @@ export function FirstVisitKanteiReadyPage() {
       })
       .then((data) => {
         if (cancelled) return;
-        if (data.branch === "guest") {
-          router.replace(FIRST_VISIT_ROUTES.register);
-          return;
-        }
         if (data.branch === "hasKantei") {
           router.replace(FIRST_VISIT_ROUTES.alreadyReady);
+          return;
+        }
+        if (data.branch === "guest") {
+          router.replace(FIRST_VISIT_ROUTES.guideStationSign);
           return;
         }
         setRedirecting(false);
@@ -57,8 +59,9 @@ export function FirstVisitKanteiReadyPage() {
 
   const handleAction = useCallback(
     (action: FirstVisitGuideCardAction, cardId: string) => {
-      if (action === "next" && cardId === "kantei-proceed-ready") {
-        router.push(FIRST_VISIT_ROUTES.kantei);
+      if (action === "next" && cardId === "kantei-hall-intro") {
+        setFirstVisitOrderGuideFlag();
+        router.push("/order");
       }
     },
     [router],
@@ -76,14 +79,12 @@ export function FirstVisitKanteiReadyPage() {
 
   return (
     <FirstVisitGuideCardPageLayout
-      stepLabel="鑑定のやかたへ"
-      ariaLabel="鑑定のやかたへの案内"
-      backHref={FIRST_VISIT_ROUTES.ready}
+      stepLabel="鑑定のへや"
+      ariaLabel="鑑定のへやへの案内"
+      backHref={FIRST_VISIT_ROUTES.kantei}
+      backLabel="ログハウス完成へ戻る"
     >
-      <FirstVisitGuideCardPanel
-        card={FIRST_VISIT_KANTEI_PROCEED_READY_CARD}
-        onAction={handleAction}
-      />
+      <FirstVisitGuideCardPanel card={FIRST_VISIT_KANTEI_HALL_INTRO_CARD} onAction={handleAction} />
     </FirstVisitGuideCardPageLayout>
   );
 }

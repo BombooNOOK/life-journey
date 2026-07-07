@@ -6,7 +6,7 @@ export const metadata: Metadata = {
   title: "はじめての方へ",
 };
 
-/** 第4幕：鑑定のやかたへ（ログイン済み） */
+/** 第9幕：鑑定のへや（ログハウス完成後） */
 export default function GuideFirstKanteiReadyPage() {
   return <FirstVisitKanteiReadyPage />;
 }

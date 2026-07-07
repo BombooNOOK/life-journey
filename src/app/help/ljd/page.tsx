@@ -1,11 +1,13 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 
+import { BambooForestGuideMap } from "@/components/help/BambooForestGuideMap";
 import { LjdFirstVisitFlowSteps } from "@/components/help/LjdFirstVisitFlowSteps";
 import { LjdWalkthroughToc } from "@/components/help/LjdWalkthroughToc";
 import { PageTitleWithAccent } from "@/components/ui/PageTitleWithAccent";
 import {
   FOREST_GUIDE_STATION_DESCRIPTION,
+  FOREST_GUIDE_STATION_MAP_SECTION_TITLE,
   FOREST_GUIDE_STATION_SUBTITLE,
   FOREST_GUIDE_STATION_TITLE,
 } from "@/lib/help/forestGuideStation";
@@ -43,6 +45,21 @@ export default function HelpLjdWalkthroughPage() {
           </>
         }
       />
+
+      <section aria-labelledby="forest-guide-map-heading" className="space-y-3">
+        <div>
+          <h2
+            id="forest-guide-map-heading"
+            className="text-base font-semibold text-stone-900 sm:text-lg"
+          >
+            {FOREST_GUIDE_STATION_MAP_SECTION_TITLE}
+          </h2>
+          <p className="mt-1 text-sm leading-6 text-stone-600">
+            はじめての方が進む順番を、案内図で確認できます。
+          </p>
+        </div>
+        <BambooForestGuideMap />
+      </section>
 
       <LjdFirstVisitFlowSteps />
 

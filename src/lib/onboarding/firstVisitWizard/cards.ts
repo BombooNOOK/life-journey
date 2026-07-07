@@ -34,6 +34,12 @@ import {
   BOOKSHELF_KANTEI_GUIDE_CARD2_SECONDARY_BUTTON,
   BOOKSHELF_KANTEI_GUIDE_CARD2_TITLE,
 } from "@/lib/onboarding/bookshelfKanteiGuideCopy";
+import type { ForestDirectionSignFacing } from "@/lib/onboarding/forestDirectionSignLayout";
+import {
+  FIRST_VISIT_GUIDE_STATION_SIGN_BODY,
+  FIRST_VISIT_GUIDE_STATION_SIGN_BUTTON,
+  FIRST_VISIT_GUIDE_STATION_SIGN_LABEL,
+} from "@/lib/onboarding/firstVisitWizard/guideStationCopy";
 
 export type FirstVisitGuideCardAction =
   | "next"
@@ -60,6 +66,8 @@ export type FirstVisitGuideCard = {
   footnote?: string;
   /** 森の一本矢印看板に載せる行き先名（設定時は看板カード表示） */
   signLabel?: string;
+  /** 行き先看板の向き（既定: 右向き） */
+  signFacing?: ForestDirectionSignFacing;
   /** 看板テキストで改行を保持する */
   signMultiline?: boolean;
   /** フクロウコメント枠 PNG 内に載せるテキスト */
@@ -74,10 +82,22 @@ export type FirstVisitGuideCard = {
   buttons: FirstVisitGuideCardButton[];
 };
 
-/** 第4幕：鑑定のやかた案内 */
+/** 第4幕①：矢印看板 → 森の案内所へ */
+export const FIRST_VISIT_GUIDE_STATION_SIGN_CARD: FirstVisitGuideCard = {
+  id: "guide-station-sign",
+  signLabel: FIRST_VISIT_GUIDE_STATION_SIGN_LABEL,
+  signFacing: "right",
+  body: FIRST_VISIT_GUIDE_STATION_SIGN_BODY,
+  bodyAlign: "center",
+  bare: true,
+  buttons: [{ label: FIRST_VISIT_GUIDE_STATION_SIGN_BUTTON, action: "next", variant: "primary" }],
+};
+
+/** 第9幕：鑑定のへや案内 */
 export const FIRST_VISIT_KANTEI_HALL_INTRO_CARD: FirstVisitGuideCard = {
   id: "kantei-hall-intro",
   signLabel: FIRST_VISIT_KANTEI_HALL_SIGN_LABEL,
+  signFacing: "right",
   body: FIRST_VISIT_KANTEI_HALL_BODY,
   bodyAlign: "center",
   bare: true,
@@ -99,7 +119,7 @@ export const FIRST_VISIT_RESIDENT_OWL_PROMPT_CARD: FirstVisitGuideCard = {
   ],
 };
 
-/** 第4幕：ログイン済み・未鑑定ユーザー向け */
+/** 第9幕：鑑定のへや（ログイン済み・ログハウス完成後） */
 export const FIRST_VISIT_KANTEI_PROCEED_READY_CARD: FirstVisitGuideCard = {
   id: "kantei-proceed-ready",
   title: FIRST_VISIT_KANTEI_PROCEED_TITLE,

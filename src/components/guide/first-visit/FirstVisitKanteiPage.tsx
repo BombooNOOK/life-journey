@@ -14,14 +14,14 @@ import { OwlLoadingPanel } from "@/components/ui/OwlLoadingPanel";
 import {
   FIRST_VISIT_LOGHOUSE_COMPLETE_BODY,
   FIRST_VISIT_LOGHOUSE_COMPLETE_BUTTON,
+  FIRST_VISIT_LOGHOUSE_COMPLETE_FOOTNOTE,
   FIRST_VISIT_LOGHOUSE_COMPLETE_ILLUSTRATION_SRC,
   FIRST_VISIT_LOGHOUSE_COMPLETE_TITLE,
   preloadFirstVisitLoghouseCompleteIllustration,
 } from "@/lib/onboarding/firstVisitWizard/loghouseCompleteCopy";
 import { FIRST_VISIT_ROUTES } from "@/lib/onboarding/firstVisitWizard/routes";
-import { setFirstVisitOrderGuideFlag } from "@/lib/onboarding/firstVisitWizard/session";
 
-/** 第6幕：ログハウス完成 → 鑑定のやかたへ */
+/** 第8幕：ログハウス完成 */
 export function FirstVisitKanteiPage() {
   const router = useRouter();
   const { user, loading } = useFirebaseAuth();
@@ -46,8 +46,7 @@ export function FirstVisitKanteiPage() {
   }, [isLoggedIn, loading, router]);
 
   const handleProceed = useCallback(() => {
-    setFirstVisitOrderGuideFlag();
-    router.push("/order");
+    router.push(FIRST_VISIT_ROUTES.kanteiReady);
   }, [router]);
 
   if (loading || !isLoggedIn || !illustrationReady) {
@@ -84,6 +83,8 @@ export function FirstVisitKanteiPage() {
           <button type="button" className={`mt-8 ${companionWritingGuidePrimaryButtonClass}`} onClick={handleProceed}>
             {FIRST_VISIT_LOGHOUSE_COMPLETE_BUTTON}
           </button>
+
+          <p className="mt-3 text-center text-sm text-stone-500">{FIRST_VISIT_LOGHOUSE_COMPLETE_FOOTNOTE}</p>
         </div>
       </div>
     </section>
