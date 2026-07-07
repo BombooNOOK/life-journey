@@ -20,7 +20,6 @@ import {
   ORDER_NAVIGATING_BOOKSHELF_LABEL,
   ORDER_SUBMITTING_LABEL,
 } from "@/lib/onboarding/firstVisitWizard/loadingCopy";
-import { OwlLoadingInline } from "@/components/ui/OwlLoadingInline";
 import { OwlSuspenseFallback } from "@/components/ui/OwlSuspenseFallback";
 import { FIRST_VISIT_KANTEI_HALL_SIGN_LABEL } from "@/lib/onboarding/firstVisitWizard/kanteiHallCopy";
 import { selectViewerProfile } from "@/lib/profile/selectViewerProfile";
@@ -453,11 +452,7 @@ function OrderPageContent() {
               disabled={submitPhase !== "idle"}
               className="w-full rounded-lg bg-stone-800 py-3 text-sm font-medium text-white hover:bg-stone-700 disabled:opacity-60"
             >
-              {submitPhase === "submitting" ? (
-                <OwlLoadingInline label={ORDER_SUBMITTING_LABEL} size="sm" className="text-white" />
-              ) : (
-                "この内容で保存する"
-              )}
+              この内容で保存する
             </button>
           </div>
         </form>

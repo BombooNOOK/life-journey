@@ -2,17 +2,11 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 import { BambooForestGuideMap } from "@/components/help/BambooForestGuideMap";
+import { ForestGuideStationHeader } from "@/components/help/ForestGuideStationHeader";
 import { LjdFirstVisitFlowSteps } from "@/components/help/LjdFirstVisitFlowSteps";
 import { LjdWalkthroughToc } from "@/components/help/LjdWalkthroughToc";
-import { PageTitleWithAccent } from "@/components/ui/PageTitleWithAccent";
-import {
-  FOREST_GUIDE_STATION_DESCRIPTION,
-  FOREST_GUIDE_STATION_MAP_SECTION_TITLE,
-  FOREST_GUIDE_STATION_SUBTITLE,
-  FOREST_GUIDE_STATION_TITLE,
-} from "@/lib/help/forestGuideStation";
-import { LOG_HOUSE_BACK_LINK } from "@/lib/journal/logHouseLabels";
-import { FIRST_VISIT_ROUTES } from "@/lib/onboarding/firstVisitWizard/routes";
+import { FOREST_GUIDE_STATION_MAP_SECTION_TITLE, FOREST_GUIDE_STATION_TITLE } from "@/lib/help/forestGuideStation";
+import { FOREST_GUIDE_MAP_SECTION_HINT } from "@/lib/help/bambooForestGuideMapBuildings";
 
 export const dynamic = "force-static";
 
@@ -23,28 +17,7 @@ export const metadata: Metadata = {
 export default function HelpLjdWalkthroughPage() {
   return (
     <div className="home-read-scope space-y-6">
-      <PageTitleWithAccent
-        tone="diary"
-        decoration="forest-guide-station-md"
-        title={FOREST_GUIDE_STATION_TITLE}
-        backLink={LOG_HOUSE_BACK_LINK}
-        description={
-          <>
-            <p className="text-base font-medium text-stone-800">{FOREST_GUIDE_STATION_SUBTITLE}</p>
-            <p className="mt-2">{FOREST_GUIDE_STATION_DESCRIPTION}</p>
-            <p className="mt-2 text-sm text-stone-600">
-              初めての方は
-              <Link
-                href={FIRST_VISIT_ROUTES.welcome}
-                className="mx-1 font-medium text-emerald-900 underline-offset-2 hover:underline"
-              >
-                はじめての方へ
-              </Link>
-              から案内をご覧ください。
-            </p>
-          </>
-        }
-      />
+      <ForestGuideStationHeader />
 
       <section aria-labelledby="forest-guide-map-heading" className="space-y-3">
         <div>
@@ -54,9 +27,7 @@ export default function HelpLjdWalkthroughPage() {
           >
             {FOREST_GUIDE_STATION_MAP_SECTION_TITLE}
           </h2>
-          <p className="mt-1 text-sm leading-6 text-stone-600">
-            はじめての方が進む順番を、案内図で確認できます。
-          </p>
+          <p className="mt-1 text-sm leading-6 text-stone-600">{FOREST_GUIDE_MAP_SECTION_HINT}</p>
         </div>
         <BambooForestGuideMap />
       </section>
