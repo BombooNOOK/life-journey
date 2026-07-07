@@ -18,8 +18,8 @@ export type FirstVisitRoadmapTextPlacement = {
   paddingTopPx?: number;
 };
 
-/** 羊皮紙の内側いっぱい。フォントサイズは他ページと同じ CSS クラスを使用 */
-export const FIRST_VISIT_ROADMAP_TEXT_PLACEMENT: FirstVisitRoadmapTextPlacement = {
+/** PC（lg 以上）：看板内の余白を多めに取った配置 */
+export const FIRST_VISIT_ROADMAP_TEXT_PLACEMENT_DESKTOP: FirstVisitRoadmapTextPlacement = {
   x: 88,
   y: 158,
   widthPx: 400,
@@ -27,8 +27,27 @@ export const FIRST_VISIT_ROADMAP_TEXT_PLACEMENT: FirstVisitRoadmapTextPlacement 
   paddingTopPx: 10,
 };
 
+/** スマホ：改行が起きにくいよう羊皮紙いっぱいに広げた配置 */
+export const FIRST_VISIT_ROADMAP_TEXT_PLACEMENT_MOBILE: FirstVisitRoadmapTextPlacement = {
+  x: 68,
+  y: 154,
+  widthPx: 440,
+  heightPx: 592,
+  paddingTopPx: 10,
+};
+
+export type FirstVisitRoadmapViewport = "desktop" | "mobile";
+
+export function firstVisitRoadmapTextPlacement(
+  viewport: FirstVisitRoadmapViewport,
+): FirstVisitRoadmapTextPlacement {
+  return viewport === "desktop"
+    ? FIRST_VISIT_ROADMAP_TEXT_PLACEMENT_DESKTOP
+    : FIRST_VISIT_ROADMAP_TEXT_PLACEMENT_MOBILE;
+}
+
 export function firstVisitRoadmapTextStyle(
-  placement: FirstVisitRoadmapTextPlacement = FIRST_VISIT_ROADMAP_TEXT_PLACEMENT,
+  placement: FirstVisitRoadmapTextPlacement = FIRST_VISIT_ROADMAP_TEXT_PLACEMENT_MOBILE,
   scale = 1,
 ): CSSProperties {
   return {

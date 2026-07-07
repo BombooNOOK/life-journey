@@ -13,7 +13,7 @@ const RESIDENT_NUMBER_DIGITS = 9;
 const ASSIGN_MAX_ATTEMPTS = 8;
 
 /** キャラ名選択実装まではサンプル名を表示 */
-export const FOREST_RESIDENT_DEFAULT_DISPLAY_NAME = "ウサギさん" as const;
+export const FOREST_RESIDENT_DEFAULT_DISPLAY_NAME = "森の住民" as const;
 
 export function formatForestResidentNumber(sequence: number): string {
   return `${RESIDENT_NUMBER_PREFIX}${String(sequence).padStart(RESIDENT_NUMBER_DIGITS, "0")}`;
@@ -46,7 +46,7 @@ export function formatForestResidentRegisteredLabel(date: Date): string {
   }).format(date);
 }
 
-/** 表示名（住民票専用名 → プロフィール名 → ウサギさん） */
+/** 表示名（住民票専用名 → プロフィール名 → 森の住民） */
 export function deriveForestResidentDisplayName(
   nickname: string | null,
   forestResidentDisplayName: string | null | undefined,

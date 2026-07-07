@@ -18,10 +18,28 @@ import {
 } from "@/lib/onboarding/firstVisitWizard/roadmapCopy";
 import {
   FIRST_VISIT_ROADMAP_DESIGN_SIZE,
-  FIRST_VISIT_ROADMAP_TEXT_PLACEMENT,
+  firstVisitRoadmapTextPlacement,
   firstVisitRoadmapTextStyle,
+  type FirstVisitRoadmapViewport,
 } from "@/lib/onboarding/firstVisitWizard/roadmapLayout";
 import { FIRST_VISIT_ROUTES } from "@/lib/onboarding/firstVisitWizard/routes";
+
+function useRoadmapViewport(): FirstVisitRoadmapViewport {
+  const [viewport, setViewport] = useState<FirstVisitRoadmapViewport>(() => {
+    if (typeof window === "undefined") return "mobile";
+    return window.matchMedia("(min-width: 1024px)").matches ? "desktop" : "mobile";
+  });
+
+  useLayoutEffect(() => {
+    const media = window.matchMedia("(min-width: 1024px)");
+    const sync = () => setViewport(media.matches ? "desktop" : "mobile");
+    sync();
+    media.addEventListener("change", sync);
+    return () => media.removeEventListener("change", sync);
+  }, []);
+
+  return viewport;
+}
 
 function useRoadmapSignScale() {
   const ref = useRef<HTMLElement>(null);
@@ -49,8 +67,9 @@ function useRoadmapSignScale() {
 
 /** 第3幕②：今日の道のり（看板内にテキストを重ねる） */
 export function FirstVisitRoadmapPage() {
+  const viewport = useRoadmapViewport();
   const { ref, scale } = useRoadmapSignScale();
-  const placement = FIRST_VISIT_ROADMAP_TEXT_PLACEMENT;
+  const placement = firstVisitRoadmapTextPlacement(viewport);
   const paddingTop = (placement.paddingTopPx ?? 0) * scale;
   const { widthPx, heightPx } = FIRST_VISIT_ROADMAP_DESIGN_SIZE;
 
@@ -82,10 +101,13 @@ export function FirstVisitRoadmapPage() {
 
             <p className="lj-read-desc m-0 mt-2 text-stone-700">{FIRST_VISIT_ROADMAP_INTRO}</p>
 
-            <ol className="lj-read-desc m-0 mt-2 inline-block list-none space-y-1.5 p-0 text-left text-stone-700">
+            <ol className="lj-read-desc m-0 mt-2 w-full list-none space-y-1.5 p-0 text-left text-stone-700 lg:inline-block lg:w-auto">
               {FIRST_VISIT_ROADMAP_STEPS.map((step, index) => (
-                <li key={step} className="m-0 leading-relaxed">
-                  <span className="font-semibold text-emerald-950">{index + 1}.</span> {step}
+                <li key={step} className="m-0 flex gap-1 leading-relaxed">
+                  <span className="shrink-0 font-semibold text-emerald-950">{index + 1}.</span>
+                  <span className="min-w-0 whitespace-pre-line">
+                    {viewport === "desktop" ? step.replace(/\n/g, "") : step}
+                  </span>
                 </li>
               ))}
             </ol>

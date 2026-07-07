@@ -14,7 +14,7 @@ describe("deriveForestResidentDisplayName", () => {
     expect(deriveForestResidentDisplayName("りさ", null)).toBe("りさ");
   });
 
-  it("falls back to default rabbit name for default nickname", () => {
+  it("falls back to default resident name for default nickname", () => {
     expect(deriveForestResidentDisplayName("メイン", null)).toBe(FOREST_RESIDENT_DEFAULT_DISPLAY_NAME);
   });
 

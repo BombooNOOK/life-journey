@@ -168,7 +168,7 @@ export function ForestResidentCardLayoutDebugClient() {
           <ForestResidentCard {...FIRST_VISIT_RESIDENT_CARD_PREVIEW_FIXTURE} />
         </div>
         <p className="mt-6 text-xs leading-relaxed text-stone-500">
-          サンプル文言: ウサギさん / BN-000802079 / 2026年7月6日
+          サンプル文言: 森の住民 / BN-000802079 / 2026年7月6日
         </p>
       </div>
     </div>
