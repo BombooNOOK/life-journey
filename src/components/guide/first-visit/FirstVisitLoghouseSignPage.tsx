@@ -46,7 +46,13 @@ export function FirstVisitLoghouseSignPage() {
   }
 
   return (
-    <FirstVisitGuideCardPageLayout stepLabel="ログハウスへ" ariaLabel="ログハウス建築の案内">
+    <FirstVisitGuideCardPageLayout
+      stepLabel="ログハウスへ"
+      ariaLabel="ログハウス建築の案内"
+      backHref={FIRST_VISIT_ROUTES.residentCard}
+      backLabel="住民票カードへ戻る"
+      showPauseLink
+    >
       <FirstVisitGuideCardPanel card={FIRST_VISIT_LOGHOUSE_SIGN_CARD} onAction={handleAction} />
     </FirstVisitGuideCardPageLayout>
   );

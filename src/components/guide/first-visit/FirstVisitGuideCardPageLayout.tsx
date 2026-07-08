@@ -3,6 +3,7 @@
 import type { ReactNode } from "react";
 
 import { FirstVisitGuideStage } from "@/components/guide/first-visit/FirstVisitGuideStage";
+import { FirstVisitPauseLink } from "@/components/guide/first-visit/FirstVisitPauseLink";
 import { FirstVisitWizardNav } from "@/components/guide/first-visit/FirstVisitWizardNav";
 import { FirstVisitWizardPageHeader } from "@/components/guide/first-visit/FirstVisitWizardPageHeader";
 import { useTransitionNavigation } from "@/components/ui/TransitionNavigationProvider";
@@ -12,6 +13,8 @@ type Props = {
   ariaLabel: string;
   backHref?: string;
   backLabel?: string;
+  /** 未指定時は backHref がないページで表示 */
+  showPauseLink?: boolean;
   children: ReactNode;
 };
 
@@ -24,9 +27,11 @@ export function FirstVisitGuideCardPageLayout({
   ariaLabel,
   backHref,
   backLabel = "もどる",
+  showPauseLink,
   children,
 }: Props) {
   const { replace, isPending } = useTransitionNavigation();
+  const shouldShowPause = showPauseLink ?? !backHref;
 
   return (
     <div className="home-read-scope min-h-[100dvh] pb-10">
@@ -45,6 +50,11 @@ export function FirstVisitGuideCardPageLayout({
             </button>
           ) : null}
           {children}
+          {shouldShowPause ? (
+            <p className="mt-6 text-center">
+              <FirstVisitPauseLink />
+            </p>
+          ) : null}
         </FirstVisitGuideStage>
       </div>
 
@@ -52,6 +62,11 @@ export function FirstVisitGuideCardPageLayout({
         {children}
         {backHref ? (
           <FirstVisitWizardNav backHref={backHref} backLabel={backLabel} showNext={false} />
+        ) : null}
+        {shouldShowPause ? (
+          <p className="mt-4 text-center">
+            <FirstVisitPauseLink />
+          </p>
         ) : null}
       </div>
     </div>

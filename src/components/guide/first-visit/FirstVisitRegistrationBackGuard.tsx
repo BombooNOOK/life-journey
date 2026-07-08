@@ -10,6 +10,7 @@ import {
   isGoogleOAuthFlowCookieActive,
   readOAuthReturnPendingAgeMs,
 } from "@/lib/auth/clientCookies";
+import { shouldBlockFirstVisitSwipeBack } from "@/lib/onboarding/firstVisitWizard/backBlockPolicy";
 import { readFirstVisitFromRegisterFlag } from "@/lib/onboarding/firstVisitWizard/session";
 
 type Props = {
@@ -46,7 +47,7 @@ export function FirstVisitRegistrationBackGuard({
       (returnTo != null && isFirstVisitLoghouseReturnTo(returnTo)));
 
   const blockBack =
-    pathname.startsWith("/guide/first/") ||
+    shouldBlockFirstVisitSwipeBack(pathname) ||
     fromRegister ||
     oauthPending ||
     firstVisitLoginHandoff;
