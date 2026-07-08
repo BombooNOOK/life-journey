@@ -12,7 +12,6 @@ import { PdfDownloadButton } from "@/components/orders/PdfDownloadButton";
 import { BodyPortal, IMMERSIVE_OVERLAY_Z_CLASS } from "@/components/ui/BodyPortal";
 import { OwlSpinIndicator } from "@/components/ui/OwlSpinIndicator";
 import { useVisualViewportDock } from "@/hooks/useVisualViewportDock";
-import { useBlockBrowserBack } from "@/hooks/useBlockBrowserBack";
 import {
   type KanteiFirstReadGuideMode,
   kanteiLifePathFirstPdfIndex,
@@ -97,7 +96,6 @@ export function KanteiPdfReader({
 }: Props) {
   const router = useRouter();
   const restrictedFirstRead = guideMode != null;
-  useBlockBrowserBack(restrictedFirstRead);
   const isCompact = useCompactReader();
   const touchStartRef = useRef<{ x: number; y: number; pointerId: number } | null>(null);
   const didSwipeRef = useRef(false);

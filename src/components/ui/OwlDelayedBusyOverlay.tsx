@@ -19,7 +19,7 @@ type Props = {
   className?: string;
 };
 
-/** 待ちが続いたときだけフクロウを出す軽量オーバーレイ */
+/** 待ちが続いたときだけフクロウを出す軽量オーバーレイ（背景透明） */
 export function OwlDelayedBusyOverlay({
   busy,
   message,
@@ -42,7 +42,7 @@ export function OwlDelayedBusyOverlay({
   return createPortal(
     <div
       className={[
-        "pointer-events-none fixed inset-0 z-[200] flex items-center justify-center bg-black/[0.04]",
+        "pointer-events-none fixed inset-0 z-[200] flex items-center justify-center",
         className,
       ]
         .filter(Boolean)
@@ -52,10 +52,12 @@ export function OwlDelayedBusyOverlay({
       aria-busy="true"
       aria-label={message && showMessage ? message : "読み込み中"}
     >
-      <div className="flex flex-col items-center gap-2 rounded-2xl border border-stone-200/80 bg-[#fffdf9]/95 px-5 py-4 shadow-lg">
+      <div className="flex flex-col items-center gap-2">
         <OwlSpinIndicator size="md" />
         {message && showMessage ? (
-          <p className="max-w-[16rem] text-center text-sm leading-relaxed text-stone-600">{message}</p>
+          <p className="max-w-[16rem] text-center text-sm leading-relaxed text-stone-700 [text-shadow:0_0_8px_rgba(255,253,249,0.95),0_1px_2px_rgba(255,255,255,0.9)]">
+            {message}
+          </p>
         ) : null}
       </div>
     </div>,

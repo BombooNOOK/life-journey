@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 
+import { BrowserBackBlockedHint } from "@/components/ui/BrowserBackBlockedHint";
 import { useBlockBrowserBack } from "@/hooks/useBlockBrowserBack";
 import {
   readBookshelfKanteiGuideFlag,
@@ -14,17 +15,26 @@ type Props = {
 };
 
 /** 初回導線の延長（/order・本棚・鑑定書プレビュー）でスワイプ戻りを無効化 */
+function readFirstVisitFlowBackBlock(kanteiFirstReadGuide: boolean): boolean {
+  return (
+    kanteiFirstReadGuide ||
+    readFirstVisitOrderGuideFlag() ||
+    readBookshelfKanteiGuideFlag()
+  );
+}
+
 export function FirstVisitFlowBrowserBackGuard({ kanteiFirstReadGuide = false }: Props) {
-  const [blockBack, setBlockBack] = useState(false);
+  const [blockBack, setBlockBack] = useState(() =>
+    readFirstVisitFlowBackBlock(kanteiFirstReadGuide),
+  );
 
   useEffect(() => {
-    setBlockBack(
-      kanteiFirstReadGuide ||
-        readFirstVisitOrderGuideFlag() ||
-        readBookshelfKanteiGuideFlag(),
-    );
+    setBlockBack(readFirstVisitFlowBackBlock(kanteiFirstReadGuide));
   }, [kanteiFirstReadGuide]);
 
-  useBlockBrowserBack(blockBack);
-  return null;
+  const { blockedHintOpen, dismissBlockedHint } = useBlockBrowserBack(blockBack);
+
+  return (
+    <BrowserBackBlockedHint open={blockedHintOpen} onDismiss={dismissBlockedHint} />
+  );
 }

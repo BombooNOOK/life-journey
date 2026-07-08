@@ -4,6 +4,7 @@ import { usePathname } from "next/navigation";
 import { useEffect, useState, type ReactNode } from "react";
 
 import { isFirstVisitLoghouseReturnTo } from "@/app/login/loginFlow";
+import { BrowserBackBlockedHint } from "@/components/ui/BrowserBackBlockedHint";
 import { useBlockBrowserBack } from "@/hooks/useBlockBrowserBack";
 import {
   isGoogleOAuthFlowCookieActive,
@@ -17,7 +18,7 @@ type Props = {
   flowIntent?: "login" | "register" | null;
 };
 
-/** 住民登録〜住民票発行中はスワイプ戻りを無効化（/login の Google 戻りも含む） */
+/** 住民登録〜初回導線中はスワイプ戻りを無効化（/login の Google 戻りも含む） */
 export function FirstVisitRegistrationBackGuard({
   children,
   returnTo,
@@ -50,7 +51,12 @@ export function FirstVisitRegistrationBackGuard({
     oauthPending ||
     firstVisitLoginHandoff;
 
-  useBlockBrowserBack(blockBack);
+  const { blockedHintOpen, dismissBlockedHint } = useBlockBrowserBack(blockBack);
 
-  return children ?? null;
+  return (
+    <>
+      {children}
+      <BrowserBackBlockedHint open={blockedHintOpen} onDismiss={dismissBlockedHint} />
+    </>
+  );
 }
