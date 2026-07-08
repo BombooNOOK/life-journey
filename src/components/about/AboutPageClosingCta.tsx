@@ -9,6 +9,7 @@ import {
   heroCtaPrimaryClass,
 } from "@/components/home/heroCtaStyles";
 import { HOME_CLOSING_GROUP_IMAGE } from "@/lib/home/homeClosingSection";
+import { FIRST_VISIT_ROUTES } from "@/lib/onboarding/firstVisitWizard/routes";
 import { useAboutPageCtaAudienceContext } from "@/components/about/AboutPageCtaAudienceProvider";
 
 const BODY_PARAGRAPHS = [
@@ -59,7 +60,7 @@ export function AboutPageClosingCta() {
 
         {showReturningUserCtas ? null : (
           <div className={`mt-6 sm:mt-8 ${heroCtaClosingStackClass}`}>
-            <Link href="/order" className={heroCtaPrimaryClass}>
+            <Link href={FIRST_VISIT_ROUTES.welcome} className={heroCtaPrimaryClass}>
               はじめての方はこちら
             </Link>
             <p className={`mt-3 ${heroCtaClosingMicrocopyClass}`}>

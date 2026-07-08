@@ -75,6 +75,11 @@ export function OwlNavButton({
       window.setTimeout(() => setBusy(false), 1200);
       return;
     }
+    const useReplace = href === "/guide/first" || href.startsWith("/guide/first/");
+    if (useReplace) {
+      router.replace(href);
+      return;
+    }
     router.push(href);
   }
 

@@ -1130,7 +1130,7 @@ export function LoginClient({
               </Link>
             </>
           ) : (
-            <Link href={buildLoginHref("/order")} className={mobileReadable.link}>
+            <Link href={FIRST_VISIT_ROUTES.welcome} className={mobileReadable.link}>
               はじめての方はこちら
             </Link>
           )}

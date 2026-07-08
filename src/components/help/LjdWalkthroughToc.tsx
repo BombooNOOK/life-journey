@@ -11,6 +11,7 @@ import {
   FOREST_GUIDE_STATION_TITLE,
 } from "@/lib/help/forestGuideStation";
 import { LOG_HOUSE_OPEN_LABEL, LOG_HOUSE_SHORT_LABEL } from "@/lib/journal/logHouseLabels";
+import { FIRST_VISIT_ROUTES } from "@/lib/onboarding/firstVisitWizard/routes";
 
 type TocItem = {
   id: string;
@@ -76,7 +77,7 @@ const TOC_ITEMS: TocItem[] = [
           </Link>
           をご覧ください。まずは鑑定を受けて、本棚で結果を読み返してみてください。
         </p>
-        <GuideAppLink href="/order" label="無料鑑定をはじめる" />
+        <GuideAppLink href={FIRST_VISIT_ROUTES.welcome} label="無料鑑定をはじめる" />
       </>
     ),
   },

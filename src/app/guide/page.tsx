@@ -7,6 +7,7 @@ import { PageTitleWithAccent } from "@/components/ui/PageTitleWithAccent";
 import { SoftIllustrationAccent } from "@/components/ui/SoftIllustrationAccent";
 import { APP_DISPLAY_NAME } from "@/lib/branding/appDisplayName";
 import { LOG_HOUSE_BACK_LINK } from "@/lib/journal/logHouseLabels";
+import { FIRST_VISIT_ROUTES } from "@/lib/onboarding/firstVisitWizard/routes";
 
 export const dynamic = "force-static";
 
@@ -75,7 +76,7 @@ export default function GuidePage() {
             <p className="text-xs text-stone-500">
               ヘッダーの「はじめての方」からも同じ画面を開けます（無料鑑定フォームです）。
             </p>
-            <GuideAppLink href="/order" label="無料鑑定をはじめる" />
+            <GuideAppLink href={FIRST_VISIT_ROUTES.welcome} label="無料鑑定をはじめる" />
           </StepCard>
         </li>
 
@@ -154,7 +155,7 @@ export default function GuidePage() {
           無料鑑定 → 本棚で鑑定書を読む → 日記を書く → 振り返り → 製本前確認、の順が基本です。迷ったらログハウスから各機能へ進めます。
         </p>
         <div className="relative z-10">
-          <GuideAppLink href="/order" label="いま無料鑑定からはじめる" />
+          <GuideAppLink href={FIRST_VISIT_ROUTES.welcome} label="いま無料鑑定からはじめる" />
         </div>
       </div>
 

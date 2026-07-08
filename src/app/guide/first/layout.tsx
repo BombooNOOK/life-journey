@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 
 import { FirstVisitRegistrationBackGuard } from "@/components/guide/first-visit/FirstVisitRegistrationBackGuard";
+import { FirstVisitWizardHistoryPin } from "@/components/guide/first-visit/FirstVisitWizardHistoryPin";
 import { TransitionNavigationProvider } from "@/components/ui/TransitionNavigationProvider";
 
 export const metadata: Metadata = {
@@ -12,6 +13,7 @@ export const metadata: Metadata = {
 export default function FirstVisitLayout({ children }: { children: React.ReactNode }) {
   return (
     <FirstVisitRegistrationBackGuard>
+      <FirstVisitWizardHistoryPin />
       <TransitionNavigationProvider>{children}</TransitionNavigationProvider>
     </FirstVisitRegistrationBackGuard>
   );

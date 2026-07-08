@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 import { heroCtaPrimaryClass } from "@/components/home/heroCtaStyles";
+import { FIRST_VISIT_ROUTES } from "@/lib/onboarding/firstVisitWizard/routes";
 
 /** はじめての方へ：動画の直後に置く、やわらかい開始導線 */
 export function HomeQuickStartSection() {
@@ -16,7 +17,7 @@ export function HomeQuickStartSection() {
         まずは、あなたのページをひらく
       </h2>
       <div className="mx-auto mt-4 flex w-full max-w-sm flex-col">
-        <Link href="/order" className={heroCtaPrimaryClass}>
+        <Link href={FIRST_VISIT_ROUTES.welcome} className={heroCtaPrimaryClass}>
           無料鑑定をはじめる
         </Link>
       </div>

@@ -12,6 +12,7 @@ import {
 import { daysInMonth, toIsoDateString } from "@/lib/order/birthDate";
 import { romanizeFromKanaParts } from "@/lib/numerology/kanaToRomaji";
 import { OrderFormProfileNotice } from "@/components/orders/OrderFormProfileNotice";
+import { OrderPageFirstVisitGate } from "@/components/orders/OrderPageFirstVisitGate";
 import { FirstVisitFlowBrowserBackGuard } from "@/components/orders/FirstVisitFlowBrowserBackGuard";
 import { OwlLoadingPanel } from "@/components/ui/OwlLoadingPanel";
 import {
@@ -465,7 +466,9 @@ function OrderPageContent() {
 export default function OrderPage() {
   return (
     <Suspense fallback={<OwlSuspenseFallback label="鑑定フォームを読み込んでいます…" />}>
-      <OrderPageContent />
+      <OrderPageFirstVisitGate>
+        <OrderPageContent />
+      </OrderPageFirstVisitGate>
     </Suspense>
   );
 }

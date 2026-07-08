@@ -13,6 +13,7 @@ import {
   LOG_HOUSE_BACK_TO_LABEL,
   LOG_HOUSE_LOADING_LABEL,
 } from "@/lib/journal/logHouseLabels";
+import { FIRST_VISIT_ROUTES } from "@/lib/onboarding/firstVisitWizard/routes";
 
 const JOURNAL_LOGIN_HREF = buildLoginHref("/journal");
 
@@ -77,7 +78,7 @@ export function AboutPageQuickStartCta() {
         まずは、あなたのページをひらく
       </h2>
       <div className="mx-auto mt-4 flex w-full max-w-sm flex-col gap-3">
-        <Link href="/order" className={heroCtaPrimaryClass}>
+        <Link href={FIRST_VISIT_ROUTES.welcome} className={heroCtaPrimaryClass}>
           無料鑑定をはじめる
         </Link>
         <Link href={JOURNAL_LOGIN_HREF} className={heroCtaSecondaryClass}>
@@ -88,7 +89,7 @@ export function AboutPageQuickStartCta() {
         お名前と生年月日だけで、Life Journey Diaryをお試しできます。
       </p>
       <p className="lj-read-desc mt-2 text-center text-stone-600">
-        <Link href="/order" className="text-emerald-900 hover:underline">
+        <Link href={FIRST_VISIT_ROUTES.welcome} className="text-emerald-900 hover:underline">
           はじめての方はこちら
         </Link>
       </p>

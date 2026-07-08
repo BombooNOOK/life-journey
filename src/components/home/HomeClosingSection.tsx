@@ -7,6 +7,7 @@ import {
   heroCtaPrimaryClass,
 } from "@/components/home/heroCtaStyles";
 import { HOME_CLOSING_GROUP_IMAGE } from "@/lib/home/homeClosingSection";
+import { FIRST_VISIT_ROUTES } from "@/lib/onboarding/firstVisitWizard/routes";
 
 const BODY_PARAGRAPHS = [
   "Life Journey Diaryは、日々のきもちや出来事を、スマホから気軽に残せる記録ノートです。",
@@ -36,7 +37,7 @@ export function HomeClosingSection() {
         </div>
 
         <div className={`mt-6 sm:mt-8 ${heroCtaClosingStackClass}`}>
-          <Link href="/order" className={heroCtaPrimaryClass}>
+          <Link href={FIRST_VISIT_ROUTES.welcome} className={heroCtaPrimaryClass}>
             はじめての方はこちら
           </Link>
           <p className={`mt-3 ${heroCtaClosingMicrocopyClass}`}>

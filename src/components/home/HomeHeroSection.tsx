@@ -2,6 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 
 import { ReadingFontSizeControl } from "@/components/reading/ReadingFontSizeControl";
+import { FIRST_VISIT_ROUTES } from "@/lib/onboarding/firstVisitWizard/routes";
 import { HomeHeroSubNavLink } from "@/components/home/HomeHeroSubNavLink";
 import {
   heroCtaButtonsGroupClass,
@@ -94,7 +95,7 @@ export function HomeHeroSection() {
           </div>
           <div className={heroCtaStackClass}>
             <div className={heroCtaButtonsGroupClass}>
-              <Link href="/order" className={heroCtaPrimaryClass}>
+              <Link href={FIRST_VISIT_ROUTES.welcome} className={heroCtaPrimaryClass}>
                 はじめての方はこちら
               </Link>
               <HomeHeroSubNavLink />

@@ -34,7 +34,7 @@ export function FirstVisitGuidePanel({ state, profileId, companionWritingHref }:
         <p className="mt-2 text-sm leading-6 text-stone-600">{LOG_HOUSE_TAGLINE}</p>
         <div className="mt-4 flex flex-wrap gap-2">
           <Link
-            href={`/order?profile=${encodeURIComponent(profileId)}`}
+            href={FIRST_VISIT_ROUTES.kanteiReady}
             className="inline-flex min-h-[44px] items-center justify-center rounded-lg bg-emerald-800 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-900"
           >
             無料鑑定をはじめる

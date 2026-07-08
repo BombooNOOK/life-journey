@@ -6,7 +6,8 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react
 
 const HINT_VISIBLE_MS = 4000;
 /** popstate 直後の pathname 更新では stay を上書きしない */
-const POPSTATE_GUARD_MS = 500;
+const POPSTATE_GUARD_MS = 1200;
+const POPSTATE_CHAIN_MS = 350;
 
 function currentAppPath(): string {
   if (typeof window === "undefined") return "";
@@ -16,6 +17,7 @@ function currentAppPath(): string {
 function restoreStayPath(stay: string): void {
   try {
     window.history.replaceState({ ljdBrowserBackTrap: "anchor" }, "", stay);
+    window.history.pushState({ ljdBrowserBackTrap: true }, "", stay);
     window.history.pushState({ ljdBrowserBackTrap: true }, "", stay);
   } catch {
     /* noop */
@@ -41,12 +43,6 @@ export function useBlockBrowserBack(enabled = true): {
 
   enabledRef.current = enabled;
 
-  useLayoutEffect(() => {
-    if (!enabled) return;
-    if (Date.now() - lastPopstateAtRef.current < POPSTATE_GUARD_MS) return;
-    stayPathRef.current = currentAppPath();
-  }, [enabled, pathname]);
-
   const dismissBlockedHint = useCallback(() => {
     setBlockedHintOpen(false);
     if (hintTimerRef.current != null) {
@@ -60,10 +56,12 @@ export function useBlockBrowserBack(enabled = true): {
       dismissBlockedHint();
       return;
     }
+    if (Date.now() - lastPopstateAtRef.current < POPSTATE_GUARD_MS) return;
 
-    stayPathRef.current = currentAppPath();
-    restoreStayPath(stayPathRef.current);
-  }, [enabled, dismissBlockedHint]);
+    const stay = currentAppPath();
+    stayPathRef.current = stay;
+    restoreStayPath(stay);
+  }, [enabled, pathname, dismissBlockedHint]);
 
   useEffect(() => {
     if (!enabled) return;
@@ -86,27 +84,31 @@ export function useBlockBrowserBack(enabled = true): {
       lastPopstateAtRef.current = Date.now();
 
       const stay = stayPathRef.current || currentAppPath();
+      const route = stay.split("#")[0] ?? stay;
+      const popped = currentAppPath();
 
       restoreStayPath(stay);
 
-      const route = stay.split("#")[0] ?? stay;
-      try {
-        router.replace(route);
-      } catch {
-        /* noop */
+      if (popped !== stay) {
+        try {
+          router.replace(route);
+        } catch {
+          /* noop */
+        }
       }
 
       showBlockedHint();
 
       window.setTimeout(() => {
         handlingPopstateRef.current = false;
-      }, 0);
+      }, POPSTATE_CHAIN_MS);
     };
 
     const onPageShow = (event: PageTransitionEvent) => {
       if (!enabledRef.current || !event.persisted) return;
-      stayPathRef.current = currentAppPath();
-      restoreStayPath(stayPathRef.current);
+      const stay = currentAppPath();
+      stayPathRef.current = stay;
+      restoreStayPath(stay);
     };
 
     window.addEventListener("popstate", onPopState, true);
@@ -123,11 +125,16 @@ export function useBlockBrowserBack(enabled = true): {
   return { blockedHintOpen, dismissBlockedHint };
 }
 
-/** 住民登録〜住民票発行のあいだ、履歴の先頭を固定する */
-export function pinFirstVisitRegistrationHistory(): void {
+/** 初回導線の各ステップで履歴スタックを現在ページに固定する */
+export function pinFirstVisitWizardHistory(): void {
   if (typeof window === "undefined") return;
   const stay = currentAppPath();
-  window.history.replaceState({ ljdFirstVisitRegistrationPin: true }, "", stay);
+  window.history.replaceState({ ljdFirstVisitWizardPin: true }, "", stay);
   window.history.pushState({ ljdBrowserBackTrap: true }, "", stay);
   window.history.pushState({ ljdBrowserBackTrap: true }, "", stay);
+}
+
+/** 住民登録〜住民票発行のあいだ、履歴の先頭を固定する */
+export function pinFirstVisitRegistrationHistory(): void {
+  pinFirstVisitWizardHistory();
 }

@@ -1,5 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 
+import { FIRST_VISIT_ENTRY_HREF } from "@/lib/onboarding/firstVisitWizard/entry";
+
 function isProtectedPath(pathname: string) {
   return (
     pathname === "/order" ||
@@ -41,6 +43,14 @@ export function middleware(request: NextRequest) {
   const loggedIn = request.cookies.get("lj_logged_in")?.value === "1";
   if (loggedIn) {
     return NextResponse.next();
+  }
+
+  /** 未ログインの /order 直アクセスは旧フロー回避のため、はじめての方導線へ */
+  if (pathname === "/order" || pathname.startsWith("/order/")) {
+    const welcomeUrl = request.nextUrl.clone();
+    welcomeUrl.pathname = FIRST_VISIT_ENTRY_HREF;
+    welcomeUrl.search = "";
+    return NextResponse.redirect(welcomeUrl);
   }
 
   /** `new URL("/login", request.url)` だと Next が host を `localhost` に正規化することがある（127.0.0.1 利用時に Cookie が効かない） */
