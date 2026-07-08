@@ -4,6 +4,8 @@ import Image from "next/image";
 import { useLayoutEffect, useRef, useState } from "react";
 
 import { FirstVisitWizardLink } from "@/components/guide/first-visit/FirstVisitWizardLink";
+import { FirstVisitResumeRedirect } from "@/components/guide/first-visit/FirstVisitResumeRedirect";
+import { FIRST_VISIT_PAUSE_LINK_HREF } from "@/lib/onboarding/firstVisitWizard/backBlockCopy";
 
 import { FIRST_VISIT_ROUTES } from "@/lib/onboarding/firstVisitWizard/routes";
 import {
@@ -184,6 +186,8 @@ export function FirstVisitWelcomePage() {
         はじめての方へ — {firstVisitWelcomeCopyFor(viewport ?? "mobile").heading}
       </h1>
 
+      <FirstVisitResumeRedirect />
+
       <div ref={stageRef} className="absolute inset-0">
         {viewport && bgSrc && objectPosition ? (
           <>
@@ -205,14 +209,25 @@ export function FirstVisitWelcomePage() {
         ) : null}
       </div>
 
-      {/* 看板テキストは固定サイズのため文字サイズ帯は非表示。地図上に半透明で次へ */}
+      {/* 看板テキストは固定サイズのため文字サイズ帯は非表示。地図上に小さめの戻る／次へ */}
       <div className="pointer-events-none absolute inset-x-0 bottom-0 z-30 flex justify-center px-4 pb-[max(0.875rem,env(safe-area-inset-bottom))] pt-10">
-        <FirstVisitWizardLink
-          href={FIRST_VISIT_ROUTES.about}
-          className="pointer-events-auto inline-flex min-h-[48px] w-full max-w-sm items-center justify-center rounded-xl border border-emerald-900/15 bg-emerald-800/82 px-5 py-3 text-base font-medium text-white shadow-[0_8px_28px_-8px_rgba(24,83,53,0.45)] backdrop-blur-[2px] transition hover:bg-emerald-900/88 active:bg-emerald-900/92"
+        <nav
+          className="pointer-events-auto flex w-full max-w-sm gap-2"
+          aria-label="案内の進行"
         >
-          {FIRST_VISIT_WELCOME_COPY.nextLabel}
-        </FirstVisitWizardLink>
+          <FirstVisitWizardLink
+            href={FIRST_VISIT_PAUSE_LINK_HREF}
+            className="inline-flex min-h-[42px] flex-1 items-center justify-center rounded-xl border border-white/30 bg-black/45 px-3 py-2 text-sm font-medium text-white shadow-[0_8px_28px_-8px_rgba(0,0,0,0.35)] backdrop-blur-[2px] transition hover:bg-black/55 active:bg-black/65"
+          >
+            {FIRST_VISIT_WELCOME_COPY.backLabel}
+          </FirstVisitWizardLink>
+          <FirstVisitWizardLink
+            href={FIRST_VISIT_ROUTES.about}
+            className="inline-flex min-h-[42px] flex-1 items-center justify-center rounded-xl border border-emerald-900/15 bg-emerald-800/82 px-3 py-2 text-sm font-medium text-white shadow-[0_8px_28px_-8px_rgba(24,83,53,0.45)] backdrop-blur-[2px] transition hover:bg-emerald-900/88 active:bg-emerald-900/92"
+          >
+            {FIRST_VISIT_WELCOME_COPY.nextLabel}
+          </FirstVisitWizardLink>
+        </nav>
       </div>
     </section>
   );

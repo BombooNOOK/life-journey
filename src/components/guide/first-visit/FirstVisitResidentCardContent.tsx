@@ -2,9 +2,9 @@
 
 import { ForestResidentCard } from "@/components/guide/ForestResidentCard";
 import { FirstVisitGuideCardPageLayout } from "@/components/guide/first-visit/FirstVisitGuideCardPageLayout";
+import { FirstVisitMilestoneActions } from "@/components/guide/first-visit/FirstVisitMilestoneActions";
 import {
   companionWritingGuideBodyClass,
-  companionWritingGuidePrimaryButtonClass,
   companionWritingGuideTitleClass,
 } from "@/components/journal/companion-writing/companionWritingGuideStyles";
 import type { ForestResidentCardData } from "@/lib/forestResident/forestResidentNumber";
@@ -51,9 +51,10 @@ export function FirstVisitResidentCardContent({ card, showEmailNote, onNext }: P
           {FIRST_VISIT_RESIDENT_CARD_GROWTH_HINT}
         </p>
 
-        <button type="button" className={companionWritingGuidePrimaryButtonClass} onClick={onNext}>
-          {FIRST_VISIT_RESIDENT_CARD_NEXT_BUTTON}
-        </button>
+        <FirstVisitMilestoneActions
+          nextLabel={FIRST_VISIT_RESIDENT_CARD_NEXT_BUTTON}
+          onNext={onNext}
+        />
       </div>
     </FirstVisitGuideCardPageLayout>
   );

@@ -1,6 +1,15 @@
 import { FIRST_VISIT_ROUTES } from "@/lib/onboarding/firstVisitWizard/routes";
 
-/** スワイプ戻りを許可する初回導線（戻る UI がなく、戻っても不具合がない箇所） */
+/** 入力・送信の途中では戻る UI を出さない初回導線 */
+export const FIRST_VISIT_NO_BACK_UI_PATHS = new Set<string>([
+  FIRST_VISIT_ROUTES.register,
+  "/order",
+]);
+
+export function isFirstVisitNoBackUiPath(pathname: string): boolean {
+  return FIRST_VISIT_NO_BACK_UI_PATHS.has(pathname);
+}
+
 const SWIPE_BACK_ALLOWED_PATHS = new Set<string>([
   FIRST_VISIT_ROUTES.welcome,
   FIRST_VISIT_ROUTES.about,

@@ -31,6 +31,7 @@ export const FIRST_VISIT_WELCOME_COPY = {
     "それでは、森の中へ進んでみましょう。",
   ],
   nextLabel: "次へ",
+  backLabel: "もどる",
 } as const;
 
 /** モバイル object-cover 時のフォーカス（下部看板が見えるようやや下寄せ） */

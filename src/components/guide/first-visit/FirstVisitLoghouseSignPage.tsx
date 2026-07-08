@@ -29,8 +29,14 @@ export function FirstVisitLoghouseSignPage() {
 
   const handleAction = useCallback(
     (action: FirstVisitGuideCardAction, cardId: string) => {
-      if (action !== "next" || cardId !== "loghouse-sign") return;
-      replace(FIRST_VISIT_ROUTES.loghouse);
+      if (cardId !== "loghouse-sign") return;
+      if (action === "home") {
+        replace("/");
+        return;
+      }
+      if (action === "next") {
+        replace(FIRST_VISIT_ROUTES.loghouse);
+      }
     },
     [replace],
   );
@@ -46,13 +52,7 @@ export function FirstVisitLoghouseSignPage() {
   }
 
   return (
-    <FirstVisitGuideCardPageLayout
-      stepLabel="ログハウスへ"
-      ariaLabel="ログハウス建築の案内"
-      backHref={FIRST_VISIT_ROUTES.residentCard}
-      backLabel="住民票カードへ戻る"
-      showPauseLink
-    >
+    <FirstVisitGuideCardPageLayout stepLabel="ログハウスへ" ariaLabel="ログハウス建築の案内">
       <FirstVisitGuideCardPanel card={FIRST_VISIT_LOGHOUSE_SIGN_CARD} onAction={handleAction} />
     </FirstVisitGuideCardPageLayout>
   );

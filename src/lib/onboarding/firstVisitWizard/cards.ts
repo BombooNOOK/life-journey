@@ -17,6 +17,7 @@ import {
 } from "@/lib/onboarding/firstVisitWizard/loghouseCompleteCopy";
 import {
   FIRST_VISIT_LOGHOUSE_SIGN_BUTTON,
+  FIRST_VISIT_LOGHOUSE_SIGN_HOME_BUTTON,
   FIRST_VISIT_LOGHOUSE_SIGN_LABEL,
 } from "@/lib/onboarding/firstVisitWizard/residentCardCopy";
 import {
@@ -30,11 +31,6 @@ import {
   BOOKSHELF_KANTEI_GUIDE_CARD1_PRIMARY_BUTTON,
   BOOKSHELF_KANTEI_GUIDE_CARD1_SECONDARY_BUTTON,
   BOOKSHELF_KANTEI_GUIDE_CARD1_TITLE,
-  BOOKSHELF_KANTEI_GUIDE_CARD2_BODY,
-  BOOKSHELF_KANTEI_GUIDE_CARD2_ILLUSTRATION_SRC,
-  BOOKSHELF_KANTEI_GUIDE_CARD2_PRIMARY_BUTTON,
-  BOOKSHELF_KANTEI_GUIDE_CARD2_SECONDARY_BUTTON,
-  BOOKSHELF_KANTEI_GUIDE_CARD2_TITLE,
 } from "@/lib/onboarding/bookshelfKanteiGuideCopy";
 import type { ForestDirectionSignFacing } from "@/lib/onboarding/forestDirectionSignLayout";
 import {
@@ -145,7 +141,10 @@ export const FIRST_VISIT_LOGHOUSE_SIGN_CARD: FirstVisitGuideCard = {
   id: "loghouse-sign",
   owlCommentLabel: FIRST_VISIT_LOGHOUSE_SIGN_LABEL,
   bare: true,
-  buttons: [{ label: FIRST_VISIT_LOGHOUSE_SIGN_BUTTON, action: "next", variant: "primary" }],
+  buttons: [
+    { label: FIRST_VISIT_LOGHOUSE_SIGN_HOME_BUTTON, action: "home", variant: "secondary" },
+    { label: FIRST_VISIT_LOGHOUSE_SIGN_BUTTON, action: "next", variant: "primary" },
+  ],
 };
 
 /** 第5幕：ログハウス建築 */
@@ -209,26 +208,7 @@ export const BOOKSHELF_KANTEI_COMPLETE_GUIDE_CARDS: FirstVisitGuideCard[] = [
       },
       {
         label: BOOKSHELF_KANTEI_GUIDE_CARD1_SECONDARY_BUTTON,
-        action: "next",
-        variant: "secondary",
-      },
-    ],
-  },
-  {
-    id: "bookshelf-kantei-journal",
-    title: BOOKSHELF_KANTEI_GUIDE_CARD2_TITLE,
-    body: BOOKSHELF_KANTEI_GUIDE_CARD2_BODY,
-    illustrationSrc: BOOKSHELF_KANTEI_GUIDE_CARD2_ILLUSTRATION_SRC,
-    illustrationLarge: true,
-    buttons: [
-      {
-        label: BOOKSHELF_KANTEI_GUIDE_CARD2_PRIMARY_BUTTON,
-        action: "companion_journal",
-        variant: "primary",
-      },
-      {
-        label: BOOKSHELF_KANTEI_GUIDE_CARD2_SECONDARY_BUTTON,
-        action: "stay_bookshelf",
+        action: "home",
         variant: "secondary",
       },
     ],

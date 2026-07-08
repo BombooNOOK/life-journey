@@ -1,5 +1,6 @@
 import Image from "next/image";
 
+import { CharacterFaceIcon } from "@/components/home/CharacterFaceIcon";
 import { FirstVisitWizardNav } from "@/components/guide/first-visit/FirstVisitWizardNav";
 import { FirstVisitWizardPageHeader } from "@/components/guide/first-visit/FirstVisitWizardPageHeader";
 import {
@@ -77,9 +78,12 @@ export function FirstVisitOwlPage() {
             小さな手がかりとして使います。
           </p>
 
-          <p className="border-l-[3px] border-stone-500 pl-3.5 text-[0.95em] italic leading-relaxed text-stone-500 sm:pl-4">
-            {FIRST_VISIT_OWL_QUOTE}
-          </p>
+          <div className="flex items-start gap-2.5 sm:gap-3">
+            <CharacterFaceIcon name="character-hedgehog-face" />
+            <p className="min-w-0 flex-1 text-[0.95em] italic leading-relaxed text-stone-500">
+              {FIRST_VISIT_OWL_QUOTE}
+            </p>
+          </div>
 
           <p>
             そんなふうに気づくことで、

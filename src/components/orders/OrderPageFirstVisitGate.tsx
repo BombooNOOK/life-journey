@@ -4,6 +4,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState, type ReactNode } from "react";
 
 import { OwlLoadingPanel } from "@/components/ui/OwlLoadingPanel";
+import { markFirstVisitProgressFromPathname } from "@/lib/onboarding/firstVisitWizard/progress";
 import { FIRST_VISIT_ROUTES } from "@/lib/onboarding/firstVisitWizard/routes";
 import { readFirstVisitOrderGuideFlag } from "@/lib/onboarding/firstVisitWizard/session";
 
@@ -20,6 +21,10 @@ export function OrderPageFirstVisitGate({ children }: Props) {
   const searchParams = useSearchParams();
   const profileId = searchParams.get("profile")?.trim() ?? "";
   const [allowed, setAllowed] = useState(() => profileId.length > 0 || readFirstVisitOrderGuideFlag());
+
+  useEffect(() => {
+    markFirstVisitProgressFromPathname("/order");
+  }, []);
 
   useEffect(() => {
     if (profileId.length > 0 || readFirstVisitOrderGuideFlag()) {

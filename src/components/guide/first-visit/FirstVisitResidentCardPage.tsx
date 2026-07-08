@@ -7,6 +7,7 @@ import { buildLoginHref } from "@/app/login/loginFlow";
 import { isLjLoggedInOnClient } from "@/lib/auth/clientCookies";
 import { useFirebaseAuth } from "@/components/auth/FirebaseAuthProvider";
 import { FirstVisitResidentCardContent } from "@/components/guide/first-visit/FirstVisitResidentCardContent";
+import { FirstVisitResidentCardVideoStage } from "@/components/guide/first-visit/FirstVisitResidentCardVideoStage";
 import { useTransitionNavigation } from "@/components/ui/TransitionNavigationProvider";
 import { OwlLoadingPanel } from "@/components/ui/OwlLoadingPanel";
 import { pinFirstVisitRegistrationHistory } from "@/hooks/useBlockBrowserBack";
@@ -19,11 +20,15 @@ import {
 } from "@/lib/onboarding/firstVisitWizard/loadingCopy";
 import {
   readFirstVisitFromRegisterFlag,
+  readFirstVisitResidentCardVideoDoneFlag,
   readFirstVisitWelcomeEmailSentFlag,
   setFirstVisitFromRegisterFlag,
+  setFirstVisitResidentCardVideoDoneFlag,
 } from "@/lib/onboarding/firstVisitWizard/session";
 
 const AUTH_SETTLE_TIMEOUT_MS = 20_000;
+
+type ViewPhase = "video" | "card";
 
 function hasRegisterHandoff(): boolean {
   return readFirstVisitFromRegisterFlag() || isLjLoggedInOnClient();
@@ -38,6 +43,9 @@ export function FirstVisitResidentCardPage() {
   const [card, setCard] = useState<ForestResidentCardData | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [authSettling, setAuthSettling] = useState(() => hasRegisterHandoff() && !isLoggedIn);
+  const [viewPhase, setViewPhase] = useState<ViewPhase>(() =>
+    readFirstVisitResidentCardVideoDoneFlag() ? "card" : "video",
+  );
 
   useEffect(() => {
     if (hasRegisterHandoff()) {
@@ -118,11 +126,16 @@ export function FirstVisitResidentCardPage() {
     };
   }, [authLoading, isLoggedIn]);
 
+  const handleVideoComplete = useCallback(() => {
+    setFirstVisitResidentCardVideoDoneFlag();
+    setViewPhase("card");
+  }, []);
+
   const handleNext = useCallback(() => {
     replace(FIRST_VISIT_ROUTES.loghouseSign);
   }, [replace]);
 
-  if (authLoading || authSettling || !isLoggedIn || (!card && !loadError)) {
+  if (authLoading || authSettling || !isLoggedIn) {
     return (
       <OwlLoadingPanel
         layout="page"
@@ -132,9 +145,17 @@ export function FirstVisitResidentCardPage() {
     );
   }
 
+  if (viewPhase === "video") {
+    return <FirstVisitResidentCardVideoStage onComplete={handleVideoComplete} />;
+  }
+
   if (loadError || !card) {
     return (
-      <OwlLoadingPanel layout="page" label={loadError ?? "住民票カードを読み込めませんでした。"} />
+      <OwlLoadingPanel
+        layout="page"
+        label={loadError ?? FIRST_VISIT_RESIDENT_CARD_LOADING_LABEL}
+        hint={loadError ? undefined : FIRST_VISIT_RESIDENT_CARD_LOADING_HINT}
+      />
     );
   }
 

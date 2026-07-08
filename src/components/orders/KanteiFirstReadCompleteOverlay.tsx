@@ -16,6 +16,7 @@ import {
   KANTEI_FIRST_READ_COMPLETE_OVERLAY_PRIMARY_BUTTON,
   KANTEI_FIRST_READ_COMPLETE_OVERLAY_SECONDARY_BUTTON,
 } from "@/lib/onboarding/bookshelfKanteiGuideCopy";
+import { FIRST_VISIT_MILESTONE_HOME_BUTTON } from "@/lib/onboarding/firstVisitWizard/milestoneCopy";
 import { calendarDayKeyInJapan, journalWithCompanionPath } from "@/lib/journal/journalNav";
 import { clearBookshelfKanteiGuideFlag } from "@/lib/onboarding/firstVisitWizard/session";
 import { markKanteiFirstReadComplete } from "@/lib/pdf/kanteiFirstReadGuide";
@@ -61,7 +62,7 @@ export function KanteiFirstReadCompleteOverlay({
 
   const handleStay = () => {
     finish();
-    router.push(backHref);
+    router.replace("/");
   };
 
   return (
@@ -94,7 +95,7 @@ export function KanteiFirstReadCompleteOverlay({
                 {KANTEI_FIRST_READ_COMPLETE_OVERLAY_PRIMARY_BUTTON}
               </button>
               <button type="button" className={companionWritingGuideSecondaryButtonClass} onClick={handleStay}>
-                {KANTEI_FIRST_READ_COMPLETE_OVERLAY_SECONDARY_BUTTON}
+                {FIRST_VISIT_MILESTONE_HOME_BUTTON}
               </button>
             </div>
           </FirstVisitGuideCardShell>

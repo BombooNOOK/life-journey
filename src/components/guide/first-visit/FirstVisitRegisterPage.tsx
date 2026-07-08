@@ -73,13 +73,7 @@ export function FirstVisitRegisterPage() {
   }
 
   return (
-    <FirstVisitGuideCardPageLayout
-      stepLabel="森の住民登録"
-      ariaLabel="森の住民登録"
-      backHref={FIRST_VISIT_ROUTES.guideStation}
-      backLabel="森の案内所へ戻る"
-      showPauseLink
-    >
+    <FirstVisitGuideCardPageLayout stepLabel="森の住民登録" ariaLabel="森の住民登録">
       {showIntroOverlay ? (
         <FirstVisitResidentRegistrationIntroOverlay onNext={() => setShowIntroOverlay(false)} />
       ) : (

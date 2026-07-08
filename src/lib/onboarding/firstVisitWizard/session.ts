@@ -3,6 +3,7 @@ const BOOKSHELF_KANTEI_GUIDE_FLAG = "ljd:firstGuide:bookshelfKanteiGuide";
 const FROM_REGISTER_FLAG = "ljd:firstGuide:fromRegister";
 const FROM_REGISTER_COOKIE = "lj_first_visit_from_register";
 const WELCOME_EMAIL_SENT_FLAG = "ljd:firstGuide:welcomeEmailSent";
+const RESIDENT_CARD_VIDEO_DONE_FLAG = "ljd:firstGuide:residentCardVideoDone";
 const FROM_REGISTER_COOKIE_MAX_AGE_SECONDS = 120;
 
 function canUseSessionStorage(): boolean {
@@ -103,4 +104,19 @@ export function setFirstVisitWelcomeEmailSentFlag(sent: boolean): void {
 export function clearFirstVisitWelcomeEmailSentFlag(): void {
   if (!canUseSessionStorage()) return;
   window.sessionStorage.removeItem(WELCOME_EMAIL_SENT_FLAG);
+}
+
+export function readFirstVisitResidentCardVideoDoneFlag(): boolean {
+  if (!canUseSessionStorage()) return false;
+  return window.sessionStorage.getItem(RESIDENT_CARD_VIDEO_DONE_FLAG) === "1";
+}
+
+export function setFirstVisitResidentCardVideoDoneFlag(): void {
+  if (!canUseSessionStorage()) return;
+  window.sessionStorage.setItem(RESIDENT_CARD_VIDEO_DONE_FLAG, "1");
+}
+
+export function clearFirstVisitResidentCardVideoDoneFlag(): void {
+  if (!canUseSessionStorage()) return;
+  window.sessionStorage.removeItem(RESIDENT_CARD_VIDEO_DONE_FLAG);
 }

@@ -25,7 +25,6 @@ type Props = {
 export function BookshelfKanteiCompleteGuide({ activeProfileId, kanteiOrderId }: Props) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
-  const [index, setIndex] = useState(0);
 
   useEffect(() => {
     setOpen(readBookshelfKanteiGuideFlag());
@@ -44,12 +43,11 @@ export function BookshelfKanteiCompleteGuide({ activeProfileId, kanteiOrderId }:
         return;
       }
 
-      if (action === "next" && cardId === BOOKSHELF_KANTEI_COMPLETE_GUIDE_CARDS[0]?.id) {
-        setIndex(1);
+      if (action === "home") {
+        finishGuide();
+        router.replace("/");
         return;
       }
-
-      finishGuide();
 
       if (action === "companion_journal") {
         const href = journalWithCompanionPath(
@@ -71,14 +69,14 @@ export function BookshelfKanteiCompleteGuide({ activeProfileId, kanteiOrderId }:
 
   if (!open) return null;
 
-  const card = BOOKSHELF_KANTEI_COMPLETE_GUIDE_CARDS[index];
+  const card = BOOKSHELF_KANTEI_COMPLETE_GUIDE_CARDS[0];
   if (!card) return null;
 
   return (
     <FirstVisitGuideStage ariaLabel={card.title ?? "鑑定書のご案内"}>
       <FirstVisitGuideCardStack
         cards={BOOKSHELF_KANTEI_COMPLETE_GUIDE_CARDS}
-        index={index}
+        index={0}
         onAction={handleAction}
       />
     </FirstVisitGuideStage>
