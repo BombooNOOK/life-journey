@@ -79,6 +79,15 @@ export function setFirstVisitFromRegisterFlag(): void {
   writeFromRegisterCookie();
 }
 
+/** 登録完了直後：住民票発行演出を必ず最初から */
+export function beginFirstVisitRegisterHandoff(): void {
+  if (canUseSessionStorage()) {
+    window.sessionStorage.setItem(FROM_REGISTER_FLAG, "1");
+    window.sessionStorage.removeItem(RESIDENT_CARD_VIDEO_DONE_FLAG);
+  }
+  writeFromRegisterCookie();
+}
+
 export function clearFirstVisitFromRegisterFlag(): void {
   if (canUseSessionStorage()) {
     window.sessionStorage.removeItem(FROM_REGISTER_FLAG);

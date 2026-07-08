@@ -70,7 +70,7 @@ import {
   FIRST_VISIT_RESIDENT_CARD_LOADING_HINT,
   FIRST_VISIT_RESIDENT_CARD_LOADING_LABEL,
 } from "@/lib/onboarding/firstVisitWizard/loadingCopy";
-import { setFirstVisitFromRegisterFlag, readFirstVisitFromRegisterFlag, setFirstVisitWelcomeEmailSentFlag } from "@/lib/onboarding/firstVisitWizard/session";
+import { readFirstVisitFromRegisterFlag, setFirstVisitWelcomeEmailSentFlag, beginFirstVisitRegisterHandoff } from "@/lib/onboarding/firstVisitWizard/session";
 
 const OAUTH_LOGIN_FAILURE_TIMEOUT_MS = 30_000;
 const FIRST_VISIT_POST_REGISTER_SETTLE_MS = 400;
@@ -305,7 +305,7 @@ export function LoginClient({
     async (welcomeEmailSent: boolean) => {
       registerNavLock.current = true;
       setFirstVisitWelcomeEmailSentFlag(welcomeEmailSent);
-      setFirstVisitFromRegisterFlag();
+      beginFirstVisitRegisterHandoff();
       const dest = firstVisitPostRegisterDestination();
       if (browserWantsFullPagePostLoginNavigation()) {
         await new Promise((resolve) => setTimeout(resolve, FIRST_VISIT_POST_REGISTER_SETTLE_MS));
@@ -378,7 +378,7 @@ export function LoginClient({
         credentials: "same-origin",
       }).catch(() => {});
       if (input.isNewGoogleUser && isFirstVisitLoghouseReturnTo(returnTo)) {
-        setFirstVisitFromRegisterFlag();
+        beginFirstVisitRegisterHandoff();
         setFirstVisitWelcomeEmailSentFlag(false);
       }
       const destination =
@@ -489,9 +489,6 @@ export function LoginClient({
     }
     googleSignInLock.current = true;
     setBusyGoogle(true);
-    if (isFirstVisitRegisterFlow) {
-      setFirstVisitFromRegisterFlag();
-    }
     try {
       setError(null);
       setNotice(null);
@@ -590,9 +587,6 @@ export function LoginClient({
     const a = auth();
     if (!a) return;
     setBusyEmail(true);
-    if (mode === "register" && isFirstVisitRegisterFlow) {
-      setFirstVisitFromRegisterFlag();
-    }
     try {
       let cred;
       if (mode === "register") {
@@ -600,7 +594,7 @@ export function LoginClient({
         const isFirstVisitRegister = isFirstVisitRegisterFlow || isFirstVisitEmbedded;
         if (isFirstVisitRegister) {
           registerNavLock.current = true;
-          setFirstVisitFromRegisterFlag();
+          beginFirstVisitRegisterHandoff();
           flushSync(() => setFullPagePostLoginPending(true));
         }
         syncLjAuthClientCookies({ email: cred.user.email ?? null });
@@ -756,7 +750,7 @@ export function LoginClient({
         variant={isFirstVisitLoghouseReturnTo(returnTo) ? "firstVisitResident" : "default"}
         onGoMyPage={() => {
           if (isFirstVisitLoghouseReturnTo(returnTo)) {
-            setFirstVisitFromRegisterFlag();
+            beginFirstVisitRegisterHandoff();
           }
           if (browserWantsFullPagePostLoginNavigation()) {
             window.location.assign(postRegisterDestination);

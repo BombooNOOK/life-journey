@@ -54,6 +54,12 @@ export function FirstVisitResidentCardPage() {
   }, []);
 
   useEffect(() => {
+    if (readFirstVisitFromRegisterFlag() && !readFirstVisitResidentCardVideoDoneFlag()) {
+      setViewPhase("video");
+    }
+  }, []);
+
+  useEffect(() => {
     if (isLoggedIn) {
       setAuthSettling(false);
       return;

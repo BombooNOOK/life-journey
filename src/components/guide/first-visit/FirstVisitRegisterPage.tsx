@@ -79,7 +79,7 @@ export function FirstVisitRegisterPage() {
       ) : (
         <FirstVisitGuideCardShell bareOnMobile>
           <LoginClient
-              returnToRaw={FIRST_VISIT_ROUTES.loghouse}
+              returnToRaw={FIRST_VISIT_ROUTES.residentCard}
               flowIntent="register"
               appearance="firstVisitEmbedded"
           />
