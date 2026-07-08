@@ -28,6 +28,7 @@ import {
   openKanteiPdfDocument,
   resolveKanteiPdfNamedDestination,
 } from "@/lib/pdf/loadKanteiPdfJs";
+import { clearBookshelfKanteiGuideFlag } from "@/lib/onboarding/firstVisitWizard/session";
 
 const PDF_FETCH_TIMEOUT_MS = 310_000;
 const LOAD_HINT_MS = 60_000;
@@ -95,6 +96,11 @@ export function KanteiPdfReader({
   activeProfileId,
 }: Props) {
   const router = useRouter();
+
+  useEffect(() => {
+    clearBookshelfKanteiGuideFlag();
+  }, []);
+
   const restrictedFirstRead = guideMode != null;
   const isCompact = useCompactReader();
   const touchStartRef = useRef<{ x: number; y: number; pointerId: number } | null>(null);

@@ -6,12 +6,13 @@ import {
 } from "@/components/journal/companion-writing/companionWritingGuideStyles";
 import { useTransitionNavigation } from "@/components/ui/TransitionNavigationProvider";
 import { FIRST_VISIT_PAUSE_LINK_HREF } from "@/lib/onboarding/firstVisitWizard/backBlockCopy";
-import { FIRST_VISIT_MILESTONE_HOME_BUTTON } from "@/lib/onboarding/firstVisitWizard/milestoneCopy";
+import { FIRST_VISIT_MILESTONE_HOME_BUTTON, FIRST_VISIT_RESUME_HINT } from "@/lib/onboarding/firstVisitWizard/milestoneCopy";
 
 type Props = {
   nextLabel: string;
   onNext: () => void;
   homeLabel?: string;
+  showResumeHint?: boolean;
 };
 
 /** 区切りページ：次へ ＋ 森の入口へ（戻るではなく中断） */
@@ -19,6 +20,7 @@ export function FirstVisitMilestoneActions({
   nextLabel,
   onNext,
   homeLabel = FIRST_VISIT_MILESTONE_HOME_BUTTON,
+  showResumeHint = true,
 }: Props) {
   const { replace, isPending } = useTransitionNavigation();
 
@@ -40,6 +42,9 @@ export function FirstVisitMilestoneActions({
       >
         {homeLabel}
       </button>
+      {showResumeHint ? (
+        <p className="text-center text-xs leading-relaxed text-stone-500">{FIRST_VISIT_RESUME_HINT}</p>
+      ) : null}
     </div>
   );
 }

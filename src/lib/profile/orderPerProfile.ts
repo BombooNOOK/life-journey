@@ -104,3 +104,12 @@ export async function listKanteiOrdersForProfile(params: {
 
   return [];
 }
+
+/** ログハウス・再開判定用：本棚と同じ条件で鑑定の有無を見る */
+export async function resolvePrimaryKanteiOrderForProfile(params: {
+  viewerEmail: string;
+  profileId: string;
+}): Promise<{ id: string } | null> {
+  const orders = await listKanteiOrdersForProfile({ ...params, take: 1 });
+  return orders[0] ?? null;
+}

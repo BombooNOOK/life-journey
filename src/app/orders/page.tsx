@@ -18,7 +18,7 @@ import { isAdminEmail } from "@/lib/admin/access";
 import { getViewerEmailFromCookie } from "@/lib/auth/viewer";
 import { prisma } from "@/lib/db";
 import { withPrismaConnectionRetry } from "@/lib/db/prismaRetry";
-import { findKanteiOrderForProfile } from "@/lib/profile/orderPerProfile";
+import { resolvePrimaryKanteiOrderForProfile } from "@/lib/profile/orderPerProfile";
 import { listProfilesAndActiveProfileId } from "@/lib/profile/activeProfile";
 import { loadEntitlementContext } from "@/lib/entitlement/accountSettingsForEntitlement";
 import {
@@ -61,13 +61,10 @@ export default async function OrdersListPage() {
   try {
     const loaded = await withPrismaConnectionRetry(async () => {
       const profileData = await listProfilesAndActiveProfileId(viewerEmail);
-      let kanteiOrder: Awaited<ReturnType<typeof findKanteiOrderForProfile>> = null;
-      if (profileData.activeProfileId) {
-        kanteiOrder = await findKanteiOrderForProfile({
-          viewerEmail,
-          profileId: profileData.activeProfileId,
-        });
-      }
+      const kanteiOrder = await resolvePrimaryKanteiOrderForProfile({
+        viewerEmail,
+        profileId: profileData.activeProfileId,
+      });
       const entitlementCtx = await loadEntitlementContext(viewerEmail);
       return { profileData, kanteiOrder, entitlementCtx };
     });

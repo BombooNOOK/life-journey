@@ -1,5 +1,5 @@
 import { getViewerEmailFromCookie } from "@/lib/auth/viewer";
-import { findKanteiOrderForProfile } from "@/lib/profile/orderPerProfile";
+import { resolvePrimaryKanteiOrderForProfile } from "@/lib/profile/orderPerProfile";
 import { listProfilesAndActiveProfileId } from "@/lib/profile/activeProfile";
 
 export type FirstVisitReadyBranch = "guest" | "needsKantei" | "hasKantei";
@@ -21,7 +21,7 @@ export async function resolveFirstVisitReadyContext(
     return { branch: "needsKantei" };
   }
 
-  const kanteiOrder = await findKanteiOrderForProfile({
+  const kanteiOrder = await resolvePrimaryKanteiOrderForProfile({
     viewerEmail,
     profileId: activeProfileId,
   });
