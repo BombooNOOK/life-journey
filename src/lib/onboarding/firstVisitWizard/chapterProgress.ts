@@ -112,7 +112,6 @@ function resolveChapter1ResumeHref(input: ChapterProgressInput): string {
   if (input.fromRegisterHandoff) return FIRST_VISIT_ROUTES.residentCard;
   if (input.savedStage === "register") return FIRST_VISIT_ROUTES.residentCard;
   if (input.savedStage && (CHAPTER_1_STAGES as readonly string[]).includes(input.savedStage)) {
-    if (input.savedStage === "register") return FIRST_VISIT_ROUTES.residentCard;
     return firstVisitProgressHref(input.savedStage);
   }
   if (isLoggedIn(input.branch)) return FIRST_VISIT_ROUTES.residentCard;
