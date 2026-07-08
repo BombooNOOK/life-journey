@@ -5,13 +5,14 @@ import { useCallback, useEffect, useState } from "react";
 
 import { useFirebaseAuth } from "@/components/auth/FirebaseAuthProvider";
 import { buildLoginHref } from "@/app/login/loginFlow";
+import { FirstVisitMilestoneActions } from "@/components/guide/first-visit/FirstVisitMilestoneActions";
 import {
   companionWritingGuideBodyClass,
-  companionWritingGuidePrimaryButtonClass,
   companionWritingGuideTitleClass,
 } from "@/components/journal/companion-writing/companionWritingGuideStyles";
 import { useTransitionNavigation } from "@/components/ui/TransitionNavigationProvider";
 import { OwlLoadingPanel } from "@/components/ui/OwlLoadingPanel";
+import { pinFirstVisitWizardHistory } from "@/hooks/useBlockBrowserBack";
 import {
   FIRST_VISIT_LOGHOUSE_COMPLETE_BODY,
   FIRST_VISIT_LOGHOUSE_COMPLETE_BUTTON,
@@ -29,6 +30,10 @@ export function FirstVisitKanteiPage() {
   const { user, loading } = useFirebaseAuth();
   const isLoggedIn = Boolean(user?.email?.trim());
   const [illustrationReady, setIllustrationReady] = useState(false);
+
+  useEffect(() => {
+    pinFirstVisitWizardHistory();
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -87,9 +92,10 @@ export function FirstVisitKanteiPage() {
             {FIRST_VISIT_LOGHOUSE_COMPLETE_BODY}
           </p>
 
-          <button type="button" className={`mt-8 ${companionWritingGuidePrimaryButtonClass}`} onClick={handleProceed}>
-            {FIRST_VISIT_LOGHOUSE_COMPLETE_BUTTON}
-          </button>
+          <FirstVisitMilestoneActions
+            nextLabel={FIRST_VISIT_LOGHOUSE_COMPLETE_BUTTON}
+            onNext={handleProceed}
+          />
 
           <p className="mt-3 text-center text-sm text-stone-500">{FIRST_VISIT_LOGHOUSE_COMPLETE_FOOTNOTE}</p>
         </div>

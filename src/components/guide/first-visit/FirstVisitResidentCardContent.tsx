@@ -2,9 +2,9 @@
 
 import { ForestResidentCard } from "@/components/guide/ForestResidentCard";
 import { FirstVisitGuideCardPageLayout } from "@/components/guide/first-visit/FirstVisitGuideCardPageLayout";
-import { FirstVisitMilestoneActions } from "@/components/guide/first-visit/FirstVisitMilestoneActions";
 import {
   companionWritingGuideBodyClass,
+  companionWritingGuidePrimaryButtonClass,
   companionWritingGuideTitleClass,
 } from "@/components/journal/companion-writing/companionWritingGuideStyles";
 import type { ForestResidentCardData } from "@/lib/forestResident/forestResidentNumber";
@@ -28,6 +28,7 @@ export function FirstVisitResidentCardContent({ card, showEmailNote, onNext }: P
     <FirstVisitGuideCardPageLayout
       stepLabel="住民票カード"
       ariaLabel="住民票カードが発行されました"
+      showPauseLink={false}
     >
       <div className="flex w-full flex-col items-center gap-5">
         <div className="w-full space-y-3 text-center lg:text-left">
@@ -51,10 +52,9 @@ export function FirstVisitResidentCardContent({ card, showEmailNote, onNext }: P
           {FIRST_VISIT_RESIDENT_CARD_GROWTH_HINT}
         </p>
 
-        <FirstVisitMilestoneActions
-          nextLabel={FIRST_VISIT_RESIDENT_CARD_NEXT_BUTTON}
-          onNext={onNext}
-        />
+        <button type="button" className={companionWritingGuidePrimaryButtonClass} onClick={onNext}>
+          {FIRST_VISIT_RESIDENT_CARD_NEXT_BUTTON}
+        </button>
       </div>
     </FirstVisitGuideCardPageLayout>
   );

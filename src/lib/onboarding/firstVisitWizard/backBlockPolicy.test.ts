@@ -16,6 +16,8 @@ describe("backBlockPolicy", () => {
   it("blocks swipe back on later wizard steps", () => {
     expect(shouldBlockFirstVisitSwipeBack(FIRST_VISIT_ROUTES.roadmap)).toBe(true);
     expect(shouldBlockFirstVisitSwipeBack(FIRST_VISIT_ROUTES.residentCard)).toBe(true);
+    expect(shouldBlockFirstVisitSwipeBack(FIRST_VISIT_ROUTES.loghouseSign)).toBe(true);
+    expect(shouldBlockFirstVisitSwipeBack(FIRST_VISIT_ROUTES.loghouse)).toBe(true);
     expect(shouldBlockFirstVisitSwipeBack(FIRST_VISIT_ROUTES.welcome)).toBe(false);
     expect(shouldBlockFirstVisitSwipeBack("/orders")).toBe(false);
   });

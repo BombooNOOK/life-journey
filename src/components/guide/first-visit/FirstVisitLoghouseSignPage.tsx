@@ -8,6 +8,7 @@ import { useFirebaseAuth } from "@/components/auth/FirebaseAuthProvider";
 import { FirstVisitGuideCardPageLayout } from "@/components/guide/first-visit/FirstVisitGuideCardPageLayout";
 import { FirstVisitGuideCardPanel } from "@/components/guide/first-visit/FirstVisitGuideCardStack";
 import { useTransitionNavigation } from "@/components/ui/TransitionNavigationProvider";
+import { pinFirstVisitWizardHistory } from "@/hooks/useBlockBrowserBack";
 import type { FirstVisitGuideCardAction } from "@/lib/onboarding/firstVisitWizard/cards";
 import { FIRST_VISIT_LOGHOUSE_SIGN_CARD } from "@/lib/onboarding/firstVisitWizard/cards";
 import { FIRST_VISIT_ROUTES } from "@/lib/onboarding/firstVisitWizard/routes";
@@ -21,6 +22,10 @@ export function FirstVisitLoghouseSignPage() {
   const isLoggedIn = Boolean(user?.email?.trim());
 
   useEffect(() => {
+    pinFirstVisitWizardHistory();
+  }, []);
+
+  useEffect(() => {
     if (authLoading) return;
     if (!isLoggedIn) {
       router.replace(buildLoginHref(FIRST_VISIT_ROUTES.loghouseSign, "login"));
@@ -30,11 +35,8 @@ export function FirstVisitLoghouseSignPage() {
   const handleAction = useCallback(
     (action: FirstVisitGuideCardAction, cardId: string) => {
       if (cardId !== "loghouse-sign") return;
-      if (action === "home") {
-        replace("/");
-        return;
-      }
       if (action === "next") {
+        pinFirstVisitWizardHistory();
         replace(FIRST_VISIT_ROUTES.loghouse);
       }
     },
@@ -52,7 +54,11 @@ export function FirstVisitLoghouseSignPage() {
   }
 
   return (
-    <FirstVisitGuideCardPageLayout stepLabel="ログハウスへ" ariaLabel="ログハウス建築の案内">
+    <FirstVisitGuideCardPageLayout
+      stepLabel="ログハウスへ"
+      ariaLabel="ログハウス建築の案内"
+      showPauseLink={false}
+    >
       <FirstVisitGuideCardPanel card={FIRST_VISIT_LOGHOUSE_SIGN_CARD} onAction={handleAction} />
     </FirstVisitGuideCardPageLayout>
   );

@@ -17,7 +17,6 @@ import {
 } from "@/lib/onboarding/firstVisitWizard/loghouseCompleteCopy";
 import {
   FIRST_VISIT_LOGHOUSE_SIGN_BUTTON,
-  FIRST_VISIT_LOGHOUSE_SIGN_HOME_BUTTON,
   FIRST_VISIT_LOGHOUSE_SIGN_LABEL,
 } from "@/lib/onboarding/firstVisitWizard/residentCardCopy";
 import {
@@ -141,10 +140,7 @@ export const FIRST_VISIT_LOGHOUSE_SIGN_CARD: FirstVisitGuideCard = {
   id: "loghouse-sign",
   owlCommentLabel: FIRST_VISIT_LOGHOUSE_SIGN_LABEL,
   bare: true,
-  buttons: [
-    { label: FIRST_VISIT_LOGHOUSE_SIGN_HOME_BUTTON, action: "home", variant: "secondary" },
-    { label: FIRST_VISIT_LOGHOUSE_SIGN_BUTTON, action: "next", variant: "primary" },
-  ],
+  buttons: [{ label: FIRST_VISIT_LOGHOUSE_SIGN_BUTTON, action: "next", variant: "primary" }],
 };
 
 /** 第5幕：ログハウス建築 */

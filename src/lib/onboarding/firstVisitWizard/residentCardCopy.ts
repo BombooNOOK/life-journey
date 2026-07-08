@@ -1,5 +1,4 @@
 /** 初回導線：住民票カード発行ページ */
-import { FIRST_VISIT_MILESTONE_HOME_BUTTON } from "@/lib/onboarding/firstVisitWizard/milestoneCopy";
 
 export const FIRST_VISIT_RESIDENT_CARD_PAGE_TITLE = "住民票カードが発行されました" as const;
 
@@ -19,5 +18,3 @@ export const FIRST_VISIT_LOGHOUSE_SIGN_LABEL =
   "何やら森の奥で\n工事が始まったみたいです。\n見に行ってみましょう。" as const;
 
 export const FIRST_VISIT_LOGHOUSE_SIGN_BUTTON = "次へ" as const;
-
-export const FIRST_VISIT_LOGHOUSE_SIGN_HOME_BUTTON = FIRST_VISIT_MILESTONE_HOME_BUTTON;

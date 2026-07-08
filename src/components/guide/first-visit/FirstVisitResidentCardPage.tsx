@@ -132,6 +132,7 @@ export function FirstVisitResidentCardPage() {
   }, []);
 
   const handleNext = useCallback(() => {
+    pinFirstVisitRegistrationHistory();
     replace(FIRST_VISIT_ROUTES.loghouseSign);
   }, [replace]);
 

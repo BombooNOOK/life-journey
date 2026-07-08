@@ -7,6 +7,7 @@ import { buildLoginHref } from "@/app/login/loginFlow";
 import { useFirebaseAuth } from "@/components/auth/FirebaseAuthProvider";
 import { useTransitionNavigation } from "@/components/ui/TransitionNavigationProvider";
 import { OwlLoadingPanel } from "@/components/ui/OwlLoadingPanel";
+import { pinFirstVisitWizardHistory } from "@/hooks/useBlockBrowserBack";
 import {
   FIRST_VISIT_LOGHOUSE_BUILD_VIDEO_NEXT_LABEL,
   FIRST_VISIT_LOGHOUSE_BUILD_VIDEO_POSTER_SRC,
@@ -29,6 +30,10 @@ export function FirstVisitLoghousePage() {
   const [phase, setPhase] = useState<PlaybackPhase>("ready");
   const [videoError, setVideoError] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
+
+  useEffect(() => {
+    pinFirstVisitWizardHistory();
+  }, []);
 
   useEffect(() => {
     if (loading) return;
