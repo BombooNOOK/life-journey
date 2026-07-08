@@ -6,4 +6,4 @@ export const FIRST_VISIT_MILESTONE_HOME_BUTTON =
 
 /** 区切りで森の入口に戻ったあと、続きから再開する案内 */
 export const FIRST_VISIT_RESUME_HINT =
-  "続きは、森の入口の「はじめての方」をタップしてください。ログイン済みなら、自動で続きのページへ進みます。" as const;
+  "続きは、森の入口の「はじめての方」から「はじめての道しるべ」で確認できます。" as const;

@@ -121,7 +121,7 @@ function useKanteiHallMapLink(): {
       .catch(() => {
         if (!cancelled) {
           setLink({
-            href: "/guide/first/welcome",
+            href: "/guide/first/path-guide",
             linkLabel: "はじめての方の案内へ",
           });
         }

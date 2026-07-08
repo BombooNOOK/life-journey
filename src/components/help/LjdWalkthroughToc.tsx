@@ -77,7 +77,7 @@ const TOC_ITEMS: TocItem[] = [
           </Link>
           をご覧ください。まずは鑑定を受けて、本棚で結果を読み返してみてください。
         </p>
-        <GuideAppLink href={FIRST_VISIT_ROUTES.welcome} label="無料鑑定をはじめる" />
+        <GuideAppLink href={FIRST_VISIT_ROUTES.pathGuide} label="無料鑑定をはじめる" />
       </>
     ),
   },
@@ -175,8 +175,8 @@ const TOC_ITEMS: TocItem[] = [
       <>
         <ul className="list-inside list-disc space-y-1 text-stone-700">
           <li>
-            <Link href="/guide/first/welcome" className="text-emerald-900 underline-offset-2 hover:underline">
-              はじめての方へ
+            <Link href="/guide/first/path-guide" className="text-emerald-900 underline-offset-2 hover:underline">
+              はじめての道しるべ
             </Link>
           </li>
           <li>

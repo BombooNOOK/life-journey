@@ -29,7 +29,7 @@ export function LogHouseGuestEntrance() {
           ログハウスを建てる流れがおすすめです。
         </p>
         <div className="mt-5 flex flex-col gap-3">
-          <Link href={FIRST_VISIT_ROUTES.welcome} className={primaryButtonClass}>
+          <Link href={FIRST_VISIT_ROUTES.pathGuide} className={primaryButtonClass}>
             はじめての方はこちら
           </Link>
           <Link href={buildLoginHref("/orders", "login")} className={secondaryButtonClass}>

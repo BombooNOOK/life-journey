@@ -20,8 +20,8 @@ export function MyPageGuideLink() {
           <p className="mt-1 text-xs leading-relaxed text-stone-600">
             BambooNOOKの森から、やさしく案内します
           </p>
-          <Link href={FIRST_VISIT_ROUTES.welcome} className={`${guideButtonClass} mt-3`}>
-            はじめての方へ →
+          <Link href={FIRST_VISIT_ROUTES.pathGuide} className={`${guideButtonClass} mt-3`}>
+            はじめての道しるべ →
           </Link>
         </div>
         <div className="rounded-xl border border-emerald-100/80 bg-white/60 p-3">

@@ -6,7 +6,7 @@ import { FIRST_VISIT_ROUTES } from "@/lib/onboarding/firstVisitWizard/routes";
 describe("forestGuideMapKanteiHallLink", () => {
   it("routes guests and users without resident card to welcome", () => {
     expect(forestGuideMapKanteiHallLink("guestOrNoResident")).toEqual({
-      href: FIRST_VISIT_ROUTES.welcome,
+      href: FIRST_VISIT_ROUTES.pathGuide,
       linkLabel: "はじめての方の案内へ",
     });
   });

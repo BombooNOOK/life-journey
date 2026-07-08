@@ -22,6 +22,7 @@ import {
   preloadFirstVisitLoghouseCompleteIllustration,
 } from "@/lib/onboarding/firstVisitWizard/loghouseCompleteCopy";
 import { FIRST_VISIT_ROUTES } from "@/lib/onboarding/firstVisitWizard/routes";
+import { setFirstVisitChapterCompleteFlag } from "@/lib/onboarding/firstVisitWizard/session";
 
 /** 第8幕：ログハウス完成 */
 export function FirstVisitKanteiPage() {
@@ -53,6 +54,7 @@ export function FirstVisitKanteiPage() {
   }, [isLoggedIn, loading, router]);
 
   const handleProceed = useCallback(() => {
+    setFirstVisitChapterCompleteFlag(1);
     replace(FIRST_VISIT_ROUTES.kanteiReady);
   }, [replace]);
 

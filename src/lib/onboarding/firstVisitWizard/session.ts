@@ -4,7 +4,12 @@ const FROM_REGISTER_FLAG = "ljd:firstGuide:fromRegister";
 const FROM_REGISTER_COOKIE = "lj_first_visit_from_register";
 const WELCOME_EMAIL_SENT_FLAG = "ljd:firstGuide:welcomeEmailSent";
 const RESIDENT_CARD_VIDEO_DONE_FLAG = "ljd:firstGuide:residentCardVideoDone";
+const CHAPTER_COMPLETE_PREFIX = "ljd:firstGuide:chapterComplete:";
+const CHAPTER_3_STARTED_FLAG = "ljd:firstGuide:chapter3Started";
+const PROLOGUE_WATCHED_FLAG = "ljd:firstGuide:pathGuidePrologueWatched";
 const FROM_REGISTER_COOKIE_MAX_AGE_SECONDS = 120;
+
+export type FirstVisitChapterNumber = 1 | 2 | 3;
 
 function canUseSessionStorage(): boolean {
   return typeof window !== "undefined" && typeof window.sessionStorage !== "undefined";
@@ -128,4 +133,53 @@ export function setFirstVisitResidentCardVideoDoneFlag(): void {
 export function clearFirstVisitResidentCardVideoDoneFlag(): void {
   if (!canUseSessionStorage()) return;
   window.sessionStorage.removeItem(RESIDENT_CARD_VIDEO_DONE_FLAG);
+}
+
+function chapterCompleteKey(chapter: FirstVisitChapterNumber): string {
+  return `${CHAPTER_COMPLETE_PREFIX}${chapter}`;
+}
+
+export function readFirstVisitChapterCompleteFlag(chapter: FirstVisitChapterNumber): boolean {
+  if (!canUseSessionStorage()) return false;
+  return window.sessionStorage.getItem(chapterCompleteKey(chapter)) === "1";
+}
+
+export function setFirstVisitChapterCompleteFlag(chapter: FirstVisitChapterNumber): void {
+  if (!canUseSessionStorage()) return;
+  window.sessionStorage.setItem(chapterCompleteKey(chapter), "1");
+}
+
+export function clearFirstVisitChapterCompleteFlag(chapter: FirstVisitChapterNumber): void {
+  if (!canUseSessionStorage()) return;
+  window.sessionStorage.removeItem(chapterCompleteKey(chapter));
+}
+
+export function readFirstVisitChapter3StartedFlag(): boolean {
+  if (!canUseSessionStorage()) return false;
+  return window.sessionStorage.getItem(CHAPTER_3_STARTED_FLAG) === "1";
+}
+
+export function setFirstVisitChapter3StartedFlag(): void {
+  if (!canUseSessionStorage()) return;
+  window.sessionStorage.setItem(CHAPTER_3_STARTED_FLAG, "1");
+}
+
+export function clearFirstVisitChapter3StartedFlag(): void {
+  if (!canUseSessionStorage()) return;
+  window.sessionStorage.removeItem(CHAPTER_3_STARTED_FLAG);
+}
+
+export function readFirstVisitPathGuidePrologueWatchedFlag(): boolean {
+  if (!canUseSessionStorage()) return false;
+  return window.sessionStorage.getItem(PROLOGUE_WATCHED_FLAG) === "1";
+}
+
+export function setFirstVisitPathGuidePrologueWatchedFlag(): void {
+  if (!canUseSessionStorage()) return;
+  window.sessionStorage.setItem(PROLOGUE_WATCHED_FLAG, "1");
+}
+
+export function clearFirstVisitPathGuidePrologueWatchedFlag(): void {
+  if (!canUseSessionStorage()) return;
+  window.sessionStorage.removeItem(PROLOGUE_WATCHED_FLAG);
 }

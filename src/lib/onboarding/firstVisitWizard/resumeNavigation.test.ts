@@ -4,7 +4,7 @@ import { FIRST_VISIT_ROUTES } from "@/lib/onboarding/firstVisitWizard/routes";
 import { resolveFirstVisitResumeHref } from "@/lib/onboarding/firstVisitWizard/resumeNavigation";
 
 describe("resolveFirstVisitResumeHref", () => {
-  it("returns welcome for guests", () => {
+  it("returns path-guide for guests without chapter progress", () => {
     expect(
       resolveFirstVisitResumeHref({
         branch: "guest",
@@ -13,7 +13,19 @@ describe("resolveFirstVisitResumeHref", () => {
         orderGuide: false,
         fromRegisterHandoff: false,
       }),
-    ).toBe(FIRST_VISIT_ROUTES.welcome);
+    ).toBe(FIRST_VISIT_ROUTES.pathGuide);
+  });
+
+  it("resumes guests mid chapter 1", () => {
+    expect(
+      resolveFirstVisitResumeHref({
+        branch: "guest",
+        savedStage: "loghouse-sign",
+        bookshelfKanteiGuide: false,
+        orderGuide: false,
+        fromRegisterHandoff: false,
+      }),
+    ).toBe(FIRST_VISIT_ROUTES.loghouseSign);
   });
 
   it("prioritizes bookshelf guide flag after kantei", () => {
@@ -40,7 +52,7 @@ describe("resolveFirstVisitResumeHref", () => {
     ).toBe(FIRST_VISIT_ROUTES.residentCard);
   });
 
-  it("sends fresh logged-in users without kantei to kantei-ready", () => {
+  it("sends logged-in users without mid-flow flags to path-guide", () => {
     expect(
       resolveFirstVisitResumeHref({
         branch: "needsKantei",
@@ -49,6 +61,6 @@ describe("resolveFirstVisitResumeHref", () => {
         orderGuide: false,
         fromRegisterHandoff: false,
       }),
-    ).toBe(FIRST_VISIT_ROUTES.kanteiReady);
+    ).toBe(FIRST_VISIT_ROUTES.pathGuide);
   });
 });

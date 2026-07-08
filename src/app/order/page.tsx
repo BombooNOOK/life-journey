@@ -24,7 +24,7 @@ import {
 import { OwlSuspenseFallback } from "@/components/ui/OwlSuspenseFallback";
 import { FIRST_VISIT_KANTEI_HALL_SIGN_LABEL } from "@/lib/onboarding/firstVisitWizard/kanteiHallCopy";
 import { selectViewerProfile } from "@/lib/profile/selectViewerProfile";
-import { setBookshelfKanteiGuideFlag } from "@/lib/onboarding/firstVisitWizard/session";
+import { setBookshelfKanteiGuideFlag, setFirstVisitChapterCompleteFlag } from "@/lib/onboarding/firstVisitWizard/session";
 import { isHiraganaOnly } from "@/lib/validation/hiragana";
 
 const MIN_YEAR = 1870;
@@ -240,6 +240,7 @@ function OrderPageContent() {
         await selectViewerProfile(data.profileId);
       }
       setBookshelfKanteiGuideFlag();
+      setFirstVisitChapterCompleteFlag(2);
       setSubmitPhase("navigating");
       router.replace("/orders/bookshelf#bookshelf-kantei-books");
     } catch {

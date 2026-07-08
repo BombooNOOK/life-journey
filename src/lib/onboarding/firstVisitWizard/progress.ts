@@ -2,6 +2,7 @@ import { FIRST_VISIT_ROUTES } from "@/lib/onboarding/firstVisitWizard/routes";
 
 /** 初回導線の再開用チェックポイント */
 export type FirstVisitProgressStage =
+  | "path-guide"
   | "welcome"
   | "about"
   | "owl"
@@ -20,6 +21,7 @@ export type FirstVisitProgressStage =
 const PROGRESS_FLAG = "ljd:firstGuide:progress";
 
 const STAGE_ROUTES: Record<FirstVisitProgressStage, string> = {
+  "path-guide": FIRST_VISIT_ROUTES.pathGuide,
   welcome: FIRST_VISIT_ROUTES.welcome,
   about: FIRST_VISIT_ROUTES.about,
   owl: FIRST_VISIT_ROUTES.owl,

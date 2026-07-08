@@ -40,10 +40,10 @@ export function FirstVisitGuidePanel({ state, profileId, companionWritingHref }:
             無料鑑定をはじめる
           </Link>
           <Link
-            href={FIRST_VISIT_ROUTES.welcome}
+            href={FIRST_VISIT_ROUTES.pathGuide}
             className="inline-flex min-h-[44px] items-center justify-center rounded-lg border border-emerald-200 bg-white px-4 py-2 text-sm font-medium text-emerald-950 hover:bg-emerald-50/80"
           >
-            はじめての方へ
+            はじめての道しるべ
           </Link>
         </div>
       </section>
@@ -70,10 +70,10 @@ export function FirstVisitGuidePanel({ state, profileId, companionWritingHref }:
           <CompanionWritingButtonLabel />
         </Link>
         <Link
-          href="/guide/first"
+          href="/guide/first/path-guide"
           className="inline-flex min-h-[44px] items-center justify-center rounded-lg border border-emerald-200 bg-white px-4 py-2 text-sm font-medium text-emerald-950 hover:bg-emerald-50/80"
         >
-          初めての3分ガイド
+          はじめての道しるべ
         </Link>
       </div>
     </section>

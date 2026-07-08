@@ -41,7 +41,7 @@ export function FirstVisitResumeRedirect() {
           orderGuide: readFirstVisitOrderGuideFlag(),
           fromRegisterHandoff: readFirstVisitFromRegisterFlag(),
         });
-        if (href !== FIRST_VISIT_ROUTES.welcome) {
+        if (href !== FIRST_VISIT_ROUTES.pathGuide) {
           router.replace(href);
         }
       })

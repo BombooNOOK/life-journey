@@ -23,7 +23,7 @@ export function forestGuideMapKanteiHallLink(
       };
     case "guestOrNoResident":
       return {
-        href: FIRST_VISIT_ROUTES.welcome,
+        href: FIRST_VISIT_ROUTES.pathGuide,
         linkLabel: "はじめての方の案内へ",
       };
   }

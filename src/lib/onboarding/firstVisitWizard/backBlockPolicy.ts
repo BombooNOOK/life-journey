@@ -11,6 +11,7 @@ export function isFirstVisitNoBackUiPath(pathname: string): boolean {
 }
 
 const SWIPE_BACK_ALLOWED_PATHS = new Set<string>([
+  FIRST_VISIT_ROUTES.pathGuide,
   FIRST_VISIT_ROUTES.welcome,
   FIRST_VISIT_ROUTES.about,
 ]);

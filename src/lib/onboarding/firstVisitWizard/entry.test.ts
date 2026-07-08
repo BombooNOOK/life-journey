@@ -6,8 +6,8 @@ import {
 } from "@/lib/onboarding/firstVisitWizard/entry";
 
 describe("firstVisitWizard entry", () => {
-  it("exposes welcome as the canonical entry href", () => {
-    expect(FIRST_VISIT_ENTRY_HREF).toBe("/guide/first/welcome");
+  it("exposes path-guide as the canonical entry href", () => {
+    expect(FIRST_VISIT_ENTRY_HREF).toBe("/guide/first/path-guide");
   });
 
   it("detects legacy /order register returnTo", () => {

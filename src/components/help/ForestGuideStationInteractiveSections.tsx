@@ -2,7 +2,7 @@
 
 import { TransitionNavigationProvider } from "@/components/ui/TransitionNavigationProvider";
 import { BambooForestGuideMap } from "@/components/help/BambooForestGuideMap";
-import { LjdFirstVisitFlowSteps } from "@/components/help/LjdFirstVisitFlowSteps";
+import { LjdFirstVisitFlowCard } from "@/components/help/LjdFirstVisitFlowCard";
 import { LjdWalkthroughToc } from "@/components/help/LjdWalkthroughToc";
 import {
   FOREST_GUIDE_STATION_MAP_SECTION_TITLE,
@@ -26,7 +26,7 @@ export function ForestGuideStationInteractiveSections() {
         <BambooForestGuideMap />
       </section>
 
-      <LjdFirstVisitFlowSteps />
+      <LjdFirstVisitFlowCard />
 
       <LjdWalkthroughToc />
     </TransitionNavigationProvider>

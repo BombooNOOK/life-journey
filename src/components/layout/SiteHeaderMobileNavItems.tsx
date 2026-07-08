@@ -100,7 +100,7 @@ export function SiteHeaderMobileNavItems({ onNavigate }: Props) {
             はじめての方へ
           </span>
         ) : (
-          <MobileMenuNavButton href="/guide/first/welcome" router={router}>
+          <MobileMenuNavButton href="/guide/first/path-guide" router={router}>
             はじめての方へ
           </MobileMenuNavButton>
         )

@@ -13,11 +13,13 @@ type ResumeInput = {
   fromRegisterHandoff: boolean;
 };
 
-function safeResumeHref(stage: FirstVisitProgressStage): string {
-  if (stage === "register") return FIRST_VISIT_ROUTES.residentCard;
-  if (stage === "order") return FIRST_VISIT_ROUTES.kanteiReady;
-  return firstVisitProgressHref(stage);
-}
+const CHAPTER_1_RESUME_STAGES = [
+  "register",
+  "resident-card",
+  "loghouse-sign",
+  "loghouse",
+  "kantei",
+] as const satisfies readonly FirstVisitProgressStage[];
 
 /** ログイン済みユーザーが初回導線に戻ったときの着地先 */
 export function resolveFirstVisitResumeHref({
@@ -27,8 +29,6 @@ export function resolveFirstVisitResumeHref({
   orderGuide,
   fromRegisterHandoff,
 }: ResumeInput): string {
-  if (branch === "guest") return FIRST_VISIT_ROUTES.welcome;
-
   if (bookshelfKanteiGuide) {
     return firstVisitProgressHref("bookshelf-kantei");
   }
@@ -41,17 +41,22 @@ export function resolveFirstVisitResumeHref({
     return FIRST_VISIT_ROUTES.residentCard;
   }
 
+  if (branch === "guest") {
+    if (
+      savedStage &&
+      (CHAPTER_1_RESUME_STAGES as readonly string[]).includes(savedStage)
+    ) {
+      if (savedStage === "register") return FIRST_VISIT_ROUTES.register;
+      return firstVisitProgressHref(savedStage);
+    }
+    return FIRST_VISIT_ROUTES.pathGuide;
+  }
+
   if (savedStage) {
-    return safeResumeHref(savedStage);
+    if (savedStage === "register") return FIRST_VISIT_ROUTES.residentCard;
+    if (savedStage === "order") return FIRST_VISIT_ROUTES.kanteiReady;
+    return firstVisitProgressHref(savedStage);
   }
 
-  if (branch === "hasKantei") {
-    return "/orders/bookshelf";
-  }
-
-  if (branch === "needsKantei") {
-    return FIRST_VISIT_ROUTES.kanteiReady;
-  }
-
-  return FIRST_VISIT_ROUTES.welcome;
+  return FIRST_VISIT_ROUTES.pathGuide;
 }

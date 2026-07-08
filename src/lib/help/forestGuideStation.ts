@@ -10,6 +10,11 @@ export const FOREST_GUIDE_STATION_MAP_SECTION_TITLE = "BambooNOOKの森の案内
 
 export const FOREST_GUIDE_STATION_FIRST_VISIT_SECTION_TITLE = "はじめての方の流れ" as const;
 
+export const FOREST_GUIDE_STATION_FIRST_VISIT_CARD_BODY =
+  "森の住民登録から、\nはじめての日記を書くまでの流れを確認できます。" as const;
+
+export const FOREST_GUIDE_STATION_FIRST_VISIT_CARD_BUTTON = "確認する" as const;
+
 export const FOREST_GUIDE_STATION_NUMEROLOGY_READING_HREF = "/help/ljd/numerology-reading" as const;
 
 export const FOREST_GUIDE_STATION_NUMEROLOGY_READING_LINK_LABEL =

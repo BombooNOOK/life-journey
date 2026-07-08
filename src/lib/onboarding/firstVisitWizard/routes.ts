@@ -1,5 +1,6 @@
 /** はじめての方へ（道案内ウィザード）のルート */
 export const FIRST_VISIT_ROUTES = {
+  pathGuide: "/guide/first/path-guide",
   welcome: "/guide/first/welcome",
   about: "/guide/first/about",
   owl: "/guide/first/owl",
