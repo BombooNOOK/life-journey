@@ -22,12 +22,17 @@ export function isTransientPrismaConnectionError(e: unknown): boolean {
   return false;
 }
 
+function retryDelayMs(baseDelayMs: number, attempt: number): number {
+  const exponential = baseDelayMs * 2 ** attempt;
+  return Math.min(exponential, 4_000);
+}
+
 export async function withPrismaConnectionRetry<T>(
   fn: () => Promise<T>,
   opts?: { retries?: number; baseDelayMs?: number },
 ): Promise<T> {
-  const retries = opts?.retries ?? 2;
-  const baseDelayMs = opts?.baseDelayMs ?? 400;
+  const retries = opts?.retries ?? 4;
+  const baseDelayMs = opts?.baseDelayMs ?? 600;
   let last: unknown;
   for (let attempt = 0; attempt <= retries; attempt++) {
     try {
@@ -35,7 +40,7 @@ export async function withPrismaConnectionRetry<T>(
     } catch (e) {
       last = e;
       if (attempt < retries && isTransientPrismaConnectionError(e)) {
-        await new Promise((r) => setTimeout(r, baseDelayMs * (attempt + 1)));
+        await new Promise((r) => setTimeout(r, retryDelayMs(baseDelayMs, attempt)));
         continue;
       }
       throw e;

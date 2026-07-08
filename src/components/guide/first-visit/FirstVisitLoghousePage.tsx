@@ -27,6 +27,7 @@ export function FirstVisitLoghousePage() {
   const { user, loading } = useFirebaseAuth();
   const isLoggedIn = Boolean(user?.email?.trim());
   const [phase, setPhase] = useState<PlaybackPhase>("ready");
+  const [videoError, setVideoError] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
 
   useEffect(() => {
@@ -89,6 +90,7 @@ export function FirstVisitLoghousePage() {
             playsInline
             preload="metadata"
             onEnded={() => setPhase("ended")}
+            onError={() => setVideoError(true)}
           />
           {phase === "ready" ? (
             // eslint-disable-next-line @next/next/no-img-element
@@ -100,6 +102,14 @@ export function FirstVisitLoghousePage() {
           ) : null}
         </div>
       </div>
+
+      {videoError ? (
+        <div className="absolute inset-x-0 top-[max(1rem,env(safe-area-inset-top))] z-30 px-4">
+          <p className="mx-auto max-w-md rounded-xl border border-amber-200/80 bg-amber-50/95 px-4 py-3 text-center text-sm text-amber-950 shadow-sm">
+            建築の動画を読み込めませんでした。通信環境を確認するか、そのまま「次へ」で進んでください。
+          </p>
+        </div>
+      ) : null}
 
       {phase === "ready" ? (
         <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/20 px-6">
@@ -122,7 +132,7 @@ export function FirstVisitLoghousePage() {
         </div>
       ) : null}
 
-      {phase === "ended" ? (
+      {phase === "ended" || videoError ? (
         <div className="pointer-events-none absolute inset-x-0 bottom-0 z-30 flex flex-col items-center gap-3 px-4 pb-[max(1.25rem,env(safe-area-inset-bottom))] pt-10">
           <button
             type="button"

@@ -6,6 +6,7 @@ import {
 } from "@/components/guide/FirstVisitGuidePanel";
 import { MyPageGuideLink } from "@/components/guide/MyPageGuideLink";
 import { LogHouseGuestEntrance } from "@/components/orders/LogHouseGuestEntrance";
+import { LogHouseLoadErrorPanel } from "@/components/orders/LogHouseLoadErrorPanel";
 import { LogHouseResidentCardSection } from "@/components/orders/LogHouseResidentCardSection";
 import { KanteiMissingBanner } from "@/components/orders/KanteiMissingBanner";
 import { LegalFooterLinks } from "@/components/legal/LegalFooterLinks";
@@ -26,7 +27,6 @@ import {
   type SerializedUserEntitlement,
 } from "@/lib/entitlement/resolveUserEntitlement";
 import { calendarDayKeyInJapan, journalWithCompanionPath } from "@/lib/journal/journalNav";
-import { LOG_HOUSE_LOAD_ERROR_TITLE, LOG_HOUSE_PAGE_TITLE } from "@/lib/journal/logHouseLabels";
 import { resolveFirstVisitGuideState } from "@/lib/onboarding/firstVisitGuideState";
 import { ensureForestResidentForEmail } from "@/lib/forestResident/forestResidentNumber";
 import type { ForestResidentCardData } from "@/lib/forestResident/forestResidentNumber";
@@ -59,23 +59,24 @@ export default async function OrdersListPage() {
     trialDayIndex: null,
   };
   try {
-    const loaded = await withPrismaConnectionRetry(() =>
-      listProfilesAndActiveProfileId(viewerEmail),
-    );
-    profiles = loaded.profiles;
-    activeProfileId = loaded.activeProfileId;
-    if (activeProfileId) {
-      const kanteiOrder = await withPrismaConnectionRetry(() =>
-        findKanteiOrderForProfile({ viewerEmail, profileId: activeProfileId }),
-      );
-      hasKanteiOrder = kanteiOrder != null;
-      activeKanteiOrderId = kanteiOrder?.id ?? null;
-    }
-    const entitlementCtx = await withPrismaConnectionRetry(() =>
-      loadEntitlementContext(viewerEmail),
-    );
-    journalEntryCount = entitlementCtx.journalEntryCount;
-    entitlement = serializeUserEntitlement(resolveUserEntitlement(entitlementCtx));
+    const loaded = await withPrismaConnectionRetry(async () => {
+      const profileData = await listProfilesAndActiveProfileId(viewerEmail);
+      let kanteiOrder: Awaited<ReturnType<typeof findKanteiOrderForProfile>> = null;
+      if (profileData.activeProfileId) {
+        kanteiOrder = await findKanteiOrderForProfile({
+          viewerEmail,
+          profileId: profileData.activeProfileId,
+        });
+      }
+      const entitlementCtx = await loadEntitlementContext(viewerEmail);
+      return { profileData, kanteiOrder, entitlementCtx };
+    });
+    profiles = loaded.profileData.profiles;
+    activeProfileId = loaded.profileData.activeProfileId;
+    hasKanteiOrder = loaded.kanteiOrder != null;
+    activeKanteiOrderId = loaded.kanteiOrder?.id ?? null;
+    journalEntryCount = loaded.entitlementCtx.journalEntryCount;
+    entitlement = serializeUserEntitlement(resolveUserEntitlement(loaded.entitlementCtx));
   } catch (e) {
     fetchError = e instanceof Error ? e.message : "一覧を取得できませんでした。";
   }
@@ -89,34 +90,7 @@ export default async function OrdersListPage() {
   }
 
   if (fetchError) {
-    const showDevHint = process.env.NODE_ENV === "development";
-    return (
-      <div className="space-y-4">
-        <div>
-          <h1 className="text-2xl font-bold text-stone-900">{LOG_HOUSE_PAGE_TITLE}</h1>
-        </div>
-        <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-900">
-          <p className="font-semibold">{LOG_HOUSE_LOAD_ERROR_TITLE}</p>
-          <p className="mt-2 text-stone-800">
-            まずは下の「詳細」を確認してください（ここに出ている内容が、実際の原因に近いです）。接続の一時切れのときは、数分あけてから再読み込みしてください。
-          </p>
-          <p className="mt-3 text-xs font-medium uppercase tracking-wide text-red-800">詳細</p>
-          <p className="mt-1 whitespace-pre-wrap rounded-md border border-red-200/80 bg-white/80 px-3 py-2 font-mono text-xs text-red-950">
-            {fetchError}
-          </p>
-          {!showDevHint ? (
-            <p className="mt-3 text-xs text-red-800">
-              本番で続く場合は、Vercel の `DATABASE_URL` が Neon の<strong>プーラー用</strong>
-              接続になっているか、未適用のマイグレーションがないかを確認してください。
-            </p>
-          ) : (
-            <p className="mt-3 text-xs text-red-800">
-              開発時: `DATABASE_URL` と `npx prisma db push` / `migrate` を確認してください。
-            </p>
-          )}
-        </div>
-      </div>
-    );
+    return <LogHouseLoadErrorPanel detail={fetchError} />;
   }
 
   const activeProfile = profiles.find((p) => p.id === activeProfileId) ?? null;
