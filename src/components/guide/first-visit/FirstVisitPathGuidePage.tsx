@@ -42,7 +42,8 @@ import {
 import type { FirstVisitReadyBranch, FirstVisitReadyContext } from "@/lib/viewer/firstVisitReadyContext";
 
 const CONTEXT_FETCH_TIMEOUT_MS = 8000;
-const CARD_GAP_CLASS = "gap-[2px]";
+/** プロローグ＋章カード間。看板下・下部ボタン上の余白と揃える */
+const CARD_STACK_CLASS = "mt-5 flex flex-1 flex-col gap-2.5 lg:mt-6 lg:gap-3";
 
 /** SSR / 初回 hydrate 共通の安全な初期値（sessionStorage を読まない） */
 const BOOTSTRAP_INPUT: ChapterProgressInput = {
@@ -157,7 +158,7 @@ export function FirstVisitPathGuidePage() {
             sizes={FIRST_VISIT_PATH_GUIDE_IMAGE_SIZES}
             priority
           />
-          <div className="absolute inset-[14%_18%_20%_18%] flex flex-col items-center justify-center text-center">
+          <div className="absolute inset-[22%_18%_12%_18%] flex flex-col items-center justify-start pt-[2%] text-center">
             <h1 className={`${pathGuideTitleSignTextClass.heading} text-[#4a3728]`}>
               {FIRST_VISIT_PATH_GUIDE_TITLE}
             </h1>
@@ -167,8 +168,8 @@ export function FirstVisitPathGuidePage() {
           </div>
         </header>
 
-        {/* カード4枚：看板との間隔あり・カード間は2px */}
-        <div className={`mt-4 flex flex-col ${CARD_GAP_CLASS}`}>
+        {/* カード4枚：看板下・カード間・下部ボタンまで均等に余白 */}
+        <div className={CARD_STACK_CLASS}>
           <FirstVisitPathGuidePrologueCard watched={prologueWatched} onWatched={handlePrologueWatched} />
 
           {chapters.map((chapter) => (
@@ -183,7 +184,7 @@ export function FirstVisitPathGuidePage() {
         </div>
 
         {/* 下部ナビ：章カードタップで進むため、森の入口へのみ */}
-        <div className="mt-6 w-full shrink-0 pb-1">
+        <div className="mt-6 w-full shrink-0 pb-1 lg:mt-8">
           <button
             type="button"
             disabled={isPending}

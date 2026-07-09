@@ -1,5 +1,5 @@
 /** 看板内の短い説明（進行中） */
-export const FIRST_VISIT_PATH_GUIDE_INTRO = "3つの章から、ゆっくり歩いてみましょう。" as const;
+export const FIRST_VISIT_PATH_GUIDE_INTRO = "3つの章から、ゆっくり\n歩いてみましょう。" as const;
 
 /** 看板内の短い説明（全章完了後） */
 export const FIRST_VISIT_PATH_GUIDE_COMPLETE_INTRO = "ご案内は完了しました。いつでも見返せます。" as const;

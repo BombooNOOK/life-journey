@@ -27,6 +27,13 @@ function cardSrc(chapterId: ChapterCardViewModel["id"]): string {
   return FIRST_VISIT_PATH_GUIDE_ASSETS.cardChapter3;
 }
 
+function chapterTitleClass(chapterId: ChapterCardViewModel["id"]): string {
+  if (chapterId === 1 || chapterId === 3) {
+    return pathGuideCardTextClass.titleSingleLine;
+  }
+  return pathGuideCardTextClass.title;
+}
+
 /** 挿絵入りカード全体を1つの進むボタンとして扱う */
 export function FirstVisitIllustratedChapterCard({ chapter, onAction, className = "" }: Props) {
   const clickable = chapter.actionHref != null && chapter.status !== "locked";
@@ -51,7 +58,7 @@ export function FirstVisitIllustratedChapterCard({ chapter, onAction, className 
             {chapter.status === "complete" ? " · 完了" : null}
             {chapter.status === "locked" ? " · ロック" : null}
           </p>
-          <h2 className={`${pathGuideCardTextClass.title} text-[#4a3728]`}>
+          <h2 className={`${chapterTitleClass(chapter.id)} text-[#4a3728]`}>
             {chapter.title}
           </h2>
           <p
