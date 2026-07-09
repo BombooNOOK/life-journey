@@ -7,7 +7,6 @@ import { FirstVisitIllustratedChapterCard } from "@/components/guide/first-visit
 import { FirstVisitPathGuidePrologueCard } from "@/components/guide/first-visit/FirstVisitPathGuidePrologueCard";
 import { useTransitionNavigation } from "@/components/ui/TransitionNavigationProvider";
 import {
-  isFirstVisitPathGuideComplete,
   resolveFirstVisitChapterCards,
   type ChapterCardViewModel,
   type ChapterProgressInput,
@@ -24,8 +23,6 @@ import {
 } from "@/lib/onboarding/firstVisitWizard/pathGuideCardText";
 import {
   FIRST_VISIT_PATH_GUIDE_BACK_LABEL,
-  FIRST_VISIT_PATH_GUIDE_COMPLETE_INTRO,
-  FIRST_VISIT_PATH_GUIDE_INTRO,
   FIRST_VISIT_PATH_GUIDE_TITLE,
 } from "@/lib/onboarding/firstVisitWizard/pathGuideCopy";
 import { readFirstVisitProgressStage } from "@/lib/onboarding/firstVisitWizard/progress";
@@ -79,10 +76,7 @@ function buildProgressInput(
 
 function resolveView(branch: FirstVisitReadyBranch, journalEntryCount: number) {
   const input = buildProgressInput(branch, journalEntryCount);
-  return {
-    chapters: resolveFirstVisitChapterCards(input),
-    allComplete: isFirstVisitPathGuideComplete(input),
-  };
+  return resolveFirstVisitChapterCards(input);
 }
 
 /** はじめての道しるべ — 幅基準・縦横比固定（イラストは伸ばさない） */
@@ -91,13 +85,10 @@ export function FirstVisitPathGuidePage() {
   const [chapters, setChapters] = useState<ChapterCardViewModel[]>(() =>
     resolveFirstVisitChapterCards(BOOTSTRAP_INPUT),
   );
-  const [allComplete, setAllComplete] = useState(false);
   const [prologueWatched, setPrologueWatched] = useState(false);
 
   const syncFromSession = useCallback((branch: FirstVisitReadyBranch, journalEntryCount: number) => {
-    const next = resolveView(branch, journalEntryCount);
-    setChapters(next.chapters);
-    setAllComplete(next.allComplete);
+    setChapters(resolveView(branch, journalEntryCount));
   }, []);
 
   useEffect(() => {
@@ -137,8 +128,6 @@ export function FirstVisitPathGuidePage() {
     setFirstVisitChapter3StartedFlag();
   }, []);
 
-  const intro = allComplete ? FIRST_VISIT_PATH_GUIDE_COMPLETE_INTRO : FIRST_VISIT_PATH_GUIDE_INTRO;
-
   return (
     <div className="home-read-scope relative min-h-[100dvh] bg-white">
       <div
@@ -158,13 +147,10 @@ export function FirstVisitPathGuidePage() {
             sizes={FIRST_VISIT_PATH_GUIDE_IMAGE_SIZES}
             priority
           />
-          <div className="absolute inset-[22%_18%_12%_18%] flex flex-col items-center justify-start pt-[2%] text-center">
+          <div className="absolute inset-[24%_16%_24%_16%] flex items-center justify-center text-center">
             <h1 className={`${pathGuideTitleSignTextClass.heading} text-[#4a3728]`}>
               {FIRST_VISIT_PATH_GUIDE_TITLE}
             </h1>
-            <p className={`${pathGuideTitleSignTextClass.intro} text-[#5c4638]/90`}>
-              {intro}
-            </p>
           </div>
         </header>
 

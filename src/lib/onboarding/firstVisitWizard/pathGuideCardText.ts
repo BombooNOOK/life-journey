@@ -11,13 +11,13 @@ export const pathGuideCardTextClass = {
   titleOneLine: `mt-[0.2em] ${pathGuideCardPrimarySize} whitespace-nowrap font-semibold leading-[1.2]`,
   /** 章タイトル（改行あり） */
   title: `mt-[0.2em] ${pathGuideCardPrimarySize} whitespace-pre-line font-semibold leading-[1.2]`,
-  action: `mt-[0.25em] ${pathGuideCardPrimarySize} font-medium leading-tight`,
+  action: "mt-[0.25em] text-[4.15cqw] font-medium leading-tight lg:text-[2.85cqw]",
 } as const;
 
-/** 看板タイトル（幅に連動） */
+/** 看板タイトル（幅に連動。「はじめての道しるべ」1行ギリ収まり） */
 export const pathGuideTitleSignTextClass = {
-  heading: "text-balance text-[5.3cqw] font-bold leading-tight tracking-wide lg:text-[3.8cqw]",
-  intro: "mt-[0.35em] whitespace-pre-line text-[4.2cqw] leading-snug lg:text-[2.7cqw]",
+  heading:
+    "whitespace-nowrap text-[7.1cqw] font-bold leading-tight tracking-wide lg:text-[5.15cqw]",
 } as const;
 
 /** カード・看板のテキストを幅基準でスケールする */
