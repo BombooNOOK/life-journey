@@ -1,0 +1,126 @@
+import { FIRST_VISIT_ROUTES } from "@/lib/onboarding/firstVisitWizard/routes";
+
+/** 0=未登録 1=登録済・ログハウス未完成 2=ログハウス完成 3=鑑定完了 4=日記1件以上 */
+export type OnboardingStage = 0 | 1 | 2 | 3 | 4;
+
+export type OnboardingStageInput = {
+  isLoggedIn: boolean;
+  chapter1Complete: boolean;
+  hasKanteiOrder: boolean;
+  journalEntryCount: number;
+};
+
+export type OnboardingFeature =
+  | "forest_loghouse"
+  | "forest_companion"
+  | "bottom_calendar"
+  | "bottom_list"
+  | "bottom_bookshelf"
+  | "bottom_loghouse"
+  | "guide_loghouse"
+  | "guide_bookshelf"
+  | "guide_calendar"
+  | "guide_list"
+  | "guide_companion";
+
+const FEATURE_MIN_STAGE: Record<OnboardingFeature, OnboardingStage> = {
+  forest_loghouse: 2,
+  forest_companion: 3,
+  bottom_loghouse: 2,
+  bottom_calendar: 3,
+  bottom_list: 3,
+  bottom_bookshelf: 3,
+  guide_loghouse: 2,
+  guide_bookshelf: 3,
+  guide_calendar: 3,
+  guide_list: 3,
+  guide_companion: 3,
+};
+
+export function resolveOnboardingStage(input: OnboardingStageInput): OnboardingStage {
+  if (!input.isLoggedIn) return 0;
+  if (input.journalEntryCount > 0) return 4;
+  if (input.hasKanteiOrder) return 3;
+  if (input.chapter1Complete) return 2;
+  return 1;
+}
+
+export function isOnboardingComplete(stage: OnboardingStage): boolean {
+  return stage >= 4;
+}
+
+export function isOnboardingFeatureUnlocked(
+  stage: OnboardingStage,
+  feature: OnboardingFeature,
+): boolean {
+  return stage >= FEATURE_MIN_STAGE[feature];
+}
+
+export function onboardingLockMessage(feature: OnboardingFeature): string {
+  const min = FEATURE_MIN_STAGE[feature];
+  if (min <= 1) {
+    return "はじめての道しるべから、住民登録とログハウスづくりを進めてください。";
+  }
+  if (min === 2) {
+    return "住民登録とログハウスづくりが終わると、ここから入れます。";
+  }
+  return "無料鑑定が終わると、ここから使えるようになります。";
+}
+
+export type OnboardingNextStep = {
+  href: string;
+  label: string;
+  body: string;
+};
+
+export function resolveOnboardingNextStep(stage: OnboardingStage): OnboardingNextStep | null {
+  if (stage >= 4) return null;
+
+  if (stage === 0) {
+    return {
+      href: FIRST_VISIT_ROUTES.pathGuide,
+      label: "はじめての道しるべへ",
+      body: "まずは道しるべから、プロローグと第1章を進めましょう。",
+    };
+  }
+
+  if (stage === 1) {
+    return {
+      href: FIRST_VISIT_ROUTES.pathGuide,
+      label: "ログハウスづくりの続きへ",
+      body: "道しるべの第1章から、ログハウス建築を続けましょう。",
+    };
+  }
+
+  if (stage === 2) {
+    return {
+      href: FIRST_VISIT_ROUTES.pathGuide,
+      label: "第2章・鑑定へ",
+      body: "道しるべの第2章から、無料鑑定を受けましょう。",
+    };
+  }
+
+  return {
+    href: FIRST_VISIT_ROUTES.pathGuide,
+    label: "第3章・日記へ",
+    body: "道しるべの第3章から、はじめての日記を書きましょう。",
+  };
+}
+
+/** 直URLアクセス時の最低段階（案内所・道しるべ・ログイン等は含まない） */
+export function resolvePathMinOnboardingStage(pathname: string): OnboardingStage | null {
+  if (pathname === "/orders") return 2;
+  if (pathname.startsWith("/orders/calendar")) return 3;
+  if (pathname.startsWith("/orders/list")) return 3;
+  if (pathname.startsWith("/orders/bookshelf")) return 3;
+  if (pathname.startsWith("/journal")) return 3;
+  if (/^\/orders\/[^/]+\/read/.test(pathname)) return 3;
+  if (/^\/orders\/[^/]+$/.test(pathname) && pathname !== "/orders") return 3;
+  return null;
+}
+
+export function isPathAllowedForStage(pathname: string, stage: OnboardingStage): boolean {
+  const required = resolvePathMinOnboardingStage(pathname);
+  if (required == null) return true;
+  return stage >= required;
+}

@@ -3,6 +3,8 @@
 import Image from "next/image";
 
 import { buildLoginHref } from "@/app/login/loginFlow";
+import { OnboardingLockedTap } from "@/components/onboarding/OnboardingLockedTap";
+import { useOnboardingStage } from "@/components/onboarding/OnboardingStageProvider";
 import { OwlNavButton } from "@/components/ui/OwlNavButton";
 import { HOME_FOREST_SIGN_OWL_TEACHER_SRC } from "@/lib/home/homeForestSignAssets";
 import { HOME_HERO_OWL_TEACHER_SRC } from "@/lib/home/homeHeroAssets";
@@ -22,6 +24,7 @@ import {
   type HomeForestSignViewport,
   type ObjectCoverLayout,
 } from "@/lib/home/homeForestSignLayout";
+import type { OnboardingFeature } from "@/lib/onboarding/onboardingStage";
 
 type NavItem = {
   id: string;
@@ -93,6 +96,13 @@ function ForestSignText({
   );
 }
 
+const FOREST_SIGN_NAV_FEATURES: Record<string, OnboardingFeature | null> = {
+  loghouse: "forest_loghouse",
+  first: null,
+  companion: "forest_companion",
+  "ljd-help": null,
+};
+
 function ForestSignSignLink({
   placement,
   viewport,
@@ -110,8 +120,11 @@ function ForestSignSignLink({
   preview?: boolean;
   nowrap?: boolean;
 }) {
+  const { isFeatureUnlocked } = useOnboardingStage();
   const style = placementStyle(placement, viewport, coverLayout);
   const whitespaceClass = nowrap ? "whitespace-nowrap" : "whitespace-pre-wrap";
+  const feature = FOREST_SIGN_NAV_FEATURES[item.id] ?? null;
+  const unlocked = feature == null || isFeatureUnlocked(feature);
 
   if (preview) {
     return (
@@ -121,6 +134,19 @@ function ForestSignSignLink({
       >
         {item.label}
       </span>
+    );
+  }
+
+  if (!unlocked && feature) {
+    return (
+      <OnboardingLockedTap feature={feature} className="pointer-events-auto">
+        <span
+          className={`${signLinkClass} ${whitespaceClass} pointer-events-auto opacity-45 ${primary ? "font-bold" : ""}`}
+          style={style}
+        >
+          {item.label}
+        </span>
+      </OnboardingLockedTap>
     );
   }
 

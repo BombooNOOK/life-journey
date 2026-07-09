@@ -2,7 +2,7 @@
 export const FIRST_VISIT_PATH_GUIDE_ASSET_DIR = "/images/ljd/first-visit/path-guide" as const;
 
 /** 素材差し替え時にインクリメント（ブラウザキャッシュ回避） */
-const PATH_GUIDE_ASSET_VERSION = 3;
+const PATH_GUIDE_ASSET_VERSION = 4;
 
 function pathGuideAsset(path: string): string {
   return `${FIRST_VISIT_PATH_GUIDE_ASSET_DIR}/${path}?v=${PATH_GUIDE_ASSET_VERSION}`;
@@ -16,7 +16,11 @@ export const FIRST_VISIT_PATH_GUIDE_ASSETS = {
   cardChapter1: pathGuideAsset("path_guide_card_chapter1.png"),
   cardChapter2: pathGuideAsset("path_guide_card_chapter2.png"),
   cardChapter3: pathGuideAsset("path_guide_card_chapter3.png"),
+  /** 森の案内所「はじめての道しるべ」カード用（Next/Image 向けにクエリなし） */
+  youngLeaf: `${FIRST_VISIT_PATH_GUIDE_ASSET_DIR}/path_guide_young_leaf.png`,
 } as const;
+
+export const FIRST_VISIT_PATH_GUIDE_YOUNG_LEAF_SIZE = { widthPx: 1024, heightPx: 1024 } as const;
 
 /** Canva 書き出しの実ピクセル（座標合わせの基準） */
 export const FIRST_VISIT_PATH_GUIDE_BG_SIZE = { widthPx: 576, heightPx: 1024 } as const;

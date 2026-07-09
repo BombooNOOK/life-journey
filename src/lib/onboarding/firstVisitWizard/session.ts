@@ -1,3 +1,8 @@
+import {
+  ONBOARDING_CHAPTER1_COMPLETE_COOKIE,
+  ONBOARDING_CHAPTER1_COOKIE_MAX_AGE_SECONDS,
+} from "@/lib/onboarding/onboardingStageCookies";
+
 const ORDER_GUIDE_FLAG = "ljd:firstGuide:orderGuide";
 const BOOKSHELF_KANTEI_GUIDE_FLAG = "ljd:firstGuide:bookshelfKanteiGuide";
 const FROM_REGISTER_FLAG = "ljd:firstGuide:fromRegister";
@@ -147,6 +152,22 @@ export function readFirstVisitChapterCompleteFlag(chapter: FirstVisitChapterNumb
 export function setFirstVisitChapterCompleteFlag(chapter: FirstVisitChapterNumber): void {
   if (!canUseSessionStorage()) return;
   window.sessionStorage.setItem(chapterCompleteKey(chapter), "1");
+  if (chapter === 1) {
+    writeOnboardingChapter1CompleteCookie();
+  }
+}
+
+function writeOnboardingChapter1CompleteCookie(): void {
+  if (typeof document === "undefined") return;
+  const secure = window.location.protocol === "https:" ? "; Secure" : "";
+  document.cookie = `${ONBOARDING_CHAPTER1_COMPLETE_COOKIE}=1; Path=/; Max-Age=${ONBOARDING_CHAPTER1_COOKIE_MAX_AGE_SECONDS}; SameSite=Lax${secure}`;
+}
+
+export function readOnboardingChapter1CompleteCookie(): boolean {
+  if (typeof document === "undefined") return false;
+  return document.cookie
+    .split(";")
+    .some((part) => part.trim() === `${ONBOARDING_CHAPTER1_COMPLETE_COOKIE}=1`);
 }
 
 export function clearFirstVisitChapterCompleteFlag(chapter: FirstVisitChapterNumber): void {

@@ -40,8 +40,8 @@ const TOC_ITEMS: TocItem[] = [
         <p className="mt-2">
           <strong>本棚</strong>は、プロフィールごとに、鑑定結果や日記ブックを保管・読み返す場所です。
         </p>
-        <GuideAppLink href="/orders" label={LOG_HOUSE_OPEN_LABEL} />
-        <GuideAppLink href="/orders/bookshelf" label="本棚を開く" />
+        <GuideAppLink href="/orders" label={LOG_HOUSE_OPEN_LABEL} feature="guide_loghouse" />
+        <GuideAppLink href="/orders/bookshelf" label="本棚を開く" feature="guide_bookshelf" />
       </>
     ),
   },
@@ -75,7 +75,7 @@ const TOC_ITEMS: TocItem[] = [
     body: (
       <>
         <p>カレンダーから日付を選び、今日の気持ちや出来事を短く残します。1日1枚まで写真を添えられます。</p>
-        <GuideAppLink href="/orders/calendar" label="カレンダーから日記を書く" />
+        <GuideAppLink href="/orders/calendar" label="カレンダーから日記を書く" feature="guide_calendar" />
       </>
     ),
   },
@@ -94,6 +94,7 @@ const TOC_ITEMS: TocItem[] = [
         <GuideAppLink
           href="/journal/with-companion?returnTo=%2Forders"
           label={<CompanionWritingButtonLabel />}
+          feature="guide_companion"
         />
       </>
     ),
@@ -107,7 +108,7 @@ const TOC_ITEMS: TocItem[] = [
         <p>
           日記を保存すると、どうぶつ鑑定士による読み解きコメントが届きます。プレビュー画面でいつでも読み返せます。保存前の入力中には表示されません。
         </p>
-        <GuideAppLink href="/orders/calendar" label="日記を書いて読み解きを見る" />
+        <GuideAppLink href="/orders/calendar" label="日記を書いて読み解きを見る" feature="guide_calendar" />
       </>
     ),
   },
@@ -118,8 +119,8 @@ const TOC_ITEMS: TocItem[] = [
     body: (
       <>
         <p>カレンダーで月ごとに記録のある日を確認できます。月別一覧からも、書いた日記を読み返せます。</p>
-        <GuideAppLink href="/orders/calendar" label="カレンダーを開く" />
-        <GuideAppLink href="/orders/list" label="月別一覧を開く" />
+        <GuideAppLink href="/orders/calendar" label="カレンダーを開く" feature="guide_calendar" />
+        <GuideAppLink href="/orders/list" label="月別一覧を開く" feature="guide_list" />
       </>
     ),
   },
@@ -130,7 +131,7 @@ const TOC_ITEMS: TocItem[] = [
     body: (
       <>
         <p>本棚には鑑定書や、期間を選んで作った日記ブックが並びます。製本をご希望の方は、本棚から製本前確認へ進めます。</p>
-        <GuideAppLink href="/orders/bookshelf" label="本棚を開く" />
+        <GuideAppLink href="/orders/bookshelf" label="本棚を開く" feature="guide_bookshelf" />
         <p className="mt-2 text-xs text-stone-500">
           操作のくわしい流れは
           <Link href="/guide" className="mx-0.5 text-emerald-900 hover:underline">
