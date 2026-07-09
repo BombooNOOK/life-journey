@@ -28,3 +28,6 @@ export const LOG_HOUSE_LOAD_ERROR_TITLE = "ログハウスを読み込めませ�
 
 export const LOG_HOUSE_TAGLINE =
   "BambooNOOKの森で、今日のページをひらこう。";
+
+export const LOG_HOUSE_RESIDENT_CARD_LOADING_LABEL =
+  "森の住民票を開いています…";

@@ -36,4 +36,10 @@ export const myPageActionIllustrations = {
     height: 583,
     alt: "",
   },
+  residentCard: {
+    src: "/images/ljd/forest-resident/forest_resident_badge_green.png",
+    width: 512,
+    height: 512,
+    alt: "",
+  },
 } as const;

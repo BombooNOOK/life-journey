@@ -7,7 +7,6 @@ import {
 import { MyPageGuideLink } from "@/components/guide/MyPageGuideLink";
 import { LogHouseGuestEntrance } from "@/components/orders/LogHouseGuestEntrance";
 import { LogHouseLoadErrorPanel } from "@/components/orders/LogHouseLoadErrorPanel";
-import { LogHouseResidentCardSection } from "@/components/orders/LogHouseResidentCardSection";
 import { KanteiMissingBanner } from "@/components/orders/KanteiMissingBanner";
 import { LegalFooterLinks } from "@/components/legal/LegalFooterLinks";
 import { MyPageManageHub } from "@/components/orders/MyPageManageMenu";
@@ -28,8 +27,6 @@ import {
 } from "@/lib/entitlement/resolveUserEntitlement";
 import { calendarDayKeyInJapan, journalWithCompanionPath } from "@/lib/journal/journalNav";
 import { resolveFirstVisitGuideState } from "@/lib/onboarding/firstVisitGuideState";
-import { ensureForestResidentForEmail } from "@/lib/forestResident/forestResidentNumber";
-import type { ForestResidentCardData } from "@/lib/forestResident/forestResidentNumber";
 import { TrialStatusBanner } from "@/components/entitlement/TrialStatusBanner";
 
 export const dynamic = "force-dynamic";
@@ -48,7 +45,6 @@ export default async function OrdersListPage() {
   let hasKanteiOrder = true;
   let activeKanteiOrderId: string | null = null;
   let journalEntryCount = 0;
-  let residentCard: ForestResidentCardData | null = null;
   let entitlement: SerializedUserEntitlement = {
     tier: "trial_not_started",
     showTrialBanner: false,
@@ -78,14 +74,6 @@ export default async function OrdersListPage() {
     fetchError = e instanceof Error ? e.message : "一覧を取得できませんでした。";
   }
 
-  if (!fetchError) {
-    try {
-      residentCard = await withPrismaConnectionRetry(() => ensureForestResidentForEmail(viewerEmail));
-    } catch (e) {
-      console.error("[orders] forest resident card", e);
-    }
-  }
-
   if (fetchError) {
     return <LogHouseLoadErrorPanel detail={fetchError} />;
   }
@@ -107,8 +95,6 @@ export default async function OrdersListPage() {
   return (
       <div className="space-y-5 sm:space-y-6">
       <MyPagePageHeader />
-
-      {residentCard ? <LogHouseResidentCardSection initialCard={residentCard} /> : null}
 
       <MyPageProfileList profiles={profiles} activeProfileId={activeProfileId} />
 

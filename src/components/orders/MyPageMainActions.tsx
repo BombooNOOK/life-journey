@@ -48,7 +48,7 @@ export function MyPageMainActions({
         helpAriaLabel="ログハウスの操作説明"
         help={
           <p>
-            選んだプロフィールの日記を書いたり、記録や本棚・鑑定結果を開けます。
+            選んだプロフィールの日記を書いたり、記録や本棚・鑑定結果を開けます。森の住民票はアカウント共通です。
           </p>
         }
       />
@@ -135,6 +135,16 @@ export function MyPageMainActions({
             tone="shelf"
           />
         </ProfileSelectNavButton>
+
+        <Link href="/orders/resident-card" className={navButtonClass}>
+          <MyPageActionCard
+            illustration={myPageActionIllustrations.residentCard}
+            title="森の住民票を見る"
+            description="あなたの森の住民としてのカードを見ます"
+            supplementLabel="アカウント共通"
+            tone="wood"
+          />
+        </Link>
 
         {kanteiOrderId ? (
           <Link
