@@ -16,7 +16,7 @@ export const FIRST_VISIT_CHAPTERS: FirstVisitChapterDefinition[] = [
   {
     id: 1,
     label: "第1章",
-    title: "住民登録と\nログハウスづくり",
+    title: "森の住民登録と\nログハウスづくり",
     description: "住民票カードを作り、\nあなたのログハウスを用意します。",
     timeEstimate: "約2〜3分",
     reviewHref: "/help/ljd#loghouse",
@@ -24,7 +24,7 @@ export const FIRST_VISIT_CHAPTERS: FirstVisitChapterDefinition[] = [
   {
     id: 2,
     label: "第2章",
-    title: "鑑定のへやで鑑定書をつくる",
+    title: "鑑定のへやで\n鑑定書を作る",
     description: "生年月日とお名前から、\nあなたの数字を見つけます。",
     timeEstimate: "約2〜3分",
     reviewHref: "/help/ljd#kantei",

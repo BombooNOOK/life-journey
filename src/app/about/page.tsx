@@ -1,16 +1,8 @@
 import type { Metadata } from "next";
 
 import { AboutPageCtaAudienceProvider } from "@/components/about/AboutPageCtaAudienceProvider";
-import { AboutPageClosingCta } from "@/components/about/AboutPageClosingCta";
-import { AboutPageGuestReadingFontSizeBand } from "@/components/about/AboutPageGuestReadingFontSizeBand";
-import { AboutPageQuickStartCta } from "@/components/about/AboutPageQuickStartCta";
+import { LjdAboutLpSections } from "@/components/about/LjdAboutLpSections";
 import { AboutPageTopBar } from "@/components/about/AboutPageTopBar";
-import { HomeAboutSection } from "@/components/home/HomeAboutSection";
-import { HomeOwlNavigatorIntroSection } from "@/components/home/HomeOwlNavigatorIntroSection";
-import { HomeAppraiserProfilesSection } from "@/components/home/HomeAppraiserProfilesSection";
-import { HomeFaqSection } from "@/components/home/HomeFaqSection";
-import { HomeProductMockSection } from "@/components/home/HomeProductMockSection";
-import { HomeRecommendedForSection } from "@/components/home/HomeRecommendedForSection";
 
 export const metadata: Metadata = {
   title: "Life Journey Diaryとは",
@@ -30,23 +22,7 @@ export default function AboutPage() {
           </p>
         </div>
 
-        <HomeAboutSection />
-
-        <HomeOwlNavigatorIntroSection />
-
-        <AboutPageQuickStartCta />
-
-        <HomeRecommendedForSection />
-
-        <HomeProductMockSection />
-
-        <HomeAppraiserProfilesSection />
-
-        <HomeFaqSection />
-
-        <AboutPageClosingCta />
-
-        <AboutPageGuestReadingFontSizeBand />
+        <LjdAboutLpSections />
       </div>
     </AboutPageCtaAudienceProvider>
   );

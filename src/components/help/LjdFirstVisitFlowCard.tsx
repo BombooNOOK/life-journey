@@ -10,7 +10,7 @@ import { FIRST_VISIT_ROUTES } from "@/lib/onboarding/firstVisitWizard/routes";
 const buttonClass =
   "inline-flex min-h-[44px] items-center justify-center rounded-lg border border-emerald-200/80 bg-white px-4 py-2.5 text-sm font-medium text-emerald-950 shadow-sm transition hover:border-emerald-300 hover:bg-emerald-50/90";
 
-/** 森の案内所：はじめての方の流れカード */
+/** 森の案内所：はじめての道しるべカード */
 export function LjdFirstVisitFlowCard() {
   return (
     <section aria-labelledby="forest-guide-first-visit-heading">

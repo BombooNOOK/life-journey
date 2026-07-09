@@ -22,7 +22,7 @@ export const FOREST_GUIDE_MAP_BUILDINGS: Record<ForestGuideMapBuildingId, Forest
   guideStation: {
     id: "guideStation",
     title: "森の案内所",
-    body: "迷ったときに戻ってこられる場所です。森の案内図や、はじめての方の流れ、日記の書き方を確認できます。",
+    body: "迷ったときに戻ってこられる場所です。森の案内図や、はじめての道しるべ、日記の書き方を確認できます。",
   },
   musicHall: {
     id: "musicHall",

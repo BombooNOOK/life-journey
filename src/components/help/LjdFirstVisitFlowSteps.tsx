@@ -7,7 +7,7 @@ import {
   FOREST_GUIDE_STATION_FIRST_VISIT_SECTION_TITLE,
 } from "@/lib/help/forestGuideStation";
 
-/** 森の案内所：はじめての方の流れ（折りたたみステップ一覧） */
+/** 森の案内所：はじめての道しるべ（折りたたみステップ一覧） */
 export function LjdFirstVisitFlowSteps() {
   return (
     <section aria-labelledby="forest-guide-first-visit-heading">

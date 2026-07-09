@@ -4,14 +4,14 @@ export const FOREST_GUIDE_STATION_TITLE = "森の案内所" as const;
 export const FOREST_GUIDE_STATION_SUBTITLE = "Life Journey Diaryの歩き方" as const;
 
 export const FOREST_GUIDE_STATION_DESCRIPTION =
-  "ここは、Life Journey Diaryの森で迷ったときに立ち寄れる案内所です。森の案内図や、はじめての方の流れ、日記の書き方、すうじの読み方を確認できます。" as const;
+  "ここは、Life Journey Diaryの森で迷ったときに立ち寄れる案内所です。森の案内図や、はじめての道しるべ、日記の書き方、すうじの読み方を確認できます。" as const;
 
 export const FOREST_GUIDE_STATION_MAP_SECTION_TITLE = "BambooNOOKの森の案内図" as const;
 
-export const FOREST_GUIDE_STATION_FIRST_VISIT_SECTION_TITLE = "はじめての方の流れ" as const;
+export const FOREST_GUIDE_STATION_FIRST_VISIT_SECTION_TITLE = "はじめての道しるべ" as const;
 
 export const FOREST_GUIDE_STATION_FIRST_VISIT_CARD_BODY =
-  "森の住民登録から、\nはじめての日記を書くまでの流れを確認できます。" as const;
+  "プロローグ動画と3つの章から、\nはじめての流れを確認できます。" as const;
 
 export const FOREST_GUIDE_STATION_FIRST_VISIT_CARD_BUTTON = "確認する" as const;
 

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useCallback, useState, type ReactNode } from "react";
 
 import { GuideAppLink } from "@/components/help/GuideAppLink";
+import { LjdAboutLpEmbed } from "@/components/help/LjdAboutLpEmbed";
 import { CompanionWritingButtonLabel } from "@/components/journal/companion-writing/CompanionWritingButtonLabel";
 import {
   FOREST_GUIDE_STATION_NUMEROLOGY_READING_HREF,
@@ -24,22 +25,8 @@ const TOC_ITEMS: TocItem[] = [
   {
     id: "about",
     title: "LJD とは",
-    summary: "Life Journey Diary の考え方",
-    body: (
-      <>
-        <p>
-          Life Journey Diary（LJD）は、鑑定書と日記がつながる場所です。数字で紡ぐ人生の旅を、日々の言葉で重ねていきます。
-        </p>
-        <p className="mt-2">
-          特別なことがあった日だけでなく、いつも通りの日も、少し疲れた日も、なんとなく心が動いた日も——今日という一日を、あなた自身の言葉で残していく日記です。
-        </p>
-        <p className="mt-3">
-          <Link href="/diary-guide" className="font-medium text-emerald-900 underline-offset-2 hover:underline">
-            くわしい歩き方（文章版）→
-          </Link>
-        </p>
-      </>
-    ),
+    summary: "Life Journey Diaryのことを、ゆっくりご紹介します",
+    body: <LjdAboutLpEmbed />,
   },
   {
     id: "loghouse",
@@ -248,7 +235,10 @@ export function LjdWalkthroughToc() {
                     id={`${item.id}-panel`}
                     role="region"
                     aria-labelledby={`${item.id}-heading`}
-                    className="border-t border-stone-100 px-4 py-3 text-sm leading-6 text-stone-700"
+                    className={[
+                      "border-t border-stone-100 px-3 py-4 sm:px-4 sm:py-5",
+                      item.id === "about" ? "" : "text-sm leading-6 text-stone-700",
+                    ].join(" ")}
                   >
                     {item.body}
                   </div>
