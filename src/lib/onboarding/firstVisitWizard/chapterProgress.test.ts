@@ -43,6 +43,21 @@ describe("chapterProgress", () => {
     expect(cards[1]?.status).toBe("locked");
   });
 
+  it("unlocks chapter 2 when chapter 1 end stage is saved without entering chapter 2", () => {
+    const cards = resolveFirstVisitChapterCards({
+      ...baseInput,
+      branch: "needsKantei",
+      savedStage: "kantei",
+    });
+    expect(inferChapter1Complete({
+      ...baseInput,
+      branch: "needsKantei",
+      savedStage: "kantei",
+    })).toBe(true);
+    expect(cards[0]?.status).toBe("complete");
+    expect(cards[1]?.status).toBe("available");
+  });
+
   it("unlocks chapter 2 after chapter 1 completes", () => {
     const cards = resolveFirstVisitChapterCards({
       ...baseInput,

@@ -61,6 +61,7 @@ function hasKantei(branch: FirstVisitReadyBranch): boolean {
 export function inferChapter1Complete(input: ChapterProgressInput): boolean {
   if (input.chapter1CompleteFlag) return true;
   if (hasKantei(input.branch)) return true;
+  if (input.savedStage === "kantei") return true;
   if (input.savedStage && (CHAPTER_2_STAGES as readonly string[]).includes(input.savedStage)) {
     return true;
   }

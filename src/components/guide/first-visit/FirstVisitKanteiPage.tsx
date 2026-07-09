@@ -5,9 +5,10 @@ import { useCallback, useEffect, useState } from "react";
 
 import { useFirebaseAuth } from "@/components/auth/FirebaseAuthProvider";
 import { buildLoginHref } from "@/app/login/loginFlow";
-import { FirstVisitMilestoneActions } from "@/components/guide/first-visit/FirstVisitMilestoneActions";
 import {
   companionWritingGuideBodyClass,
+  companionWritingGuidePrimaryButtonClass,
+  companionWritingGuideSecondaryButtonClass,
   companionWritingGuideTitleClass,
 } from "@/components/journal/companion-writing/companionWritingGuideStyles";
 import { useTransitionNavigation } from "@/components/ui/TransitionNavigationProvider";
@@ -16,18 +17,19 @@ import { pinFirstVisitWizardHistory } from "@/hooks/useBlockBrowserBack";
 import {
   FIRST_VISIT_LOGHOUSE_COMPLETE_BODY,
   FIRST_VISIT_LOGHOUSE_COMPLETE_BUTTON,
-  FIRST_VISIT_LOGHOUSE_COMPLETE_FOOTNOTE,
   FIRST_VISIT_LOGHOUSE_COMPLETE_ILLUSTRATION_SRC,
+  FIRST_VISIT_LOGHOUSE_COMPLETE_LOGHOUSE_GUIDE_NOTE,
+  FIRST_VISIT_LOGHOUSE_COMPLETE_PATH_GUIDE_BUTTON,
   FIRST_VISIT_LOGHOUSE_COMPLETE_TITLE,
   preloadFirstVisitLoghouseCompleteIllustration,
 } from "@/lib/onboarding/firstVisitWizard/loghouseCompleteCopy";
 import { FIRST_VISIT_ROUTES } from "@/lib/onboarding/firstVisitWizard/routes";
 import { setFirstVisitChapterCompleteFlag } from "@/lib/onboarding/firstVisitWizard/session";
 
-/** 第8幕：ログハウス完成 */
+/** 第8幕：ログハウス完成（第1章の区切り） */
 export function FirstVisitKanteiPage() {
   const router = useRouter();
-  const { replace } = useTransitionNavigation();
+  const { replace, isPending } = useTransitionNavigation();
   const { user, loading } = useFirebaseAuth();
   const isLoggedIn = Boolean(user?.email?.trim());
   const [illustrationReady, setIllustrationReady] = useState(false);
@@ -53,9 +55,17 @@ export function FirstVisitKanteiPage() {
     }
   }, [isLoggedIn, loading, router]);
 
-  const handleProceed = useCallback(() => {
+  useEffect(() => {
+    if (loading || !isLoggedIn || !illustrationReady) return;
     setFirstVisitChapterCompleteFlag(1);
+  }, [illustrationReady, isLoggedIn, loading]);
+
+  const handleProceed = useCallback(() => {
     replace(FIRST_VISIT_ROUTES.kanteiReady);
+  }, [replace]);
+
+  const handlePathGuideBack = useCallback(() => {
+    replace(FIRST_VISIT_ROUTES.pathGuide);
   }, [replace]);
 
   if (loading || !isLoggedIn || !illustrationReady) {
@@ -94,12 +104,31 @@ export function FirstVisitKanteiPage() {
             {FIRST_VISIT_LOGHOUSE_COMPLETE_BODY}
           </p>
 
-          <FirstVisitMilestoneActions
-            nextLabel={FIRST_VISIT_LOGHOUSE_COMPLETE_BUTTON}
-            onNext={handleProceed}
-          />
+          <div className="mt-6 flex w-full flex-col gap-2.5">
+            <button
+              type="button"
+              className={companionWritingGuidePrimaryButtonClass}
+              disabled={isPending}
+              onClick={handleProceed}
+            >
+              {FIRST_VISIT_LOGHOUSE_COMPLETE_BUTTON}
+            </button>
 
-          <p className="mt-3 text-center text-sm text-stone-500">{FIRST_VISIT_LOGHOUSE_COMPLETE_FOOTNOTE}</p>
+            <div className="h-4" aria-hidden />
+
+            <p className={`text-center leading-relaxed ${companionWritingGuideBodyClass}`}>
+              {FIRST_VISIT_LOGHOUSE_COMPLETE_LOGHOUSE_GUIDE_NOTE}
+            </p>
+
+            <button
+              type="button"
+              className={companionWritingGuideSecondaryButtonClass}
+              disabled={isPending}
+              onClick={handlePathGuideBack}
+            >
+              {FIRST_VISIT_LOGHOUSE_COMPLETE_PATH_GUIDE_BUTTON}
+            </button>
+          </div>
         </div>
       </div>
     </section>

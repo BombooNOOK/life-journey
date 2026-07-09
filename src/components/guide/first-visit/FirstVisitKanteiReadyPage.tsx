@@ -83,8 +83,7 @@ export function FirstVisitKanteiReadyPage() {
     <FirstVisitGuideCardPageLayout
       stepLabel="鑑定のへや"
       ariaLabel="鑑定のへやへの案内"
-      backHref={FIRST_VISIT_ROUTES.kantei}
-      backLabel="ログハウス完成へ戻る"
+      showPauseLink={false}
     >
       <FirstVisitGuideCardPanel card={FIRST_VISIT_KANTEI_HALL_INTRO_CARD} onAction={handleAction} />
     </FirstVisitGuideCardPageLayout>

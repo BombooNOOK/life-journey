@@ -12,8 +12,7 @@ export const FIRST_VISIT_PATH_GUIDE_PROLOGUE_TITLE = "プロローグ" as const;
 
 export const FIRST_VISIT_PATH_GUIDE_PROLOGUE_HEADING = "Life Journey Diaryって？" as const;
 
-export const FIRST_VISIT_PATH_GUIDE_PROLOGUE_BODY =
-  "短い動画で、森と日記の雰囲気を掴みましょう。" as const;
+export const FIRST_VISIT_PATH_GUIDE_PROLOGUE_BODY = "まずは動画でご覧ください" as const;
 
 export const FIRST_VISIT_PATH_GUIDE_PROLOGUE_WATCH_LABEL = "動画を見る" as const;
 
