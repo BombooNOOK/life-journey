@@ -107,6 +107,13 @@ export function OnboardingStageProvider({ children }: { children: ReactNode }) {
 
     const isLoggedIn = Boolean(user) || isLjLoggedInOnClient();
 
+    setReady(false);
+    if (isLoggedIn) {
+      setServerContext(mergeStageContext({ ...BOOTSTRAP, isLoggedIn: true }));
+    } else {
+      setServerContext(BOOTSTRAP);
+    }
+
     void fetch("/api/viewer/onboarding-stage-context", { credentials: "same-origin" })
       .then(async (res) => {
         if (!res.ok) throw new Error("onboarding context fetch failed");

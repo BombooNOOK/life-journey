@@ -47,10 +47,12 @@ function BottomNavTab({
   item,
   active,
   unlocked,
+  syncing,
 }: {
   item: (typeof NAV_ITEMS)[number];
   active: boolean;
   unlocked: boolean;
+  syncing: boolean;
 }) {
   const tabContent = (
     <>
@@ -70,11 +72,19 @@ function BottomNavTab({
     );
   }
 
-  if (!unlocked) {
+  if (!unlocked && !syncing) {
     return (
       <OnboardingLockedTap feature={item.feature} className="flex flex-1">
         <span className={`${TAB_CLASS} w-full text-stone-400`}>{tabContent}</span>
       </OnboardingLockedTap>
+    );
+  }
+
+  if (syncing) {
+    return (
+      <span className={`${TAB_CLASS} text-stone-500`} aria-busy="true">
+        {tabContent}
+      </span>
     );
   }
 
@@ -95,20 +105,23 @@ function BottomNavTab({
 export function DiaryHomeBottomNav() {
   const pathname = usePathname();
   const router = useRouter();
-  const { isFeatureUnlocked } = useOnboardingStage();
+  const { ready, isFeatureUnlocked } = useOnboardingStage();
+  const syncing = !ready;
 
   useEffect(() => {
+    if (syncing) return;
     for (const item of NAV_ITEMS) {
       if (isFeatureUnlocked(item.feature)) {
         router.prefetch(item.href);
       }
     }
-  }, [isFeatureUnlocked, router]);
+  }, [isFeatureUnlocked, router, syncing]);
 
   return (
     <nav
       className="lj-bottom-nav fixed inset-x-0 bottom-0 z-40 border-t border-emerald-100/90 bg-[#fffdf9]/95 backdrop-blur-md"
       aria-label="日記メニュー"
+      aria-busy={syncing || undefined}
     >
       <div className="mx-auto flex max-w-3xl pb-[max(0px,env(safe-area-inset-bottom))]">
         {NAV_ITEMS.map((item) => (
@@ -117,6 +130,7 @@ export function DiaryHomeBottomNav() {
             item={item}
             active={item.isActive(pathname)}
             unlocked={isFeatureUnlocked(item.feature)}
+            syncing={syncing}
           />
         ))}
       </div>

@@ -19,15 +19,23 @@ export function OnboardingLockedTap({
   className = "",
   lockedClassName = "opacity-45",
 }: Props) {
-  const { isFeatureUnlocked, lockMessage } = useOnboardingStage();
+  const { ready, isFeatureUnlocked, lockMessage } = useOnboardingStage();
   const [notice, setNotice] = useState<string | null>(null);
   const unlocked = isFeatureUnlocked(feature);
 
   const handleTap = useCallback(() => {
-    if (unlocked) return;
+    if (!ready || unlocked) return;
     setNotice(lockMessage(feature));
     window.setTimeout(() => setNotice(null), 4200);
-  }, [feature, lockMessage, unlocked]);
+  }, [feature, lockMessage, ready, unlocked]);
+
+  if (!ready) {
+    return (
+      <div className={className} aria-busy="true">
+        {children}
+      </div>
+    );
+  }
 
   return (
     <div className={["relative", className].filter(Boolean).join(" ")}>

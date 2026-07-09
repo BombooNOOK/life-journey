@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { FirebaseAuthProvider } from "@/components/auth/FirebaseAuthProvider";
 import { ConditionalSiteChrome } from "@/components/layout/ConditionalSiteChrome";
 import { OnboardingStageProvider } from "@/components/onboarding/OnboardingStageProvider";
+import { OnboardingStageSyncBanner } from "@/components/onboarding/OnboardingStageSyncBanner";
 import { ReadingFontSizeProvider } from "@/components/reading/ReadingFontSizeContext";
 import {
   APP_DESCRIPTION,
@@ -59,6 +60,7 @@ export default function RootLayout({
         <FirebaseAuthProvider>
           <ReadingFontSizeProvider>
             <OnboardingStageProvider>
+              <OnboardingStageSyncBanner />
               <ConditionalSiteChrome>{children}</ConditionalSiteChrome>
             </OnboardingStageProvider>
           </ReadingFontSizeProvider>

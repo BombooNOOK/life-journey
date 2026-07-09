@@ -120,7 +120,7 @@ function ForestSignSignLink({
   preview?: boolean;
   nowrap?: boolean;
 }) {
-  const { isFeatureUnlocked } = useOnboardingStage();
+  const { ready, isFeatureUnlocked } = useOnboardingStage();
   const style = placementStyle(placement, viewport, coverLayout);
   const whitespaceClass = nowrap ? "whitespace-nowrap" : "whitespace-pre-wrap";
   const feature = FOREST_SIGN_NAV_FEATURES[item.id] ?? null;
@@ -131,6 +131,18 @@ function ForestSignSignLink({
       <span
         className={`${signLinkClass} ${whitespaceClass} pointer-events-none ${primary ? "font-bold" : ""}`}
         style={style}
+      >
+        {item.label}
+      </span>
+    );
+  }
+
+  if (!ready && feature) {
+    return (
+      <span
+        className={`${signLinkClass} ${whitespaceClass} pointer-events-none ${primary ? "font-bold" : ""}`}
+        style={style}
+        aria-busy="true"
       >
         {item.label}
       </span>
