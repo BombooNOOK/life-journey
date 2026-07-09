@@ -1,13 +1,17 @@
-/** カード幅（1024 設計）に連動するオーバーレイ文字サイズ（モバイルは +4pt 相当） */
+/**
+ * カード幅（1024 設計）に連動するオーバーレイ文字サイズ。
+ * 基準: プロローグ「Life Journey Diaryって？」が1行にギリ収まる大きさ。
+ */
+const pathGuideCardPrimarySize = "text-[5.85cqw] lg:text-[4.05cqw]";
+
+/** カード3行（章名・タイトル・アクション）共通 */
 export const pathGuideCardTextClass = {
-  label: "text-[4.1cqw] font-semibold tracking-wide leading-tight lg:text-[2.6cqw]",
-  title: "mt-[0.3em] text-pretty text-[5cqw] font-semibold leading-[1.3] lg:text-[3.5cqw]",
-  /** 第1章・第3章など1行で収めたいタイトル用（やや小さめ） */
-  titleSingleLine:
-    "mt-[0.3em] whitespace-nowrap text-[4.55cqw] font-semibold leading-[1.3] lg:text-[3.35cqw]",
-  body: "mt-[0.3em] whitespace-pre-line text-pretty text-[4.35cqw] leading-[1.35] lg:text-[2.85cqw]",
-  meta: "mt-[0.3em] text-pretty text-[4.1cqw] leading-[1.35] lg:text-[2.6cqw]",
-  action: "mt-[0.3em] text-[4.1cqw] font-medium leading-tight lg:text-[2.6cqw]",
+  label: `${pathGuideCardPrimarySize} font-semibold tracking-wide leading-tight`,
+  /** プロローグ見出しなど1行タイトル */
+  titleOneLine: `mt-[0.2em] ${pathGuideCardPrimarySize} whitespace-nowrap font-semibold leading-[1.2]`,
+  /** 章タイトル（改行あり） */
+  title: `mt-[0.2em] ${pathGuideCardPrimarySize} whitespace-pre-line font-semibold leading-[1.2]`,
+  action: `mt-[0.25em] ${pathGuideCardPrimarySize} font-medium leading-tight`,
 } as const;
 
 /** 看板タイトル（幅に連動） */

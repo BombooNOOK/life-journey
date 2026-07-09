@@ -14,7 +14,6 @@ import {
   pathGuideCardTextOverlayClass,
 } from "@/lib/onboarding/firstVisitWizard/pathGuideCardText";
 import {
-  FIRST_VISIT_PATH_GUIDE_PROLOGUE_BODY,
   FIRST_VISIT_PATH_GUIDE_PROLOGUE_CLOSE_LABEL,
   FIRST_VISIT_PATH_GUIDE_PROLOGUE_HEADING,
   FIRST_VISIT_PATH_GUIDE_PROLOGUE_REPLAY_LABEL,
@@ -113,14 +112,10 @@ export function FirstVisitPathGuidePrologueCard({ watched, onWatched, className 
           <div className="min-w-0 text-left">
             <p className={`${pathGuideCardTextClass.label} text-emerald-900/75`}>
               {FIRST_VISIT_PATH_GUIDE_PROLOGUE_TITLE}
-              {watched ? " · 見た" : null}
             </p>
-            <h2 className={`${pathGuideCardTextClass.title} text-[#4a3728]`}>
+            <h2 className={`${pathGuideCardTextClass.titleOneLine} text-[#4a3728]`}>
               {FIRST_VISIT_PATH_GUIDE_PROLOGUE_HEADING}
             </h2>
-            <p className={`${pathGuideCardTextClass.body} text-[#5c4638]/90`}>
-              {FIRST_VISIT_PATH_GUIDE_PROLOGUE_BODY}
-            </p>
             <p className={`${pathGuideCardTextClass.action} text-emerald-900/85`}>
               {watched
                 ? `${FIRST_VISIT_PATH_GUIDE_PROLOGUE_REPLAY_LABEL} →`

@@ -27,17 +27,17 @@ function cardSrc(chapterId: ChapterCardViewModel["id"]): string {
   return FIRST_VISIT_PATH_GUIDE_ASSETS.cardChapter3;
 }
 
-function chapterTitleClass(chapterId: ChapterCardViewModel["id"]): string {
-  if (chapterId === 1 || chapterId === 3) {
-    return pathGuideCardTextClass.titleSingleLine;
-  }
-  return pathGuideCardTextClass.title;
+function chapterActionText(chapter: ChapterCardViewModel): string | null {
+  if (chapter.status === "locked") return chapter.statusLabel;
+  if (chapter.buttonLabel) return `${chapter.buttonLabel} →`;
+  if (chapter.status === "complete") return chapter.statusLabel;
+  return null;
 }
 
 /** 挿絵入りカード全体を1つの進むボタンとして扱う */
 export function FirstVisitIllustratedChapterCard({ chapter, onAction, className = "" }: Props) {
   const clickable = chapter.actionHref != null && chapter.status !== "locked";
-  const dimmed = chapter.status === "locked" || chapter.status === "complete";
+  const actionText = chapterActionText(chapter);
 
   const content = (
     <>
@@ -53,32 +53,17 @@ export function FirstVisitIllustratedChapterCard({ chapter, onAction, className 
 
       <div className={pathGuideCardTextOverlayClass}>
         <div className="min-w-0 text-left">
-          <p className={`${pathGuideCardTextClass.label} text-emerald-900/75`}>
-            {chapter.label}
-            {chapter.status === "complete" ? " · 完了" : null}
-            {chapter.status === "locked" ? " · ロック" : null}
-          </p>
-          <h2 className={`${chapterTitleClass(chapter.id)} text-[#4a3728]`}>
-            {chapter.title}
-          </h2>
-          <p
-            className={[
-              pathGuideCardTextClass.body,
-              dimmed ? "text-[#5c4638]/75" : "text-[#5c4638]/90",
-            ].join(" ")}
-          >
-            {chapter.description}
-          </p>
-          {chapter.status === "locked" ? (
-            <p className={`${pathGuideCardTextClass.meta} text-[#6b5748]/85`}>{chapter.statusLabel}</p>
-          ) : null}
-          {chapter.status === "available" || chapter.status === "in_progress" ? (
-            <p className={`${pathGuideCardTextClass.action} text-emerald-900/85`}>
-              {chapter.buttonLabel ?? chapter.statusLabel} →
+          <p className={`${pathGuideCardTextClass.label} text-emerald-900/75`}>{chapter.label}</p>
+          <h2 className={`${pathGuideCardTextClass.title} text-[#4a3728]`}>{chapter.title}</h2>
+          {actionText ? (
+            <p
+              className={[
+                pathGuideCardTextClass.action,
+                chapter.status === "locked" ? "text-[#6b5748]/85" : "text-emerald-900/85",
+              ].join(" ")}
+            >
+              {actionText}
             </p>
-          ) : null}
-          {chapter.status === "complete" && chapter.buttonLabel ? (
-            <p className={`${pathGuideCardTextClass.action} text-emerald-900/85`}>{chapter.buttonLabel} →</p>
           ) : null}
         </div>
       </div>
