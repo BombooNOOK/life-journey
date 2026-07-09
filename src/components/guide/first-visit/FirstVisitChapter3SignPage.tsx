@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback } from "react";
+import { useCallback, useEffect } from "react";
 
 import { FirstVisitGuideCardPageLayout } from "@/components/guide/first-visit/FirstVisitGuideCardPageLayout";
 import { FirstVisitGuideCardPanel } from "@/components/guide/first-visit/FirstVisitGuideCardStack";
@@ -9,14 +9,20 @@ import type { FirstVisitGuideCardAction } from "@/lib/onboarding/firstVisitWizar
 import { FIRST_VISIT_CHAPTER_3_SIGN_CARD } from "@/lib/onboarding/firstVisitWizard/cards";
 import { FIRST_VISIT_CHAPTER_3_ENTRY_HREF } from "@/lib/onboarding/firstVisitWizard/chapters";
 import { FIRST_VISIT_ROUTES } from "@/lib/onboarding/firstVisitWizard/routes";
+import { setFirstVisitChapter3StartedFlag } from "@/lib/onboarding/firstVisitWizard/session";
 
 /** 第3章前：行き先看板 → ログハウスで日記 */
 export function FirstVisitChapter3SignPage() {
   const { replace } = useTransitionNavigation();
 
+  useEffect(() => {
+    setFirstVisitChapter3StartedFlag();
+  }, []);
+
   const handleAction = useCallback(
     (action: FirstVisitGuideCardAction, cardId: string) => {
       if (action === "next" && cardId === "chapter-3-sign") {
+        setFirstVisitChapter3StartedFlag();
         replace(FIRST_VISIT_CHAPTER_3_ENTRY_HREF);
       }
     },

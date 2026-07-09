@@ -1,3 +1,4 @@
+import { FIRST_VISIT_CHAPTER_3_ENTRY_HREF } from "@/lib/onboarding/firstVisitWizard/chapters";
 import { FIRST_VISIT_ROUTES } from "@/lib/onboarding/firstVisitWizard/routes";
 
 /** 0=未登録 1=登録済・ログハウス未完成 2=ログハウス完成 3=鑑定完了 4=日記1件以上 */
@@ -73,7 +74,14 @@ export type OnboardingNextStep = {
   body: string;
 };
 
-export function resolveOnboardingNextStep(stage: OnboardingStage): OnboardingNextStep | null {
+export type OnboardingNextStepOptions = {
+  chapter3Started?: boolean;
+};
+
+export function resolveOnboardingNextStep(
+  stage: OnboardingStage,
+  options: OnboardingNextStepOptions = {},
+): OnboardingNextStep | null {
   if (stage >= 4) return null;
 
   if (stage === 0) {
@@ -100,11 +108,20 @@ export function resolveOnboardingNextStep(stage: OnboardingStage): OnboardingNex
     };
   }
 
-  return {
-    href: FIRST_VISIT_ROUTES.pathGuide,
-    label: "第3章・日記へ",
-    body: "道しるべの第3章から、はじめての日記を書きましょう。",
-  };
+  if (stage === 3) {
+    const href = options.chapter3Started
+      ? FIRST_VISIT_CHAPTER_3_ENTRY_HREF
+      : FIRST_VISIT_ROUTES.chapter3Sign;
+    return {
+      href,
+      label: "ログハウスで日記を書く",
+      body: options.chapter3Started
+        ? "ログハウスから、はじめての日記を書きましょう。"
+        : "看板の案内から、ログハウスで日記を書き始めましょう。",
+    };
+  }
+
+  return null;
 }
 
 /** 直URLアクセス時の最低段階（案内所・道しるべ・ログイン等は含まない） */

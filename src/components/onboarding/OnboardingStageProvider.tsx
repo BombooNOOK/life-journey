@@ -25,6 +25,7 @@ import { inferChapter1Complete } from "@/lib/onboarding/firstVisitWizard/chapter
 import { readFirstVisitProgressStage } from "@/lib/onboarding/firstVisitWizard/progress";
 import {
   readFirstVisitChapterCompleteFlag,
+  readFirstVisitChapter3StartedFlag,
   readOnboardingChapter1CompleteCookie,
 } from "@/lib/onboarding/firstVisitWizard/session";
 import type { OnboardingStageContext } from "@/lib/viewer/onboardingStageContext";
@@ -88,7 +89,9 @@ function mergeStageContext(server: OnboardingStageContext): OnboardingStageConte
     chapter1Complete,
     hasKanteiOrder,
     stage,
-    nextStep: resolveOnboardingNextStep(stage),
+    nextStep: resolveOnboardingNextStep(stage, {
+      chapter3Started: readFirstVisitChapter3StartedFlag(),
+    }),
   };
 }
 

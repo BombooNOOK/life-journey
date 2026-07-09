@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 
+import { LOG_HOUSE_MAIN_ACTIONS_HREF } from "@/lib/journal/logHouseLabels";
+import { FIRST_VISIT_ROUTES } from "@/lib/onboarding/firstVisitWizard/routes";
 import {
   isOnboardingFeatureUnlocked,
   isPathAllowedForStage,
@@ -81,5 +83,10 @@ describe("onboardingStage", () => {
   it("returns next step until stage 4", () => {
     expect(resolveOnboardingNextStep(4)).toBeNull();
     expect(resolveOnboardingNextStep(2)?.label).toContain("第2章");
+    expect(resolveOnboardingNextStep(3)?.href).toBe(FIRST_VISIT_ROUTES.chapter3Sign);
+    expect(resolveOnboardingNextStep(3, { chapter3Started: true })?.href).toBe(
+      LOG_HOUSE_MAIN_ACTIONS_HREF,
+    );
+    expect(resolveOnboardingNextStep(3)?.label).toBe("ログハウスで日記を書く");
   });
 });

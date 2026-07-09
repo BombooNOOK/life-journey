@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
-import { LogHouseResidentCardSection } from "@/components/orders/LogHouseResidentCardSection";
+import { LogHouseResidentCardPageContent } from "@/components/orders/LogHouseResidentCardPageContent";
 import { LogHouseLoadErrorPanel } from "@/components/orders/LogHouseLoadErrorPanel";
 import { MyPageSubpageHeader } from "@/components/orders/MyPageSubpageHeader";
 import { getViewerEmailFromCookie } from "@/lib/auth/viewer";
@@ -40,10 +40,10 @@ export default async function LogHouseResidentCardPage() {
     <div className="mx-auto w-full max-w-md space-y-5 sm:space-y-6">
       <MyPageSubpageHeader
         title="森の住民票"
-        description="あなたの森の住民としてのカードです"
+        description="あなたの森の住民としてのカードです。おなまえの変更は下のメニューからできます。"
       />
 
-      <LogHouseResidentCardSection initialCard={residentCard} />
+      <LogHouseResidentCardPageContent initialCard={residentCard} />
 
       <p>
         <Link href="/orders" className="text-sm text-stone-600 hover:text-stone-900">
