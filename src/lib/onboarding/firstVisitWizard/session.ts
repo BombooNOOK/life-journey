@@ -13,6 +13,7 @@ const CHAPTER_COMPLETE_PREFIX = "ljd:firstGuide:chapterComplete:";
 const CHAPTER_3_STARTED_FLAG = "ljd:firstGuide:chapter3Started";
 const PROLOGUE_WATCHED_FLAG = "ljd:firstGuide:pathGuidePrologueWatched";
 const PATH_GUIDE_WRITING_HABIT_DISMISSED_FLAG = "ljd:firstGuide:pathGuideWritingHabitDismissed";
+const KANTEI_VIDEO_ORDER_ID = "ljd:firstGuide:kanteiVideoOrderId";
 const FROM_REGISTER_COOKIE_MAX_AGE_SECONDS = 120;
 
 export type FirstVisitChapterNumber = 1 | 2 | 3;
@@ -219,4 +220,21 @@ export function setFirstVisitPathGuideWritingHabitDismissedFlag(): void {
 export function clearFirstVisitPathGuideWritingHabitDismissedFlag(): void {
   if (!canUseSessionStorage()) return;
   window.sessionStorage.removeItem(PATH_GUIDE_WRITING_HABIT_DISMISSED_FLAG);
+}
+
+/** 鑑定演出動画のあとに開く注文 ID */
+export function setFirstVisitKanteiVideoOrderId(orderId: string): void {
+  if (!canUseSessionStorage()) return;
+  window.sessionStorage.setItem(KANTEI_VIDEO_ORDER_ID, orderId);
+}
+
+export function readFirstVisitKanteiVideoOrderId(): string | null {
+  if (!canUseSessionStorage()) return null;
+  const raw = window.sessionStorage.getItem(KANTEI_VIDEO_ORDER_ID)?.trim();
+  return raw || null;
+}
+
+export function clearFirstVisitKanteiVideoOrderId(): void {
+  if (!canUseSessionStorage()) return;
+  window.sessionStorage.removeItem(KANTEI_VIDEO_ORDER_ID);
 }

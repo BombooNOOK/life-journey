@@ -16,6 +16,7 @@ export const FIRST_VISIT_ROUTES = {
   loghouse: "/guide/first/loghouse",
   kantei: "/guide/first/kantei",
   chapter3Sign: "/guide/first/chapter-3-sign",
+  kanteiCreate: "/guide/first/kantei-create",
 } as const;
 
 export type FirstVisitRouteKey = keyof typeof FIRST_VISIT_ROUTES;

@@ -13,6 +13,8 @@ export const ORDER_NAVIGATING_BOOKSHELF_HINT =
 
 export const ORDER_NAVIGATING_KANTEI_READ_LABEL = "鑑定書のプレビューへ向かっています…" as const;
 
+export const ORDER_NAVIGATING_KANTEI_VIDEO_LABEL = "鑑定の演出へ向かっています…" as const;
+
 export const ORDER_NAVIGATING_KANTEI_READ_HINT =
   "ライフ・パス・ナンバーのページを、少しだけのぞいてみましょう。" as const;
 

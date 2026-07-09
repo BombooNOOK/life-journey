@@ -18,14 +18,18 @@ import { OwlLoadingPanel } from "@/components/ui/OwlLoadingPanel";
 import {
   FIRST_VISIT_OWL_LOADING_HINT,
   ORDER_NAVIGATING_KANTEI_READ_HINT,
-  ORDER_NAVIGATING_KANTEI_READ_LABEL,
+  ORDER_NAVIGATING_KANTEI_VIDEO_LABEL,
   ORDER_SUBMITTING_LABEL,
 } from "@/lib/onboarding/firstVisitWizard/loadingCopy";
 import { OwlSuspenseFallback } from "@/components/ui/OwlSuspenseFallback";
 import { FIRST_VISIT_KANTEI_HALL_SIGN_LABEL } from "@/lib/onboarding/firstVisitWizard/kanteiHallCopy";
+import { FIRST_VISIT_ROUTES } from "@/lib/onboarding/firstVisitWizard/routes";
 import { buildKanteiFirstReadHref } from "@/lib/pdf/kanteiFirstReadGuide";
 import { selectViewerProfile } from "@/lib/profile/selectViewerProfile";
-import { setFirstVisitChapterCompleteFlag } from "@/lib/onboarding/firstVisitWizard/session";
+import {
+  setFirstVisitChapterCompleteFlag,
+  setFirstVisitKanteiVideoOrderId,
+} from "@/lib/onboarding/firstVisitWizard/session";
 import { isHiraganaOnly } from "@/lib/validation/hiragana";
 
 const MIN_YEAR = 1870;
@@ -241,8 +245,9 @@ function OrderPageContent() {
         await selectViewerProfile(data.profileId);
       }
       setFirstVisitChapterCompleteFlag(2);
+      setFirstVisitKanteiVideoOrderId(data.id);
       setSubmitPhase("navigating");
-      router.replace(buildKanteiFirstReadHref(data.id));
+      router.replace(FIRST_VISIT_ROUTES.kanteiCreate);
     } catch {
       setError("通信に失敗しました。ネットワークを確認してください。");
       setSubmitPhase("idle");
@@ -256,7 +261,9 @@ function OrderPageContent() {
         <OwlLoadingPanel
           layout="page"
           label={
-            submitPhase === "navigating" ? ORDER_NAVIGATING_KANTEI_READ_LABEL : ORDER_SUBMITTING_LABEL
+            submitPhase === "navigating"
+              ? ORDER_NAVIGATING_KANTEI_VIDEO_LABEL
+              : ORDER_SUBMITTING_LABEL
           }
           hint={
             submitPhase === "navigating"

@@ -17,7 +17,8 @@ export type FirstVisitProgressStage =
   | "kantei-ready"
   | "order"
   | "bookshelf-kantei"
-  | "chapter-3-sign";
+  | "chapter-3-sign"
+  | "kantei-create";
 
 const PROGRESS_FLAG = "ljd:firstGuide:progress";
 
@@ -38,6 +39,7 @@ const STAGE_ROUTES: Record<FirstVisitProgressStage, string> = {
   order: "/order",
   "bookshelf-kantei": "/orders/bookshelf#bookshelf-kantei-books",
   "chapter-3-sign": FIRST_VISIT_ROUTES.chapter3Sign,
+  "kantei-create": FIRST_VISIT_ROUTES.kanteiCreate,
 };
 
 function canUseSessionStorage(): boolean {
