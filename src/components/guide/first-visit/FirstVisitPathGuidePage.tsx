@@ -1,11 +1,10 @@
 "use client";
 
 import Image from "next/image";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 import { FirstVisitIllustratedChapterCard } from "@/components/guide/first-visit/FirstVisitIllustratedChapterCard";
 import { FirstVisitPathGuidePrologueCard } from "@/components/guide/first-visit/FirstVisitPathGuidePrologueCard";
-import { FirstVisitWizardLink } from "@/components/guide/first-visit/FirstVisitWizardLink";
 import { useTransitionNavigation } from "@/components/ui/TransitionNavigationProvider";
 import {
   isFirstVisitPathGuideComplete,
@@ -27,11 +26,9 @@ import {
   FIRST_VISIT_PATH_GUIDE_BACK_LABEL,
   FIRST_VISIT_PATH_GUIDE_COMPLETE_INTRO,
   FIRST_VISIT_PATH_GUIDE_INTRO,
-  FIRST_VISIT_PATH_GUIDE_START_LABEL,
   FIRST_VISIT_PATH_GUIDE_TITLE,
 } from "@/lib/onboarding/firstVisitWizard/pathGuideCopy";
 import { readFirstVisitProgressStage } from "@/lib/onboarding/firstVisitWizard/progress";
-import { FIRST_VISIT_ROUTES } from "@/lib/onboarding/firstVisitWizard/routes";
 import {
   readBookshelfKanteiGuideFlag,
   readFirstVisitChapter3StartedFlag,
@@ -87,11 +84,6 @@ function resolveView(branch: FirstVisitReadyBranch, journalEntryCount: number) {
   };
 }
 
-function resolveStartHref(chapters: ChapterCardViewModel[]): string {
-  const current = chapters.find((chapter) => chapter.status === "in_progress" || chapter.status === "available");
-  return current?.actionHref ?? FIRST_VISIT_ROUTES.register;
-}
-
 /** はじめての道しるべ — 幅基準・縦横比固定（イラストは伸ばさない） */
 export function FirstVisitPathGuidePage() {
   const { replace, isPending } = useTransitionNavigation();
@@ -144,7 +136,6 @@ export function FirstVisitPathGuidePage() {
     setFirstVisitChapter3StartedFlag();
   }, []);
 
-  const startHref = useMemo(() => resolveStartHref(chapters), [chapters]);
   const intro = allComplete ? FIRST_VISIT_PATH_GUIDE_COMPLETE_INTRO : FIRST_VISIT_PATH_GUIDE_INTRO;
 
   return (
@@ -176,8 +167,8 @@ export function FirstVisitPathGuidePage() {
           </div>
         </header>
 
-        {/* カード4枚：幅でサイズ決定・間隔2px */}
-        <div className={`mt-1 flex flex-col ${CARD_GAP_CLASS}`}>
+        {/* カード4枚：看板との間隔あり・カード間は2px */}
+        <div className={`mt-4 flex flex-col ${CARD_GAP_CLASS}`}>
           <FirstVisitPathGuidePrologueCard watched={prologueWatched} onWatched={handlePrologueWatched} />
 
           {chapters.map((chapter) => (
@@ -191,31 +182,16 @@ export function FirstVisitPathGuidePage() {
           ))}
         </div>
 
-        {/* 下部ナビ */}
-        <div className="mt-3 grid w-full shrink-0 grid-cols-2 gap-1.5 pb-1">
+        {/* 下部ナビ：章カードタップで進むため、森の入口へのみ */}
+        <div className="mt-6 w-full shrink-0 pb-1">
           <button
             type="button"
             disabled={isPending}
             onClick={() => replace("/")}
-            className="inline-flex min-h-[40px] items-center justify-center rounded-full bg-[#8a7a68] px-2.5 text-[1.125rem] font-medium text-white shadow-sm transition hover:bg-[#7a6b5a] disabled:opacity-60 lg:text-[0.84rem]"
+            className="inline-flex min-h-[40px] w-full items-center justify-center rounded-full bg-[#8a7a68] px-2.5 text-[1.125rem] font-medium text-white shadow-sm transition hover:bg-[#7a6b5a] disabled:opacity-60 lg:text-[0.84rem]"
           >
             {FIRST_VISIT_PATH_GUIDE_BACK_LABEL}
           </button>
-          {allComplete ? (
-            <FirstVisitWizardLink
-              href="/orders"
-              className="inline-flex min-h-[40px] items-center justify-center rounded-full bg-emerald-800 px-2.5 text-[1.125rem] font-medium text-white shadow-sm transition hover:bg-emerald-900 lg:text-[0.84rem]"
-            >
-              ログハウスへ
-            </FirstVisitWizardLink>
-          ) : (
-            <FirstVisitWizardLink
-              href={startHref}
-              className="inline-flex min-h-[40px] items-center justify-center rounded-full bg-emerald-800 px-2.5 text-[1.125rem] font-medium text-white shadow-sm transition hover:bg-emerald-900 lg:text-[0.84rem]"
-            >
-              {FIRST_VISIT_PATH_GUIDE_START_LABEL}
-            </FirstVisitWizardLink>
-          )}
         </div>
       </div>
     </div>

@@ -8,7 +8,6 @@ import { FirstVisitGuideCardPageLayout } from "@/components/guide/first-visit/Fi
 import { FirstVisitGuideCardPanel } from "@/components/guide/first-visit/FirstVisitGuideCardStack";
 import type { FirstVisitGuideCardAction } from "@/lib/onboarding/firstVisitWizard/cards";
 import { FIRST_VISIT_KANTEI_HALL_INTRO_CARD } from "@/lib/onboarding/firstVisitWizard/cards";
-import { firstVisitReadyNextHref } from "@/lib/onboarding/firstVisitWizard/readyNavigation";
 import { FIRST_VISIT_ROUTES } from "@/lib/onboarding/firstVisitWizard/routes";
 import { setFirstVisitOrderGuideFlag } from "@/lib/onboarding/firstVisitWizard/session";
 import type { FirstVisitReadyBranch } from "@/lib/viewer/firstVisitReadyContext";

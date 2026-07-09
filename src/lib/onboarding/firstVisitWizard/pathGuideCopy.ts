@@ -6,9 +6,7 @@ export const FIRST_VISIT_PATH_GUIDE_COMPLETE_INTRO = "ご案内は完了しま�
 
 export const FIRST_VISIT_PATH_GUIDE_TITLE = "はじめての道しるべ" as const;
 
-export const FIRST_VISIT_PATH_GUIDE_BACK_LABEL = "もどる" as const;
-
-export const FIRST_VISIT_PATH_GUIDE_START_LABEL = "はじめる" as const;
+export const FIRST_VISIT_PATH_GUIDE_BACK_LABEL = "森の入口へ" as const;
 
 export const FIRST_VISIT_CHAPTER_STATUS_LABELS = {
   locked: "前の章が終わると進めます",
