@@ -8,7 +8,9 @@ import {
   resolveFirstVisitChapterCards,
   type ChapterProgressInput,
 } from "@/lib/onboarding/firstVisitWizard/chapterProgress";
+import { FIRST_VISIT_CHAPTER_3_ENTRY_HREF } from "@/lib/onboarding/firstVisitWizard/chapters";
 import { FIRST_VISIT_ROUTES } from "@/lib/onboarding/firstVisitWizard/routes";
+import { LOG_HOUSE_MAIN_ACTIONS_HREF } from "@/lib/journal/logHouseLabels";
 
 const baseInput: ChapterProgressInput = {
   branch: "guest",
@@ -119,5 +121,20 @@ describe("chapterProgress", () => {
     });
     expect(cards[2]?.status).toBe("available");
     expect(cards[2]?.actionHref).toBe(FIRST_VISIT_ROUTES.chapter3Sign);
+  });
+
+  it("lands chapter 3 diary entry on log house main actions", () => {
+    expect(FIRST_VISIT_CHAPTER_3_ENTRY_HREF).toBe(LOG_HOUSE_MAIN_ACTIONS_HREF);
+  });
+
+  it("resumes chapter 3 on log house after the sign step started", () => {
+    const cards = resolveFirstVisitChapterCards({
+      ...baseInput,
+      branch: "hasKantei",
+      chapter1CompleteFlag: true,
+      chapter3StartedFlag: true,
+    });
+    expect(cards[2]?.status).toBe("in_progress");
+    expect(cards[2]?.actionHref).toBe(LOG_HOUSE_MAIN_ACTIONS_HREF);
   });
 });

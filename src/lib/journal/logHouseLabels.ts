@@ -31,3 +31,9 @@ export const LOG_HOUSE_TAGLINE =
 
 export const LOG_HOUSE_RESIDENT_CARD_LOADING_LABEL =
   "森の住民票を開いています…";
+
+/** ログハウス「② やりたいことを選ぶ」セクション（第3章導線の着地先） */
+export const LOG_HOUSE_MAIN_ACTIONS_SECTION_ID = "main-actions";
+
+export const LOG_HOUSE_MAIN_ACTIONS_HREF =
+  `/orders#${LOG_HOUSE_MAIN_ACTIONS_SECTION_ID}` as const;

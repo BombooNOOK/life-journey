@@ -1,4 +1,5 @@
 import { FOREST_GUIDE_STATION_NUMEROLOGY_READING_HREF } from "@/lib/help/forestGuideStation";
+import { LOG_HOUSE_MAIN_ACTIONS_HREF } from "@/lib/journal/logHouseLabels";
 import { FIRST_VISIT_ROUTES } from "@/lib/onboarding/firstVisitWizard/routes";
 
 export type FirstVisitChapterId = 1 | 2 | 3;
@@ -45,4 +46,5 @@ export const FIRST_VISIT_CHAPTER_2_NUMEROLOGY_REVIEW_HREF =
 
 export const FIRST_VISIT_CHAPTER_3_SIGN_HREF = FIRST_VISIT_ROUTES.chapter3Sign;
 
-export const FIRST_VISIT_CHAPTER_3_ENTRY_HREF = `/journal/with-companion?returnTo=${encodeURIComponent(FIRST_VISIT_ROUTES.pathGuide)}` as const;
+/** 第3章看板の「ログハウスで日記を書く」→ ログハウス②へ */
+export const FIRST_VISIT_CHAPTER_3_ENTRY_HREF = LOG_HOUSE_MAIN_ACTIONS_HREF;

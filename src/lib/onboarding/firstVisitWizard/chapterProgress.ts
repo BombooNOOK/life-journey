@@ -1,5 +1,6 @@
 import type { FirstVisitChapterId } from "@/lib/onboarding/firstVisitWizard/chapters";
 import {
+  FIRST_VISIT_CHAPTER_3_ENTRY_HREF,
   FIRST_VISIT_CHAPTER_3_SIGN_HREF,
   FIRST_VISIT_CHAPTERS,
 } from "@/lib/onboarding/firstVisitWizard/chapters";
@@ -119,6 +120,13 @@ function resolveChapter1ResumeHref(input: ChapterProgressInput): string {
   return FIRST_VISIT_ROUTES.register;
 }
 
+function resolveChapter3ResumeHref(input: ChapterProgressInput): string {
+  if (input.chapter3StartedFlag) {
+    return FIRST_VISIT_CHAPTER_3_ENTRY_HREF;
+  }
+  return FIRST_VISIT_CHAPTER_3_SIGN_HREF;
+}
+
 function resolveChapter2ResumeHref(input: ChapterProgressInput): string {
   if (input.bookshelfKanteiGuide) {
     return firstVisitProgressHref("bookshelf-kantei");
@@ -184,7 +192,7 @@ function resolveChapterAction(
         ? resolveChapter1ResumeHref(input)
         : chapterId === 2
           ? resolveChapter2ResumeHref(input)
-          : FIRST_VISIT_CHAPTER_3_SIGN_HREF;
+          : resolveChapter3ResumeHref(input);
     return { actionHref: href, buttonLabel: "続きから進む", statusLabel: "続きから進む" };
   }
 
