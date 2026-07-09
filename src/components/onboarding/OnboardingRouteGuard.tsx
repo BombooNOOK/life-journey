@@ -6,6 +6,7 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useOnboardingStage } from "@/components/onboarding/OnboardingStageProvider";
 import { isPathAllowedForStage } from "@/lib/onboarding/onboardingStage";
 import { FIRST_VISIT_ROUTES } from "@/lib/onboarding/firstVisitWizard/routes";
+import { readFirstVisitChapterCompleteFlag } from "@/lib/onboarding/firstVisitWizard/session";
 
 /** 段階に合わない URL へ入ったら道しるべへ戻す */
 export function OnboardingRouteGuard() {
@@ -22,7 +23,8 @@ export function OnboardingRouteGuard() {
     if (pathname === "/") return;
     if (
       pathname.includes("/read") &&
-      searchParams.get("guide") === "life-path-first"
+      (searchParams.get("guide") === "life-path-first" ||
+        readFirstVisitChapterCompleteFlag(2))
     ) {
       return;
     }

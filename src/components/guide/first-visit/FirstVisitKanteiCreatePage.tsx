@@ -18,8 +18,8 @@ import { FIRST_VISIT_ROUTES } from "@/lib/onboarding/firstVisitWizard/routes";
 import {
   clearFirstVisitKanteiVideoOrderId,
   readFirstVisitKanteiVideoOrderId,
+  setBookshelfKanteiGuideFlag,
 } from "@/lib/onboarding/firstVisitWizard/session";
-import { buildKanteiFirstReadHref } from "@/lib/pdf/kanteiFirstReadGuide";
 
 type PlaybackPhase = "ready" | "playing" | "ended";
 
@@ -42,13 +42,11 @@ export function FirstVisitKanteiCreatePage() {
     setOrderId(pendingOrderId);
   }, [router]);
 
-  const goToKanteiRead = useCallback(
-    (id: string) => {
-      clearFirstVisitKanteiVideoOrderId();
-      replace(buildKanteiFirstReadHref(id));
-    },
-    [replace],
-  );
+  const goToBookshelfGuide = useCallback(() => {
+    clearFirstVisitKanteiVideoOrderId();
+    setBookshelfKanteiGuideFlag();
+    replace("/orders/bookshelf#bookshelf-kantei-books");
+  }, [replace]);
 
   const handleStart = useCallback(() => {
     const video = videoRef.current;
@@ -66,9 +64,8 @@ export function FirstVisitKanteiCreatePage() {
   }, []);
 
   const handleSkip = useCallback(() => {
-    if (!orderId) return;
-    goToKanteiRead(orderId);
-  }, [goToKanteiRead, orderId]);
+    goToBookshelfGuide();
+  }, [goToBookshelfGuide]);
 
   if (!orderId) {
     return (
@@ -118,7 +115,7 @@ export function FirstVisitKanteiCreatePage() {
       {videoError ? (
         <div className="absolute inset-x-0 top-[max(1rem,env(safe-area-inset-top))] z-30 px-4">
           <p className="mx-auto max-w-md rounded-xl border border-amber-200/80 bg-amber-50/95 px-4 py-3 text-center text-sm text-amber-950 shadow-sm">
-            鑑定の動画を読み込めませんでした。通信環境を確認するか、そのまま「鑑定書を見る」で進んでください。
+            鑑定の動画を読み込めませんでした。通信環境を確認するか、そのまま「本棚へ進む」で進んでください。
           </p>
         </div>
       ) : null}
