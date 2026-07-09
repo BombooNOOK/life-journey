@@ -43,7 +43,7 @@ export function LoginParamsBridge() {
       setRedirecting(false);
       return;
     }
-    router.replace(FIRST_VISIT_ROUTES.welcome);
+    router.replace(FIRST_VISIT_ROUTES.pathGuide);
   }, [legacyOrderRegister, router]);
 
   if (redirecting) {
@@ -51,7 +51,7 @@ export function LoginParamsBridge() {
       <OwlLoadingPanel
         layout="page"
         label="はじめての方の案内へ進みます…"
-        hint="森の案内図から、順番にご案内します。"
+        hint="はじめての道しるべから、順番にご案内します。"
       />
     );
   }

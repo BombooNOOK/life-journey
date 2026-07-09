@@ -60,7 +60,7 @@ export function AboutPageClosingCta() {
 
         {showReturningUserCtas ? null : (
           <div className={`mt-6 sm:mt-8 ${heroCtaClosingStackClass}`}>
-            <Link href={FIRST_VISIT_ROUTES.welcome} className={heroCtaPrimaryClass}>
+            <Link href={FIRST_VISIT_ROUTES.pathGuide} className={heroCtaPrimaryClass}>
               はじめての方はこちら
             </Link>
             <p className={`mt-3 ${heroCtaClosingMicrocopyClass}`}>

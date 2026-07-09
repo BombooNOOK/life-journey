@@ -78,7 +78,7 @@ export function AboutPageQuickStartCta() {
         まずは、あなたのページをひらく
       </h2>
       <div className="mx-auto mt-4 flex w-full max-w-sm flex-col gap-3">
-        <Link href={FIRST_VISIT_ROUTES.welcome} className={heroCtaPrimaryClass}>
+        <Link href={FIRST_VISIT_ROUTES.pathGuide} className={heroCtaPrimaryClass}>
           無料鑑定をはじめる
         </Link>
         <Link href={JOURNAL_LOGIN_HREF} className={heroCtaSecondaryClass}>
@@ -89,7 +89,7 @@ export function AboutPageQuickStartCta() {
         お名前と生年月日だけで、Life Journey Diaryをお試しできます。
       </p>
       <p className="lj-read-desc mt-2 text-center text-stone-600">
-        <Link href={FIRST_VISIT_ROUTES.welcome} className="text-emerald-900 hover:underline">
+        <Link href={FIRST_VISIT_ROUTES.pathGuide} className="text-emerald-900 hover:underline">
           はじめての方はこちら
         </Link>
       </p>

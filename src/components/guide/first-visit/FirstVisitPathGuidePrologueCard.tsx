@@ -18,7 +18,6 @@ import {
   FIRST_VISIT_PATH_GUIDE_PROLOGUE_CLOSE_LABEL,
   FIRST_VISIT_PATH_GUIDE_PROLOGUE_HEADING,
   FIRST_VISIT_PATH_GUIDE_PROLOGUE_REPLAY_LABEL,
-  FIRST_VISIT_PATH_GUIDE_PROLOGUE_SKIP_LABEL,
   FIRST_VISIT_PATH_GUIDE_PROLOGUE_TITLE,
   FIRST_VISIT_PATH_GUIDE_PROLOGUE_VIDEO_POSTER_SRC,
   FIRST_VISIT_PATH_GUIDE_PROLOGUE_VIDEO_SRC,
@@ -35,9 +34,6 @@ type PlaybackPhase = "idle" | "playing" | "ended";
 
 const overlayPrimaryClass =
   "inline-flex min-h-[44px] w-full max-w-xs items-center justify-center rounded-lg bg-emerald-800 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-emerald-900";
-
-const overlaySecondaryClass =
-  "inline-flex min-h-[44px] w-full max-w-xs items-center justify-center rounded-lg border border-white/40 bg-black/35 px-4 py-2.5 text-sm font-medium text-white backdrop-blur-sm transition hover:bg-black/50";
 
 /** プロローグカード全体が動画ボタン。再生は全画面 */
 export function FirstVisitPathGuidePrologueCard({ watched, onWatched, className = "" }: Props) {
@@ -72,11 +68,6 @@ export function FirstVisitPathGuidePrologueCard({ watched, onWatched, className 
     setPhase("ended");
     onWatched();
   }, [onWatched]);
-
-  const handleSkip = useCallback(() => {
-    onWatched();
-    closePlayer();
-  }, [closePlayer, onWatched]);
 
   useEffect(() => {
     if (!open) return;
@@ -163,15 +154,15 @@ export function FirstVisitPathGuidePrologueCard({ watched, onWatched, className 
                   <button type="button" className={`${overlayPrimaryClass} pointer-events-auto`} onClick={handleReplay}>
                     {FIRST_VISIT_PATH_GUIDE_PROLOGUE_REPLAY_LABEL}
                   </button>
-                  <button type="button" className={`${overlaySecondaryClass} pointer-events-auto`} onClick={closePlayer}>
+                  <button
+                    type="button"
+                    className={`${overlayPrimaryClass} pointer-events-auto border border-white/40 bg-black/35 backdrop-blur-sm hover:bg-black/50`}
+                    onClick={closePlayer}
+                  >
                     {FIRST_VISIT_PATH_GUIDE_PROLOGUE_CLOSE_LABEL}
                   </button>
                 </>
-              ) : (
-                <button type="button" className={`${overlaySecondaryClass} pointer-events-auto`} onClick={handleSkip}>
-                  {FIRST_VISIT_PATH_GUIDE_PROLOGUE_SKIP_LABEL}
-                </button>
-              )}
+              ) : null}
             </div>
           </div>
         </div>

@@ -8,6 +8,7 @@ import { HomeForestSignStage } from "@/components/home/HomeForestSignStage";
 import { ReadingFontSizeControl } from "@/components/reading/ReadingFontSizeControl";
 import { isLjLoggedInOnClient } from "@/lib/auth/clientCookies";
 import { HOME_FOREST_SIGN_NAV_LABELS, type HomeForestSignViewport } from "@/lib/home/homeForestSignLayout";
+import { FIRST_VISIT_ROUTES } from "@/lib/onboarding/firstVisitWizard/routes";
 
 const NAV_ITEMS = [
   {
@@ -17,7 +18,7 @@ const NAV_ITEMS = [
   },
   {
     id: "first",
-    href: "/guide/first",
+    href: FIRST_VISIT_ROUTES.pathGuide,
     label: HOME_FOREST_SIGN_NAV_LABELS.first,
   },
   {

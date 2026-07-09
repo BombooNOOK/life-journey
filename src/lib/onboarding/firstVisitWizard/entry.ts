@@ -1,6 +1,6 @@
 import { FIRST_VISIT_ROUTES } from "@/lib/onboarding/firstVisitWizard/routes";
 
-/** はじめての方導線の入口（森の案内図） */
+/** はじめての方導線の入口（道しるべ） */
 export const FIRST_VISIT_ENTRY_HREF = FIRST_VISIT_ROUTES.pathGuide;
 
 /** 旧フロー（/login → /order で生年月日入力）への returnTo か */

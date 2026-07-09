@@ -26,8 +26,9 @@ import {
 } from "@/lib/onboarding/firstVisitWizard/welcomeLayout";
 import type { ObjectCoverLayout } from "@/lib/home/homeForestSignLayout";
 
-function useWelcomeViewport(): FirstVisitWelcomeViewport | null {
-  const [viewport, setViewport] = useState<FirstVisitWelcomeViewport | null>(null);
+function useWelcomeViewport(): FirstVisitWelcomeViewport {
+  // SSR と初回 hydrate を揃える（mobile 固定 → useLayoutEffect で実寸に同期）
+  const [viewport, setViewport] = useState<FirstVisitWelcomeViewport>("mobile");
 
   useLayoutEffect(() => {
     const media = window.matchMedia("(min-width: 1024px)");
@@ -149,7 +150,7 @@ export function FirstVisitWelcomePage() {
   const viewport = useWelcomeViewport();
   const stageRef = useRef<HTMLDivElement>(null);
   const [stageLayout, setStageLayout] = useState<ObjectCoverLayout | null>(() =>
-    viewport ? initialStageLayout(viewport) : null,
+    initialStageLayout(viewport),
   );
 
   useLayoutEffect(() => {
@@ -173,8 +174,8 @@ export function FirstVisitWelcomePage() {
     return () => observer.disconnect();
   }, [viewport]);
 
-  const bgSrc = viewport ? firstVisitWelcomeBgSrc(viewport) : null;
-  const objectPosition = viewport ? FIRST_VISIT_WELCOME_BG_OBJECT_POSITION[viewport] : null;
+  const bgSrc = firstVisitWelcomeBgSrc(viewport);
+  const objectPosition = FIRST_VISIT_WELCOME_BG_OBJECT_POSITION[viewport];
   const isMobile = viewport === "mobile";
 
   return (
@@ -183,30 +184,24 @@ export function FirstVisitWelcomePage() {
       aria-labelledby="first-visit-welcome-heading"
     >
       <h1 id="first-visit-welcome-heading" className="sr-only">
-        はじめての方へ — {firstVisitWelcomeCopyFor(viewport ?? "mobile").heading}
+        はじめての方へ — {firstVisitWelcomeCopyFor(viewport).heading}
       </h1>
 
       <FirstVisitResumeRedirect />
 
       <div ref={stageRef} className="absolute inset-0">
-        {viewport && bgSrc && objectPosition ? (
-          <>
-            <Image
-              src={bgSrc}
-              alt=""
-              fill
-              sizes="100vw"
-              className={
-                isMobile ? "object-cover object-center" : "object-contain object-center"
-              }
-              style={isMobile ? { objectPosition: objectPositionCss(objectPosition) } : undefined}
-              quality={100}
-              priority
-              unoptimized
-            />
-            <FirstVisitWelcomeMessageText viewport={viewport} stageLayout={stageLayout} />
-          </>
-        ) : null}
+        <Image
+          src={bgSrc}
+          alt=""
+          fill
+          sizes="100vw"
+          className={isMobile ? "object-cover object-center" : "object-contain object-center"}
+          style={isMobile ? { objectPosition: objectPositionCss(objectPosition) } : undefined}
+          quality={100}
+          priority
+          unoptimized
+        />
+        <FirstVisitWelcomeMessageText viewport={viewport} stageLayout={stageLayout} />
       </div>
 
       {/* 看板テキストは固定サイズのため文字サイズ帯は非表示。地図上に小さめの戻る／次へ */}
@@ -222,7 +217,7 @@ export function FirstVisitWelcomePage() {
             {FIRST_VISIT_WELCOME_COPY.backLabel}
           </FirstVisitWizardLink>
           <FirstVisitWizardLink
-            href={FIRST_VISIT_ROUTES.about}
+            href={FIRST_VISIT_ROUTES.pathGuide}
             className="inline-flex min-h-[42px] flex-1 items-center justify-center rounded-xl border border-emerald-900/15 bg-emerald-800/82 px-3 py-2 text-sm font-medium text-white shadow-[0_8px_28px_-8px_rgba(24,83,53,0.45)] backdrop-blur-[2px] transition hover:bg-emerald-900/88 active:bg-emerald-900/92"
           >
             {FIRST_VISIT_WELCOME_COPY.nextLabel}

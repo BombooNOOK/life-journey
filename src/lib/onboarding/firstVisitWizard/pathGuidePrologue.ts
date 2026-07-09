@@ -20,5 +20,3 @@ export const FIRST_VISIT_PATH_GUIDE_PROLOGUE_WATCH_LABEL = "動画を見る" as 
 export const FIRST_VISIT_PATH_GUIDE_PROLOGUE_REPLAY_LABEL = "もう一度見る" as const;
 
 export const FIRST_VISIT_PATH_GUIDE_PROLOGUE_CLOSE_LABEL = "道しるべへ戻る" as const;
-
-export const FIRST_VISIT_PATH_GUIDE_PROLOGUE_SKIP_LABEL = "動画を見ずに進む" as const;

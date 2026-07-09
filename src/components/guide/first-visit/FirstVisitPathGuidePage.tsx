@@ -197,21 +197,21 @@ export function FirstVisitPathGuidePage() {
             type="button"
             disabled={isPending}
             onClick={() => replace("/")}
-            className="inline-flex min-h-[40px] items-center justify-center rounded-full bg-[#8a7a68] px-2.5 text-[0.84rem] font-medium text-white shadow-sm transition hover:bg-[#7a6b5a] disabled:opacity-60"
+            className="inline-flex min-h-[40px] items-center justify-center rounded-full bg-[#8a7a68] px-2.5 text-[1rem] font-medium text-white shadow-sm transition hover:bg-[#7a6b5a] disabled:opacity-60 lg:text-[0.84rem]"
           >
             {FIRST_VISIT_PATH_GUIDE_BACK_LABEL}
           </button>
           {allComplete ? (
             <FirstVisitWizardLink
               href="/orders"
-              className="inline-flex min-h-[40px] items-center justify-center rounded-full bg-emerald-800 px-2.5 text-[0.84rem] font-medium text-white shadow-sm transition hover:bg-emerald-900"
+              className="inline-flex min-h-[40px] items-center justify-center rounded-full bg-emerald-800 px-2.5 text-[1rem] font-medium text-white shadow-sm transition hover:bg-emerald-900 lg:text-[0.84rem]"
             >
               ログハウスへ
             </FirstVisitWizardLink>
           ) : (
             <FirstVisitWizardLink
               href={startHref}
-              className="inline-flex min-h-[40px] items-center justify-center rounded-full bg-emerald-800 px-2.5 text-[0.84rem] font-medium text-white shadow-sm transition hover:bg-emerald-900"
+              className="inline-flex min-h-[40px] items-center justify-center rounded-full bg-emerald-800 px-2.5 text-[1rem] font-medium text-white shadow-sm transition hover:bg-emerald-900 lg:text-[0.84rem]"
             >
               {FIRST_VISIT_PATH_GUIDE_START_LABEL}
             </FirstVisitWizardLink>

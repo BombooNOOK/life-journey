@@ -17,7 +17,7 @@ export function HomeQuickStartSection() {
         まずは、あなたのページをひらく
       </h2>
       <div className="mx-auto mt-4 flex w-full max-w-sm flex-col">
-        <Link href={FIRST_VISIT_ROUTES.welcome} className={heroCtaPrimaryClass}>
+        <Link href={FIRST_VISIT_ROUTES.pathGuide} className={heroCtaPrimaryClass}>
           無料鑑定をはじめる
         </Link>
       </div>

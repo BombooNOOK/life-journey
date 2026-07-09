@@ -95,7 +95,7 @@ export function HomeHeroSection() {
           </div>
           <div className={heroCtaStackClass}>
             <div className={heroCtaButtonsGroupClass}>
-              <Link href={FIRST_VISIT_ROUTES.welcome} className={heroCtaPrimaryClass}>
+              <Link href={FIRST_VISIT_ROUTES.pathGuide} className={heroCtaPrimaryClass}>
                 はじめての方はこちら
               </Link>
               <HomeHeroSubNavLink />
