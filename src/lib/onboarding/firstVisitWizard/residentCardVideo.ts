@@ -5,7 +5,7 @@
 export const FIRST_VISIT_RESIDENT_CARD_VIDEO_SRC =
   "/videos/first-visit/ljd-resident-card.mp4";
 
-/** 任意：ポスター画像があるときだけ表示 */
+/** 再生前に表示する静止画（動画の1コマ目を書き出した JPG 推奨） */
 export const FIRST_VISIT_RESIDENT_CARD_VIDEO_POSTER_SRC =
   "/videos/first-visit/ljd-resident-card-poster.jpg";
 

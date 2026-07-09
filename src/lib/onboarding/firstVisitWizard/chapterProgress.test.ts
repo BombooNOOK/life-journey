@@ -110,4 +110,14 @@ describe("chapterProgress", () => {
     expect(cards[1]?.status).toBe("in_progress");
     expect(cards[1]?.actionHref).toBe("/orders/bookshelf#bookshelf-kantei-books");
   });
+
+  it("routes chapter 3 through the loghouse sign page", () => {
+    const cards = resolveFirstVisitChapterCards({
+      ...baseInput,
+      branch: "hasKantei",
+      chapter1CompleteFlag: true,
+    });
+    expect(cards[2]?.status).toBe("available");
+    expect(cards[2]?.actionHref).toBe(FIRST_VISIT_ROUTES.chapter3Sign);
+  });
 });

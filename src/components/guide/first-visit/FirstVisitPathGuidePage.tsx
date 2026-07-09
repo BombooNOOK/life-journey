@@ -5,8 +5,10 @@ import { useCallback, useEffect, useState } from "react";
 
 import { FirstVisitIllustratedChapterCard } from "@/components/guide/first-visit/FirstVisitIllustratedChapterCard";
 import { FirstVisitPathGuidePrologueCard } from "@/components/guide/first-visit/FirstVisitPathGuidePrologueCard";
+import { FirstVisitPathGuideWritingHabitCard } from "@/components/guide/first-visit/FirstVisitPathGuideWritingHabitCard";
 import { useTransitionNavigation } from "@/components/ui/TransitionNavigationProvider";
 import {
+  isFirstVisitPathGuideComplete,
   resolveFirstVisitChapterCards,
   type ChapterCardViewModel,
   type ChapterProgressInput,
@@ -33,8 +35,10 @@ import {
   readFirstVisitFromRegisterFlag,
   readFirstVisitOrderGuideFlag,
   readFirstVisitPathGuidePrologueWatchedFlag,
+  readFirstVisitPathGuideWritingHabitDismissedFlag,
   setFirstVisitChapter3StartedFlag,
   setFirstVisitPathGuidePrologueWatchedFlag,
+  setFirstVisitPathGuideWritingHabitDismissedFlag,
 } from "@/lib/onboarding/firstVisitWizard/session";
 import type { FirstVisitReadyBranch, FirstVisitReadyContext } from "@/lib/viewer/firstVisitReadyContext";
 
@@ -74,11 +78,6 @@ function buildProgressInput(
   };
 }
 
-function resolveView(branch: FirstVisitReadyBranch, journalEntryCount: number) {
-  const input = buildProgressInput(branch, journalEntryCount);
-  return resolveFirstVisitChapterCards(input);
-}
-
 /** はじめての道しるべ — 幅基準・縦横比固定（イラストは伸ばさない） */
 export function FirstVisitPathGuidePage() {
   const { replace, isPending } = useTransitionNavigation();
@@ -86,13 +85,18 @@ export function FirstVisitPathGuidePage() {
     resolveFirstVisitChapterCards(BOOTSTRAP_INPUT),
   );
   const [prologueWatched, setPrologueWatched] = useState(false);
+  const [writingHabitDismissed, setWritingHabitDismissed] = useState(true);
+  const [allChaptersComplete, setAllChaptersComplete] = useState(false);
 
   const syncFromSession = useCallback((branch: FirstVisitReadyBranch, journalEntryCount: number) => {
-    setChapters(resolveView(branch, journalEntryCount));
+    const input = buildProgressInput(branch, journalEntryCount);
+    setChapters(resolveFirstVisitChapterCards(input));
+    setAllChaptersComplete(isFirstVisitPathGuideComplete(input));
   }, []);
 
   useEffect(() => {
     setPrologueWatched(readFirstVisitPathGuidePrologueWatchedFlag());
+    setWritingHabitDismissed(readFirstVisitPathGuideWritingHabitDismissedFlag());
     syncFromSession("guest", 0);
 
     const controller = new AbortController();
@@ -128,6 +132,13 @@ export function FirstVisitPathGuidePage() {
     setFirstVisitChapter3StartedFlag();
   }, []);
 
+  const handleWritingHabitDismiss = useCallback(() => {
+    setFirstVisitPathGuideWritingHabitDismissedFlag();
+    setWritingHabitDismissed(true);
+  }, []);
+
+  const showWritingHabitCard = allChaptersComplete && !writingHabitDismissed;
+
   return (
     <div className="home-read-scope relative min-h-[100dvh] bg-white">
       <div
@@ -157,6 +168,10 @@ export function FirstVisitPathGuidePage() {
         {/* カード4枚：看板下・カード間・下部ボタンまで均等に余白 */}
         <div className={CARD_STACK_CLASS}>
           <FirstVisitPathGuidePrologueCard watched={prologueWatched} onWatched={handlePrologueWatched} />
+
+          {showWritingHabitCard ? (
+            <FirstVisitPathGuideWritingHabitCard onDismiss={handleWritingHabitDismiss} />
+          ) : null}
 
           {chapters.map((chapter) => (
             <FirstVisitIllustratedChapterCard

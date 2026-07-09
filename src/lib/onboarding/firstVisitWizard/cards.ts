@@ -37,6 +37,12 @@ import {
   FIRST_VISIT_GUIDE_STATION_SIGN_BUTTON,
   FIRST_VISIT_GUIDE_STATION_SIGN_LABEL,
 } from "@/lib/onboarding/firstVisitWizard/guideStationCopy";
+import {
+  FIRST_VISIT_CHAPTER_3_SIGN_BODY,
+  FIRST_VISIT_CHAPTER_3_SIGN_BUTTON,
+  FIRST_VISIT_CHAPTER_3_SIGN_LABEL,
+  FIRST_VISIT_CHAPTER_3_SIGN_OWL_QUOTE,
+} from "@/lib/onboarding/firstVisitWizard/chapter3WritingCopy";
 
 export type FirstVisitGuideCardAction =
   | "next"
@@ -78,6 +84,18 @@ export type FirstVisitGuideCard = {
   /** 本文の揃え（既定: 左） */
   bodyAlign?: "left" | "center";
   buttons: FirstVisitGuideCardButton[];
+};
+
+/** 第3章前：行き先看板 → ログハウスで日記 */
+export const FIRST_VISIT_CHAPTER_3_SIGN_CARD: FirstVisitGuideCard = {
+  id: "chapter-3-sign",
+  signLabel: FIRST_VISIT_CHAPTER_3_SIGN_LABEL,
+  signFacing: "left",
+  owlQuote: FIRST_VISIT_CHAPTER_3_SIGN_OWL_QUOTE,
+  body: FIRST_VISIT_CHAPTER_3_SIGN_BODY,
+  bodyAlign: "center",
+  bare: true,
+  buttons: [{ label: FIRST_VISIT_CHAPTER_3_SIGN_BUTTON, action: "next", variant: "primary" }],
 };
 
 /** 第4幕①：矢印看板 → 森の案内所へ */

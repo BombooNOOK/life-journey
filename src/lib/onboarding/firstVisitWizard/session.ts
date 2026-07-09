@@ -12,6 +12,7 @@ const RESIDENT_CARD_VIDEO_DONE_FLAG = "ljd:firstGuide:residentCardVideoDone";
 const CHAPTER_COMPLETE_PREFIX = "ljd:firstGuide:chapterComplete:";
 const CHAPTER_3_STARTED_FLAG = "ljd:firstGuide:chapter3Started";
 const PROLOGUE_WATCHED_FLAG = "ljd:firstGuide:pathGuidePrologueWatched";
+const PATH_GUIDE_WRITING_HABIT_DISMISSED_FLAG = "ljd:firstGuide:pathGuideWritingHabitDismissed";
 const FROM_REGISTER_COOKIE_MAX_AGE_SECONDS = 120;
 
 export type FirstVisitChapterNumber = 1 | 2 | 3;
@@ -203,4 +204,19 @@ export function setFirstVisitPathGuidePrologueWatchedFlag(): void {
 export function clearFirstVisitPathGuidePrologueWatchedFlag(): void {
   if (!canUseSessionStorage()) return;
   window.sessionStorage.removeItem(PROLOGUE_WATCHED_FLAG);
+}
+
+export function readFirstVisitPathGuideWritingHabitDismissedFlag(): boolean {
+  if (!canUseSessionStorage()) return false;
+  return window.sessionStorage.getItem(PATH_GUIDE_WRITING_HABIT_DISMISSED_FLAG) === "1";
+}
+
+export function setFirstVisitPathGuideWritingHabitDismissedFlag(): void {
+  if (!canUseSessionStorage()) return;
+  window.sessionStorage.setItem(PATH_GUIDE_WRITING_HABIT_DISMISSED_FLAG, "1");
+}
+
+export function clearFirstVisitPathGuideWritingHabitDismissedFlag(): void {
+  if (!canUseSessionStorage()) return;
+  window.sessionStorage.removeItem(PATH_GUIDE_WRITING_HABIT_DISMISSED_FLAG);
 }

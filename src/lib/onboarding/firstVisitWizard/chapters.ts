@@ -43,4 +43,6 @@ export const FIRST_VISIT_CHAPTERS: FirstVisitChapterDefinition[] = [
 export const FIRST_VISIT_CHAPTER_2_NUMEROLOGY_REVIEW_HREF =
   FOREST_GUIDE_STATION_NUMEROLOGY_READING_HREF;
 
+export const FIRST_VISIT_CHAPTER_3_SIGN_HREF = FIRST_VISIT_ROUTES.chapter3Sign;
+
 export const FIRST_VISIT_CHAPTER_3_ENTRY_HREF = `/journal/with-companion?returnTo=${encodeURIComponent(FIRST_VISIT_ROUTES.pathGuide)}` as const;
