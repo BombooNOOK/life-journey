@@ -13,28 +13,69 @@ import {
   LOG_HOUSE_ROOM_PREVIEW_PROFILES,
 } from "@/lib/loghouse/logHouseRoomPreviewFixture";
 
-/** ログハウス室内UI — Cursor Simple Browser 用プレビュー */
-export function LogHouseRoomPreviewClient() {
+type Props = {
+  /** framed = 定規ページ用の枠内表示 */
+  layout?: "immersive" | "framed";
+};
+
+/** ログハウス室内UI — Cursor Simple Browser 用プレビュー（没入型） */
+export function LogHouseRoomPreviewClient({ layout = "immersive" }: Props) {
   const [manageOpen, setManageOpen] = useState(false);
 
+  if (layout === "framed") {
+    return (
+      <div className="mx-auto w-full max-w-md">
+        <LogHouseRoomMobile
+          profileId={LOG_HOUSE_ROOM_PREVIEW_PROFILE_ID}
+          profiles={[...LOG_HOUSE_ROOM_PREVIEW_PROFILES]}
+          activeProfileId={LOG_HOUSE_ROOM_PREVIEW_PROFILE_ID}
+          entitlement={LOG_HOUSE_ROOM_PREVIEW_ENTITLEMENT}
+          kanteiOrderId={LOG_HOUSE_ROOM_PREVIEW_KANTEI_ORDER_ID}
+          companionWritingHref={LOG_HOUSE_ROOM_PREVIEW_COMPANION_HREF}
+          onOpenManage={() => setManageOpen(true)}
+          previewMode
+          layout="framed"
+        />
+        <LogHouseRoomManageSheet
+          open={manageOpen}
+          onClose={() => setManageOpen(false)}
+          profiles={[...LOG_HOUSE_ROOM_PREVIEW_PROFILES]}
+          activeProfileId={LOG_HOUSE_ROOM_PREVIEW_PROFILE_ID}
+          companionWritingHref={LOG_HOUSE_ROOM_PREVIEW_COMPANION_HREF}
+          previewMode
+        />
+      </div>
+    );
+  }
+
   return (
-    <div className="mx-auto w-full max-w-md">
-      <div className="mb-4 rounded-xl border border-amber-200 bg-amber-50 px-3 py-3 text-xs leading-relaxed text-amber-950">
-        <p>
-          <strong>プレビュー</strong>（ログイン不要）。本番は{" "}
-          <code className="rounded bg-amber-100 px-1">/orders</code>{" "}
-          です。家具をタップすると各画面へ進みます（一部はログインが必要です）。
-          青い点線はタップ枠の位置です。
-        </p>
-        <p className="mt-2">
-          <Link href="/help/music-hall" className="font-medium underline-offset-2 hover:underline">
-            森の小さな音楽堂
-          </Link>
-          {" · "}
-          <Link href="/preview" className="font-medium underline-offset-2 hover:underline">
-            プレビュー一覧
-          </Link>
-        </p>
+    <div className="relative min-h-[100dvh]">
+      <div className="pointer-events-none absolute inset-x-0 top-14 z-[70] px-3">
+        <div className="pointer-events-auto mx-auto max-w-md rounded-xl border border-amber-200 bg-amber-50/95 px-3 py-2 text-[11px] leading-relaxed text-amber-950 shadow-sm backdrop-blur-[1px]">
+          <p>
+            <strong>プレビュー</strong>（没入型）。左☰＝移動／地図＝案内図／⚙＝設定。本番は{" "}
+            <code className="rounded bg-amber-100 px-1">/orders</code>。
+          </p>
+          <p className="mt-1">
+            <Link
+              href="/help/music-hall?returnTo=%2Fpreview%2Floghouse-room"
+              className="font-medium underline-offset-2 hover:underline"
+            >
+              音楽堂
+            </Link>
+            {" · "}
+            <Link href="/preview" className="font-medium underline-offset-2 hover:underline">
+              一覧
+            </Link>
+            {" · "}
+            <Link
+              href="/preview/loghouse-room/layout"
+              className="font-medium underline-offset-2 hover:underline"
+            >
+              定規
+            </Link>
+          </p>
+        </div>
       </div>
 
       <LogHouseRoomMobile
@@ -46,6 +87,7 @@ export function LogHouseRoomPreviewClient() {
         companionWritingHref={LOG_HOUSE_ROOM_PREVIEW_COMPANION_HREF}
         onOpenManage={() => setManageOpen(true)}
         previewMode
+        layout="immersive"
       />
 
       <LogHouseRoomManageSheet

@@ -245,7 +245,7 @@ export function LogHouseRoomLayoutDebugClient() {
       <div>
         <p className="text-sm font-medium text-stone-800">実際の室内UI（プレビューと同じ）</p>
         <div className="mt-4 max-w-sm">
-          <LogHouseRoomPreviewClient />
+          <LogHouseRoomPreviewClient layout="framed" />
         </div>
         <p className="mt-6 text-xs leading-relaxed text-stone-500">
           右側は本番コンポーネントです。定規で直した値は保存後にこちらへ即反映されます。

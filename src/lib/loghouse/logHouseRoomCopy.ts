@@ -31,3 +31,14 @@ export const LOG_HOUSE_ROOM_SPOT_COPY: Record<LogHouseRoomSpotId, LogHouseRoomSp
 export const LOG_HOUSE_ROOM_RABBIT_GREETING = "今日も森へようこそ";
 
 export const LOG_HOUSE_ROOM_MANAGE_BUTTON_LABEL = "その他";
+
+/** 歯車：設定・管理 */
+export const LOG_HOUSE_SETTINGS_BUTTON_LABEL = "設定" as const;
+
+/** ハンバーガー：森の入口へワンタップ */
+export const LOG_HOUSE_FOREST_ENTRANCE_LABEL = "森の入口（トップ）" as const;
+export const LOG_HOUSE_FOREST_ENTRANCE_HREF = "/" as const;
+
+/** 地図アイコン：森の案内図 */
+export const LOG_HOUSE_FOREST_MAP_LABEL = "森の案内図" as const;
+export const LOG_HOUSE_FOREST_MAP_HREF = "/help/ljd#forest-guide-map-heading" as const;

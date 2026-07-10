@@ -79,7 +79,7 @@ const links: { href: string; label: string; note?: string; highlight?: boolean }
   {
     href: "/preview/loghouse-room",
     label: "ログハウス室内UI（スマホ）",
-    note: "ログイン不要。Cursor Simple Browser 用。npm run dev 中のみ",
+    note: "ログイン不要。没入型全画面。Cursor Simple Browser 用。npm run dev 中のみ",
     highlight: true,
   },
   {

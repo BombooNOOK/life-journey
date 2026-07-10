@@ -3,27 +3,31 @@ import Link from "next/link";
 import { ForestMusicHallTrackPlayer } from "@/components/help/ForestMusicHallTrackPlayer";
 import { ForestBuildingIllustration } from "@/components/guide/first-visit/ForestBuildingIllustration";
 import {
-  FOREST_MUSIC_HALL_BACK_HREF,
   FOREST_MUSIC_HALL_PAGE_DESCRIPTION,
   FOREST_MUSIC_HALL_PAGE_TITLE,
   FOREST_MUSIC_HALL_TRACKS,
   FOREST_MUSIC_HALL_TRACK_CATEGORIES,
   type ForestMusicHallTrackCategory,
 } from "@/lib/help/forestMusicHallCatalog";
+import type { ForestMusicHallBackLink } from "@/lib/help/forestMusicHallNav";
 
 const CATEGORY_ORDER: ForestMusicHallTrackCategory[] = ["bgm", "nature"];
 
+type Props = {
+  backLink: ForestMusicHallBackLink;
+};
+
 /** 森の小さな音楽堂ページ本文 */
-export function ForestMusicHallPage() {
+export function ForestMusicHallPage({ backLink }: Props) {
   return (
     <div className="home-read-scope space-y-6">
       <header className="space-y-4">
         <p>
           <Link
-            href={FOREST_MUSIC_HALL_BACK_HREF}
+            href={backLink.href}
             className="text-sm text-stone-600 underline-offset-2 hover:text-stone-900 hover:underline"
           >
-            ← 森の案内所へ
+            ← {backLink.label}
           </Link>
         </p>
         <div className="flex items-start gap-3">

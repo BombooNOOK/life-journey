@@ -16,6 +16,10 @@ import { buildDisplaySettingsHref } from "@/lib/navigation/displaySettingsNav";
 import { buildReadingFontSizePageHref } from "@/lib/navigation/readingFontSizeNav";
 import { LOG_HOUSE_LOADING_LABEL, LOG_HOUSE_NAV_LABEL } from "@/lib/journal/logHouseLabels";
 import { FOREST_GUIDE_STATION_TITLE } from "@/lib/help/forestGuideStation";
+import {
+  LOG_HOUSE_FOREST_ENTRANCE_HREF,
+  LOG_HOUSE_FOREST_ENTRANCE_LABEL,
+} from "@/lib/loghouse/logHouseRoomCopy";
 
 const mobileMenuItemClass =
   "block w-full rounded-lg px-3 py-3 text-left text-base font-medium text-stone-700 transition hover:bg-emerald-50/90 active:bg-emerald-50";
@@ -85,13 +89,18 @@ export function SiteHeaderMobileNavItems({ onNavigate }: Props) {
       ) : null}
 
       {showAuthenticatedNav ? (
-        <OwlNavButton
-          href="/orders"
-          loadingLabel={LOG_HOUSE_LOADING_LABEL}
-          className={mobileMenuButtonClass}
-        >
-          {LOG_HOUSE_NAV_LABEL}
-        </OwlNavButton>
+        <>
+          <MobileMenuNavButton href={LOG_HOUSE_FOREST_ENTRANCE_HREF} router={router}>
+            {LOG_HOUSE_FOREST_ENTRANCE_LABEL}
+          </MobileMenuNavButton>
+          <OwlNavButton
+            href="/orders"
+            loadingLabel={LOG_HOUSE_LOADING_LABEL}
+            className={mobileMenuButtonClass}
+          >
+            {LOG_HOUSE_NAV_LABEL}
+          </OwlNavButton>
+        </>
       ) : null}
 
       {showGuestNav ? (

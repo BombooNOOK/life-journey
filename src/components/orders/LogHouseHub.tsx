@@ -1,6 +1,6 @@
 "use client";
 
-import { useLayoutEffect, useState } from "react";
+import { useState } from "react";
 
 import {
   FirstVisitGuidePanel,
@@ -17,6 +17,7 @@ import { MyPageManageHub } from "@/components/orders/MyPageManageMenu";
 import { TrialStatusBanner } from "@/components/entitlement/TrialStatusBanner";
 import type { SerializedUserEntitlement } from "@/lib/entitlement/resolveUserEntitlement";
 import type { FirstVisitGuideState } from "@/lib/onboarding/firstVisitGuideState";
+import { useIsLogHouseMobileViewport } from "@/lib/loghouse/logHouseViewport";
 
 type ProfileRow = { id: string; nickname: string };
 
@@ -33,21 +34,7 @@ type Props = {
   legalFooter: React.ReactNode;
 };
 
-function useLogHouseViewport(): "mobile" | "desktop" {
-  const [viewport, setViewport] = useState<"mobile" | "desktop">("mobile");
-
-  useLayoutEffect(() => {
-    const mq = window.matchMedia("(min-width: 1024px)");
-    const update = () => setViewport(mq.matches ? "desktop" : "mobile");
-    update();
-    mq.addEventListener("change", update);
-    return () => mq.removeEventListener("change", update);
-  }, []);
-
-  return viewport;
-}
-
-/** ログハウス：スマホ＝室内UI、PC＝既存カードUI */
+/** ログハウス：スマホ＝没入室内UI、PC＝既存カードUI */
 export function LogHouseHub({
   profiles,
   activeProfileId,
@@ -60,15 +47,15 @@ export function LogHouseHub({
   adminLink,
   legalFooter,
 }: Props) {
-  const viewport = useLogHouseViewport();
+  const isMobile = useIsLogHouseMobileViewport();
   const [manageOpen, setManageOpen] = useState(false);
 
   const activeProfile = profiles.find((p) => p.id === activeProfileId) ?? null;
 
-  if (viewport === "mobile") {
+  if (isMobile) {
     if (!activeProfile) {
       return (
-        <div className="space-y-5 sm:space-y-6">
+        <div className="space-y-5 px-4 py-6 sm:space-y-6">
           <MyPagePageHeader />
           <MyPageProfileList profiles={profiles} activeProfileId={activeProfileId} />
           <MyPageManageHub activeProfileId={activeProfileId || null} />
@@ -78,26 +65,7 @@ export function LogHouseHub({
     }
 
     return (
-      <div className="space-y-4 max-lg:-mx-4 max-lg:max-w-none max-lg:px-0">
-        <TrialStatusBanner entitlement={entitlement} />
-
-        <FirstVisitGuidePanel
-          state={firstVisitGuideState}
-          profileId={activeProfile.id}
-          companionWritingHref={companionWritingHref}
-        />
-
-        {firstVisitGuideState === "returning" ? <ReturningUserGuideHint /> : null}
-
-        {!hasKanteiOrder ? (
-          <div className="px-4">
-            <KanteiMissingBanner
-              profileId={activeProfile.id}
-              blockNewKantei={entitlement.tier === "trial_expired"}
-            />
-          </div>
-        ) : null}
-
+      <>
         <LogHouseRoomMobile
           profileId={activeProfile.id}
           profiles={profiles}
@@ -108,10 +76,6 @@ export function LogHouseHub({
           onOpenManage={() => setManageOpen(true)}
         />
 
-        <div className="px-4">
-          <MyPageGuideLink />
-        </div>
-
         <LogHouseRoomManageSheet
           open={manageOpen}
           onClose={() => setManageOpen(false)}
@@ -119,10 +83,7 @@ export function LogHouseHub({
           activeProfileId={activeProfileId}
           companionWritingHref={companionWritingHref}
         />
-
-        <div className="border-t border-stone-200 px-4 pt-6">{legalFooter}</div>
-        {viewerIsAdmin ? <div className="border-t border-stone-200 px-4 pt-6">{adminLink}</div> : null}
-      </div>
+      </>
     );
   }
 

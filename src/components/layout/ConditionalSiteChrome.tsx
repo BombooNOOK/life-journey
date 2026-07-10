@@ -4,16 +4,26 @@ import { usePathname } from "next/navigation";
 
 import { SiteFooter } from "@/components/layout/SiteFooter";
 import { SiteHeader } from "@/components/layout/SiteHeader";
+import {
+  isLogHouseImmersivePath,
+  isLogHouseImmersivePreviewPath,
+  useIsLogHouseMobileViewport,
+} from "@/lib/loghouse/logHouseViewport";
 import { isFirstVisitFullBleedPath } from "@/lib/onboarding/firstVisitWizard/routes";
 
 type Props = {
   children: React.ReactNode;
 };
 
-/** トップ玄関・初回導線（/guide/first/*）はヘッダー・フッターなしの全画面表示 */
+/** トップ玄関・初回導線・スマホログハウスはヘッダー・フッターなしの全画面表示 */
 export function ConditionalSiteChrome({ children }: Props) {
   const pathname = usePathname();
-  const isFullBleedEntrance = pathname === "/" || isFirstVisitFullBleedPath(pathname);
+  const isMobile = useIsLogHouseMobileViewport();
+  const isFullBleedEntrance =
+    pathname === "/" ||
+    isFirstVisitFullBleedPath(pathname) ||
+    isLogHouseImmersivePreviewPath(pathname) ||
+    (isLogHouseImmersivePath(pathname) && isMobile);
 
   if (isFullBleedEntrance) {
     return <div className="flex min-h-[100dvh] flex-col">{children}</div>;
