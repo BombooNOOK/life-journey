@@ -28,15 +28,15 @@ export const LOG_HOUSE_ROOM_RABBIT_PLACEMENT = {
   y: 48,
   width: 22,
   height: 34,
-  /** 椅子より手前（隠れないように） */
-  zIndex: 22,
+  /** 椅子(20)より奥。ラグ上に立つ想定 */
+  zIndex: 18,
 } as const;
 
-/** 室内をゆっくり巡回する立ち位置（left/top %・足元イメージ） */
+/** 室内をゆっくり巡回する立ち位置（left/top %・ラグ周辺／椅子の手前には出ない） */
 export const LOG_HOUSE_ROOM_RABBIT_WAYPOINTS = [
   { x: 38, y: 48 },
-  { x: 24, y: 52 },
-  { x: 44, y: 50 },
   { x: 30, y: 46 },
-  { x: 48, y: 54 },
+  { x: 44, y: 47 },
+  { x: 34, y: 50 },
+  { x: 42, y: 49 },
 ] as const;
