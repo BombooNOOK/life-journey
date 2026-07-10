@@ -2,13 +2,20 @@
 
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useMemo, useState, type CSSProperties } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+  useTransition,
+  type CSSProperties,
+} from "react";
 
 import { LogHouseRoomChrome } from "@/components/orders/loghouse-room/LogHouseRoomChrome";
 import { LogHouseRoomPartsLayer } from "@/components/orders/loghouse-room/LogHouseRoomPartsLayer";
 import { LogHouseRoomRabbitAvatar } from "@/components/orders/loghouse-room/LogHouseRoomRabbitAvatar";
 import { LogHouseRoomTapSpot } from "@/components/orders/loghouse-room/LogHouseRoomTapSpot";
-import { OwlLoadingInline } from "@/components/ui/OwlLoadingInline";
+import { OwlDelayedBusyOverlay } from "@/components/ui/OwlDelayedBusyOverlay";
 import type { SerializedUserEntitlement } from "@/lib/entitlement/resolveUserEntitlement";
 import { buildForestMusicHallHref } from "@/lib/help/forestMusicHallNav";
 import {
@@ -118,8 +125,10 @@ export function LogHouseRoomMobile({
   layout = "immersive",
 }: Props) {
   const router = useRouter();
-  const [busy, setBusy] = useState(false);
+  const [isPending, startTransition] = useTransition();
+  const [profileBusy, setProfileBusy] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
+  const busy = isPending || profileBusy;
 
   const canWriteJournal =
     entitlement.canUseContinuedFeatures || entitlement.canCreateFirstJournal;
@@ -136,23 +145,26 @@ export function LogHouseRoomMobile({
   const navigate = useCallback(
     async (href: string, needsProfileSelect: boolean) => {
       if (busy) return;
-      setBusy(true);
       try {
         if (needsProfileSelect && !isActiveProfile && !previewMode) {
+          setProfileBusy(true);
           const result = await selectViewerProfile(profileId);
+          setProfileBusy(false);
           if (!result.ok) {
             window.alert(result.error);
             return;
           }
         }
-        router.push(href);
+        // keep owl visible for the whole transition (do not clear busy after push)
+        startTransition(() => {
+          router.push(href);
+        });
       } catch {
+        setProfileBusy(false);
         window.alert("ページへ移動できませんでした。もう一度お試しください。");
-      } finally {
-        setBusy(false);
       }
     },
-    [busy, isActiveProfile, previewMode, profileId, router],
+    [busy, isActiveProfile, previewMode, profileId, router, startTransition],
   );
 
   const spotActions: Record<LogHouseRoomSpotId, SpotAction> = useMemo(
@@ -173,6 +185,13 @@ export function LogHouseRoomMobile({
     }),
     [hasKantei, journalBlocked, kanteiOrderId],
   );
+
+  useEffect(() => {
+    if (previewMode) return;
+    for (const action of Object.values(spotActions)) {
+      if (action.href) router.prefetch(action.href);
+    }
+  }, [previewMode, router, spotActions]);
 
   const onSpotActivate = useCallback(
     (spotId: LogHouseRoomSpotId) => {
@@ -198,13 +217,9 @@ export function LogHouseRoomMobile({
     </div>
   ) : null;
 
-  const busyOverlay = busy ? (
-    <div className="pointer-events-none absolute inset-0 z-50 flex items-center justify-center bg-white/25">
-      <div className="rounded-xl border border-emerald-100 bg-white/95 px-3 py-2 shadow-sm">
-        <OwlLoadingInline label="ログハウスから移動しています…" size="sm" />
-      </div>
-    </div>
-  ) : null;
+  const busyOverlay = (
+    <OwlDelayedBusyOverlay busy={busy} spinnerDelayMs={0} className="bg-white/15" />
+  );
 
   if (layout === "framed") {
     return (

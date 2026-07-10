@@ -320,7 +320,7 @@ export function HomeForestSignOverlay({
             item={item}
             primary={navId === primaryNavId}
             preview={preview}
-            nowrap={slotId === "sign-top-left"}
+            nowrap={slotId === "sign-top-left" || slotId === "sign-mid-left"}
           />
         );
       })}

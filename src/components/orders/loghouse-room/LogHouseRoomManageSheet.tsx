@@ -5,7 +5,6 @@ import { useEffect, useState, type ReactNode } from "react";
 
 import { MyPageManageHub } from "@/components/orders/MyPageManageMenu";
 import { selectViewerProfile } from "@/lib/profile/selectViewerProfile";
-import { LOG_HOUSE_ROOM_MANAGE_BUTTON_LABEL } from "@/lib/loghouse/logHouseRoomCopy";
 
 type ProfileRow = { id: string; nickname: string };
 
@@ -14,7 +13,8 @@ type Props = {
   onClose: () => void;
   profiles: ProfileRow[];
   activeProfileId: string;
-  companionWritingHref: string | null;
+  /** @deprecated 歯車メニューからは伴走導線を出さない（互換のため残す） */
+  companionWritingHref?: string | null;
   children?: ReactNode;
   previewMode?: boolean;
 };
@@ -25,7 +25,6 @@ export function LogHouseRoomManageSheet({
   onClose,
   profiles,
   activeProfileId,
-  companionWritingHref,
   previewMode = false,
 }: Props) {
   const [busyId, setBusyId] = useState<string | null>(null);
@@ -79,7 +78,7 @@ export function LogHouseRoomManageSheet({
       >
         <div className="mb-4 flex items-center justify-between gap-3">
           <h2 id="loghouse-manage-title" className="text-base font-semibold text-stone-900">
-            {LOG_HOUSE_ROOM_MANAGE_BUTTON_LABEL}
+            プロフィールを選ぶ
           </h2>
           <button
             type="button"
@@ -92,7 +91,6 @@ export function LogHouseRoomManageSheet({
         </div>
 
         <section className="mb-5 space-y-2">
-          <h3 className="text-sm font-semibold text-stone-900">プロフィールを選ぶ</h3>
           {previewMode ? (
             <p className="text-xs text-stone-500">プレビューでは切り替えできません。</p>
           ) : null}
@@ -131,18 +129,6 @@ export function LogHouseRoomManageSheet({
             </Link>
           </p>
         </section>
-
-        {companionWritingHref ? (
-          <p className="mb-5">
-            <Link
-              href={companionWritingHref}
-              className="text-sm font-medium text-emerald-900 underline-offset-2 hover:underline"
-              onClick={onClose}
-            >
-              どうぶつ鑑定士といっしょに書く →
-            </Link>
-          </p>
-        ) : null}
 
         <MyPageManageHub activeProfileId={activeProfileId || null} />
       </div>
