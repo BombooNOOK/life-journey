@@ -158,3 +158,13 @@ html[data-reading-font-size="x-large"] .lj-reading-exempt {
     transform: translateY(-3px);
   }
 }
+
+@keyframes loghouseRabbitWalkBob {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-5px);
+  }
+}

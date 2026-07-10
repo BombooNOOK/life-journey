@@ -2,7 +2,7 @@
 
 export const LOG_HOUSE_ROOM_ASSET_DIR = "/images/ljd/loghouse-room" as const;
 
-const LOG_HOUSE_ROOM_ASSET_VERSION = 5;
+const LOG_HOUSE_ROOM_ASSET_VERSION = 6;
 
 function logHouseRoomAsset(filename: string): string {
   return `${LOG_HOUSE_ROOM_ASSET_DIR}/${filename}?v=${LOG_HOUSE_ROOM_ASSET_VERSION}`;
@@ -48,9 +48,19 @@ export const LOG_HOUSE_ROOM_PART_INTRINSIC: Record<
   residentCard: { widthPx: 720, heightPx: 720 },
   todayResult: { widthPx: 720, heightPx: 720 },
   radio: { widthPx: 629, heightPx: 488 },
-  rabbit: { widthPx: 370, heightPx: 693 },
+  rabbit: { widthPx: 385, heightPx: 720 },
 };
 
 export const LOG_HOUSE_ROOM_RABBIT_SRC = LOG_HOUSE_ROOM_PART_SRC.rabbit;
 
 export const LOG_HOUSE_ROOM_RABBIT_INTRINSIC = LOG_HOUSE_ROOM_PART_INTRINSIC.rabbit;
+
+/** 分身うさぎ：立ち／瞬き／歩き（左右） */
+export const LOG_HOUSE_ROOM_RABBIT_POSE_SRC = {
+  idle: LOG_HOUSE_ROOM_RABBIT_SRC,
+  blink: logHouseRoomAsset("loghouse_rabbit_blink.png"),
+  walkLeft: logHouseRoomAsset("loghouse_rabbit_walk_left.png"),
+  walkRight: logHouseRoomAsset("loghouse_rabbit_walk_right.png"),
+} as const;
+
+export type LogHouseRoomRabbitPose = keyof typeof LOG_HOUSE_ROOM_RABBIT_POSE_SRC;

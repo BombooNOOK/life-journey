@@ -18,7 +18,10 @@
 | `loghouse_resident_card.png` | 壁の住民票（タップ可） |
 | `loghouse_today_result.png` | 今日の鑑定結果（タップ可） |
 | `loghouse_radio.png` | ラジカセ（タップ可） |
-| `loghouse_rabbit.png` | 分身うさぎ（タップで吹き出し） |
+| `loghouse_rabbit.png` | 分身うさぎ・立ち |
+| `loghouse_rabbit_blink.png` | 分身うさぎ・瞬き |
+| `loghouse_rabbit_walk_left.png` | 分身うさぎ・左向き歩き |
+| `loghouse_rabbit_walk_right.png` | 分身うさぎ・右向き歩き |
 | `loghouse_chair.png` | 椅子とテーブル（見た目のみ・タップなし） |
 
 ## 座標調整
