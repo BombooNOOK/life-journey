@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { useCallback, useState, type CSSProperties } from "react";
+import { useCallback, useEffect, useMemo, useState, type CSSProperties } from "react";
 
 import { LogHouseRoomChrome } from "@/components/orders/loghouse-room/LogHouseRoomChrome";
 import { LogHouseRoomPartsLayer } from "@/components/orders/loghouse-room/LogHouseRoomPartsLayer";
@@ -10,15 +10,26 @@ import { LogHouseRoomRabbitAvatar } from "@/components/orders/loghouse-room/LogH
 import { LogHouseRoomTapSpot } from "@/components/orders/loghouse-room/LogHouseRoomTapSpot";
 import { OwlLoadingInline } from "@/components/ui/OwlLoadingInline";
 import type { SerializedUserEntitlement } from "@/lib/entitlement/resolveUserEntitlement";
+import { buildForestMusicHallHref } from "@/lib/help/forestMusicHallNav";
 import {
   LOG_HOUSE_ROOM_MOBILE_BG_SRC,
   LOG_HOUSE_ROOM_MOBILE_INTRINSIC,
 } from "@/lib/loghouse/logHouseRoomAssets";
-import { LOG_HOUSE_ROOM_HOTSPOTS } from "@/lib/loghouse/logHouseRoomHotspots";
-import { buildForestMusicHallHref } from "@/lib/help/forestMusicHallNav";
+import {
+  LOG_HOUSE_ROOM_JOURNAL_LOCK_MESSAGE,
+  LOG_HOUSE_ROOM_KANTEI_LOCK_MESSAGE,
+} from "@/lib/loghouse/logHouseRoomCopy";
+import { LOG_HOUSE_ROOM_HOTSPOTS, type LogHouseRoomSpotId } from "@/lib/loghouse/logHouseRoomHotspots";
 import { selectViewerProfile } from "@/lib/profile/selectViewerProfile";
 
 type ProfileRow = { id: string; nickname: string };
+
+type SpotAction = {
+  href: string | null;
+  needsProfile?: boolean;
+  /** 鑑定前など：見た目は通常のまま、タップで案内を出す */
+  lockMessage?: string | null;
+};
 
 type Props = {
   profileId: string;
@@ -29,12 +40,7 @@ type Props = {
   companionWritingHref: string | null;
   onOpenManage: () => void;
   className?: string;
-  /** プレビュー：プロフィール API を呼ばない・タップ枠を表示 */
   previewMode?: boolean;
-  /**
-   * immersive = 本番スマホの全画面没入
-   * framed = 定規など枠内プレビュー
-   */
   layout?: "immersive" | "framed";
 };
 
@@ -55,15 +61,12 @@ function RoomStage({
   busy,
   previewMode,
   spotActions,
-  navigate,
+  onSpotActivate,
 }: {
   busy: boolean;
   previewMode: boolean;
-  spotActions: Record<
-    (typeof LOG_HOUSE_ROOM_HOTSPOTS)[number]["id"],
-    { href: string | null; disabled?: boolean; needsProfile?: boolean }
-  >;
-  navigate: (href: string, needsProfileSelect: boolean) => Promise<void>;
+  spotActions: Record<LogHouseRoomSpotId, SpotAction>;
+  onSpotActivate: (spotId: LogHouseRoomSpotId) => void;
 }) {
   return (
     <>
@@ -80,13 +83,11 @@ function RoomStage({
 
       <LogHouseRoomPartsLayer />
 
-      <div
-        className="absolute inset-0 z-[20] overflow-hidden"
-        style={{ touchAction: "manipulation" }}
-      >
+      <div className="absolute inset-0 z-[20] overflow-hidden" style={{ touchAction: "manipulation" }}>
         {LOG_HOUSE_ROOM_HOTSPOTS.map((spot) => {
           const action = spotActions[spot.id];
-          const disabled = busy || action.disabled || action.href == null;
+          const locked = Boolean(action.lockMessage);
+          const disabled = busy || (!locked && action.href == null);
 
           return (
             <LogHouseRoomTapSpot
@@ -94,10 +95,7 @@ function RoomStage({
               spot={spot}
               disabled={disabled}
               showDebugOutline={previewMode}
-              onActivate={() => {
-                if (!action.href) return;
-                void navigate(action.href, action.needsProfile === true);
-              }}
+              onActivate={() => onSpotActivate(spot.id)}
             />
           );
         })}
@@ -121,11 +119,19 @@ export function LogHouseRoomMobile({
 }: Props) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
+  const [notice, setNotice] = useState<string | null>(null);
 
   const canWriteJournal =
     entitlement.canUseContinuedFeatures || entitlement.canCreateFirstJournal;
   const journalBlocked = entitlement.tier === "trial_expired" || !canWriteJournal;
   const isActiveProfile = profileId === activeProfileId;
+  const hasKantei = Boolean(kanteiOrderId);
+
+  useEffect(() => {
+    if (!notice) return;
+    const timer = window.setTimeout(() => setNotice(null), 4200);
+    return () => window.clearTimeout(timer);
+  }, [notice]);
 
   const navigate = useCallback(
     async (href: string, needsProfileSelect: boolean) => {
@@ -149,23 +155,48 @@ export function LogHouseRoomMobile({
     [busy, isActiveProfile, previewMode, profileId, router],
   );
 
-  const spotActions: Record<
-    (typeof LOG_HOUSE_ROOM_HOTSPOTS)[number]["id"],
-    { href: string | null; disabled?: boolean; needsProfile?: boolean }
-  > = {
-    bookshelf: { href: "/orders/bookshelf", needsProfile: true },
-    desk: {
-      href: journalBlocked ? null : "/orders/calendar",
-      disabled: journalBlocked,
-      needsProfile: true,
+  const spotActions: Record<LogHouseRoomSpotId, SpotAction> = useMemo(
+    () => ({
+      bookshelf: hasKantei
+        ? { href: "/orders/bookshelf", needsProfile: true }
+        : { href: null, lockMessage: LOG_HOUSE_ROOM_KANTEI_LOCK_MESSAGE },
+      desk: !hasKantei
+        ? { href: null, lockMessage: LOG_HOUSE_ROOM_KANTEI_LOCK_MESSAGE }
+        : journalBlocked
+          ? { href: null, lockMessage: LOG_HOUSE_ROOM_JOURNAL_LOCK_MESSAGE }
+          : { href: "/orders/calendar", needsProfile: true },
+      residentCard: { href: "/orders/resident-card" },
+      todayResult: hasKantei
+        ? { href: `/orders/${encodeURIComponent(kanteiOrderId!)}` }
+        : { href: null, lockMessage: LOG_HOUSE_ROOM_KANTEI_LOCK_MESSAGE },
+      radio: { href: buildForestMusicHallHref("/orders") },
+    }),
+    [hasKantei, journalBlocked, kanteiOrderId],
+  );
+
+  const onSpotActivate = useCallback(
+    (spotId: LogHouseRoomSpotId) => {
+      const action = spotActions[spotId];
+      if (action.lockMessage) {
+        setNotice(action.lockMessage);
+        return;
+      }
+      if (!action.href) return;
+      void navigate(action.href, action.needsProfile === true);
     },
-    residentCard: { href: "/orders/resident-card" },
-    todayResult: {
-      href: kanteiOrderId ? `/orders/${encodeURIComponent(kanteiOrderId)}` : null,
-      disabled: !kanteiOrderId,
-    },
-    radio: { href: buildForestMusicHallHref("/orders") },
-  };
+    [navigate, spotActions],
+  );
+
+  const noticeOverlay = notice ? (
+    <div className="pointer-events-none absolute inset-x-0 bottom-8 z-[55] flex justify-center px-4">
+      <p
+        role="status"
+        className="max-w-sm rounded-xl border border-emerald-200/90 bg-[#fffdf9]/95 px-3.5 py-2.5 text-center text-xs leading-relaxed text-stone-700 shadow-lg backdrop-blur-[1px]"
+      >
+        {notice}
+      </p>
+    </div>
+  ) : null;
 
   const busyOverlay = busy ? (
     <div className="pointer-events-none absolute inset-0 z-50 flex items-center justify-center bg-white/25">
@@ -178,15 +209,26 @@ export function LogHouseRoomMobile({
   if (layout === "framed") {
     return (
       <div
-        className={["relative mx-auto w-full max-w-md overflow-hidden rounded-2xl border border-stone-200/90 bg-[#ebe4d4] shadow-sm", className]
+        className={[
+          "relative mx-auto w-full max-w-md overflow-hidden rounded-2xl border border-stone-200/90 bg-[#ebe4d4] shadow-sm",
+          className,
+        ]
           .filter(Boolean)
           .join(" ")}
-        style={{ aspectRatio: `${LOG_HOUSE_ROOM_MOBILE_INTRINSIC.widthPx} / ${LOG_HOUSE_ROOM_MOBILE_INTRINSIC.heightPx}` }}
+        style={{
+          aspectRatio: `${LOG_HOUSE_ROOM_MOBILE_INTRINSIC.widthPx} / ${LOG_HOUSE_ROOM_MOBILE_INTRINSIC.heightPx}`,
+        }}
       >
         <div className="absolute inset-0 isolate overflow-hidden">
-          <RoomStage busy={busy} previewMode={previewMode} spotActions={spotActions} navigate={navigate} />
+          <RoomStage
+            busy={busy}
+            previewMode={previewMode}
+            spotActions={spotActions}
+            onSpotActivate={onSpotActivate}
+          />
         </div>
         <LogHouseRoomChrome onOpenSettings={onOpenManage} />
+        {noticeOverlay}
         {busyOverlay}
         <p className="sr-only">ログハウス室内。家具をタップして各機能へ進めます。</p>
       </div>
@@ -206,11 +248,17 @@ export function LogHouseRoomMobile({
     >
       <div className="absolute inset-0 overflow-hidden">
         <div className="relative isolate overflow-hidden" style={coverStageStyle(LOG_HOUSE_ROOM_MOBILE_INTRINSIC)}>
-          <RoomStage busy={busy} previewMode={previewMode} spotActions={spotActions} navigate={navigate} />
+          <RoomStage
+            busy={busy}
+            previewMode={previewMode}
+            spotActions={spotActions}
+            onSpotActivate={onSpotActivate}
+          />
         </div>
       </div>
 
       <LogHouseRoomChrome onOpenSettings={onOpenManage} />
+      {noticeOverlay}
       {busyOverlay}
       <p className="sr-only">ログハウス室内。家具をタップして各機能へ進めます。</p>
     </div>

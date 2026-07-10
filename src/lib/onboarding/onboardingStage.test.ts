@@ -73,7 +73,8 @@ describe("onboardingStage", () => {
   });
 
   it("guards protected paths", () => {
-    expect(isPathAllowedForStage("/orders", 1)).toBe(false);
+    expect(isPathAllowedForStage("/orders", 0)).toBe(false);
+    expect(isPathAllowedForStage("/orders", 1)).toBe(true);
     expect(isPathAllowedForStage("/orders", 2)).toBe(true);
     expect(isPathAllowedForStage("/orders/calendar", 2)).toBe(false);
     expect(isPathAllowedForStage("/orders/calendar", 3)).toBe(true);

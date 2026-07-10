@@ -58,7 +58,7 @@ export type HomeForestSignLayout = {
 export const HOME_FOREST_SIGN_SLOT_NAV_IDS: Record<HomeForestSignSignSlotId, string> = {
   "sign-top-left": "first",
   "sign-mid-left": "loghouse",
-  "sign-top-right": "companion",
+  "sign-top-right": "forest-map",
   "sign-bottom-right": "ljd-help",
 };
 
@@ -81,7 +81,7 @@ export const HOME_FOREST_SIGN_SUBTITLE_TEXT = "BambooNOOKの森で、\n今日の
 export const HOME_FOREST_SIGN_NAV_LABELS = {
   first: "はじめての方",
   loghouse: "ログハウスへ",
-  companion: "どうぶつ鑑定士と\nいっしょに書く",
+  "forest-map": "森の案内図",
   "ljd-help": "森の案内所",
 } as const;
 
@@ -92,12 +92,13 @@ export const HOME_FOREST_SIGN_NAV_LOADING_LABELS: Record<
 > = {
   first: "ガイドを開いています…",
   loghouse: "ログハウスを開いています…",
-  companion: "日記を書くページを開いています…",
+  "forest-map": "森の案内図を開いています…",
   "ljd-help": "森の案内所を開いています…",
-  loginNote: "ログハウスを開いています…",
+  loginNote: "ログイン画面を開いています…",
 };
 
-export const HOME_FOREST_SIGN_LOG_HOUSE_NOTE = "日記を書く・読むはこちらから";
+/** 未ログイン時：既存アカウント向けログイン導線 */
+export const HOME_FOREST_SIGN_LOG_HOUSE_NOTE = "ログインはこちら";
 /** @deprecated preview 定規用。 {@link HOME_FOREST_SIGN_LOG_HOUSE_NOTE} と同じ文言 */
 export const HOME_FOREST_SIGN_LOGIN_NOTE_PREVIEW_TEXT = HOME_FOREST_SIGN_LOG_HOUSE_NOTE;
 

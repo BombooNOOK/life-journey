@@ -25,13 +25,13 @@ export type OnboardingFeature =
   | "guide_companion";
 
 const FEATURE_MIN_STAGE: Record<OnboardingFeature, OnboardingStage> = {
-  forest_loghouse: 2,
+  forest_loghouse: 1,
   forest_companion: 3,
-  bottom_loghouse: 2,
+  bottom_loghouse: 1,
   bottom_calendar: 3,
   bottom_list: 3,
   bottom_bookshelf: 3,
-  guide_loghouse: 2,
+  guide_loghouse: 1,
   guide_bookshelf: 3,
   guide_calendar: 3,
   guide_list: 3,
@@ -126,7 +126,7 @@ export function resolveOnboardingNextStep(
 
 /** 直URLアクセス時の最低段階（案内所・道しるべ・ログイン等は含まない） */
 export function resolvePathMinOnboardingStage(pathname: string): OnboardingStage | null {
-  if (pathname === "/orders") return 2;
+  if (pathname === "/orders") return 1;
   if (pathname.startsWith("/orders/calendar")) return 3;
   if (pathname.startsWith("/orders/list")) return 3;
   if (pathname.startsWith("/orders/bookshelf")) return 3;

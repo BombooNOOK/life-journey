@@ -97,9 +97,9 @@ function ForestSignText({
 }
 
 const FOREST_SIGN_NAV_FEATURES: Record<string, OnboardingFeature | null> = {
-  loghouse: "forest_loghouse",
+  loghouse: null,
   first: null,
-  companion: "forest_companion",
+  "forest-map": null,
   "ljd-help": null,
 };
 
@@ -184,10 +184,12 @@ export function HomeForestSignLoginNote({
   viewport,
   coverLayout = null,
   preview = false,
+  isLoggedIn = false,
 }: {
   viewport: HomeForestSignViewport;
   coverLayout?: ObjectCoverLayout | null;
   preview?: boolean;
+  isLoggedIn?: boolean;
 }) {
   const layout = homeForestSignLayoutFor(viewport);
   const { heightPx } = homeForestSignDesignSize(viewport);
@@ -195,6 +197,8 @@ export function HomeForestSignLoginNote({
   const usePercentFont = !coverLayout;
 
   if (!layout.loginNote) return null;
+  // ログイン済みは看板の「ログハウスへ」で入れるので、重複するログイン導線は出さない
+  if (!preview && isLoggedIn) return null;
 
   return (
     <div

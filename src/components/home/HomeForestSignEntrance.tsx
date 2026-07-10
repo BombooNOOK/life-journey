@@ -2,36 +2,40 @@
 
 import { useLayoutEffect, useMemo, useState } from "react";
 
+import { buildLoginHref } from "@/app/login/loginFlow";
 import { useFirebaseAuth } from "@/components/auth/FirebaseAuthProvider";
 import { CompanionWritingFarewellBanner } from "@/components/journal/companion-writing/CompanionWritingFarewellBanner";
 import { HomeForestSignStage } from "@/components/home/HomeForestSignStage";
 import { ReadingFontSizeControl } from "@/components/reading/ReadingFontSizeControl";
 import { isLjLoggedInOnClient } from "@/lib/auth/clientCookies";
 import { HOME_FOREST_SIGN_NAV_LABELS, type HomeForestSignViewport } from "@/lib/home/homeForestSignLayout";
+import { LOG_HOUSE_FOREST_MAP_HREF } from "@/lib/loghouse/logHouseRoomCopy";
 import { FIRST_VISIT_ROUTES } from "@/lib/onboarding/firstVisitWizard/routes";
 
-const NAV_ITEMS = [
-  {
-    id: "loghouse",
-    href: "/orders",
-    label: HOME_FOREST_SIGN_NAV_LABELS.loghouse,
-  },
-  {
-    id: "first",
-    href: FIRST_VISIT_ROUTES.pathGuide,
-    label: HOME_FOREST_SIGN_NAV_LABELS.first,
-  },
-  {
-    id: "companion",
-    href: "/journal/with-companion",
-    label: HOME_FOREST_SIGN_NAV_LABELS.companion,
-  },
-  {
-    id: "ljd-help",
-    href: "/help/ljd",
-    label: HOME_FOREST_SIGN_NAV_LABELS["ljd-help"],
-  },
-] as const;
+function buildNavItems(isLoggedIn: boolean) {
+  return [
+    {
+      id: "loghouse",
+      href: isLoggedIn ? "/orders" : buildLoginHref("/orders"),
+      label: HOME_FOREST_SIGN_NAV_LABELS.loghouse,
+    },
+    {
+      id: "first",
+      href: FIRST_VISIT_ROUTES.pathGuide,
+      label: HOME_FOREST_SIGN_NAV_LABELS.first,
+    },
+    {
+      id: "forest-map",
+      href: LOG_HOUSE_FOREST_MAP_HREF,
+      label: HOME_FOREST_SIGN_NAV_LABELS["forest-map"],
+    },
+    {
+      id: "ljd-help",
+      href: "/help/ljd",
+      label: HOME_FOREST_SIGN_NAV_LABELS["ljd-help"],
+    },
+  ] as const;
+}
 
 const mobileFontSizeBandClass =
   "relative mx-auto w-full max-w-[min(17rem,78vw)] border-t border-stone-300/40 px-1 pb-2.5 pt-2.5 sm:max-w-[17rem]";
@@ -61,8 +65,8 @@ export function HomeForestSignEntrance() {
   const isDesktop = viewport === "desktop";
 
   const navById = useMemo(
-    () => Object.fromEntries(NAV_ITEMS.map((item) => [item.id, item])),
-    [],
+    () => Object.fromEntries(buildNavItems(isLoggedIn).map((item) => [item.id, item])),
+    [isLoggedIn],
   );
   const primaryNavId = isLoggedIn ? "loghouse" : "first";
 

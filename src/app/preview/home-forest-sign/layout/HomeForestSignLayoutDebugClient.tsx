@@ -24,10 +24,10 @@ import { HomeForestSignLoginNote, HomeForestSignOverlay } from "@/components/hom
 const PREVIEW_NAV_BY_ID = {
   loghouse: { id: "loghouse", href: "/orders", label: HOME_FOREST_SIGN_NAV_LABELS.loghouse },
   first: { id: "first", href: "/guide/first", label: HOME_FOREST_SIGN_NAV_LABELS.first },
-  companion: {
-    id: "companion",
-    href: "/journal/with-companion",
-    label: HOME_FOREST_SIGN_NAV_LABELS.companion,
+  "forest-map": {
+    id: "forest-map",
+    href: "/help/ljd#forest-guide-map-heading",
+    label: HOME_FOREST_SIGN_NAV_LABELS["forest-map"],
   },
   "ljd-help": { id: "ljd-help", href: "/help/ljd", label: HOME_FOREST_SIGN_NAV_LABELS["ljd-help"] },
 } as const;

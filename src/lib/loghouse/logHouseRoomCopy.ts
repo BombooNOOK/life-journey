@@ -30,6 +30,13 @@ export const LOG_HOUSE_ROOM_SPOT_COPY: Record<LogHouseRoomSpotId, LogHouseRoomSp
 
 export const LOG_HOUSE_ROOM_RABBIT_GREETING = "今日も森へようこそ";
 
+/** 鑑定前に本棚・机・今日の鑑定結果をタップしたとき */
+export const LOG_HOUSE_ROOM_KANTEI_LOCK_MESSAGE =
+  "無料鑑定が終わると、ここから使えるようになります。" as const;
+
+export const LOG_HOUSE_ROOM_JOURNAL_LOCK_MESSAGE =
+  "いまは日記を書けない状態です。アカウント設定をご確認ください。" as const;
+
 export const LOG_HOUSE_ROOM_MANAGE_BUTTON_LABEL = "その他";
 
 /** 歯車：設定・管理 */

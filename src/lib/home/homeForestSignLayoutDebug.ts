@@ -51,7 +51,7 @@ const SAMPLE = {
   subtitle: HOME_FOREST_SIGN_SUBTITLE_TEXT,
   signTopLeft: HOME_FOREST_SIGN_NAV_LABELS.first,
   signMidLeft: HOME_FOREST_SIGN_NAV_LABELS.loghouse,
-  signTopRight: HOME_FOREST_SIGN_NAV_LABELS.companion,
+  signTopRight: HOME_FOREST_SIGN_NAV_LABELS["forest-map"],
   signBottomRight: HOME_FOREST_SIGN_NAV_LABELS["ljd-help"],
   loginNote: HOME_FOREST_SIGN_LOGIN_NOTE_PREVIEW_TEXT,
 } as const;
