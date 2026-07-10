@@ -27,10 +27,9 @@ export const FOREST_GUIDE_MAP_BUILDINGS: Record<ForestGuideMapBuildingId, Forest
   musicHall: {
     id: "musicHall",
     title: "森の小さな音楽堂",
-    body: "BambooNOOKのサウンドトラックを聴ける場所です。森の雰囲気に合う音楽を、ゆっくり味わってみてください。",
-    href: "https://bamboonook.base.shop/categories/7427836",
-    linkLabel: "サウンドトラックを見る",
-    external: true,
+    body: "BambooNOOKの森で暮らすうちに出会った音楽や、森の自然音を聴ける場所です。",
+    href: "/help/music-hall",
+    linkLabel: "音楽堂を開く",
   },
   kanteiHall: {
     id: "kanteiHall",

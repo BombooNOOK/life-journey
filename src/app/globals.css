@@ -148,3 +148,13 @@ html[data-reading-font-size="x-large"] .lj-reading-exempt {
     font-size: clamp(0.75rem, 0.75rem, 14px);
   }
 }
+
+@keyframes loghouseRabbitIdle {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-3px);
+  }
+}

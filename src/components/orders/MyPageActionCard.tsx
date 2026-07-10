@@ -86,7 +86,7 @@ export function MyPageActionCard({
       <div className="flex items-center gap-3.5 sm:gap-4">
         <div
           className={[
-            "flex h-[4.25rem] w-[4.25rem] shrink-0 items-center justify-center rounded-xl p-1.5 ring-1 sm:h-[4.5rem] sm:w-[4.5rem]",
+            "flex h-[4.25rem] w-[4.25rem] shrink-0 items-center justify-center overflow-hidden rounded-xl p-1.5 ring-1 sm:h-[4.5rem] sm:w-[4.5rem]",
             palette.iconWrap,
           ].join(" ")}
         >

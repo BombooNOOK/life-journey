@@ -25,13 +25,9 @@ type Props = {
   alt?: string;
 };
 
-function readGuideMapViewport(): FirstVisitWelcomeViewport {
-  if (typeof window === "undefined") return "mobile";
-  return window.matchMedia("(min-width: 1024px)").matches ? "desktop" : "mobile";
-}
-
+/** SSR と初回 hydrate は常に mobile。window 参照は mount 後だけ（hydration mismatch 防止） */
 function useGuideMapViewport(): FirstVisitWelcomeViewport {
-  const [viewport, setViewport] = useState<FirstVisitWelcomeViewport>(readGuideMapViewport);
+  const [viewport, setViewport] = useState<FirstVisitWelcomeViewport>("mobile");
 
   useLayoutEffect(() => {
     const mq = window.matchMedia("(min-width: 1024px)");

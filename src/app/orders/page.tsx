@@ -1,18 +1,9 @@
 import Link from "next/link";
 
-import {
-  FirstVisitGuidePanel,
-  ReturningUserGuideHint,
-} from "@/components/guide/FirstVisitGuidePanel";
-import { MyPageGuideLink } from "@/components/guide/MyPageGuideLink";
+import { LogHouseHub } from "@/components/orders/LogHouseHub";
 import { LogHouseGuestEntrance } from "@/components/orders/LogHouseGuestEntrance";
 import { LogHouseLoadErrorPanel } from "@/components/orders/LogHouseLoadErrorPanel";
-import { KanteiMissingBanner } from "@/components/orders/KanteiMissingBanner";
 import { LegalFooterLinks } from "@/components/legal/LegalFooterLinks";
-import { MyPageManageHub } from "@/components/orders/MyPageManageMenu";
-import { MyPageMainActions } from "@/components/orders/MyPageMainActions";
-import { MyPagePageHeader } from "@/components/orders/MyPagePageHeader";
-import { MyPageProfileList } from "@/components/orders/MyPageProfileList";
 import { isAdminEmail } from "@/lib/admin/access";
 import { getViewerEmailFromCookie } from "@/lib/auth/viewer";
 import { prisma } from "@/lib/db";
@@ -27,7 +18,6 @@ import {
 } from "@/lib/entitlement/resolveUserEntitlement";
 import { calendarDayKeyInJapan, journalWithCompanionPath } from "@/lib/journal/journalNav";
 import { resolveFirstVisitGuideState } from "@/lib/onboarding/firstVisitGuideState";
-import { TrialStatusBanner } from "@/components/entitlement/TrialStatusBanner";
 
 export const dynamic = "force-dynamic";
 
@@ -93,60 +83,24 @@ export default async function OrdersListPage() {
       : journalWithCompanionPath("/orders");
 
   return (
-      <div className="space-y-5 sm:space-y-6">
-      <MyPagePageHeader />
-
-      <MyPageProfileList profiles={profiles} activeProfileId={activeProfileId} />
-
-      <TrialStatusBanner entitlement={entitlement} />
-
-      {activeProfile ? (
-        <FirstVisitGuidePanel
-          state={firstVisitGuideState}
-          profileId={activeProfile.id}
-          companionWritingHref={companionWritingHref}
-        />
-      ) : null}
-
-      {firstVisitGuideState === "returning" ? <ReturningUserGuideHint /> : null}
-
-      {activeProfile && !hasKanteiOrder ? (
-        <KanteiMissingBanner
-          profileId={activeProfile.id}
-          blockNewKantei={entitlement.tier === "trial_expired"}
-        />
-      ) : null}
-
-      {activeProfile ? (
-        <MyPageMainActions
-          profileId={activeProfile.id}
-          isActive
-          entitlement={entitlement}
-          kanteiOrderId={activeKanteiOrderId}
-          firstVisitGuideState={firstVisitGuideState}
-          companionWritingHref={companionWritingHref}
-        />
-      ) : null}
-
-      <MyPageGuideLink />
-
-      <MyPageManageHub activeProfileId={activeProfileId || null} />
-
-      <div className="border-t border-stone-200 pt-6">
-        <LegalFooterLinks />
-      </div>
-
-      {viewerIsAdmin ? (
-        <div className="border-t border-stone-200 pt-6">
-          <Link
-            href="/admin"
-            className="inline-flex min-h-[44px] items-center rounded-lg border border-stone-300 bg-stone-50 px-4 py-2.5 text-sm font-medium text-stone-700 transition hover:bg-stone-100"
-          >
-            管理者ページへ
-          </Link>
-        </div>
-      ) : null}
-
-      </div>
+    <LogHouseHub
+      profiles={profiles}
+      activeProfileId={activeProfileId}
+      hasKanteiOrder={hasKanteiOrder}
+      activeKanteiOrderId={activeKanteiOrderId}
+      entitlement={entitlement}
+      firstVisitGuideState={firstVisitGuideState}
+      companionWritingHref={companionWritingHref}
+      viewerIsAdmin={viewerIsAdmin}
+      adminLink={
+        <Link
+          href="/admin"
+          className="inline-flex min-h-[44px] items-center rounded-lg border border-stone-300 bg-stone-50 px-4 py-2.5 text-sm font-medium text-stone-700 transition hover:bg-stone-100"
+        >
+          管理者ページへ
+        </Link>
+      }
+      legalFooter={<LegalFooterLinks />}
+    />
   );
 }

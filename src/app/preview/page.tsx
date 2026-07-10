@@ -77,6 +77,18 @@ const links: { href: string; label: string; note?: string; highlight?: boolean }
     highlight: true,
   },
   {
+    href: "/preview/loghouse-room",
+    label: "ログハウス室内UI（スマホ）",
+    note: "ログイン不要。Cursor Simple Browser 用。npm run dev 中のみ",
+    highlight: true,
+  },
+  {
+    href: "/preview/loghouse-room/layout",
+    label: "ログハウス室内レイアウト定規",
+    note: "576×1024 を 1:1 表示。グリッド・座標クリック・配置確認。npm run dev 中のみ",
+    highlight: true,
+  },
+  {
     href: "/preview/home-forest-sign/layout?viewport=mobile",
     label: "トップ・森の案内板レイアウト定規",
     note: "485×1024 / 1024×576 を 1:1 表示。看板テキストの座標調整。npm run dev 中のみ",
