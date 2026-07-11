@@ -13,7 +13,9 @@ import {
 } from "@/lib/loghouse/logHouseRoomAssets";
 import {
   LOG_HOUSE_ROOM_RABBIT_PLACEMENT,
-  LOG_HOUSE_ROOM_RABBIT_WAYPOINTS,
+  logHouseRoomRabbitFeetFromPlacement,
+  logHouseRoomRabbitPlacementFromFeet,
+  pickLogHouseRoomRabbitFeetOnRug,
 } from "@/lib/loghouse/logHouseRoomLayout";
 
 type Props = {
@@ -24,16 +26,19 @@ type Point = { x: number; y: number };
 
 const POSES = Object.keys(LOG_HOUSE_ROOM_RABBIT_POSE_SRC) as LogHouseRoomRabbitPose[];
 
+const HOME_PLACEMENT: Point = {
+  x: LOG_HOUSE_ROOM_RABBIT_PLACEMENT.x,
+  y: LOG_HOUSE_ROOM_RABBIT_PLACEMENT.y,
+};
+
 function randomBetween(minMs: number, maxMs: number) {
   return minMs + Math.floor(Math.random() * (maxMs - minMs + 1));
 }
 
-function pickNextWaypoint(current: Point): Point {
-  const options = LOG_HOUSE_ROOM_RABBIT_WAYPOINTS.filter(
-    (point) => Math.hypot(point.x - current.x, point.y - current.y) > 4,
-  );
-  const pool = options.length > 0 ? options : [...LOG_HOUSE_ROOM_RABBIT_WAYPOINTS];
-  return pool[Math.floor(Math.random() * pool.length)]!;
+function pickNextPlacement(current: Point): Point {
+  const currentFeet = logHouseRoomRabbitFeetFromPlacement(current);
+  const nextFeet = pickLogHouseRoomRabbitFeetOnRug(currentFeet);
+  return logHouseRoomRabbitPlacementFromFeet(nextFeet);
 }
 
 function walkDurationMs(from: Point, to: Point) {
@@ -44,10 +49,9 @@ function walkDurationMs(from: Point, to: Point) {
 /** ログハウス室内の分身うさぎ（立ち・瞬き・歩き） */
 export function LogHouseRoomRabbitAvatar({ className = "" }: Props) {
   const placement = LOG_HOUSE_ROOM_RABBIT_PLACEMENT;
-  const home = LOG_HOUSE_ROOM_RABBIT_WAYPOINTS[0]!;
 
   const [pose, setPose] = useState<LogHouseRoomRabbitPose>("idle");
-  const [position, setPosition] = useState<Point>(home);
+  const [position, setPosition] = useState<Point>(HOME_PLACEMENT);
   const [moveMs, setMoveMs] = useState(0);
   const [walking, setWalking] = useState(false);
   const [showBubble, setShowBubble] = useState(false);
@@ -104,7 +108,7 @@ export function LogHouseRoomRabbitAvatar({ className = "" }: Props) {
       if (reduceMotion) return;
       later(() => {
         const current = positionRef.current;
-        const next = pickNextWaypoint(current);
+        const next = pickNextPlacement(current);
         const duration = walkDurationMs(current, next);
         const facingRight = next.x >= current.x;
 

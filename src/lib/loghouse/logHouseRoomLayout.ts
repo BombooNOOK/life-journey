@@ -25,18 +25,82 @@ export const LOG_HOUSE_ROOM_PART_PLACEMENTS: LogHouseRoomPartPlacement[] = [
 
 export const LOG_HOUSE_ROOM_RABBIT_PLACEMENT = {
   x: 38,
-  y: 48,
+  /** 足元がじゅうたん中央付近になるよう配置（height 34 → 足元 y≈70） */
+  y: 36,
   width: 22,
   height: 34,
   /** 椅子(20)より奥。ラグ上に立つ想定 */
   zIndex: 18,
 } as const;
 
-/** 室内をゆっくり巡回する立ち位置（left/top %・ラグ周辺／椅子の手前には出ない） */
+/**
+ * うさぎの「足元」が動ける範囲（部屋 %・楕円）。
+ * 下側は椅子・机にめり込まないよう短め（足元の最大おおよそ y=76）。
+ */
+export const LOG_HOUSE_ROOM_RABBIT_RUG = {
+  centerX: 48,
+  centerY: 70,
+  radiusX: 15,
+  /** 上方向（奥）は広め、下方向（手前）は椅子前で切る */
+  radiusYUp: 8,
+  radiusYDown: 6,
+} as const;
+
+export type LogHouseRoomPoint = { x: number; y: number };
+
+/** 配置ボックス左上 → 足元（ボックス下辺中央） */
+export function logHouseRoomRabbitFeetFromPlacement(placement: LogHouseRoomPoint): LogHouseRoomPoint {
+  return {
+    x: placement.x + LOG_HOUSE_ROOM_RABBIT_PLACEMENT.width / 2,
+    y: placement.y + LOG_HOUSE_ROOM_RABBIT_PLACEMENT.height,
+  };
+}
+
+/** 足元 → 配置ボックス左上 */
+export function logHouseRoomRabbitPlacementFromFeet(feet: LogHouseRoomPoint): LogHouseRoomPoint {
+  return {
+    x: feet.x - LOG_HOUSE_ROOM_RABBIT_PLACEMENT.width / 2,
+    y: feet.y - LOG_HOUSE_ROOM_RABBIT_PLACEMENT.height,
+  };
+}
+
+export function logHouseRoomRabbitFeetOnRug(feet: LogHouseRoomPoint): boolean {
+  const { centerX, centerY, radiusX, radiusYUp, radiusYDown } = LOG_HOUSE_ROOM_RABBIT_RUG;
+  const nx = (feet.x - centerX) / radiusX;
+  const radiusY = feet.y >= centerY ? radiusYDown : radiusYUp;
+  const ny = (feet.y - centerY) / radiusY;
+  return nx * nx + ny * ny <= 1;
+}
+
+/** じゅうたん上のランダムな足元（現在地からある程度離す） */
+export function pickLogHouseRoomRabbitFeetOnRug(
+  currentFeet: LogHouseRoomPoint,
+  minDistance = 5,
+): LogHouseRoomPoint {
+  const { centerX, centerY, radiusX, radiusYUp, radiusYDown } = LOG_HOUSE_ROOM_RABBIT_RUG;
+  let best = currentFeet;
+
+  for (let attempt = 0; attempt < 40; attempt += 1) {
+    const angle = Math.random() * Math.PI * 2;
+    const radius = Math.sqrt(Math.random());
+    const radiusY = Math.sin(angle) >= 0 ? radiusYDown : radiusYUp;
+    const next = {
+      x: centerX + Math.cos(angle) * radiusX * radius,
+      y: centerY + Math.sin(angle) * radiusY * radius,
+    };
+    if (Math.hypot(next.x - currentFeet.x, next.y - currentFeet.y) >= minDistance) {
+      return next;
+    }
+    best = next;
+  }
+
+  return best;
+}
+
+/** 初期立ち位置の互換（足元はじゅうたん上） */
 export const LOG_HOUSE_ROOM_RABBIT_WAYPOINTS = [
-  { x: 38, y: 48 },
-  { x: 30, y: 46 },
-  { x: 44, y: 47 },
-  { x: 34, y: 50 },
-  { x: 42, y: 49 },
+  {
+    x: LOG_HOUSE_ROOM_RABBIT_PLACEMENT.x,
+    y: LOG_HOUSE_ROOM_RABBIT_PLACEMENT.y,
+  },
 ] as const;
