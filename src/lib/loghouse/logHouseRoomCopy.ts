@@ -46,6 +46,6 @@ export const LOG_HOUSE_SETTINGS_BUTTON_LABEL = "設定" as const;
 export const LOG_HOUSE_FOREST_ENTRANCE_LABEL = "森の入口（トップ）" as const;
 export const LOG_HOUSE_FOREST_ENTRANCE_HREF = "/" as const;
 
-/** 地図アイコン：森の案内図 */
+/** 地図アイコン：森の案内図（単独ページ） */
 export const LOG_HOUSE_FOREST_MAP_LABEL = "森の案内図" as const;
-export const LOG_HOUSE_FOREST_MAP_HREF = "/help/ljd#forest-guide-map-heading" as const;
+export const LOG_HOUSE_FOREST_MAP_HREF = "/help/forest-map?returnTo=%2Forders" as const;

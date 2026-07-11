@@ -9,7 +9,7 @@ import { HomeForestSignStage } from "@/components/home/HomeForestSignStage";
 import { ReadingFontSizeControl } from "@/components/reading/ReadingFontSizeControl";
 import { isLjLoggedInOnClient } from "@/lib/auth/clientCookies";
 import { HOME_FOREST_SIGN_NAV_LABELS, type HomeForestSignViewport } from "@/lib/home/homeForestSignLayout";
-import { LOG_HOUSE_FOREST_MAP_HREF } from "@/lib/loghouse/logHouseRoomCopy";
+import { buildForestMapHref } from "@/lib/help/forestMapNav";
 import { FIRST_VISIT_ROUTES } from "@/lib/onboarding/firstVisitWizard/routes";
 
 function buildNavItems(isLoggedIn: boolean) {
@@ -26,7 +26,7 @@ function buildNavItems(isLoggedIn: boolean) {
     },
     {
       id: "forest-map",
-      href: LOG_HOUSE_FOREST_MAP_HREF,
+      href: buildForestMapHref("/"),
       label: HOME_FOREST_SIGN_NAV_LABELS["forest-map"],
     },
     {

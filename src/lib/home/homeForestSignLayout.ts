@@ -139,7 +139,7 @@ export const HOME_FOREST_SIGN_LAYOUT: Record<HomeForestSignViewport, HomeForestS
     },
     signMidLeft: {
       x: 177,
-      y: 618,
+      y: 602,
       textAnchor: "center",
       textAlign: "center",
       fontSize: 26,
@@ -150,7 +150,7 @@ export const HOME_FOREST_SIGN_LAYOUT: Record<HomeForestSignViewport, HomeForestS
     },
     signTopRight: {
       x: 290,
-      y: 528,
+      y: 536,
       rotate: -5,
       fontSize: 18,
       fontWeight: 600,

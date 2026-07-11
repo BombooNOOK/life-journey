@@ -26,7 +26,7 @@ const PREVIEW_NAV_BY_ID = {
   first: { id: "first", href: "/guide/first", label: HOME_FOREST_SIGN_NAV_LABELS.first },
   "forest-map": {
     id: "forest-map",
-    href: "/help/ljd#forest-guide-map-heading",
+    href: "/help/forest-map?returnTo=%2F",
     label: HOME_FOREST_SIGN_NAV_LABELS["forest-map"],
   },
   "ljd-help": { id: "ljd-help", href: "/help/ljd", label: HOME_FOREST_SIGN_NAV_LABELS["ljd-help"] },
