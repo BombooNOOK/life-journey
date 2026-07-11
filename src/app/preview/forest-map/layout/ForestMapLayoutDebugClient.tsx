@@ -38,8 +38,9 @@ export function ForestMapLayoutDebugClient() {
       </ul>
 
       <ForestMapPage
-        backLink={{ href: "/preview", label: "プレビュー一覧へ" }}
+        backLink={{ href: "/preview", label: "プレビュー一覧へ戻る" }}
         showHotspotOutlines
+        layout="framed"
       />
     </div>
   );

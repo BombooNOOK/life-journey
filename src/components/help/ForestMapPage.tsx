@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useState, useTransition } from "react";
+import { useCallback, useEffect, useState, useTransition, type CSSProperties } from "react";
 
 import { OwlDelayedBusyOverlay } from "@/components/ui/OwlDelayedBusyOverlay";
 import {
@@ -12,12 +12,16 @@ import {
 } from "@/lib/help/forestMapDestinations";
 import {
   FOREST_MAP_INTRINSIC,
-  FOREST_MAP_PAGE_DESCRIPTION,
   FOREST_MAP_PAGE_TITLE,
   FOREST_MAP_SRC,
 } from "@/lib/help/forestMapAssets";
 import { FOREST_MAP_HOTSPOTS } from "@/lib/help/forestMapHotspots";
-import type { ForestGuideMapKanteiHallLink } from "@/lib/help/forestGuideMapKanteiHallLink";
+import type {
+  ForestGuideMapCoreNumber,
+  ForestGuideMapKanteiHallLink,
+} from "@/lib/help/forestGuideMapKanteiHallLink";
+import { LOG_HOUSE_NAV_LABEL } from "@/lib/journal/logHouseLabels";
+import { FIRST_VISIT_ROUTES } from "@/lib/onboarding/firstVisitWizard/routes";
 
 type BackLink = { href: string; label: string };
 
@@ -25,13 +29,51 @@ type Props = {
   backLink: BackLink;
   /** 定規プレビュー用：枠を常時表示 */
   showHotspotOutlines?: boolean;
+  /** immersive = 本番全画面 / framed = 定規用 */
+  layout?: "immersive" | "framed";
 };
 
-function useKanteiHallHref(): {
-  href: string | null;
+const chromeButtonClass =
+  "inline-flex h-11 w-11 items-center justify-center rounded-full border border-stone-500/20 bg-[#fffdf9]/55 text-stone-700 shadow-sm backdrop-blur-[3px] transition hover:bg-[#fffdf9]/75 active:scale-[0.98]";
+
+function HomeIcon() {
+  return (
+    <svg aria-hidden className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M4.5 10.5 12 4.5l7.5 6V20a1.5 1.5 0 0 1-1.5 1.5h-3.75v-6h-4.5v6H6A1.5 1.5 0 0 1 4.5 20v-9.5Z"
+      />
+    </svg>
+  );
+}
+
+function BackIcon() {
+  return (
+    <svg aria-hidden className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M15 6 9 12l6 6" />
+    </svg>
+  );
+}
+
+/** 576×1024 を viewport に cover 相当で広げる */
+function coverStageStyle(size: { widthPx: number; heightPx: number }): CSSProperties {
+  const ratio = size.widthPx / size.heightPx;
+  return {
+    position: "absolute",
+    left: "50%",
+    top: "50%",
+    width: `max(100vw, calc(100dvh * ${ratio}))`,
+    height: `max(100dvh, calc(100vw / ${ratio}))`,
+    transform: "translate(-50%, -50%)",
+  };
+}
+
+function useKanteiHallLink(): {
+  link: ForestGuideMapKanteiHallLink | null;
   loading: boolean;
 } {
-  const [href, setHref] = useState<string | null>(null);
+  const [link, setLink] = useState<ForestGuideMapKanteiHallLink | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -42,10 +84,16 @@ function useKanteiHallHref(): {
         return (await res.json()) as ForestGuideMapKanteiHallLink;
       })
       .then((data) => {
-        if (!cancelled) setHref(data.href);
+        if (!cancelled) setLink(data);
       })
       .catch(() => {
-        if (!cancelled) setHref("/guide/first/path-guide");
+        if (!cancelled) {
+          setLink({
+            branch: "guestOrNoResident",
+            href: FIRST_VISIT_ROUTES.pathGuide,
+            linkLabel: "はじめての方の案内へ",
+          });
+        }
       })
       .finally(() => {
         if (!cancelled) setLoading(false);
@@ -55,17 +103,159 @@ function useKanteiHallHref(): {
     };
   }, []);
 
-  return { href, loading };
+  return { link, loading };
 }
 
-/** BambooNOOKの森 案内図（タップで直接移動） */
-export function ForestMapPage({ backLink, showHotspotOutlines = false }: Props) {
+function KanteiCoreNumbersPanel({
+  coreNumbers,
+  bookshelfHref,
+  bookshelfLabel,
+  onClose,
+}: {
+  coreNumbers: ForestGuideMapCoreNumber[];
+  bookshelfHref: string;
+  bookshelfLabel: string;
+  onClose: () => void;
+}) {
+  return (
+    <div className="absolute inset-x-0 bottom-0 z-[56] px-3 pb-[max(1rem,env(safe-area-inset-bottom))]">
+      <div
+        role="dialog"
+        aria-labelledby="forest-map-kantei-panel-title"
+        className="mx-auto max-w-md rounded-2xl border border-amber-100/90 bg-[#fffdf9]/96 px-4 py-4 shadow-lg backdrop-blur-[2px]"
+      >
+        <div className="mb-3 flex items-start justify-between gap-3">
+          <h2 id="forest-map-kantei-panel-title" className="text-sm font-semibold text-stone-900">
+            あなたのコアナンバー
+          </h2>
+          <button
+            type="button"
+            onClick={onClose}
+            className="inline-flex min-h-[40px] min-w-[40px] items-center justify-center rounded-full border border-stone-200 text-stone-600 hover:bg-stone-50"
+            aria-label="閉じる"
+          >
+            ✕
+          </button>
+        </div>
+        <div className="grid grid-cols-3 gap-2">
+          {coreNumbers.map((item) => (
+            <div
+              key={item.label}
+              className="rounded-xl border border-amber-100 bg-gradient-to-br from-white to-amber-50/80 px-2 py-2.5 text-center"
+            >
+              <p className="text-[10px] font-medium leading-tight text-stone-500">{item.label}</p>
+              <p className="mt-1 text-lg font-semibold tabular-nums text-stone-900">
+                {item.value == null ? "—" : item.value}
+              </p>
+            </div>
+          ))}
+        </div>
+        <Link
+          href={bookshelfHref}
+          className="mt-4 inline-flex min-h-[44px] w-full items-center justify-center rounded-xl border border-emerald-300 bg-emerald-50/90 px-4 text-sm font-semibold text-emerald-950 transition hover:bg-emerald-100"
+        >
+          {bookshelfLabel}
+        </Link>
+      </div>
+    </div>
+  );
+}
+
+function MapStage({
+  busy,
+  showHotspotOutlines,
+  onActivate,
+}: {
+  busy: boolean;
+  showHotspotOutlines: boolean;
+  onActivate: (spotId: ForestMapSpotId) => void;
+}) {
+  return (
+    <>
+      <Image
+        src={FOREST_MAP_SRC}
+        alt=""
+        fill
+        priority
+        sizes="100vw"
+        className="object-cover object-center"
+        unoptimized
+        draggable={false}
+      />
+      <div className="absolute inset-0">
+        {FOREST_MAP_HOTSPOTS.map((spot) => {
+          const dest = FOREST_MAP_DESTINATIONS[spot.id];
+          const ariaLabel = dest.comingSoonMessage
+            ? `${dest.label}（準備中）`
+            : `${dest.label}へ移動`;
+          return (
+            <button
+              key={spot.id}
+              type="button"
+              disabled={busy}
+              aria-label={ariaLabel}
+              onClick={() => onActivate(spot.id)}
+              className={[
+                "absolute rounded-lg transition active:scale-[0.98]",
+                "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-700",
+                showHotspotOutlines
+                  ? "border-2 border-emerald-500/70 bg-emerald-200/20"
+                  : "border-2 border-transparent bg-transparent hover:border-emerald-400/40 hover:bg-emerald-100/10",
+              ].join(" ")}
+              style={{
+                left: `${spot.x}%`,
+                top: `${spot.y}%`,
+                width: `${spot.width}%`,
+                height: `${spot.height}%`,
+              }}
+            />
+          );
+        })}
+      </div>
+    </>
+  );
+}
+
+function ForestMapChrome({ backLink }: { backLink: BackLink }) {
+  return (
+    <div className="pointer-events-none absolute inset-x-0 top-0 z-40 flex items-start justify-between gap-2 px-3 pb-2 pt-[max(0.75rem,env(safe-area-inset-top))]">
+      <div className="pointer-events-auto">
+        <Link
+          href={backLink.href}
+          className={chromeButtonClass}
+          aria-label={backLink.label}
+          title={backLink.label}
+        >
+          <BackIcon />
+        </Link>
+      </div>
+      <div className="pointer-events-auto">
+        <Link
+          href="/orders"
+          className={chromeButtonClass}
+          aria-label={`${LOG_HOUSE_NAV_LABEL}へ`}
+          title={`${LOG_HOUSE_NAV_LABEL}へ`}
+        >
+          <HomeIcon />
+        </Link>
+      </div>
+    </div>
+  );
+}
+
+/** BambooNOOKの森 案内図（タップで直接移動・全画面） */
+export function ForestMapPage({
+  backLink,
+  showHotspotOutlines = false,
+  layout = "immersive",
+}: Props) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [localBusy, setLocalBusy] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
+  const [showKanteiPanel, setShowKanteiPanel] = useState(false);
   const busy = isPending || localBusy;
-  const { href: kanteiHref, loading: kanteiLoading } = useKanteiHallHref();
+  const { link: kanteiLink, loading: kanteiLoading } = useKanteiHallLink();
 
   useEffect(() => {
     if (!notice) return;
@@ -78,7 +268,10 @@ export function ForestMapPage({ backLink, showHotspotOutlines = false }: Props) 
       const dest = FOREST_MAP_DESTINATIONS[spot.id];
       if (dest.href && !dest.external) router.prefetch(dest.href);
     });
-  }, [router]);
+    router.prefetch("/orders");
+    if (backLink.href) router.prefetch(backLink.href);
+    if (kanteiLink?.href) router.prefetch(kanteiLink.href);
+  }, [backLink.href, kanteiLink?.href, router]);
 
   const navigate = useCallback(
     async (spotId: ForestMapSpotId) => {
@@ -91,12 +284,16 @@ export function ForestMapPage({ backLink, showHotspotOutlines = false }: Props) 
       }
 
       if (dest.resolve === "kanteiHall") {
-        if (kanteiLoading || !kanteiHref) {
+        if (kanteiLoading || !kanteiLink) {
           setLocalBusy(true);
           return;
         }
+        if (kanteiLink.branch === "hasKantei") {
+          setShowKanteiPanel(true);
+          return;
+        }
         startTransition(() => {
-          router.push(kanteiHref);
+          router.push(kanteiLink.href);
         });
         return;
       }
@@ -112,96 +309,98 @@ export function ForestMapPage({ backLink, showHotspotOutlines = false }: Props) 
         router.push(dest.href!);
       });
     },
-    [busy, kanteiHref, kanteiLoading, router, startTransition],
+    [busy, kanteiLink, kanteiLoading, router, startTransition],
   );
 
   useEffect(() => {
     if (!localBusy) return;
     if (kanteiLoading) return;
-    if (!kanteiHref) {
+    if (!kanteiLink) {
       setLocalBusy(false);
       return;
     }
     setLocalBusy(false);
+    if (kanteiLink.branch === "hasKantei") {
+      setShowKanteiPanel(true);
+      return;
+    }
     startTransition(() => {
-      router.push(kanteiHref);
+      router.push(kanteiLink.href);
     });
-  }, [kanteiHref, kanteiLoading, localBusy, router, startTransition]);
+  }, [kanteiLink, kanteiLoading, localBusy, router, startTransition]);
 
-  return (
-    <div className="mx-auto flex min-h-[100dvh] w-full max-w-lg flex-col px-3 pb-8 pt-4 sm:px-4">
-      <OwlDelayedBusyOverlay busy={busy} spinnerDelayMs={0} />
+  const noticeOverlay = notice ? (
+    <div className="pointer-events-none absolute inset-x-0 bottom-8 z-[55] flex justify-center px-4">
+      <p
+        role="status"
+        className="max-w-sm rounded-xl border border-emerald-200/90 bg-[#fffdf9]/95 px-3.5 py-2.5 text-center text-xs leading-relaxed text-stone-700 shadow-lg backdrop-blur-[1px]"
+      >
+        {notice}
+      </p>
+    </div>
+  ) : null;
 
-      <div className="mb-3 flex items-center justify-between gap-3">
-        <Link
-          href={backLink.href}
-          className="inline-flex min-h-[44px] items-center text-sm font-medium text-emerald-900 underline-offset-2 hover:underline"
-        >
-          ← {backLink.label}
-        </Link>
-      </div>
+  const kanteiPanel =
+    showKanteiPanel && kanteiLink?.branch === "hasKantei" ? (
+      <>
+        <button
+          type="button"
+          className="absolute inset-0 z-[55] bg-stone-900/20"
+          aria-label="パネルを閉じる"
+          onClick={() => setShowKanteiPanel(false)}
+        />
+        <KanteiCoreNumbersPanel
+          coreNumbers={
+            kanteiLink.coreNumbers ?? [
+              { label: "ライフパス", value: null },
+              { label: "ディスティニー", value: null },
+              { label: "ソウル", value: null },
+              { label: "パーソナリティ", value: null },
+              { label: "バースデー", value: null },
+              { label: "マチュリティ", value: null },
+            ]
+          }
+          bookshelfHref={kanteiLink.href}
+          bookshelfLabel={kanteiLink.linkLabel}
+          onClose={() => setShowKanteiPanel(false)}
+        />
+      </>
+    ) : null;
 
-      <header className="mb-3 space-y-1">
-        <h1 className="text-lg font-semibold text-stone-900 sm:text-xl">{FOREST_MAP_PAGE_TITLE}</h1>
-        <p className="text-sm leading-relaxed text-stone-600">{FOREST_MAP_PAGE_DESCRIPTION}</p>
-      </header>
+  const busyOverlay = <OwlDelayedBusyOverlay busy={busy} spinnerDelayMs={0} className="bg-white/15" />;
 
+  if (layout === "framed") {
+    return (
       <div
-        className="relative w-full overflow-hidden rounded-2xl border border-stone-200/90 bg-[#ebe4d4] shadow-sm"
+        className="relative mx-auto w-full max-w-md overflow-hidden rounded-2xl border border-stone-200/90 bg-[#ebe4d4] shadow-sm"
         style={{
           aspectRatio: `${FOREST_MAP_INTRINSIC.widthPx} / ${FOREST_MAP_INTRINSIC.heightPx}`,
         }}
       >
-        <Image
-          src={FOREST_MAP_SRC}
-          alt={FOREST_MAP_PAGE_TITLE}
-          fill
-          priority
-          sizes="(max-width: 512px) 100vw, 32rem"
-          className="object-contain"
-          unoptimized
-        />
+        <div className="absolute inset-0 isolate overflow-hidden">
+          <MapStage busy={busy} showHotspotOutlines={showHotspotOutlines} onActivate={navigate} />
+        </div>
+        <ForestMapChrome backLink={backLink} />
+        {noticeOverlay}
+        {kanteiPanel}
+        {busyOverlay}
+        <p className="sr-only">{FOREST_MAP_PAGE_TITLE}</p>
+      </div>
+    );
+  }
 
-        <div className="absolute inset-0">
-          {FOREST_MAP_HOTSPOTS.map((spot) => {
-            const dest = FOREST_MAP_DESTINATIONS[spot.id];
-            const ariaLabel = dest.comingSoonMessage
-              ? `${dest.label}（準備中）`
-              : `${dest.label}へ移動`;
-            return (
-              <button
-                key={spot.id}
-                type="button"
-                disabled={busy}
-                aria-label={ariaLabel}
-                onClick={() => void navigate(spot.id)}
-                className={[
-                  "absolute rounded-lg transition active:scale-[0.98]",
-                  "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-700",
-                  showHotspotOutlines
-                    ? "border-2 border-emerald-500/70 bg-emerald-200/20"
-                    : "border-2 border-transparent bg-transparent hover:border-emerald-400/40 hover:bg-emerald-100/10",
-                ].join(" ")}
-                style={{
-                  left: `${spot.x}%`,
-                  top: `${spot.y}%`,
-                  width: `${spot.width}%`,
-                  height: `${spot.height}%`,
-                }}
-              />
-            );
-          })}
+  return (
+    <div className="fixed inset-0 z-[60] overflow-hidden overscroll-none bg-[#ebe4d4] select-none">
+      <div className="absolute inset-0 overflow-hidden">
+        <div className="relative isolate overflow-hidden" style={coverStageStyle(FOREST_MAP_INTRINSIC)}>
+          <MapStage busy={busy} showHotspotOutlines={showHotspotOutlines} onActivate={navigate} />
         </div>
       </div>
-
-      {notice ? (
-        <p
-          role="status"
-          className="mt-3 rounded-xl border border-emerald-200/90 bg-[#fffdf9] px-3.5 py-2.5 text-center text-sm leading-relaxed text-stone-700 shadow-sm"
-        >
-          {notice}
-        </p>
-      ) : null}
+      <ForestMapChrome backLink={backLink} />
+      {noticeOverlay}
+      {kanteiPanel}
+      {busyOverlay}
+      <h1 className="sr-only">{FOREST_MAP_PAGE_TITLE}</h1>
     </div>
   );
 }

@@ -9,19 +9,21 @@ import {
   isLogHouseImmersivePreviewPath,
   useIsLogHouseMobileViewport,
 } from "@/lib/loghouse/logHouseViewport";
+import { isForestMapImmersivePath } from "@/lib/help/forestMapAssets";
 import { isFirstVisitFullBleedPath } from "@/lib/onboarding/firstVisitWizard/routes";
 
 type Props = {
   children: React.ReactNode;
 };
 
-/** トップ玄関・初回導線・スマホログハウスはヘッダー・フッターなしの全画面表示 */
+/** トップ玄関・初回導線・スマホログハウス・森の案内図はヘッダー・フッターなしの全画面表示 */
 export function ConditionalSiteChrome({ children }: Props) {
   const pathname = usePathname();
   const isMobile = useIsLogHouseMobileViewport();
   const isFullBleedEntrance =
     pathname === "/" ||
     isFirstVisitFullBleedPath(pathname) ||
+    isForestMapImmersivePath(pathname) ||
     isLogHouseImmersivePreviewPath(pathname) ||
     (isLogHouseImmersivePath(pathname) && isMobile);
 

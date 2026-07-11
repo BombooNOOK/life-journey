@@ -27,3 +27,7 @@ export const FOREST_MAP_PAGE_PATH = "/help/forest-map" as const;
 export const FOREST_MAP_PAGE_TITLE = "BambooNOOKの森 案内図" as const;
 export const FOREST_MAP_PAGE_DESCRIPTION =
   "BambooNOOKの森の案内図です。建物をタップすると、その場所へ移動できます。" as const;
+
+export function isForestMapImmersivePath(pathname: string | null): boolean {
+  return pathname === FOREST_MAP_PAGE_PATH;
+}
