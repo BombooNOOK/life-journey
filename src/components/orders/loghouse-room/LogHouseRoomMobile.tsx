@@ -98,7 +98,7 @@ function RoomStage({
 
       <LogHouseRoomPartsLayer />
 
-      <div className="absolute inset-0 z-[20] overflow-hidden" style={{ touchAction: "manipulation" }}>
+      <div className="absolute inset-0 z-[20]" style={{ touchAction: "manipulation" }}>
         {LOG_HOUSE_ROOM_HOTSPOTS.map((spot) => {
           const action = spotActions[spot.id];
           const locked = Boolean(action.lockMessage);
@@ -117,7 +117,9 @@ function RoomStage({
           );
         })}
 
-        <LogHouseRoomRabbitAvatar />
+        <div className="pointer-events-none absolute inset-0 overflow-hidden">
+          <LogHouseRoomRabbitAvatar />
+        </div>
       </div>
     </>
   );
@@ -246,12 +248,30 @@ export function LogHouseRoomMobile({
     }
   }, [previewMode, router, spotActions]);
 
-  const onSpotActivate = useCallback((spotId: LogHouseRoomSpotId) => {
-    setFlashSpotId(spotId);
-    setSelectedSpotId(spotId);
-    setHintActive(false);
-    dismissFirstVisitTip();
-  }, [dismissFirstVisitTip]);
+  const onSpotActivate = useCallback(
+    (spotId: LogHouseRoomSpotId) => {
+      dismissFirstVisitTip();
+      const action = spotActions[spotId];
+
+      // ？ヒント中だけ説明シート。普段はタップで直接移動
+      if (hintActive) {
+        setFlashSpotId(spotId);
+        setSelectedSpotId(spotId);
+        setHintActive(false);
+        return;
+      }
+
+      if (action.lockMessage) {
+        setFlashSpotId(spotId);
+        setNotice(action.lockMessage);
+        return;
+      }
+      if (!action.href) return;
+      setFlashSpotId(spotId);
+      void navigate(action.href, action.needsProfile === true);
+    },
+    [dismissFirstVisitTip, hintActive, navigate, spotActions],
+  );
 
   const selectedAction = selectedSpotId ? spotActions[selectedSpotId] : null;
 

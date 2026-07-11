@@ -18,6 +18,13 @@ type Props = {
   children?: ReactNode;
 };
 
+function hintLabelPositionClass(align: LogHouseRoomHotspot["hintLabelAlign"]): string {
+  // end: 右寄りの家具はホットスポット中央から左へ伸ばし、画面外切れを防ぐ
+  if (align === "start") return "left-0";
+  if (align === "end") return "right-1/2";
+  return "left-1/2 -translate-x-1/2";
+}
+
 /** 室内の家具タップ領域（通常は透明・景観優先） */
 export function LogHouseRoomTapSpot({
   spot,
@@ -56,8 +63,13 @@ export function LogHouseRoomTapSpot({
       }}
     >
       {showHintLabel ? (
-        <span className="pointer-events-none absolute bottom-1 left-1/2 z-10 -translate-x-1/2">
-          <span className="rounded-full bg-[#fffdf9]/72 px-2 py-0.5 text-[10px] font-medium tracking-wide text-stone-700 shadow-sm ring-1 ring-stone-300/35 backdrop-blur-[2px]">
+        <span
+          className={[
+            "pointer-events-none absolute bottom-1 z-10",
+            hintLabelPositionClass(spot.hintLabelAlign),
+          ].join(" ")}
+        >
+          <span className="inline-block whitespace-nowrap rounded-full bg-[#fffdf9]/72 px-2.5 py-0.5 text-[10px] font-medium tracking-wide text-stone-700 shadow-sm ring-1 ring-stone-300/35 backdrop-blur-[2px]">
             {copy.label}
           </span>
         </span>
