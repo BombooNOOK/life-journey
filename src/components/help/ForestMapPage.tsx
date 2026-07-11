@@ -56,15 +56,15 @@ function BackIcon() {
   );
 }
 
-/** 576×1024 を viewport に cover 相当で広げる */
-function coverStageStyle(size: { widthPx: number; heightPx: number }): CSSProperties {
+/** 576×1024 を viewport に収める（端が切れない contain） */
+function containStageStyle(size: { widthPx: number; heightPx: number }): CSSProperties {
   const ratio = size.widthPx / size.heightPx;
   return {
     position: "absolute",
     left: "50%",
     top: "50%",
-    width: `max(100vw, calc(100dvh * ${ratio}))`,
-    height: `max(100dvh, calc(100vw / ${ratio}))`,
+    width: `min(100vw, calc(100dvh * ${ratio}))`,
+    height: `min(100dvh, calc(100vw / ${ratio}))`,
     transform: "translate(-50%, -50%)",
   };
 }
@@ -178,7 +178,7 @@ function MapStage({
         fill
         priority
         sizes="100vw"
-        className="object-cover object-center"
+        className="object-contain object-center"
         unoptimized
         draggable={false}
       />
@@ -392,7 +392,7 @@ export function ForestMapPage({
   return (
     <div className="fixed inset-0 z-[60] overflow-hidden overscroll-none bg-[#ebe4d4] select-none">
       <div className="absolute inset-0 overflow-hidden">
-        <div className="relative isolate overflow-hidden" style={coverStageStyle(FOREST_MAP_INTRINSIC)}>
+        <div className="relative isolate overflow-hidden" style={containStageStyle(FOREST_MAP_INTRINSIC)}>
           <MapStage busy={busy} showHotspotOutlines={showHotspotOutlines} onActivate={navigate} />
         </div>
       </div>
