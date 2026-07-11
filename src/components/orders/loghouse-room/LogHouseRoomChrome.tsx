@@ -9,11 +9,15 @@ import { SiteHeaderMobileNavItems } from "@/components/layout/SiteHeaderMobileNa
 import {
   LOG_HOUSE_FOREST_MAP_HREF,
   LOG_HOUSE_FOREST_MAP_LABEL,
+  LOG_HOUSE_ROOM_HINT_BUTTON_LABEL,
+  LOG_HOUSE_ROOM_HINT_HIDE_LABEL,
   LOG_HOUSE_SETTINGS_BUTTON_LABEL,
 } from "@/lib/loghouse/logHouseRoomCopy";
 
 type Props = {
   onOpenSettings: () => void;
+  hintActive?: boolean;
+  onToggleHint?: () => void;
 };
 
 function MenuIcon({ open }: { open: boolean }) {
@@ -61,11 +65,25 @@ function MapIcon() {
   );
 }
 
-const chromeButtonClass =
-  "inline-flex h-11 w-11 items-center justify-center rounded-full border border-stone-200/90 bg-white/90 text-stone-700 shadow-sm backdrop-blur-[1px] transition hover:bg-white active:scale-[0.98]";
+function HintIcon() {
+  return (
+    <svg aria-hidden className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+      <circle cx="12" cy="12" r="9" />
+      <path strokeLinecap="round" d="M12 10.5v6" />
+      <circle cx="12" cy="7.5" r="0.9" fill="currentColor" stroke="none" />
+    </svg>
+  );
+}
 
-/** 没入ログハウス：移動メニュー・設定・案内図 */
-export function LogHouseRoomChrome({ onOpenSettings }: Props) {
+const chromeButtonClass =
+  "inline-flex h-11 w-11 items-center justify-center rounded-full border border-stone-500/20 bg-[#fffdf9]/55 text-stone-700 shadow-sm backdrop-blur-[3px] transition hover:bg-[#fffdf9]/75 active:scale-[0.98]";
+
+/** 没入ログハウス：移動メニュー・設定・案内図・タップヒント */
+export function LogHouseRoomChrome({
+  onOpenSettings,
+  hintActive = false,
+  onToggleHint,
+}: Props) {
   const menuId = useId();
   const pathname = usePathname();
   const [menuOpen, setMenuOpen] = useState(false);
@@ -129,6 +147,21 @@ export function LogHouseRoomChrome({ onOpenSettings }: Props) {
         </div>
 
         <div className="pointer-events-auto flex items-center gap-2">
+          {onToggleHint ? (
+            <button
+              type="button"
+              className={[
+                chromeButtonClass,
+                hintActive ? "border-emerald-400/50 bg-emerald-50/70 text-emerald-900" : "",
+              ].join(" ")}
+              aria-pressed={hintActive}
+              aria-label={hintActive ? LOG_HOUSE_ROOM_HINT_HIDE_LABEL : LOG_HOUSE_ROOM_HINT_BUTTON_LABEL}
+              title={hintActive ? LOG_HOUSE_ROOM_HINT_HIDE_LABEL : LOG_HOUSE_ROOM_HINT_BUTTON_LABEL}
+              onClick={onToggleHint}
+            >
+              <HintIcon />
+            </button>
+          ) : null}
           <Link
             href={LOG_HOUSE_FOREST_MAP_HREF}
             className={chromeButtonClass}

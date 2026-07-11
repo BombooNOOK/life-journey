@@ -2,9 +2,7 @@
 
 import type { ReactNode } from "react";
 
-import {
-  LOG_HOUSE_ROOM_SPOT_COPY,
-} from "@/lib/loghouse/logHouseRoomCopy";
+import { LOG_HOUSE_ROOM_SPOT_COPY } from "@/lib/loghouse/logHouseRoomCopy";
 import type { LogHouseRoomHotspot } from "@/lib/loghouse/logHouseRoomHotspots";
 
 type Props = {
@@ -13,15 +11,21 @@ type Props = {
   disabled?: boolean;
   /** プレビュー用：タップ枠を半透明で表示 */
   showDebugOutline?: boolean;
+  /** ヒントモード：小さめ半透明ラベル */
+  showHintLabel?: boolean;
+  /** タップ直後のふわっと光 */
+  flash?: boolean;
   children?: ReactNode;
 };
 
-/** 室内の家具タップ領域（淡いラベル + 光） */
+/** 室内の家具タップ領域（通常は透明・景観優先） */
 export function LogHouseRoomTapSpot({
   spot,
   onActivate,
   disabled = false,
   showDebugOutline = false,
+  showHintLabel = false,
+  flash = false,
   children,
 }: Props) {
   const copy = LOG_HOUSE_ROOM_SPOT_COPY[spot.id];
@@ -33,14 +37,17 @@ export function LogHouseRoomTapSpot({
       aria-label={`${copy.label}：${copy.description}`}
       onClick={onActivate}
       className={[
-        "group absolute z-[24] rounded-xl border-2 transition duration-150",
+        "absolute z-[24] rounded-xl border-2 transition duration-200",
         "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-700",
         disabled
           ? "cursor-not-allowed border-transparent opacity-40"
           : showDebugOutline
-            ? "border-blue-400/55 border-dashed bg-blue-50/10 hover:border-amber-200/70 hover:bg-amber-50/20 active:scale-[0.99] active:bg-amber-100/25"
-            : "border-transparent bg-white/0 hover:border-amber-200/70 hover:bg-amber-50/20 active:scale-[0.99] active:bg-amber-100/25",
-      ].join(" ")}
+            ? "border-blue-400/55 border-dashed bg-blue-50/10 hover:border-amber-200/50 hover:bg-amber-50/15 active:scale-[0.99]"
+            : "border-transparent bg-transparent hover:bg-amber-50/10 active:scale-[0.99]",
+        flash ? "border-amber-200/80 bg-amber-100/35 shadow-[0_0_24px_rgba(251,191,36,0.35)]" : "",
+      ]
+        .filter(Boolean)
+        .join(" ")}
       style={{
         left: `${spot.x}%`,
         top: `${spot.y}%`,
@@ -48,19 +55,13 @@ export function LogHouseRoomTapSpot({
         height: `${spot.height}%`,
       }}
     >
-      <span
-        className={[
-          "pointer-events-none absolute bottom-1 left-1/2 flex -translate-x-1/2 flex-col items-center gap-0.5",
-          "opacity-0 transition group-hover:opacity-100 group-focus-visible:opacity-100",
-        ].join(" ")}
-      >
-        <span className="rounded-full bg-white/88 px-2 py-0.5 text-[10px] font-semibold text-stone-800 shadow-sm ring-1 ring-stone-200/80 backdrop-blur-[1px]">
-          {copy.label}
+      {showHintLabel ? (
+        <span className="pointer-events-none absolute bottom-1 left-1/2 z-10 -translate-x-1/2">
+          <span className="rounded-full bg-[#fffdf9]/72 px-2 py-0.5 text-[10px] font-medium tracking-wide text-stone-700 shadow-sm ring-1 ring-stone-300/35 backdrop-blur-[2px]">
+            {copy.label}
+          </span>
         </span>
-        <span className="hidden max-w-[7rem] text-center text-[9px] leading-tight text-stone-700/90 sm:block">
-          {copy.description}
-        </span>
-      </span>
+      ) : null}
       {children}
     </button>
   );
