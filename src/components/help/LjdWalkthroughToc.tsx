@@ -6,6 +6,7 @@ import { useCallback, useEffect, useState, type ReactNode } from "react";
 import { GuideAppLink } from "@/components/help/GuideAppLink";
 import { LjdDiaryWritingGuideBody } from "@/components/help/LjdDiaryWritingGuideBody";
 import { LjdAboutLpEmbed } from "@/components/help/LjdAboutLpEmbed";
+import { LjdLogHouseGuideShot } from "@/components/help/LjdLogHouseGuideShot";
 import { HomeAppraiserProfilesSection } from "@/components/home/HomeAppraiserProfilesSection";
 import { HomeFaqSection } from "@/components/home/HomeFaqSection";
 import { CompanionWritingButtonLabel } from "@/components/journal/companion-writing/CompanionWritingButtonLabel";
@@ -13,13 +14,14 @@ import {
   LJD_DIARY_WRITING_GUIDE_COMPANION_CROSSREF,
   LJD_DIARY_WRITING_GUIDE_SECTION_SUMMARY,
 } from "@/lib/help/ljdDiaryWritingGuideCopy";
+import { LJD_LOG_HOUSE_GUIDE_SECTION_SUMMARY } from "@/lib/help/ljdLogHouseGuideAnnotate";
 import {
   FOREST_GUIDE_STATION_NUMEROLOGY_READING_HREF,
   FOREST_GUIDE_STATION_NUMEROLOGY_READING_LINK_LABEL,
   FOREST_GUIDE_STATION_TITLE,
 } from "@/lib/help/forestGuideStation";
-import { LOG_HOUSE_OPEN_LABEL, LOG_HOUSE_SHORT_LABEL } from "@/lib/journal/logHouseLabels";
 import { FIRST_VISIT_ROUTES } from "@/lib/onboarding/firstVisitWizard/routes";
+import { LOG_HOUSE_SHORT_LABEL } from "@/lib/journal/logHouseLabels";
 
 type TocItem = {
   id: string;
@@ -37,22 +39,9 @@ const TOC_ITEMS: TocItem[] = [
   },
   {
     id: "loghouse",
-    title: "ログハウスと本棚",
-    summary: "拠点と、本の保管場所",
-    body: (
-      <>
-        <p>
-          <strong>{LOG_HOUSE_SHORT_LABEL}</strong>
-          は、LJD の拠点です。プロフィールの選択、日記を書く・読む、本棚への入口があります。
-        </p>
-        <p className="mt-2">
-          <strong>本棚</strong>
-          は、プロフィールごとに、鑑定結果や日記ブックを保管・読み返す場所です。
-        </p>
-        <GuideAppLink href="/orders" label={LOG_HOUSE_OPEN_LABEL} feature="guide_loghouse" />
-        <GuideAppLink href="/orders/bookshelf" label="本棚を開く" feature="guide_bookshelf" />
-      </>
-    ),
+    title: LOG_HOUSE_SHORT_LABEL,
+    summary: LJD_LOG_HOUSE_GUIDE_SECTION_SUMMARY,
+    body: <LjdLogHouseGuideShot />,
   },
   {
     id: "kantei",
@@ -281,7 +270,10 @@ export function LjdWalkthroughToc() {
                     aria-labelledby={`${item.id}-heading`}
                     className={[
                       "border-t border-stone-100 px-3 py-4 sm:px-4 sm:py-5",
-                      item.id === "about" || item.id === "appraisers" || item.id === "faq"
+                      item.id === "about" ||
+                      item.id === "appraisers" ||
+                      item.id === "faq" ||
+                      item.id === "loghouse"
                         ? ""
                         : "text-sm leading-6 text-stone-700",
                     ].join(" ")}
