@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useLayoutEffect, useState } from "react";
+import { useEffect, useState } from "react";
 
 import { AppTransitionLink } from "@/components/ui/AppTransitionLink";
 import { OwlSpinIndicator } from "@/components/ui/OwlSpinIndicator";
@@ -20,28 +20,12 @@ import {
   BAMBOO_FOREST_GUIDE_MAP_INTRINSIC,
   bambooForestGuideMapSrc,
 } from "@/lib/help/bambooForestGuideMap";
-import type { FirstVisitWelcomeViewport } from "@/lib/onboarding/firstVisitWizard/welcomeAssets";
 
 type Props = {
   className?: string;
   /** 案内図の説明（スクリーンリーダー向け） */
   alt?: string;
 };
-
-/** SSR と初回 hydrate は常に mobile。window 参照は mount 後だけ（hydration mismatch 防止） */
-function useGuideMapViewport(): FirstVisitWelcomeViewport {
-  const [viewport, setViewport] = useState<FirstVisitWelcomeViewport>("mobile");
-
-  useLayoutEffect(() => {
-    const mq = window.matchMedia("(min-width: 1024px)");
-    const update = () => setViewport(mq.matches ? "desktop" : "mobile");
-    update();
-    mq.addEventListener("change", update);
-    return () => mq.removeEventListener("change", update);
-  }, []);
-
-  return viewport;
-}
 
 function ForestGuideMapBuildingPanel({
   building,
@@ -173,38 +157,29 @@ function resolveBuildingForPanel(
   };
 }
 
-/** BambooNOOKの森の案内図（建物タップで説明＋行き先） */
+/** BambooNOOKの森の案内図（建物タップで説明＋行き先）。PC も縦長スマホ構図を共用 */
 export function BambooForestGuideMap({
   className = "",
   alt = "BambooNOOKの森の案内図",
 }: Props) {
-  const viewport = useGuideMapViewport();
   const { link: kanteiHallLink, loading: kanteiHallLinkLoading } = useKanteiHallMapLink();
   const [selectedId, setSelectedId] = useState<ForestGuideMapBuildingId | null>(null);
 
-  useEffect(() => {
-    setSelectedId(null);
-  }, [viewport]);
-
-  const intrinsic = BAMBOO_FOREST_GUIDE_MAP_INTRINSIC[viewport];
-  const isDesktop = viewport === "desktop";
-  const hotspots = forestGuideMapHotspots(viewport);
+  const intrinsic = BAMBOO_FOREST_GUIDE_MAP_INTRINSIC;
+  const hotspots = forestGuideMapHotspots();
   const aspectRatio = `${intrinsic.widthPx} / ${intrinsic.heightPx}`;
 
   return (
     <figure className={className}>
       <div
-        className={[
-          "relative mx-auto w-full overflow-hidden rounded-xl border border-stone-200/90 bg-[#ebe4d4] shadow-sm",
-          isDesktop ? "max-w-2xl" : "max-w-md",
-        ].join(" ")}
+        className="relative mx-auto w-full max-w-md overflow-hidden rounded-xl border border-stone-200/90 bg-[#ebe4d4] shadow-sm"
         style={{ aspectRatio }}
       >
         <Image
-          src={bambooForestGuideMapSrc(viewport)}
+          src={bambooForestGuideMapSrc()}
           alt=""
           fill
-          sizes={isDesktop ? "(min-width: 1024px) 42rem, 100vw" : "(max-width: 1023px) 100vw, 28rem"}
+          sizes="(max-width: 1023px) 100vw, 28rem"
           className="object-contain"
           quality={100}
           unoptimized

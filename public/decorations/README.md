@@ -19,8 +19,7 @@
 |----------|------|
 | `welcome/bg_map_mobile.png` | 森へようこそ（モバイル・フクロウコメント枠込み） |
 | `welcome/bg_map_desktop.png` | 森へようこそ（PC・フクロウコメント枠込み） |
-| `forest-guide/forest_guide_map_mobile.png` | 森の案内図（モバイル・地図のみ） |
-| `forest-guide/forest_guide_map_desktop.png` | 森の案内図（PC・地図のみ） |
+| `forest-guide/forest_guide_map_mobile.png` | 森の案内図（縦長・PCでも共用） |
 
 ## 森の建物単独（`public/images/ljd/first-visit/buildings/`）
 
@@ -32,6 +31,7 @@
 | `forest_building_music_hall.png` | 森の小さな音楽堂 |
 | `forest_building_handicraft_shop.png` | 森のてしごと屋 |
 | `../loghouse-complete.jpg` | ログハウス完成（完成画面専用） |
+| `roadmap/first_visit_roadmap_owl_sign.png` | 今日の道のり（フクロウ＋看板） |
 | `owl-sensei-md.webp` | `/diary-guide` タイトル横 |
 | `owl-sensei-sm.webp` | マイページ「使い方を見る」カード |
 | `leaf-sm.webp` | `/diary-guide` 章区切り |

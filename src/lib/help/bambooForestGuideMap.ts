@@ -1,19 +1,16 @@
-import type { FirstVisitWelcomeViewport } from "@/lib/onboarding/firstVisitWizard/welcomeAssets";
+/** BambooNOOKの森の案内図（案内所・縦長スマホ構図を PC でも共用） */
 
-/** BambooNOOKの森の案内図（案内所追加版・地図のみ） */
-export const BAMBOO_FOREST_GUIDE_MAP_SRC: Record<FirstVisitWelcomeViewport, string> = {
-  mobile: "/images/ljd/first-visit/forest-guide/forest_guide_map_mobile.png",
-  desktop: "/images/ljd/first-visit/forest-guide/forest_guide_map_desktop.png",
-};
+const BAMBOO_FOREST_GUIDE_MAP_ASSET_VERSION = 2;
 
-export const BAMBOO_FOREST_GUIDE_MAP_INTRINSIC: Record<
-  FirstVisitWelcomeViewport,
-  { widthPx: number; heightPx: number }
-> = {
-  mobile: { widthPx: 576, heightPx: 1024 },
-  desktop: { widthPx: 1024, heightPx: 576 },
-};
+/** 旧画風・建物配置は単独案内図（`forestMapHotspots`）と同じ */
+export const BAMBOO_FOREST_GUIDE_MAP_SRC =
+  `/images/ljd/first-visit/forest-guide/forest_guide_map_mobile.png?v=${BAMBOO_FOREST_GUIDE_MAP_ASSET_VERSION}` as const;
 
-export function bambooForestGuideMapSrc(viewport: FirstVisitWelcomeViewport): string {
-  return BAMBOO_FOREST_GUIDE_MAP_SRC[viewport];
+export const BAMBOO_FOREST_GUIDE_MAP_INTRINSIC = {
+  widthPx: 576,
+  heightPx: 1024,
+} as const;
+
+export function bambooForestGuideMapSrc(): string {
+  return BAMBOO_FOREST_GUIDE_MAP_SRC;
 }
