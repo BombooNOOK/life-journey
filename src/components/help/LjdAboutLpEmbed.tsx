@@ -3,11 +3,11 @@
 import { AboutPageCtaAudienceProvider } from "@/components/about/AboutPageCtaAudienceProvider";
 import { LjdAboutLpSections } from "@/components/about/LjdAboutLpSections";
 
-/** 森の案内所などへ埋め込む LJDとは LP（CTA 出し分け付き） */
+/** 案内所 TOC「LJD とは」用。鑑定士・FAQ は TOC の独立項目へ移した */
 export function LjdAboutLpEmbed() {
   return (
     <AboutPageCtaAudienceProvider>
-      <LjdAboutLpSections />
+      <LjdAboutLpSections showAppraisers={false} showFaq={false} />
     </AboutPageCtaAudienceProvider>
   );
 }

@@ -1,11 +1,18 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useState, type ReactNode } from "react";
 
 import { GuideAppLink } from "@/components/help/GuideAppLink";
+import { LjdDiaryWritingGuideBody } from "@/components/help/LjdDiaryWritingGuideBody";
 import { LjdAboutLpEmbed } from "@/components/help/LjdAboutLpEmbed";
+import { HomeAppraiserProfilesSection } from "@/components/home/HomeAppraiserProfilesSection";
+import { HomeFaqSection } from "@/components/home/HomeFaqSection";
 import { CompanionWritingButtonLabel } from "@/components/journal/companion-writing/CompanionWritingButtonLabel";
+import {
+  LJD_DIARY_WRITING_GUIDE_COMPANION_CROSSREF,
+  LJD_DIARY_WRITING_GUIDE_SECTION_SUMMARY,
+} from "@/lib/help/ljdDiaryWritingGuideCopy";
 import {
   FOREST_GUIDE_STATION_NUMEROLOGY_READING_HREF,
   FOREST_GUIDE_STATION_NUMEROLOGY_READING_LINK_LABEL,
@@ -18,7 +25,7 @@ type TocItem = {
   id: string;
   title: string;
   summary: string;
-  body: React.ReactNode;
+  body: ReactNode;
 };
 
 const TOC_ITEMS: TocItem[] = [
@@ -35,10 +42,12 @@ const TOC_ITEMS: TocItem[] = [
     body: (
       <>
         <p>
-          <strong>{LOG_HOUSE_SHORT_LABEL}</strong>は、LJD の拠点です。プロフィールの選択、日記を書く・読む、本棚への入口があります。
+          <strong>{LOG_HOUSE_SHORT_LABEL}</strong>
+          は、LJD の拠点です。プロフィールの選択、日記を書く・読む、本棚への入口があります。
         </p>
         <p className="mt-2">
-          <strong>本棚</strong>は、プロフィールごとに、鑑定結果や日記ブックを保管・読み返す場所です。
+          <strong>本棚</strong>
+          は、プロフィールごとに、鑑定結果や日記ブックを保管・読み返す場所です。
         </p>
         <GuideAppLink href="/orders" label={LOG_HOUSE_OPEN_LABEL} feature="guide_loghouse" />
         <GuideAppLink href="/orders/bookshelf" label="本棚を開く" feature="guide_bookshelf" />
@@ -71,31 +80,36 @@ const TOC_ITEMS: TocItem[] = [
   {
     id: "writing",
     title: "日記の書き方",
-    summary: "気分・本文・写真",
-    body: (
-      <>
-        <p>カレンダーから日付を選び、今日の気持ちや出来事を短く残します。1日1枚まで写真を添えられます。</p>
-        <GuideAppLink href="/orders/calendar" label="カレンダーから日記を書く" feature="guide_calendar" />
-      </>
-    ),
+    summary: LJD_DIARY_WRITING_GUIDE_SECTION_SUMMARY,
+    body: <LjdDiaryWritingGuideBody variant="dictionary" />,
   },
   {
     id: "companion-writing",
     title: "どうぶつ鑑定士といっしょに書く",
-    summary: "気分から、鑑定士と短く書き始める",
+    summary: "日記の書き方のなかで案内",
     body: (
       <>
-        <p>
-          今日の気分を選ぶと、どうぶつ鑑定士のことばが届きます。そのあと、短い一問に答えながら、最初の1ページを残せます。
-        </p>
-        <p className="mt-2 text-sm text-stone-600">
-          はじめて日記を書く方におすすめの入口です。
-        </p>
+        <p>{LJD_DIARY_WRITING_GUIDE_COMPANION_CROSSREF}</p>
         <GuideAppLink
           href="/journal/with-companion?returnTo=%2Forders"
           label={<CompanionWritingButtonLabel />}
           feature="guide_companion"
         />
+      </>
+    ),
+  },
+  {
+    id: "appraisers",
+    title: "どうぶつ鑑定士の紹介",
+    summary: "森の仲間たち",
+    body: (
+      <>
+        <p>
+          日記の読み解きや、いっしょに書くときに寄り添ってくれる、森のどうぶつ鑑定士たちです。性格や話し方にちがいがあるので、気になる子から眺めてみてください。
+        </p>
+        <div className="mt-4">
+          <HomeAppraiserProfilesSection framed={false} showHeading={false} />
+        </div>
       </>
     ),
   },
@@ -108,7 +122,11 @@ const TOC_ITEMS: TocItem[] = [
         <p>
           日記を保存すると、どうぶつ鑑定士による読み解きコメントが届きます。プレビュー画面でいつでも読み返せます。保存前の入力中には表示されません。
         </p>
-        <GuideAppLink href="/orders/calendar" label="日記を書いて読み解きを見る" feature="guide_calendar" />
+        <GuideAppLink
+          href="/orders/calendar"
+          label="日記を書いて読み解きを見る"
+          feature="guide_calendar"
+        />
       </>
     ),
   },
@@ -130,7 +148,9 @@ const TOC_ITEMS: TocItem[] = [
     summary: "鑑定書と日記ブック",
     body: (
       <>
-        <p>本棚には鑑定書や、期間を選んで作った日記ブックが並びます。製本をご希望の方は、本棚から製本前確認へ進めます。</p>
+        <p>
+          本棚には鑑定書や、期間を選んで作った日記ブックが並びます。製本をご希望の方は、本棚から製本前確認へ進めます。
+        </p>
         <GuideAppLink href="/orders/bookshelf" label="本棚を開く" feature="guide_bookshelf" />
         <p className="mt-2 text-xs text-stone-500">
           操作のくわしい流れは
@@ -156,6 +176,12 @@ const TOC_ITEMS: TocItem[] = [
     ),
   },
   {
+    id: "faq",
+    title: "よくある質問",
+    summary: "はじめる前に気になりやすいこと",
+    body: <HomeFaqSection framed={false} showHeading={false} />,
+  },
+  {
     id: "help",
     title: "困ったとき",
     summary: "その他のヘルプ",
@@ -163,7 +189,10 @@ const TOC_ITEMS: TocItem[] = [
       <>
         <ul className="list-inside list-disc space-y-1 text-stone-700">
           <li>
-            <Link href="/guide/first/path-guide" className="text-emerald-900 underline-offset-2 hover:underline">
+            <Link
+              href="/guide/first/path-guide"
+              className="text-emerald-900 underline-offset-2 hover:underline"
+            >
               はじめての道しるべ
             </Link>
           </li>
@@ -173,12 +202,18 @@ const TOC_ITEMS: TocItem[] = [
             </Link>
           </li>
           <li>
-            <Link href="/help/home-screen" className="text-emerald-900 underline-offset-2 hover:underline">
+            <Link
+              href="/help/home-screen"
+              className="text-emerald-900 underline-offset-2 hover:underline"
+            >
               ホーム画面に追加する
             </Link>
           </li>
           <li>
-            <Link href="/help/pdf-download" className="text-emerald-900 underline-offset-2 hover:underline">
+            <Link
+              href="/help/pdf-download"
+              className="text-emerald-900 underline-offset-2 hover:underline"
+            >
               鑑定書PDFのダウンロード
             </Link>
           </li>
@@ -193,7 +228,6 @@ const TOC_ITEMS: TocItem[] = [
   },
 ];
 
-
 export function LjdWalkthroughToc() {
   const [openId, setOpenId] = useState<string | null>(null);
 
@@ -201,8 +235,17 @@ export function LjdWalkthroughToc() {
     setOpenId((prev) => (prev === id ? null : id));
   }, []);
 
+  useEffect(() => {
+    const hash = window.location.hash.replace(/^#/, "");
+    if (!hash || !TOC_ITEMS.some((item) => item.id === hash)) return;
+    setOpenId(hash);
+    window.requestAnimationFrame(() => {
+      document.getElementById(hash)?.scrollIntoView({ block: "start" });
+    });
+  }, []);
+
   return (
-    <nav className="space-y-2" aria-label={`${FOREST_GUIDE_STATION_TITLE} 目次`}>
+    <nav className="relative z-10 space-y-2" aria-label={`${FOREST_GUIDE_STATION_TITLE} 目次`}>
       <ol className="space-y-2">
         {TOC_ITEMS.map((item, index) => {
           const isOpen = openId === item.id;
@@ -238,7 +281,9 @@ export function LjdWalkthroughToc() {
                     aria-labelledby={`${item.id}-heading`}
                     className={[
                       "border-t border-stone-100 px-3 py-4 sm:px-4 sm:py-5",
-                      item.id === "about" ? "" : "text-sm leading-6 text-stone-700",
+                      item.id === "about" || item.id === "appraisers" || item.id === "faq"
+                        ? ""
+                        : "text-sm leading-6 text-stone-700",
                     ].join(" ")}
                   >
                     {item.body}

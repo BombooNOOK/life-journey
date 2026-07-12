@@ -39,18 +39,34 @@ const FAQ_ITEMS: FaqItem[] = [
 ];
 
 /** トップ：クロージング前の折りたたみ式よくある質問 */
-export function HomeFaqSection() {
+export function HomeFaqSection({
+  framed = true,
+  showHeading = true,
+}: {
+  framed?: boolean;
+  showHeading?: boolean;
+} = {}) {
   return (
-    <section className="rounded-2xl border border-stone-200/70 bg-[#faf8f5] px-4 py-6 sm:px-5 sm:py-7">
+    <section
+      className={
+        framed
+          ? "rounded-2xl border border-stone-200/70 bg-[#faf8f5] px-4 py-6 sm:px-5 sm:py-7"
+          : undefined
+      }
+    >
       <div className="mx-auto max-w-2xl">
-        <h2 className="text-base font-semibold leading-snug text-stone-900 sm:text-[1.05rem]">
-          よくある質問
-        </h2>
-        <p className="lj-read-desc mt-2 leading-relaxed text-stone-600">
-          はじめる前に気になりやすいことをまとめました。
-        </p>
+        {showHeading ? (
+          <>
+            <h2 className="text-base font-semibold leading-snug text-stone-900 sm:text-[1.05rem]">
+              よくある質問
+            </h2>
+            <p className="lj-read-desc mt-2 leading-relaxed text-stone-600">
+              はじめる前に気になりやすいことをまとめました。
+            </p>
+          </>
+        ) : null}
 
-        <div className="mt-4 space-y-2 sm:mt-5">
+        <div className={["space-y-2", showHeading ? "mt-4 sm:mt-5" : ""].filter(Boolean).join(" ")}>
           {FAQ_ITEMS.map((item, index) => (
             <details
               key={item.question}
