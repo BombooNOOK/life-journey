@@ -1,10 +1,14 @@
+import { LogHouseRoomTimeThemeControl } from "@/components/orders/LogHouseRoomTimeThemeControl";
 import { ReadingFontSizeControl } from "@/components/reading/ReadingFontSizeControl";
 
-/** マイページ：表示設定（文字サイズ） */
+/** マイページ：表示設定（文字サイズ・ログハウス時間帯） */
 export function MyPageDisplaySettingsSection({ showHeading = true }: { showHeading?: boolean }) {
   return (
     <section className="rounded-2xl border border-stone-200 bg-white p-4 shadow-sm sm:p-5">
       <ReadingFontSizeControl variant="section" showSectionHeading={showHeading} />
+      <div className="mt-6 border-t border-stone-100 pt-5">
+        <LogHouseRoomTimeThemeControl />
+      </div>
     </section>
   );
 }

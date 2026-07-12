@@ -17,10 +17,11 @@ import { LogHouseRoomRabbitAvatar } from "@/components/orders/loghouse-room/LogH
 import { LogHouseRoomSpotSheet } from "@/components/orders/loghouse-room/LogHouseRoomSpotSheet";
 import { LogHouseRoomTapSpot } from "@/components/orders/loghouse-room/LogHouseRoomTapSpot";
 import { OwlDelayedBusyOverlay } from "@/components/ui/OwlDelayedBusyOverlay";
+import { useLogHouseRoomTimeTheme } from "@/hooks/useLogHouseRoomTimeOfDay";
 import type { SerializedUserEntitlement } from "@/lib/entitlement/resolveUserEntitlement";
 import { buildForestMusicHallHref } from "@/lib/help/forestMusicHallNav";
 import {
-  LOG_HOUSE_ROOM_MOBILE_BG_SRC,
+  LOG_HOUSE_ROOM_MOBILE_BG_BY_TIME,
   LOG_HOUSE_ROOM_MOBILE_INTRINSIC,
 } from "@/lib/loghouse/logHouseRoomAssets";
 import {
@@ -31,6 +32,7 @@ import {
   LOG_HOUSE_ROOM_KANTEI_LOCK_MESSAGE,
 } from "@/lib/loghouse/logHouseRoomCopy";
 import { LOG_HOUSE_ROOM_HOTSPOTS, type LogHouseRoomSpotId } from "@/lib/loghouse/logHouseRoomHotspots";
+import type { LogHouseRoomTimeOfDay } from "@/lib/loghouse/logHouseRoomTimeTheme";
 import { selectViewerProfile } from "@/lib/profile/selectViewerProfile";
 
 type ProfileRow = { id: string; nickname: string };
@@ -53,6 +55,8 @@ type Props = {
   className?: string;
   previewMode?: boolean;
   layout?: "immersive" | "framed";
+  /** プレビュー確認用。本番では渡さない */
+  timeOfDayOverride?: LogHouseRoomTimeOfDay;
 };
 
 /** 576×1024 を viewport に cover 相当で広げる（座標は相対維持） */
@@ -75,6 +79,7 @@ function RoomStage({
   onSpotActivate,
   hintActive,
   flashSpotId,
+  timeOfDay,
 }: {
   busy: boolean;
   previewMode: boolean;
@@ -82,19 +87,27 @@ function RoomStage({
   onSpotActivate: (spotId: LogHouseRoomSpotId) => void;
   hintActive: boolean;
   flashSpotId: LogHouseRoomSpotId | null;
+  timeOfDay: LogHouseRoomTimeOfDay;
 }) {
   return (
     <>
-      <Image
-        src={LOG_HOUSE_ROOM_MOBILE_BG_SRC}
-        alt=""
-        fill
-        priority
-        sizes="100vw"
-        className="z-0 object-cover object-center"
-        draggable={false}
-        unoptimized
-      />
+      {/* 昼・夜を重ねてクロスフェード（座標はそのまま） */}
+      {(["day", "night"] as const).map((id) => (
+        <Image
+          key={id}
+          src={LOG_HOUSE_ROOM_MOBILE_BG_BY_TIME[id]}
+          alt=""
+          fill
+          priority={id === timeOfDay}
+          sizes="100vw"
+          className={[
+            "z-0 object-cover object-center transition-opacity duration-700 ease-in-out",
+            timeOfDay === id ? "opacity-100" : "opacity-0",
+          ].join(" ")}
+          draggable={false}
+          unoptimized
+        />
+      ))}
 
       <LogHouseRoomPartsLayer />
 
@@ -135,8 +148,11 @@ export function LogHouseRoomMobile({
   className = "",
   previewMode = false,
   layout = "immersive",
+  timeOfDayOverride,
 }: Props) {
   const router = useRouter();
+  const { timeOfDay: detectedTimeOfDay } = useLogHouseRoomTimeTheme();
+  const timeOfDay = timeOfDayOverride ?? detectedTimeOfDay;
   const [isPending, startTransition] = useTransition();
   const [profileBusy, setProfileBusy] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
@@ -145,6 +161,7 @@ export function LogHouseRoomMobile({
   const [selectedSpotId, setSelectedSpotId] = useState<LogHouseRoomSpotId | null>(null);
   const [flashSpotId, setFlashSpotId] = useState<LogHouseRoomSpotId | null>(null);
   const busy = isPending || profileBusy;
+  const ambientBg = timeOfDay === "night" ? "#2a2218" : "#ebe4d4";
 
   const canWriteJournal =
     entitlement.canUseContinuedFeatures || entitlement.canCreateFirstJournal;
@@ -296,7 +313,7 @@ export function LogHouseRoomMobile({
 
   const firstVisitTipOverlay = showFirstVisitTip ? (
     <div className="pointer-events-none absolute inset-x-0 bottom-8 z-[54] flex justify-center px-4">
-      <div className="pointer-events-auto max-w-sm rounded-xl border border-emerald-200/80 bg-[#fffdf9]/95 px-3.5 py-3 text-center shadow-lg backdrop-blur-[1px]">
+      <div className="pointer-events-auto max-w-sm rounded-xl border border-emerald-200/80 bg-[#fffdf9]/96 px-3.5 py-3 text-center shadow-lg backdrop-blur-[1px]">
         <p className="whitespace-pre-line text-xs leading-relaxed text-stone-700">
           {LOG_HOUSE_ROOM_FIRST_VISIT_TIP}
         </p>
@@ -339,6 +356,7 @@ export function LogHouseRoomMobile({
       onOpenSettings={onOpenManage}
       hintActive={hintActive}
       onToggleHint={toggleHint}
+      timeOfDay={timeOfDay}
     />
   );
 
@@ -350,6 +368,7 @@ export function LogHouseRoomMobile({
       onSpotActivate={onSpotActivate}
       hintActive={hintActive}
       flashSpotId={flashSpotId}
+      timeOfDay={timeOfDay}
     />
   );
 
@@ -357,13 +376,14 @@ export function LogHouseRoomMobile({
     return (
       <div
         className={[
-          "relative mx-auto w-full max-w-md overflow-hidden rounded-2xl border border-stone-200/90 bg-[#ebe4d4] shadow-sm",
+          "relative mx-auto w-full max-w-md overflow-hidden rounded-2xl border border-stone-200/90 shadow-sm",
           className,
         ]
           .filter(Boolean)
           .join(" ")}
         style={{
           aspectRatio: `${LOG_HOUSE_ROOM_MOBILE_INTRINSIC.widthPx} / ${LOG_HOUSE_ROOM_MOBILE_INTRINSIC.heightPx}`,
+          backgroundColor: ambientBg,
         }}
       >
         <div className="absolute inset-0 isolate overflow-hidden">{stage}</div>
@@ -380,13 +400,13 @@ export function LogHouseRoomMobile({
   return (
     <div
       className={[
-        "fixed inset-0 z-[60] overflow-hidden overscroll-none bg-[#ebe4d4]",
+        "fixed inset-0 z-[60] overflow-hidden overscroll-none",
         "select-none",
         className,
       ]
         .filter(Boolean)
         .join(" ")}
-      style={{ touchAction: "none" }}
+      style={{ touchAction: "none", backgroundColor: ambientBg }}
     >
       <div className="absolute inset-0 overflow-hidden">
         <div className="relative isolate overflow-hidden" style={coverStageStyle(LOG_HOUSE_ROOM_MOBILE_INTRINSIC)}>

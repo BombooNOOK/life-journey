@@ -1,11 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { useEffect, useId, useState } from "react";
-import { createPortal } from "react-dom";
 
-import { SiteHeaderMobileNavItems } from "@/components/layout/SiteHeaderMobileNavItems";
 import {
   LOG_HOUSE_FOREST_MAP_HREF,
   LOG_HOUSE_FOREST_MAP_LABEL,
@@ -18,23 +14,9 @@ type Props = {
   onOpenSettings: () => void;
   hintActive?: boolean;
   onToggleHint?: () => void;
+  /** 夜背景時はアイコンの下地を少し濃くして可読性を保つ */
+  timeOfDay?: "day" | "night";
 };
-
-function MenuIcon({ open }: { open: boolean }) {
-  if (open) {
-    return (
-      <svg aria-hidden className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-        <path strokeLinecap="round" d="M6 6l12 12M18 6L6 18" />
-      </svg>
-    );
-  }
-
-  return (
-    <svg aria-hidden className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-      <path strokeLinecap="round" d="M4 7h16M4 12h16M4 17h16" />
-    </svg>
-  );
-}
 
 function GearIcon() {
   return (
@@ -82,110 +64,57 @@ function HintIcon() {
 const chromeButtonClass =
   "inline-flex h-11 w-11 items-center justify-center rounded-full border border-stone-500/20 bg-[#fffdf9]/55 text-stone-700 shadow-sm backdrop-blur-[3px] transition hover:bg-[#fffdf9]/75 active:scale-[0.98]";
 
-/** 没入ログハウス：移動メニュー・設定・案内図・タップヒント */
+const chromeButtonNightClass =
+  "inline-flex h-11 w-11 items-center justify-center rounded-full border border-stone-200/35 bg-[#fffdf9]/82 text-stone-800 shadow-md backdrop-blur-[3px] transition hover:bg-[#fffdf9]/92 active:scale-[0.98]";
+
+/** 没入ログハウス：案内図・設定・タップヒント（ハンバーガーなし） */
 export function LogHouseRoomChrome({
   onOpenSettings,
   hintActive = false,
   onToggleHint,
+  timeOfDay = "day",
 }: Props) {
-  const menuId = useId();
-  const pathname = usePathname();
-  const [menuOpen, setMenuOpen] = useState(false);
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  useEffect(() => {
-    setMenuOpen(false);
-  }, [pathname]);
-
-  useEffect(() => {
-    if (!menuOpen) return;
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    return () => {
-      document.body.style.overflow = previousOverflow;
-    };
-  }, [menuOpen]);
-
-  const closeMenu = () => setMenuOpen(false);
-
-  const mobileMenu =
-    menuOpen && mounted
-      ? createPortal(
-          <>
-            <button
-              type="button"
-              className="fixed inset-0 z-[200] bg-stone-900/25"
-              aria-label="メニューを閉じる"
-              onClick={closeMenu}
-            />
-            <nav
-              id={menuId}
-              className="fixed inset-x-4 top-[max(4.5rem,env(safe-area-inset-top))] z-[210] overflow-hidden rounded-2xl border border-stone-200/90 bg-[#fffdf9] shadow-lg"
-              aria-label="移動メニュー"
-            >
-              <SiteHeaderMobileNavItems onNavigate={closeMenu} />
-            </nav>
-          </>,
-          document.body,
-        )
-      : null;
+  const buttonClass = timeOfDay === "night" ? chromeButtonNightClass : chromeButtonClass;
 
   return (
-    <>
-      <div className="pointer-events-none absolute inset-x-0 top-0 z-40 flex items-start justify-between gap-2 px-3 pb-2 pt-[max(0.75rem,env(safe-area-inset-top))]">
-        <div className="pointer-events-auto">
-          <button
-            type="button"
-            className={chromeButtonClass}
-            aria-expanded={menuOpen}
-            aria-controls={menuId}
-            aria-label={menuOpen ? "メニューを閉じる" : "メニューを開く"}
-            onClick={() => setMenuOpen((open) => !open)}
-          >
-            <MenuIcon open={menuOpen} />
-          </button>
-        </div>
-
-        <div className="pointer-events-auto flex items-center gap-2">
-          {onToggleHint ? (
-            <button
-              type="button"
-              className={[
-                chromeButtonClass,
-                hintActive ? "border-emerald-400/50 bg-emerald-50/70 text-emerald-900" : "",
-              ].join(" ")}
-              aria-pressed={hintActive}
-              aria-label={hintActive ? LOG_HOUSE_ROOM_HINT_HIDE_LABEL : LOG_HOUSE_ROOM_HINT_BUTTON_LABEL}
-              title={hintActive ? LOG_HOUSE_ROOM_HINT_HIDE_LABEL : LOG_HOUSE_ROOM_HINT_BUTTON_LABEL}
-              onClick={onToggleHint}
-            >
-              <HintIcon />
-            </button>
-          ) : null}
-          <Link
-            href={LOG_HOUSE_FOREST_MAP_HREF}
-            className={chromeButtonClass}
-            aria-label={LOG_HOUSE_FOREST_MAP_LABEL}
-            title={LOG_HOUSE_FOREST_MAP_LABEL}
-          >
-            <MapIcon />
-          </Link>
-          <button
-            type="button"
-            className={chromeButtonClass}
-            aria-label={`${LOG_HOUSE_SETTINGS_BUTTON_LABEL}を開く`}
-            title={LOG_HOUSE_SETTINGS_BUTTON_LABEL}
-            onClick={onOpenSettings}
-          >
-            <GearIcon />
-          </button>
-        </div>
+    <div className="pointer-events-none absolute inset-x-0 top-0 z-40 flex items-start justify-between gap-2 px-3 pb-2 pt-[max(0.75rem,env(safe-area-inset-top))]">
+      <div className="pointer-events-auto">
+        <Link
+          href={LOG_HOUSE_FOREST_MAP_HREF}
+          className={buttonClass}
+          aria-label={LOG_HOUSE_FOREST_MAP_LABEL}
+          title={LOG_HOUSE_FOREST_MAP_LABEL}
+        >
+          <MapIcon />
+        </Link>
       </div>
-      {mobileMenu}
-    </>
+
+      <div className="pointer-events-auto flex items-center gap-2">
+        {onToggleHint ? (
+          <button
+            type="button"
+            className={[
+              buttonClass,
+              hintActive ? "border-emerald-400/50 bg-emerald-50/80 text-emerald-900" : "",
+            ].join(" ")}
+            aria-pressed={hintActive}
+            aria-label={hintActive ? LOG_HOUSE_ROOM_HINT_HIDE_LABEL : LOG_HOUSE_ROOM_HINT_BUTTON_LABEL}
+            title={hintActive ? LOG_HOUSE_ROOM_HINT_HIDE_LABEL : LOG_HOUSE_ROOM_HINT_BUTTON_LABEL}
+            onClick={onToggleHint}
+          >
+            <HintIcon />
+          </button>
+        ) : null}
+        <button
+          type="button"
+          className={buttonClass}
+          aria-label={`${LOG_HOUSE_SETTINGS_BUTTON_LABEL}を開く`}
+          title={LOG_HOUSE_SETTINGS_BUTTON_LABEL}
+          onClick={onOpenSettings}
+        >
+          <GearIcon />
+        </button>
+      </div>
+    </div>
   );
 }

@@ -29,6 +29,7 @@ type Props = {
   entitlement: SerializedUserEntitlement;
   firstVisitGuideState: FirstVisitGuideState;
   companionWritingHref: string;
+  viewerEmail: string;
   viewerIsAdmin: boolean;
   adminLink: React.ReactNode;
   legalFooter: React.ReactNode;
@@ -43,6 +44,7 @@ export function LogHouseHub({
   entitlement,
   firstVisitGuideState,
   companionWritingHref,
+  viewerEmail,
   viewerIsAdmin,
   adminLink,
   legalFooter,
@@ -82,6 +84,7 @@ export function LogHouseHub({
           profiles={profiles}
           activeProfileId={activeProfileId}
           companionWritingHref={companionWritingHref}
+          viewerEmail={viewerEmail}
         />
       </>
     );

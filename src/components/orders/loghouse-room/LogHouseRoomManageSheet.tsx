@@ -1,8 +1,10 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useState, type ReactNode } from "react";
 
+import { useFirebaseAuth } from "@/components/auth/FirebaseAuthProvider";
 import { MyPageManageHub } from "@/components/orders/MyPageManageMenu";
 import { selectViewerProfile } from "@/lib/profile/selectViewerProfile";
 
@@ -15,6 +17,8 @@ type Props = {
   activeProfileId: string;
   /** @deprecated 歯車メニューからは伴走導線を出さない（互換のため残す） */
   companionWritingHref?: string | null;
+  /** ログイン中アカウント（表示用）。未指定時は Firebase から取得 */
+  viewerEmail?: string | null;
   children?: ReactNode;
   previewMode?: boolean;
 };
@@ -25,10 +29,16 @@ export function LogHouseRoomManageSheet({
   onClose,
   profiles,
   activeProfileId,
+  viewerEmail = null,
   previewMode = false,
 }: Props) {
+  const router = useRouter();
+  const { user, signOutUser } = useFirebaseAuth();
   const [busyId, setBusyId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [signingOut, setSigningOut] = useState(false);
+
+  const accountEmail = viewerEmail?.trim() || user?.email || null;
 
   useEffect(() => {
     if (!open) return;
@@ -58,6 +68,19 @@ export function LogHouseRoomManageSheet({
       window.location.reload();
     } finally {
       setBusyId(null);
+    }
+  }
+
+  async function handleSignOut() {
+    if (previewMode || signingOut) return;
+    setSigningOut(true);
+    try {
+      onClose();
+      await signOutUser();
+      router.push("/");
+      router.refresh();
+    } finally {
+      setSigningOut(false);
     }
   }
 
@@ -131,6 +154,23 @@ export function LogHouseRoomManageSheet({
         </section>
 
         <MyPageManageHub activeProfileId={activeProfileId || null} />
+
+        <section className="mt-6 border-t border-stone-200 pt-4">
+          <p className="text-xs text-stone-500">ログイン中のアカウント</p>
+          <p className="mt-1 break-all text-sm text-stone-800">
+            {previewMode
+              ? "preview@example.com"
+              : accountEmail ?? "（読み込み中…）"}
+          </p>
+          <button
+            type="button"
+            disabled={previewMode || signingOut}
+            onClick={() => void handleSignOut()}
+            className="mt-3 inline-flex min-h-[44px] w-full items-center justify-center rounded-xl border border-stone-300 bg-white px-4 text-sm font-medium text-stone-800 transition hover:bg-stone-50 disabled:opacity-60"
+          >
+            {signingOut ? "ログアウト中…" : "ログアウト"}
+          </button>
+        </section>
       </div>
     </div>
   );

@@ -1,15 +1,28 @@
 /** ログハウス室内UI（スマホ縦長）— 画像パス */
 
+import type { LogHouseRoomTimeOfDay } from "@/lib/loghouse/logHouseRoomTimeTheme";
+
 export const LOG_HOUSE_ROOM_ASSET_DIR = "/images/ljd/loghouse-room" as const;
 
-const LOG_HOUSE_ROOM_ASSET_VERSION = 6;
+const LOG_HOUSE_ROOM_ASSET_VERSION = 7;
 
 function logHouseRoomAsset(filename: string): string {
   return `${LOG_HOUSE_ROOM_ASSET_DIR}/${filename}?v=${LOG_HOUSE_ROOM_ASSET_VERSION}`;
 }
 
-/** 縦長室内背景（576×1024） */
+/** 縦長室内背景（576×1024）— 昼（既定） */
 export const LOG_HOUSE_ROOM_MOBILE_BG_SRC = logHouseRoomAsset("loghouse_room_mobile.png");
+
+/** 縦長室内背景（576×1024）— 夜 */
+export const LOG_HOUSE_ROOM_MOBILE_BG_NIGHT_SRC = logHouseRoomAsset(
+  "loghouse_room_mobile_night.png",
+);
+
+/** 時間帯 → 背景。季節などを足すときは別マップを重ねる想定 */
+export const LOG_HOUSE_ROOM_MOBILE_BG_BY_TIME: Record<LogHouseRoomTimeOfDay, string> = {
+  day: LOG_HOUSE_ROOM_MOBILE_BG_SRC,
+  night: LOG_HOUSE_ROOM_MOBILE_BG_NIGHT_SRC,
+};
 
 export const LOG_HOUSE_ROOM_MOBILE_INTRINSIC = { widthPx: 576, heightPx: 1024 } as const;
 

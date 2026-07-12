@@ -12,14 +12,20 @@ import {
   LOG_HOUSE_ROOM_PREVIEW_PROFILE_ID,
   LOG_HOUSE_ROOM_PREVIEW_PROFILES,
 } from "@/lib/loghouse/logHouseRoomPreviewFixture";
+import type { LogHouseRoomTimeOfDay } from "@/lib/loghouse/logHouseRoomTimeTheme";
 
 type Props = {
   /** framed = 定規ページ用の枠内表示 */
   layout?: "immersive" | "framed";
+  /** `?theme=day|night` で昼夜確認 */
+  timeOfDayOverride?: LogHouseRoomTimeOfDay;
 };
 
 /** ログハウス室内UI — プレビュー（PCでも部屋全体が見える枠表示が既定） */
-export function LogHouseRoomPreviewClient({ layout = "framed" }: Props) {
+export function LogHouseRoomPreviewClient({
+  layout = "framed",
+  timeOfDayOverride,
+}: Props) {
   const [manageOpen, setManageOpen] = useState(false);
 
   if (layout === "framed") {
@@ -39,6 +45,15 @@ export function LogHouseRoomPreviewClient({ layout = "framed" }: Props) {
             （幅1023px以下）。
           </p>
           <p className="mt-1">
+            昼夜確認:{" "}
+            <Link href="/preview/loghouse-room?theme=day" className="font-medium underline-offset-2 hover:underline">
+              昼
+            </Link>
+            {" · "}
+            <Link href="/preview/loghouse-room?theme=night" className="font-medium underline-offset-2 hover:underline">
+              夜
+            </Link>
+            {" · "}
             <Link
               href="/help/music-hall?returnTo=%2Fpreview%2Floghouse-room"
               className="font-medium underline-offset-2 hover:underline"
@@ -69,6 +84,7 @@ export function LogHouseRoomPreviewClient({ layout = "framed" }: Props) {
           onOpenManage={() => setManageOpen(true)}
           previewMode
           layout="framed"
+          timeOfDayOverride={timeOfDayOverride}
         />
         <LogHouseRoomManageSheet
           open={manageOpen}
@@ -91,7 +107,20 @@ export function LogHouseRoomPreviewClient({ layout = "framed" }: Props) {
             <Link href="/preview/loghouse-room" className="font-medium underline-offset-2 hover:underline">
               枠表示
             </Link>
-            へ。
+            へ。昼夜:{" "}
+            <Link
+              href="/preview/loghouse-room?view=immersive&theme=day"
+              className="font-medium underline-offset-2 hover:underline"
+            >
+              昼
+            </Link>
+            {" · "}
+            <Link
+              href="/preview/loghouse-room?view=immersive&theme=night"
+              className="font-medium underline-offset-2 hover:underline"
+            >
+              夜
+            </Link>
           </p>
         </div>
       </div>
@@ -106,6 +135,7 @@ export function LogHouseRoomPreviewClient({ layout = "framed" }: Props) {
         onOpenManage={() => setManageOpen(true)}
         previewMode
         layout="immersive"
+        timeOfDayOverride={timeOfDayOverride}
       />
 
       <LogHouseRoomManageSheet

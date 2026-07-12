@@ -91,6 +91,7 @@ export default async function OrdersListPage() {
       entitlement={entitlement}
       firstVisitGuideState={firstVisitGuideState}
       companionWritingHref={companionWritingHref}
+      viewerEmail={viewerEmail}
       viewerIsAdmin={viewerIsAdmin}
       adminLink={
         <Link
