@@ -11,7 +11,7 @@ export const FOREST_GUIDE_STATION_MAP_SECTION_TITLE = "BambooNOOKの森の案内
 export const FOREST_GUIDE_STATION_FIRST_VISIT_SECTION_TITLE = "はじめての道しるべ" as const;
 
 export const FOREST_GUIDE_STATION_FIRST_VISIT_CARD_BODY =
-  "プロローグ動画と3つの章から、\nはじめての流れを確認できます。" as const;
+  "プロローグ動画と3つの章から、はじめての流れを確認できます。" as const;
 
 export const FOREST_GUIDE_STATION_FIRST_VISIT_CARD_BUTTON = "確認する" as const;
 
