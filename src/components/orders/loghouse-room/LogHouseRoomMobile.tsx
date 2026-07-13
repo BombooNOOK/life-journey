@@ -206,6 +206,7 @@ export function LogHouseRoomMobile({
   hasKanteiOrder = false,
   kanteiOrderId,
   mailboxUnreadCount = 0,
+  companionWritingHref,
   onOpenManage,
   className = "",
   previewMode = false,
