@@ -37,8 +37,6 @@ function GardenDesktopPanel({ initialState }: Props) {
     chooseBloom,
   } = useGardenWatering(initialState);
 
-  const showCenterPlant = plant.waterCount > 0 || plant.isComplete;
-
   return (
     <div className="mx-auto w-full max-w-md space-y-5 sm:space-y-6">
       <MyPageSubpageHeader
@@ -82,19 +80,17 @@ function GardenDesktopPanel({ initialState }: Props) {
                 </div>
               );
             })}
-            {showCenterPlant ? (
-              <div className="absolute inset-x-[18%] bottom-[8%] top-[28%]">
-                <Image
-                  key={plant.plantImageSrc}
-                  src={plant.plantImageSrc}
-                  alt={`成長段階 ${plant.stage}`}
-                  fill
-                  className="object-contain object-bottom drop-shadow-md"
-                  sizes="20rem"
-                  unoptimized
-                />
-              </div>
-            ) : null}
+            <div className="absolute inset-x-[18%] bottom-[8%] top-[28%]">
+              <Image
+                key={plant.plantImageSrc}
+                src={plant.plantImageSrc}
+                alt={`成長段階 ${plant.stage}`}
+                fill
+                className="object-contain object-bottom drop-shadow-md"
+                sizes="20rem"
+                unoptimized
+              />
+            </div>
           </div>
 
           <div className="space-y-3 border-t border-[#ebe4d8]/80 px-4 py-4">

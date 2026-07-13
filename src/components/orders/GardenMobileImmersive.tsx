@@ -61,7 +61,6 @@ function GardenStage({
 }) {
   const plantBox = GARDEN_MOBILE_PLANT_PLACEMENT;
   const canBox = GARDEN_MOBILE_WATERING_CAN_PLACEMENT;
-  const showCenterPlant = plant.waterCount > 0 || plant.isComplete;
 
   return (
     <>
@@ -102,27 +101,25 @@ function GardenStage({
         );
       })}
 
-      {showCenterPlant ? (
-        <div
-          className="pointer-events-none absolute z-10"
-          style={{
-            left: `${plantBox.x}%`,
-            top: `${plantBox.y}%`,
-            width: `${plantBox.width}%`,
-            height: `${plantBox.height}%`,
-          }}
-        >
-          <Image
-            key={plant.plantImageSrc}
-            src={plant.plantImageSrc}
-            alt={`成長段階 ${plant.stage}`}
-            fill
-            className="object-contain object-bottom drop-shadow-sm"
-            sizes="60vw"
-            unoptimized
-          />
-        </div>
-      ) : null}
+      <div
+        className="pointer-events-none absolute z-10"
+        style={{
+          left: `${plantBox.x}%`,
+          top: `${plantBox.y}%`,
+          width: `${plantBox.width}%`,
+          height: `${plantBox.height}%`,
+        }}
+      >
+        <Image
+          key={plant.plantImageSrc}
+          src={plant.plantImageSrc}
+          alt={`成長段階 ${plant.stage}`}
+          fill
+          className="object-contain object-bottom drop-shadow-sm"
+          sizes="60vw"
+          unoptimized
+        />
+      </div>
 
       {showWateringCan ? (
         <button
@@ -206,7 +203,8 @@ export function GardenMobileImmersive({
       </div>
 
       <div className="pointer-events-none absolute inset-x-0 bottom-0 z-40 px-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
-        <div className="pointer-events-auto mx-auto max-w-sm space-y-2 rounded-2xl border border-stone-200/70 bg-[#fffdf9]/92 px-3.5 py-3 text-center shadow-lg backdrop-blur-[2px]">
+        {/* Safari: backdrop-filter 付き親の中だと文字が消えることがあるため、ぼかしは使わない */}
+        <div className="pointer-events-auto mx-auto max-w-sm space-y-2 rounded-2xl border border-stone-200/80 bg-[#fffdf9] px-3.5 py-3 text-center shadow-lg">
           {showBloom ? (
             <GardenBloomChoicePanel
               compact
@@ -216,16 +214,16 @@ export function GardenMobileImmersive({
             />
           ) : (
             <>
-              <p className="text-sm leading-relaxed text-stone-700">{plant.comment}</p>
-              <p className="text-xs text-stone-600">{plant.progressPrimary}</p>
-              <p className="whitespace-pre-line text-xs text-stone-500">
+              <p className="text-sm leading-relaxed text-stone-800">{plant.comment}</p>
+              <p className="text-xs text-stone-700">{plant.progressPrimary}</p>
+              <p className="whitespace-pre-line text-xs text-stone-600">
                 {plant.progressSecondary}
               </p>
               {!plant.isComplete ? (
                 <p className="text-xs text-stone-600">{plant.statusLabel}</p>
               ) : null}
               {plant.canWater ? (
-                <p className="text-[11px] text-emerald-900/80">
+                <p className="text-[11px] text-emerald-900">
                   ジョウロをタップしてお水をあげられます
                 </p>
               ) : null}
