@@ -16,6 +16,7 @@ import {
   serializeUserEntitlement,
   type SerializedUserEntitlement,
 } from "@/lib/entitlement/resolveUserEntitlement";
+import { countUnreadMailboxNotices } from "@/lib/loghouse/mailboxNotices";
 import { calendarDayKeyInJapan, journalWithCompanionPath } from "@/lib/journal/journalNav";
 import { resolveFirstVisitGuideState } from "@/lib/onboarding/firstVisitGuideState";
 
@@ -34,6 +35,7 @@ export default async function OrdersListPage() {
   let fetchError: string | null = null;
   let hasKanteiOrder = true;
   let activeKanteiOrderId: string | null = null;
+  let mailboxUnreadCount = 0;
   let journalEntryCount = 0;
   let entitlement: SerializedUserEntitlement = {
     tier: "trial_not_started",
@@ -52,12 +54,20 @@ export default async function OrdersListPage() {
         profileId: profileData.activeProfileId,
       });
       const entitlementCtx = await loadEntitlementContext(viewerEmail);
-      return { profileData, kanteiOrder, entitlementCtx };
+      const unread =
+        profileData.activeProfileId
+          ? await countUnreadMailboxNotices({
+              email: viewerEmail,
+              profileId: profileData.activeProfileId,
+            })
+          : 0;
+      return { profileData, kanteiOrder, entitlementCtx, unread };
     });
     profiles = loaded.profileData.profiles;
     activeProfileId = loaded.profileData.activeProfileId;
     hasKanteiOrder = loaded.kanteiOrder != null;
     activeKanteiOrderId = loaded.kanteiOrder?.id ?? null;
+    mailboxUnreadCount = loaded.unread;
     journalEntryCount = loaded.entitlementCtx.journalEntryCount;
     entitlement = serializeUserEntitlement(resolveUserEntitlement(loaded.entitlementCtx));
   } catch (e) {
@@ -88,6 +98,7 @@ export default async function OrdersListPage() {
       activeProfileId={activeProfileId}
       hasKanteiOrder={hasKanteiOrder}
       activeKanteiOrderId={activeKanteiOrderId}
+      mailboxUnreadCount={mailboxUnreadCount}
       entitlement={entitlement}
       firstVisitGuideState={firstVisitGuideState}
       companionWritingHref={companionWritingHref}

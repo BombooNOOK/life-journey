@@ -38,6 +38,11 @@ export const LOG_HOUSE_ROOM_SPOT_COPY: Record<LogHouseRoomSpotId, LogHouseRoomSp
     description: "おでかけする",
     actionLabel: "おでかけをする",
   },
+  mailbox: {
+    label: "ポスト",
+    description: "お知らせを見る",
+    actionLabel: "ポストを開く",
+  },
 };
 
 export const LOG_HOUSE_ROOM_RABBIT_GREETING = "今日も森へようこそ";
@@ -49,6 +54,10 @@ export const LOG_HOUSE_ROOM_KANTEI_LOCK_MESSAGE =
 /** 鑑定前に机をタップしたとき */
 export const LOG_HOUSE_ROOM_DESK_KANTEI_LOCK_MESSAGE =
   "無料鑑定が終わると、ここから日記が書けるようになります。" as const;
+
+/** 鑑定済みだが今日の鑑定結果がまだ開かないとき */
+export const LOG_HOUSE_ROOM_TODAY_RESULT_PREPARING_MESSAGE =
+  "鑑定は完了しています。\n今日の鑑定結果を準備しています。\n少し時間をおいて、もう一度開いてみてください。" as const;
 
 /** 鑑定ロック案内の次の一手（はじめての道しるべへ） */
 export const LOG_HOUSE_ROOM_KANTEI_LOCK_CTA_LABEL = "無料鑑定を受ける" as const;

@@ -144,14 +144,11 @@ function resolveChapter3ResumeHref(input: ChapterProgressInput): string {
 }
 
 function resolveChapter2ResumeHref(input: ChapterProgressInput): string {
-  if (input.bookshelfKanteiGuide) {
-    return firstVisitProgressHref("bookshelf-kantei");
-  }
   if (input.orderGuide || input.savedStage === "order") {
     return firstVisitProgressHref("order");
   }
-  if (input.savedStage === "bookshelf-kantei") {
-    return firstVisitProgressHref("bookshelf-kantei");
+  if (input.savedStage === "kantei-create") {
+    return FIRST_VISIT_ROUTES.kanteiCreate;
   }
   return FIRST_VISIT_ROUTES.kanteiReady;
 }

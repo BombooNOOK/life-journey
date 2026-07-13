@@ -124,15 +124,15 @@ describe("chapterProgress", () => {
     ).toBe(true);
   });
 
-  it("resumes chapter 2 from bookshelf guide flag", () => {
+  it("resumes chapter 2 from order guide flag", () => {
     const cards = resolveFirstVisitChapterCards({
       ...baseInput,
       branch: "needsKantei",
       chapter1CompleteFlag: true,
-      bookshelfKanteiGuide: true,
+      orderGuide: true,
     });
     expect(cards[1]?.status).toBe("in_progress");
-    expect(cards[1]?.actionHref).toBe("/orders/bookshelf#bookshelf-kantei-books");
+    expect(cards[1]?.actionHref).toBe("/order");
   });
 
   it("routes chapter 3 through the loghouse sign page", () => {

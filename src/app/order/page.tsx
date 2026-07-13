@@ -24,7 +24,6 @@ import {
 import { OwlSuspenseFallback } from "@/components/ui/OwlSuspenseFallback";
 import { FIRST_VISIT_KANTEI_HALL_SIGN_LABEL } from "@/lib/onboarding/firstVisitWizard/kanteiHallCopy";
 import { FIRST_VISIT_ROUTES } from "@/lib/onboarding/firstVisitWizard/routes";
-import { buildKanteiFirstReadHref } from "@/lib/pdf/kanteiFirstReadGuide";
 import { selectViewerProfile } from "@/lib/profile/selectViewerProfile";
 import {
   setFirstVisitChapterCompleteFlag,
@@ -214,12 +213,9 @@ function OrderPageContent() {
         if (res.status === 409 && data.code === "ORDER_EXISTS_FOR_PROFILE") {
           setError(data.error ?? "このプロフィールには既に鑑定書があります。");
           setExistingOrderId(data.existingOrderId ?? null);
-          if (data.existingOrderId) {
-            setSubmitPhase("navigating");
-            router.replace(buildKanteiFirstReadHref(data.existingOrderId));
-          } else {
-            setSubmitPhase("idle");
-          }
+          setFirstVisitChapterCompleteFlag(2);
+          setSubmitPhase("navigating");
+          router.replace(FIRST_VISIT_ROUTES.kanteiComplete);
           return;
         }
         const parts: string[] = [];

@@ -37,6 +37,7 @@ import {
   readFirstVisitPathGuidePrologueWatchedFlag,
   readFirstVisitPathGuideWritingHabitDismissedFlag,
   readOnboardingChapter1CompleteCookie,
+  readOnboardingChapter2CompleteCookie,
   setFirstVisitChapter3StartedFlag,
   setFirstVisitPathGuidePrologueWatchedFlag,
   setFirstVisitPathGuideWritingHabitDismissedFlag,
@@ -73,7 +74,10 @@ function buildProgressInput(
     savedStage: readFirstVisitProgressStage(),
     chapter1CompleteFlag:
       readFirstVisitChapterCompleteFlag(1) || readOnboardingChapter1CompleteCookie(),
-    chapter2CompleteFlag: readFirstVisitChapterCompleteFlag(2),
+    chapter2CompleteFlag:
+      readFirstVisitChapterCompleteFlag(2) ||
+      readOnboardingChapter2CompleteCookie() ||
+      branch === "hasKantei",
     chapter3CompleteFlag: readFirstVisitChapterCompleteFlag(3),
     chapter3StartedFlag: readFirstVisitChapter3StartedFlag(),
     bookshelfKanteiGuide: readBookshelfKanteiGuideFlag(),

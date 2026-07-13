@@ -25,12 +25,13 @@ const CHAPTER_1_RESUME_STAGES = [
 export function resolveFirstVisitResumeHref({
   branch,
   savedStage,
-  bookshelfKanteiGuide,
+  bookshelfKanteiGuide: _bookshelfKanteiGuide,
   orderGuide,
   fromRegisterHandoff,
 }: ResumeInput): string {
-  if (bookshelfKanteiGuide) {
-    return firstVisitProgressHref("bookshelf-kantei");
+  // 旧「少し読む」フラグは廃止。鑑定済みなら道しるべ（第3章）へ
+  if (branch === "hasKantei") {
+    return FIRST_VISIT_ROUTES.pathGuide;
   }
 
   if (orderGuide) {
@@ -55,6 +56,7 @@ export function resolveFirstVisitResumeHref({
   if (savedStage) {
     if (savedStage === "register") return FIRST_VISIT_ROUTES.residentCard;
     if (savedStage === "order") return FIRST_VISIT_ROUTES.kanteiReady;
+    if (savedStage === "bookshelf-kantei") return FIRST_VISIT_ROUTES.pathGuide;
     return firstVisitProgressHref(savedStage);
   }
 

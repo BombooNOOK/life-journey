@@ -6,7 +6,8 @@ export type LogHouseRoomSpotId =
   | "residentCard"
   | "todayResult"
   | "radio"
-  | "goOut";
+  | "goOut"
+  | "mailbox";
 
 export type LogHouseRoomHintLabelAlign = "center" | "start" | "end";
 

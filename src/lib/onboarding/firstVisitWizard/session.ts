@@ -1,6 +1,8 @@
 import {
   ONBOARDING_CHAPTER1_COMPLETE_COOKIE,
   ONBOARDING_CHAPTER1_COOKIE_MAX_AGE_SECONDS,
+  ONBOARDING_CHAPTER2_COMPLETE_COOKIE,
+  ONBOARDING_CHAPTER2_COOKIE_MAX_AGE_SECONDS,
 } from "@/lib/onboarding/onboardingStageCookies";
 
 const ORDER_GUIDE_FLAG = "ljd:firstGuide:orderGuide";
@@ -157,6 +159,9 @@ export function setFirstVisitChapterCompleteFlag(chapter: FirstVisitChapterNumbe
   if (chapter === 1) {
     writeOnboardingChapter1CompleteCookie();
   }
+  if (chapter === 2) {
+    writeOnboardingChapter2CompleteCookie();
+  }
 }
 
 function writeOnboardingChapter1CompleteCookie(): void {
@@ -165,11 +170,24 @@ function writeOnboardingChapter1CompleteCookie(): void {
   document.cookie = `${ONBOARDING_CHAPTER1_COMPLETE_COOKIE}=1; Path=/; Max-Age=${ONBOARDING_CHAPTER1_COOKIE_MAX_AGE_SECONDS}; SameSite=Lax${secure}`;
 }
 
+function writeOnboardingChapter2CompleteCookie(): void {
+  if (typeof document === "undefined") return;
+  const secure = window.location.protocol === "https:" ? "; Secure" : "";
+  document.cookie = `${ONBOARDING_CHAPTER2_COMPLETE_COOKIE}=1; Path=/; Max-Age=${ONBOARDING_CHAPTER2_COOKIE_MAX_AGE_SECONDS}; SameSite=Lax${secure}`;
+}
+
 export function readOnboardingChapter1CompleteCookie(): boolean {
   if (typeof document === "undefined") return false;
   return document.cookie
     .split(";")
     .some((part) => part.trim() === `${ONBOARDING_CHAPTER1_COMPLETE_COOKIE}=1`);
+}
+
+export function readOnboardingChapter2CompleteCookie(): boolean {
+  if (typeof document === "undefined") return false;
+  return document.cookie
+    .split(";")
+    .some((part) => part.trim() === `${ONBOARDING_CHAPTER2_COMPLETE_COOKIE}=1`);
 }
 
 export function clearFirstVisitChapterCompleteFlag(chapter: FirstVisitChapterNumber): void {

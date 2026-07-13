@@ -31,10 +31,13 @@ import {
 import { clearBookshelfKanteiGuideFlag } from "@/lib/onboarding/firstVisitWizard/session";
 
 const PDF_FETCH_TIMEOUT_MS = 310_000;
-const LOAD_HINT_MS = 60_000;
+const LOAD_HINT_MS = 8_000;
 const SWIPE_THRESHOLD_PX = 44;
 const COMPACT_READER_HINT =
   "左右スワイプでめくる・ピンチで拡大・ダブルタップで戻す・タップで前後ボタン";
+const PDF_LOADING_LABEL = "鑑定書を準備しています…" as const;
+const PDF_LOADING_HINT =
+  "初回は少し時間がかかることがあります。\nそのまま少しお待ちください。" as const;
 
 type Props = {
   orderId: string;
@@ -316,7 +319,7 @@ export function KanteiPdfReader({
   useEffect(() => {
     if (!loading || error) return;
     const hintTimer = window.setTimeout(() => {
-      setLoadHint("PDFの生成に時間がかかっています。初回は1分ほどかかることがあります。");
+      setLoadHint(PDF_LOADING_HINT);
     }, LOAD_HINT_MS);
     return () => window.clearTimeout(hintTimer);
   }, [error, loading]);
@@ -486,10 +489,9 @@ export function KanteiPdfReader({
       aria-live="polite"
     >
       <OwlSpinIndicator size="md" />
-      <p className="text-sm font-medium text-stone-800">鑑定書を準備しています…</p>
-      <p className="max-w-sm text-xs leading-relaxed text-stone-600">
-        {loadHint ??
-          "初回は30秒〜1分ほどかかることがあります。フクロウが回っているあいだはそのままお待ちください。"}
+      <p className="text-sm font-medium text-stone-800">{PDF_LOADING_LABEL}</p>
+      <p className="max-w-sm whitespace-pre-line text-xs leading-relaxed text-stone-600">
+        {loadHint ?? PDF_LOADING_HINT}
       </p>
     </div>
   );

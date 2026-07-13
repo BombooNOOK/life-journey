@@ -6,6 +6,7 @@ import { assertKanteiOrderAccessForApi } from "@/lib/entitlement/requireFullAcce
 import { buildOrderPayload } from "@/lib/order/buildSnapshot";
 import { toIsoDateString } from "@/lib/order/birthDate";
 import { fetchAccountPdfDownloadLimitOrNull } from "@/lib/order/effectivePdfDownloadLimit";
+import { ensureFortuneReportReadyMailboxNotice } from "@/lib/loghouse/mailboxNotices";
 import { ensureOrderKanteiCode, formatKanteiCodeErrorDetail } from "@/lib/order/kanteiCode";
 import type { CustomerFormValues } from "@/lib/order/types";
 import { profileByIdForViewer, resolveActiveProfileId, listProfilesAndActiveProfileId } from "@/lib/profile/activeProfile";
@@ -208,6 +209,18 @@ export async function POST(req: Request) {
       console.error("[POST /api/orders] kanteiCode assign failed (order saved)", {
         orderId: order.id,
         error: formatKanteiCodeErrorDetail(e),
+      });
+    }
+    try {
+      await ensureFortuneReportReadyMailboxNotice({
+        email: viewerEmail,
+        profileId,
+        orderId: order.id,
+      });
+    } catch (e) {
+      console.error("[POST /api/orders] mailbox notice failed (order saved)", {
+        orderId: order.id,
+        error: e,
       });
     }
     return NextResponse.json({ id: order.id, profileId: order.profileId, code: "OK" });

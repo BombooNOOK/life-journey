@@ -16,7 +16,7 @@ export const ORDER_NAVIGATING_KANTEI_READ_LABEL = "鑑定書のプレビュー�
 export const ORDER_NAVIGATING_KANTEI_VIDEO_LABEL = "鑑定の演出へ向かっています…" as const;
 
 export const ORDER_NAVIGATING_KANTEI_READ_HINT =
-  "ライフ・パス・ナンバーのページを、少しだけのぞいてみましょう。" as const;
+  "鑑定書は本棚とポストに届きます。このあと演出へ進みます。" as const;
 
 export const FIRST_VISIT_RESIDENT_CARD_LOADING_LABEL = "住民票カードを発行しています…" as const;
 

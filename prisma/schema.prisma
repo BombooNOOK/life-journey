@@ -403,3 +403,27 @@ model GardenDisplayFlower {
   @@unique([email, profileId, slotIndex])
   @@index([email, profileId])
 }
+
+/// ログハウスのポスト（ヤギの郵便屋さんからのお届けもの）
+model LogHouseMailboxNotice {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  email     String
+  profileId String
+
+  /// fortune_report_ready | daily_acorn_delivery | system_notice | …
+  type    String
+  title   String
+  message String
+
+  actionLabel String?
+  actionRoute String?
+  relatedOrderId String?
+
+  readAt DateTime?
+
+  @@index([email, profileId, createdAt])
+  @@index([email, profileId, readAt])
+}

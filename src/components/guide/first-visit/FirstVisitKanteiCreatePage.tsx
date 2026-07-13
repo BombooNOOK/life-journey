@@ -18,7 +18,6 @@ import { FIRST_VISIT_ROUTES } from "@/lib/onboarding/firstVisitWizard/routes";
 import {
   clearFirstVisitKanteiVideoOrderId,
   readFirstVisitKanteiVideoOrderId,
-  setBookshelfKanteiGuideFlag,
 } from "@/lib/onboarding/firstVisitWizard/session";
 
 type PlaybackPhase = "ready" | "playing" | "ended";
@@ -42,10 +41,9 @@ export function FirstVisitKanteiCreatePage() {
     setOrderId(pendingOrderId);
   }, [router]);
 
-  const goToBookshelfGuide = useCallback(() => {
+  const goToComplete = useCallback(() => {
     clearFirstVisitKanteiVideoOrderId();
-    setBookshelfKanteiGuideFlag();
-    replace("/orders/bookshelf#bookshelf-kantei-books");
+    replace(FIRST_VISIT_ROUTES.kanteiComplete);
   }, [replace]);
 
   const handleStart = useCallback(() => {
@@ -64,8 +62,8 @@ export function FirstVisitKanteiCreatePage() {
   }, []);
 
   const handleSkip = useCallback(() => {
-    goToBookshelfGuide();
-  }, [goToBookshelfGuide]);
+    goToComplete();
+  }, [goToComplete]);
 
   if (!orderId) {
     return (
@@ -115,7 +113,7 @@ export function FirstVisitKanteiCreatePage() {
       {videoError ? (
         <div className="absolute inset-x-0 top-[max(1rem,env(safe-area-inset-top))] z-30 px-4">
           <p className="mx-auto max-w-md rounded-xl border border-amber-200/80 bg-amber-50/95 px-4 py-3 text-center text-sm text-amber-950 shadow-sm">
-            鑑定の動画を読み込めませんでした。通信環境を確認するか、そのまま「本棚へ進む」で進んでください。
+            鑑定の動画を読み込めませんでした。通信環境を確認するか、そのまま「次へ」で進んでください。
           </p>
         </div>
       ) : null}
@@ -164,7 +162,7 @@ export function FirstVisitKanteiCreatePage() {
           </button>
           <button
             type="button"
-            onClick={handleSkip}
+            onClick={goToComplete}
             className="pointer-events-auto inline-flex min-h-[48px] w-full max-w-sm items-center justify-center rounded-xl border border-emerald-900/15 bg-emerald-800/82 px-5 py-3 text-base font-medium text-white shadow-[0_8px_28px_-8px_rgba(24,83,53,0.45)] backdrop-blur-[2px] transition hover:bg-emerald-900/88 active:bg-emerald-900/92"
           >
             {FIRST_VISIT_KANTEI_CREATE_VIDEO_NEXT_LABEL}

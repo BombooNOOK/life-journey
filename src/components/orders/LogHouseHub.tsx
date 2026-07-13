@@ -26,6 +26,7 @@ type Props = {
   activeProfileId: string;
   hasKanteiOrder: boolean;
   activeKanteiOrderId: string | null;
+  mailboxUnreadCount?: number;
   entitlement: SerializedUserEntitlement;
   firstVisitGuideState: FirstVisitGuideState;
   companionWritingHref: string;
@@ -41,6 +42,7 @@ export function LogHouseHub({
   activeProfileId,
   hasKanteiOrder,
   activeKanteiOrderId,
+  mailboxUnreadCount = 0,
   entitlement,
   firstVisitGuideState,
   companionWritingHref,
@@ -73,7 +75,9 @@ export function LogHouseHub({
           profiles={profiles}
           activeProfileId={activeProfileId}
           entitlement={entitlement}
+          hasKanteiOrder={hasKanteiOrder}
           kanteiOrderId={activeKanteiOrderId}
+          mailboxUnreadCount={mailboxUnreadCount}
           companionWritingHref={companionWritingHref}
           onOpenManage={() => setManageOpen(true)}
         />

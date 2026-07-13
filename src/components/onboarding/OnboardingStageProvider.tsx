@@ -27,6 +27,7 @@ import {
   readFirstVisitChapterCompleteFlag,
   readFirstVisitChapter3StartedFlag,
   readOnboardingChapter1CompleteCookie,
+  readOnboardingChapter2CompleteCookie,
 } from "@/lib/onboarding/firstVisitWizard/session";
 import type { OnboardingStageContext } from "@/lib/viewer/onboardingStageContext";
 import type { FirstVisitReadyBranch } from "@/lib/viewer/firstVisitReadyContext";
@@ -54,7 +55,9 @@ const OnboardingStageContextReact = createContext<OnboardingStageProviderValue |
 
 function mergeStageContext(server: OnboardingStageContext): OnboardingStageContext {
   const hasKanteiOrder =
-    server.hasKanteiOrder || readFirstVisitChapterCompleteFlag(2);
+    server.hasKanteiOrder ||
+    readFirstVisitChapterCompleteFlag(2) ||
+    readOnboardingChapter2CompleteCookie();
   const branch: FirstVisitReadyBranch = !server.isLoggedIn
     ? "guest"
     : hasKanteiOrder

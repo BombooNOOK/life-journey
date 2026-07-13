@@ -135,6 +135,7 @@ const ORDERS_STATIC_FIRST_SEGMENTS = new Set([
   "go-out",
   "garden",
   "list",
+  "mailbox",
   "profile",
   "resident-card",
   "settings",

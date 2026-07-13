@@ -12,6 +12,7 @@ export const FIRST_VISIT_ROUTES = {
   residentCard: "/guide/first/resident-card",
   loghouseSign: "/guide/first/loghouse-sign",
   kanteiReady: "/guide/first/kantei-ready",
+  kanteiComplete: "/guide/first/kantei-complete",
   alreadyReady: "/guide/first/already-ready",
   loghouse: "/guide/first/loghouse",
   kantei: "/guide/first/kantei",

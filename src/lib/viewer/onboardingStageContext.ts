@@ -6,7 +6,7 @@ import {
   resolveOnboardingStage,
   type OnboardingStage,
 } from "@/lib/onboarding/onboardingStage";
-import { ONBOARDING_CHAPTER1_COMPLETE_COOKIE } from "@/lib/onboarding/onboardingStageCookies";
+import { ONBOARDING_CHAPTER1_COMPLETE_COOKIE, ONBOARDING_CHAPTER2_COMPLETE_COOKIE } from "@/lib/onboarding/onboardingStageCookies";
 import { resolveFirstVisitReadyContext } from "@/lib/viewer/firstVisitReadyContext";
 
 export type OnboardingStageContext = {
@@ -39,7 +39,9 @@ export async function resolveOnboardingStageContext(
   const chapter1FromCookie =
     cookieStore.get(ONBOARDING_CHAPTER1_COMPLETE_COOKIE)?.value === "1";
   const hasKanteiOrder = ready.branch === "hasKantei";
-  const chapter1Complete = chapter1FromCookie || hasKanteiOrder;
+  const chapter2FromCookie =
+    cookieStore.get(ONBOARDING_CHAPTER2_COMPLETE_COOKIE)?.value === "1";
+  const chapter1Complete = chapter1FromCookie || hasKanteiOrder || chapter2FromCookie;
 
   const stage = resolveOnboardingStage({
     isLoggedIn: true,

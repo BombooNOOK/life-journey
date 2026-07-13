@@ -14,6 +14,7 @@ import {
 
 import { LogHouseRoomChrome } from "@/components/orders/loghouse-room/LogHouseRoomChrome";
 import { LogHouseRoomGoOutSpot } from "@/components/orders/loghouse-room/LogHouseRoomGoOutSpot";
+import { LogHouseRoomMailboxSpot } from "@/components/orders/loghouse-room/LogHouseRoomMailboxSpot";
 import { LogHouseRoomPartsLayer } from "@/components/orders/loghouse-room/LogHouseRoomPartsLayer";
 import { LogHouseRoomRabbitAvatar } from "@/components/orders/loghouse-room/LogHouseRoomRabbitAvatar";
 import { LogHouseRoomSpotSheet } from "@/components/orders/loghouse-room/LogHouseRoomSpotSheet";
@@ -34,7 +35,9 @@ import {
   LOG_HOUSE_ROOM_JOURNAL_LOCK_MESSAGE,
   LOG_HOUSE_ROOM_KANTEI_LOCK_CTA_LABEL,
   LOG_HOUSE_ROOM_KANTEI_LOCK_MESSAGE,
+  LOG_HOUSE_ROOM_TODAY_RESULT_PREPARING_MESSAGE,
 } from "@/lib/loghouse/logHouseRoomCopy";
+import { LOG_HOUSE_MAILBOX_PAGE_PATH } from "@/lib/loghouse/logHouseMailboxCopy";
 import { LOG_HOUSE_ROOM_HOTSPOTS, type LogHouseRoomSpotId } from "@/lib/loghouse/logHouseRoomHotspots";
 import { LOG_HOUSE_GO_OUT_PAGE_PATH } from "@/lib/loghouse/logHouseGoOutCopy";
 import type { LogHouseRoomTimeOfDay } from "@/lib/loghouse/logHouseRoomTimeTheme";
@@ -84,7 +87,10 @@ type Props = {
   profiles: ProfileRow[];
   activeProfileId: string;
   entitlement: SerializedUserEntitlement;
+  /** サーバー上の鑑定済み（注文IDが取れない場合でも完了扱い） */
+  hasKanteiOrder?: boolean;
   kanteiOrderId: string | null;
+  mailboxUnreadCount?: number;
   companionWritingHref: string | null;
   onOpenManage: () => void;
   className?: string;
@@ -115,6 +121,7 @@ function RoomStage({
   hintActive,
   flashSpotId,
   timeOfDay,
+  mailboxUnread,
 }: {
   busy: boolean;
   previewMode: boolean;
@@ -123,6 +130,7 @@ function RoomStage({
   hintActive: boolean;
   flashSpotId: LogHouseRoomSpotId | null;
   timeOfDay: LogHouseRoomTimeOfDay;
+  mailboxUnread: boolean;
 }) {
   return (
     <>
@@ -165,6 +173,15 @@ function RoomStage({
           );
         })}
 
+        <LogHouseRoomMailboxSpot
+          disabled={busy || !spotActions.mailbox.href}
+          showDebugOutline={previewMode}
+          showHintLabel={hintActive}
+          flash={flashSpotId === "mailbox"}
+          hasUnread={mailboxUnread}
+          onActivate={() => onSpotActivate("mailbox")}
+        />
+
         <LogHouseRoomGoOutSpot
           disabled={busy || !spotActions.goOut.href}
           showDebugOutline={previewMode}
@@ -186,7 +203,9 @@ export function LogHouseRoomMobile({
   profileId,
   activeProfileId,
   entitlement,
+  hasKanteiOrder = false,
   kanteiOrderId,
+  mailboxUnreadCount = 0,
   onOpenManage,
   className = "",
   previewMode = false,
@@ -210,7 +229,7 @@ export function LogHouseRoomMobile({
     entitlement.canUseContinuedFeatures || entitlement.canCreateFirstJournal;
   const journalBlocked = entitlement.tier === "trial_expired" || !canWriteJournal;
   const isActiveProfile = profileId === activeProfileId;
-  const hasKantei = Boolean(kanteiOrderId);
+  const hasKantei = hasKanteiOrder || Boolean(kanteiOrderId);
 
   useEffect(() => {
     if (!notice) return;
@@ -294,11 +313,14 @@ export function LogHouseRoomMobile({
           ? { href: null, lockMessage: LOG_HOUSE_ROOM_JOURNAL_LOCK_MESSAGE }
           : { href: "/orders/calendar", needsProfile: true },
       residentCard: { href: "/orders/resident-card" },
-      todayResult: hasKantei
-        ? { href: `/orders/${encodeURIComponent(kanteiOrderId!)}` }
-        : { ...KANTEI_LOCK },
+      todayResult: kanteiOrderId
+        ? { href: `/orders/${encodeURIComponent(kanteiOrderId)}` }
+        : hasKantei
+          ? { href: null, lockMessage: LOG_HOUSE_ROOM_TODAY_RESULT_PREPARING_MESSAGE }
+          : { ...KANTEI_LOCK },
       radio: { href: buildForestMusicHallHref("/orders") },
       goOut: { href: LOG_HOUSE_GO_OUT_PAGE_PATH },
+      mailbox: { href: LOG_HOUSE_MAILBOX_PAGE_PATH },
     }),
     [hasKantei, journalBlocked, kanteiOrderId],
   );
@@ -429,6 +451,7 @@ export function LogHouseRoomMobile({
       hintActive={hintActive}
       flashSpotId={flashSpotId}
       timeOfDay={timeOfDay}
+      mailboxUnread={mailboxUnreadCount > 0}
     />
   );
 

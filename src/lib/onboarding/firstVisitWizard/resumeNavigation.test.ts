@@ -28,7 +28,7 @@ describe("resolveFirstVisitResumeHref", () => {
     ).toBe(FIRST_VISIT_ROUTES.loghouseSign);
   });
 
-  it("prioritizes bookshelf guide flag after kantei", () => {
+  it("sends hasKantei users to path-guide (life-path peek removed)", () => {
     expect(
       resolveFirstVisitResumeHref({
         branch: "hasKantei",
@@ -37,7 +37,7 @@ describe("resolveFirstVisitResumeHref", () => {
         orderGuide: false,
         fromRegisterHandoff: false,
       }),
-    ).toBe("/orders/bookshelf#bookshelf-kantei-books");
+    ).toBe(FIRST_VISIT_ROUTES.pathGuide);
   });
 
   it("maps saved register stage to resident card milestone", () => {
