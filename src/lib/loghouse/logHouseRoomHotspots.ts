@@ -5,7 +5,8 @@ export type LogHouseRoomSpotId =
   | "desk"
   | "residentCard"
   | "todayResult"
-  | "radio";
+  | "radio"
+  | "goOut";
 
 export type LogHouseRoomHintLabelAlign = "center" | "start" | "end";
 
@@ -30,3 +31,13 @@ export const LOG_HOUSE_ROOM_HOTSPOTS: LogHouseRoomHotspot[] = [
   { id: "todayResult", x: 70.7, y: 60.5, width: 25.6, height: 14.5, hintLabelAlign: "end" },
   { id: "radio", x: 59.2, y: 80.8, width: 21.8, height: 10.7, hintLabelAlign: "end" },
 ];
+
+/** 玄関の靴（おでかけ導線）— 576×1024 設計・% */
+export const LOG_HOUSE_ROOM_GO_OUT_HOTSPOT: LogHouseRoomHotspot = {
+  id: "goOut",
+  x: 36,
+  y: 90.5,
+  width: 28,
+  height: 8.5,
+  hintLabelAlign: "center",
+};

@@ -79,6 +79,20 @@ describe("onboardingStage", () => {
     expect(isPathAllowedForStage("/orders/calendar", 2)).toBe(false);
     expect(isPathAllowedForStage("/orders/calendar", 3)).toBe(true);
     expect(isPathAllowedForStage("/help/ljd", 0)).toBe(true);
+    // 住民票・アカウント・設定・お問い合わせは鑑定前でも開ける
+    expect(isPathAllowedForStage("/orders/resident-card", 1)).toBe(true);
+    expect(isPathAllowedForStage("/orders/resident-card", 2)).toBe(true);
+    expect(isPathAllowedForStage("/orders/account", 2)).toBe(true);
+    expect(isPathAllowedForStage("/orders/account/delete", 1)).toBe(true);
+    expect(isPathAllowedForStage("/orders/settings", 1)).toBe(true);
+    expect(isPathAllowedForStage("/orders/settings/add-profile", 2)).toBe(true);
+    expect(isPathAllowedForStage("/orders/go-out", 2)).toBe(true);
+    expect(isPathAllowedForStage("/orders/support", 2)).toBe(true);
+    // 実注文ID（詳細・配下）は鑑定後
+    expect(isPathAllowedForStage("/orders/clxyz1234567890abcdefgh", 2)).toBe(false);
+    expect(isPathAllowedForStage("/orders/clxyz1234567890abcdefgh", 3)).toBe(true);
+    expect(isPathAllowedForStage("/orders/clxyz1234567890abcdefgh/today", 2)).toBe(false);
+    expect(isPathAllowedForStage("/orders/clxyz1234567890abcdefgh/manage", 2)).toBe(false);
   });
 
   it("returns next step until stage 4", () => {

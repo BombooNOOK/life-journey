@@ -33,6 +33,11 @@ export const LOG_HOUSE_ROOM_SPOT_COPY: Record<LogHouseRoomSpotId, LogHouseRoomSp
     description: "音楽や自然音を聴く",
     actionLabel: "音楽堂を開く",
   },
+  goOut: {
+    label: "おでかけ",
+    description: "森へおでかけする",
+    actionLabel: "おでかけをする",
+  },
 };
 
 export const LOG_HOUSE_ROOM_RABBIT_GREETING = "今日も森へようこそ";
@@ -40,6 +45,9 @@ export const LOG_HOUSE_ROOM_RABBIT_GREETING = "今日も森へようこそ";
 /** 鑑定前に本棚・机・今日の鑑定結果をタップしたとき */
 export const LOG_HOUSE_ROOM_KANTEI_LOCK_MESSAGE =
   "無料鑑定が終わると、ここから使えるようになります。" as const;
+
+/** 鑑定ロック案内の次の一手（はじめての道しるべへ） */
+export const LOG_HOUSE_ROOM_KANTEI_LOCK_CTA_LABEL = "無料鑑定を受ける" as const;
 
 export const LOG_HOUSE_ROOM_JOURNAL_LOCK_MESSAGE =
   "いまは日記を書けない状態です。アカウント設定をご確認ください。" as const;
@@ -64,6 +72,6 @@ export const LOG_HOUSE_ROOM_HINT_AUTO_HIDE_MS = 6500 as const;
 
 /** 初回ログハウス案内 */
 export const LOG_HOUSE_ROOM_FIRST_VISIT_TIP =
-  "ログハウスでは、本棚や机をタップできます。\n迷ったら、？を押してみてください。" as const;
+  "ログハウスでは、本棚や机をタップできます。\n迷ったら、？を押してみてください。\n森へ出かけるときは、玄関の靴をタップ。" as const;
 export const LOG_HOUSE_ROOM_FIRST_VISIT_TIP_STORAGE_KEY =
   "ljd.loghouseRoom.tapHintIntroSeen.v1" as const;

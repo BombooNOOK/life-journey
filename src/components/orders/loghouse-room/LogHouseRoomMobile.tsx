@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   useCallback,
@@ -12,6 +13,7 @@ import {
 } from "react";
 
 import { LogHouseRoomChrome } from "@/components/orders/loghouse-room/LogHouseRoomChrome";
+import { LogHouseRoomGoOutSpot } from "@/components/orders/loghouse-room/LogHouseRoomGoOutSpot";
 import { LogHouseRoomPartsLayer } from "@/components/orders/loghouse-room/LogHouseRoomPartsLayer";
 import { LogHouseRoomRabbitAvatar } from "@/components/orders/loghouse-room/LogHouseRoomRabbitAvatar";
 import { LogHouseRoomSpotSheet } from "@/components/orders/loghouse-room/LogHouseRoomSpotSheet";
@@ -29,19 +31,42 @@ import {
   LOG_HOUSE_ROOM_FIRST_VISIT_TIP_STORAGE_KEY,
   LOG_HOUSE_ROOM_HINT_AUTO_HIDE_MS,
   LOG_HOUSE_ROOM_JOURNAL_LOCK_MESSAGE,
+  LOG_HOUSE_ROOM_KANTEI_LOCK_CTA_LABEL,
   LOG_HOUSE_ROOM_KANTEI_LOCK_MESSAGE,
 } from "@/lib/loghouse/logHouseRoomCopy";
 import { LOG_HOUSE_ROOM_HOTSPOTS, type LogHouseRoomSpotId } from "@/lib/loghouse/logHouseRoomHotspots";
+import { LOG_HOUSE_GO_OUT_PAGE_PATH } from "@/lib/loghouse/logHouseGoOutCopy";
 import type { LogHouseRoomTimeOfDay } from "@/lib/loghouse/logHouseRoomTimeTheme";
+import { FIRST_VISIT_ROUTES } from "@/lib/onboarding/firstVisitWizard/routes";
 import { selectViewerProfile } from "@/lib/profile/selectViewerProfile";
 
 type ProfileRow = { id: string; nickname: string };
+
+type SpotLockCta = {
+  href: string;
+  label: string;
+};
 
 type SpotAction = {
   href: string | null;
   needsProfile?: boolean;
   /** 鑑定前など：見た目は通常のまま、タップで案内を出す */
   lockMessage?: string | null;
+  lockCta?: SpotLockCta | null;
+};
+
+type SpotNotice = {
+  message: string;
+  cta?: SpotLockCta | null;
+};
+
+const KANTEI_LOCK: Pick<SpotAction, "href" | "lockMessage" | "lockCta"> = {
+  href: null,
+  lockMessage: LOG_HOUSE_ROOM_KANTEI_LOCK_MESSAGE,
+  lockCta: {
+    href: FIRST_VISIT_ROUTES.pathGuide,
+    label: LOG_HOUSE_ROOM_KANTEI_LOCK_CTA_LABEL,
+  },
 };
 
 type Props = {
@@ -130,6 +155,14 @@ function RoomStage({
           );
         })}
 
+        <LogHouseRoomGoOutSpot
+          disabled={busy || !spotActions.goOut.href}
+          showDebugOutline={previewMode}
+          showHintLabel={hintActive}
+          flash={flashSpotId === "goOut"}
+          onActivate={() => onSpotActivate("goOut")}
+        />
+
         <div className="pointer-events-none absolute inset-0 overflow-hidden">
           <LogHouseRoomRabbitAvatar />
         </div>
@@ -155,7 +188,7 @@ export function LogHouseRoomMobile({
   const timeOfDay = timeOfDayOverride ?? detectedTimeOfDay;
   const [isPending, startTransition] = useTransition();
   const [profileBusy, setProfileBusy] = useState(false);
-  const [notice, setNotice] = useState<string | null>(null);
+  const [notice, setNotice] = useState<SpotNotice | null>(null);
   const [hintActive, setHintActive] = useState(false);
   const [showFirstVisitTip, setShowFirstVisitTip] = useState(false);
   const [selectedSpotId, setSelectedSpotId] = useState<LogHouseRoomSpotId | null>(null);
@@ -171,7 +204,8 @@ export function LogHouseRoomMobile({
 
   useEffect(() => {
     if (!notice) return;
-    const timer = window.setTimeout(() => setNotice(null), 4200);
+    const ms = notice.cta ? 10000 : 4200;
+    const timer = window.setTimeout(() => setNotice(null), ms);
     return () => window.clearTimeout(timer);
   }, [notice]);
 
@@ -243,17 +277,18 @@ export function LogHouseRoomMobile({
     () => ({
       bookshelf: hasKantei
         ? { href: "/orders/bookshelf", needsProfile: true }
-        : { href: null, lockMessage: LOG_HOUSE_ROOM_KANTEI_LOCK_MESSAGE },
+        : { ...KANTEI_LOCK },
       desk: !hasKantei
-        ? { href: null, lockMessage: LOG_HOUSE_ROOM_KANTEI_LOCK_MESSAGE }
+        ? { ...KANTEI_LOCK }
         : journalBlocked
           ? { href: null, lockMessage: LOG_HOUSE_ROOM_JOURNAL_LOCK_MESSAGE }
           : { href: "/orders/calendar", needsProfile: true },
       residentCard: { href: "/orders/resident-card" },
       todayResult: hasKantei
         ? { href: `/orders/${encodeURIComponent(kanteiOrderId!)}` }
-        : { href: null, lockMessage: LOG_HOUSE_ROOM_KANTEI_LOCK_MESSAGE },
+        : { ...KANTEI_LOCK },
       radio: { href: buildForestMusicHallHref("/orders") },
+      goOut: { href: LOG_HOUSE_GO_OUT_PAGE_PATH },
     }),
     [hasKantei, journalBlocked, kanteiOrderId],
   );
@@ -280,7 +315,10 @@ export function LogHouseRoomMobile({
 
       if (action.lockMessage) {
         setFlashSpotId(spotId);
-        setNotice(action.lockMessage);
+        setNotice({
+          message: action.lockMessage,
+          cta: action.lockCta ?? null,
+        });
         return;
       }
       if (!action.href) return;
@@ -302,12 +340,22 @@ export function LogHouseRoomMobile({
 
   const noticeOverlay = notice ? (
     <div className="pointer-events-none absolute inset-x-0 bottom-8 z-[55] flex justify-center px-4">
-      <p
+      <div
         role="status"
-        className="max-w-sm rounded-xl border border-emerald-200/90 bg-[#fffdf9]/95 px-3.5 py-2.5 text-center text-xs leading-relaxed text-stone-700 shadow-lg backdrop-blur-[1px]"
+        className="pointer-events-auto max-w-sm rounded-xl border border-emerald-200/90 bg-[#fffdf9]/95 px-3.5 py-2.5 text-center text-xs leading-relaxed text-stone-700 shadow-lg backdrop-blur-[1px]"
       >
-        {notice}
-      </p>
+        <p>{notice.message}</p>
+        {notice.cta ? (
+          <p className="mt-2">
+            <Link
+              href={notice.cta.href}
+              className="font-medium text-emerald-900 underline-offset-2 hover:underline"
+            >
+              {notice.cta.label}
+            </Link>
+          </p>
+        ) : null}
+      </div>
     </div>
   ) : null;
 
@@ -340,6 +388,8 @@ export function LogHouseRoomMobile({
         <LogHouseRoomSpotSheet
           spotId={selectedSpotId}
           lockMessage={selectedAction.lockMessage}
+          lockCtaHref={selectedAction.lockCta?.href}
+          lockCtaLabel={selectedAction.lockCta?.label}
           busy={busy}
           onClose={() => setSelectedSpotId(null)}
           onConfirm={confirmSelectedSpot}

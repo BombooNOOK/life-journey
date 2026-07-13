@@ -23,6 +23,15 @@ export const LOG_HOUSE_ROOM_PART_PLACEMENTS: LogHouseRoomPartPlacement[] = [
   { id: "radio", x: 57.2, y: 77.7, width: 27.7, height: 15.1, zIndex: 19, objectPosition: "right bottom" },
 ];
 
+export const LOG_HOUSE_ROOM_SHOES_PLACEMENT = {
+  x: 38,
+  y: 91.2,
+  width: 24,
+  height: 7.5,
+  zIndex: 21,
+  objectPosition: "center bottom",
+} as const;
+
 export const LOG_HOUSE_ROOM_RABBIT_PLACEMENT = {
   x: 38,
   /** 足元がじゅうたん中央付近になるよう配置（height 34 → 足元 y≈70） */

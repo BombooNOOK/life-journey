@@ -124,6 +124,22 @@ export function resolveOnboardingNextStep(
   return null;
 }
 
+/**
+ * `/orders/[id]` と紛らわしい固定セグメント。
+ * これらを注文詳細扱いにすると、鑑定前に道しるべへ誤誘導される。
+ */
+const ORDERS_STATIC_FIRST_SEGMENTS = new Set([
+  "account",
+  "bookshelf",
+  "calendar",
+  "go-out",
+  "list",
+  "profile",
+  "resident-card",
+  "settings",
+  "support",
+]);
+
 /** 直URLアクセス時の最低段階（案内所・道しるべ・ログイン等は含まない） */
 export function resolvePathMinOnboardingStage(pathname: string): OnboardingStage | null {
   if (pathname === "/orders") return 1;
@@ -131,8 +147,12 @@ export function resolvePathMinOnboardingStage(pathname: string): OnboardingStage
   if (pathname.startsWith("/orders/list")) return 3;
   if (pathname.startsWith("/orders/bookshelf")) return 3;
   if (pathname.startsWith("/journal")) return 3;
-  if (/^\/orders\/[^/]+\/read/.test(pathname)) return 3;
-  if (/^\/orders\/[^/]+$/.test(pathname) && pathname !== "/orders") return 3;
+
+  // `/orders/[orderId]` および `/orders/[orderId]/…`（account / settings 等は除外）
+  const ordersSegment = pathname.match(/^\/orders\/([^/]+)(?:\/|$)/);
+  if (ordersSegment && !ORDERS_STATIC_FIRST_SEGMENTS.has(ordersSegment[1])) {
+    return 3;
+  }
   return null;
 }
 

@@ -1,11 +1,19 @@
 "use client";
 
-import { LOG_HOUSE_ROOM_SPOT_COPY } from "@/lib/loghouse/logHouseRoomCopy";
+import Link from "next/link";
+
+import {
+  LOG_HOUSE_ROOM_KANTEI_LOCK_CTA_LABEL,
+  LOG_HOUSE_ROOM_SPOT_COPY,
+} from "@/lib/loghouse/logHouseRoomCopy";
 import type { LogHouseRoomSpotId } from "@/lib/loghouse/logHouseRoomHotspots";
 
 type Props = {
   spotId: LogHouseRoomSpotId;
   lockMessage?: string | null;
+  /** 鑑定ロック時など、説明の下に出す導線 */
+  lockCtaHref?: string | null;
+  lockCtaLabel?: string | null;
   onClose: () => void;
   onConfirm: () => void;
   busy?: boolean;
@@ -15,6 +23,8 @@ type Props = {
 export function LogHouseRoomSpotSheet({
   spotId,
   lockMessage = null,
+  lockCtaHref = null,
+  lockCtaLabel = null,
   onClose,
   onConfirm,
   busy = false,
@@ -49,6 +59,16 @@ export function LogHouseRoomSpotSheet({
         <p className="text-sm leading-relaxed text-stone-600">
           {locked ? lockMessage : copy.description}
         </p>
+        {locked && lockCtaHref ? (
+          <p className="mt-3 text-center text-sm">
+            <Link
+              href={lockCtaHref}
+              className="font-medium text-emerald-900 underline-offset-2 hover:underline"
+            >
+              {lockCtaLabel ?? LOG_HOUSE_ROOM_KANTEI_LOCK_CTA_LABEL}
+            </Link>
+          </p>
+        ) : null}
         {!locked ? (
           <button
             type="button"

@@ -82,6 +82,9 @@ export function AccountDeleteForm({ blockMessage = null }: Props) {
         <label htmlFor="account-delete-confirmation" className={mobileReadable.label}>
           最終確認（「{ACCOUNT_DELETE_CONFIRMATION_WORD}」と入力）
         </label>
+        <p className="text-sm text-stone-600">
+          削除を実行するには、下の欄に「{ACCOUNT_DELETE_CONFIRMATION_WORD}」と入力してください。
+        </p>
         <input
           id="account-delete-confirmation"
           type="text"

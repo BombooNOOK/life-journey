@@ -324,14 +324,14 @@ function OrderPageContent() {
                 label="せい（ひらがな・必須）"
                 value={form.lastNameKana}
                 onChange={(v) => setForm((f) => ({ ...f, lastNameKana: v }))}
-                placeholder="やまだ"
+                placeholder="もりの"
                 required
               />
               <Field
                 label="めい（ひらがな・必須）"
                 value={form.firstNameKana}
                 onChange={(v) => setForm((f) => ({ ...f, firstNameKana: v }))}
-                placeholder="たろう"
+                placeholder="うさぎ"
                 required
               />
             </div>
