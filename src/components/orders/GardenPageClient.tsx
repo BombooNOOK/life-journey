@@ -8,8 +8,9 @@ import { GardenMobileImmersive } from "@/components/orders/GardenMobileImmersive
 import { MyPageSubpageHeader } from "@/components/orders/MyPageSubpageHeader";
 import { OwlLoadingInline } from "@/components/ui/OwlLoadingInline";
 import { useGardenWatering } from "@/hooks/useGardenWatering";
+import { useLogHouseRoomTimeTheme } from "@/hooks/useLogHouseRoomTimeOfDay";
 import {
-  GARDEN_BG_SRC,
+  GARDEN_BG_BY_TIME,
   GARDEN_WATERING_CAN_SRC,
 } from "@/lib/garden/gardenAssets";
 import {
@@ -26,6 +27,8 @@ type Props = {
 };
 
 function GardenDesktopPanel({ initialState }: Props) {
+  const { timeOfDay } = useLogHouseRoomTimeTheme();
+  const ambientBg = timeOfDay === "night" ? "#1a2430" : "#dfe8d4";
   const {
     plant,
     displayFlowers,
@@ -48,16 +51,25 @@ function GardenDesktopPanel({ initialState }: Props) {
 
       <div className="space-y-5">
         <div className="overflow-hidden rounded-2xl border border-[#e8dfd0]/90 bg-[#fffdf9] shadow-sm">
-          <div className="relative mx-auto aspect-[3/4] max-h-[28rem] w-full overflow-hidden bg-[#dfe8d4]">
-            <Image
-              src={GARDEN_BG_SRC}
-              alt=""
-              fill
-              className="object-cover object-center"
-              sizes="28rem"
-              unoptimized
-              priority
-            />
+          <div
+            className="relative mx-auto aspect-[3/4] max-h-[28rem] w-full overflow-hidden"
+            style={{ backgroundColor: ambientBg }}
+          >
+            {(["day", "night"] as const).map((id) => (
+              <Image
+                key={id}
+                src={GARDEN_BG_BY_TIME[id]}
+                alt=""
+                fill
+                className={[
+                  "object-cover object-center transition-opacity duration-700 ease-in-out",
+                  timeOfDay === id ? "opacity-100" : "opacity-0",
+                ].join(" ")}
+                sizes="28rem"
+                unoptimized
+                priority={id === timeOfDay}
+              />
+            ))}
             {displayFlowers.map((flower) => {
               const left =
                 flower.slotIndex === 1 ? "4%" : flower.slotIndex === 2 ? "72%" : "70%";

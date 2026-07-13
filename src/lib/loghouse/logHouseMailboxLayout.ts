@@ -1,21 +1,25 @@
 /** 玄関ポスト（靴の左）— 576×1024 設計・% */
 
-/** 見た目サイズ（1.4倍前後） */
+/**
+ * 見た目サイズ（ホットスポットに対する％）。
+ * 以前は見た目をホットスポットの約7割に抑えており、拡大が相殺されていたため、
+ * ほぼ埋める比率にして実質約1.3倍になるよう調整。
+ */
 export const LOG_HOUSE_ROOM_MAILBOX_VISUAL = {
-  widthPctOfHotspot: 72,
-  heightPctOfHotspot: 78,
+  widthPctOfHotspot: 92,
+  heightPctOfHotspot: 94,
 } as const;
 
 /**
- * タップ領域（見た目より広め・最低でも押しやすいサイズ）。
- * 旧: x16 y87.5 w20 h11.5 → 約1.4倍＋余白
+ * タップ領域（見た目より少し広め）。
+ * 実効の見た目サイズ ≈ w×0.92 / h×0.94 → 画面比で約 26% × 16%（旧実効の約1.3倍）
  */
 export const LOG_HOUSE_ROOM_MAILBOX_HOTSPOT = {
   id: "mailbox" as const,
-  x: 12.5,
-  y: 84.5,
-  width: 27,
-  height: 15.5,
+  x: 11.5,
+  y: 83,
+  width: 28.5,
+  height: 17,
   hintLabelAlign: "center" as const,
   hintLabelEdge: "inside-top" as const,
 };

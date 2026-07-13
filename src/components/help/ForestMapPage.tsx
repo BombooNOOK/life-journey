@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState, useTransition, type CSSProperties } from "react";
 
 import { OwlDelayedBusyOverlay } from "@/components/ui/OwlDelayedBusyOverlay";
+import { useLogHouseRoomTimeTheme } from "@/hooks/useLogHouseRoomTimeOfDay";
 import {
   FOREST_MAP_DESTINATIONS,
   type ForestMapSpotId,
@@ -13,13 +14,14 @@ import {
 import {
   FOREST_MAP_INTRINSIC,
   FOREST_MAP_PAGE_TITLE,
-  FOREST_MAP_SRC,
+  FOREST_MAP_SRC_BY_TIME,
 } from "@/lib/help/forestMapAssets";
 import { FOREST_MAP_HOTSPOTS } from "@/lib/help/forestMapHotspots";
 import type {
   ForestGuideMapKanteiHallLink,
 } from "@/lib/help/forestGuideMapKanteiHallLink";
 import { LOG_HOUSE_NAV_LABEL } from "@/lib/journal/logHouseLabels";
+import type { LogHouseRoomTimeOfDay } from "@/lib/loghouse/logHouseRoomTimeTheme";
 import { FIRST_VISIT_ROUTES } from "@/lib/onboarding/firstVisitWizard/routes";
 
 type BackLink = { href: string; label: string };
@@ -109,23 +111,31 @@ function MapStage({
   busy,
   showHotspotOutlines,
   onActivate,
+  timeOfDay,
 }: {
   busy: boolean;
   showHotspotOutlines: boolean;
   onActivate: (spotId: ForestMapSpotId) => void;
+  timeOfDay: LogHouseRoomTimeOfDay;
 }) {
   return (
     <>
-      <Image
-        src={FOREST_MAP_SRC}
-        alt=""
-        fill
-        priority
-        sizes="100vw"
-        className="object-contain object-center"
-        unoptimized
-        draggable={false}
-      />
+      {(["day", "night"] as const).map((id) => (
+        <Image
+          key={id}
+          src={FOREST_MAP_SRC_BY_TIME[id]}
+          alt=""
+          fill
+          priority={id === timeOfDay}
+          sizes="100vw"
+          className={[
+            "object-contain object-center transition-opacity duration-700 ease-in-out",
+            timeOfDay === id ? "opacity-100" : "opacity-0",
+          ].join(" ")}
+          unoptimized
+          draggable={false}
+        />
+      ))}
       <div className="absolute inset-0">
         {FOREST_MAP_HOTSPOTS.map((spot) => {
           const dest = FOREST_MAP_DESTINATIONS[spot.id];
@@ -194,6 +204,8 @@ export function ForestMapPage({
   layout = "immersive",
 }: Props) {
   const router = useRouter();
+  const { timeOfDay } = useLogHouseRoomTimeTheme();
+  const ambientBg = timeOfDay === "night" ? "#1a2430" : "#ebe4d4";
   const [isPending, startTransition] = useTransition();
   const [localBusy, setLocalBusy] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
@@ -280,13 +292,19 @@ export function ForestMapPage({
   if (layout === "framed") {
     return (
       <div
-        className="relative mx-auto w-full max-w-md overflow-hidden rounded-2xl border border-stone-200/90 bg-[#ebe4d4] shadow-sm"
+        className="relative mx-auto w-full max-w-md overflow-hidden rounded-2xl border border-stone-200/90 shadow-sm"
         style={{
           aspectRatio: `${FOREST_MAP_INTRINSIC.widthPx} / ${FOREST_MAP_INTRINSIC.heightPx}`,
+          backgroundColor: ambientBg,
         }}
       >
         <div className="absolute inset-0 isolate overflow-hidden">
-          <MapStage busy={busy} showHotspotOutlines={showHotspotOutlines} onActivate={navigate} />
+          <MapStage
+            busy={busy}
+            showHotspotOutlines={showHotspotOutlines}
+            onActivate={navigate}
+            timeOfDay={timeOfDay}
+          />
         </div>
         <ForestMapChrome backLink={backLink} />
         {noticeOverlay}
@@ -297,10 +315,18 @@ export function ForestMapPage({
   }
 
   return (
-    <div className="fixed inset-0 z-[60] overflow-hidden overscroll-none bg-[#ebe4d4] select-none">
+    <div
+      className="fixed inset-0 z-[60] overflow-hidden overscroll-none select-none"
+      style={{ backgroundColor: ambientBg }}
+    >
       <div className="absolute inset-0 overflow-hidden">
         <div className="relative isolate overflow-hidden" style={containStageStyle(FOREST_MAP_INTRINSIC)}>
-          <MapStage busy={busy} showHotspotOutlines={showHotspotOutlines} onActivate={navigate} />
+          <MapStage
+            busy={busy}
+            showHotspotOutlines={showHotspotOutlines}
+            onActivate={navigate}
+            timeOfDay={timeOfDay}
+          />
         </div>
       </div>
       <ForestMapChrome backLink={backLink} />

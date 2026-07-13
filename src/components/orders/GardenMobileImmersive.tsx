@@ -6,9 +6,10 @@ import { useEffect, type CSSProperties } from "react";
 
 import { GardenBloomChoicePanel } from "@/components/orders/GardenBloomChoicePanel";
 import { useGardenWatering } from "@/hooks/useGardenWatering";
+import { useLogHouseRoomTimeTheme } from "@/hooks/useLogHouseRoomTimeOfDay";
 import {
+  GARDEN_BG_BY_TIME,
   GARDEN_BG_INTRINSIC,
-  GARDEN_BG_SRC,
   GARDEN_WATERING_CAN_SRC,
 } from "@/lib/garden/gardenAssets";
 import { GARDEN_PAGE_TITLE, GARDEN_WATER_BUTTON_LABEL } from "@/lib/garden/gardenCopy";
@@ -23,6 +24,7 @@ import type {
   GardenStateView,
 } from "@/lib/garden/gardenPlant";
 import { LOG_HOUSE_BACK_TO_LABEL } from "@/lib/journal/logHouseLabels";
+import type { LogHouseRoomTimeOfDay } from "@/lib/loghouse/logHouseRoomTimeTheme";
 
 type Props = {
   initialState: GardenStateView;
@@ -52,28 +54,36 @@ function GardenStage({
   busy,
   showWateringCan,
   onWater,
+  timeOfDay,
 }: {
   plant: GardenPlantView;
   displayFlowers: GardenDisplayFlowerView[];
   busy: boolean;
   showWateringCan: boolean;
   onWater: () => void;
+  timeOfDay: LogHouseRoomTimeOfDay;
 }) {
   const plantBox = GARDEN_MOBILE_PLANT_PLACEMENT;
   const canBox = GARDEN_MOBILE_WATERING_CAN_PLACEMENT;
 
   return (
     <>
-      <Image
-        src={GARDEN_BG_SRC}
-        alt=""
-        fill
-        priority
-        sizes="100vw"
-        className="z-0 object-contain object-center"
-        draggable={false}
-        unoptimized
-      />
+      {(["day", "night"] as const).map((id) => (
+        <Image
+          key={id}
+          src={GARDEN_BG_BY_TIME[id]}
+          alt=""
+          fill
+          priority={id === timeOfDay}
+          sizes="100vw"
+          className={[
+            "z-0 object-contain object-center transition-opacity duration-700 ease-in-out",
+            timeOfDay === id ? "opacity-100" : "opacity-0",
+          ].join(" ")}
+          draggable={false}
+          unoptimized
+        />
+      ))}
 
       {GARDEN_MOBILE_DISPLAY_SLOT_PLACEMENTS.map((slot) => {
         const flower = displayFlowers.find((f) => f.slotIndex === slot.slotIndex);
@@ -183,6 +193,8 @@ export function GardenMobileImmersive({
     return () => window.clearTimeout(timer);
   }, [clearNotice, error, notice]);
 
+  const { timeOfDay } = useLogHouseRoomTimeTheme();
+  const ambientBg = timeOfDay === "night" ? "#1a2430" : "#dfe8d4";
   const showBloom = plant.showBloomChoices;
   const showWateringCan = !plant.isComplete;
 
@@ -251,7 +263,7 @@ export function GardenMobileImmersive({
           className="relative w-full overflow-hidden rounded-2xl border border-stone-200/90 shadow-sm"
           style={{
             aspectRatio: `${GARDEN_BG_INTRINSIC.widthPx} / ${GARDEN_BG_INTRINSIC.heightPx}`,
-            backgroundColor: "#dfe8d4",
+            backgroundColor: ambientBg,
           }}
         >
           <div className="absolute inset-0 isolate overflow-hidden">
@@ -261,6 +273,7 @@ export function GardenMobileImmersive({
               busy={busy}
               showWateringCan={showWateringCan}
               onWater={() => void water()}
+              timeOfDay={timeOfDay}
             />
           </div>
           {chrome}
@@ -272,7 +285,7 @@ export function GardenMobileImmersive({
   return (
     <div
       className="fixed inset-0 z-[60] overflow-hidden overscroll-none select-none"
-      style={{ touchAction: "none", backgroundColor: "#dfe8d4" }}
+      style={{ touchAction: "none", backgroundColor: ambientBg }}
     >
       <div className="absolute inset-0 overflow-hidden">
         <div
@@ -285,6 +298,7 @@ export function GardenMobileImmersive({
             busy={busy}
             showWateringCan={showWateringCan}
             onWater={() => void water()}
+            timeOfDay={timeOfDay}
           />
         </div>
       </div>

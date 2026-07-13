@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import { AppTransitionLink } from "@/components/ui/AppTransitionLink";
 import { OwlSpinIndicator } from "@/components/ui/OwlSpinIndicator";
 import { useDelayedBusy } from "@/hooks/useDelayedBusy";
+import { useLogHouseRoomTimeTheme } from "@/hooks/useLogHouseRoomTimeOfDay";
 import {
   FOREST_GUIDE_MAP_BUILDINGS,
   type ForestGuideMapBuildingId,
@@ -15,7 +16,7 @@ import type { ForestGuideMapKanteiHallLink } from "@/lib/help/forestGuideMapKant
 import { forestGuideMapHotspots } from "@/lib/help/bambooForestGuideMapHotspots";
 import {
   BAMBOO_FOREST_GUIDE_MAP_INTRINSIC,
-  bambooForestGuideMapSrc,
+  BAMBOO_FOREST_GUIDE_MAP_SRC_BY_TIME,
 } from "@/lib/help/bambooForestGuideMap";
 import { KANTEI_HALL_MAP_BODY_HAS_KANTEI } from "@/lib/kantei/kanteiHallCopy";
 
@@ -143,6 +144,8 @@ export function BambooForestGuideMap({
   alt = "BambooNOOKの森の案内図",
 }: Props) {
   const { link: kanteiHallLink, loading: kanteiHallLinkLoading } = useKanteiHallMapLink();
+  const { timeOfDay } = useLogHouseRoomTimeTheme();
+  const ambientBg = timeOfDay === "night" ? "#1a2430" : "#ebe4d4";
   const [selectedId, setSelectedId] = useState<ForestGuideMapBuildingId | null>(null);
 
   const intrinsic = BAMBOO_FOREST_GUIDE_MAP_INTRINSIC;
@@ -152,19 +155,25 @@ export function BambooForestGuideMap({
   return (
     <figure className={className}>
       <div
-        className="relative mx-auto w-full max-w-md overflow-hidden rounded-xl border border-stone-200/90 bg-[#ebe4d4] shadow-sm"
-        style={{ aspectRatio }}
+        className="relative mx-auto w-full max-w-md overflow-hidden rounded-xl border border-stone-200/90 shadow-sm"
+        style={{ aspectRatio, backgroundColor: ambientBg }}
       >
-        <Image
-          src={bambooForestGuideMapSrc()}
-          alt=""
-          fill
-          sizes="(max-width: 1023px) 100vw, 28rem"
-          className="object-contain"
-          quality={100}
-          unoptimized
-          priority
-        />
+        {(["day", "night"] as const).map((id) => (
+          <Image
+            key={id}
+            src={BAMBOO_FOREST_GUIDE_MAP_SRC_BY_TIME[id]}
+            alt=""
+            fill
+            sizes="(max-width: 1023px) 100vw, 28rem"
+            className={[
+              "object-contain transition-opacity duration-700 ease-in-out",
+              timeOfDay === id ? "opacity-100" : "opacity-0",
+            ].join(" ")}
+            quality={100}
+            unoptimized
+            priority={id === timeOfDay}
+          />
+        ))}
 
         <div className="absolute inset-0" aria-hidden={false}>
           {hotspots.map((spot) => {
