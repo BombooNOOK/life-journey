@@ -1,7 +1,7 @@
 /** どんぐりUI資産（カプセル・どんぐり帳） */
 export const DONGURI_ASSET_DIR = "/images/ljd/donguri" as const;
 
-const DONGURI_ASSET_VERSION = 1;
+const DONGURI_ASSET_VERSION = 2;
 
 function donguriAsset(filename: string): string {
   return `${DONGURI_ASSET_DIR}/${filename}?v=${DONGURI_ASSET_VERSION}`;

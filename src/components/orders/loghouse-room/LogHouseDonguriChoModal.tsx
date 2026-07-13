@@ -24,7 +24,7 @@ type Props = {
   onClose: () => void;
 };
 
-/** ログハウス上にふわっと開くどんぐり帳カード */
+/** ログハウス上にふわっと開くどんぐり帳カード（縦長帳面） */
 export function LogHouseDonguriChoModal({ open, view, onClose }: Props) {
   useEffect(() => {
     if (!open) return;
@@ -38,7 +38,7 @@ export function LogHouseDonguriChoModal({ open, view, onClose }: Props) {
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-[70] flex items-center justify-center px-4">
+    <div className="fixed inset-0 z-[70] flex items-center justify-center px-4 py-6">
       <button
         type="button"
         className="absolute inset-0 bg-stone-900/35 backdrop-blur-[2px]"
@@ -50,22 +50,22 @@ export function LogHouseDonguriChoModal({ open, view, onClose }: Props) {
         role="dialog"
         aria-modal="true"
         aria-labelledby="donguri-cho-title"
-        className="relative z-10 w-full max-w-sm overflow-hidden rounded-[1.75rem] shadow-[0_18px_48px_rgba(80,62,44,0.22)]"
+        className="relative z-10 w-full max-w-[19.5rem] overflow-hidden"
+        style={{ aspectRatio: "251 / 448" }}
       >
         <div className="pointer-events-none absolute inset-0" aria-hidden>
           <Image
             src={DONGURI_CHO_CARD_SRC}
             alt=""
             fill
-            className="object-cover object-center"
-            sizes="24rem"
+            className="object-contain object-center drop-shadow-[0_16px_40px_rgba(80,62,44,0.28)]"
+            sizes="20rem"
             unoptimized
             priority
           />
-          <div className="absolute inset-0 bg-[#f6efe4]/55" />
         </div>
 
-        <div className="relative px-5 pb-5 pt-6 sm:px-6">
+        <div className="relative flex h-full flex-col px-[12%] pb-[10%] pt-[11%]">
           <div className="flex items-center justify-center gap-2">
             <Image
               src={DONGURI_ICON_SRC}
@@ -81,7 +81,7 @@ export function LogHouseDonguriChoModal({ open, view, onClose }: Props) {
             </h2>
           </div>
 
-          <section className="mt-5 rounded-2xl border border-[#d9c7ad]/70 bg-[#fffdf8]/72 px-4 py-3.5 text-center shadow-sm">
+          <section className="mt-4 rounded-2xl border border-[#d9c7ad]/55 bg-[#fffdf8]/55 px-3.5 py-3 text-center">
             <p className="text-xs font-medium tracking-wide text-stone-500">{DONGURI_BALANCE_LABEL}</p>
             <p className="mt-1 text-3xl font-semibold tabular-nums text-stone-900">
               {view.balance}
@@ -90,7 +90,7 @@ export function LogHouseDonguriChoModal({ open, view, onClose }: Props) {
           </section>
 
           {view.todayDelivery ? (
-            <section className="mt-3 rounded-2xl border border-[#d9c7ad]/55 bg-[#fffdf8]/65 px-4 py-3">
+            <section className="mt-2.5 rounded-2xl border border-[#d9c7ad]/45 bg-[#fffdf8]/45 px-3.5 py-2.5">
               <p className="text-xs font-medium tracking-wide text-stone-500">
                 {DONGURI_TODAY_DELIVERY_LABEL}
               </p>
@@ -103,7 +103,7 @@ export function LogHouseDonguriChoModal({ open, view, onClose }: Props) {
             </section>
           ) : null}
 
-          <section className="mt-3 rounded-2xl border border-[#d9c7ad]/55 bg-[#fffdf8]/65 px-4 py-3">
+          <section className="mt-2.5 min-h-0 flex-1 overflow-auto rounded-2xl border border-[#d9c7ad]/45 bg-[#fffdf8]/45 px-3.5 py-2.5">
             <p className="text-xs font-medium tracking-wide text-stone-500">
               {DONGURI_RECENT_LEDGER_LABEL}
             </p>
@@ -134,7 +134,7 @@ export function LogHouseDonguriChoModal({ open, view, onClose }: Props) {
           <button
             type="button"
             onClick={onClose}
-            className="mt-5 inline-flex min-h-[44px] w-full items-center justify-center rounded-xl border border-stone-400/35 bg-[#fffdf9]/85 text-sm font-medium text-stone-700 transition hover:bg-white"
+            className="mt-3 inline-flex min-h-[42px] w-full shrink-0 items-center justify-center rounded-xl border border-stone-400/35 bg-[#fffdf9]/75 text-sm font-medium text-stone-700 transition hover:bg-white/90"
           >
             {DONGURI_CLOSE_LABEL}
           </button>
