@@ -36,6 +36,7 @@ import {
   readFirstVisitOrderGuideFlag,
   readFirstVisitPathGuidePrologueWatchedFlag,
   readFirstVisitPathGuideWritingHabitDismissedFlag,
+  readOnboardingChapter1CompleteCookie,
   setFirstVisitChapter3StartedFlag,
   setFirstVisitPathGuidePrologueWatchedFlag,
   setFirstVisitPathGuideWritingHabitDismissedFlag,
@@ -58,23 +59,27 @@ const BOOTSTRAP_INPUT: ChapterProgressInput = {
   bookshelfKanteiGuide: false,
   orderGuide: false,
   fromRegisterHandoff: false,
+  hasResidentCard: false,
 };
 
 function buildProgressInput(
   branch: FirstVisitReadyBranch,
   journalEntryCount: number,
+  hasResidentCard: boolean,
 ): ChapterProgressInput {
   return {
     branch,
     journalEntryCount,
     savedStage: readFirstVisitProgressStage(),
-    chapter1CompleteFlag: readFirstVisitChapterCompleteFlag(1),
+    chapter1CompleteFlag:
+      readFirstVisitChapterCompleteFlag(1) || readOnboardingChapter1CompleteCookie(),
     chapter2CompleteFlag: readFirstVisitChapterCompleteFlag(2),
     chapter3CompleteFlag: readFirstVisitChapterCompleteFlag(3),
     chapter3StartedFlag: readFirstVisitChapter3StartedFlag(),
     bookshelfKanteiGuide: readBookshelfKanteiGuideFlag(),
     orderGuide: readFirstVisitOrderGuideFlag(),
     fromRegisterHandoff: readFirstVisitFromRegisterFlag(),
+    hasResidentCard,
   };
 }
 
@@ -88,16 +93,19 @@ export function FirstVisitPathGuidePage() {
   const [writingHabitDismissed, setWritingHabitDismissed] = useState(true);
   const [allChaptersComplete, setAllChaptersComplete] = useState(false);
 
-  const syncFromSession = useCallback((branch: FirstVisitReadyBranch, journalEntryCount: number) => {
-    const input = buildProgressInput(branch, journalEntryCount);
-    setChapters(resolveFirstVisitChapterCards(input));
-    setAllChaptersComplete(isFirstVisitPathGuideComplete(input));
-  }, []);
+  const syncFromSession = useCallback(
+    (branch: FirstVisitReadyBranch, journalEntryCount: number, hasResidentCard: boolean) => {
+      const input = buildProgressInput(branch, journalEntryCount, hasResidentCard);
+      setChapters(resolveFirstVisitChapterCards(input));
+      setAllChaptersComplete(isFirstVisitPathGuideComplete(input));
+    },
+    [],
+  );
 
   useEffect(() => {
     setPrologueWatched(readFirstVisitPathGuidePrologueWatchedFlag());
     setWritingHabitDismissed(readFirstVisitPathGuideWritingHabitDismissedFlag());
-    syncFromSession("guest", 0);
+    syncFromSession("guest", 0, false);
 
     const controller = new AbortController();
     const timeoutId = window.setTimeout(() => controller.abort(), CONTEXT_FETCH_TIMEOUT_MS);
@@ -108,7 +116,7 @@ export function FirstVisitPathGuidePage() {
         return (await res.json()) as FirstVisitReadyContext;
       })
       .then((data) => {
-        syncFromSession(data.branch, data.journalEntryCount ?? 0);
+        syncFromSession(data.branch, data.journalEntryCount ?? 0, data.hasResidentCard === true);
       })
       .catch(() => {
         // ゲスト表示のまま
@@ -118,8 +126,8 @@ export function FirstVisitPathGuidePage() {
       });
 
     return () => {
-      controller.abort();
       window.clearTimeout(timeoutId);
+      controller.abort();
     };
   }, [syncFromSession]);
 

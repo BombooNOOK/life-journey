@@ -42,7 +42,29 @@ describe("chapterProgress", () => {
     });
     expect(cards[0]?.status).toBe("in_progress");
     expect(cards[0]?.buttonLabel).toBe("続きから進む");
+    expect(cards[0]?.actionHref).toBe(FIRST_VISIT_ROUTES.residentCard);
     expect(cards[1]?.status).toBe("locked");
+  });
+
+  it("resumes logged-in users with a resident card at loghouse complete (chapter 1 end)", () => {
+    const cards = resolveFirstVisitChapterCards({
+      ...baseInput,
+      branch: "needsKantei",
+      hasResidentCard: true,
+    });
+    expect(cards[0]?.status).toBe("in_progress");
+    expect(cards[0]?.actionHref).toBe(FIRST_VISIT_ROUTES.kantei);
+    expect(cards[1]?.status).toBe("locked");
+  });
+
+  it("does not send resident-card holders back to resident-card via fromRegister handoff", () => {
+    const cards = resolveFirstVisitChapterCards({
+      ...baseInput,
+      branch: "needsKantei",
+      fromRegisterHandoff: true,
+      hasResidentCard: true,
+    });
+    expect(cards[0]?.actionHref).toBe(FIRST_VISIT_ROUTES.kantei);
   });
 
   it("unlocks chapter 2 when chapter 1 end stage is saved without entering chapter 2", () => {

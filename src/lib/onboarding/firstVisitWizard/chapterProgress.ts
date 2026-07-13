@@ -49,6 +49,8 @@ export type ChapterProgressInput = {
   bookshelfKanteiGuide: boolean;
   orderGuide: boolean;
   fromRegisterHandoff: boolean;
+  /** 住民票が既に発行済み（DB）なら住民票ページへ戻さない */
+  hasResidentCard?: boolean;
 };
 
 function isLoggedIn(branch: FirstVisitReadyBranch): boolean {
@@ -111,12 +113,26 @@ function isChapter3InProgress(input: ChapterProgressInput, ch3Complete: boolean)
 }
 
 function resolveChapter1ResumeHref(input: ChapterProgressInput): string {
-  if (input.fromRegisterHandoff) return FIRST_VISIT_ROUTES.residentCard;
-  if (input.savedStage === "register") return FIRST_VISIT_ROUTES.residentCard;
+  const hasResidentCard = input.hasResidentCard === true;
+
+  // 新規登録直後だけ住民票へ。発行済みなら建築〜第1章完了へ進める
+  if (input.fromRegisterHandoff && !hasResidentCard) {
+    return FIRST_VISIT_ROUTES.residentCard;
+  }
+  if (input.savedStage === "register" && !hasResidentCard) {
+    return FIRST_VISIT_ROUTES.residentCard;
+  }
   if (input.savedStage && (CHAPTER_1_STAGES as readonly string[]).includes(input.savedStage)) {
+    // 住民票済みなのに進捗が住民票のままなら、ログハウス完成（第1章区切り）へ
+    if (hasResidentCard && (input.savedStage === "register" || input.savedStage === "resident-card")) {
+      return FIRST_VISIT_ROUTES.kantei;
+    }
     return firstVisitProgressHref(input.savedStage);
   }
-  if (isLoggedIn(input.branch)) return FIRST_VISIT_ROUTES.residentCard;
+  if (isLoggedIn(input.branch)) {
+    // ログハウスで過ごしているユーザーが session を失った場合の再開先
+    return hasResidentCard ? FIRST_VISIT_ROUTES.kantei : FIRST_VISIT_ROUTES.residentCard;
+  }
   return FIRST_VISIT_ROUTES.register;
 }
 

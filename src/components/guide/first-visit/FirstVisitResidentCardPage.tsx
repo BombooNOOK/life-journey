@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 
@@ -22,7 +23,6 @@ import {
   readFirstVisitFromRegisterFlag,
   readFirstVisitResidentCardVideoDoneFlag,
   readFirstVisitWelcomeEmailSentFlag,
-  setFirstVisitFromRegisterFlag,
   setFirstVisitResidentCardVideoDoneFlag,
 } from "@/lib/onboarding/firstVisitWizard/session";
 
@@ -43,6 +43,7 @@ export function FirstVisitResidentCardPage() {
   const [card, setCard] = useState<ForestResidentCardData | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [authSettling, setAuthSettling] = useState(() => hasRegisterHandoff() && !isLoggedIn);
+  const [authTimedOut, setAuthTimedOut] = useState(false);
   const [viewPhase, setViewPhase] = useState<ViewPhase>(() =>
     readFirstVisitResidentCardVideoDoneFlag() ? "card" : "video",
   );
@@ -62,12 +63,14 @@ export function FirstVisitResidentCardPage() {
   useEffect(() => {
     if (isLoggedIn) {
       setAuthSettling(false);
+      setAuthTimedOut(false);
       return;
     }
     if (!hasRegisterHandoff()) return;
 
     let cancelled = false;
     setAuthSettling(true);
+    setAuthTimedOut(false);
 
     void (async () => {
       try {
@@ -90,7 +93,10 @@ export function FirstVisitResidentCardPage() {
       } catch {
         /* noop */
       }
-      if (!cancelled) setAuthSettling(false);
+      if (!cancelled) {
+        setAuthSettling(false);
+        setAuthTimedOut(true);
+      }
     })();
 
     return () => {
@@ -120,7 +126,7 @@ export function FirstVisitResidentCardPage() {
       .then((data) => {
         if (!cancelled) {
           setCard(data.card);
-          setFirstVisitFromRegisterFlag();
+          // 新規登録直後の handoff フラグは維持するが、再訪時に付け直さない
         }
       })
       .catch(() => {
@@ -141,6 +147,37 @@ export function FirstVisitResidentCardPage() {
     pinFirstVisitRegistrationHistory();
     replace(FIRST_VISIT_ROUTES.loghouseSign);
   }, [replace]);
+
+  if (authTimedOut && !isLoggedIn) {
+    return (
+      <div className="mx-auto flex min-h-[70dvh] w-full max-w-md flex-col justify-center gap-4 px-4 py-10 text-center">
+        <p className="text-base font-medium text-stone-800">ログイン状態を確認できませんでした</p>
+        <p className="text-sm leading-relaxed text-stone-600">
+          すでにログハウスで過ごしている場合は、住民票の再発行は不要です。ログハウスへ戻るか、もう一度ログインしてください。
+        </p>
+        <div className="flex flex-col gap-2">
+          <Link
+            href="/orders"
+            className="inline-flex min-h-[44px] items-center justify-center rounded-xl bg-emerald-800 px-4 text-sm font-semibold text-white"
+          >
+            ログハウスへ戻る
+          </Link>
+          <Link
+            href={buildLoginHref(FIRST_VISIT_ROUTES.kanteiReady, "login")}
+            className="inline-flex min-h-[44px] items-center justify-center rounded-xl border border-stone-300 bg-white px-4 text-sm font-medium text-stone-800"
+          >
+            ログインしなおす
+          </Link>
+          <Link
+            href={FIRST_VISIT_ROUTES.pathGuide}
+            className="text-sm text-stone-600 underline-offset-2 hover:underline"
+          >
+            はじめての道しるべへ
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   if (authLoading || authSettling || !isLoggedIn) {
     return (

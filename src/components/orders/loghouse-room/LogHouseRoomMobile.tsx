@@ -64,7 +64,7 @@ const KANTEI_LOCK: Pick<SpotAction, "href" | "lockMessage" | "lockCta"> = {
   href: null,
   lockMessage: LOG_HOUSE_ROOM_KANTEI_LOCK_MESSAGE,
   lockCta: {
-    href: FIRST_VISIT_ROUTES.pathGuide,
+    href: FIRST_VISIT_ROUTES.kanteiReady,
     label: LOG_HOUSE_ROOM_KANTEI_LOCK_CTA_LABEL,
   },
 };

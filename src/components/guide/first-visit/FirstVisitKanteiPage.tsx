@@ -5,6 +5,7 @@ import { useCallback, useEffect, useState } from "react";
 
 import { useFirebaseAuth } from "@/components/auth/FirebaseAuthProvider";
 import { buildLoginHref } from "@/app/login/loginFlow";
+import { isLjLoggedInOnClient } from "@/lib/auth/clientCookies";
 import {
   companionWritingGuideBodyClass,
   companionWritingGuidePrimaryButtonClass,
@@ -32,6 +33,7 @@ export function FirstVisitKanteiPage() {
   const { replace, isPending } = useTransitionNavigation();
   const { user, loading } = useFirebaseAuth();
   const isLoggedIn = Boolean(user?.email?.trim());
+  const sessionLooksLoggedIn = isLoggedIn || isLjLoggedInOnClient();
   const [illustrationReady, setIllustrationReady] = useState(false);
 
   useEffect(() => {
@@ -50,15 +52,14 @@ export function FirstVisitKanteiPage() {
 
   useEffect(() => {
     if (loading) return;
-    if (!isLoggedIn) {
-      router.replace(buildLoginHref(FIRST_VISIT_ROUTES.kantei, "login"));
-    }
-  }, [isLoggedIn, loading, router]);
+    if (sessionLooksLoggedIn) return;
+    router.replace(buildLoginHref(FIRST_VISIT_ROUTES.kantei, "login"));
+  }, [loading, router, sessionLooksLoggedIn]);
 
   useEffect(() => {
-    if (loading || !isLoggedIn || !illustrationReady) return;
+    if (loading || !sessionLooksLoggedIn || !illustrationReady) return;
     setFirstVisitChapterCompleteFlag(1);
-  }, [illustrationReady, isLoggedIn, loading]);
+  }, [illustrationReady, loading, sessionLooksLoggedIn]);
 
   const handleProceed = useCallback(() => {
     replace(FIRST_VISIT_ROUTES.kanteiReady);
@@ -68,12 +69,12 @@ export function FirstVisitKanteiPage() {
     replace(FIRST_VISIT_ROUTES.pathGuide);
   }, [replace]);
 
-  if (loading || !isLoggedIn || !illustrationReady) {
+  if (loading || !sessionLooksLoggedIn || !illustrationReady) {
     return (
       <OwlLoadingPanel
         layout="page"
         label={
-          loading || !isLoggedIn
+          loading || !sessionLooksLoggedIn
             ? "ログイン状態を確認しています…"
             : "ログハウスの完成を読み込んでいます…"
         }
