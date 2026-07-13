@@ -72,10 +72,31 @@ export const GARDEN_WATERED_SOFT_MESSAGE =
   "今日はもうお水をもらって、うれしそうです" as const;
 
 export const GARDEN_COMPLETE_TITLE = "きれいなお花が咲きました" as const;
-export const GARDEN_COMPLETE_SUB = `${GARDEN_WATER_GOAL}日分のお水で、ここまで育ちました` as const;
-export const GARDEN_COMPLETE_BODY = "今日も見に来てくれてありがとう" as const;
+export const GARDEN_COMPLETE_SUB =
+  `${GARDEN_WATER_GOAL}日分のお水で、\nここまで育ちました。` as const;
+export const GARDEN_COMPLETE_PROMPT = "このお花をどうしますか？" as const;
+export const GARDEN_COMPLETE_BODY = GARDEN_COMPLETE_PROMPT;
 
 export const GARDEN_GROWING_SUB = "今日も少し育っています" as const;
+
+export const GARDEN_BLOOM_CHOICE_DISPLAY = "お庭に飾る" as const;
+export const GARDEN_BLOOM_CHOICE_KEEP = "このまま置いておく" as const;
+export const GARDEN_BLOOM_CHOICE_SHARE = "クマくんのショップにおすそわけする" as const;
+
+export const GARDEN_DISPLAY_DONE_MESSAGE =
+  "お花をお庭に飾りました。\nログハウスのそばに、またひとつ思い出が増えました。" as const;
+
+export const GARDEN_KEEP_DONE_MESSAGE =
+  "このまま、もう少し眺めておくことにしました。\nお花はいつでも飾ることができます。" as const;
+
+export const GARDEN_SHARE_COMING_SOON_MESSAGE =
+  "クマくんのショップにお花をおすそわけすると、\nお礼にどんぐりがもらえます。\n\nいまは準備中です。もうしばらくお待ちください。" as const;
+
+export const GARDEN_DISPLAY_SLOTS_FULL_MESSAGE = "飾る場所がいっぱいです" as const;
+
+export const GARDEN_DISPLAY_SLOT_PICK_PROMPT = "どの場所に飾りますか？" as const;
+
+export const GARDEN_DISPLAY_SLOT_COUNT = 3 as const;
 
 export const GARDEN_PAGE_PATH = "/orders/garden" as const;
 

@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useEffect, type CSSProperties } from "react";
 
+import { GardenBloomChoicePanel } from "@/components/orders/GardenBloomChoicePanel";
 import { useGardenWatering } from "@/hooks/useGardenWatering";
 import {
   GARDEN_BG_INTRINSIC,
@@ -12,14 +13,19 @@ import {
 } from "@/lib/garden/gardenAssets";
 import { GARDEN_PAGE_TITLE, GARDEN_WATER_BUTTON_LABEL } from "@/lib/garden/gardenCopy";
 import {
+  GARDEN_MOBILE_DISPLAY_SLOT_PLACEMENTS,
   GARDEN_MOBILE_PLANT_PLACEMENT,
   GARDEN_MOBILE_WATERING_CAN_PLACEMENT,
 } from "@/lib/garden/gardenMobileLayout";
-import type { GardenPlantView } from "@/lib/garden/gardenPlant";
+import type {
+  GardenDisplayFlowerView,
+  GardenPlantView,
+  GardenStateView,
+} from "@/lib/garden/gardenPlant";
 import { LOG_HOUSE_BACK_TO_LABEL } from "@/lib/journal/logHouseLabels";
 
 type Props = {
-  initialPlant: GardenPlantView;
+  initialState: GardenStateView;
   /** ログイン不要プレビュー（APIなし・連続水やり可） */
   previewMode?: boolean;
   backHref?: string;
@@ -42,15 +48,20 @@ function containStageStyle(size: { widthPx: number; heightPx: number }): CSSProp
 
 function GardenStage({
   plant,
+  displayFlowers,
   busy,
+  showWateringCan,
   onWater,
 }: {
   plant: GardenPlantView;
+  displayFlowers: GardenDisplayFlowerView[];
   busy: boolean;
+  showWateringCan: boolean;
   onWater: () => void;
 }) {
   const plantBox = GARDEN_MOBILE_PLANT_PLACEMENT;
   const canBox = GARDEN_MOBILE_WATERING_CAN_PLACEMENT;
+  const showCenterPlant = plant.waterCount > 0 || plant.isComplete;
 
   return (
     <>
@@ -65,77 +76,118 @@ function GardenStage({
         unoptimized
       />
 
-      <div
-        className="pointer-events-none absolute z-10"
-        style={{
-          left: `${plantBox.x}%`,
-          top: `${plantBox.y}%`,
-          width: `${plantBox.width}%`,
-          height: `${plantBox.height}%`,
-        }}
-      >
-        <Image
-          key={plant.plantImageSrc}
-          src={plant.plantImageSrc}
-          alt={`成長段階 ${plant.stage}`}
-          fill
-          className="object-contain object-bottom drop-shadow-sm"
-          sizes="60vw"
-          unoptimized
-        />
-      </div>
+      {GARDEN_MOBILE_DISPLAY_SLOT_PLACEMENTS.map((slot) => {
+        const flower = displayFlowers.find((f) => f.slotIndex === slot.slotIndex);
+        if (!flower) return null;
+        return (
+          <div
+            key={flower.id}
+            className="pointer-events-none absolute z-10"
+            style={{
+              left: `${slot.x}%`,
+              top: `${slot.y}%`,
+              width: `${slot.width}%`,
+              height: `${slot.height}%`,
+            }}
+          >
+            <Image
+              src={flower.plantImageSrc}
+              alt={`飾ったお花（場所 ${slot.slotIndex}）`}
+              fill
+              className="object-contain object-bottom drop-shadow-sm"
+              sizes="30vw"
+              unoptimized
+            />
+          </div>
+        );
+      })}
 
-      <button
-        type="button"
-        disabled={busy}
-        aria-label={
-          plant.canWater ? GARDEN_WATER_BUTTON_LABEL : (plant.softMessage ?? plant.statusLabel)
-        }
-        onClick={onWater}
-        className={[
-          "absolute z-20 rounded-2xl border-2 border-transparent transition duration-200",
-          "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-700",
-          plant.canWater ? "hover:brightness-105 active:scale-[0.97]" : "opacity-80",
-          busy ? "opacity-60" : "",
-        ].join(" ")}
-        style={{
-          left: `${canBox.x}%`,
-          top: `${canBox.y}%`,
-          width: `${canBox.width}%`,
-          height: `${canBox.height}%`,
-        }}
-      >
-        <Image
-          src={GARDEN_WATERING_CAN_SRC}
-          alt=""
-          fill
-          className="pointer-events-none object-contain object-bottom"
-          sizes="40vw"
-          unoptimized
-        />
-      </button>
+      {showCenterPlant ? (
+        <div
+          className="pointer-events-none absolute z-10"
+          style={{
+            left: `${plantBox.x}%`,
+            top: `${plantBox.y}%`,
+            width: `${plantBox.width}%`,
+            height: `${plantBox.height}%`,
+          }}
+        >
+          <Image
+            key={plant.plantImageSrc}
+            src={plant.plantImageSrc}
+            alt={`成長段階 ${plant.stage}`}
+            fill
+            className="object-contain object-bottom drop-shadow-sm"
+            sizes="60vw"
+            unoptimized
+          />
+        </div>
+      ) : null}
+
+      {showWateringCan ? (
+        <button
+          type="button"
+          disabled={busy}
+          aria-label={
+            plant.canWater ? GARDEN_WATER_BUTTON_LABEL : (plant.softMessage ?? plant.statusLabel)
+          }
+          onClick={onWater}
+          className={[
+            "absolute z-20 rounded-2xl border-2 border-transparent transition duration-200",
+            "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-700",
+            plant.canWater ? "hover:brightness-105 active:scale-[0.97]" : "opacity-80",
+            busy ? "opacity-60" : "",
+          ].join(" ")}
+          style={{
+            left: `${canBox.x}%`,
+            top: `${canBox.y}%`,
+            width: `${canBox.width}%`,
+            height: `${canBox.height}%`,
+          }}
+        >
+          <Image
+            src={GARDEN_WATERING_CAN_SRC}
+            alt=""
+            fill
+            className="pointer-events-none object-contain object-bottom"
+            sizes="40vw"
+            unoptimized
+          />
+        </button>
+      ) : null}
     </>
   );
 }
 
 /** スマホ：お庭背景＋植木鉢＋ジョウロタップで水やり（庭全体が見える） */
 export function GardenMobileImmersive({
-  initialPlant,
+  initialState,
   previewMode = false,
   backHref = "/orders",
   layout = "immersive",
 }: Props) {
-  const { plant, busy, error, notice, water, clearNotice } = useGardenWatering(initialPlant, {
-    previewMode,
-  });
+  const {
+    plant,
+    displayFlowers,
+    freeDisplaySlots,
+    busy,
+    error,
+    notice,
+    water,
+    chooseBloom,
+    clearNotice,
+  } = useGardenWatering(initialState, { previewMode });
 
   useEffect(() => {
     if (!notice && !error) return;
     const timer = window.setTimeout(() => {
       clearNotice();
-    }, 4200);
+    }, 5200);
     return () => window.clearTimeout(timer);
   }, [clearNotice, error, notice]);
+
+  const showBloom = plant.showBloomChoices;
+  const showWateringCan = !plant.isComplete;
 
   const chrome = (
     <>
@@ -154,18 +206,33 @@ export function GardenMobileImmersive({
       </div>
 
       <div className="pointer-events-none absolute inset-x-0 bottom-0 z-40 px-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
-        <div className="mx-auto max-w-sm space-y-2 rounded-2xl border border-stone-200/70 bg-[#fffdf9]/88 px-3.5 py-3 text-center shadow-lg backdrop-blur-[2px]">
-          <p className="text-sm leading-relaxed text-stone-700">{plant.comment}</p>
-          <p className="text-xs text-stone-600">{plant.progressPrimary}</p>
-          <p className="text-xs text-stone-500">{plant.progressSecondary}</p>
-          {!plant.isComplete ? (
-            <p className="text-xs text-stone-600">{plant.statusLabel}</p>
-          ) : null}
-          {plant.canWater ? (
-            <p className="text-[11px] text-emerald-900/80">ジョウロをタップしてお水をあげられます</p>
-          ) : null}
+        <div className="pointer-events-auto mx-auto max-w-sm space-y-2 rounded-2xl border border-stone-200/70 bg-[#fffdf9]/92 px-3.5 py-3 text-center shadow-lg backdrop-blur-[2px]">
+          {showBloom ? (
+            <GardenBloomChoicePanel
+              compact
+              busy={busy}
+              freeDisplaySlots={freeDisplaySlots}
+              onChoose={(choice, slotIndex) => void chooseBloom(choice, slotIndex)}
+            />
+          ) : (
+            <>
+              <p className="text-sm leading-relaxed text-stone-700">{plant.comment}</p>
+              <p className="text-xs text-stone-600">{plant.progressPrimary}</p>
+              <p className="whitespace-pre-line text-xs text-stone-500">
+                {plant.progressSecondary}
+              </p>
+              {!plant.isComplete ? (
+                <p className="text-xs text-stone-600">{plant.statusLabel}</p>
+              ) : null}
+              {plant.canWater ? (
+                <p className="text-[11px] text-emerald-900/80">
+                  ジョウロをタップしてお水をあげられます
+                </p>
+              ) : null}
+            </>
+          )}
           {notice ? (
-            <p className="text-sm leading-relaxed text-emerald-900" role="status">
+            <p className="whitespace-pre-line text-sm leading-relaxed text-emerald-900" role="status">
               {notice}
             </p>
           ) : null}
@@ -190,7 +257,13 @@ export function GardenMobileImmersive({
           }}
         >
           <div className="absolute inset-0 isolate overflow-hidden">
-            <GardenStage plant={plant} busy={busy} onWater={() => void water()} />
+            <GardenStage
+              plant={plant}
+              displayFlowers={displayFlowers}
+              busy={busy}
+              showWateringCan={showWateringCan}
+              onWater={() => void water()}
+            />
           </div>
           {chrome}
         </div>
@@ -208,7 +281,13 @@ export function GardenMobileImmersive({
           className="relative isolate overflow-hidden"
           style={containStageStyle(GARDEN_BG_INTRINSIC)}
         >
-          <GardenStage plant={plant} busy={busy} onWater={() => void water()} />
+          <GardenStage
+            plant={plant}
+            displayFlowers={displayFlowers}
+            busy={busy}
+            showWateringCan={showWateringCan}
+            onWater={() => void water()}
+          />
         </div>
       </div>
       {chrome}

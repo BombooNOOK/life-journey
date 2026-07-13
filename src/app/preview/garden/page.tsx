@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 
 import { GardenPreviewClient } from "@/components/orders/GardenPreviewClient";
 import { GardenMobileImmersive } from "@/components/orders/GardenMobileImmersive";
-import { buildGardenPreviewPlant } from "@/lib/garden/gardenPreviewFixture";
+import { buildGardenPreviewState } from "@/lib/garden/gardenPreviewFixture";
 
 type Props = {
   searchParams?: Promise<{ view?: string }>;
@@ -17,7 +17,7 @@ export default async function GardenPreviewPage({ searchParams }: Props) {
   if (params.view === "immersive") {
     return (
       <GardenMobileImmersive
-        initialPlant={buildGardenPreviewPlant(0)}
+        initialState={buildGardenPreviewState(0)}
         previewMode
         backHref="/preview/garden"
         layout="immersive"

@@ -15,3 +15,10 @@ export const GARDEN_MOBILE_WATERING_CAN_PLACEMENT = {
   width: 28,
   height: 15,
 } as const;
+
+/** 完成花を飾るスロット（1〜3） */
+export const GARDEN_MOBILE_DISPLAY_SLOT_PLACEMENTS = [
+  { slotIndex: 1, x: 4, y: 36, width: 22, height: 16 },
+  { slotIndex: 2, x: 74, y: 38, width: 22, height: 16 },
+  { slotIndex: 3, x: 72, y: 58, width: 22, height: 15 },
+] as const;

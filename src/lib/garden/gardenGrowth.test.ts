@@ -70,7 +70,7 @@ describe("gardenGrowth", () => {
     expect(gardenProgressSecondaryLabel(false)).toBe("今日も少し育っています");
     expect(gardenProgressPrimaryLabel(28, true)).toBe("きれいなお花が咲きました");
     expect(gardenProgressSecondaryLabel(true)).toBe(
-      "28日分のお水で、ここまで育ちました",
+      "28日分のお水で、\nここまで育ちました。",
     );
   });
 

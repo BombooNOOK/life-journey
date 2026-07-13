@@ -356,7 +356,7 @@ model Profile {
   @@index([email, isArchived])
 }
 
-/// お庭の植木鉢（プロフィールごとに1鉢・MVPは1種）
+/// お庭の植木鉢（プロフィールごとに中央1鉢・MVPは1種）
 model GardenPlant {
   id        String   @id @default(cuid())
   createdAt DateTime @default(now())
@@ -373,11 +373,33 @@ model GardenPlant {
   lastWateredOn String?
   completedAt   DateTime?
 
+  /// 満開後の選択: null=未選択 | keep | displayed | shared
+  afterBloomChoice String?
+
   /// 将来拡張用（MVP では未使用）
   flowerColor String?
   potType     String?
+  /// 0 = 中央の育成鉢
   gardenSlot  Int     @default(0)
 
   @@unique([email, profileId, seedType, gardenSlot])
+  @@index([email, profileId])
+}
+
+/// お庭に飾った完成花（スロット 1〜3）
+model GardenDisplayFlower {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  email     String
+  profileId String
+  /// 1 | 2 | 3
+  slotIndex Int
+  seedType  String @default("default")
+  flowerColor String?
+  displayedAt DateTime @default(now())
+
+  @@unique([email, profileId, slotIndex])
   @@index([email, profileId])
 }

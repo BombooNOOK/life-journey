@@ -12,7 +12,7 @@ import {
   GARDEN_PAGE_PATH,
   GARDEN_PAGE_TITLE,
 } from "@/lib/garden/gardenCopy";
-import { ensureGardenPlantForProfile } from "@/lib/garden/gardenPlant";
+import { loadGardenStateForProfile } from "@/lib/garden/gardenPlant";
 import { LOG_HOUSE_BACK_TO_LABEL } from "@/lib/journal/logHouseLabels";
 import { listProfilesAndActiveProfileId } from "@/lib/profile/activeProfile";
 
@@ -60,14 +60,14 @@ export default async function GardenPage() {
   }
 
   try {
-    const plant = await withPrismaConnectionRetry(() =>
-      ensureGardenPlantForProfile({
+    const state = await withPrismaConnectionRetry(() =>
+      loadGardenStateForProfile({
         email: viewerEmail,
         profileId: activeProfileId,
       }),
     );
 
-    return <GardenPageClient initialPlant={plant} />;
+    return <GardenPageClient initialState={state} />;
   } catch (e) {
     return (
       <LogHouseLoadErrorPanel
