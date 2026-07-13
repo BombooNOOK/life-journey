@@ -1,7 +1,13 @@
 "use client";
 
+import Image from "next/image";
+
+import {
+  LOG_HOUSE_ROOM_MAILBOX_MAIL_SRC,
+  LOG_HOUSE_ROOM_MAILBOX_SRC,
+} from "@/lib/loghouse/logHouseRoomAssets";
 import { LOG_HOUSE_ROOM_SPOT_COPY } from "@/lib/loghouse/logHouseRoomCopy";
-import { LOG_HOUSE_ROOM_MAILBOX_HOTSPOT, LOG_HOUSE_ROOM_MAILBOX_PLACEMENT } from "@/lib/loghouse/logHouseMailboxLayout";
+import { LOG_HOUSE_ROOM_MAILBOX_HOTSPOT } from "@/lib/loghouse/logHouseMailboxLayout";
 
 type Props = {
   onActivate: () => void;
@@ -9,11 +15,11 @@ type Props = {
   showDebugOutline?: boolean;
   showHintLabel?: boolean;
   flash?: boolean;
-  /** 未読があるとき、控えめなどんぐり印 */
+  /** 未読があるとき、お手紙ありポスト画像を使う */
   hasUnread?: boolean;
 };
 
-/** 玄関ポスト（靴の近く・仮ビジュアル） */
+/** 玄関ポスト（靴の近く・未読で画像切替） */
 export function LogHouseRoomMailboxSpot({
   onActivate,
   disabled = false,
@@ -23,8 +29,8 @@ export function LogHouseRoomMailboxSpot({
   hasUnread = false,
 }: Props) {
   const spot = LOG_HOUSE_ROOM_MAILBOX_HOTSPOT;
-  const box = LOG_HOUSE_ROOM_MAILBOX_PLACEMENT;
   const copy = LOG_HOUSE_ROOM_SPOT_COPY.mailbox;
+  const src = hasUnread ? LOG_HOUSE_ROOM_MAILBOX_MAIL_SRC : LOG_HOUSE_ROOM_MAILBOX_SRC;
 
   return (
     <button
@@ -51,34 +57,30 @@ export function LogHouseRoomMailboxSpot({
         height: `${spot.height}%`,
       }}
     >
-      <span
-        className="pointer-events-none absolute inset-0 flex items-end justify-center"
+      <Image
+        src={src}
+        alt=""
+        fill
         aria-hidden
-      >
-        <span
-          className={[
-            "relative flex h-[88%] w-[70%] flex-col items-center justify-end",
-            hasUnread ? "animate-pulse" : "",
-          ].join(" ")}
-          style={{
-            marginLeft: `${((box.x - spot.x) / spot.width) * 100}%`,
-          }}
-        >
-          {/* 仮ポスト：木箱＋差入口 */}
-          <span className="relative h-full w-full rounded-md border border-[#6b5344]/70 bg-gradient-to-b from-[#c4a484] to-[#8d6b4f] shadow-sm">
-            <span className="absolute inset-x-[18%] top-[22%] h-[14%] rounded-sm bg-[#5c4334]/85" />
-            <span className="absolute inset-x-[28%] bottom-[18%] top-[42%] rounded-sm border border-[#5c4334]/35 bg-[#efe2d0]/35" />
-          </span>
-          {hasUnread ? (
-            <span className="absolute -right-0.5 -top-1 text-[11px] drop-shadow-sm" title="未読">
-              🌰
-            </span>
-          ) : null}
-        </span>
-      </span>
+        className="pointer-events-none object-contain object-bottom"
+        sizes="22vw"
+        unoptimized
+        priority={hasUnread}
+      />
 
       {showHintLabel ? (
-        <span className="pointer-events-none absolute left-1/2 top-0 z-10 -translate-x-1/2">
+        <span
+          className={[
+            "pointer-events-none absolute left-1/2 z-10 -translate-x-1/2",
+            spot.hintLabelEdge === "below"
+              ? "top-full mt-0.5"
+              : spot.hintLabelEdge === "inside-bottom"
+                ? "bottom-0"
+                : spot.hintLabelEdge === "inside-top"
+                  ? "top-0"
+                  : "bottom-full mb-1",
+          ].join(" ")}
+        >
           <span className="inline-block whitespace-nowrap rounded-full bg-[#fffdf9]/85 px-2.5 py-0.5 text-[10px] font-medium tracking-wide text-stone-700 shadow-sm ring-1 ring-stone-300/35">
             {copy.label}
           </span>

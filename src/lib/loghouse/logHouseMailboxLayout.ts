@@ -1,4 +1,4 @@
-/** 玄関ポスト（靴の左・仮ビジュアル）— 576×1024 設計・% */
+/** 玄関ポスト（靴の左）— 576×1024 設計・% */
 export const LOG_HOUSE_ROOM_MAILBOX_PLACEMENT = {
   x: 18,
   y: 88.5,

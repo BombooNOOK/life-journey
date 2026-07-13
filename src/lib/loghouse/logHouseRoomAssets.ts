@@ -4,7 +4,7 @@ import type { LogHouseRoomTimeOfDay } from "@/lib/loghouse/logHouseRoomTimeTheme
 
 export const LOG_HOUSE_ROOM_ASSET_DIR = "/images/ljd/loghouse-room" as const;
 
-const LOG_HOUSE_ROOM_ASSET_VERSION = 8;
+const LOG_HOUSE_ROOM_ASSET_VERSION = 9;
 
 function logHouseRoomAsset(filename: string): string {
   return `${LOG_HOUSE_ROOM_ASSET_DIR}/${filename}?v=${LOG_HOUSE_ROOM_ASSET_VERSION}`;
@@ -67,6 +67,12 @@ export const LOG_HOUSE_ROOM_PART_INTRINSIC: Record<
 export const LOG_HOUSE_ROOM_SHOES_SRC = logHouseRoomAsset("loghouse_shoes.png");
 
 export const LOG_HOUSE_ROOM_SHOES_INTRINSIC = { widthPx: 720, heightPx: 480 } as const;
+
+/** 玄関ポスト：未読なし / お手紙あり */
+export const LOG_HOUSE_ROOM_MAILBOX_SRC = logHouseRoomAsset("loghouse_mailbox.png");
+export const LOG_HOUSE_ROOM_MAILBOX_MAIL_SRC = logHouseRoomAsset("loghouse_mailbox_mail.png");
+
+export const LOG_HOUSE_ROOM_MAILBOX_INTRINSIC = { widthPx: 480, heightPx: 480 } as const;
 
 export const LOG_HOUSE_ROOM_RABBIT_SRC = LOG_HOUSE_ROOM_PART_SRC.rabbit;
 
