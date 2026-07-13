@@ -3,6 +3,8 @@ import {
   ONBOARDING_CHAPTER1_COOKIE_MAX_AGE_SECONDS,
   ONBOARDING_CHAPTER2_COMPLETE_COOKIE,
   ONBOARDING_CHAPTER2_COOKIE_MAX_AGE_SECONDS,
+  ONBOARDING_CHAPTER3_STARTED_COOKIE,
+  ONBOARDING_CHAPTER3_STARTED_COOKIE_MAX_AGE_SECONDS,
 } from "@/lib/onboarding/onboardingStageCookies";
 
 const ORDER_GUIDE_FLAG = "ljd:firstGuide:orderGuide";
@@ -195,19 +197,41 @@ export function clearFirstVisitChapterCompleteFlag(chapter: FirstVisitChapterNum
   window.sessionStorage.removeItem(chapterCompleteKey(chapter));
 }
 
+function writeOnboardingChapter3StartedCookie(): void {
+  if (typeof document === "undefined") return;
+  const secure = window.location.protocol === "https:" ? "; Secure" : "";
+  document.cookie = `${ONBOARDING_CHAPTER3_STARTED_COOKIE}=1; Path=/; Max-Age=${ONBOARDING_CHAPTER3_STARTED_COOKIE_MAX_AGE_SECONDS}; SameSite=Lax${secure}`;
+}
+
+export function readOnboardingChapter3StartedCookie(): boolean {
+  if (typeof document === "undefined") return false;
+  return document.cookie
+    .split(";")
+    .some((part) => part.trim() === `${ONBOARDING_CHAPTER3_STARTED_COOKIE}=1`);
+}
+
 export function readFirstVisitChapter3StartedFlag(): boolean {
-  if (!canUseSessionStorage()) return false;
-  return window.sessionStorage.getItem(CHAPTER_3_STARTED_FLAG) === "1";
+  if (canUseSessionStorage() && window.sessionStorage.getItem(CHAPTER_3_STARTED_FLAG) === "1") {
+    return true;
+  }
+  return readOnboardingChapter3StartedCookie();
 }
 
 export function setFirstVisitChapter3StartedFlag(): void {
-  if (!canUseSessionStorage()) return;
-  window.sessionStorage.setItem(CHAPTER_3_STARTED_FLAG, "1");
+  if (canUseSessionStorage()) {
+    window.sessionStorage.setItem(CHAPTER_3_STARTED_FLAG, "1");
+  }
+  writeOnboardingChapter3StartedCookie();
 }
 
 export function clearFirstVisitChapter3StartedFlag(): void {
-  if (!canUseSessionStorage()) return;
-  window.sessionStorage.removeItem(CHAPTER_3_STARTED_FLAG);
+  if (canUseSessionStorage()) {
+    window.sessionStorage.removeItem(CHAPTER_3_STARTED_FLAG);
+  }
+  if (typeof document !== "undefined") {
+    const secure = window.location.protocol === "https:" ? "; Secure" : "";
+    document.cookie = `${ONBOARDING_CHAPTER3_STARTED_COOKIE}=; Path=/; Max-Age=0; SameSite=Lax${secure}`;
+  }
 }
 
 export function readFirstVisitPathGuidePrologueWatchedFlag(): boolean {

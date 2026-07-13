@@ -1,4 +1,8 @@
 import { FIRST_VISIT_ROUTES } from "@/lib/onboarding/firstVisitWizard/routes";
+import { journalWithCompanionPath } from "@/lib/journal/journalNav";
+
+/** 第3章の「次の一歩」：看板ではなく机（伴走執筆）へ。看板は道しるべ専用の演出。 */
+export const ONBOARDING_CHAPTER3_DESK_WRITING_HREF = journalWithCompanionPath("/orders");
 
 /** 0=未登録 1=登録済・ログハウス未完成 2=ログハウス完成 3=鑑定完了 4=日記1件以上 */
 export type OnboardingStage = 0 | 1 | 2 | 3 | 4;
@@ -74,7 +78,10 @@ export type OnboardingNextStep = {
 };
 
 export type OnboardingNextStepOptions = {
+  /** @deprecated 第3章バナーは看板に戻さないため未使用（互換のため残す） */
   chapter3Started?: boolean;
+  /** すでに伴走執筆画面にいるときはバナー不要 */
+  onCompanionWritingPath?: boolean;
 };
 
 export function resolveOnboardingNextStep(
@@ -108,12 +115,12 @@ export function resolveOnboardingNextStep(
   }
 
   if (stage === 3) {
-    // 看板を見たあとはログハウス内で机→伴走執筆へ進むため、重複する上部案内は出さない
-    if (options.chapter3Started) return null;
+    // 看板へ戻すとログハウス⇄看板の迷子ループになる。常に机（伴走）へ。
+    if (options.onCompanionWritingPath) return null;
     return {
-      href: FIRST_VISIT_ROUTES.chapter3Sign,
-      label: "ログハウスで日記を書く",
-      body: "看板の案内から、ログハウスで日記を書き始めましょう。",
+      href: ONBOARDING_CHAPTER3_DESK_WRITING_HREF,
+      label: "机で日記を書く",
+      body: "ログハウスの机から、どうぶつ鑑定士といっしょに、はじめての日記を書いてみましょう。",
     };
   }
 

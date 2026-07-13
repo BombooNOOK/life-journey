@@ -4,6 +4,7 @@ import { FIRST_VISIT_ROUTES } from "@/lib/onboarding/firstVisitWizard/routes";
 import {
   isOnboardingFeatureUnlocked,
   isPathAllowedForStage,
+  ONBOARDING_CHAPTER3_DESK_WRITING_HREF,
   resolveOnboardingNextStep,
   resolveOnboardingStage,
 } from "@/lib/onboarding/onboardingStage";
@@ -98,8 +99,11 @@ describe("onboardingStage", () => {
   it("returns next step until stage 4", () => {
     expect(resolveOnboardingNextStep(4)).toBeNull();
     expect(resolveOnboardingNextStep(2)?.label).toContain("第2章");
-    expect(resolveOnboardingNextStep(3)?.href).toBe(FIRST_VISIT_ROUTES.chapter3Sign);
-    expect(resolveOnboardingNextStep(3, { chapter3Started: true })).toBeNull();
-    expect(resolveOnboardingNextStep(3)?.label).toBe("ログハウスで日記を書く");
+    expect(resolveOnboardingNextStep(3)?.href).toBe(ONBOARDING_CHAPTER3_DESK_WRITING_HREF);
+    expect(resolveOnboardingNextStep(3)?.label).toBe("机で日記を書く");
+    expect(resolveOnboardingNextStep(3, { chapter3Started: true })?.href).toBe(
+      ONBOARDING_CHAPTER3_DESK_WRITING_HREF,
+    );
+    expect(resolveOnboardingNextStep(3, { onCompanionWritingPath: true })).toBeNull();
   });
 });

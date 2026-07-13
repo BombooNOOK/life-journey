@@ -9,6 +9,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import { usePathname } from "next/navigation";
 
 import { useFirebaseAuth } from "@/components/auth/FirebaseAuthProvider";
 import { isLjLoggedInOnClient } from "@/lib/auth/clientCookies";
@@ -28,7 +29,9 @@ import {
   readFirstVisitChapter3StartedFlag,
   readOnboardingChapter1CompleteCookie,
   readOnboardingChapter2CompleteCookie,
+  setFirstVisitChapter3StartedFlag,
 } from "@/lib/onboarding/firstVisitWizard/session";
+import { isLogHouseImmersivePath } from "@/lib/loghouse/logHouseViewport";
 import type { OnboardingStageContext } from "@/lib/viewer/onboardingStageContext";
 import type { FirstVisitReadyBranch } from "@/lib/viewer/firstVisitReadyContext";
 
@@ -53,7 +56,14 @@ const BOOTSTRAP: OnboardingStageContext = {
 
 const OnboardingStageContextReact = createContext<OnboardingStageProviderValue | null>(null);
 
-function mergeStageContext(server: OnboardingStageContext): OnboardingStageContext {
+function isCompanionWritingPath(pathname: string | null): boolean {
+  return Boolean(pathname?.startsWith("/journal/with-companion"));
+}
+
+function mergeStageContext(
+  server: OnboardingStageContext,
+  pathname: string | null,
+): OnboardingStageContext {
   const hasKanteiOrder =
     server.hasKanteiOrder ||
     readFirstVisitChapterCompleteFlag(2) ||
@@ -74,7 +84,7 @@ function mergeStageContext(server: OnboardingStageContext): OnboardingStageConte
       chapter1CompleteFlag: readFirstVisitChapterCompleteFlag(1),
       chapter2CompleteFlag: readFirstVisitChapterCompleteFlag(2),
       chapter3CompleteFlag: readFirstVisitChapterCompleteFlag(3),
-      chapter3StartedFlag: false,
+      chapter3StartedFlag: readFirstVisitChapter3StartedFlag(),
       bookshelfKanteiGuide: false,
       orderGuide: false,
       fromRegisterHandoff: false,
@@ -94,12 +104,14 @@ function mergeStageContext(server: OnboardingStageContext): OnboardingStageConte
     stage,
     nextStep: resolveOnboardingNextStep(stage, {
       chapter3Started: readFirstVisitChapter3StartedFlag(),
+      onCompanionWritingPath: isCompanionWritingPath(pathname),
     }),
   };
 }
 
 export function OnboardingStageProvider({ children }: { children: ReactNode }) {
   const { user } = useFirebaseAuth();
+  const pathname = usePathname();
   const [ready, setReady] = useState(false);
   const [serverContext, setServerContext] = useState<OnboardingStageContext>(BOOTSTRAP);
   const [refreshToken, setRefreshToken] = useState(0);
@@ -115,7 +127,7 @@ export function OnboardingStageProvider({ children }: { children: ReactNode }) {
 
     setReady(false);
     if (isLoggedIn) {
-      setServerContext(mergeStageContext({ ...BOOTSTRAP, isLoggedIn: true }));
+      setServerContext(mergeStageContext({ ...BOOTSTRAP, isLoggedIn: true }, pathname));
     } else {
       setServerContext(BOOTSTRAP);
     }
@@ -145,12 +157,22 @@ export function OnboardingStageProvider({ children }: { children: ReactNode }) {
     return () => {
       cancelled = true;
     };
+    // pathname は merge 側で反映。ナビのたびに API 再取得しない
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional: bootstrap fetch only
   }, [user, refreshToken]);
 
   const context = useMemo(
-    () => mergeStageContext(serverContext),
-    [serverContext],
+    () => mergeStageContext(serverContext, pathname),
+    [serverContext, pathname],
   );
+
+  // 第3章中にログハウスへ戻った人は「開始済み」扱い（道しるべ再開先を看板ループにしない）
+  useEffect(() => {
+    if (!ready || context.stage !== 3) return;
+    if (!isLogHouseImmersivePath(pathname) && !isCompanionWritingPath(pathname)) return;
+    if (readFirstVisitChapter3StartedFlag()) return;
+    setFirstVisitChapter3StartedFlag();
+  }, [context.stage, pathname, ready]);
 
   const value = useMemo<OnboardingStageProviderValue>(() => {
     const stage = context.stage;

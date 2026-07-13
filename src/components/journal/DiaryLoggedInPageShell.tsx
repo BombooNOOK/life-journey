@@ -20,13 +20,15 @@ export function DiaryLoggedInPageShell({ children }: Props) {
   const pathname = usePathname();
   const isMobile = useIsLogHouseMobileViewport();
   const immersiveLogHouse = isLogHouseImmersivePath(pathname) && isMobile;
+  const onCompanionWriting = pathname.startsWith("/journal/with-companion");
+  const hideChrome = immersiveLogHouse || onCompanionWriting;
 
   return (
     <div className={immersiveLogHouse ? "" : "pb-24"}>
       <Suspense fallback={null}>
         <OnboardingRouteGuard />
       </Suspense>
-      {immersiveLogHouse ? null : <OnboardingNextStepBanner />}
+      {hideChrome ? null : <OnboardingNextStepBanner />}
       {children}
       {immersiveLogHouse ? null : <DiaryHomeBottomNav />}
     </div>
