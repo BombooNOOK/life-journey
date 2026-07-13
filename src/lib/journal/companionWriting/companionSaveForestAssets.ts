@@ -7,12 +7,12 @@ export const COMPANION_SAVE_FOREST_FRAMES = [
   {
     key: "book-flying",
     src: "/images/ljd/companion-save/companion_save_forest_02_book_flying.png?v=2",
-    label: "日記ブックが森へ向かう",
+    label: "日記ブックが鑑定のへやへ向かう",
   },
   {
     key: "book-arrived",
     src: "/images/ljd/companion-save/companion_save_forest_03_book_arrived.png?v=2",
-    label: "日記ブックが森に届く",
+    label: "日記ブックが鑑定のへやに届く",
   },
 ] as const;
 

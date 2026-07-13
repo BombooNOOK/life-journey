@@ -9,7 +9,7 @@ describe("companionWriting guideWhispers", () => {
   it("鑑定士ごとの短いひとことを返す", () => {
     const calendar = getCompanionWritingCalendarWhisper("frog");
     expect(calendar.name).toBe("ケロシオン");
-    expect(calendar.message).toContain("森に届き");
+    expect(calendar.message).toContain("受け取りました");
 
     const edit = getCompanionWritingEditGuideWhisper("owl");
     expect(edit.name).toBe("フクロウ先生");

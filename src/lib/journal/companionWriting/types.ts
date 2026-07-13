@@ -36,7 +36,7 @@ export const COMPANION_WRITING_WRITE_HINT = "短くても大丈夫です";
 /** 伴走ウィザード：質問穴埋め */
 export const COMPANION_WRITING_QUESTIONS_HEADING = "フクロウ先生の質問に答えてみてください";
 
-export const COMPANION_WRITING_QUESTIONS_HINT = "短い言葉で大丈夫です";
+export const COMPANION_WRITING_QUESTIONS_HINT = "単語や短い文で大丈夫です。";
 
 /** 伴走ウィザード：保存前確認 */
 export const COMPANION_WRITING_CONFIRM_HEADING = "こんな感じで残しますか？";
@@ -59,7 +59,7 @@ export const COMPANION_WRITING_CALENDAR_GUIDE_NEXT_LABEL = "つぎへ";
 /** 足あと確認：カレンダー全画面表示の秒数 */
 export const COMPANION_WRITING_CALENDAR_REVEAL_MS = 3000;
 
-/** 森への届け演出：合計表示秒数（3枚×1秒） */
+/** 届け演出：合計表示秒数（3枚×1秒） */
 export const COMPANION_WRITING_FOREST_DELIVERY_MS = 3000;
 
 export const COMPANION_SAVE_FOREST_FRAME_PATHS = [
@@ -69,7 +69,7 @@ export const COMPANION_SAVE_FOREST_FRAME_PATHS = [
 ] as const;
 
 /** 完了カードのメイン文言 */
-export const COMPANION_WRITING_COMPLETE_CARD_MESSAGE = "今日の1ページ、森に届きました！";
+export const COMPANION_WRITING_COMPLETE_CARD_MESSAGE = "今日の1ページ、受け取りましたよ";
 
 export const COMPANION_WRITING_COMPLETE_GROW_LABEL = "今日のページをもう少し育てる";
 
@@ -79,9 +79,13 @@ export const COMPANION_WRITING_COMPLETE_FINISH_LABEL = "確認しておしまい
 export const COMPANION_WRITING_SAVE_LOADING_LABEL =
   "フクロウ先生が日記のあしあとを確認しています…";
 
-/** 森への届け演出カード内テキスト */
+/** 届け演出：飛行中（鑑定のへやへ） */
 export const COMPANION_WRITING_FOREST_DELIVERY_CARD_TEXT =
-  "今日の1ページが、森へ向かっています…";
+  "今日の1ページが、鑑定のへやに向かっています…";
+
+/** 届け演出：到着（フクロウ先生の受け取り） */
+export const COMPANION_WRITING_FOREST_DELIVERY_ARRIVED_TEXT =
+  "今日の1ページ、受け取りましたよ\nフクロウ先生より";
 
 /** カレンダー表示中の仮ギミック文言（本番用は後で差し替え可） */
 export const COMPANION_WRITING_CALENDAR_REVEAL_STATUS =
@@ -134,7 +138,7 @@ export const COMPANION_WRITING_EDIT_ZONE_SPOTLIGHT_MS = 3200;
 export const COMPANION_WRITING_JOURNAL_GUIDE_DISMISS_LABEL = "わかりました";
 
 export const COMPANION_WRITING_FAREWELL_MESSAGE =
-  "今日のページは、森にそっと残りました。また書きたくなった日に、ここへ戻ってきてください。";
+  "今日のページは、そっと残りました。また書きたくなった日に、ここへ戻ってきてください。";
 
 /** 伴走プレビュー：最下部到達後の案内（1枚目） */
 export const COMPANION_WRITING_PREVIEW_GUIDE_READ_TITLE = "書いた記録は、いつでも見返せます";
@@ -146,9 +150,9 @@ export const COMPANION_WRITING_PREVIEW_GUIDE_READ_BODY =
 export const COMPANION_WRITING_PREVIEW_GUIDE_WRITE_TITLE = "また書きたくなったら";
 
 export const COMPANION_WRITING_PREVIEW_GUIDE_WRITE_BODY =
-  "ログハウスの「日記を書く」や「どうぶつ鑑定士といっしょに書く」から、いつでも新しい記録を始められます。";
+  "「日記を書く」や「どうぶつ鑑定士といっしょに書く」から、いつでも新しい記録を始められます。";
 
-export const COMPANION_WRITING_PREVIEW_GUIDE_CLOSING = "また森で待っているね。";
+export const COMPANION_WRITING_PREVIEW_GUIDE_CLOSING = "また、机で待っているね。";
 
 export const COMPANION_WRITING_PREVIEW_GUIDE_FINISH_LABEL = "トップへ";
 

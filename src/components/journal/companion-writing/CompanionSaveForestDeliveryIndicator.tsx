@@ -1,45 +1,14 @@
 "use client";
 
-import { useLayoutEffect, useState } from "react";
+import { COMPANION_SAVE_FOREST_FRAMES } from "@/lib/journal/companionWriting/companionSaveForestAssets";
 
-import {
-  COMPANION_SAVE_FOREST_FRAMES,
-  COMPANION_SAVE_FOREST_FRAME_STEP_MS,
-} from "@/lib/journal/companionWriting/companionSaveForestAssets";
+type Props = {
+  /** 左から何枚まで表示するか（親の届け文言と同期） */
+  visibleCount: number;
+};
 
 /** 伴走保存後：日記ブック3枚が左・中・右へ順番に現れる（きのこ演出と同型） */
-export function CompanionSaveForestDeliveryIndicator() {
-  const [visibleCount, setVisibleCount] = useState(0);
-
-  useLayoutEffect(() => {
-    let cancelled = false;
-    const timers: number[] = [];
-
-    const revealAll = () => {
-      if (!cancelled) setVisibleCount(COMPANION_SAVE_FOREST_FRAMES.length);
-    };
-
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-      revealAll();
-      return () => {
-        cancelled = true;
-      };
-    }
-
-    COMPANION_SAVE_FOREST_FRAMES.forEach((_, index) => {
-      timers.push(
-        window.setTimeout(() => {
-          if (!cancelled) setVisibleCount(index + 1);
-        }, index * COMPANION_SAVE_FOREST_FRAME_STEP_MS),
-      );
-    });
-
-    return () => {
-      cancelled = true;
-      timers.forEach((timer) => window.clearTimeout(timer));
-    };
-  }, []);
-
+export function CompanionSaveForestDeliveryIndicator({ visibleCount }: Props) {
   return (
     <div
       className="mx-auto flex h-24 w-full max-w-[21rem] items-end justify-center gap-1.5 sm:h-28 sm:max-w-[24rem] sm:gap-2"
