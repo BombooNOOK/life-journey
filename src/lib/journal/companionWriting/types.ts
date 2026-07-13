@@ -152,7 +152,7 @@ export const COMPANION_WRITING_PREVIEW_GUIDE_WRITE_TITLE = "また書きたく�
 export const COMPANION_WRITING_PREVIEW_GUIDE_WRITE_BODY =
   "「日記を書く」や「どうぶつ鑑定士といっしょに書く」から、いつでも新しい記録を始められます。";
 
-export const COMPANION_WRITING_PREVIEW_GUIDE_CLOSING = "また、机で待っているね。";
+export const COMPANION_WRITING_PREVIEW_GUIDE_CLOSING = "また会えるのを、楽しみにしているね。";
 
 export const COMPANION_WRITING_PREVIEW_GUIDE_FINISH_LABEL = "トップへ";
 
