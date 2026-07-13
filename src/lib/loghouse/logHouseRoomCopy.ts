@@ -35,7 +35,7 @@ export const LOG_HOUSE_ROOM_SPOT_COPY: Record<LogHouseRoomSpotId, LogHouseRoomSp
   },
   goOut: {
     label: "おでかけ",
-    description: "森におでかけする。お庭にでる。",
+    description: "おでかけする",
     actionLabel: "おでかけをする",
   },
 };
