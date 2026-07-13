@@ -2,7 +2,7 @@ import { GARDEN_DEFAULT_SEED_TYPE, type GardenGrowthStage } from "@/lib/garden/g
 
 export const GARDEN_ASSET_DIR = "/images/ljd/garden" as const;
 
-const GARDEN_ASSET_VERSION = 2;
+const GARDEN_ASSET_VERSION = 3;
 
 function gardenAsset(filename: string): string {
   return `${GARDEN_ASSET_DIR}/${filename}?v=${GARDEN_ASSET_VERSION}`;

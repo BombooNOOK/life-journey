@@ -27,6 +27,7 @@ import {
   LOG_HOUSE_ROOM_MOBILE_INTRINSIC,
 } from "@/lib/loghouse/logHouseRoomAssets";
 import {
+  LOG_HOUSE_ROOM_DESK_KANTEI_LOCK_MESSAGE,
   LOG_HOUSE_ROOM_FIRST_VISIT_TIP,
   LOG_HOUSE_ROOM_FIRST_VISIT_TIP_STORAGE_KEY,
   LOG_HOUSE_ROOM_HINT_AUTO_HIDE_MS,
@@ -63,6 +64,15 @@ type SpotNotice = {
 const KANTEI_LOCK: Pick<SpotAction, "href" | "lockMessage" | "lockCta"> = {
   href: null,
   lockMessage: LOG_HOUSE_ROOM_KANTEI_LOCK_MESSAGE,
+  lockCta: {
+    href: FIRST_VISIT_ROUTES.kanteiReady,
+    label: LOG_HOUSE_ROOM_KANTEI_LOCK_CTA_LABEL,
+  },
+};
+
+const DESK_KANTEI_LOCK: Pick<SpotAction, "href" | "lockMessage" | "lockCta"> = {
+  href: null,
+  lockMessage: LOG_HOUSE_ROOM_DESK_KANTEI_LOCK_MESSAGE,
   lockCta: {
     href: FIRST_VISIT_ROUTES.kanteiReady,
     label: LOG_HOUSE_ROOM_KANTEI_LOCK_CTA_LABEL,
@@ -279,7 +289,7 @@ export function LogHouseRoomMobile({
         ? { href: "/orders/bookshelf", needsProfile: true }
         : { ...KANTEI_LOCK },
       desk: !hasKantei
-        ? { ...KANTEI_LOCK }
+        ? { ...DESK_KANTEI_LOCK }
         : journalBlocked
           ? { href: null, lockMessage: LOG_HOUSE_ROOM_JOURNAL_LOCK_MESSAGE }
           : { href: "/orders/calendar", needsProfile: true },

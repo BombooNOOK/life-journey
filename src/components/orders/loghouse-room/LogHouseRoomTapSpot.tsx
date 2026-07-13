@@ -25,6 +25,13 @@ function hintLabelPositionClass(align: LogHouseRoomHotspot["hintLabelAlign"]): s
   return "left-1/2 -translate-x-1/2";
 }
 
+function hintLabelEdgeClass(edge: LogHouseRoomHotspot["hintLabelEdge"]): string {
+  if (edge === "inside-top") return "top-1";
+  if (edge === "above") return "bottom-full mb-1";
+  if (edge === "below") return "top-full mt-1";
+  return "bottom-1";
+}
+
 /** 室内の家具タップ領域（通常は透明・景観優先） */
 export function LogHouseRoomTapSpot({
   spot,
@@ -65,7 +72,8 @@ export function LogHouseRoomTapSpot({
       {showHintLabel ? (
         <span
           className={[
-            "pointer-events-none absolute bottom-1 z-10",
+            "pointer-events-none absolute z-10",
+            hintLabelEdgeClass(spot.hintLabelEdge),
             hintLabelPositionClass(spot.hintLabelAlign),
           ].join(" ")}
         >

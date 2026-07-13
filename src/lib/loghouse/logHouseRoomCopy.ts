@@ -35,16 +35,20 @@ export const LOG_HOUSE_ROOM_SPOT_COPY: Record<LogHouseRoomSpotId, LogHouseRoomSp
   },
   goOut: {
     label: "おでかけ",
-    description: "森へおでかけする",
+    description: "森におでかけする。お庭にでる。",
     actionLabel: "おでかけをする",
   },
 };
 
 export const LOG_HOUSE_ROOM_RABBIT_GREETING = "今日も森へようこそ";
 
-/** 鑑定前に本棚・机・今日の鑑定結果をタップしたとき */
+/** 鑑定前に本棚・今日の鑑定結果をタップしたとき */
 export const LOG_HOUSE_ROOM_KANTEI_LOCK_MESSAGE =
   "無料鑑定が終わると、ここから使えるようになります。" as const;
+
+/** 鑑定前に机をタップしたとき */
+export const LOG_HOUSE_ROOM_DESK_KANTEI_LOCK_MESSAGE =
+  "無料鑑定が終わると、ここから日記が書けるようになります。" as const;
 
 /** 鑑定ロック案内の次の一手（はじめての道しるべへ） */
 export const LOG_HOUSE_ROOM_KANTEI_LOCK_CTA_LABEL = "無料鑑定を受ける" as const;
