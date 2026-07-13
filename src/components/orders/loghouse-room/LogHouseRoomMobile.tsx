@@ -13,6 +13,7 @@ import {
 } from "react";
 
 import { LogHouseRoomChrome } from "@/components/orders/loghouse-room/LogHouseRoomChrome";
+import { LogHouseDonguriChoModal } from "@/components/orders/loghouse-room/LogHouseDonguriChoModal";
 import { LogHouseRoomGoOutSpot } from "@/components/orders/loghouse-room/LogHouseRoomGoOutSpot";
 import { LogHouseRoomMailboxSpot } from "@/components/orders/loghouse-room/LogHouseRoomMailboxSpot";
 import { LogHouseRoomPartsLayer } from "@/components/orders/loghouse-room/LogHouseRoomPartsLayer";
@@ -23,6 +24,7 @@ import { OwlDelayedBusyOverlay } from "@/components/ui/OwlDelayedBusyOverlay";
 import { useLogHouseRoomTimeTheme } from "@/hooks/useLogHouseRoomTimeOfDay";
 import type { SerializedUserEntitlement } from "@/lib/entitlement/resolveUserEntitlement";
 import { buildForestMusicHallHref } from "@/lib/help/forestMusicHallNav";
+import { getStubDonguriChoView } from "@/lib/loghouse/donguriLedger";
 import {
   LOG_HOUSE_ROOM_MOBILE_BG_BY_TIME,
   LOG_HOUSE_ROOM_MOBILE_INTRINSIC,
@@ -223,6 +225,8 @@ export function LogHouseRoomMobile({
   const [showFirstVisitTip, setShowFirstVisitTip] = useState(false);
   const [selectedSpotId, setSelectedSpotId] = useState<LogHouseRoomSpotId | null>(null);
   const [flashSpotId, setFlashSpotId] = useState<LogHouseRoomSpotId | null>(null);
+  const [donguriChoOpen, setDonguriChoOpen] = useState(false);
+  const donguriCho = useMemo(() => getStubDonguriChoView(), []);
   const busy = isPending || profileBusy;
   const ambientBg = timeOfDay === "night" ? "#2a2218" : "#ebe4d4";
 
@@ -443,6 +447,16 @@ export function LogHouseRoomMobile({
       hintActive={hintActive}
       onToggleHint={toggleHint}
       timeOfDay={timeOfDay}
+      donguriBalance={donguriCho.balance}
+      onOpenDonguriCho={() => setDonguriChoOpen(true)}
+    />
+  );
+
+  const donguriChoModal = (
+    <LogHouseDonguriChoModal
+      open={donguriChoOpen}
+      view={donguriCho}
+      onClose={() => setDonguriChoOpen(false)}
     />
   );
 
@@ -461,19 +475,50 @@ export function LogHouseRoomMobile({
 
   if (layout === "framed") {
     return (
+      <>
+        <div
+          className={[
+            "relative mx-auto w-full max-w-md overflow-hidden rounded-2xl border border-stone-200/90 shadow-sm",
+            className,
+          ]
+            .filter(Boolean)
+            .join(" ")}
+          style={{
+            aspectRatio: `${LOG_HOUSE_ROOM_MOBILE_INTRINSIC.widthPx} / ${LOG_HOUSE_ROOM_MOBILE_INTRINSIC.heightPx}`,
+            backgroundColor: ambientBg,
+          }}
+        >
+          <div className="absolute inset-0 isolate overflow-hidden">{stage}</div>
+          {chrome}
+          {firstVisitTipOverlay}
+          {noticeOverlay}
+          {spotSheet}
+          {busyOverlay}
+          <p className="sr-only">ログハウス室内。家具をタップして各機能へ進めます。</p>
+        </div>
+        {donguriChoModal}
+      </>
+    );
+  }
+
+  return (
+    <>
       <div
         className={[
-          "relative mx-auto w-full max-w-md overflow-hidden rounded-2xl border border-stone-200/90 shadow-sm",
+          "fixed inset-0 z-[60] overflow-hidden overscroll-none",
+          "select-none",
           className,
         ]
           .filter(Boolean)
           .join(" ")}
-        style={{
-          aspectRatio: `${LOG_HOUSE_ROOM_MOBILE_INTRINSIC.widthPx} / ${LOG_HOUSE_ROOM_MOBILE_INTRINSIC.heightPx}`,
-          backgroundColor: ambientBg,
-        }}
+        style={{ touchAction: "none", backgroundColor: ambientBg }}
       >
-        <div className="absolute inset-0 isolate overflow-hidden">{stage}</div>
+        <div className="absolute inset-0 overflow-hidden">
+          <div className="relative isolate overflow-hidden" style={coverStageStyle(LOG_HOUSE_ROOM_MOBILE_INTRINSIC)}>
+            {stage}
+          </div>
+        </div>
+
         {chrome}
         {firstVisitTipOverlay}
         {noticeOverlay}
@@ -481,32 +526,7 @@ export function LogHouseRoomMobile({
         {busyOverlay}
         <p className="sr-only">ログハウス室内。家具をタップして各機能へ進めます。</p>
       </div>
-    );
-  }
-
-  return (
-    <div
-      className={[
-        "fixed inset-0 z-[60] overflow-hidden overscroll-none",
-        "select-none",
-        className,
-      ]
-        .filter(Boolean)
-        .join(" ")}
-      style={{ touchAction: "none", backgroundColor: ambientBg }}
-    >
-      <div className="absolute inset-0 overflow-hidden">
-        <div className="relative isolate overflow-hidden" style={coverStageStyle(LOG_HOUSE_ROOM_MOBILE_INTRINSIC)}>
-          {stage}
-        </div>
-      </div>
-
-      {chrome}
-      {firstVisitTipOverlay}
-      {noticeOverlay}
-      {spotSheet}
-      {busyOverlay}
-      <p className="sr-only">ログハウス室内。家具をタップして各機能へ進めます。</p>
-    </div>
+      {donguriChoModal}
+    </>
   );
 }

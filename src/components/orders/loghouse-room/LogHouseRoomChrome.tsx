@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 
+import { LogHouseDonguriCapsule } from "@/components/orders/loghouse-room/LogHouseDonguriCapsule";
 import {
   LOG_HOUSE_FOREST_MAP_HREF,
   LOG_HOUSE_FOREST_MAP_LABEL,
@@ -16,6 +17,8 @@ type Props = {
   onToggleHint?: () => void;
   /** 夜背景時はアイコンの下地を少し濃くして可読性を保つ */
   timeOfDay?: "day" | "night";
+  donguriBalance?: number;
+  onOpenDonguriCho?: () => void;
 };
 
 function GearIcon() {
@@ -67,18 +70,20 @@ const chromeButtonClass =
 const chromeButtonNightClass =
   "inline-flex h-11 w-11 items-center justify-center rounded-full border border-stone-200/35 bg-[#fffdf9]/82 text-stone-800 shadow-md backdrop-blur-[3px] transition hover:bg-[#fffdf9]/92 active:scale-[0.98]";
 
-/** 没入ログハウス：案内図・設定・タップヒント（ハンバーガーなし） */
+/** 没入ログハウス：地図・どんぐり・？・設定 */
 export function LogHouseRoomChrome({
   onOpenSettings,
   hintActive = false,
   onToggleHint,
   timeOfDay = "day",
+  donguriBalance = 0,
+  onOpenDonguriCho,
 }: Props) {
   const buttonClass = timeOfDay === "night" ? chromeButtonNightClass : chromeButtonClass;
 
   return (
     <div className="pointer-events-none absolute inset-x-0 top-0 z-40 flex items-start justify-between gap-2 px-3 pb-2 pt-[max(0.75rem,env(safe-area-inset-top))]">
-      <div className="pointer-events-auto">
+      <div className="pointer-events-auto flex items-start gap-2">
         <Link
           href={LOG_HOUSE_FOREST_MAP_HREF}
           className={buttonClass}
@@ -87,6 +92,14 @@ export function LogHouseRoomChrome({
         >
           <MapIcon />
         </Link>
+        {onOpenDonguriCho ? (
+          <LogHouseDonguriCapsule
+            balance={donguriBalance}
+            onOpen={onOpenDonguriCho}
+            showHintLabel={hintActive}
+            timeOfDay={timeOfDay}
+          />
+        ) : null}
       </div>
 
       <div className="pointer-events-auto flex items-center gap-2">
