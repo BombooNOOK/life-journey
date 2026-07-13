@@ -355,3 +355,29 @@ model Profile {
 
   @@index([email, isArchived])
 }
+
+/// お庭の植木鉢（プロフィールごとに1鉢・MVPは1種）
+model GardenPlant {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  email     String
+  profileId String
+
+  /// 将来の色違い・種違い用（MVP は "default"）
+  seedType String @default("default")
+
+  waterCount    Int     @default(0)
+  /// 最後に水やりした日本時間の暦日 YYYY-MM-DD
+  lastWateredOn String?
+  completedAt   DateTime?
+
+  /// 将来拡張用（MVP では未使用）
+  flowerColor String?
+  potType     String?
+  gardenSlot  Int     @default(0)
+
+  @@unique([email, profileId, seedType, gardenSlot])
+  @@index([email, profileId])
+}

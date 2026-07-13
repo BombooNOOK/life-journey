@@ -83,6 +83,12 @@ const links: { href: string; label: string; note?: string; highlight?: boolean }
     highlight: true,
   },
   {
+    href: "/preview/garden",
+    label: "お庭（モバイル没入）",
+    note: "ログイン不要。ジョウロタップで成長確認。npm run dev 中のみ",
+    highlight: true,
+  },
+  {
     href: "/preview/loghouse-room/layout",
     label: "ログハウス室内レイアウト定規",
     note: "576×1024 を 1:1 表示。グリッド・座標クリック・配置確認。npm run dev 中のみ",

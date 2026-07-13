@@ -21,10 +21,10 @@ export function useIsLogHouseMobileViewport(): boolean {
 }
 
 export function isLogHouseImmersivePath(pathname: string | null): boolean {
-  return pathname === "/orders";
+  return pathname === "/orders" || pathname === "/orders/garden";
 }
 
 /** 開発用プレビューもヘッダーなし全画面にする */
 export function isLogHouseImmersivePreviewPath(pathname: string | null): boolean {
-  return pathname === "/preview/loghouse-room";
+  return pathname === "/preview/loghouse-room" || pathname === "/preview/garden";
 }

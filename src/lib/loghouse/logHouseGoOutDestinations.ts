@@ -1,5 +1,7 @@
 import { buildForestMapHref } from "@/lib/help/forestMapNav";
 import { buildForestMusicHallHref } from "@/lib/help/forestMusicHallNav";
+import { GARDEN_DESTINATION_ICON_SRC } from "@/lib/garden/gardenAssets";
+import { GARDEN_PAGE_PATH } from "@/lib/garden/gardenCopy";
 import { LOG_HOUSE_GO_OUT_PAGE_PATH } from "@/lib/loghouse/logHouseGoOutCopy";
 import type { ForestBuildingId } from "@/lib/onboarding/firstVisitWizard/forestBuildingAssets";
 
@@ -8,12 +10,13 @@ export type LogHouseGoOutDestinationStatus = "active" | "comingSoon";
 export type LogHouseGoOutDestinationId =
   | "guideStation"
   | "kanteiHall"
+  | "garden"
   | "forestMap"
   | "musicHall"
   | "loghouse";
 
-/** 建物イラスト、または案内図サムネイル */
-export type LogHouseGoOutDestinationIcon = ForestBuildingId | "forestMap";
+/** 建物イラスト、案内図、またはカスタム画像パス */
+export type LogHouseGoOutDestinationIcon = ForestBuildingId | "forestMap" | { src: string };
 
 export type LogHouseGoOutDestination = {
   id: LogHouseGoOutDestinationId;
@@ -45,6 +48,15 @@ export const LOG_HOUSE_GO_OUT_DESTINATIONS: LogHouseGoOutDestination[] = [
     description: "あなたの数字や、\n鑑定書を見たいときに。",
     icon: "kanteiHall",
     route: "kanteiHall",
+    actionLabel: "ここに行く",
+    status: "active",
+  },
+  {
+    id: "garden",
+    title: "お庭に出る",
+    description: "植物にお水をあげられる場所。\n少しだけ、森で過ごしてみましょう。",
+    icon: { src: GARDEN_DESTINATION_ICON_SRC },
+    route: GARDEN_PAGE_PATH,
     actionLabel: "ここに行く",
     status: "active",
   },

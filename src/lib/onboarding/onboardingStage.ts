@@ -133,6 +133,7 @@ const ORDERS_STATIC_FIRST_SEGMENTS = new Set([
   "bookshelf",
   "calendar",
   "go-out",
+  "garden",
   "list",
   "profile",
   "resident-card",

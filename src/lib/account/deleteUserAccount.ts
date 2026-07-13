@@ -177,6 +177,7 @@ export async function deleteUserAccount(params: {
     const deletedDiaryBooks = await tx.diaryBook.deleteMany({ where: scope });
     const deletedBookshelfBooks = await tx.diaryBookshelfBook.deleteMany({ where: scope });
     const deletedJournalEntries = await tx.journalEntry.deleteMany({ where: scope });
+    const deletedGardenPlants = await tx.gardenPlant.deleteMany({ where: scope });
     const deletedProfiles = await tx.profile.deleteMany({ where: scope });
     const deletedSupportInquiries = await tx.supportInquiry.deleteMany({ where: scope });
     await tx.accountSettings.deleteMany({ where: scope });
@@ -188,6 +189,7 @@ export async function deleteUserAccount(params: {
       deletedDiaryBooks: deletedDiaryBooks.count,
       deletedBookshelfBooks: deletedBookshelfBooks.count,
       deletedJournalEntries: deletedJournalEntries.count,
+      deletedGardenPlants: deletedGardenPlants.count,
       deletedProfiles: deletedProfiles.count,
       deletedSupportInquiries: deletedSupportInquiries.count,
     };

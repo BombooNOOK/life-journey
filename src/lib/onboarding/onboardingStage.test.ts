@@ -87,6 +87,7 @@ describe("onboardingStage", () => {
     expect(isPathAllowedForStage("/orders/settings", 1)).toBe(true);
     expect(isPathAllowedForStage("/orders/settings/add-profile", 2)).toBe(true);
     expect(isPathAllowedForStage("/orders/go-out", 2)).toBe(true);
+    expect(isPathAllowedForStage("/orders/garden", 2)).toBe(true);
     expect(isPathAllowedForStage("/orders/support", 2)).toBe(true);
     // 実注文ID（詳細・配下）は鑑定後
     expect(isPathAllowedForStage("/orders/clxyz1234567890abcdefgh", 2)).toBe(false);
