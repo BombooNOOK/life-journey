@@ -30,13 +30,15 @@ export type LogHouseRoomHotspot = {
 /** パーツ画像に合わせたタップ領域 */
 export const LOG_HOUSE_ROOM_HOTSPOTS: LogHouseRoomHotspot[] = [
   { id: "bookshelf", x: 4.6, y: 27, width: 41.4, height: 31.1, hintLabelAlign: "start" },
-  /** 開いた日記付近にヒントが出るよう上端寄せ。タップは机全体をカバー */
+  /**
+   * 机：タップは机〜日記付近。ヒントは開いた日記あたり（窓まで上げすぎない）
+   */
   {
     id: "desk",
     x: 50,
-    y: 29,
+    y: 39,
     width: 46,
-    height: 26,
+    height: 18,
     hintLabelAlign: "center",
     hintLabelEdge: "inside-top",
   },
@@ -49,10 +51,10 @@ export const LOG_HOUSE_ROOM_HOTSPOTS: LogHouseRoomHotspot[] = [
 export const LOG_HOUSE_ROOM_GO_OUT_HOTSPOT: LogHouseRoomHotspot = {
   id: "goOut",
   x: 36,
-  y: 91.8,
+  y: 90.5,
   width: 28,
-  height: 7.8,
+  height: 8.5,
   hintLabelAlign: "center",
-  /** 靴の下にヒントを出す */
-  hintLabelEdge: "below",
+  /** 靴の下端付近（画面外に出さない） */
+  hintLabelEdge: "inside-bottom",
 };

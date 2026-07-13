@@ -64,10 +64,16 @@ export function LogHouseRoomGoOutSpot({
         <span
           className={[
             "pointer-events-none absolute left-1/2 z-10 -translate-x-1/2",
-            spot.hintLabelEdge === "below" ? "top-full mt-1" : "bottom-full mb-1",
+            spot.hintLabelEdge === "below"
+              ? "top-full mt-0.5"
+              : spot.hintLabelEdge === "inside-bottom"
+                ? "bottom-0"
+                : spot.hintLabelEdge === "inside-top"
+                  ? "top-0"
+                  : "bottom-full mb-1",
           ].join(" ")}
         >
-          <span className="inline-block max-w-[11rem] rounded-full bg-[#fffdf9]/72 px-2.5 py-0.5 text-center text-[10px] font-medium leading-snug tracking-wide text-stone-700 shadow-sm ring-1 ring-stone-300/35 backdrop-blur-[2px]">
+          <span className="inline-block max-w-[12rem] rounded-full bg-[#fffdf9]/85 px-2.5 py-0.5 text-center text-[10px] font-medium leading-snug tracking-wide text-stone-700 shadow-sm ring-1 ring-stone-300/35">
             {copy.description}
           </span>
         </span>

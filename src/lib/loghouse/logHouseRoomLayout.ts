@@ -25,9 +25,9 @@ export const LOG_HOUSE_ROOM_PART_PLACEMENTS: LogHouseRoomPartPlacement[] = [
 
 export const LOG_HOUSE_ROOM_SHOES_PLACEMENT = {
   x: 38,
-  y: 92,
+  y: 91.2,
   width: 24,
-  height: 7.2,
+  height: 7.5,
   zIndex: 21,
   objectPosition: "center bottom",
 } as const;
