@@ -311,7 +311,10 @@ export function LogHouseRoomMobile({
         ? { ...DESK_KANTEI_LOCK }
         : journalBlocked
           ? { href: null, lockMessage: LOG_HOUSE_ROOM_JOURNAL_LOCK_MESSAGE }
-          : { href: "/orders/calendar", needsProfile: true },
+          : {
+              href: companionWritingHref ?? "/orders/calendar",
+              needsProfile: true,
+            },
       residentCard: { href: "/orders/resident-card" },
       todayResult: kanteiOrderId
         ? { href: `/orders/${encodeURIComponent(kanteiOrderId)}` }
@@ -322,7 +325,7 @@ export function LogHouseRoomMobile({
       goOut: { href: LOG_HOUSE_GO_OUT_PAGE_PATH },
       mailbox: { href: LOG_HOUSE_MAILBOX_PAGE_PATH },
     }),
-    [hasKantei, journalBlocked, kanteiOrderId],
+    [companionWritingHref, hasKantei, journalBlocked, kanteiOrderId],
   );
 
   useEffect(() => {

@@ -72,7 +72,7 @@ export const FOREST_DIRECTION_SIGN_LABEL_PLACEMENT_BY_FACING: Record<
     fontWeight: 400,
     lineHeight: 1,
     maxWidth: 360,
-    rotate: -3,
+    rotate: 4,
     color: FOREST_DIRECTION_SIGN_LABEL_COLOR,
   },
 };

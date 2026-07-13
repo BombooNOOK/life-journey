@@ -1,4 +1,3 @@
-import { FIRST_VISIT_CHAPTER_3_ENTRY_HREF } from "@/lib/onboarding/firstVisitWizard/chapters";
 import { FIRST_VISIT_ROUTES } from "@/lib/onboarding/firstVisitWizard/routes";
 
 /** 0=未登録 1=登録済・ログハウス未完成 2=ログハウス完成 3=鑑定完了 4=日記1件以上 */
@@ -109,15 +108,12 @@ export function resolveOnboardingNextStep(
   }
 
   if (stage === 3) {
-    const href = options.chapter3Started
-      ? FIRST_VISIT_CHAPTER_3_ENTRY_HREF
-      : FIRST_VISIT_ROUTES.chapter3Sign;
+    // 看板を見たあとはログハウス内で机→伴走執筆へ進むため、重複する上部案内は出さない
+    if (options.chapter3Started) return null;
     return {
-      href,
+      href: FIRST_VISIT_ROUTES.chapter3Sign,
       label: "ログハウスで日記を書く",
-      body: options.chapter3Started
-        ? "ログハウスから、はじめての日記を書きましょう。"
-        : "看板の案内から、ログハウスで日記を書き始めましょう。",
+      body: "看板の案内から、ログハウスで日記を書き始めましょう。",
     };
   }
 

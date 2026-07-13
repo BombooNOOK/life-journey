@@ -2,10 +2,10 @@
 export const FIRST_VISIT_CHAPTER_3_SIGN_LABEL = "ログハウスへ" as const;
 
 export const FIRST_VISIT_CHAPTER_3_SIGN_OWL_QUOTE =
-  "日記を書く場所は、あなたのログハウスです。\n\nさて、第3章でははじめての日記を書いてみましょう。\n\n最初はひとりで書くのがむずかしいかもしれません。\nだから今回は、どうぶつ鑑定士といっしょに書いていきます。" as const;
+  "日記を書く場所は、あなたのログハウスの机です。\n\nさて、第3章でははじめての日記を書いてみましょう。\n\n最初はひとりで書くのがむずかしいかもしれません。\nだから今回は、どうぶつ鑑定士といっしょに書いていきます。" as const;
 
 export const FIRST_VISIT_CHAPTER_3_SIGN_BODY =
-  "ログハウスに向かって、今日の1ページを残してみましょう。" as const;
+  "机に向かって、今日の１ページを残してみましょう。" as const;
 
 export const FIRST_VISIT_CHAPTER_3_SIGN_BUTTON = "ログハウスで日記を書く" as const;
 
