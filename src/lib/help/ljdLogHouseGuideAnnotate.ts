@@ -1,7 +1,7 @@
 /** 案内所 TOC「ログハウス」— スクショ注釈用 */
 
 export const LJD_LOG_HOUSE_GUIDE_SHOT_SRC =
-  "/images/ljd/guide-station/loghouse_guide_shot.jpg?v=1" as const;
+  "/images/ljd/guide-station/loghouse_guide_shot.jpg?v=2" as const;
 
 export const LJD_LOG_HOUSE_GUIDE_SHOT_INTRINSIC = {
   widthPx: 504,
@@ -61,16 +61,16 @@ export const LJD_LOG_HOUSE_GUIDE_MARKERS: LjdLogHouseGuideMarker[] = [
   {
     id: "todayResult",
     number: 4,
-    x: 82,
-    y: 63,
+    x: 80,
+    y: 68,
     title: "今日の鑑定結果",
     body: "タップすると、今日のヒントや鑑定結果を見ることができます。",
   },
   {
     id: "radio",
     number: 5,
-    x: 70,
-    y: 84,
+    x: 72,
+    y: 82,
     title: "ラジカセ（森の音）",
     body: "タップすると、森の小さな音楽堂が開き、音楽や自然音を聴けます。",
   },
@@ -78,7 +78,7 @@ export const LJD_LOG_HOUSE_GUIDE_MARKERS: LjdLogHouseGuideMarker[] = [
     id: "rabbit",
     number: 6,
     x: 49,
-    y: 48,
+    y: 50,
     title: "うさぎ（あなた自身）",
     body: "ログハウスにいるうさぎは、あなた自身の分身です。将来は、どんぐりで見た目を変えられるようにする予定です。",
   },

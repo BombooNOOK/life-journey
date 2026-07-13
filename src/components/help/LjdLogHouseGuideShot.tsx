@@ -20,7 +20,7 @@ export function LjdLogHouseGuideShot() {
       >
         <Image
           src={LJD_LOG_HOUSE_GUIDE_SHOT_SRC}
-          alt="ログハウスの室内。住民票・本棚・机・今日の鑑定結果・ラジカセに番号が付いています。"
+          alt="ログハウスの室内。住民票・本棚・机・今日の鑑定結果・ラジカセ・うさぎに番号が付いています。玄関のポストや左上のどんぐりも見えます。"
           fill
           sizes="(max-width: 640px) 72vw, 20rem"
           className="object-cover object-top"

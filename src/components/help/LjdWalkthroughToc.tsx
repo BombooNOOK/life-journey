@@ -14,12 +14,25 @@ import {
   LJD_DIARY_WRITING_GUIDE_COMPANION_CROSSREF,
   LJD_DIARY_WRITING_GUIDE_SECTION_SUMMARY,
 } from "@/lib/help/ljdDiaryWritingGuideCopy";
+import {
+  LJD_DONGURI_GUIDE_BODY_PARAGRAPHS,
+  LJD_DONGURI_GUIDE_LINK_LABEL,
+  LJD_DONGURI_GUIDE_SECTION_SUMMARY,
+  LJD_DONGURI_GUIDE_SECTION_TITLE,
+} from "@/lib/help/ljdDonguriGuideCopy";
 import { LJD_LOG_HOUSE_GUIDE_SECTION_SUMMARY } from "@/lib/help/ljdLogHouseGuideAnnotate";
+import {
+  LJD_MAILBOX_GUIDE_BODY_PARAGRAPHS,
+  LJD_MAILBOX_GUIDE_LINK_LABEL,
+  LJD_MAILBOX_GUIDE_SECTION_SUMMARY,
+  LJD_MAILBOX_GUIDE_SECTION_TITLE,
+} from "@/lib/help/ljdMailboxGuideCopy";
 import {
   FOREST_GUIDE_STATION_NUMEROLOGY_READING_HREF,
   FOREST_GUIDE_STATION_NUMEROLOGY_READING_LINK_LABEL,
   FOREST_GUIDE_STATION_TITLE,
 } from "@/lib/help/forestGuideStation";
+import { LOG_HOUSE_MAILBOX_PAGE_PATH } from "@/lib/loghouse/logHouseMailboxCopy";
 import { FIRST_VISIT_ROUTES } from "@/lib/onboarding/firstVisitWizard/routes";
 import { LOG_HOUSE_SHORT_LABEL } from "@/lib/journal/logHouseLabels";
 
@@ -42,6 +55,44 @@ const TOC_ITEMS: TocItem[] = [
     title: LOG_HOUSE_SHORT_LABEL,
     summary: LJD_LOG_HOUSE_GUIDE_SECTION_SUMMARY,
     body: <LjdLogHouseGuideShot />,
+  },
+  {
+    id: "mailbox",
+    title: LJD_MAILBOX_GUIDE_SECTION_TITLE,
+    summary: LJD_MAILBOX_GUIDE_SECTION_SUMMARY,
+    body: (
+      <>
+        {LJD_MAILBOX_GUIDE_BODY_PARAGRAPHS.map((paragraph, index) => (
+          <p key={paragraph} className={index === 0 ? undefined : "mt-2"}>
+            {paragraph}
+          </p>
+        ))}
+        <GuideAppLink
+          href={LOG_HOUSE_MAILBOX_PAGE_PATH}
+          label={LJD_MAILBOX_GUIDE_LINK_LABEL}
+          feature="guide_loghouse"
+        />
+      </>
+    ),
+  },
+  {
+    id: "donguri",
+    title: LJD_DONGURI_GUIDE_SECTION_TITLE,
+    summary: LJD_DONGURI_GUIDE_SECTION_SUMMARY,
+    body: (
+      <>
+        {LJD_DONGURI_GUIDE_BODY_PARAGRAPHS.map((paragraph, index) => (
+          <p key={paragraph} className={index === 0 ? undefined : "mt-2"}>
+            {paragraph}
+          </p>
+        ))}
+        <GuideAppLink
+          href="/orders"
+          label={LJD_DONGURI_GUIDE_LINK_LABEL}
+          feature="guide_loghouse"
+        />
+      </>
+    ),
   },
   {
     id: "kantei",
