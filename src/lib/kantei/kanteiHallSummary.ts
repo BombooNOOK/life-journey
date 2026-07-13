@@ -4,8 +4,12 @@ import { getLifePathArticle } from "@/lib/numerology/lifePathData";
 import { getMaturityArticle } from "@/lib/numerology/maturityData";
 import { getPersonalityArticle } from "@/lib/numerology/personalityData";
 import { getSoulArticle } from "@/lib/numerology/soulData";
+import { personalMonthEntry } from "@/lib/numerology/data/personalMonthData";
 import { personalYearCycleEntry } from "@/lib/numerology/data/personalYearCycleData";
-import { personalYearNumber } from "@/lib/numerology/personalYearMonth";
+import {
+  personalMonthNumber,
+  personalYearNumber,
+} from "@/lib/numerology/personalYearMonth";
 import { maturityNumberFromNumerology } from "@/lib/numerology/reduce";
 import type { NumerologyResult } from "@/lib/numerology/types";
 
@@ -13,7 +17,7 @@ export type KanteiHallNumberRow = {
   id: string;
   label: string;
   value: number | null;
-  /** 年付き表示（パーソナルイヤー用） */
+  /** 年／月などの期間ラベル（パーソナルイヤー・マンス用） */
   yearLabel?: string;
   message: string;
 };
@@ -22,6 +26,7 @@ export type KanteiHallSummary = {
   coreRows: KanteiHallNumberRow[];
   maturityRow: KanteiHallNumberRow;
   personalYearRow: KanteiHallNumberRow;
+  personalMonthRow: KanteiHallNumberRow;
 };
 
 function messageOrFallback(message: string | null | undefined, fallback: string): string {
@@ -39,9 +44,12 @@ export function buildKanteiHallSummary(input: {
   const { numerology, birthMonth, birthDay } = input;
   const now = input.referenceDate ?? new Date();
   const calendarYear = now.getFullYear();
+  const calendarMonth = now.getMonth() + 1;
   const maturity = maturityNumberFromNumerology(numerology);
   const yearCycle = personalYearNumber(birthMonth, birthDay, calendarYear);
   const yearTheme = personalYearCycleEntry(yearCycle);
+  const monthCycle = personalMonthNumber(yearCycle, calendarMonth);
+  const monthTheme = personalMonthEntry(monthCycle);
 
   const coreRows: KanteiHallNumberRow[] = [
     {
@@ -108,6 +116,13 @@ export function buildKanteiHallSummary(input: {
       value: yearCycle,
       yearLabel: `${calendarYear}年`,
       message: [yearTheme.theme, yearTheme.subtitle.replace(/\n/g, " ")].filter(Boolean).join(" — "),
+    },
+    personalMonthRow: {
+      id: "personalMonth",
+      label: "パーソナルマンス",
+      value: monthCycle,
+      yearLabel: `${calendarYear}年${calendarMonth}月`,
+      message: [monthTheme.theme, monthTheme.subtitle.replace(/\n/g, " ")].filter(Boolean).join(" — "),
     },
   };
 }

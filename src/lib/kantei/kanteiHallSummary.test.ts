@@ -41,5 +41,9 @@ describe("buildKanteiHallSummary", () => {
     expect(summary.personalYearRow.yearLabel).toBe("2026年");
     expect(summary.personalYearRow.value).toBeTypeOf("number");
     expect(summary.personalYearRow.message.length).toBeGreaterThan(0);
+    expect(summary.personalMonthRow.label).toBe("パーソナルマンス");
+    expect(summary.personalMonthRow.yearLabel).toBe("2026年7月");
+    expect(summary.personalMonthRow.value).toBeTypeOf("number");
+    expect(summary.personalMonthRow.message.length).toBeGreaterThan(0);
   });
 });

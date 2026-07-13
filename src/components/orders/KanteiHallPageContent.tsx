@@ -6,6 +6,7 @@ import {
   KANTEI_HALL_CORE_SECTION_TITLE,
   KANTEI_HALL_PAGE_DESCRIPTION,
   KANTEI_HALL_PAGE_TITLE,
+  KANTEI_HALL_PERSONAL_MONTH_SECTION_TITLE,
   KANTEI_HALL_PERSONAL_YEAR_SECTION_TITLE,
 } from "@/lib/kantei/kanteiHallCopy";
 import type { KanteiHallNumberRow, KanteiHallSummary } from "@/lib/kantei/kanteiHallSummary";
@@ -50,7 +51,7 @@ export function KanteiHallPageContent({
             href={backHref}
             className="text-sm text-stone-600 underline-offset-2 hover:text-stone-900 hover:underline"
           >
-            ← {backLabel}
+            {backLabel}
           </Link>
         </p>
         <div>
@@ -85,6 +86,16 @@ export function KanteiHallPageContent({
           {KANTEI_HALL_PERSONAL_YEAR_SECTION_TITLE}
         </h2>
         <NumberMessageCard row={summary.personalYearRow} />
+      </section>
+
+      <section
+        aria-labelledby="kantei-hall-month-heading"
+        className="scroll-mt-6 space-y-3 rounded-xl border border-stone-200 bg-white p-5 shadow-sm"
+      >
+        <h2 id="kantei-hall-month-heading" className="text-lg font-semibold text-stone-900">
+          {KANTEI_HALL_PERSONAL_MONTH_SECTION_TITLE}
+        </h2>
+        <NumberMessageCard row={summary.personalMonthRow} />
       </section>
 
       <p className="rounded-xl border border-stone-200 bg-stone-50/80 px-4 py-3 text-sm leading-6 text-stone-600">

@@ -14,5 +14,7 @@ export const KANTEI_HALL_CORE_SECTION_TITLE = "コアナンバー" as const;
 
 export const KANTEI_HALL_PERSONAL_YEAR_SECTION_TITLE = "パーソナルイヤー" as const;
 
+export const KANTEI_HALL_PERSONAL_MONTH_SECTION_TITLE = "パーソナルマンス" as const;
+
 export const KANTEI_HALL_BOOKSHELF_HINT =
   "くわしい鑑定書は、ログハウスの本棚から開けます。" as const;
