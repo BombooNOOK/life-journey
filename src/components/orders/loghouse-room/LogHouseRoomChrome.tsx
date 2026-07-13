@@ -96,7 +96,6 @@ export function LogHouseRoomChrome({
           <LogHouseDonguriCapsule
             balance={donguriBalance}
             onOpen={onOpenDonguriCho}
-            showHintLabel={hintActive}
             timeOfDay={timeOfDay}
           />
         ) : null}

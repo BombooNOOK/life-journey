@@ -14,10 +14,6 @@ export const DONGURI_CAPSULE_ARIA_LABEL = "どんぐり帳を開く" as const;
 
 export const DONGURI_CLOSE_LABEL = "閉じる" as const;
 
-export const DONGURI_HINT_LABEL = "どんぐり" as const;
-
-export const DONGURI_HINT_DESCRIPTION = "いま持っているどんぐりを確認できます" as const;
-
 export const DONGURI_UNIT = "こ" as const;
 
 export const DONGURI_EMPTY_LEDGER =

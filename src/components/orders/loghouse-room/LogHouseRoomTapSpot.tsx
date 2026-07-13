@@ -20,7 +20,8 @@ type Props = {
 
 function hintLabelPositionClass(align: LogHouseRoomHotspot["hintLabelAlign"]): string {
   // end: 右寄りの家具はホットスポット中央から左へ伸ばし、画面外切れを防ぐ
-  if (align === "start") return "left-0";
+  // start: 左端家具は少し右へずらし、画面外切れを防ぐ（本棚など）
+  if (align === "start") return "left-3";
   if (align === "end") return "right-1/2";
   return "left-1/2 -translate-x-1/2";
 }

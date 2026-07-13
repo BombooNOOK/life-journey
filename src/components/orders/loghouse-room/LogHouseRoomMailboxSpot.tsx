@@ -109,9 +109,8 @@ export function LogHouseRoomMailboxSpot({
 
       {showHintLabel ? (
         <span className="pointer-events-none absolute left-1/2 top-0 z-10 -translate-x-1/2">
-          <span className="inline-block max-w-[10rem] rounded-full bg-[#fffdf9]/85 px-2.5 py-0.5 text-center text-[10px] font-medium leading-snug tracking-wide text-stone-700 shadow-sm ring-1 ring-stone-300/35">
+          <span className="inline-block whitespace-nowrap rounded-full bg-[#fffdf9]/85 px-2.5 py-0.5 text-center text-[10px] font-medium tracking-wide text-stone-700 shadow-sm ring-1 ring-stone-300/35">
             {copy.label}
-            <span className="mt-0.5 block font-normal text-stone-500">{copy.description}</span>
           </span>
         </span>
       ) : null}
