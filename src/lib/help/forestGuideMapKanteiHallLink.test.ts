@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { forestGuideMapKanteiHallLink } from "@/lib/help/forestGuideMapKanteiHallLink";
+import { KANTEI_HALL_PAGE_PATH } from "@/lib/kantei/kanteiHallCopy";
 import { FIRST_VISIT_ROUTES } from "@/lib/onboarding/firstVisitWizard/routes";
 
 describe("forestGuideMapKanteiHallLink", () => {
@@ -20,11 +21,11 @@ describe("forestGuideMapKanteiHallLink", () => {
     });
   });
 
-  it("routes users with kantei to bookshelf with read label", () => {
+  it("routes users with kantei to kantei hall summary page", () => {
     expect(forestGuideMapKanteiHallLink("hasKantei")).toEqual({
       branch: "hasKantei",
-      href: "/orders/bookshelf#bookshelf-kantei-books",
-      linkLabel: "本棚で鑑定書を見る",
+      href: KANTEI_HALL_PAGE_PATH,
+      linkLabel: "数字を読み返す",
     });
   });
 });

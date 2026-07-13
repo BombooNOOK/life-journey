@@ -35,6 +35,7 @@ export function KanteiTodayHintSection({ hint, className = "" }: Props) {
 
       <div className="grid gap-3 sm:grid-cols-2">
         <div
+          id="guardian-color"
           className="rounded-xl border bg-white p-4 shadow-sm transition-colors"
           style={{
             borderColor: guardianStyle.borderColor,
@@ -53,14 +54,6 @@ export function KanteiTodayHintSection({ hint, className = "" }: Props) {
           <h3 className="text-sm font-semibold text-stone-700">今日の小さな行動</h3>
           <p className="mt-2 text-sm leading-7 text-stone-700">{hint.smallAction}</p>
         </div>
-      </div>
-
-      <div className="rounded-xl border border-stone-200 bg-white p-4 shadow-sm">
-        <h3 className="text-sm font-semibold text-stone-700">今日のガイド</h3>
-        <p className="mt-2 text-sm leading-7 text-stone-600">
-          パーソナルイヤー {hint.personalYear} ・パーソナルマンス {hint.personalMonth} ・パーソナルデイ{" "}
-          {hint.personalDay}
-        </p>
       </div>
     </section>
   );

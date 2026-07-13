@@ -139,6 +139,7 @@ const ORDERS_STATIC_FIRST_SEGMENTS = new Set([
   "garden",
   "list",
   "mailbox",
+  "kantei-hall",
   "profile",
   "resident-card",
   "settings",

@@ -11,15 +11,13 @@ import {
   type ForestGuideMapBuildingId,
   type ForestGuideMapBuildingInfo,
 } from "@/lib/help/bambooForestGuideMapBuildings";
-import type {
-  ForestGuideMapCoreNumber,
-  ForestGuideMapKanteiHallLink,
-} from "@/lib/help/forestGuideMapKanteiHallLink";
+import type { ForestGuideMapKanteiHallLink } from "@/lib/help/forestGuideMapKanteiHallLink";
 import { forestGuideMapHotspots } from "@/lib/help/bambooForestGuideMapHotspots";
 import {
   BAMBOO_FOREST_GUIDE_MAP_INTRINSIC,
   bambooForestGuideMapSrc,
 } from "@/lib/help/bambooForestGuideMap";
+import { KANTEI_HALL_MAP_BODY_HAS_KANTEI } from "@/lib/kantei/kanteiHallCopy";
 
 type Props = {
   className?: string;
@@ -30,11 +28,9 @@ type Props = {
 function ForestGuideMapBuildingPanel({
   building,
   kanteiLinkLoading,
-  coreNumbers,
 }: {
   building: ForestGuideMapBuildingInfo;
   kanteiLinkLoading: boolean;
-  coreNumbers?: ForestGuideMapCoreNumber[];
 }) {
   const buildingId = building.id;
   const showKanteiLinkSpinner = useDelayedBusy(
@@ -56,24 +52,6 @@ function ForestGuideMapBuildingPanel({
         </h3>
       </div>
       <p className="mt-2 text-sm leading-relaxed text-stone-600">{building.body}</p>
-      {buildingId === "kanteiHall" && coreNumbers && coreNumbers.length > 0 ? (
-        <div className="mt-3">
-          <p className="text-xs font-semibold text-stone-800">あなたのコアナンバー</p>
-          <div className="mt-2 grid grid-cols-3 gap-2">
-            {coreNumbers.map((item) => (
-              <div
-                key={item.label}
-                className="rounded-lg border border-amber-100 bg-gradient-to-br from-white to-amber-50/80 px-2 py-2 text-center"
-              >
-                <p className="text-[10px] font-medium leading-tight text-stone-500">{item.label}</p>
-                <p className="mt-0.5 text-base font-semibold tabular-nums text-stone-900">
-                  {item.value == null ? "—" : item.value}
-                </p>
-              </div>
-            ))}
-          </div>
-        </div>
-      ) : null}
       {building.href && building.linkLabel ? (
         <p className="mt-3">
           {building.external ? (
@@ -154,6 +132,8 @@ function resolveBuildingForPanel(
     ...building,
     href: kanteiHallLink.href,
     linkLabel: kanteiHallLink.linkLabel,
+    body:
+      kanteiHallLink.branch === "hasKantei" ? KANTEI_HALL_MAP_BODY_HAS_KANTEI : building.body,
   };
 }
 
@@ -223,11 +203,6 @@ export function BambooForestGuideMap({
           <ForestGuideMapBuildingPanel
             building={resolveBuildingForPanel(selectedId, kanteiHallLink)}
             kanteiLinkLoading={selectedId === "kanteiHall" && kanteiHallLinkLoading}
-            coreNumbers={
-              selectedId === "kanteiHall" && kanteiHallLink?.branch === "hasKantei"
-                ? kanteiHallLink.coreNumbers
-                : undefined
-            }
           />
         </div>
       ) : (

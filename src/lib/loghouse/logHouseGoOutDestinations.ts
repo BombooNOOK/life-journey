@@ -45,7 +45,7 @@ export const LOG_HOUSE_GO_OUT_DESTINATIONS: LogHouseGoOutDestination[] = [
   {
     id: "kanteiHall",
     title: "鑑定のへや",
-    description: "あなたの数字や、\n鑑定書を見たいときに。",
+    description: "あなたの数字を、\n短いメッセージで読み返したいときに。",
     icon: "kanteiHall",
     route: "kanteiHall",
     actionLabel: "ここに行く",

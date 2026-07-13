@@ -4,8 +4,10 @@ import { journalProfileIdsForQuery } from "@/lib/profile/activeProfile";
 
 const KANTEI_ORDER_CORE_SELECT = {
   id: true,
+  birthYear: true,
   birthMonth: true,
   birthDay: true,
+  birthDate: true,
   numerologyJson: true,
 } as const;
 
@@ -42,8 +44,10 @@ export async function findKanteiOrderForProfile(params: {
   profileId: string;
 }): Promise<{
   id: string;
+  birthYear: number;
   birthMonth: number;
   birthDay: number;
+  birthDate: string;
   numerologyJson: string | null;
 } | null> {
   const email = normalizeEmail(params.viewerEmail);

@@ -17,7 +17,6 @@ import {
 } from "@/lib/help/forestMapAssets";
 import { FOREST_MAP_HOTSPOTS } from "@/lib/help/forestMapHotspots";
 import type {
-  ForestGuideMapCoreNumber,
   ForestGuideMapKanteiHallLink,
 } from "@/lib/help/forestGuideMapKanteiHallLink";
 import { LOG_HOUSE_NAV_LABEL } from "@/lib/journal/logHouseLabels";
@@ -104,61 +103,6 @@ function useKanteiHallLink(): {
   }, []);
 
   return { link, loading };
-}
-
-function KanteiCoreNumbersPanel({
-  coreNumbers,
-  bookshelfHref,
-  bookshelfLabel,
-  onClose,
-}: {
-  coreNumbers: ForestGuideMapCoreNumber[];
-  bookshelfHref: string;
-  bookshelfLabel: string;
-  onClose: () => void;
-}) {
-  return (
-    <div className="absolute inset-x-0 bottom-0 z-[56] px-3 pb-[max(1rem,env(safe-area-inset-bottom))]">
-      <div
-        role="dialog"
-        aria-labelledby="forest-map-kantei-panel-title"
-        className="mx-auto max-w-md rounded-2xl border border-amber-100/90 bg-[#fffdf9]/96 px-4 py-4 shadow-lg backdrop-blur-[2px]"
-      >
-        <div className="mb-3 flex items-start justify-between gap-3">
-          <h2 id="forest-map-kantei-panel-title" className="text-sm font-semibold text-stone-900">
-            あなたのコアナンバー
-          </h2>
-          <button
-            type="button"
-            onClick={onClose}
-            className="inline-flex min-h-[40px] min-w-[40px] items-center justify-center rounded-full border border-stone-200 text-stone-600 hover:bg-stone-50"
-            aria-label="閉じる"
-          >
-            ✕
-          </button>
-        </div>
-        <div className="grid grid-cols-3 gap-2">
-          {coreNumbers.map((item) => (
-            <div
-              key={item.label}
-              className="rounded-xl border border-amber-100 bg-gradient-to-br from-white to-amber-50/80 px-2 py-2.5 text-center"
-            >
-              <p className="text-[10px] font-medium leading-tight text-stone-500">{item.label}</p>
-              <p className="mt-1 text-lg font-semibold tabular-nums text-stone-900">
-                {item.value == null ? "—" : item.value}
-              </p>
-            </div>
-          ))}
-        </div>
-        <Link
-          href={bookshelfHref}
-          className="mt-4 inline-flex min-h-[44px] w-full items-center justify-center rounded-xl border border-emerald-300 bg-emerald-50/90 px-4 text-sm font-semibold text-emerald-950 transition hover:bg-emerald-100"
-        >
-          {bookshelfLabel}
-        </Link>
-      </div>
-    </div>
-  );
 }
 
 function MapStage({
@@ -253,7 +197,6 @@ export function ForestMapPage({
   const [isPending, startTransition] = useTransition();
   const [localBusy, setLocalBusy] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
-  const [showKanteiPanel, setShowKanteiPanel] = useState(false);
   const busy = isPending || localBusy;
   const { link: kanteiLink, loading: kanteiLoading } = useKanteiHallLink();
 
@@ -288,10 +231,6 @@ export function ForestMapPage({
           setLocalBusy(true);
           return;
         }
-        if (kanteiLink.branch === "hasKantei") {
-          setShowKanteiPanel(true);
-          return;
-        }
         startTransition(() => {
           router.push(kanteiLink.href);
         });
@@ -320,10 +259,6 @@ export function ForestMapPage({
       return;
     }
     setLocalBusy(false);
-    if (kanteiLink.branch === "hasKantei") {
-      setShowKanteiPanel(true);
-      return;
-    }
     startTransition(() => {
       router.push(kanteiLink.href);
     });
@@ -340,33 +275,6 @@ export function ForestMapPage({
     </div>
   ) : null;
 
-  const kanteiPanel =
-    showKanteiPanel && kanteiLink?.branch === "hasKantei" ? (
-      <>
-        <button
-          type="button"
-          className="absolute inset-0 z-[55] bg-stone-900/20"
-          aria-label="パネルを閉じる"
-          onClick={() => setShowKanteiPanel(false)}
-        />
-        <KanteiCoreNumbersPanel
-          coreNumbers={
-            kanteiLink.coreNumbers ?? [
-              { label: "ライフパス", value: null },
-              { label: "ディスティニー", value: null },
-              { label: "ソウル", value: null },
-              { label: "パーソナリティ", value: null },
-              { label: "バースデー", value: null },
-              { label: "マチュリティ", value: null },
-            ]
-          }
-          bookshelfHref={kanteiLink.href}
-          bookshelfLabel={kanteiLink.linkLabel}
-          onClose={() => setShowKanteiPanel(false)}
-        />
-      </>
-    ) : null;
-
   const busyOverlay = <OwlDelayedBusyOverlay busy={busy} spinnerDelayMs={0} className="bg-white/15" />;
 
   if (layout === "framed") {
@@ -382,7 +290,6 @@ export function ForestMapPage({
         </div>
         <ForestMapChrome backLink={backLink} />
         {noticeOverlay}
-        {kanteiPanel}
         {busyOverlay}
         <p className="sr-only">{FOREST_MAP_PAGE_TITLE}</p>
       </div>
@@ -398,7 +305,6 @@ export function ForestMapPage({
       </div>
       <ForestMapChrome backLink={backLink} />
       {noticeOverlay}
-      {kanteiPanel}
       {busyOverlay}
       <h1 className="sr-only">{FOREST_MAP_PAGE_TITLE}</h1>
     </div>
