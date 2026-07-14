@@ -84,7 +84,13 @@ export default async function LogHouseDeskWritePage() {
       redirect("/orders");
     }
 
-    return <LogHouseDeskWritingChoice companionWritingHref={companionWritingHref} />;
+    return (
+      <LogHouseDeskWritingChoice
+        companionWritingHref={companionWritingHref}
+        profiles={profiles}
+        activeProfileId={activeProfileId}
+      />
+    );
   } catch (e) {
     return (
       <LogHouseLoadErrorPanel

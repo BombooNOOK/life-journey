@@ -19,6 +19,11 @@ export const LOG_HOUSE_DESK_WRITE_COMPANION_DESCRIPTION =
 
 export const LOG_HOUSE_DESK_WRITE_SOLO_HREF = "/orders/calendar" as const;
 
+export const LOG_HOUSE_DESK_WRITE_PROFILE_LABEL = "このプロフィールで書く" as const;
+
+export const LOG_HOUSE_DESK_WRITE_PROFILE_HINT =
+  "プロフィールが複数あるときだけ、ここで切り替えられます。" as const;
+
 /**
  * はじめての日記（鑑定済み・日記0件）は選択画面を挟まず伴走執筆へ。
  * それ以外の通常利用は `/orders/write`。

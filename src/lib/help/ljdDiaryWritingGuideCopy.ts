@@ -24,7 +24,7 @@ export const LJD_DIARY_WRITING_GUIDE_COMMON_STEPS: readonly LjdDiaryWritingGuide
     id: "profile",
     title: "プロフィールを確認する",
     body: "どのプロフィールの日記として残すか、はじめに確認します。",
-    note: "プロフィールが複数あるときは、書く前に切り替えておきましょう。設定やプロフィール一覧から選べます。日記は、すべてご自身に関する内容として書く想定です。",
+    note: "プロフィールが複数あるときは、机のあとの「今日はどうしますか？」画面の上部で切り替えられます。日記は、すべてご自身に関する内容として書く想定です。",
   },
   {
     id: "desk",
