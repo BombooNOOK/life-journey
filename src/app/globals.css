@@ -182,18 +182,6 @@ html[data-reading-font-size="x-large"] .lj-reading-exempt {
   }
 }
 
-@keyframes loghouseRadioLamp {
-  0%,
-  100% {
-    opacity: 0.55;
-    transform: scale(0.92);
-  }
-  50% {
-    opacity: 1;
-    transform: scale(1.12);
-  }
-}
-
 @keyframes loghouseRadioSoftPulse {
   0%,
   100% {
@@ -202,10 +190,6 @@ html[data-reading-font-size="x-large"] .lj-reading-exempt {
   50% {
     box-shadow: 0 0 0 4px rgba(159, 176, 110, 0.12);
   }
-}
-
-.loghouse-radio-lamp {
-  animation: loghouseRadioLamp 2.6s ease-in-out infinite;
 }
 
 .loghouse-radio-note {
