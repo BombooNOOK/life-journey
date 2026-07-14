@@ -13,11 +13,20 @@ export type LogHouseRadioRepeatMode = "off" | "one" | "all";
 
 export type LogHouseRadioSleepTimerMinutes = "off" | 15 | 30 | 60;
 
+/** カセットのざっくり分類（所持一覧・いまのカセット用） */
+export type LogHouseRadioCassetteCategory = "bgm" | "nature";
+
+export const LOG_HOUSE_RADIO_CATEGORY_LABEL: Record<LogHouseRadioCassetteCategory, string> = {
+  bgm: "BGM",
+  nature: "自然音",
+};
+
 export type LogHouseRadioCassette = {
   id: string;
   title: string;
   /** 一覧用の短い一言 */
   blurb: string;
+  category: LogHouseRadioCassetteCategory;
   /**
    * カセットジャケット画像。
    * 「いまのカセット」右枠と、所持一覧の並びで同じものを出す想定。
@@ -32,7 +41,7 @@ export type LogHouseRadioCassette = {
 
 export const LOG_HOUSE_RADIO_ASSET_DIR = "/images/ljd/loghouse-room/radio" as const;
 
-const LOG_HOUSE_RADIO_ASSET_VERSION = 2;
+const LOG_HOUSE_RADIO_ASSET_VERSION = 3;
 
 function radioAsset(filename: string): string {
   return `${LOG_HOUSE_RADIO_ASSET_DIR}/${filename}?v=${LOG_HOUSE_RADIO_ASSET_VERSION}`;
@@ -60,6 +69,14 @@ export const LOG_HOUSE_RADIO_CASSETTE_ICON_SRC = radioAsset("radio_cassette_icon
 /** 仮ジャケット（雨のログハウス）。専用ジャケットを渡したらこちらを差し替え */
 export const LOG_HOUSE_RADIO_JACKET_RAIN_SRC = radioAsset("radio_cassette_jacket_rain.png");
 
+/** お試し：モグラの大工さん工事中 */
+export const LOG_HOUSE_RADIO_JACKET_LOGHOUSE_BUILD_SRC = radioAsset(
+  "radio_cassette_jacket_loghouse_build.png",
+);
+
+export const LOG_HOUSE_RADIO_AUDIO_LOGHOUSE_BUILD_SRC =
+  "/audio/forest/music-hall/bgm_loghouse_build.mp3" as const;
+
 export const LOG_HOUSE_RADIO_EYEBROW = "ログハウスの道具" as const;
 
 export const LOG_HOUSE_RADIO_TITLE = "森のラジカセ" as const;
@@ -67,7 +84,7 @@ export const LOG_HOUSE_RADIO_TITLE = "森のラジカセ" as const;
 export const LOG_HOUSE_RADIO_CLOSE_LABEL = "閉じる" as const;
 
 export const LOG_HOUSE_RADIO_PREPARING_NOTE =
-  "このラジカセはいま準備中です。操作の見た目だけお試しできます。音は、森の小さな音楽堂で準備が進んでいます。" as const;
+  "このラジカセはいま準備中です。「モグラの大工さん工事中」だけ、お試しで音が鳴ります。ほかのカセットはこれから。" as const;
 
 export const LOG_HOUSE_RADIO_NOW_LABEL = "いまのカセット" as const;
 
@@ -111,34 +128,46 @@ export const LOG_HOUSE_RADIO_SLEEP_TIMER_OPTIONS: {
   { value: "off", label: "タイマーなし" },
 ];
 
-/** 仮カセット一覧（本実装前の表示用） */
+/** 仮カセット一覧（本実装前の表示用）。先頭の1本はお試しで実音源＋ジャケットあり */
 export const LOG_HOUSE_RADIO_CASSETTES: LogHouseRadioCassette[] = [
+  {
+    id: "loghouse-build",
+    title: "モグラの大工さん工事中",
+    blurb: "ログハウス建築のときのBGM",
+    category: "bgm",
+    jacketSrc: LOG_HOUSE_RADIO_JACKET_LOGHOUSE_BUILD_SRC,
+    audioSrc: LOG_HOUSE_RADIO_AUDIO_LOGHOUSE_BUILD_SRC,
+  },
   {
     id: "rain-loghouse",
     title: "雨のログハウス",
     blurb: "窓ガラスをたたく、やさしい雨音",
+    category: "nature",
     jacketSrc: LOG_HOUSE_RADIO_JACKET_RAIN_SRC,
-    // audioSrc: "/audio/ljd/radio/rain-loghouse.mp3", // 将来
   },
   {
     id: "autumn-insects",
     title: "秋の虫の音",
     blurb: "草むらのこおろぎたちがそよそよ",
+    category: "nature",
   },
   {
     id: "forest-morning",
     title: "森の朝",
     blurb: "葉ずれと、とおくの鳥の声",
+    category: "nature",
   },
   {
     id: "river-murmur",
     title: "川のせせらぎ",
     blurb: "浅い川の、きらきらした流れ",
+    category: "nature",
   },
   {
     id: "music-hall-vol1",
     title: "小さな音楽堂 Vol.1",
     blurb: "音楽堂で出会う曲のつめあわせ",
+    category: "bgm",
   },
 ];
 
@@ -166,4 +195,19 @@ export function logHouseRadioPlaybackStatusLabel(params: {
   if (params.isPlaying) return LOG_HOUSE_RADIO_PLAYING_LABEL;
   if (params.isPaused) return LOG_HOUSE_RADIO_PAUSED_LABEL;
   return LOG_HOUSE_RADIO_STOPPED_LABEL;
+}
+
+export function logHouseRadioRepeatStatusLabel(
+  mode: LogHouseRadioRepeatMode,
+): string | null {
+  if (mode === "one") return "1曲リピート中";
+  if (mode === "all") return "全曲リピート中";
+  return null;
+}
+
+export function logHouseRadioSleepTimerStatusLabel(
+  timer: LogHouseRadioSleepTimerMinutes,
+): string | null {
+  if (timer === "off") return null;
+  return `${timer}分後に停止`;
 }
