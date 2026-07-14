@@ -17,32 +17,32 @@ const toneClass: Record<
   { card: string; iconWrap: string; arrow: string; title: string; description: string }
 > = {
   emerald: {
-    card: "border-emerald-200/90 bg-gradient-to-br from-[#f8f6f0] via-white to-emerald-50/50 hover:border-emerald-300 hover:shadow-md",
-    iconWrap: "bg-[#f8f6f0] ring-emerald-100/80",
-    arrow: "group-hover:text-emerald-700",
-    title: "text-stone-900",
-    description: "text-stone-600",
+    card: "border-[#d9e0c4]/95 bg-gradient-to-br from-[#fdf9f1] via-[#fbf7ef] to-[#eef3e4]/55 hover:border-[#c5d0a8] hover:shadow-[0_8px_20px_rgba(90,70,45,0.08)]",
+    iconWrap: "bg-[#f4f0e4] ring-[#e4dec8]/90",
+    arrow: "text-[#b7ab93] group-hover:text-[#5f7348]",
+    title: "text-[#3d3226]",
+    description: "text-[#6e5c48]",
   },
   wood: {
-    card: "border-[#e5ddd0] bg-gradient-to-br from-[#faf7f1] via-white to-[#f3ebe0]/60 hover:border-[#d9cbb8] hover:shadow-md",
+    card: "border-[#e4d5c0]/95 bg-gradient-to-br from-[#fdf8f0] via-[#faf4ea] to-[#f3eadc]/70 hover:border-[#d5c3a8] hover:shadow-[0_8px_20px_rgba(90,70,45,0.08)]",
     iconWrap: "bg-[#f5efe6] ring-[#ebe2d6]",
-    arrow: "group-hover:text-[#7a6248]",
-    title: "text-stone-900",
-    description: "text-stone-600",
+    arrow: "text-[#c4b296] group-hover:text-[#7a6248]",
+    title: "text-[#3d3226]",
+    description: "text-[#6e5c48]",
   },
   shelf: {
-    card: "border-[#CDBB9C] bg-[#FFFBF2] hover:border-[#bfa888] hover:shadow-md",
+    card: "border-[#CDBB9C] bg-[#FFFBF2] hover:border-[#bfa888] hover:shadow-[0_8px_20px_rgba(90,70,45,0.08)]",
     iconWrap: "bg-[#f7f0e4] ring-[#e8dcc8]",
-    arrow: "group-hover:text-[#6B5638]",
+    arrow: "text-[#c4b296] group-hover:text-[#6B5638]",
     title: "text-[#6B5638]",
     description: "text-[#6B5638]/80",
   },
   fortune: {
-    card: "border-[#d9c9a8] bg-gradient-to-br from-[#fffaf3] via-white to-[#f3ead8]/70 hover:border-[#c4b08e] hover:shadow-md",
+    card: "border-[#d9c9a8] bg-gradient-to-br from-[#fffaf3] via-[#fbf6ec] to-[#f3ead8]/70 hover:border-[#c4b08e] hover:shadow-[0_8px_20px_rgba(90,70,45,0.08)]",
     iconWrap: "bg-[#faf4e8] ring-[#eadfce]",
-    arrow: "group-hover:text-[#8a6b42]",
-    title: "text-stone-900",
-    description: "text-stone-600",
+    arrow: "text-[#c4b296] group-hover:text-[#8a6b42]",
+    title: "text-[#3d3226]",
+    description: "text-[#6e5c48]",
   },
 };
 
@@ -76,10 +76,10 @@ export function MyPageActionCard({
   return (
     <div
       className={[
-        "group relative w-full rounded-2xl border p-3.5 shadow-sm transition sm:p-4",
+        "group relative w-full overflow-hidden rounded-[1.25rem] border p-3.5 shadow-[0_6px_18px_rgba(90,70,45,0.06)] transition sm:p-4",
         palette.card,
-        emphasis ? "ring-2 ring-emerald-200/70" : "",
-        disabled ? "cursor-not-allowed opacity-65 shadow-none hover:shadow-sm" : "",
+        emphasis ? "ring-2 ring-[#c5d0a8]/70" : "",
+        disabled ? "cursor-not-allowed opacity-65 shadow-none hover:shadow-[0_6px_18px_rgba(90,70,45,0.06)]" : "",
         className,
       ].join(" ")}
     >

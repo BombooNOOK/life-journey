@@ -83,6 +83,12 @@ const links: { href: string; label: string; note?: string; highlight?: boolean }
     highlight: true,
   },
   {
+    href: "/preview/desk-write",
+    label: "今日はどうしますか？（スマホ枠）",
+    note: "ログイン不要。PCでスマホ縦枠＋下部ナビを確認。npm run dev 中のみ",
+    highlight: true,
+  },
+  {
     href: "/preview/garden",
     label: "お庭（モバイル没入）",
     note: "ログイン不要。ジョウロタップで成長確認。npm run dev 中のみ",
