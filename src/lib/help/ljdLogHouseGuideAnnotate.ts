@@ -1,10 +1,10 @@
 /** 案内所 TOC「ログハウス」— スクショ注釈用 */
 
 export const LJD_LOG_HOUSE_GUIDE_SHOT_SRC =
-  "/images/ljd/guide-station/loghouse_guide_shot.jpg?v=2" as const;
+  "/images/ljd/guide-station/loghouse_guide_shot.jpg?v=3" as const;
 
 export const LJD_LOG_HOUSE_GUIDE_SHOT_INTRINSIC = {
-  widthPx: 504,
+  widthPx: 503,
   heightPx: 1024,
 } as const;
 
@@ -16,7 +16,9 @@ export type LjdLogHouseGuideMarkerId =
   | "desk"
   | "todayResult"
   | "radio"
-  | "rabbit";
+  | "rabbit"
+  | "mailbox"
+  | "goOut";
 
 export type LjdLogHouseGuideMarker = {
   id: LjdLogHouseGuideMarkerId;
@@ -81,5 +83,21 @@ export const LJD_LOG_HOUSE_GUIDE_MARKERS: LjdLogHouseGuideMarker[] = [
     y: 50,
     title: "うさぎ（あなた自身）",
     body: "ログハウスにいるうさぎは、あなた自身の分身です。将来は、どんぐりで見た目を変えられるようにする予定です。",
+  },
+  {
+    id: "mailbox",
+    number: 7,
+    x: 20,
+    y: 89,
+    title: "ポスト",
+    body: "タップすると、ヤギの郵便屋さんからのお届けものを確認できます。",
+  },
+  {
+    id: "goOut",
+    number: 8,
+    x: 50,
+    y: 93.5,
+    title: "靴（おでかけ）",
+    body: "タップするとおでかけへ進み、お庭や森の案内図などへ出かけられます。",
   },
 ];
