@@ -9,6 +9,7 @@ import { CompanionWritingButtonLabel } from "@/components/journal/companion-writ
 import {
   LJD_DIARY_WRITING_GUIDE_CHOOSE_ACTION,
   LJD_DIARY_WRITING_GUIDE_CHOOSE_COMPANION,
+  LJD_DIARY_WRITING_GUIDE_CHOOSE_FIRST_NOTE,
   LJD_DIARY_WRITING_GUIDE_CHOOSE_SOLO,
   LJD_DIARY_WRITING_GUIDE_CALENDAR_HUB,
   LJD_DIARY_WRITING_GUIDE_COMMON_STEPS,
@@ -23,7 +24,8 @@ import {
   LJD_DIARY_WRITING_GUIDE_NORMAL_SECTION_TITLE,
   type LjdDiaryWritingGuideStep,
 } from "@/lib/help/ljdDiaryWritingGuideCopy";
-import { LOG_HOUSE_MAIN_ACTIONS_HREF, LOG_HOUSE_OPEN_LABEL } from "@/lib/journal/logHouseLabels";
+import { LOG_HOUSE_DESK_WRITE_PAGE_PATH } from "@/lib/loghouse/logHouseDeskWritingChoice";
+import { LOG_HOUSE_OPEN_LABEL } from "@/lib/journal/logHouseLabels";
 import { journalWithCompanionPath } from "@/lib/journal/journalNav";
 
 export type LjdDiaryWritingGuideBodyVariant = "dictionary" | "firstJournal";
@@ -90,7 +92,7 @@ function GuideFlowSection({
 export function LjdDiaryWritingGuideBody({
   variant = "dictionary",
   showLogHousePreview = true,
-  emphasizeCompanion = true,
+  emphasizeCompanion = false,
   prelude = null,
 }: Props) {
   const commonCount = LJD_DIARY_WRITING_GUIDE_COMMON_STEPS.length;
@@ -111,9 +113,12 @@ export function LjdDiaryWritingGuideBody({
           {LJD_DIARY_WRITING_GUIDE_CHOOSE_ACTION.body}
         </p>
         <ul className="mt-2.5 space-y-1.5 text-sm leading-6 text-stone-700">
-          <li>・{LJD_DIARY_WRITING_GUIDE_CHOOSE_COMPANION}</li>
           <li>・{LJD_DIARY_WRITING_GUIDE_CHOOSE_SOLO}</li>
+          <li>・{LJD_DIARY_WRITING_GUIDE_CHOOSE_COMPANION}</li>
         </ul>
+        <p className="mt-2 text-xs leading-relaxed text-stone-500">
+          {LJD_DIARY_WRITING_GUIDE_CHOOSE_FIRST_NOTE}
+        </p>
       </div>
 
       {showLogHousePreview ? (
@@ -167,7 +172,11 @@ export function LjdDiaryWritingGuideBody({
 
       <GuideAppLink href="/orders" label={LOG_HOUSE_OPEN_LABEL} feature="guide_loghouse" />
       {variant === "dictionary" ? (
-        <GuideAppLink href={LOG_HOUSE_MAIN_ACTIONS_HREF} label="ログハウスの②を開く" feature="guide_loghouse" />
+        <GuideAppLink
+          href={LOG_HOUSE_DESK_WRITE_PAGE_PATH}
+          label="書き方を選ぶ画面を開く"
+          feature="guide_loghouse"
+        />
       ) : null}
     </div>
   );

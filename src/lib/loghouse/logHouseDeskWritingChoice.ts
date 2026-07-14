@@ -5,7 +5,7 @@ export const LOG_HOUSE_DESK_WRITE_PAGE_PATH = "/orders/write" as const;
 export const LOG_HOUSE_DESK_WRITE_PAGE_TITLE = "今日はどうしますか？" as const;
 
 export const LOG_HOUSE_DESK_WRITE_PAGE_DESCRIPTION =
-  "机には、ひとりで書く方法と、どうぶつ鑑定士といっしょに書く方法があります。" as const;
+  "日記には、ひとりで書く方法と、どうぶつ鑑定士といっしょに書く方法があります。" as const;
 
 export const LOG_HOUSE_DESK_WRITE_SOLO_TITLE = "ひとりで書く" as const;
 

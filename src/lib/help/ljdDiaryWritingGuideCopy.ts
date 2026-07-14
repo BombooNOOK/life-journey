@@ -1,10 +1,10 @@
-/** 森の案内所④「日記の書き方」— 辞書トーンの原稿（はじめて導線とは別） */
+/** 森の案内所「日記の書き方」— 辞書トーンの原稿（はじめて導線とは別） */
 
 export const LJD_DIARY_WRITING_GUIDE_SECTION_SUMMARY =
-  "ログハウスからカレンダーで日付を選び、1ページを残す" as const;
+  "ログハウスの机から、ひとりで書くか・いっしょに書くかを選ぶ" as const;
 
 export const LJD_DIARY_WRITING_GUIDE_LEAD =
-  "日記は、ログハウスから書きます。通常の執筆では、カレンダーで日付を選んで1日1ページを残します。プロフィールを選び、「やりたいこと」から始めます。" as const;
+  "日記は、ログハウスの机から書きます。机をタップすると、今日の書き方を選べます。" as const;
 
 export type LjdDiaryWritingGuideStep = {
   id: string;
@@ -13,7 +13,7 @@ export type LjdDiaryWritingGuideStep = {
   note?: string;
 };
 
-/** ログハウスまでの共通手順 */
+/** ログハウス〜机までの共通手順 */
 export const LJD_DIARY_WRITING_GUIDE_COMMON_STEPS: readonly LjdDiaryWritingGuideStep[] = [
   {
     id: "loghouse",
@@ -22,26 +22,34 @@ export const LJD_DIARY_WRITING_GUIDE_COMMON_STEPS: readonly LjdDiaryWritingGuide
   },
   {
     id: "profile",
-    title: "プロフィールを選ぶ（①）",
-    body: "日記を書きたいプロフィールを選びます。",
-    note: "プロフィールは、すべてご自身に関する内容として書く想定です。はじめての方は1つだけのことが多く、そのまま次へ進めます。",
+    title: "プロフィールを確認する",
+    body: "どのプロフィールの日記として残すか、はじめに確認します。",
+    note: "プロフィールが複数あるときは、書く前に切り替えておきましょう。設定やプロフィール一覧から選べます。日記は、すべてご自身に関する内容として書く想定です。",
+  },
+  {
+    id: "desk",
+    title: "机をタップする",
+    body: "ログハウスの室内で、机をタップします。ここが日記のはじまりです。",
   },
 ] as const;
 
 export const LJD_DIARY_WRITING_GUIDE_CHOOSE_ACTION: LjdDiaryWritingGuideStep = {
   id: "choose",
-  title: "②で書き方を選ぶ",
-  body: "ログハウスの「やりたいことを選ぶ」から、次のどちらかを選びます。",
+  title: "今日はどうしますか？",
+  body: "机のあとに、書き方を選ぶ画面が開きます。次のどちらかを選べます。",
 };
 
 export const LJD_DIARY_WRITING_GUIDE_CHOOSE_COMPANION =
-  "どうぶつ鑑定士に伴走してもらいながら書く場合は、「どうぶつ鑑定士といっしょに書く」を選びます。" as const;
+  "どうぶつ鑑定士といっしょに書く場合は、「鑑定士といっしょに書く」を選びます。" as const;
 
 export const LJD_DIARY_WRITING_GUIDE_CHOOSE_SOLO =
-  "通常の日記執筆モードでは、「日記を書く」を選びます。カレンダーが開き、今日か別の日かで書き始め方が少し変わります。" as const;
+  "ひとりで書く場合は、「ひとりで書く」を選びます。カレンダーが開き、今日か別の日かで書き始め方が少し変わります。" as const;
+
+export const LJD_DIARY_WRITING_GUIDE_CHOOSE_FIRST_NOTE =
+  "はじめての日記（まだ1件も書いていないとき）は、この選択を挟まず、鑑定士といっしょに書く流れへ進みます。" as const;
 
 export const LJD_DIARY_WRITING_GUIDE_COMPANION_SECTION_TITLE =
-  "どうぶつ鑑定士といっしょに書く場合" as const;
+  "鑑定士といっしょに書く場合" as const;
 
 export const LJD_DIARY_WRITING_GUIDE_COMPANION_TODAY_NOTE =
   "このモードは、基本的に「今日」の1ページを書く入口です（日付は自動で今日になります）。保存後はカレンダーに戻り、今日のしるしを確認できます。" as const;
@@ -76,7 +84,7 @@ export const LJD_DIARY_WRITING_GUIDE_COMPANION_FLOW: readonly LjdDiaryWritingGui
 ] as const;
 
 export const LJD_DIARY_WRITING_GUIDE_NORMAL_SECTION_TITLE =
-  "日記を書く場合（通常の執筆モード）" as const;
+  "ひとりで書く場合" as const;
 
 /** カレンダー中心の説明（通常モードの前提） */
 export const LJD_DIARY_WRITING_GUIDE_CALENDAR_HUB =
@@ -97,7 +105,7 @@ export const LJD_DIARY_WRITING_GUIDE_NORMAL_FLOW: readonly LjdDiaryWritingGuideS
   {
     id: "open-calendar",
     title: "カレンダーを開く",
-    body: "ログハウス②の「日記を書く」を選ぶと、カレンダーが開きます。月を切り替えながら、書きたい日を見渡せます。",
+    body: "「ひとりで書く」を選ぶと、カレンダーが開きます。月を切り替えながら、書きたい日を見渡せます。",
   },
   {
     id: "write-today",
@@ -133,7 +141,7 @@ export const LJD_DIARY_WRITING_GUIDE_NORMAL_FLOW: readonly LjdDiaryWritingGuideS
 ] as const;
 
 export const LJD_DIARY_WRITING_GUIDE_LOGHOUSE_PREVIEW_LABEL =
-  "ログハウス②の画面イメージ" as const;
+  "机のあと：書き方を選ぶ画面イメージ" as const;
 
 export const LJD_DIARY_WRITING_GUIDE_DETAILS_TITLE =
   "入力のくわしい内容" as const;
@@ -145,11 +153,11 @@ export const LJD_DIARY_WRITING_GUIDE_DETAILS_ITEMS: readonly { title: string; bo
   },
   {
     title: "1日1ページ",
-    body: "通常の執筆モードでは、1日につき1枚のページとして残します。",
+    body: "ひとりで書く場合は、1日につき1枚のページとして残します。",
   },
   {
     title: "気分・活動",
-    body: "あとから見返す手がかりになります。伴走モード・通常モードのどちらでも選べます。",
+    body: "あとから見返す手がかりになります。いっしょに書く場合・ひとりで書く場合のどちらでも選べます。",
   },
   {
     title: "本文",
@@ -157,11 +165,11 @@ export const LJD_DIARY_WRITING_GUIDE_DETAILS_ITEMS: readonly { title: string; bo
   },
   {
     title: "写真",
-    body: "通常の執筆モードでは、1日1枚まで添えられます。",
+    body: "ひとりで書く場合は、1日1枚まで添えられます。",
   },
 ] as const;
 
-/** 案内所⑤から④へ誘導する短い文 */
+/** 案内所から「日記の書き方」への誘導用の短い文 */
 export const LJD_DIARY_WRITING_GUIDE_COMPANION_CROSSREF =
   "手順の全体像は、上の「日記の書き方」をご覧ください。" as const;
 
