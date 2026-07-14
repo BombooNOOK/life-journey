@@ -7,8 +7,8 @@ type Props = {
 };
 
 /**
- * ログハウス室内：再生中だけラジカセの“上空”に気配を出す。
- * 本体の模様に埋もれないよう、ラジカセの上〜外側に出す。
+ * ログハウス室内：再生中だけラジカセ本体のすぐ近くに気配を出す。
+ * （今日の鑑定結果まで上がらないよう、高さを抑える）
  */
 export function LogHouseRadioPlayingAura({ active }: Props) {
   const radio = LOG_HOUSE_ROOM_PART_PLACEMENTS.find((p) => p.id === "radio");
@@ -25,26 +25,26 @@ export function LogHouseRadioPlayingAura({ active }: Props) {
       }}
       aria-hidden
     >
-      {/* ラジカセ上のほんのり光る空気 */}
+      {/* ラジカセ直上のほんのり光る空気（小さく） */}
       <span
-        className="absolute left-[10%] right-[8%] top-[-42%] h-[58%] rounded-full opacity-80"
+        className="absolute left-[16%] right-[14%] top-[-8%] h-[36%] rounded-full opacity-75"
         style={{
           background:
-            "radial-gradient(ellipse at 50% 70%, rgba(255, 214, 140, 0.55) 0%, rgba(255, 214, 140, 0.12) 48%, transparent 72%)",
+            "radial-gradient(ellipse at 50% 80%, rgba(255, 214, 140, 0.5) 0%, rgba(255, 214, 140, 0.1) 52%, transparent 74%)",
         }}
       />
 
-      {/* 天板付近のランプ（ゴールドの点） */}
-      <span className="loghouse-radio-lamp absolute right-[22%] top-[6%] h-2.5 w-2.5 rounded-full bg-[#ffe09a] shadow-[0_0_12px_4px_rgba(255,200,110,0.75)]" />
+      {/* 天板付近のランプ */}
+      <span className="loghouse-radio-lamp absolute right-[20%] top-[4%] h-2 w-2 rounded-full bg-[#ffe09a] shadow-[0_0_10px_3px_rgba(255,200,110,0.7)]" />
 
-      {/* 上空にふわっと浮かぶ音符（本体の模様の上ではなく、はっきり見える位置） */}
-      <span className="loghouse-radio-note absolute left-[18%] top-[-38%] text-[1.05rem] leading-none text-[#f7f0dc] drop-shadow-[0_1px_1px_rgba(55,40,20,0.55)]">
+      {/* ラジカセすぐ上〜取っ手周辺の音符 */}
+      <span className="loghouse-radio-note absolute left-[22%] top-[-6%] text-[0.95rem] leading-none text-[#f7f0dc] drop-shadow-[0_1px_1px_rgba(55,40,20,0.55)]">
         ♪
       </span>
-      <span className="loghouse-radio-note-delay absolute left-[48%] top-[-52%] text-[0.9rem] leading-none text-[#efe4c4] drop-shadow-[0_1px_1px_rgba(55,40,20,0.5)]">
+      <span className="loghouse-radio-note-delay absolute left-[52%] top-[-12%] text-[0.82rem] leading-none text-[#efe4c4] drop-shadow-[0_1px_1px_rgba(55,40,20,0.5)]">
         ♫
       </span>
-      <span className="loghouse-radio-note-delay-2 absolute left-[70%] top-[-28%] text-[0.8rem] leading-none text-[#f4ecd4]/95 drop-shadow-[0_1px_1px_rgba(55,40,20,0.45)]">
+      <span className="loghouse-radio-note-delay-2 absolute left-[74%] top-[2%] text-[0.72rem] leading-none text-[#f4ecd4]/95 drop-shadow-[0_1px_1px_rgba(55,40,20,0.45)]">
         ♪
       </span>
     </div>
