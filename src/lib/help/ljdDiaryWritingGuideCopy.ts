@@ -78,8 +78,18 @@ export const LJD_DIARY_WRITING_GUIDE_COMPANION_FLOW: readonly LjdDiaryWritingGui
   },
   {
     id: "confirm",
-    title: "内容を確認して保存",
-    body: "できあがった文章を確認し、「今日のあしあとを残す」で保存します。",
+    title: "内容を確認する",
+    body: "できあがった文章を確認します。",
+  },
+  {
+    id: "tags",
+    title: "タグをつける（任意）",
+    body: "確認画面の「タグをつける」から、あとで探しやすいしるしを付けられます。例）#おでかけ #家族。なくても保存できます。",
+  },
+  {
+    id: "save",
+    title: "あしあとを残す",
+    body: "「今日のあしあとを残す」で保存します。カレンダーには、その日のしるしが残ります。",
   },
 ] as const;
 
@@ -134,6 +144,11 @@ export const LJD_DIARY_WRITING_GUIDE_NORMAL_FLOW: readonly LjdDiaryWritingGuideS
     body: "その日の気持ちや、何をしたかを選びます。",
   },
   {
+    id: "tags",
+    title: "タグをつける（任意）",
+    body: "「タグをつける」から、あとで探しやすいしるしを付けられます。例）#おでかけ #家族。日記一覧からの検索や、日記ブックのテーマ絞り込みに使えます。なくても保存できます。",
+  },
+  {
     id: "save",
     title: "保存する",
     body: "保存するとプレビュー画面に進みます。カレンダーには、その日のしるしが残ります（「読み解きコメント」の項目も参照）。",
@@ -166,6 +181,10 @@ export const LJD_DIARY_WRITING_GUIDE_DETAILS_ITEMS: readonly { title: string; bo
   {
     title: "写真",
     body: "ひとりで書く場合は、1日1枚まで添えられます。",
+  },
+  {
+    title: "タグ",
+    body: "任意のしるしです。「タグをつける」で付けられます。日記一覧の「日記を探す」からタグで探したり、日記ブックを作るときにテーマで絞り込んだりできます。ひとりで書く場合も、鑑定士といっしょに書く場合も同じように付けられます。",
   },
 ] as const;
 

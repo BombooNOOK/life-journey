@@ -4,16 +4,41 @@ import Link from "next/link";
 import { useCallback, useEffect, useState, type ReactNode } from "react";
 
 import { GuideAppLink } from "@/components/help/GuideAppLink";
+import { LjdDiaryBookGuideCoverPreview } from "@/components/help/LjdDiaryBookGuideCoverPreview";
 import { LjdDiaryWritingGuideBody } from "@/components/help/LjdDiaryWritingGuideBody";
 import { LjdAboutLpEmbed } from "@/components/help/LjdAboutLpEmbed";
 import { LjdLogHouseGuideShot } from "@/components/help/LjdLogHouseGuideShot";
 import { HomeAppraiserProfilesSection } from "@/components/home/HomeAppraiserProfilesSection";
 import { HomeFaqSection } from "@/components/home/HomeFaqSection";
-import { CompanionWritingButtonLabel } from "@/components/journal/companion-writing/CompanionWritingButtonLabel";
 import {
-  LJD_DIARY_WRITING_GUIDE_COMPANION_CROSSREF,
-  LJD_DIARY_WRITING_GUIDE_SECTION_SUMMARY,
-} from "@/lib/help/ljdDiaryWritingGuideCopy";
+  LJD_BOOKSHELF_GUIDE_BINDING_BODY,
+  LJD_BOOKSHELF_GUIDE_BINDING_NOTE,
+  LJD_BOOKSHELF_GUIDE_BINDING_TITLE,
+  LJD_BOOKSHELF_GUIDE_CROSSREF,
+  LJD_BOOKSHELF_GUIDE_LEAD,
+  LJD_BOOKSHELF_GUIDE_SECTION_SUMMARY,
+  LJD_BOOKSHELF_GUIDE_SECTION_TITLE,
+  LJD_BOOKSHELF_GUIDE_VIEW_BODY,
+  LJD_BOOKSHELF_GUIDE_VIEW_TITLE,
+} from "@/lib/help/ljdBookshelfGuideCopy";
+import {
+  LJD_CALENDAR_LIST_GUIDE_CALENDAR_BODY,
+  LJD_CALENDAR_LIST_GUIDE_CALENDAR_TITLE,
+  LJD_CALENDAR_LIST_GUIDE_LEAD,
+  LJD_CALENDAR_LIST_GUIDE_LIST_BODY,
+  LJD_CALENDAR_LIST_GUIDE_LIST_BULLETS,
+  LJD_CALENDAR_LIST_GUIDE_LIST_TITLE,
+  LJD_CALENDAR_LIST_GUIDE_SECTION_SUMMARY,
+  LJD_CALENDAR_LIST_GUIDE_SECTION_TITLE,
+  LJD_CALENDAR_LIST_GUIDE_TAG_NOTE,
+} from "@/lib/help/ljdCalendarListGuideCopy";
+import {
+  LJD_DIARY_BOOK_GUIDE_LEAD,
+  LJD_DIARY_BOOK_GUIDE_SECTION_SUMMARY,
+  LJD_DIARY_BOOK_GUIDE_SECTION_TITLE,
+  LJD_DIARY_BOOK_GUIDE_STEPS,
+} from "@/lib/help/ljdDiaryBookGuideCopy";
+import { LJD_DIARY_WRITING_GUIDE_SECTION_SUMMARY } from "@/lib/help/ljdDiaryWritingGuideCopy";
 import {
   LJD_DONGURI_GUIDE_BODY_PARAGRAPHS,
   LJD_DONGURI_GUIDE_LINK_LABEL,
@@ -124,21 +149,6 @@ const TOC_ITEMS: TocItem[] = [
     body: <LjdDiaryWritingGuideBody variant="dictionary" />,
   },
   {
-    id: "companion-writing",
-    title: "どうぶつ鑑定士といっしょに書く",
-    summary: "日記の書き方のなかで案内",
-    body: (
-      <>
-        <p>{LJD_DIARY_WRITING_GUIDE_COMPANION_CROSSREF}</p>
-        <GuideAppLink
-          href="/journal/with-companion?returnTo=%2Forders"
-          label={<CompanionWritingButtonLabel />}
-          feature="guide_companion"
-        />
-      </>
-    ),
-  },
-  {
     id: "appraisers",
     title: "どうぶつ鑑定士の紹介",
     summary: "森の仲間たち",
@@ -172,33 +182,81 @@ const TOC_ITEMS: TocItem[] = [
   },
   {
     id: "calendar",
-    title: "カレンダー・一覧",
-    summary: "記録した日を振り返る",
+    title: LJD_CALENDAR_LIST_GUIDE_SECTION_TITLE,
+    summary: LJD_CALENDAR_LIST_GUIDE_SECTION_SUMMARY,
     body: (
       <>
-        <p>カレンダーで月ごとに記録のある日を確認できます。月別一覧からも、書いた日記を読み返せます。</p>
+        <p>{LJD_CALENDAR_LIST_GUIDE_LEAD}</p>
+        <div className="mt-3 space-y-3">
+          <div className="rounded-lg border border-stone-100 bg-[#fffdf9] px-3 py-3">
+            <p className="text-sm font-semibold text-stone-900">{LJD_CALENDAR_LIST_GUIDE_CALENDAR_TITLE}</p>
+            <p className="mt-1.5 text-sm leading-6 text-stone-700">{LJD_CALENDAR_LIST_GUIDE_CALENDAR_BODY}</p>
+          </div>
+          <div className="rounded-lg border border-stone-100 bg-[#fffdf9] px-3 py-3">
+            <p className="text-sm font-semibold text-stone-900">{LJD_CALENDAR_LIST_GUIDE_LIST_TITLE}</p>
+            <p className="mt-1.5 text-sm leading-6 text-stone-700">{LJD_CALENDAR_LIST_GUIDE_LIST_BODY}</p>
+            <ul className="mt-2 space-y-1 text-sm leading-6 text-stone-700">
+              {LJD_CALENDAR_LIST_GUIDE_LIST_BULLETS.map((item) => (
+                <li key={item}>・{item}</li>
+              ))}
+            </ul>
+            <p className="mt-2 text-xs leading-relaxed text-stone-500">{LJD_CALENDAR_LIST_GUIDE_TAG_NOTE}</p>
+          </div>
+        </div>
         <GuideAppLink href="/orders/calendar" label="カレンダーを開く" feature="guide_calendar" />
-        <GuideAppLink href="/orders/list" label="月別一覧を開く" feature="guide_list" />
+        <GuideAppLink href="/orders/list" label="日記一覧を開く" feature="guide_list" />
       </>
     ),
   },
   {
     id: "bookshelf",
-    title: "本棚・日記ブック",
-    summary: "鑑定書と日記ブック",
+    title: LJD_BOOKSHELF_GUIDE_SECTION_TITLE,
+    summary: LJD_BOOKSHELF_GUIDE_SECTION_SUMMARY,
     body: (
       <>
-        <p>
-          本棚には鑑定書や、期間を選んで作った日記ブックが並びます。製本をご希望の方は、本棚から製本前確認へ進めます。
-        </p>
+        <p>{LJD_BOOKSHELF_GUIDE_LEAD}</p>
+        <div className="mt-3 space-y-3">
+          <div className="rounded-lg border border-stone-100 bg-[#fffdf9] px-3 py-3">
+            <p className="text-sm font-semibold text-stone-900">{LJD_BOOKSHELF_GUIDE_VIEW_TITLE}</p>
+            <p className="mt-1.5 text-sm leading-6 text-stone-700">{LJD_BOOKSHELF_GUIDE_VIEW_BODY}</p>
+          </div>
+          <div className="rounded-lg border border-stone-100 bg-[#fffdf9] px-3 py-3">
+            <p className="text-sm font-semibold text-stone-900">{LJD_BOOKSHELF_GUIDE_BINDING_TITLE}</p>
+            <p className="mt-1.5 text-sm leading-6 text-stone-700">{LJD_BOOKSHELF_GUIDE_BINDING_BODY}</p>
+            <p className="mt-2 text-xs leading-relaxed text-stone-500">{LJD_BOOKSHELF_GUIDE_BINDING_NOTE}</p>
+          </div>
+        </div>
+        <p className="mt-3 text-xs leading-relaxed text-stone-500">{LJD_BOOKSHELF_GUIDE_CROSSREF}</p>
         <GuideAppLink href="/orders/bookshelf" label="本棚を開く" feature="guide_bookshelf" />
-        <p className="mt-2 text-xs text-stone-500">
-          操作のくわしい流れは
-          <Link href="/guide" className="mx-0.5 text-emerald-900 hover:underline">
-            使い方
-          </Link>
-          もご覧ください。
-        </p>
+      </>
+    ),
+  },
+  {
+    id: "diary-book",
+    title: LJD_DIARY_BOOK_GUIDE_SECTION_TITLE,
+    summary: LJD_DIARY_BOOK_GUIDE_SECTION_SUMMARY,
+    body: (
+      <>
+        <p>{LJD_DIARY_BOOK_GUIDE_LEAD}</p>
+        <ol className="mt-3 space-y-2.5">
+          {LJD_DIARY_BOOK_GUIDE_STEPS.map((step, index) => (
+            <li key={step.id}>
+              <div className="rounded-lg border border-stone-100 bg-[#fffdf9] px-3 py-3 sm:px-4">
+                <p className="text-xs font-semibold text-emerald-800/90">
+                  {index + 1}. {step.title}
+                </p>
+                <p className="mt-1.5 text-sm leading-6 text-stone-700">{step.body}</p>
+                {step.note ? (
+                  <p className="mt-2 text-xs leading-relaxed text-stone-500">{step.note}</p>
+                ) : null}
+              </div>
+            </li>
+          ))}
+        </ol>
+        <div className="mt-4">
+          <LjdDiaryBookGuideCoverPreview />
+        </div>
+        <GuideAppLink href="/orders/bookshelf" label="本棚で本をつくる" feature="guide_bookshelf" />
       </>
     ),
   },
@@ -268,6 +326,11 @@ const TOC_ITEMS: TocItem[] = [
   },
 ];
 
+/** 旧ハッシュ互換（削除した「いっしょに書く」単独項目） */
+const LEGACY_HASH_ALIASES: Record<string, string> = {
+  "companion-writing": "writing",
+};
+
 export function LjdWalkthroughToc() {
   const [openId, setOpenId] = useState<string | null>(null);
 
@@ -276,7 +339,8 @@ export function LjdWalkthroughToc() {
   }, []);
 
   useEffect(() => {
-    const hash = window.location.hash.replace(/^#/, "");
+    const raw = window.location.hash.replace(/^#/, "");
+    const hash = LEGACY_HASH_ALIASES[raw] ?? raw;
     if (!hash || !TOC_ITEMS.some((item) => item.id === hash)) return;
     setOpenId(hash);
     window.requestAnimationFrame(() => {
