@@ -144,6 +144,7 @@ const ORDERS_STATIC_FIRST_SEGMENTS = new Set([
   "resident-card",
   "settings",
   "support",
+  "write",
 ]);
 
 /** 直URLアクセス時の最低段階（案内所・道しるべ・ログイン等は含まない） */
@@ -152,6 +153,7 @@ export function resolvePathMinOnboardingStage(pathname: string): OnboardingStage
   if (pathname.startsWith("/orders/calendar")) return 3;
   if (pathname.startsWith("/orders/list")) return 3;
   if (pathname.startsWith("/orders/bookshelf")) return 3;
+  if (pathname.startsWith("/orders/write")) return 3;
   if (pathname.startsWith("/journal")) return 3;
 
   // `/orders/[orderId]` および `/orders/[orderId]/…`（account / settings 等は除外）

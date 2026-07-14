@@ -18,6 +18,9 @@ import {
 } from "@/lib/entitlement/resolveUserEntitlement";
 import { countUnreadMailboxNotices } from "@/lib/loghouse/mailboxNotices";
 import { calendarDayKeyInJapan, journalWithCompanionPath } from "@/lib/journal/journalNav";
+import {
+  resolveLogHouseDeskWritingHref,
+} from "@/lib/loghouse/logHouseDeskWritingChoice";
 import { resolveFirstVisitGuideState } from "@/lib/onboarding/firstVisitGuideState";
 
 export const dynamic = "force-dynamic";
@@ -91,6 +94,10 @@ export default async function OrdersListPage() {
           calendarDayKeyInJapan(new Date()),
         )
       : journalWithCompanionPath("/orders");
+  const deskWritingHref = resolveLogHouseDeskWritingHref({
+    firstVisitGuideState,
+    companionWritingHref,
+  });
 
   return (
     <LogHouseHub
@@ -102,6 +109,7 @@ export default async function OrdersListPage() {
       entitlement={entitlement}
       firstVisitGuideState={firstVisitGuideState}
       companionWritingHref={companionWritingHref}
+      deskWritingHref={deskWritingHref}
       viewerEmail={viewerEmail}
       viewerIsAdmin={viewerIsAdmin}
       adminLink={

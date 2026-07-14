@@ -12,6 +12,7 @@ import {
   LOG_HOUSE_ROOM_PREVIEW_PROFILE_ID,
   LOG_HOUSE_ROOM_PREVIEW_PROFILES,
 } from "@/lib/loghouse/logHouseRoomPreviewFixture";
+import { LOG_HOUSE_DESK_WRITE_PAGE_PATH } from "@/lib/loghouse/logHouseDeskWritingChoice";
 import type { LogHouseRoomTimeOfDay } from "@/lib/loghouse/logHouseRoomTimeTheme";
 
 type Props = {
@@ -33,7 +34,7 @@ export function LogHouseRoomPreviewClient({
       <div className="mx-auto flex min-h-[100dvh] w-full max-w-md flex-col justify-center gap-3 px-3 py-6">
         <div className="rounded-xl border border-amber-200 bg-amber-50/95 px-3 py-2 text-[11px] leading-relaxed text-amber-950 shadow-sm">
           <p>
-            <strong>プレビュー</strong>（スマホ枠・部屋全体）。没入型は{" "}
+            <strong>プレビュー</strong>（スマホ枠・部屋全体）。右下のラジカセをタップすると「森のラジカセ」の操作カードが開きます（UIモック・音なし）。没入型は{" "}
             <Link
               href="/preview/loghouse-room?view=immersive"
               className="font-medium underline-offset-2 hover:underline"
@@ -81,6 +82,7 @@ export function LogHouseRoomPreviewClient({
           entitlement={LOG_HOUSE_ROOM_PREVIEW_ENTITLEMENT}
           kanteiOrderId={LOG_HOUSE_ROOM_PREVIEW_KANTEI_ORDER_ID}
           companionWritingHref={LOG_HOUSE_ROOM_PREVIEW_COMPANION_HREF}
+          deskWritingHref={LOG_HOUSE_DESK_WRITE_PAGE_PATH}
           onOpenManage={() => setManageOpen(true)}
           previewMode
           layout="framed"
@@ -132,6 +134,7 @@ export function LogHouseRoomPreviewClient({
         entitlement={LOG_HOUSE_ROOM_PREVIEW_ENTITLEMENT}
         kanteiOrderId={LOG_HOUSE_ROOM_PREVIEW_KANTEI_ORDER_ID}
         companionWritingHref={LOG_HOUSE_ROOM_PREVIEW_COMPANION_HREF}
+        deskWritingHref={LOG_HOUSE_DESK_WRITE_PAGE_PATH}
         onOpenManage={() => setManageOpen(true)}
         previewMode
         layout="immersive"

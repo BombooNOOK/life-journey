@@ -58,7 +58,7 @@ export const LJD_LOG_HOUSE_GUIDE_MARKERS: LjdLogHouseGuideMarker[] = [
     x: 72,
     y: 50,
     title: "机",
-    body: "タップすると、カレンダー経由で今日の日記を書きはじめられます。",
+    body: "タップすると、ひとりで書くか・鑑定士といっしょに書くかを選べます。はじめての日記は鑑定士といっしょに書く流れになります。",
   },
   {
     id: "todayResult",
@@ -73,8 +73,8 @@ export const LJD_LOG_HOUSE_GUIDE_MARKERS: LjdLogHouseGuideMarker[] = [
     number: 5,
     x: 72,
     y: 82,
-    title: "ラジカセ（森の音）",
-    body: "タップすると、森の小さな音楽堂が開き、音楽や自然音を聴けます。",
+    title: "ラジカセ（森のラジカセ）",
+    body: "タップすると森のラジカセが開きます。いまは操作の見た目だけお試しでき、音はこれから音楽堂で準備が進みます。",
   },
   {
     id: "rabbit",

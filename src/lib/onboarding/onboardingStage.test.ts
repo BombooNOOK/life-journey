@@ -78,6 +78,8 @@ describe("onboardingStage", () => {
     expect(isPathAllowedForStage("/orders", 2)).toBe(true);
     expect(isPathAllowedForStage("/orders/calendar", 2)).toBe(false);
     expect(isPathAllowedForStage("/orders/calendar", 3)).toBe(true);
+    expect(isPathAllowedForStage("/orders/write", 2)).toBe(false);
+    expect(isPathAllowedForStage("/orders/write", 3)).toBe(true);
     expect(isPathAllowedForStage("/help/ljd", 0)).toBe(true);
     // 住民票・アカウント・設定・お問い合わせは鑑定前でも開ける
     expect(isPathAllowedForStage("/orders/resident-card", 1)).toBe(true);

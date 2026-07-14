@@ -15,8 +15,8 @@ export const LOG_HOUSE_ROOM_SPOT_COPY: Record<LogHouseRoomSpotId, LogHouseRoomSp
   },
   desk: {
     label: "机",
-    description: "今日の日記を書く",
-    actionLabel: "日記を書く",
+    description: "今日の日記の書き方を選ぶ",
+    actionLabel: "書き方を選ぶ",
   },
   residentCard: {
     label: "森の住民票",
@@ -29,9 +29,9 @@ export const LOG_HOUSE_ROOM_SPOT_COPY: Record<LogHouseRoomSpotId, LogHouseRoomSp
     actionLabel: "今日の結果を見る",
   },
   radio: {
-    label: "森の音",
-    description: "音楽や自然音を聴く",
-    actionLabel: "音楽堂を開く",
+    label: "森のラジカセ",
+    description: "カセットを選んで、森の音をながす（準備中）",
+    actionLabel: "ラジカセを開く",
   },
   goOut: {
     label: "おでかけ",

@@ -14,6 +14,7 @@ import {
 
 import { LogHouseRoomChrome } from "@/components/orders/loghouse-room/LogHouseRoomChrome";
 import { LogHouseDonguriChoModal } from "@/components/orders/loghouse-room/LogHouseDonguriChoModal";
+import { LogHouseRadioCassetteModal } from "@/components/orders/loghouse-room/LogHouseRadioCassetteModal";
 import { LogHouseRoomGoOutSpot } from "@/components/orders/loghouse-room/LogHouseRoomGoOutSpot";
 import { LogHouseRoomMailboxSpot } from "@/components/orders/loghouse-room/LogHouseRoomMailboxSpot";
 import { LogHouseRoomPartsLayer } from "@/components/orders/loghouse-room/LogHouseRoomPartsLayer";
@@ -23,8 +24,8 @@ import { LogHouseRoomTapSpot } from "@/components/orders/loghouse-room/LogHouseR
 import { OwlDelayedBusyOverlay } from "@/components/ui/OwlDelayedBusyOverlay";
 import { useLogHouseRoomTimeTheme } from "@/hooks/useLogHouseRoomTimeOfDay";
 import type { SerializedUserEntitlement } from "@/lib/entitlement/resolveUserEntitlement";
-import { buildForestMusicHallHref } from "@/lib/help/forestMusicHallNav";
 import { getStubDonguriChoView } from "@/lib/loghouse/donguriLedger";
+import { buildForestMusicHallHref } from "@/lib/help/forestMusicHallNav";
 import {
   LOG_HOUSE_ROOM_MOBILE_BG_BY_TIME,
   LOG_HOUSE_ROOM_MOBILE_INTRINSIC,
@@ -94,6 +95,8 @@ type Props = {
   kanteiOrderId: string | null;
   mailboxUnreadCount?: number;
   companionWritingHref: string | null;
+  /** 机タップ先。はじめて導線は伴走執筆、通常は `/orders/write` */
+  deskWritingHref: string;
   onOpenManage: () => void;
   className?: string;
   previewMode?: boolean;
@@ -209,6 +212,7 @@ export function LogHouseRoomMobile({
   kanteiOrderId,
   mailboxUnreadCount = 0,
   companionWritingHref,
+  deskWritingHref,
   onOpenManage,
   className = "",
   previewMode = false,
@@ -226,6 +230,7 @@ export function LogHouseRoomMobile({
   const [selectedSpotId, setSelectedSpotId] = useState<LogHouseRoomSpotId | null>(null);
   const [flashSpotId, setFlashSpotId] = useState<LogHouseRoomSpotId | null>(null);
   const [donguriChoOpen, setDonguriChoOpen] = useState(false);
+  const [radioCassetteOpen, setRadioCassetteOpen] = useState(false);
   const donguriCho = useMemo(() => getStubDonguriChoView(), []);
   const busy = isPending || profileBusy;
   const ambientBg = timeOfDay === "night" ? "#2a2218" : "#ebe4d4";
@@ -317,7 +322,7 @@ export function LogHouseRoomMobile({
         : journalBlocked
           ? { href: null, lockMessage: LOG_HOUSE_ROOM_JOURNAL_LOCK_MESSAGE }
           : {
-              href: companionWritingHref ?? "/orders/calendar",
+              href: deskWritingHref,
               needsProfile: true,
             },
       residentCard: { href: "/orders/resident-card" },
@@ -326,17 +331,18 @@ export function LogHouseRoomMobile({
         : hasKantei
           ? { href: null, lockMessage: LOG_HOUSE_ROOM_TODAY_RESULT_PREPARING_MESSAGE }
           : { ...KANTEI_LOCK },
-      radio: { href: buildForestMusicHallHref("/orders") },
+      /** ラジカセは遷移ではなく操作カードを開く（href はヒント確認用のダミー） */
+      radio: { href: "#radio-cassette" },
       goOut: { href: LOG_HOUSE_GO_OUT_PAGE_PATH },
       mailbox: { href: LOG_HOUSE_MAILBOX_PAGE_PATH },
     }),
-    [companionWritingHref, hasKantei, journalBlocked, kanteiOrderId],
+    [deskWritingHref, hasKantei, journalBlocked, kanteiOrderId],
   );
 
   useEffect(() => {
     if (previewMode) return;
     for (const action of Object.values(spotActions)) {
-      if (action.href) router.prefetch(action.href);
+      if (action.href && !action.href.startsWith("#")) router.prefetch(action.href);
     }
   }, [previewMode, router, spotActions]);
 
@@ -345,11 +351,17 @@ export function LogHouseRoomMobile({
       dismissFirstVisitTip();
       const action = spotActions[spotId];
 
-      // ？ヒント中だけ説明シート。普段はタップで直接移動
+      // ？ヒント中だけ説明シート。普段はタップで直接移動／開く
       if (hintActive) {
         setFlashSpotId(spotId);
         setSelectedSpotId(spotId);
         setHintActive(false);
+        return;
+      }
+
+      if (spotId === "radio") {
+        setFlashSpotId(spotId);
+        setRadioCassetteOpen(true);
         return;
       }
 
@@ -372,6 +384,11 @@ export function LogHouseRoomMobile({
 
   const confirmSelectedSpot = useCallback(() => {
     if (!selectedSpotId || !selectedAction?.href) return;
+    if (selectedSpotId === "radio") {
+      setSelectedSpotId(null);
+      setRadioCassetteOpen(true);
+      return;
+    }
     const href = selectedAction.href;
     const needsProfile = selectedAction.needsProfile === true;
     setSelectedSpotId(null);
@@ -460,6 +477,18 @@ export function LogHouseRoomMobile({
     />
   );
 
+  const radioCassetteModal = (
+    <LogHouseRadioCassetteModal
+      open={radioCassetteOpen}
+      onClose={() => setRadioCassetteOpen(false)}
+      musicHallHref={
+        previewMode
+          ? buildForestMusicHallHref("/preview/loghouse-room")
+          : undefined
+      }
+    />
+  );
+
   const stage = (
     <RoomStage
       busy={busy}
@@ -497,6 +526,7 @@ export function LogHouseRoomMobile({
           <p className="sr-only">ログハウス室内。家具をタップして各機能へ進めます。</p>
         </div>
         {donguriChoModal}
+        {radioCassetteModal}
       </>
     );
   }
@@ -527,6 +557,7 @@ export function LogHouseRoomMobile({
         <p className="sr-only">ログハウス室内。家具をタップして各機能へ進めます。</p>
       </div>
       {donguriChoModal}
+      {radioCassetteModal}
     </>
   );
 }

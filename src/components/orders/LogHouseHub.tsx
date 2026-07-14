@@ -30,6 +30,7 @@ type Props = {
   entitlement: SerializedUserEntitlement;
   firstVisitGuideState: FirstVisitGuideState;
   companionWritingHref: string;
+  deskWritingHref: string;
   viewerEmail: string;
   viewerIsAdmin: boolean;
   adminLink: React.ReactNode;
@@ -46,6 +47,7 @@ export function LogHouseHub({
   entitlement,
   firstVisitGuideState,
   companionWritingHref,
+  deskWritingHref,
   viewerEmail,
   viewerIsAdmin,
   adminLink,
@@ -79,6 +81,7 @@ export function LogHouseHub({
           kanteiOrderId={activeKanteiOrderId}
           mailboxUnreadCount={mailboxUnreadCount}
           companionWritingHref={companionWritingHref}
+          deskWritingHref={deskWritingHref}
           onOpenManage={() => setManageOpen(true)}
         />
 
