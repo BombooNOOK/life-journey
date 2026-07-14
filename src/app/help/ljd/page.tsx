@@ -20,11 +20,11 @@ export default function HelpLjdWalkthroughPage() {
 
       <div className="rounded-xl border border-stone-200 bg-stone-50/80 px-4 py-3 text-sm text-stone-600">
         <p>
-          画面操作の手順（無料鑑定 → 本棚 → 日記 → 製本）は
+          どこを押すか迷ったときは
           <Link href="/guide" className="mx-1 font-medium text-emerald-900 underline-offset-2 hover:underline">
-            使い方
+            はじめての操作ヒント
           </Link>
-          にまとめています。
+          もご覧ください。
         </p>
       </div>
     </div>

@@ -82,9 +82,9 @@ export default function DiaryGuidePage() {
             長い文章を書かなくても大丈夫です。一言だけでも、短いメモでも。その日の自分が残した言葉には、あとから意味が宿ることがあります。
           </p>
           <p className="text-xs text-stone-500">
-            画面の操作手順は
+            どこを押すか迷ったときは
             <Link href="/guide" className="mx-0.5 text-emerald-900 hover:underline">
-              使い方
+              はじめての操作ヒント
             </Link>
             をご覧ください。
           </p>

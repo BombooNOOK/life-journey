@@ -296,7 +296,7 @@ const TOC_ITEMS: TocItem[] = [
           </li>
           <li>
             <Link href="/guide" className="text-emerald-900 underline-offset-2 hover:underline">
-              使い方（操作手順）
+              はじめての操作ヒント
             </Link>
           </li>
           <li>

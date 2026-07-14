@@ -13,6 +13,7 @@ import { FOREST_GUIDE_MAP_SECTION_HINT } from "@/lib/help/bambooForestGuideMapBu
 export function ForestGuideStationInteractiveSections() {
   return (
     <TransitionNavigationProvider message={null}>
+      <div className="space-y-6">
       <section aria-labelledby="forest-guide-map-heading" className="space-y-3">
         <div>
           <h2
@@ -28,7 +29,10 @@ export function ForestGuideStationInteractiveSections() {
 
       <LjdFirstVisitFlowCard />
 
-      <LjdWalkthroughToc />
+      <div className="relative z-10">
+        <LjdWalkthroughToc />
+      </div>
+      </div>
     </TransitionNavigationProvider>
   );
 }

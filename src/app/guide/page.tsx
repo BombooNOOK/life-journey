@@ -1,28 +1,34 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import type { ReactNode } from "react";
 
 import { GuestReadingFontSizeBand } from "@/components/reading/GuestReadingFontSizeBand";
-import { LinkToDiaryGuide } from "@/components/guide/GuideCrossLinks";
 import { PageTitleWithAccent } from "@/components/ui/PageTitleWithAccent";
 import { SoftIllustrationAccent } from "@/components/ui/SoftIllustrationAccent";
-import { APP_DISPLAY_NAME } from "@/lib/branding/appDisplayName";
+import {
+  GUIDE_OPERATION_PAGE_DESCRIPTION,
+  GUIDE_OPERATION_PAGE_TITLE,
+  GUIDE_OPERATION_STATION_CROSSLINK_HREF,
+  GUIDE_OPERATION_STATION_CROSSLINK_LABEL,
+  GUIDE_OPERATION_TIPS,
+} from "@/lib/guide/operationTipsCopy";
 import { LOG_HOUSE_BACK_LINK } from "@/lib/journal/logHouseLabels";
-import { FIRST_VISIT_ROUTES } from "@/lib/onboarding/firstVisitWizard/routes";
 
 export const dynamic = "force-static";
 
 export const metadata: Metadata = {
-  title: "Life Journey Diaryの使い方",
+  title: GUIDE_OPERATION_PAGE_TITLE,
+  description: GUIDE_OPERATION_PAGE_DESCRIPTION,
 };
 
-function StepCard({
-  title,
+function TipCard({
   step,
+  title,
   children,
 }: {
-  title: string;
   step: string;
-  children: React.ReactNode;
+  title: string;
+  children: ReactNode;
 }) {
   return (
     <article className="relative overflow-hidden rounded-xl border border-stone-200 bg-white p-4 pr-12 shadow-sm">
@@ -41,125 +47,57 @@ function StepCard({
   );
 }
 
-function GuideAppLink({ href, label }: { href: string; label: string }) {
-  return (
-    <p className="mt-3">
-      <Link
-        href={href}
-        className="font-medium text-emerald-900 underline-offset-2 hover:underline"
-      >
-        {label} →
-      </Link>
-    </p>
-  );
-}
-
 export default function GuidePage() {
   return (
     <div className="home-read-scope space-y-6">
       <div id="guide-top" className="scroll-mt-24">
         <PageTitleWithAccent
           tone="guide"
-          title="Life Journey Diaryの使い方"
+          title={GUIDE_OPERATION_PAGE_TITLE}
           backLink={LOG_HOUSE_BACK_LINK}
-          description={`${APP_DISPLAY_NAME} で、無料鑑定から日記・製本までの流れをまとめました。実際の画面操作に沿った内容です。`}
+          description={GUIDE_OPERATION_PAGE_DESCRIPTION}
           cornerAccents={["book", "leaf"]}
         />
       </div>
 
       <ol className="space-y-3">
-        <li>
-          <StepCard step="1" title="1. まずは無料鑑定から">
-            <p>
-              生年月日などを入力して、コアナンバーの鑑定結果を受け取ります。結果はログハウスに保存され、あとから本棚で読み返せます。
-            </p>
-            <p className="text-xs text-stone-500">
-              ヘッダーの「はじめての方」からも同じ画面を開けます（無料鑑定フォームです）。
-            </p>
-            <GuideAppLink href={FIRST_VISIT_ROUTES.pathGuide} label="無料鑑定をはじめる" />
-          </StepCard>
-        </li>
-
-        <li>
-          <StepCard step="2" title="2. 鑑定書を本棚で読む">
-            <p>
-              保存した鑑定は「本棚」に並びます。カードを開いて本文を読んだり、鑑定書PDFを端末に保存したりできます（PDFの保存手順は別ページにあります）。
-            </p>
-            <GuideAppLink href="/orders/bookshelf" label="本棚を開く" />
-            <p className="mt-2 text-xs text-stone-500">
-              PDFの保存方法は
-              <Link href="/help/pdf-download" className="mx-0.5 text-emerald-900 hover:underline">
-                鑑定書PDFのダウンロード方法
-              </Link>
-              をご覧ください（ログイン後に本棚から開く操作です）。
-            </p>
-          </StepCard>
-        </li>
-
-        <li>
-          <StepCard step="3" title="3. 今日の日記を書く">
-            <p>
-              ログハウスやカレンダーから「今日の日記を書く」を選び、その日の気持ちや出来事を短く残せます。活動の種類（仕事・休息など）を選び、本文を書いて保存します。
-            </p>
-            <GuideAppLink href="/journal" label="今日の日記を書く" />
-          </StepCard>
-        </li>
-
-        <li>
-          <StepCard step="4" title="4. 1日1枚、写真を添える">
-            <p>
-              記録フォームから、1日につき1枚まで写真を添付できます。製本イメージのプレビューでも、写真の見え方を確認できます。
-            </p>
-            <GuideAppLink href="/journal" label="日記画面で写真を添える" />
-          </StepCard>
-        </li>
-
-        <li>
-          <StepCard step="5" title="5. フクロウ先生の言葉を受け取る">
-            <p>
-              日記を保存すると、フクロウ先生の読み解き（数字に沿ったことば）が届きます。記録画面やプレビューで、いつでも読み返せます。
-            </p>
-            <GuideAppLink href="/journal" label="日記を保存して読み解きを見る" />
-          </StepCard>
-        </li>
-
-        <li>
-          <StepCard step="6" title="6. カレンダーや月別一覧で振り返る">
-            <p>
-              ログハウスの Life Journey Diary カードでは、月ごとのカレンダーで記録のある日を確認できます。本棚の日記（年ごとの本）では、月別一覧から各日のプレビューを開けます。
-            </p>
-            <GuideAppLink href="/orders" label="ログハウスのカレンダーを見る" />
-            <GuideAppLink href="/orders/bookshelf" label="本棚から日記の年を開く" />
-          </StepCard>
-        </li>
-
-        <li>
-          <StepCard step="7" title="7. 製本前プレビューを確認する">
-            <p>
-              日記を製本する前に、本棚からその年の日記を開き、「製本前確認」でページの並び・長文の注意・本に入れる記事の選択を確認してください。問題なければ製本申込コードを発行し、BASEで注文します。
-            </p>
-            <GuideAppLink href="/orders/bookshelf" label="本棚から製本前確認へ" />
-            <p className="mt-2 text-xs leading-5 text-stone-500">
-              長い本文がある日は、一覧に「長文注意」が表示されます。該当日のプレビューで表示を確認してから申し込むことをおすすめします。
-            </p>
-          </StepCard>
-        </li>
+        {GUIDE_OPERATION_TIPS.map((tip, index) => (
+          <li key={tip.id}>
+            <TipCard step={String(index + 1)} title={`${index + 1}. ${tip.title}`}>
+              <p>{tip.body}</p>
+              {tip.note ? <p className="text-xs leading-relaxed text-stone-500">{tip.note}</p> : null}
+              {tip.link ? (
+                <p className="mt-3">
+                  <Link
+                    href={tip.link.href}
+                    className="font-medium text-emerald-900 underline-offset-2 hover:underline"
+                  >
+                    {tip.link.label} →
+                  </Link>
+                </p>
+              ) : null}
+            </TipCard>
+          </li>
+        ))}
       </ol>
 
       <div className="relative overflow-hidden rounded-xl border border-emerald-100 bg-gradient-to-br from-emerald-50/50 via-white to-stone-50/80 p-4 text-sm text-stone-700 shadow-sm">
         <div className="pointer-events-none absolute right-3 top-3 hidden select-none sm:block">
           <SoftIllustrationAccent variant="book" size="sm" tone="emerald" />
         </div>
-        <p className="relative z-10 font-medium text-stone-900">はじめての流れ（まとめ）</p>
+        <p className="relative z-10 font-medium text-stone-900">もっとくわしく知りたいとき</p>
         <p className="relative z-10 mt-2 leading-6">
-          無料鑑定 → 本棚で鑑定書を読む → 日記を書く → 振り返り → 製本前確認、の順が基本です。迷ったらログハウスから各機能へ進めます。
+          ログハウスや日記・本棚の意味や流れは、森の案内所にまとめています。操作で迷ったときの近道がこのページ、世界の歩き方が案内所、という役割分けです。
         </p>
-        <div className="relative z-10">
-          <GuideAppLink href={FIRST_VISIT_ROUTES.pathGuide} label="いま無料鑑定からはじめる" />
-        </div>
+        <p className="relative z-10 mt-3">
+          <Link
+            href={GUIDE_OPERATION_STATION_CROSSLINK_HREF}
+            className="font-medium text-emerald-900 underline-offset-2 hover:underline"
+          >
+            {GUIDE_OPERATION_STATION_CROSSLINK_LABEL} →
+          </Link>
+        </p>
       </div>
-
-      <LinkToDiaryGuide />
 
       <GuestReadingFontSizeBand pageKey="guide" />
     </div>

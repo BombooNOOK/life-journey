@@ -35,9 +35,9 @@ export function MyPageGuideLink() {
         </div>
       </div>
       <p className="mt-3 text-xs text-stone-500">
-        画面操作の流れは
+        どこを押すか迷ったときは
         <Link href="/guide" className="mx-1 text-emerald-900 underline-offset-2 hover:underline">
-          使い方
+          はじめての操作ヒント
         </Link>
         もご覧ください。
       </p>
