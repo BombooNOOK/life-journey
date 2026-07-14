@@ -23,9 +23,8 @@ import { LogHouseRoomRabbitAvatar } from "@/components/orders/loghouse-room/LogH
 import { LogHouseRoomSpotSheet } from "@/components/orders/loghouse-room/LogHouseRoomSpotSheet";
 import { LogHouseRoomTapSpot } from "@/components/orders/loghouse-room/LogHouseRoomTapSpot";
 import { OwlDelayedBusyOverlay } from "@/components/ui/OwlDelayedBusyOverlay";
-import { useLogHouseRadioPlayer } from "@/hooks/useLogHouseRadioPlayer";
+import { useLogHouseRadioPlayer } from "@/components/orders/loghouse-room/LogHouseRadioPlayerProvider";
 import { useLogHouseRoomTimeTheme } from "@/hooks/useLogHouseRoomTimeOfDay";
-import { findLogHouseRadioCassette } from "@/lib/loghouse/logHouseRadioCassette";
 import type { SerializedUserEntitlement } from "@/lib/entitlement/resolveUserEntitlement";
 import { getStubDonguriChoView } from "@/lib/loghouse/donguriLedger";
 import { buildForestMusicHallHref } from "@/lib/help/forestMusicHallNav";
@@ -238,7 +237,6 @@ export function LogHouseRoomMobile({
   const [donguriChoOpen, setDonguriChoOpen] = useState(false);
   const [radioCassetteOpen, setRadioCassetteOpen] = useState(false);
   const radioPlayer = useLogHouseRadioPlayer();
-  const radioCassette = findLogHouseRadioCassette(radioPlayer.cassetteId);
   const donguriCho = useMemo(() => getStubDonguriChoView(), []);
   const busy = isPending || profileBusy;
   const ambientBg = timeOfDay === "night" ? "#2a2218" : "#ebe4d4";
@@ -485,19 +483,6 @@ export function LogHouseRoomMobile({
     />
   );
 
-  const radioAudio = (
-    <audio
-      ref={radioPlayer.audioRef}
-      src={radioCassette.audioSrc}
-      preload="metadata"
-      onEnded={radioPlayer.onAudioEnded}
-      onPause={radioPlayer.onAudioPause}
-      onPlay={radioPlayer.onAudioPlay}
-      onError={radioPlayer.onAudioError}
-      className="pointer-events-none absolute h-px w-px opacity-0"
-    />
-  );
-
   const radioCassetteModal = (
     <LogHouseRadioCassetteModal
       open={radioCassetteOpen}
@@ -549,7 +534,6 @@ export function LogHouseRoomMobile({
           <p className="sr-only">ログハウス室内。家具をタップして各機能へ進めます。</p>
         </div>
         {donguriChoModal}
-        {radioAudio}
         {radioCassetteModal}
       </>
     );
@@ -581,7 +565,6 @@ export function LogHouseRoomMobile({
         <p className="sr-only">ログハウス室内。家具をタップして各機能へ進めます。</p>
       </div>
       {donguriChoModal}
-      {radioAudio}
       {radioCassetteModal}
     </>
   );

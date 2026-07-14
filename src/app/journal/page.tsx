@@ -1030,7 +1030,7 @@ function JournalPageContent() {
           <OwlLoadingInline
             label="プレビューを準備しています…"
             size="md"
-            className="rounded-xl border border-stone-200 bg-white px-5 py-4 text-sm text-stone-700 shadow-sm"
+            className="rounded-[1.25rem] border border-[#e4d5c0]/95 bg-[#fdf8f0] px-5 py-4 text-sm text-[#5c4a35] shadow-[0_4px_14px_rgba(90,70,45,0.05)]"
           />
         </div>
       ) : null}
@@ -1043,7 +1043,7 @@ function JournalPageContent() {
           <OwlLoadingInline
             label={CALENDAR_RETURN_LOADING_LABEL}
             size="md"
-            className="rounded-xl border border-stone-200 bg-white px-5 py-4 text-sm text-stone-700 shadow-sm"
+            className="rounded-[1.25rem] border border-[#e4d5c0]/95 bg-[#fdf8f0] px-5 py-4 text-sm text-[#5c4a35] shadow-[0_4px_14px_rgba(90,70,45,0.05)]"
           />
         </div>
       ) : null}
@@ -1091,14 +1091,14 @@ function JournalPageContent() {
                   Boolean(deletingId)
                 }
                 onClick={() => beginCalendarReturn(safeReturnTo)}
-                className="text-emerald-800 underline-offset-2 hover:underline disabled:cursor-not-allowed disabled:opacity-60"
+                className="text-[#4a5440] underline-offset-2 hover:underline disabled:cursor-not-allowed disabled:opacity-60"
               >
                 カレンダーへ戻る
               </button>
             ) : (
               <Link
                 href={safeReturnTo}
-                className="text-emerald-800 underline-offset-2 hover:underline"
+                className="text-[#4a5440] underline-offset-2 hover:underline"
               >
                 本の確認へ
               </Link>
@@ -1121,7 +1121,7 @@ function JournalPageContent() {
 
       {isEditEntryLoading ? (
         <div
-          className="flex min-h-[12rem] flex-col items-center justify-center gap-3 rounded-xl border border-stone-200 bg-white px-4 py-10 shadow-sm sm:min-h-[14rem] sm:p-8"
+          className="flex min-h-[12rem] flex-col items-center justify-center gap-3 rounded-[1.25rem] border border-[#e4d5c0]/95 bg-[#fdf8f0] px-4 py-10 shadow-[0_4px_14px_rgba(90,70,45,0.05)] sm:min-h-[14rem] sm:p-8"
           aria-busy="true"
           aria-live="polite"
         >
@@ -1144,7 +1144,7 @@ function JournalPageContent() {
       <form
         onSubmit={(e) => void onSubmit(e)}
         className={[
-          "space-y-3 rounded-xl border border-stone-200 bg-white p-4 shadow-sm sm:p-5",
+          "space-y-3 rounded-[1.25rem] border border-[#e4d5c0]/95 bg-[#fdf8f0] p-4 shadow-[0_4px_14px_rgba(90,70,45,0.05)] sm:p-5",
           companionGuideMode === "dock" ? "pb-[calc(13rem+3.25rem+env(safe-area-inset-bottom,0px))]" : "",
         ]
           .filter(Boolean)
@@ -1242,8 +1242,8 @@ function JournalPageContent() {
                 className={[
                   "inline-flex cursor-pointer items-center gap-2 rounded-lg border px-3 py-2 text-sm",
                   contentFontMode === mode
-                    ? "border-emerald-600 bg-emerald-50 text-emerald-950"
-                    : "border-stone-200 bg-white text-stone-800 hover:bg-stone-50",
+                    ? "border-[#a8b08f]/95 bg-[#eef1e4] text-[#4a5440]"
+                    : "border-[#e0d2bc]/90 bg-[#fffaf2]/90 text-[#5c4a35] hover:bg-[#f7efe3]",
                 ].join(" ")}
               >
                 <input
@@ -1252,7 +1252,7 @@ function JournalPageContent() {
                   value={mode}
                   checked={contentFontMode === mode}
                   onChange={() => setContentFontMode(mode)}
-                  className="h-4 w-4 border-stone-300 text-emerald-700 focus:ring-emerald-600"
+                  className="h-4 w-4 border-stone-300 text-[#6e7c57] focus:ring-[#6e7c57]"
                 />
                 {CONTENT_FONT_MODE_LABELS_JA[mode]}
               </label>
@@ -1270,7 +1270,7 @@ function JournalPageContent() {
         <div
           id="journal-photo-section"
           className={[
-            "scroll-mt-16 space-y-2 rounded-lg border border-dashed border-stone-200/90 bg-[#faf8f5]/50 px-3 py-3",
+            "scroll-mt-16 space-y-2 rounded-lg border border-dashed border-[#e0d2bc]/90 bg-[#f7efe3]/50 px-3 py-3",
             companionWritingZoneSectionClass(companionPhotoZoneActive),
           ]
             .filter(Boolean)
@@ -1294,7 +1294,7 @@ function JournalPageContent() {
             id="journal-photo"
             type="file"
             accept="image/*"
-            className="w-full rounded-lg border border-stone-300 bg-white px-3 py-2.5 text-base text-stone-700 file:mr-3 file:rounded file:border-0 file:bg-stone-100 file:px-3 file:py-1.5 file:text-base file:text-stone-700"
+            className="w-full rounded-xl border border-[#e0d2bc]/95 bg-[#fffaf4] px-3 py-2.5 text-base text-[#5c4a35] file:mr-3 file:rounded-lg file:border-0 file:bg-[#f3ead8] file:px-3 file:py-1.5 file:text-base file:text-[#5c4a35]"
             onChange={(e) => {
               const file = e.target.files?.[0];
               if (!file) {
@@ -1345,7 +1345,7 @@ function JournalPageContent() {
           ) : null}
         </div>
 
-        <div className="space-y-3 border-t border-stone-100 pt-3">
+        <div className="space-y-3 border-t border-[#ebe2d4] pt-3">
           <JournalCompanionPicker
             value={companionType}
             onChange={(next) => {
@@ -1363,10 +1363,10 @@ function JournalPageContent() {
           type="date"
           value={entryDate}
           onChange={(e) => setEntryDate(e.target.value)}
-            className="w-full rounded-lg border border-stone-300 px-3 py-2.5 text-base text-stone-900 outline-none ring-stone-400 focus:ring-2"
+            className="w-full rounded-xl border border-[#e0d2bc]/95 bg-[#fffaf4] px-3 py-2.5 text-base text-[#3f3428] outline-none ring-[#c5b089]/50 focus:ring-2"
         />
         {numerologyDebug ? (
-          <details className="rounded-lg border border-stone-200 bg-stone-50 px-3 py-2 text-xs text-stone-800">
+          <details className="rounded-xl border border-[#e0d2bc]/90 bg-[#f7efe3]/90 px-3 py-2 text-xs text-[#5c4a35]">
             <summary className="cursor-pointer select-none font-medium text-stone-700">
               数値の確認（サポート用）
             </summary>
@@ -1411,7 +1411,7 @@ function JournalPageContent() {
                 {numerologyDebug.diaryNumbers.today}
               </dd>
             </dl>
-            <div className="mt-3 border-t border-stone-200 pt-2">
+            <div className="mt-3 border-t border-[#ebe2d4] pt-2">
               <p className="mb-2 text-[11px] leading-relaxed text-stone-600">
                 DB に残っている古い読み解きを、いまのロジックで上書きするときは（検証用・通常保存では再生成しません）:
               </p>
@@ -1446,7 +1446,7 @@ function JournalPageContent() {
                     "flex flex-col items-center gap-1.5 rounded-lg border px-2 py-2.5 text-center transition",
                     selected
                       ? "border-stone-500 bg-stone-50 ring-2 ring-stone-400"
-                      : "border-stone-200 bg-white hover:border-stone-300 hover:bg-stone-50",
+                      : "border-[#e0d2bc]/90 bg-[#fffaf4] hover:border-[#c5b089] hover:bg-[#f7efe3]",
                   ].join(" ")}
                 >
                   <MoodOwlIcon moodId={option.id} sizePx={44} />
@@ -1463,7 +1463,7 @@ function JournalPageContent() {
           id="journal-activity"
           value={activity}
           onChange={(e) => setActivity(e.target.value as ActivityId)}
-          className="w-full rounded-lg border border-stone-300 bg-white px-3 py-2 text-sm text-stone-900 outline-none ring-stone-400 focus:ring-2"
+          className="w-full rounded-xl border border-[#e0d2bc]/95 bg-[#fffaf4] px-3 py-2 text-sm text-[#3f3428] outline-none ring-[#c5b089]/50 focus:ring-2"
         >
           {activityOptions.map((option) => (
             <option key={option.id} value={option.id}>
@@ -1479,11 +1479,11 @@ function JournalPageContent() {
           disabled={saving || loadingEdit || processingPhoto}
         />
 
-        <div className="flex flex-col gap-2 border-t border-stone-100 pt-3 sm:flex-row sm:flex-wrap sm:justify-end">
+        <div className="flex flex-col gap-2 border-t border-[#ebe2d4] pt-3 sm:flex-row sm:flex-wrap sm:justify-end">
             <button
               type="submit"
               disabled={saving || processingPhoto}
-              className="min-h-[44px] whitespace-nowrap rounded-lg bg-stone-800 px-4 py-2.5 text-base font-medium text-white transition hover:bg-stone-700 disabled:opacity-60"
+              className="min-h-[44px] whitespace-nowrap rounded-xl border border-[#b8893d]/80 bg-[#b8893d] px-4 py-2.5 text-base font-medium text-white shadow-[0_2px_8px_rgba(90,70,45,0.12)] transition hover:border-[#a67a32] hover:bg-[#a67a32] disabled:opacity-60"
             >
               {saving ? (
                 <OwlLoadingInline label="保存中…" size="sm" />
@@ -1497,7 +1497,7 @@ function JournalPageContent() {
                   type="button"
                   disabled={saving || processingPhoto}
                   onClick={() => void saveEntry("returnTo")}
-                  className="min-h-[44px] whitespace-nowrap rounded-lg border border-stone-300 bg-white px-4 py-2.5 text-base font-medium text-stone-700 transition hover:bg-stone-50 disabled:opacity-60"
+                  className="min-h-[44px] whitespace-nowrap rounded-xl border border-[#e0d2bc]/95 bg-[#faf3e8] px-4 py-2.5 text-base font-medium text-[#5c4a35] transition hover:border-[#d5c3a8] hover:bg-[#f3ead8] disabled:opacity-60"
                 >
                   {saving ? (
                     <OwlLoadingInline label="保存中…" size="sm" />
@@ -1511,7 +1511,7 @@ function JournalPageContent() {
                     saving || processingPhoto || deletingId === editingId || navigatingToCalendar
                   }
                   onClick={cancelEditingAndReturnToCalendar}
-                  className="min-h-[44px] whitespace-nowrap rounded-lg border border-stone-300 bg-white px-4 py-2.5 text-base font-medium text-stone-700 transition hover:bg-stone-50 disabled:opacity-60"
+                  className="min-h-[44px] whitespace-nowrap rounded-xl border border-[#e0d2bc]/95 bg-[#faf3e8] px-4 py-2.5 text-base font-medium text-[#5c4a35] transition hover:border-[#d5c3a8] hover:bg-[#f3ead8] disabled:opacity-60"
                 >
                   編集をやめる
                 </button>

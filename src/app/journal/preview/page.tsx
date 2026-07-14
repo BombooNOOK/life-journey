@@ -323,7 +323,7 @@ function JournalPreviewPageContent() {
               "min-h-[44px] rounded-md border px-3 py-2 text-base",
               viewMode === "readable"
                 ? "border-stone-700 bg-stone-800 text-white"
-                : "border-stone-300 bg-white text-stone-700 hover:bg-stone-50",
+                : "border-[#e0d2bc]/95 bg-[#faf3e8] text-[#5c4a35] hover:bg-[#f3ead8]",
             ].join(" ")}
           >
             読みやすく表示
@@ -335,7 +335,7 @@ function JournalPreviewPageContent() {
               "min-h-[44px] rounded-md border px-3 py-2 text-base",
               viewMode === "social"
                 ? "border-stone-700 bg-stone-800 text-white"
-                : "border-stone-300 bg-white text-stone-700 hover:bg-stone-50",
+                : "border-[#e0d2bc]/95 bg-[#faf3e8] text-[#5c4a35] hover:bg-[#f3ead8]",
             ].join(" ")}
           >
             投稿画像
@@ -394,13 +394,13 @@ function JournalPreviewPageContent() {
         {returnTo ? (
           <Link
             href={returnTo}
-            className="relative z-[1] inline-flex min-h-[44px] items-center rounded-lg border border-emerald-300 bg-emerald-50 px-4 py-2.5 text-base font-medium text-emerald-900 hover:bg-emerald-100 active:bg-emerald-100/90"
+            className="relative z-[1] inline-flex min-h-[44px] items-center rounded-xl border border-[#a8b08f]/90 bg-[#eef1e4] px-4 py-2.5 text-base font-medium text-[#4a5440] hover:bg-[#e4e9d8] active:bg-[#dfe6d2]"
           >
             {returnHomeLabel}
           </Link>
         ) : null}
         {canEditJournal && entry ? (
-          <div className="w-full rounded-lg border border-stone-200 bg-white px-4 py-3 sm:max-w-md">
+          <div className="w-full rounded-xl border border-[#e4d5c0]/95 bg-[#fdf8f0] px-4 py-3 sm:max-w-md">
             <p className="text-sm font-medium text-stone-700">この日記を</p>
             <div className="mt-2 flex flex-wrap gap-2">
               <button
@@ -415,7 +415,7 @@ function JournalPreviewPageContent() {
                     ),
                   );
                 }}
-                className="min-h-[44px] rounded-lg border border-stone-300 bg-white px-4 py-2.5 text-base text-stone-700 hover:bg-stone-50 disabled:opacity-60"
+                className="min-h-[44px] rounded-xl border border-[#e0d2bc]/95 bg-[#faf3e8] px-4 py-2.5 text-base text-[#5c4a35] hover:bg-[#f3ead8] disabled:opacity-60"
               >
                 編集する
               </button>
@@ -440,14 +440,14 @@ function JournalPreviewPageContent() {
                     ? `/journal?profile=${encodeURIComponent(effectiveProfileId)}`
                     : "/journal"
                 }
-                className="min-h-[44px] rounded-lg border border-stone-300 bg-white px-4 py-2.5 text-base text-stone-700 hover:bg-stone-50"
+                className="min-h-[44px] rounded-xl border border-[#e0d2bc]/95 bg-[#faf3e8] px-4 py-2.5 text-base text-[#5c4a35] hover:bg-[#f3ead8]"
               >
                 入力ページへ戻る
               </Link>
             ) : (
               <Link
                 href="/orders/calendar"
-                className="min-h-[44px] rounded-lg border border-stone-300 bg-white px-4 py-2.5 text-base text-stone-700 hover:bg-stone-50"
+                className="min-h-[44px] rounded-xl border border-[#e0d2bc]/95 bg-[#faf3e8] px-4 py-2.5 text-base text-[#5c4a35] hover:bg-[#f3ead8]"
               >
                 カレンダーへ戻る
               </Link>

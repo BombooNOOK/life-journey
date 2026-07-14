@@ -119,8 +119,8 @@ export function CompanionWritingAppraiserPicker({ selected, onSelect }: Props) {
               "flex min-h-[8.5rem] flex-col items-center justify-center gap-2.5 rounded-2xl border px-2 py-3.5 text-center transition sm:min-h-[9rem] sm:py-4",
               available
                 ? isSelected
-                  ? "border-emerald-400 bg-emerald-50/90 ring-2 ring-emerald-300/80"
-                  : "border-stone-200/90 bg-white/90 hover:border-emerald-200 hover:bg-emerald-50/35"
+                  ? "border-[#a8b08f] bg-[#eef1e4]/95 ring-2 ring-[#c5d0a8]/80"
+                  : "border-[#e0d2bc]/90 bg-[#fffaf4]/95 hover:border-[#c5b089] hover:bg-[#f7efe3]/80"
                 : "cursor-not-allowed border-stone-200/70 bg-stone-50/80 opacity-80",
             ].join(" ")}
           >

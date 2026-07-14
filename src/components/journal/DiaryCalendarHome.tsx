@@ -49,6 +49,12 @@ import {
 import { TrialStatusBanner } from "@/components/entitlement/TrialStatusBanner";
 import type { SerializedUserEntitlement } from "@/lib/entitlement/resolveUserEntitlement";
 import { LOG_HOUSE_BACK_LINK } from "@/lib/journal/logHouseLabels";
+import {
+  LJD_PAPER_CARD_CLASS,
+  LJD_PAPER_LINK_CLASS,
+  LJD_PAPER_PRIMARY_BTN_CLASS,
+  LJD_PAPER_SECONDARY_BTN_CLASS,
+} from "@/lib/ljd/ljdPaperSurface";
 
 export type DiaryCalendarEntry = DiaryMonthCalendarEntry & {
   content: string;
@@ -399,12 +405,11 @@ export function DiaryCalendarHome({
   const showSelectedDayWriteButton =
     selectedDayKey !== null && selectedDayKey !== todayDayKey;
 
-  const profileNameButtonClass =
-    "min-w-0 truncate font-medium text-emerald-900 underline decoration-emerald-300/80 underline-offset-2 hover:text-emerald-950";
+  const profileNameButtonClass = LJD_PAPER_LINK_CLASS;
   const writeButtonBase =
-    "flex min-h-[44px] w-[92%] max-w-[360px] items-center justify-center rounded-xl px-4 py-2.5 text-center text-sm font-semibold shadow-sm transition sm:min-h-[46px] sm:w-auto sm:min-w-[12rem] sm:max-w-[17rem]";
-  const writeTodayButtonClass = `${writeButtonBase} border border-[#E7C66A] bg-[#D8A93A] text-white hover:bg-[#C99A2E]`;
-  const writeSelectedDayButtonClass = `${writeButtonBase} border border-emerald-300/80 bg-emerald-700 text-white hover:border-emerald-400 hover:bg-emerald-800`;
+    "flex min-h-[44px] w-[92%] max-w-[360px] items-center justify-center px-4 py-2.5 text-center text-sm font-semibold sm:min-h-[46px] sm:w-auto sm:min-w-[12rem] sm:max-w-[17rem]";
+  const writeTodayButtonClass = `${writeButtonBase} ${LJD_PAPER_PRIMARY_BTN_CLASS}`;
+  const writeSelectedDayButtonClass = `${writeButtonBase} rounded-xl border border-[#8a9470]/90 bg-[#6e7c57] text-white shadow-[0_2px_8px_rgba(90,70,45,0.1)] transition hover:bg-[#5f6c4a]`;
 
   const awaitingCompanionBootstrap =
     companionGuideFromUrl !== null && companionComplete === null;
@@ -454,11 +459,11 @@ export function DiaryCalendarHome({
           >
             {LOG_HOUSE_BACK_LINK.label}
           </Link>
-          <h1 className="mt-0 hidden text-xl font-bold leading-snug text-stone-900 sm:mt-2 sm:block sm:text-2xl">
+          <h1 className="mt-0 hidden text-xl font-bold leading-snug text-[#3f3428] sm:mt-2 sm:block sm:text-2xl">
             <button
               type="button"
               onClick={() => setShowProfilePanel((v) => !v)}
-              className="text-emerald-900 underline decoration-emerald-300/80 underline-offset-4 hover:text-emerald-950"
+              className={`${LJD_PAPER_LINK_CLASS} underline-offset-4`}
               aria-expanded={showProfilePanel}
               aria-controls="diary-profile-switcher"
             >
@@ -546,25 +551,25 @@ export function DiaryCalendarHome({
 
         <div ref={listRef} className="scroll-mt-4 space-y-3">
           {selectedDay === null ? (
-            <p className="rounded-xl border border-dashed border-stone-200 bg-stone-50/80 px-4 py-6 text-center text-sm text-stone-500">
+            <p className="rounded-xl border border-dashed border-[#e0d2bc]/90 bg-[#f7efe3]/70 px-4 py-6 text-center text-sm text-[#8a7b6a]">
               日付をタップすると、その日の日記がここに表示されます。
             </p>
           ) : (
             <>
-              <h2 className="text-base font-semibold text-stone-900">
+              <h2 className="text-base font-semibold text-[#3f3428]">
                 {formatSelectedDayLabel(
                   viewMonth.getFullYear(),
                   viewMonth.getMonth(),
                   selectedDay,
                 )}
                 の日記
-                <span className="ml-2 text-sm font-normal text-stone-500">
+                <span className="ml-2 text-sm font-normal text-[#8a7b6a]">
                   {selectedDayEntries.length}件
                 </span>
               </h2>
 
               {selectedDayEntries.length === 0 ? (
-                <div className="rounded-xl border border-stone-200 bg-white px-4 py-6 text-center text-sm text-stone-600">
+                <div className={`${LJD_PAPER_CARD_CLASS} px-4 py-6 text-center text-sm text-[#5c4a35]`}>
                   <p>この日の日記はまだありません。</p>
                 </div>
               ) : (
@@ -582,7 +587,7 @@ export function DiaryCalendarHome({
                     return (
                       <li
                         key={entry.id}
-                        className="rounded-xl border border-stone-200 bg-white p-3 shadow-sm"
+                        className={`${LJD_PAPER_CARD_CLASS} p-3`}
                       >
                         <div className="flex flex-wrap items-start justify-between gap-2">
                           <div className="min-w-0">
@@ -627,14 +632,14 @@ export function DiaryCalendarHome({
                               returnToBase,
                               effectiveProfileId,
                             )}
-                            className="inline-flex min-h-[44px] flex-1 items-center justify-center rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm font-medium text-emerald-950 hover:bg-emerald-100/80 sm:flex-none sm:px-4"
+                            className="inline-flex min-h-[44px] flex-1 items-center justify-center rounded-xl border border-[#a8b08f]/90 bg-[#eef1e4] px-3 py-2 text-sm font-medium text-[#4a5440] hover:bg-[#e4e9d8] sm:flex-none sm:px-4"
                           >
                             {canEditJournal ? "プレビュー" : "読む"}
                           </Link>
                           {canEditJournal ? (
                             <Link
                               href={journalEditPath(entry.id, returnToBase, effectiveProfileId)}
-                              className="inline-flex min-h-[44px] flex-1 items-center justify-center rounded-lg border border-stone-200 bg-white px-3 py-2 text-sm font-medium text-stone-800 hover:bg-stone-50 sm:flex-none sm:px-4"
+                              className={`inline-flex min-h-[44px] flex-1 items-center justify-center px-3 py-2 text-sm font-medium sm:flex-none sm:px-4 ${LJD_PAPER_SECONDARY_BTN_CLASS}`}
                             >
                               編集
                             </Link>

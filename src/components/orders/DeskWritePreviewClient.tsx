@@ -63,7 +63,7 @@ export function DeskWritePreviewClient() {
           </div>
           {/* 枠内に固定した下部ナビ（本番と同じコンポーネント） */}
           <div className="pointer-events-auto absolute inset-x-0 bottom-0 [&_nav]:!relative [&_nav]:inset-auto [&_nav]:z-10">
-            <DiaryHomeBottomNav />
+            <DiaryHomeBottomNav forceActivePath="/orders/list" />
           </div>
         </div>
       </div>

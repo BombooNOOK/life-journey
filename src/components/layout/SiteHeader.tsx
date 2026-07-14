@@ -18,6 +18,7 @@ import {
 } from "@/lib/legal/legalDocumentLinks";
 import { LOG_HOUSE_LOADING_LABEL, LOG_HOUSE_NAV_LABEL } from "@/lib/journal/logHouseLabels";
 import { FOREST_GUIDE_STATION_TITLE } from "@/lib/help/forestGuideStation";
+import { LJD_PAPER_HEADER_BAR_CLASS } from "@/lib/ljd/ljdPaperSurface";
 
 const navLinkClass = "shrink-0 whitespace-nowrap hover:text-stone-900";
 const navNavButtonClass = `${navLinkClass} cursor-pointer border-0 bg-transparent p-0 text-inherit font-inherit`;
@@ -26,15 +27,15 @@ const navSepClass = "mx-1 shrink-0 select-none px-0.5 text-stone-300 sm:mx-1.5";
 function MenuIcon({ open }: { open: boolean }) {
   if (open) {
     return (
-      <svg aria-hidden className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <svg aria-hidden className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75">
         <path strokeLinecap="round" d="M6 6l12 12M18 6L6 18" />
       </svg>
     );
   }
 
   return (
-    <svg aria-hidden className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-      <path strokeLinecap="round" d="M4 7h16M4 12h16M4 17h16" />
+    <svg aria-hidden className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75">
+      <path strokeLinecap="round" d="M5 7.5h14M5 12h14M5 16.5h14" />
     </svg>
   );
 }
@@ -43,9 +44,9 @@ export function SiteHeader() {
   return (
     <Suspense
       fallback={
-        <header className="sticky top-0 z-50 border-b border-stone-200 bg-white/80 backdrop-blur">
+        <header className={`sticky top-0 z-50 ${LJD_PAPER_HEADER_BAR_CLASS}`}>
           <div className="mx-auto max-w-3xl px-4 py-3 sm:py-4">
-            <span className="font-semibold text-stone-800 text-base sm:text-lg">Life Journey Diary</span>
+            <span className="font-semibold text-[#3f3428] text-base sm:text-lg">Life Journey Diary</span>
           </div>
         </header>
       }
@@ -123,21 +124,21 @@ function SiteHeaderInner() {
   return (
     <header
       ref={headerRef}
-      className="sticky top-0 z-50 overflow-visible border-b border-stone-200 bg-white/80 backdrop-blur"
+      className={`sticky top-0 z-50 overflow-visible ${LJD_PAPER_HEADER_BAR_CLASS}`}
     >
       <div className="mx-auto max-w-3xl overflow-visible px-4 py-3 sm:py-4">
         <div className="flex items-center justify-between gap-3">
           {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
           <a
             href="/"
-            className="min-w-0 shrink font-semibold text-stone-800 no-underline hover:text-stone-900 text-base sm:text-lg"
+            className="min-w-0 shrink font-semibold text-[#3f3428] no-underline hover:text-[#2c241c] text-base sm:text-lg"
           >
             Life Journey Diary
           </a>
 
           <button
             type="button"
-            className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-stone-200/90 bg-[#fffdf9] text-stone-700 shadow-sm transition hover:border-emerald-200 hover:bg-white hover:text-emerald-900 md:hidden"
+            className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-[#e0d2bc]/95 bg-[#f6eee2] text-[#6a5846] shadow-[0_1px_3px_rgba(90,70,45,0.08)] transition hover:border-[#d5c3a8] hover:bg-[#f3ead8] hover:text-[#4a3a28] md:hidden"
             aria-expanded={menuOpen}
             aria-controls={menuId}
             aria-label={menuOpen ? "メニューを閉じる" : "メニューを開く"}

@@ -9,6 +9,12 @@ import {
   calendarDayKeyInJapan,
   entryDayKeyInJapan,
 } from "@/lib/journal/journalNav";
+import {
+  LJD_PAPER_CARD_CLASS,
+  LJD_PAPER_PANEL_CLASS,
+  LJD_SAGE,
+  LJD_SAGE_DEEP,
+} from "@/lib/ljd/ljdPaperSurface";
 
 /** 5週/6週どちらでも同じ高さにする（6週分のマスを常に確保） */
 const CALENDAR_WEEK_ROWS = 6;
@@ -34,7 +40,7 @@ type Props = {
 };
 
 const monthNavButtonClass =
-  "min-h-[44px] min-w-[44px] rounded-lg text-stone-600 transition duration-150 ease-out hover:bg-white hover:text-stone-900 active:scale-[0.97] active:opacity-75 disabled:pointer-events-none disabled:opacity-40";
+  "min-h-[44px] min-w-[44px] rounded-lg text-[#6a5846] transition duration-150 ease-out hover:bg-[#f3ead8]/80 hover:text-[#3f3428] active:scale-[0.97] active:opacity-75 disabled:pointer-events-none disabled:opacity-40";
 
 function monthLabel(date: Date): string {
   return `${date.getFullYear()}年${date.getMonth() + 1}月`;
@@ -82,12 +88,12 @@ export function DiaryMonthCalendar({
   return (
     <div
       className={[
-        "rounded-2xl border border-emerald-100 bg-white shadow-sm",
+        LJD_PAPER_CARD_CLASS,
         revealMode ? "p-2 sm:p-4" : "p-2.5 sm:p-4",
       ].join(" ")}
       aria-busy={isFetching}
     >
-      <div className="flex items-center justify-between rounded-xl border border-stone-100 bg-stone-50/80 px-2 py-2">
+      <div className="flex items-center justify-between rounded-xl border border-[#e4d5c0]/90 bg-[#f7efe3]/95 px-2 py-2">
         {revealMode ? (
           <div className="w-11" aria-hidden />
         ) : (
@@ -103,7 +109,7 @@ export function DiaryMonthCalendar({
           </button>
         )}
         <p
-          className={`text-sm font-semibold text-stone-800 transition-opacity duration-150 ease-out ${
+          className={`text-sm font-semibold text-[#3f3428] transition-opacity duration-150 ease-out ${
             isFetching ? "opacity-70" : "opacity-100"
           } ${revealMode ? "text-base" : ""}`}
         >
@@ -131,7 +137,7 @@ export function DiaryMonthCalendar({
           isFetching ? "opacity-[0.55]" : "opacity-100"
         }`}
       >
-        <div className="grid grid-cols-7 gap-1 text-center text-xs text-stone-500">
+        <div className="grid grid-cols-7 gap-1 text-center text-xs text-[#8a7b6a]">
           {["日", "月", "火", "水", "木", "金", "土"].map((w) => (
             <div key={w} className="py-1 font-medium">
               {w}
@@ -159,7 +165,7 @@ export function DiaryMonthCalendar({
             const count = entryCountByDay.get(day) ?? 0;
 
             const todayLabelBandClass =
-              "w-full shrink-0 border-b border-[#C99A2E]/90 bg-[#D8A93A] py-px text-center text-[9px] font-semibold leading-tight tracking-wide text-white sm:text-[10px]";
+              "w-full shrink-0 border-b border-[#b8893d]/90 bg-[#c49a3c] py-px text-center text-[9px] font-semibold leading-tight tracking-wide text-white sm:text-[10px]";
 
             return (
               <button
@@ -171,11 +177,12 @@ export function DiaryMonthCalendar({
                   "relative flex min-h-[2.85rem] flex-col overflow-hidden rounded-lg border text-xs transition-colors duration-150 outline-none ring-0",
                   "focus-visible:outline-2 focus-visible:outline-offset-1",
                   isSelected
-                    ? "border-2 border-emerald-700 bg-emerald-50/90 focus-visible:outline-emerald-700"
+                    ? "border-2 bg-[#eef1e4]/95 focus-visible:outline-[#66724e]"
                     : isToday
-                      ? "border-2 border-[#E7C66A] bg-amber-50/50 hover:border-[#D8A93A] hover:bg-amber-50/70 focus-visible:outline-[#D8A93A]"
-                      : "border-stone-100 bg-stone-50/90 hover:border-emerald-200 hover:bg-emerald-50/50 focus-visible:outline-stone-400",
+                      ? "border-2 border-[#d4b056] bg-[#faf4e4]/90 hover:border-[#c49a3c] hover:bg-[#f7edd4] focus-visible:outline-[#c49a3c]"
+                      : "border-[#ebe2d4] bg-[#fffaf4]/95 hover:border-[#c5b089] hover:bg-[#f7efe3]/80 focus-visible:outline-[#9a8b78]",
                 ].join(" ")}
+                style={isSelected ? { borderColor: LJD_SAGE } : undefined}
                 aria-label={`${day}日${hasEntry ? `・日記${count}件` : ""}${isToday ? "・今日" : ""}`}
                 aria-pressed={isSelected}
               >
@@ -190,7 +197,7 @@ export function DiaryMonthCalendar({
                     isToday ? "min-h-0 flex-1 py-0.5" : "min-h-[2.75rem]",
                   ].join(" ")}
                 >
-                  <span className="font-medium leading-none text-stone-800">{day}</span>
+                  <span className="font-medium leading-none text-[#3f3428]">{day}</span>
                   {hasEntry ? (
                     <span className="mt-0.5 flex items-center gap-0.5 leading-none" aria-hidden>
                       <Image
@@ -202,7 +209,10 @@ export function DiaryMonthCalendar({
                         unoptimized
                       />
                       {count > 1 ? (
-                        <span className="tabular-nums text-[9px] text-emerald-700/90">
+                        <span
+                          className="tabular-nums text-[9px]"
+                          style={{ color: LJD_SAGE_DEEP }}
+                        >
                           +{count - 1}
                         </span>
                       ) : null}
@@ -218,16 +228,16 @@ export function DiaryMonthCalendar({
       </div>
       {isFetching && !revealMode ? (
         <div
-          className="pointer-events-auto absolute inset-0 z-10 flex items-center justify-center rounded-xl bg-white/45 backdrop-blur-[1px]"
+          className="pointer-events-auto absolute inset-0 z-10 flex items-center justify-center rounded-xl bg-[#fdf8f0]/55 backdrop-blur-[1px]"
           aria-hidden
         >
-          <div className="rounded-xl border border-emerald-100/90 bg-white/95 px-3 py-2.5 shadow-sm sm:px-4">
-            <OwlLoadingInline label={loadingLabel} size="sm" className="text-xs text-stone-700" />
+          <div className={`${LJD_PAPER_PANEL_CLASS} px-3 py-2.5 sm:px-4`}>
+            <OwlLoadingInline label={loadingLabel} size="sm" className="text-xs text-[#5c4a35]" />
           </div>
         </div>
       ) : null}
       </div>
-      <p className="mt-1.5 hidden min-h-[2.5rem] text-[11px] leading-relaxed text-stone-500 sm:block">
+      <p className="mt-1.5 hidden min-h-[2.5rem] text-[11px] leading-relaxed text-[#8a7b6a] sm:block">
         日記がある日をタップすると、下に一覧が表示されます。「今日」と表示されている日が本日です。
       </p>
     </div>

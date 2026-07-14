@@ -1,5 +1,6 @@
 /**
- * 森のラジカセ — 再生状態（カードを閉じても音を継続）
+ * 森のラジカセ — 再生コントローラ（状態本体）
+ * アプリ内で音を継続するときは LogHouseRadioPlayerProvider 経由で1インスタンスだけ使う。
  */
 
 "use client";
@@ -38,7 +39,8 @@ export type LogHouseRadioPlayer = {
   onAudioError: () => void;
 };
 
-export function useLogHouseRadioPlayer(): LogHouseRadioPlayer {
+/** Provider 専用。画面コンポーネントからは useLogHouseRadioPlayer（Provider）を使う */
+export function useLogHouseRadioPlayerController(): LogHouseRadioPlayer {
   const audioRef = useRef<HTMLAudioElement>(null);
   const [cassetteId, setCassetteIdState] = useState(LOG_HOUSE_RADIO_DEFAULT_CASSETTE_ID);
   const [isPlaying, setIsPlaying] = useState(false);

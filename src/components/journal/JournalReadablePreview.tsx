@@ -11,6 +11,10 @@ import { formatJournalPreviewDateHeading } from "@/lib/journal/journalRecordDate
 import { stripTagsFromContent } from "@/lib/journal/diaryTags";
 import { journalEditPath } from "@/lib/journal/journalNav";
 import { getActivityMeta, getCompanionLabel, getMoodMeta, normalizeCompanionType } from "@/lib/journal/meta";
+import {
+  LJD_PAPER_CARD_CLASS,
+  LJD_PAPER_SECONDARY_BTN_CLASS,
+} from "@/lib/ljd/ljdPaperSurface";
 
 type Props = {
   entryId: string;
@@ -51,7 +55,7 @@ function PencilEditLink({
   return (
     <Link
       href={href}
-      className="inline-flex min-h-[44px] min-w-[44px] shrink-0 items-center justify-center rounded-lg border border-stone-200 bg-white text-stone-700 transition hover:bg-stone-50 active:bg-stone-100"
+      className={`inline-flex min-h-[44px] min-w-[44px] shrink-0 items-center justify-center ${LJD_PAPER_SECONDARY_BTN_CLASS}`}
       aria-label={label}
       title={label}
     >
@@ -114,22 +118,22 @@ export function JournalReadablePreview({
     (kanteiOrderExists === false ? JOURNAL_OWL_COMMENT_KANTEI_REQUIRED_MESSAGE : null);
 
   return (
-    <article className="space-y-6 rounded-xl bg-[#faf8f5] px-1 py-2 sm:bg-white sm:px-0 sm:py-0">
-      <header className="flex items-start justify-between gap-3 border-b border-stone-200/80 pb-4">
-        <h2 className="text-[1.375rem] font-bold leading-snug text-stone-900 sm:text-2xl">{dateLabel}</h2>
+    <article className="space-y-6 rounded-xl px-1 py-2">
+      <header className="flex items-start justify-between gap-3 border-b border-[#e8dcc8]/90 pb-4">
+        <h2 className="text-[1.375rem] font-bold leading-snug text-[#3f3428] sm:text-2xl">{dateLabel}</h2>
         {canEdit ? (
           <PencilEditLink href={editHref} label="この日記を編集する" />
         ) : null}
       </header>
 
       {showPhoto ? (
-        <figure className="overflow-hidden rounded-xl border border-stone-200 bg-white shadow-sm">
+        <figure className={`overflow-hidden ${LJD_PAPER_CARD_CLASS}`}>
           <div className="relative aspect-square w-full max-h-[min(72vh,28rem)] sm:max-h-[32rem]">
             <Image
               src={photoUrl}
               alt={`${dateLabel}の写真`}
               fill
-              className="object-contain bg-stone-100"
+              className="object-contain bg-[#f3ead8]/60"
               sizes="(max-width: 640px) 100vw, 640px"
               unoptimized={photoUrl.startsWith("data:") || photoUrl.startsWith("/api/")}
             />
@@ -137,16 +141,16 @@ export function JournalReadablePreview({
         </figure>
       ) : null}
 
-      <section className="rounded-xl border border-stone-200/90 bg-white px-4 py-4 shadow-sm sm:px-5 sm:py-5">
-        <p className="lj-read-body whitespace-pre-wrap break-words text-stone-800">
+      <section className={`${LJD_PAPER_CARD_CLASS} px-4 py-4 sm:px-5 sm:py-5`}>
+        <p className="lj-read-body whitespace-pre-wrap break-words text-[#3f3428]">
           {displayContent.trim() || "（本文なし）"}
         </p>
       </section>
 
       {commentText ? (
-        <section className="rounded-xl border border-[#e8dfd0] bg-[#f7f1e6] px-4 py-4 shadow-sm sm:px-5 sm:py-5">
-          <h3 className="lj-read-desc font-semibold text-stone-800">{commentHeading}</h3>
-          <p className="lj-read-comment mt-3 whitespace-pre-wrap break-words text-stone-800">
+        <section className="rounded-[1.25rem] border border-[#e4d5c0]/95 bg-[#f3ead9]/90 px-4 py-4 shadow-[0_4px_14px_rgba(90,70,45,0.05)] sm:px-5 sm:py-5">
+          <h3 className="lj-read-desc font-semibold text-[#4a3a28]">{commentHeading}</h3>
+          <p className="lj-read-comment mt-3 whitespace-pre-wrap break-words text-[#3f3428]">
             {commentText}
           </p>
         </section>
@@ -165,14 +169,14 @@ export function JournalReadablePreview({
         />
       ) : null}
 
-      <section className="rounded-xl border border-stone-200/80 bg-white/80 px-4 py-4">
-        <h3 className="lj-read-desc font-semibold text-stone-700">今日の気分</h3>
+      <section className={`${LJD_PAPER_CARD_CLASS} px-4 py-4`}>
+        <h3 className="lj-read-desc font-semibold text-[#5c4a35]">今日の気分</h3>
         <div className="mt-3 flex items-center gap-3">
           <MoodOwlIcon moodId={mood} sizePx={48} className="shrink-0" />
-          <p className="lj-read-desc font-medium text-stone-800">{moodMeta.label}</p>
+          <p className="lj-read-desc font-medium text-[#3f3428]">{moodMeta.label}</p>
         </div>
-        <h3 className="lj-read-desc mt-5 font-semibold text-stone-700">今日はどんな一日でしたか？</h3>
-        <p className="lj-read-desc mt-2 font-medium text-stone-800">{activityMeta.label}</p>
+        <h3 className="lj-read-desc mt-5 font-semibold text-[#5c4a35]">今日はどんな一日でしたか？</h3>
+        <p className="lj-read-desc mt-2 font-medium text-[#3f3428]">{activityMeta.label}</p>
       </section>
       <div ref={previewEndRef} className="h-px w-full" aria-hidden />
     </article>

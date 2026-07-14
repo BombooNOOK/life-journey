@@ -341,7 +341,7 @@ export function CompanionWritingPage() {
       <div className="mx-auto max-w-lg space-y-3 px-4 py-8">
         <h1 className="text-xl font-bold text-stone-900">{COMPANION_WRITING_FORMAL_TITLE}</h1>
         <p className="text-sm text-stone-700">日記を書くにはログインが必要です。</p>
-        <Link href="/login" className="text-sm font-medium text-emerald-900 underline-offset-2 hover:underline">
+        <Link href="/login" className="text-sm font-medium text-[#4a5440] underline-offset-2 hover:underline">
           ログインする
         </Link>
       </div>
@@ -357,7 +357,7 @@ export function CompanionWritingPage() {
         </p>
         <Link
           href="/orders/calendar"
-          className="text-sm font-medium text-emerald-900 underline-offset-2 hover:underline"
+          className="text-sm font-medium text-[#4a5440] underline-offset-2 hover:underline"
         >
           カレンダーで過去の日記を見る
         </Link>
@@ -366,7 +366,7 @@ export function CompanionWritingPage() {
   }
 
   return (
-    <div className="relative mx-auto max-w-lg space-y-5 px-5 py-5 sm:space-y-4 sm:px-4 sm:py-8">
+    <div className="relative mx-auto min-h-[100dvh] max-w-lg space-y-5 bg-[#f6f0e6] px-5 py-5 sm:space-y-4 sm:px-4 sm:py-8">
       {(step === "write" || step === "confirm") && saving ? (
         <div
           className="fixed inset-0 z-[70] flex items-center justify-center bg-[#faf8f5]/92 backdrop-blur-[2px]"
@@ -377,7 +377,7 @@ export function CompanionWritingPage() {
           <OwlLoadingInline
             label={COMPANION_WRITING_SAVE_LOADING_LABEL}
             size="md"
-            className="rounded-xl border border-stone-200 bg-white px-5 py-4 text-sm text-stone-700 shadow-sm"
+            className="rounded-xl border border-[#e4d5c0]/95 bg-[#fdf8f0] px-5 py-4 text-sm text-[#5c4a35] shadow-[0_4px_14px_rgba(90,70,45,0.05)]"
           />
         </div>
       ) : null}
@@ -432,7 +432,7 @@ export function CompanionWritingPage() {
           <button
             type="button"
             onClick={advanceFromCompanionStep}
-            className="min-h-[44px] w-full rounded-lg bg-emerald-800 px-4 py-2.5 text-sm font-medium text-white hover:bg-emerald-900"
+            className="min-h-[44px] w-full rounded-lg bg-[#b8893d] px-4 py-2.5 text-sm font-medium text-white hover:bg-[#a67a32]"
           >
             つぎへ
           </button>
@@ -444,7 +444,7 @@ export function CompanionWritingPage() {
                 safeReturnTo ?? "/orders",
                 effectiveProfileId,
               )}
-              className="text-sm font-medium text-emerald-900 underline-offset-2 hover:underline"
+              className="text-sm font-medium text-[#4a5440] underline-offset-2 hover:underline"
             >
               通常の日記入力へ
             </Link>
@@ -473,7 +473,7 @@ export function CompanionWritingPage() {
                     className={[
                       "flex flex-col items-center gap-1.5 rounded-lg border px-2 py-3 text-center transition sm:py-2.5",
                       selected
-                        ? "border-emerald-500 bg-emerald-50 ring-2 ring-emerald-300"
+                        ? "border-[#a8b08f] bg-[#eef1e4] ring-2 ring-[#c5d0a8]"
                         : "border-stone-200 bg-white hover:border-stone-300 hover:bg-stone-50",
                     ].join(" ")}
                   >
@@ -488,14 +488,14 @@ export function CompanionWritingPage() {
             <button
               type="button"
               onClick={() => setStep("companion")}
-              className="min-h-[44px] flex-1 rounded-lg border border-stone-300 bg-white px-4 py-2.5 text-sm font-medium text-stone-700 hover:bg-stone-50"
+              className="min-h-[44px] flex-1 rounded-lg border border-[#e0d2bc]/95 bg-[#faf3e8] px-4 py-2.5 text-sm font-medium text-[#5c4a35] hover:bg-[#f3ead8]"
             >
               もどる
             </button>
             <button
               type="button"
               onClick={() => setStep("activity")}
-              className="min-h-[44px] flex-[2] rounded-lg bg-emerald-800 px-4 py-2.5 text-sm font-medium text-white hover:bg-emerald-900"
+              className="min-h-[44px] flex-[2] rounded-lg bg-[#b8893d] px-4 py-2.5 text-sm font-medium text-white hover:bg-[#a67a32]"
             >
               つぎへ
             </button>
@@ -515,7 +515,7 @@ export function CompanionWritingPage() {
             id="companion-writing-activity"
             value={activity}
             onChange={(e) => setActivity(e.target.value as ActivityId)}
-            className="w-full rounded-lg border border-stone-300 bg-white px-3 py-2.5 text-base text-stone-900 outline-none ring-emerald-500 focus:ring-2 sm:text-sm"
+            className="w-full rounded-xl border border-[#e0d2bc]/95 bg-[#fffaf4] px-3 py-2.5 text-base text-[#3f3428] outline-none ring-[#c5b089]/50 focus:ring-2 sm:text-sm"
           >
             {activityOptions.map((option) => (
               <option key={option.id} value={option.id}>
@@ -527,14 +527,14 @@ export function CompanionWritingPage() {
             <button
               type="button"
               onClick={() => setStep("mood")}
-              className="min-h-[44px] flex-1 rounded-lg border border-stone-300 bg-white px-4 py-2.5 text-sm font-medium text-stone-700 hover:bg-stone-50"
+              className="min-h-[44px] flex-1 rounded-lg border border-[#e0d2bc]/95 bg-[#faf3e8] px-4 py-2.5 text-sm font-medium text-[#5c4a35] hover:bg-[#f3ead8]"
             >
               もどる
             </button>
             <button
               type="button"
               onClick={beginQuestionStep}
-              className="min-h-[44px] flex-[2] rounded-lg bg-emerald-800 px-4 py-2.5 text-sm font-medium text-white hover:bg-emerald-900"
+              className="min-h-[44px] flex-[2] rounded-lg bg-[#b8893d] px-4 py-2.5 text-sm font-medium text-white hover:bg-[#a67a32]"
             >
               つぎへ
             </button>
@@ -552,7 +552,7 @@ export function CompanionWritingPage() {
           <p className={`leading-relaxed text-stone-800 ${companionWritingWizardStepBodyClass}`}>
             {acknowledgmentLine}
           </p>
-          <div className="flex items-start gap-3 rounded-lg border border-emerald-100 bg-emerald-50/60 px-3 py-3.5 sm:px-4 sm:py-3">
+          <div className="flex items-start gap-3 rounded-lg border border-[#e4d5c0]/90 bg-[#eef1e4]/70 px-3 py-3.5 sm:px-4 sm:py-3">
             <Image
               src={companionIllustrationPath}
               alt=""
@@ -581,7 +581,7 @@ export function CompanionWritingPage() {
               onChange={(e) => setAnswer1(e.target.value)}
               onFocus={(e) => handleAnswerInputFocus(e.currentTarget)}
               disabled={saving}
-              className="w-full scroll-mt-3 rounded-lg border border-stone-300 px-3 py-2.5 text-base leading-relaxed text-stone-900 placeholder:text-stone-400 outline-none ring-emerald-500 focus:ring-2"
+              className="w-full scroll-mt-3 rounded-xl border border-[#e0d2bc]/95 bg-[#fffaf4] px-3 py-2.5 text-base leading-relaxed text-[#3f3428] placeholder:text-[#9a8b78] outline-none ring-[#c5b089]/50 focus:ring-2"
             />
           </label>
           <label className="block space-y-2" htmlFor="companion-writing-answer-2">
@@ -595,7 +595,7 @@ export function CompanionWritingPage() {
               onChange={(e) => setAnswer2(e.target.value)}
               onFocus={(e) => handleAnswerInputFocus(e.currentTarget)}
               disabled={saving}
-              className="w-full scroll-mt-3 rounded-lg border border-stone-300 px-3 py-2.5 text-base leading-relaxed text-stone-900 placeholder:text-stone-400 outline-none ring-emerald-500 focus:ring-2"
+              className="w-full scroll-mt-3 rounded-xl border border-[#e0d2bc]/95 bg-[#fffaf4] px-3 py-2.5 text-base leading-relaxed text-[#3f3428] placeholder:text-[#9a8b78] outline-none ring-[#c5b089]/50 focus:ring-2"
             />
           </label>
           <div className="flex gap-2">
@@ -603,7 +603,7 @@ export function CompanionWritingPage() {
               type="button"
               disabled={saving}
               onClick={() => setStep("activity")}
-              className="min-h-[44px] flex-1 rounded-lg border border-stone-300 bg-white px-4 py-2.5 text-sm font-medium text-stone-700 hover:bg-stone-50 disabled:opacity-60"
+              className="min-h-[44px] flex-1 rounded-lg border border-[#e0d2bc]/95 bg-[#faf3e8] px-4 py-2.5 text-sm font-medium text-[#5c4a35] hover:bg-[#f3ead8] disabled:opacity-60"
             >
               もどる
             </button>
@@ -611,7 +611,7 @@ export function CompanionWritingPage() {
               type="button"
               disabled={saving}
               onClick={advanceToConfirmStep}
-              className="min-h-[44px] flex-[2] rounded-lg bg-emerald-800 px-4 py-2.5 text-sm font-medium text-white hover:bg-emerald-900 disabled:opacity-60"
+              className="min-h-[44px] flex-[2] rounded-lg bg-[#b8893d] px-4 py-2.5 text-sm font-medium text-white hover:bg-[#a67a32] disabled:opacity-60"
             >
               つぎへ
             </button>
@@ -641,7 +641,7 @@ export function CompanionWritingPage() {
               type="button"
               disabled={saving}
               onClick={() => setStep("write")}
-              className="min-h-[44px] flex-1 rounded-lg border border-stone-300 bg-white px-4 py-2.5 text-sm font-medium text-stone-700 hover:bg-stone-50 disabled:opacity-60"
+              className="min-h-[44px] flex-1 rounded-lg border border-[#e0d2bc]/95 bg-[#faf3e8] px-4 py-2.5 text-sm font-medium text-[#5c4a35] hover:bg-[#f3ead8] disabled:opacity-60"
             >
               もどる
             </button>
@@ -649,7 +649,7 @@ export function CompanionWritingPage() {
               type="button"
               disabled={saving}
               onClick={() => void saveEntry()}
-              className="min-h-[44px] flex-[2] rounded-lg bg-emerald-800 px-4 py-2.5 text-sm font-medium text-white hover:bg-emerald-900 disabled:opacity-60"
+              className="min-h-[44px] flex-[2] rounded-lg bg-[#b8893d] px-4 py-2.5 text-sm font-medium text-white hover:bg-[#a67a32] disabled:opacity-60"
             >
               {saving ? (
                 <OwlLoadingInline label="保存中…" size="sm" />
@@ -676,7 +676,7 @@ export function CompanionWritingPage() {
               safeReturnTo ?? "/orders",
               effectiveProfileId,
             )}
-            className="mx-1 text-emerald-900 underline-offset-2 hover:underline"
+            className="mx-1 text-[#4a5440] underline-offset-2 hover:underline"
           >
             通常の日記入力
           </Link>

@@ -29,6 +29,15 @@ import {
   monthKeyFromDateAnchor,
   parseMonthKeyParam,
 } from "@/lib/journal/journalNav";
+import {
+  LJD_PAPER_CARD_CLASS,
+  LJD_PAPER_INPUT_CLASS,
+  LJD_PAPER_LINK_CLASS,
+  LJD_PAPER_PRIMARY_BTN_CLASS,
+  LJD_PAPER_SECONDARY_BTN_CLASS,
+  LJD_PAPER_SELECTED_CLASS,
+  LJD_PAPER_CHIP_IDLE_CLASS,
+} from "@/lib/ljd/ljdPaperSurface";
 
 type ProfileOption = { id: string; nickname: string };
 
@@ -39,7 +48,7 @@ type Props = {
 };
 
 const listSelectClass =
-  "min-h-[44px] w-full appearance-none rounded-lg border border-stone-300 bg-white bg-[length:12px] bg-[right_0.75rem_center] bg-no-repeat px-3 py-2 pr-9 text-base text-stone-900 outline-none ring-stone-400 focus:ring-2 disabled:opacity-60";
+  `min-h-[44px] w-full appearance-none ${LJD_PAPER_INPUT_CLASS} bg-[length:12px] bg-[right_0.75rem_center] bg-no-repeat px-3 py-2 pr-9 text-base disabled:opacity-60`;
 const listSelectStyle = {
   backgroundImage:
     "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12' fill='none'%3E%3Cpath d='M3 4.5L6 7.5L9 4.5' stroke='%2378716c' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E\")",
@@ -284,7 +293,7 @@ export function DiaryJournalListHome({
       <div className="space-y-4">
         <div>
           <div className="flex flex-wrap items-center gap-2">
-            <h1 className="text-xl font-bold text-stone-900 sm:text-2xl">日記一覧</h1>
+            <h1 className="text-xl font-bold text-[#3f3428] sm:text-2xl">日記一覧</h1>
             <InlineHelpButton ariaLabel="日記一覧の説明" panelZIndexClass="z-50">
               {JOURNAL_LIST_HELP_TEXT}
             </InlineHelpButton>
@@ -293,7 +302,7 @@ export function DiaryJournalListHome({
           <button
             type="button"
             onClick={() => setShowProfilePanel((v) => !v)}
-            className="mt-2 text-sm font-medium text-emerald-900 underline-offset-2 hover:underline"
+            className={`mt-2 text-sm ${LJD_PAPER_LINK_CLASS}`}
             aria-expanded={showProfilePanel}
             aria-controls="list-profile-switcher"
           >
@@ -308,7 +317,7 @@ export function DiaryJournalListHome({
         ) : null}
 
         <div
-          className="rounded-xl border border-stone-200 bg-white px-3 py-3 shadow-sm"
+          className={`${LJD_PAPER_CARD_CLASS} px-3 py-3`}
           aria-busy={loading}
         >
           <div className="flex gap-2">
@@ -348,8 +357,8 @@ export function DiaryJournalListHome({
             </label>
           </div>
 
-          <fieldset className="mt-3 border-t border-stone-100 pt-3">
-            <legend className="text-sm font-medium text-stone-800">日記を探す</legend>
+          <fieldset className="mt-3 border-t border-[#ebe2d4] pt-3">
+            <legend className="text-sm font-medium text-[#4a3a28]">日記を探す</legend>
             <div className="mt-2 flex flex-wrap gap-2">
               {(
                 [
@@ -363,8 +372,8 @@ export function DiaryJournalListHome({
                   className={[
                     "inline-flex min-h-[40px] cursor-pointer items-center rounded-lg border px-3 py-2 text-sm",
                     searchScope === option.id
-                      ? "border-emerald-600 bg-emerald-50 text-emerald-950"
-                      : "border-stone-200 bg-white text-stone-700",
+                      ? LJD_PAPER_SELECTED_CLASS
+                      : LJD_PAPER_CHIP_IDLE_CLASS,
                   ].join(" ")}
                 >
                   <input
@@ -387,7 +396,7 @@ export function DiaryJournalListHome({
                 onChange={(e) => setKeywordQuery(e.target.value)}
                 placeholder="キーワード（本文）"
                 autoComplete="off"
-                className="w-full rounded-lg border border-stone-300 px-3 py-2.5 text-base text-stone-900 placeholder:text-stone-400 outline-none ring-stone-400 focus:ring-2"
+                className={`w-full px-3 py-2.5 text-base ${LJD_PAPER_INPUT_CLASS}`}
               />
             </label>
             <div className="mt-2">
@@ -410,7 +419,7 @@ export function DiaryJournalListHome({
               <button
                 type="button"
                 onClick={() => applySearch()}
-                className="min-h-[44px] rounded-lg bg-emerald-800 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-900"
+                className={`min-h-[44px] px-4 py-2 text-sm font-medium ${LJD_PAPER_PRIMARY_BTN_CLASS}`}
               >
                 検索
               </button>
@@ -418,7 +427,7 @@ export function DiaryJournalListHome({
                 <button
                   type="button"
                   onClick={() => clearSearch()}
-                  className="min-h-[44px] rounded-lg border border-stone-300 bg-white px-4 py-2 text-sm font-medium text-stone-700 hover:bg-stone-50"
+                  className={`min-h-[44px] px-4 py-2 text-sm font-medium ${LJD_PAPER_SECONDARY_BTN_CLASS}`}
                 >
                   検索をクリア
                 </button>
@@ -441,7 +450,7 @@ export function DiaryJournalListHome({
         ) : error ? (
           <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800">{error}</p>
         ) : sortedEntries.length === 0 ? (
-          <div className="lj-read-desc rounded-xl border border-stone-200 bg-white p-5 text-stone-600 shadow-sm">
+          <div className={`lj-read-desc ${LJD_PAPER_CARD_CLASS} p-5 text-[#5c4a35]`}>
             <p>{emptyMessage}</p>
             {!isSearchActive ? (
               <p className="mt-2 lj-read-caption text-stone-500">
@@ -451,14 +460,14 @@ export function DiaryJournalListHome({
             {!isSearchActive ? (
               <Link
                 href="/orders/calendar"
-                className="mt-3 inline-flex min-h-[44px] items-center text-base font-medium text-emerald-900 underline-offset-2 hover:underline"
+                className={`mt-3 inline-flex min-h-[44px] items-center text-base ${LJD_PAPER_LINK_CLASS}`}
               >
                 カレンダーから日記を書く
               </Link>
             ) : null}
           </div>
         ) : (
-          <ul className="divide-y divide-stone-100 rounded-xl border border-stone-200 bg-white shadow-sm">
+          <ul className={`divide-y divide-[#ebe2d4] ${LJD_PAPER_CARD_CLASS} overflow-hidden`}>
             {sortedEntries.map((entry) => {
               const previewHref = journalPreviewPath(
                 entry.id,
@@ -476,13 +485,13 @@ export function DiaryJournalListHome({
                 <li key={entry.id}>
                   <Link
                     href={previewHref}
-                    className="flex min-h-[56px] items-center gap-3 px-3 py-3.5 transition active:bg-stone-50/80"
+                    className="flex min-h-[56px] items-center gap-3 px-3 py-3.5 transition active:bg-[#f3ead8]/60"
                   >
-                    <span className="lj-read-desc w-[5.5rem] shrink-0 font-medium text-stone-700">
+                    <span className="lj-read-desc w-[5.5rem] shrink-0 font-medium text-[#5c4a35]">
                       {dayLabel}
                     </span>
                     {photoUrl ? (
-                      <span className="relative h-11 w-11 shrink-0 overflow-hidden rounded-md border border-stone-200 bg-stone-100">
+                      <span className="relative h-11 w-11 shrink-0 overflow-hidden rounded-lg border border-[#e0d2bc]/90 bg-[#f3ead8]/80">
                         <Image
                           src={photoUrl}
                           alt=""
@@ -494,7 +503,7 @@ export function DiaryJournalListHome({
                       </span>
                     ) : (
                       <span
-                        className="flex h-11 w-11 shrink-0 items-center justify-center rounded-md border border-dashed border-stone-200/80 bg-stone-50/80 text-stone-300"
+                        className="flex h-11 w-11 shrink-0 items-center justify-center rounded-md border border-dashed border-[#e0d2bc]/90 bg-[#f7efe3]/80 text-[#c5b089]"
                         aria-hidden
                       >
                         <svg
@@ -511,7 +520,7 @@ export function DiaryJournalListHome({
                         </svg>
                       </span>
                     )}
-                    <span className="lj-read-diary min-w-0 flex-1 leading-snug text-stone-800 line-clamp-1">
+                    <span className="lj-read-diary min-w-0 flex-1 leading-snug text-[#3f3428] line-clamp-1">
                       {previewLine}
                     </span>
                   </Link>

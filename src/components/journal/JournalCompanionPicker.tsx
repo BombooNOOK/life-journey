@@ -34,13 +34,13 @@ export function JournalCompanionPicker({ value, onChange, disabled = false }: Pr
               className={[
                 "inline-flex max-w-full flex-wrap items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition",
                 isSelected
-                  ? "border-emerald-500 bg-emerald-50 text-emerald-900 ring-2 ring-emerald-300"
-                  : "border-stone-200 bg-white text-stone-700 hover:border-stone-300 hover:bg-stone-50",
+                  ? "border-[#a8b08f]/95 bg-[#eef1e4] text-[#4a5440] ring-2 ring-[#c5d0a8]/80"
+                  : "border-[#e0d2bc]/90 bg-[#fffaf2]/90 text-[#6a5846] hover:border-[#c5b089] hover:bg-[#f7efe3]",
               ].join(" ")}
             >
               <span>{option.label}</span>
               {isSelected ? (
-                <span className="font-normal text-emerald-700">選択中</span>
+                <span className="font-normal text-[#6e7c57]">選択中</span>
               ) : null}
             </button>
           );

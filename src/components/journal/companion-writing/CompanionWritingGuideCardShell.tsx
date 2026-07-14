@@ -25,7 +25,7 @@ export function CompanionWritingGuideCardShell({
 }: Props) {
   return (
     <div
-      className="overflow-hidden rounded-2xl shadow-[0_14px_44px_-14px_rgba(24,83,53,0.24)] ring-1 ring-emerald-100/90"
+      className="overflow-hidden rounded-2xl shadow-[0_10px_32px_-12px_rgba(90,70,45,0.18)] ring-1 ring-[#e8dcc8]/80"
       style={{
         borderWidth: 1.5,
         borderStyle: "solid",

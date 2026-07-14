@@ -13,6 +13,10 @@ import { LJD_NAV_ICONS } from "@/lib/ljd/ljdPaperSurface";
 const TAB_CLASS =
   "flex min-h-[56px] flex-1 flex-col items-center justify-center gap-0.5 px-1 py-1.5 text-[11px] font-medium tracking-wide";
 
+/** 現在地：ミントではなく、黄み寄りのセージ／オリーブ（生成りナビになじむ森の緑） */
+const ACTIVE_LOCATOR = "#66724e";
+const ACTIVE_LABEL = "#4a5440";
+
 const NAV_ITEMS = [
   {
     href: "/orders/calendar",
@@ -61,7 +65,11 @@ function NavIcon({
     <span
       className={[
         "relative flex h-8 w-8 items-center justify-center transition",
-        active ? "opacity-100" : muted ? "opacity-40 saturate-50" : "opacity-75",
+        active
+          ? "opacity-100 [filter:sepia(0.16)_hue-rotate(38deg)_saturate(0.7)_brightness(0.92)]"
+          : muted
+            ? "opacity-40 saturate-50"
+            : "opacity-75",
       ].join(" ")}
     >
       <Image
@@ -90,18 +98,19 @@ function BottomNavTab({
 }) {
   const tabContent = (
     <>
-      <NavIcon src={item.iconSrc} active={active} muted={!unlocked && !active} />
-      <span className={active ? "text-[#4a3a28]" : undefined}>{item.label}</span>
       <span
-        className={`mt-0.5 h-1 w-6 rounded-full ${active ? "bg-[#c4a574]/85" : "bg-transparent"}`}
+        className="mb-0.5 h-1 w-8 rounded-full"
+        style={active ? { backgroundColor: ACTIVE_LOCATOR, opacity: 0.88 } : undefined}
         aria-hidden
       />
+      <NavIcon src={item.iconSrc} active={active} muted={!unlocked && !active} />
+      <span style={active ? { color: ACTIVE_LABEL } : undefined}>{item.label}</span>
     </>
   );
 
   if (active) {
     return (
-      <span className={`${TAB_CLASS} text-[#5c4a35]`} aria-current="page">
+      <span className={TAB_CLASS} style={{ color: ACTIVE_LABEL }} aria-current="page">
         {tabContent}
       </span>
     );
@@ -137,8 +146,14 @@ function BottomNavTab({
 }
 
 /** ログイン後の主要画面用・下部ナビ（カレンダー / 日記一覧 / 本棚 / ログハウス） */
-export function DiaryHomeBottomNav() {
+export function DiaryHomeBottomNav({
+  forceActivePath,
+}: {
+  /** プレビュー枠などで、パスに関係なく選択タブを固定したいとき */
+  forceActivePath?: string;
+} = {}) {
   const pathname = usePathname();
+  const activePath = forceActivePath ?? pathname;
   const router = useRouter();
   const { ready, isFeatureUnlocked } = useOnboardingStage();
   const syncing = !ready;
@@ -163,7 +178,7 @@ export function DiaryHomeBottomNav() {
           <BottomNavTab
             key={item.href}
             item={item}
-            active={item.isActive(pathname)}
+            active={item.isActive(activePath)}
             unlocked={isFeatureUnlocked(item.feature)}
             syncing={syncing}
           />

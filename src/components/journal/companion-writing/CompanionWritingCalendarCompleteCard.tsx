@@ -107,7 +107,7 @@ export function CompanionWritingCalendarCompleteCard({
               sizes="80px"
             />
           </div>
-          <p className="text-center text-base font-semibold leading-relaxed text-emerald-950 sm:text-lg">
+          <p className="text-center text-base font-semibold leading-relaxed text-[#4a5440] sm:text-lg">
             {COMPANION_WRITING_COMPLETE_CARD_MESSAGE}
           </p>
           <p className="text-center text-xs font-semibold text-stone-600">{whisper.name}より</p>

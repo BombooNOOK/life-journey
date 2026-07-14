@@ -119,7 +119,7 @@ export function JournalWritingComposer({
             }}
             {...entryTap}
             className={[
-              "lj-read-diary w-full rounded-lg border border-stone-300 px-3 py-2.5 text-left touch-manipulation",
+              "lj-read-diary w-full rounded-xl border border-[#e0d2bc]/95 bg-[#fffaf4] px-3 py-2.5 text-left touch-manipulation",
               "max-h-36 min-h-[6.5rem] overflow-y-auto",
               showPlaceholder ? "text-stone-400" : "whitespace-pre-wrap text-stone-900",
               disabled ? "opacity-50" : "cursor-text active:bg-stone-50/80",
@@ -135,7 +135,7 @@ export function JournalWritingComposer({
             onChange={(e) => onContentChange(e.target.value)}
             maxLength={maxLength}
             rows={8}
-            className="lj-read-diary w-full resize-none overflow-y-auto rounded-lg border border-stone-300 px-3 py-2.5 text-stone-900 outline-none ring-stone-400 focus:ring-2 sm:min-h-[10rem] sm:max-h-[20rem]"
+            className="lj-read-diary w-full resize-none overflow-y-auto rounded-xl border border-[#e0d2bc]/95 bg-[#fffaf4] px-3 py-2.5 text-[#3f3428] outline-none ring-[#c5b089]/50 focus:ring-2 sm:min-h-[10rem] sm:max-h-[20rem]"
             placeholder={placeholder}
           />
         )}
