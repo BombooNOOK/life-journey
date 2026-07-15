@@ -1,6 +1,6 @@
 import { FOREST_GUIDE_STATION_TITLE } from "@/lib/help/forestGuideStation";
 import { FOREST_MUSIC_HALL_BACK_HREF } from "@/lib/help/forestMusicHallCatalog";
-import { LOG_HOUSE_NAV_LABEL } from "@/lib/journal/logHouseLabels";
+import { LOG_HOUSE_BACK_TO_LABEL } from "@/lib/journal/logHouseLabels";
 import { resolveSafeReturnTo } from "@/lib/navigation/safeReturnTo";
 
 export const FOREST_MUSIC_HALL_PATH = "/help/music-hall" as const;
@@ -20,7 +20,7 @@ export function buildForestMusicHallHref(returnTo?: string | null): string {
 function backLabelForHref(href: string): string {
   const path = href.split("?")[0] ?? href;
   if (path === "/orders" || path.startsWith("/orders/")) {
-    return `${LOG_HOUSE_NAV_LABEL}へ戻る`;
+    return LOG_HOUSE_BACK_TO_LABEL;
   }
   if (path === "/help/ljd" || path.startsWith("/help/ljd")) {
     return `${FOREST_GUIDE_STATION_TITLE}へ戻る`;
@@ -28,7 +28,7 @@ function backLabelForHref(href: string): string {
   if (path.startsWith("/preview/loghouse-room")) {
     return "プレビューへ戻る";
   }
-  return "もといた場所へ戻る";
+  return LOG_HOUSE_BACK_TO_LABEL;
 }
 
 /** 音楽堂の「戻る」リンク（returnTo 優先、なければ案内所） */

@@ -14,7 +14,7 @@ export const LOG_HOUSE_ROOM_SPOT_COPY: Record<LogHouseRoomSpotId, LogHouseRoomSp
     actionLabel: "本棚を開く",
   },
   desk: {
-    label: "机",
+    label: "日記を書く",
     description: "今日の日記の書き方を選ぶ",
     actionLabel: "書き方を選ぶ",
   },
@@ -85,6 +85,6 @@ export const LOG_HOUSE_ROOM_HINT_AUTO_HIDE_MS = 6500 as const;
 
 /** 初回ログハウス案内 */
 export const LOG_HOUSE_ROOM_FIRST_VISIT_TIP =
-  "ログハウスでは、本棚や机をタップできます。\n迷ったら、？を押してみてください。\n玄関のポストにはお手紙が、左上ではどんぐりも確認できます。" as const;
+  "ログハウスでは、本棚や「日記を書く」をタップできます。\n迷ったら、？を押してみてください。\n玄関のポストにはお手紙が、左上ではどんぐりも確認できます。" as const;
 export const LOG_HOUSE_ROOM_FIRST_VISIT_TIP_STORAGE_KEY =
   "ljd.loghouseRoom.tapHintIntroSeen.v1" as const;

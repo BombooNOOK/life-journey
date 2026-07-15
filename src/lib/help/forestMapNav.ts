@@ -1,6 +1,6 @@
 import { FOREST_GUIDE_STATION_TITLE } from "@/lib/help/forestGuideStation";
 import { FOREST_MAP_PAGE_PATH } from "@/lib/help/forestMapAssets";
-import { LOG_HOUSE_NAV_LABEL } from "@/lib/journal/logHouseLabels";
+import { LOG_HOUSE_BACK_TO_LABEL } from "@/lib/journal/logHouseLabels";
 import { resolveSafeReturnTo } from "@/lib/navigation/safeReturnTo";
 
 export type ForestMapBackLink = {
@@ -19,12 +19,12 @@ function backLabelForHref(href: string): string {
   const path = href.split("?")[0] ?? href;
   if (path === "/" || path === "") return "森の入口へ戻る";
   if (path === "/orders" || path.startsWith("/orders/")) {
-    return `${LOG_HOUSE_NAV_LABEL}へ戻る`;
+    return LOG_HOUSE_BACK_TO_LABEL;
   }
   if (path === "/help/ljd" || path.startsWith("/help/ljd")) {
     return `${FOREST_GUIDE_STATION_TITLE}へ戻る`;
   }
-  return "もといた場所へ戻る";
+  return LOG_HOUSE_BACK_TO_LABEL;
 }
 
 /** 案内図の「戻る」リンク（returnTo 優先、なければ森の入口） */

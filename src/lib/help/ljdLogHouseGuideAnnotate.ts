@@ -57,7 +57,7 @@ export const LJD_LOG_HOUSE_GUIDE_MARKERS: LjdLogHouseGuideMarker[] = [
     number: 3,
     x: 72,
     y: 50,
-    title: "机",
+    title: "日記を書く",
     body: "タップすると、ひとりで書くか・鑑定士といっしょに書くかを選べます。はじめての日記は鑑定士といっしょに書く流れになります。",
   },
   {

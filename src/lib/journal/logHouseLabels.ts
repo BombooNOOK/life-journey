@@ -5,12 +5,12 @@ export const LOG_HOUSE_SHORT_LABEL = "ログハウス";
 
 export const LOG_HOUSE_BACK_LINK = {
   href: "/orders" as const,
-  label: "← ログハウス",
+  label: "← もといた場所に戻る",
 };
 
-export const LOG_HOUSE_BACK_TO_LINK_LABEL = "← ログハウスへ";
+export const LOG_HOUSE_BACK_TO_LINK_LABEL = "← もといた場所に戻る";
 
-export const LOG_HOUSE_BACK_TO_LABEL = "ログハウスへ戻る";
+export const LOG_HOUSE_BACK_TO_LABEL = "もといた場所に戻る";
 
 export const LOG_HOUSE_LOADING_LABEL = "ログハウスを開いています…";
 
