@@ -18,6 +18,7 @@ import {
   ForestBookshelfPeekCard,
   type ForestBookshelfPeekCardModel,
 } from "@/components/orders/forest-bookshelf/ForestBookshelfPeekCard";
+import { ForestBookshelfHelp } from "@/components/orders/forest-bookshelf/ForestBookshelfHelp";
 import { TrialStatusBanner } from "@/components/entitlement/TrialStatusBanner";
 import { KanteiMissingBanner } from "@/components/orders/KanteiMissingBanner";
 import { FirstVisitFlowBrowserBackGuard } from "@/components/orders/FirstVisitFlowBrowserBackGuard";
@@ -399,21 +400,24 @@ export function ForestBookshelfClient({
 
       {immersive ? (
         <>
-          <div className="pointer-events-none absolute inset-x-0 top-0 z-30 flex items-start justify-between gap-3 px-3 pb-2 pt-[max(0.75rem,env(safe-area-inset-top))]">
+          <div className="pointer-events-none absolute inset-x-0 top-0 z-40 flex items-start justify-between gap-3 px-3 pb-2 pt-[max(0.75rem,env(safe-area-inset-top))]">
             <Link
               href="/orders"
               className="pointer-events-auto inline-flex min-h-11 items-center rounded-full border border-[#d9cbb8]/90 bg-[#fffdf8]/88 px-3 text-sm font-medium text-[#5c4a3a] shadow-sm backdrop-blur-[3px]"
             >
               {LOG_HOUSE_BACK_TO_LINK_LABEL}
             </Link>
-            <p className="pointer-events-none max-w-[46%] rounded-full border border-[#d9cbb8]/70 bg-[#fffdf8]/75 px-2.5 py-2 text-right text-[11px] leading-tight text-[#6a5846] shadow-sm backdrop-blur-[3px]">
-              「{activeProfileLabel}」
-              {deployRevision ? (
-                <span className="mt-0.5 block text-[9px] text-[#9a8b78]" title="デプロイ確認用">
-                  反映 {deployRevision}
-                </span>
-              ) : null}
-            </p>
+            <div className="pointer-events-auto relative flex max-w-[58%] items-start justify-end gap-2">
+              <ForestBookshelfHelp enableFirstVisitTip />
+              <p className="pointer-events-none min-w-0 rounded-full border border-[#d9cbb8]/70 bg-[#fffdf8]/75 px-2.5 py-2 text-right text-[11px] leading-tight text-[#6a5846] shadow-sm backdrop-blur-[3px]">
+                「{activeProfileLabel}」
+                {deployRevision ? (
+                  <span className="mt-0.5 block text-[9px] text-[#9a8b78]" title="デプロイ確認用">
+                    反映 {deployRevision}
+                  </span>
+                ) : null}
+              </p>
+            </div>
           </div>
 
           {(entitlement.showTrialBanner || (!featuredKantei && activeProfileId)) && (
@@ -438,14 +442,17 @@ export function ForestBookshelfClient({
               <Link href="/orders" className={`text-sm ${LJD_PAPER_LINK_CLASS}`}>
                 {LOG_HOUSE_BACK_TO_LINK_LABEL}
               </Link>
-              <p className="text-xs text-[#6a5846]">
-                表示中: <span className="font-medium text-[#3f3428]">「{activeProfileLabel}」</span>
-                {deployRevision ? (
-                  <span className="ml-2 text-[10px] text-[#9a8b78]" title="デプロイ確認用">
-                    反映 {deployRevision}
-                  </span>
-                ) : null}
-              </p>
+              <div className="relative flex items-center gap-2">
+                <ForestBookshelfHelp enableFirstVisitTip={false} />
+                <p className="text-xs text-[#6a5846]">
+                  表示中: <span className="font-medium text-[#3f3428]">「{activeProfileLabel}」</span>
+                  {deployRevision ? (
+                    <span className="ml-2 text-[10px] text-[#9a8b78]" title="デプロイ確認用">
+                      反映 {deployRevision}
+                    </span>
+                  ) : null}
+                </p>
+              </div>
             </div>
 
             <TrialStatusBanner entitlement={entitlement} />
