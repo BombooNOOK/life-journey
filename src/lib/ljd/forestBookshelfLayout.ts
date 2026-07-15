@@ -44,7 +44,7 @@ export const FOREST_BOOKSHELF_ITEM_LAYOUT: Record<ForestBookshelfItemId, ForestB
   kanteiCover: { left: 4, top: 20.5, width: 34, height: 19 },
   spinesFortune: { left: 36.5, top: 14.5, width: 64, height: 33 },
   /** 2段目：日記ブック */
-  createDiary: { left: -1, top: 36.5, width: 42, height: 35.5 },
+  createDiary: { left: -2, top: 35.5, width: 42, height: 35.5 },
   currentDiary: { left: 36.5, top: 51, width: 30, height: 19 },
   placeholderRed: { left: 66, top: 41.5, width: 37.5, height: 30 },
   /** 3段目：これまでの日記ブック */
@@ -59,7 +59,7 @@ export const FOREST_BOOKSHELF_ITEM_LAYOUT: Record<ForestBookshelfItemId, ForestB
 export const FOREST_BOOKSHELF_SPOT_LAYOUT: Record<ForestBookshelfSpotId, ForestBookshelfRect> = {
   kanteiCover: { left: 2, top: 19, width: 38, height: 22 },
   spinesFortune: { left: 34.5, top: 13, width: 68, height: 36 },
-  createDiary: { left: -2.5, top: 35, width: 45.5, height: 38.5 },
+  createDiary: { left: -3.5, top: 34, width: 45.5, height: 38.5 },
   currentDiary: { left: 34.5, top: 49.5, width: 34, height: 22 },
   placeholderRed: { left: 64, top: 40, width: 41, height: 33 },
   placeholderGreen: { left: -3.5, top: 73.5, width: 40, height: 25 },

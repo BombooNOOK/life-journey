@@ -71,6 +71,29 @@ export const HOME_FOREST_SIGN_TEXT_COLORS = {
   link: "#6b5d4a",
 } as const;
 
+/** 夜背景向け：タイトル等は明るめ、看板上は板が明るいので茶系のまま */
+export const HOME_FOREST_SIGN_TEXT_COLORS_NIGHT = {
+  title: "#f4ebe0",
+  sign: "#4a3528",
+  subtitle: "#e6eedf",
+  soft: "#efe4d6",
+  link: "#4a3528",
+} as const;
+
+export type HomeForestSignTextColorSet = {
+  title: string;
+  sign: string;
+  subtitle: string;
+  soft: string;
+  link: string;
+};
+
+export function homeForestSignTextColors(
+  timeOfDay: "day" | "night" = "day",
+): HomeForestSignTextColorSet {
+  return timeOfDay === "night" ? HOME_FOREST_SIGN_TEXT_COLORS_NIGHT : HOME_FOREST_SIGN_TEXT_COLORS;
+}
+
 const WOOD_TEXT = HOME_FOREST_SIGN_TEXT_COLORS.sign;
 const WOOD_TEXT_SOFT = HOME_FOREST_SIGN_TEXT_COLORS.soft;
 

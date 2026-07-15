@@ -4,6 +4,7 @@ import Image from "next/image";
 import { useLayoutEffect, useRef, useState } from "react";
 
 import { HomeForestSignLoginNote, HomeForestSignOverlay } from "@/components/home/HomeForestSignOverlay";
+import { useLogHouseRoomTimeTheme } from "@/hooks/useLogHouseRoomTimeOfDay";
 import {
   computeObjectCoverLayout,
   HOME_FOREST_SIGN_OBJECT_POSITION,
@@ -11,10 +12,8 @@ import {
   type HomeForestSignViewport,
   type ObjectCoverLayout,
 } from "@/lib/home/homeForestSignLayout";
-import {
-  HOME_FOREST_SIGN_DESKTOP_BG_SRC,
-  HOME_FOREST_SIGN_MOBILE_BG_SRC,
-} from "@/lib/home/homeForestSignAssets";
+import { HOME_FOREST_SIGN_BG_BY_TIME } from "@/lib/home/homeForestSignAssets";
+import type { LogHouseRoomTimeOfDay } from "@/lib/loghouse/logHouseRoomTimeTheme";
 
 type NavItem = {
   id: string;
@@ -28,11 +27,8 @@ type Props = {
   primaryNavId: string;
   isLoggedIn: boolean;
   className?: string;
-};
-
-const BG_SRC: Record<HomeForestSignViewport, string> = {
-  mobile: HOME_FOREST_SIGN_MOBILE_BG_SRC,
-  desktop: HOME_FOREST_SIGN_DESKTOP_BG_SRC,
+  /** プレビュー定規などで昼/夜を固定したいとき */
+  timeOfDayOverride?: LogHouseRoomTimeOfDay;
 };
 
 function initialCoverLayout(viewport: HomeForestSignViewport): ObjectCoverLayout | null {
@@ -47,16 +43,19 @@ function initialCoverLayout(viewport: HomeForestSignViewport): ObjectCoverLayout
   );
 }
 
-/** 画面いっぱいの object-cover 背景＋看板テキスト */
+/** 画面いっぱいの object-cover 背景＋看板テキスト（ログハウスと同じ昼/夜連動） */
 export function HomeForestSignStage({
   viewport,
   navById,
   primaryNavId,
   isLoggedIn,
   className = "",
+  timeOfDayOverride,
 }: Props) {
   const stageRef = useRef<HTMLDivElement>(null);
   const objectPosition = HOME_FOREST_SIGN_OBJECT_POSITION[viewport];
+  const { timeOfDay: themeTimeOfDay } = useLogHouseRoomTimeTheme();
+  const timeOfDay = timeOfDayOverride ?? themeTimeOfDay;
   const [coverLayout, setCoverLayout] = useState<ObjectCoverLayout | null>(() =>
     initialCoverLayout(viewport),
   );
@@ -79,32 +78,46 @@ export function HomeForestSignStage({
     return () => observer.disconnect();
   }, [viewport, objectPosition]);
 
+  const bgByTime = HOME_FOREST_SIGN_BG_BY_TIME[viewport];
+
   return (
     <div
       ref={stageRef}
       className={className}
-      style={{ position: "absolute", inset: 0 }}
+      style={{
+        position: "absolute",
+        inset: 0,
+        backgroundColor: timeOfDay === "night" ? "#121820" : "#ebe4d4",
+      }}
     >
-      <Image
-        src={BG_SRC[viewport]}
-        alt=""
-        fill
-        sizes={viewport === "mobile" ? "100vw" : "(min-width: 1024px) 100vw"}
-        className="object-cover"
-        style={{ objectPosition: objectPositionCss(objectPosition) }}
-        priority
-      />
+      {(["day", "night"] as const).map((id) => (
+        <Image
+          key={id}
+          src={bgByTime[id]}
+          alt=""
+          fill
+          sizes={viewport === "mobile" ? "100vw" : "(min-width: 1024px) 100vw"}
+          className={[
+            "object-cover transition-opacity duration-700 ease-in-out",
+            timeOfDay === id ? "opacity-100" : "opacity-0",
+          ].join(" ")}
+          style={{ objectPosition: objectPositionCss(objectPosition) }}
+          priority={id === timeOfDay}
+          unoptimized
+        />
+      ))}
       <HomeForestSignOverlay
         viewport={viewport}
         navById={navById}
         primaryNavId={primaryNavId}
-        isLoggedIn={isLoggedIn}
         coverLayout={coverLayout}
+        timeOfDay={timeOfDay}
       />
       <HomeForestSignLoginNote
         viewport={viewport}
         coverLayout={coverLayout}
         isLoggedIn={isLoggedIn}
+        timeOfDay={timeOfDay}
       />
     </div>
   );

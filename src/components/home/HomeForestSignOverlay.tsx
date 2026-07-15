@@ -19,11 +19,13 @@ import {
   homeForestSignImagePlacementStyle,
   homeForestSignLayoutFor,
   homeForestSignPlacementStyle,
+  homeForestSignTextColors,
   type HomeForestSignSignSlotId,
   type HomeForestSignTextPlacement,
   type HomeForestSignViewport,
   type ObjectCoverLayout,
 } from "@/lib/home/homeForestSignLayout";
+import type { LogHouseRoomTimeOfDay } from "@/lib/loghouse/logHouseRoomTimeTheme";
 import type { OnboardingFeature } from "@/lib/onboarding/onboardingStage";
 
 type NavItem = {
@@ -36,11 +38,11 @@ type Props = {
   viewport: HomeForestSignViewport;
   navById: Record<string, NavItem>;
   primaryNavId: string;
-  isLoggedIn: boolean;
   /** 本番 object-cover 表示時の座標変換 */
   coverLayout?: ObjectCoverLayout | null;
   /** 定規プレビュー用：リンクを無効化 */
   preview?: boolean;
+  timeOfDay?: LogHouseRoomTimeOfDay;
 };
 
 const SIGN_SLOTS: HomeForestSignSignSlotId[] = [
@@ -50,13 +52,28 @@ const SIGN_SLOTS: HomeForestSignSignSlotId[] = [
   "sign-bottom-right",
 ];
 
-const signLinkClass = [
+const signLinkClassDay = [
   "block rounded-sm",
   "underline-offset-[0.2em] decoration-[#9a826e]/55",
   "transition hover:underline hover:decoration-[#8a7563]",
   "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#6b5d4a]",
   "[text-shadow:0_1px_0_rgba(255,251,245,0.65)]",
 ].join(" ");
+
+const signLinkClassNight = [
+  "block rounded-sm",
+  "underline-offset-[0.2em] decoration-[#c4a882]/70",
+  "transition hover:underline hover:decoration-[#d8c4a8]",
+  "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#f0e2d0]",
+  "[text-shadow:0_1px_1px_rgba(255,248,235,0.55)]",
+].join(" ");
+
+function withColor(
+  placement: HomeForestSignTextPlacement,
+  color: string,
+): HomeForestSignTextPlacement {
+  return { ...placement, color };
+}
 
 function placementStyle(
   placement: HomeForestSignTextPlacement,
@@ -111,6 +128,7 @@ function ForestSignSignLink({
   primary,
   preview = false,
   nowrap = false,
+  timeOfDay = "day",
 }: {
   placement: HomeForestSignTextPlacement;
   viewport: HomeForestSignViewport;
@@ -119,12 +137,17 @@ function ForestSignSignLink({
   primary: boolean;
   preview?: boolean;
   nowrap?: boolean;
+  timeOfDay?: LogHouseRoomTimeOfDay;
 }) {
   const { ready, isFeatureUnlocked } = useOnboardingStage();
-  const style = placementStyle(placement, viewport, coverLayout);
+  const colors = homeForestSignTextColors(timeOfDay);
+  const style = placementStyle(withColor(placement, colors.sign), viewport, coverLayout);
+  const signLinkClass = timeOfDay === "night" ? signLinkClassNight : signLinkClassDay;
   const whitespaceClass = nowrap ? "whitespace-nowrap" : "whitespace-pre-wrap";
   const feature = FOREST_SIGN_NAV_FEATURES[item.id] ?? null;
   const unlocked = feature == null || isFeatureUnlocked(feature);
+  const primaryDecoration =
+    timeOfDay === "night" ? "font-bold decoration-[#c4a882]" : "font-bold decoration-[#8a7563]";
 
   if (preview) {
     return (
@@ -171,7 +194,7 @@ function ForestSignSignLink({
         ] ?? "ページを開いています…"
       }
       compactLoading
-      className={`${signLinkClass} ${whitespaceClass} ${primary ? "font-bold decoration-[#8a7563]" : ""}`}
+      className={`${signLinkClass} ${whitespaceClass} ${primary ? primaryDecoration : ""}`}
       style={style}
     >
       {item.label}
@@ -185,16 +208,23 @@ export function HomeForestSignLoginNote({
   coverLayout = null,
   preview = false,
   isLoggedIn = false,
+  timeOfDay = "day",
 }: {
   viewport: HomeForestSignViewport;
   coverLayout?: ObjectCoverLayout | null;
   preview?: boolean;
   isLoggedIn?: boolean;
+  timeOfDay?: LogHouseRoomTimeOfDay;
 }) {
   const layout = homeForestSignLayoutFor(viewport);
   const { heightPx } = homeForestSignDesignSize(viewport);
   const loginHref = buildLoginHref("/orders");
   const usePercentFont = !coverLayout;
+  const colors = homeForestSignTextColors(timeOfDay);
+  const loginShadow =
+    timeOfDay === "night"
+      ? "[text-shadow:0_1px_3px_rgba(8,12,18,0.9),0_0_2px_rgba(8,12,18,0.75)]"
+      : "[text-shadow:0_1px_2px_rgba(255,251,245,0.95),0_0_1px_rgba(255,251,245,0.85)]";
 
   if (!layout.loginNote) return null;
   // ログイン済みは看板の「ログハウスへ」で入れるので、重複するログイン導線は出さない
@@ -211,8 +241,12 @@ export function HomeForestSignLoginNote({
       }}
     >
       <div
-        className="pointer-events-auto whitespace-pre-wrap text-center [text-shadow:0_1px_2px_rgba(255,251,245,0.95),0_0_1px_rgba(255,251,245,0.85)]"
-        style={placementStyle(layout.loginNote, viewport, coverLayout)}
+        className={`pointer-events-auto whitespace-pre-wrap text-center ${loginShadow}`}
+        style={placementStyle(
+          withColor(layout.loginNote, timeOfDay === "night" ? colors.soft : colors.sign),
+          viewport,
+          coverLayout,
+        )}
       >
         {preview ? (
           <span className="text-[color:inherit]">{HOME_FOREST_SIGN_LOGIN_NOTE_PREVIEW_TEXT}</span>
@@ -236,13 +270,18 @@ export function HomeForestSignOverlay({
   viewport,
   navById,
   primaryNavId,
-  isLoggedIn,
   coverLayout = null,
   preview = false,
+  timeOfDay = "day",
 }: Props) {
   const layout = homeForestSignLayoutFor(viewport);
   const { widthPx, heightPx } = homeForestSignDesignSize(viewport);
   const usePercentFont = !coverLayout;
+  const colors = homeForestSignTextColors(timeOfDay);
+  const skyTextShadow =
+    timeOfDay === "night"
+      ? "[text-shadow:0_1px_4px_rgba(8,12,18,0.85),0_0_2px_rgba(8,12,18,0.7)]"
+      : "[text-shadow:0_1px_0_rgba(255,251,245,0.45)]";
   const owlTeacherSrc =
     viewport === "mobile" ? HOME_HERO_OWL_TEACHER_SRC : HOME_FOREST_SIGN_OWL_TEACHER_SRC;
 
@@ -281,7 +320,12 @@ export function HomeForestSignOverlay({
         />
       </div>
 
-      <ForestSignText placement={layout.title} viewport={viewport} coverLayout={coverLayout}>
+      <ForestSignText
+        placement={withColor(layout.title, colors.title)}
+        viewport={viewport}
+        coverLayout={coverLayout}
+        className={skyTextShadow}
+      >
         <h1
           className={`m-0 text-[length:inherit] font-[inherit] leading-[inherit] text-[color:inherit] ${textAlignClass(layout.title)}`}
         >
@@ -289,7 +333,12 @@ export function HomeForestSignOverlay({
         </h1>
       </ForestSignText>
 
-      <ForestSignText placement={layout.subtitle} viewport={viewport} coverLayout={coverLayout}>
+      <ForestSignText
+        placement={withColor(layout.subtitle, colors.subtitle)}
+        viewport={viewport}
+        coverLayout={coverLayout}
+        className={skyTextShadow}
+      >
         <p
           className={`m-0 text-[length:inherit] font-[inherit] leading-[inherit] text-[color:inherit] ${textAlignClass(layout.subtitle)}`}
         >
@@ -321,6 +370,7 @@ export function HomeForestSignOverlay({
             primary={navId === primaryNavId}
             preview={preview}
             nowrap={slotId === "sign-top-left" || slotId === "sign-mid-left"}
+            timeOfDay={timeOfDay}
           />
         );
       })}

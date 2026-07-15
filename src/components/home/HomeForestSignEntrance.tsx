@@ -7,6 +7,7 @@ import { useFirebaseAuth } from "@/components/auth/FirebaseAuthProvider";
 import { CompanionWritingFarewellBanner } from "@/components/journal/companion-writing/CompanionWritingFarewellBanner";
 import { HomeForestSignStage } from "@/components/home/HomeForestSignStage";
 import { ReadingFontSizeControl } from "@/components/reading/ReadingFontSizeControl";
+import { useLogHouseRoomTimeTheme } from "@/hooks/useLogHouseRoomTimeOfDay";
 import { isLjLoggedInOnClient } from "@/lib/auth/clientCookies";
 import { HOME_FOREST_SIGN_NAV_LABELS, type HomeForestSignViewport } from "@/lib/home/homeForestSignLayout";
 import { buildForestMapHref } from "@/lib/help/forestMapNav";
@@ -63,6 +64,7 @@ export function HomeForestSignEntrance() {
   const isLoggedIn = Boolean(user) || isLjLoggedInOnClient();
   const viewport = useForestSignViewport();
   const isDesktop = viewport === "desktop";
+  const { timeOfDay } = useLogHouseRoomTimeTheme();
 
   const navById = useMemo(
     () => Object.fromEntries(buildNavItems(isLoggedIn).map((item) => [item.id, item])),
@@ -71,7 +73,10 @@ export function HomeForestSignEntrance() {
   const primaryNavId = isLoggedIn ? "loghouse" : "first";
 
   return (
-    <section className="home-read-scope relative flex min-h-[100dvh] flex-col overflow-hidden bg-[#f3efe4]">
+    <section
+      className="home-read-scope relative flex min-h-[100dvh] flex-col overflow-hidden"
+      style={{ backgroundColor: timeOfDay === "night" ? "#121820" : "#f3efe4" }}
+    >
       {viewport ? (
         <HomeForestSignStage
           key={viewport}

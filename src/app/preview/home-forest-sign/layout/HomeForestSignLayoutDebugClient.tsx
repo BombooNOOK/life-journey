@@ -366,7 +366,6 @@ export function HomeForestSignLayoutDebugClient({
                   viewport={viewport}
                   navById={PREVIEW_NAV_BY_ID}
                   primaryNavId="first"
-                  isLoggedIn={false}
                   preview
                 />
                 <HomeForestSignLoginNote viewport={viewport} preview />
