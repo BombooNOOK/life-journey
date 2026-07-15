@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { ForestBookshelfPreviewClient } from "@/components/orders/forest-bookshelf/ForestBookshelfPreviewClient";
 import { FOREST_BOOKSHELF_ASSETS } from "@/lib/ljd/forestBookshelfAssets";
@@ -36,6 +36,17 @@ type EditTarget =
   | { kind: "item"; id: ForestBookshelfItemId }
   | { kind: "spot"; id: ForestBookshelfSpotId };
 
+const DRAFT_STORAGE_KEY = "forest-bookshelf-layout-draft-v1";
+
+/** 今回は描画しない装飾（定規の一覧からも外す） */
+const HIDDEN_ITEM_IDS = new Set<ForestBookshelfItemId>([
+  "plant",
+  "lanternShelf",
+  "lanternFloor",
+]);
+
+const EDITABLE_ITEM_IDS = FOREST_BOOKSHELF_ITEM_IDS.filter((id) => !HIDDEN_ITEM_IDS.has(id));
+
 function clampRect(rect: ForestBookshelfRect): ForestBookshelfRect {
   return {
     left: Number(rect.left),
@@ -45,9 +56,32 @@ function clampRect(rect: ForestBookshelfRect): ForestBookshelfRect {
   };
 }
 
+function readStoredDraft(): {
+  items: typeof FOREST_BOOKSHELF_ITEM_LAYOUT;
+  spots: typeof FOREST_BOOKSHELF_SPOT_LAYOUT;
+} | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = window.localStorage.getItem(DRAFT_STORAGE_KEY);
+    if (!raw) return null;
+    const data = JSON.parse(raw) as {
+      items?: typeof FOREST_BOOKSHELF_ITEM_LAYOUT;
+      spots?: typeof FOREST_BOOKSHELF_SPOT_LAYOUT;
+    };
+    if (!data.items || !data.spots) return null;
+    return {
+      items: { ...FOREST_BOOKSHELF_ITEM_LAYOUT, ...data.items },
+      spots: { ...FOREST_BOOKSHELF_SPOT_LAYOUT, ...data.spots },
+    };
+  } catch {
+    return null;
+  }
+}
+
 export function ForestBookshelfLayoutDebugClient() {
   const [showGrid, setShowGrid] = useState(true);
-  const [showSample, setShowSample] = useState(true);
+  /** 旧・全体本棚の見本。アップ本体とは構図が違うのでデフォルトOFF */
+  const [showSample, setShowSample] = useState(false);
   const [showItems, setShowItems] = useState(true);
   const [showSpots, setShowSpots] = useState(true);
   const [showShelfFloors, setShowShelfFloors] = useState(true);
@@ -56,13 +90,37 @@ export function ForestBookshelfLayoutDebugClient() {
   const [cursor, setCursor] = useState<ForestBookshelfLayoutPin | null>(null);
   const [pin, setPin] = useState<ForestBookshelfLayoutPin | null>(null);
   const [copyState, setCopyState] = useState<"idle" | "ok" | "fail">("idle");
+  const [saveState, setSaveState] = useState<"idle" | "saving" | "ok" | "fail">("idle");
+  const [saveMessage, setSaveMessage] = useState<string | null>(null);
 
   const [itemDraft, setItemDraft] = useState(FOREST_BOOKSHELF_ITEM_LAYOUT);
   const [spotDraft, setSpotDraft] = useState(FOREST_BOOKSHELF_SPOT_LAYOUT);
   const [editTarget, setEditTarget] = useState<EditTarget>({
     kind: "item",
-    id: "plant",
+    id: "kanteiCover",
   });
+  const [draftHydrated, setDraftHydrated] = useState(false);
+
+  useEffect(() => {
+    const stored = readStoredDraft();
+    if (stored) {
+      setItemDraft(stored.items);
+      setSpotDraft(stored.spots);
+    }
+    setDraftHydrated(true);
+  }, []);
+
+  useEffect(() => {
+    if (!draftHydrated) return;
+    try {
+      window.localStorage.setItem(
+        DRAFT_STORAGE_KEY,
+        JSON.stringify({ items: itemDraft, spots: spotDraft }),
+      );
+    } catch {
+      /* ignore quota */
+    }
+  }, [draftHydrated, itemDraft, spotDraft]);
 
   const { widthPx, heightPx } = FOREST_BOOKSHELF_LAYOUT_SIZE_PX;
   const padLeft = FOREST_BOOKSHELF_LAYOUT_PAD_LEFT_PX;
@@ -71,7 +129,13 @@ export function ForestBookshelfLayoutDebugClient() {
     () => forestBookshelfLayoutRegions({ items: itemDraft, spots: spotDraft }),
     [itemDraft, spotDraft],
   );
-  const itemRegions = useMemo(() => regions.filter((r) => r.kind === "item"), [regions]);
+  const itemRegions = useMemo(
+    () =>
+      regions.filter(
+        (r) => r.kind === "item" && !HIDDEN_ITEM_IDS.has(r.id as ForestBookshelfItemId),
+      ),
+    [regions],
+  );
   const spotRegions = useMemo(() => regions.filter((r) => r.kind === "spot"), [regions]);
 
   const gridDataUrl = useMemo(() => {
@@ -135,9 +199,36 @@ export function ForestBookshelfLayoutDebugClient() {
     }
   }, [editTarget.id, editingRect]);
 
+  const saveDraftToFile = useCallback(async () => {
+    setSaveState("saving");
+    setSaveMessage(null);
+    try {
+      const res = await fetch("/api/dev/forest-bookshelf-layout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ items: itemDraft, spots: spotDraft }),
+      });
+      const data = (await res.json()) as { ok?: boolean; error?: string; path?: string };
+      if (!res.ok || !data.ok) {
+        throw new Error(data.error || "save failed");
+      }
+      setSaveState("ok");
+      setSaveMessage(`保存しました → ${data.path ?? "forestBookshelfLayout.ts"}`);
+      window.setTimeout(() => setSaveState("idle"), 2500);
+    } catch (error) {
+      setSaveState("fail");
+      setSaveMessage(error instanceof Error ? error.message : "保存に失敗しました");
+    }
+  }, [itemDraft, spotDraft]);
+
   const resetDrafts = useCallback(() => {
     setItemDraft(FOREST_BOOKSHELF_ITEM_LAYOUT);
     setSpotDraft(FOREST_BOOKSHELF_SPOT_LAYOUT);
+    try {
+      window.localStorage.removeItem(DRAFT_STORAGE_KEY);
+    } catch {
+      /* ignore */
+    }
   }, []);
 
   const bottomEdge = forestBookshelfBottomEdge(editingRect);
@@ -172,38 +263,33 @@ export function ForestBookshelfLayoutDebugClient() {
       <div className="space-y-4">
         <div className="rounded-xl border border-amber-200 bg-amber-50/80 p-4 text-sm leading-relaxed text-amber-950">
           <p className="font-medium">
-            本棚本体（{widthPx}×{heightPx}）を 1:1 で表示しています。左に{" "}
-            {padLeft}px 余白があり、外ランタンの負座標も測れます。
+            合わせるのは空の棚本体（
+            <code className="rounded bg-white/70 px-1">bookshelf_main.png</code>
+            ）だけです。緑の棚板ラインに、本の下端を乗せてください。
           </p>
           <ul className="mt-2 list-disc space-y-1 pl-5 text-xs">
             <li>
-              <strong>5px マス</strong>で位置を確認。クリックで座標（px / %）をコピー。
+              <strong>基準</strong>：いまのアップ本棚（鑑定書／日記ブックのラベルが入った木の棚）。
+            </li>
+            <li>
+              「旧・全体見本」は<strong>別構図の古い絵</strong>です。重ねると迷子になるので、通常はOFFのまま。
             </li>
             <li>
               実線枠＝見た目（
-              <code className="rounded bg-white/70 px-1">FOREST_BOOKSHELF_ITEM_LAYOUT</code>
+              <code className="rounded bg-white/70 px-1">ITEM_LAYOUT</code>
+              ）／点線枠＝タップ（
+              <code className="rounded bg-white/70 px-1">SPOT_LAYOUT</code>
               ）。
             </li>
             <li>
-              点線枠＝タップ領域（
-              <code className="rounded bg-white/70 px-1">FOREST_BOOKSHELF_SPOT_LAYOUT</code>
-              ）。
+              左の下書きは右プレビューへ即反映。ブラウザにも自動保存されます。
             </li>
             <li>
-              左で動かした下書きは、右側の実物プレビューへ<strong>その場で反映</strong>されます。
+              終わったら下の<strong className="text-amber-950">「この配置をファイルに保存」</strong>
+              を押すだけでOKです（手動コピペ不要）。
             </li>
             <li>
-              本番・/orders/bookshelf に残すときは「配置スニペットをコピー」→{" "}
-              <code className="rounded bg-white/70 px-1">forestBookshelfLayout.ts</code>{" "}
-              に貼って保存。
-            </li>
-            <li>
-              <strong>底合わせ</strong>は「下端 %」か棚板スナップを使うと簡単です（高さは維持したまま乗せられます）。
-            </li>
-            <li>
-              見本は{" "}
-              <code className="rounded bg-white/70 px-1">bookshelf_sample.png</code>{" "}
-              を半透明で重ねています。
+              <strong>底合わせ</strong>は「下端 %」か棚板スナップが簡単（高さ維持のまま棚に乗せられます）。
             </li>
           </ul>
         </div>
@@ -213,9 +299,9 @@ export function ForestBookshelfLayoutDebugClient() {
             <input type="checkbox" checked={showGrid} onChange={(e) => setShowGrid(e.target.checked)} />
             5px グリッド
           </label>
-          <label className="flex items-center gap-2">
+          <label className="flex items-center gap-2" title="古い全体本棚。アップ本体とは別構図です">
             <input type="checkbox" checked={showSample} onChange={(e) => setShowSample(e.target.checked)} />
-            見本合成
+            旧・全体見本（非推奨）
           </label>
           <label className="flex items-center gap-2">
             <input
@@ -236,7 +322,7 @@ export function ForestBookshelfLayoutDebugClient() {
         </div>
 
         <div
-          className="relative cursor-crosshair overflow-hidden border border-stone-300 bg-[#ebe2d4]"
+          className="relative cursor-crosshair overflow-hidden border border-stone-300 bg-[#2c1f14]"
           style={{ width: widthPx + padLeft, height: heightPx }}
           onMouseMove={handleMouseMove}
           onClick={handleClick}
@@ -245,7 +331,7 @@ export function ForestBookshelfLayoutDebugClient() {
           <div className="absolute inset-y-0 right-0" style={{ left: padLeft, width: widthPx }}>
             <Image
               src={FOREST_BOOKSHELF_ASSETS.main}
-              alt=""
+              alt="本棚本体（合わせ先）"
               width={widthPx}
               height={heightPx}
               className="relative z-10 block"
@@ -255,10 +341,10 @@ export function ForestBookshelfLayoutDebugClient() {
             {showSample ? (
               <Image
                 src={FOREST_BOOKSHELF_ASSETS.sample}
-                alt=""
+                alt="旧・全体見本（参考のみ・構図不一致）"
                 width={widthPx}
                 height={heightPx}
-                className="pointer-events-none absolute inset-0 z-[15] block opacity-40"
+                className="pointer-events-none absolute inset-0 z-[15] block opacity-35 mix-blend-normal"
                 unoptimized
               />
             ) : null}
@@ -371,7 +457,7 @@ export function ForestBookshelfLayoutDebugClient() {
                 value={editTarget.kind}
                 onChange={(e) => {
                   const kind = e.target.value as EditTarget["kind"];
-                  if (kind === "item") setEditTarget({ kind, id: "plant" });
+                  if (kind === "item") setEditTarget({ kind, id: "kanteiCover" });
                   else setEditTarget({ kind, id: "kanteiCover" });
                 }}
               >
@@ -393,14 +479,13 @@ export function ForestBookshelfLayoutDebugClient() {
                   }
                 }}
               >
-                {(editTarget.kind === "item"
-                  ? FOREST_BOOKSHELF_ITEM_IDS
-                  : FOREST_BOOKSHELF_SPOT_IDS
-                ).map((id) => (
-                  <option key={id} value={id}>
-                    {FOREST_BOOKSHELF_ITEM_LABELS[id as ForestBookshelfItemId] ?? id}（{id}）
-                  </option>
-                ))}
+                {(editTarget.kind === "item" ? EDITABLE_ITEM_IDS : FOREST_BOOKSHELF_SPOT_IDS).map(
+                  (id) => (
+                    <option key={id} value={id}>
+                      {FOREST_BOOKSHELF_ITEM_LABELS[id as ForestBookshelfItemId] ?? id}（{id}）
+                    </option>
+                  ),
+                )}
               </select>
             </label>
           </div>
@@ -523,10 +608,18 @@ export function ForestBookshelfLayoutDebugClient() {
           <div className="mt-3 flex flex-wrap gap-2">
             <button
               type="button"
-              onClick={() => void copyPlacement()}
-              className="rounded-lg bg-amber-800 px-3 py-2 text-sm font-medium text-white hover:bg-amber-900"
+              onClick={() => void saveDraftToFile()}
+              disabled={saveState === "saving"}
+              className="rounded-lg bg-emerald-800 px-3 py-2 text-sm font-medium text-white hover:bg-emerald-900 disabled:opacity-60"
             >
-              配置スニペットをコピー
+              {saveState === "saving" ? "保存中…" : "この配置をファイルに保存"}
+            </button>
+            <button
+              type="button"
+              onClick={() => void copyPlacement()}
+              className="rounded-lg border border-stone-300 bg-white px-3 py-2 text-sm text-stone-700 hover:bg-stone-50"
+            >
+              1件だけコピー（任意）
             </button>
             <button
               type="button"
@@ -536,16 +629,32 @@ export function ForestBookshelfLayoutDebugClient() {
               下書きをリセット
             </button>
           </div>
-          <pre className="mt-2 overflow-x-auto rounded bg-stone-900 p-2 text-[11px] text-amber-100">
-            {forestBookshelfRectSnippet(editTarget.id, editingRect)}
-          </pre>
+          {saveMessage ? (
+            <p
+              className={[
+                "mt-2 text-xs",
+                saveState === "fail" ? "text-rose-700" : "text-emerald-800",
+              ].join(" ")}
+            >
+              {saveMessage}
+            </p>
+          ) : (
+            <p className="mt-2 text-xs text-stone-500">
+              「ファイルに保存」で{" "}
+              <code className="rounded bg-stone-100 px-1">forestBookshelfLayout.ts</code>{" "}
+              を自動更新します。コピペ作業は不要です。
+            </p>
+          )}
+          {copyState === "ok" ? (
+            <p className="mt-1 text-xs text-stone-500">1件コピーしました</p>
+          ) : null}
         </div>
       </div>
 
       <div>
         <p className="text-sm font-medium text-stone-800">実際の本棚UI（プレビュー）</p>
         <p className="mt-1 text-xs text-stone-500">
-          左の下書きがここに即反映されます。永続化は layout.ts への貼り付けが必要です。
+          左の下書きがここに即反映されます。終わったら左の「ファイルに保存」を押してください。
         </p>
         <div className="mt-4 overflow-hidden rounded-xl border border-stone-200 bg-[#ebe2d4]">
           <ForestBookshelfPreviewClient

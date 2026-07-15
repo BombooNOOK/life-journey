@@ -281,14 +281,8 @@ export function ForestBookshelfClient({
         />
       </div>
 
-      {/* 装飾・本ビジュアル */}
+      {/* 本ビジュアル（天板植木鉢・ランタン／床ランタンは今回非表示） */}
       <div className="absolute inset-0">
-        <ForestBookshelfItem rect={itemLayout.plant} src={FOREST_BOOKSHELF_ASSETS.plant} alt="" />
-        <ForestBookshelfItem
-          rect={itemLayout.lanternShelf}
-          src={FOREST_BOOKSHELF_ASSETS.lanternShelf}
-          alt=""
-        />
         <ForestBookshelfItem
           rect={itemLayout.kanteiCover}
           src={kanteiCover}

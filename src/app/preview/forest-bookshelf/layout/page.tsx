@@ -16,9 +16,8 @@ export default function ForestBookshelfLayoutPage() {
         <p className="text-xs font-medium uppercase tracking-wide text-amber-800">Dev layout tool</p>
         <h1 className="mt-2 text-xl font-semibold">森の本棚レイアウト定規</h1>
         <p className="mt-2 text-sm leading-relaxed text-stone-600">
-          本棚本体（576×1024）上の本・小物・タップ領域を測ります。値は{" "}
-          <code className="rounded bg-stone-200 px-1">src/lib/ljd/forestBookshelfLayout.ts</code>{" "}
-          を編集してください。
+          合わせ先はアップ構図の空棚です。緑の棚板ラインに本の下端を合わせ、終わったら
+          「この配置をファイルに保存」を押してください（コピペ不要）。
         </p>
 
         <div className="mt-8">
