@@ -6,7 +6,7 @@
 
 export const FOREST_BOOKSHELF_ASSET_DIR = "/images/ljd/bookshelf" as const;
 /** 本体画像差し替え時に上げる */
-const ASSET_VERSION = 3;
+const ASSET_VERSION = 4;
 
 function asset(filename: string): string {
   return `${FOREST_BOOKSHELF_ASSET_DIR}/${filename}?v=${ASSET_VERSION}`;
@@ -31,5 +31,5 @@ export const FOREST_BOOKSHELF_ASSETS = {
   lanternFloor: asset("bookshelf_lantern_floor.png"),
 } as const;
 
-/** ページ背景（やや薄暗い書斎系の生成り） */
-export const FOREST_BOOKSHELF_PAGE_BG = "#ebe2d4" as const;
+/** ページ背景（アップ本棚の余白・木陰） */
+export const FOREST_BOOKSHELF_PAGE_BG = "#2c1f14" as const;

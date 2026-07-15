@@ -189,10 +189,9 @@ export { ITEM_LABELS as FOREST_BOOKSHELF_ITEM_LABELS };
  * 見本に合わせて微調整可。
  */
 export const FOREST_BOOKSHELF_SHELF_FLOOR_Y_PERCENT = [
-  { id: "shelf1", label: "1段目（最上段）", y: 27.5 },
-  { id: "shelf2", label: "2段目（鑑定書）", y: 44.0 },
-  { id: "shelf3", label: "3段目（日記ブック）", y: 62.5 },
-  { id: "shelf4", label: "4段目（これまでの）", y: 78.0 },
+  { id: "shelf1", label: "1段目（鑑定書）", y: 41.5 },
+  { id: "shelf2", label: "2段目（日記ブック）", y: 72.5 },
+  { id: "shelf3", label: "3段目（これまでの）", y: 91.5 },
 ] as const;
 
 /** 下端（上からの %）= top + height */

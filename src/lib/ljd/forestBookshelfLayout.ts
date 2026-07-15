@@ -1,7 +1,6 @@
 /**
  * 森の本棚 — パーツ配置（%）
- * 基準: bookshelf_main.png（576×1024）の棚板
- * （見本 sample は構図参考。本番描画の本体は main）
+ * 基準: bookshelf_main.png（576×1024）目の前アップ構図
  */
 
 export type ForestBookshelfRect = {
@@ -36,31 +35,31 @@ export type ForestBookshelfSpotId =
   | "spinesDiary";
 
 export const FOREST_BOOKSHELF_ITEM_LAYOUT: Record<ForestBookshelfItemId, ForestBookshelfRect> = {
-  /** 1段目：棚板上（看板左右） — 下端 ≈ 27.5% */
-  plant: { left: 7, top: 12.5, width: 22, height: 15 },
-  lanternShelf: { left: 70, top: 12.5, width: 20, height: 15 },
-  /** 2段目：鑑定書 — 下端 ≈ 44.0% */
-  kanteiCover: { left: 12, top: 28.5, width: 24, height: 15.5 },
-  spinesFortune: { left: 52, top: 30.5, width: 36, height: 13.5 },
-  /** 3段目：日記ブック — 下端 ≈ 62.5% */
-  createDiary: { left: 6, top: 46.2, width: 28, height: 16.3 },
-  currentDiary: { left: 36, top: 47.2, width: 24, height: 15.3 },
-  placeholderRed: { left: 62, top: 47.2, width: 26, height: 15.3 },
-  /** 4段目：これまでの日記ブック — 下端 ≈ 78.0% */
-  placeholderGreen: { left: 8, top: 63.5, width: 26, height: 14.5 },
-  spinesDiary: { left: 37, top: 65.2, width: 30, height: 12.8 },
-  owl: { left: 68, top: 63.5, width: 24, height: 14.5 },
-  /** 本棚枠の外側・左下（シーン相対）。本体より前面に重ねる */
-  lanternFloor: { left: -6, top: 76.5, width: 32, height: 20 },
+  /** 最上段の天板付近（画面上端に少しはみ出し可） */
+  plant: { left: 1, top: -1, width: 24, height: 15 },
+  lanternShelf: { left: 74, top: -1, width: 24, height: 15 },
+  /** 1段目：鑑定書 — 下端 ≈ 41.5% */
+  kanteiCover: { left: 6, top: 16, width: 34, height: 25.5 },
+  spinesFortune: { left: 46, top: 22, width: 48, height: 19.5 },
+  /** 2段目：日記ブック — 下端 ≈ 72.5% */
+  createDiary: { left: 3, top: 47, width: 32, height: 25.5 },
+  currentDiary: { left: 34, top: 49.5, width: 30, height: 23 },
+  placeholderRed: { left: 66, top: 49.5, width: 30, height: 23 },
+  /** 3段目：これまでの日記ブック — 下端 ≈ 91.5% */
+  placeholderGreen: { left: 5, top: 76, width: 30, height: 15.5 },
+  spinesDiary: { left: 36, top: 78.5, width: 34, height: 13 },
+  owl: { left: 70, top: 76, width: 28, height: 15.5 },
+  /** アップ構図では床が出ないため未使用（描画側でスキップ） */
+  lanternFloor: { left: 0, top: 0, width: 1, height: 1 },
 };
 
 /** タップ領域は見た目より少し広め */
 export const FOREST_BOOKSHELF_SPOT_LAYOUT: Record<ForestBookshelfSpotId, ForestBookshelfRect> = {
-  kanteiCover: { left: 10, top: 27.8, width: 28, height: 17 },
-  spinesFortune: { left: 50, top: 29.8, width: 40, height: 15 },
-  createDiary: { left: 4.5, top: 45.5, width: 31, height: 18 },
-  currentDiary: { left: 34, top: 46.5, width: 28, height: 17 },
-  placeholderRed: { left: 60, top: 46.5, width: 30, height: 17 },
-  placeholderGreen: { left: 6, top: 62.8, width: 30, height: 16 },
-  spinesDiary: { left: 35, top: 64.5, width: 34, height: 14.5 },
+  kanteiCover: { left: 4, top: 15, width: 38, height: 28 },
+  spinesFortune: { left: 44, top: 20, width: 52, height: 23 },
+  createDiary: { left: 1, top: 45.5, width: 35, height: 28 },
+  currentDiary: { left: 32, top: 48, width: 34, height: 26 },
+  placeholderRed: { left: 64, top: 48, width: 34, height: 26 },
+  placeholderGreen: { left: 3, top: 74.5, width: 34, height: 18 },
+  spinesDiary: { left: 34, top: 77, width: 38, height: 16 },
 };

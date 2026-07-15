@@ -238,16 +238,18 @@ export function ForestBookshelfClient({
   const scene = (
     <div
       className={[
-        "relative overflow-visible",
-        immersive ? "" : "mx-auto w-full rounded-2xl shadow-[0_14px_40px_rgba(60,40,20,0.18)]",
+        "relative",
+        immersive ? "overflow-hidden" : "mx-auto w-full overflow-visible rounded-2xl shadow-[0_14px_40px_rgba(60,40,20,0.18)]",
       ]
         .filter(Boolean)
         .join(" ")}
       style={
         immersive
           ? {
+              // 画面を覆う（幅優先でガツン。上下は構図の余白）
               aspectRatio: `${widthPx} / ${heightPx}`,
-              width: `min(100vw, calc(100dvh * ${widthPx} / ${heightPx}))`,
+              width: `max(100vw, calc(100dvh * ${widthPx} / ${heightPx}))`,
+              height: `max(100dvh, calc(100vw * ${heightPx} / ${widthPx}))`,
             }
           : {
               aspectRatio: `${widthPx} / ${heightPx}`,
@@ -262,8 +264,8 @@ export function ForestBookshelfClient({
       {/* 本棚本体 */}
       <div
         className={[
-          "absolute inset-0 overflow-hidden",
-          immersive ? "" : "rounded-2xl",
+          "absolute inset-0",
+          immersive ? "" : "overflow-hidden rounded-2xl",
         ]
           .filter(Boolean)
           .join(" ")}
@@ -273,21 +275,14 @@ export function ForestBookshelfClient({
           alt="森の本棚"
           fill
           priority
-          className="object-contain object-center"
+          className="object-cover object-center"
           sizes="100vw"
           unoptimized
         />
       </div>
 
-      {/* 装飾・本ビジュアル（本棚枠内） */}
-      <div
-        className={[
-          "absolute inset-0 overflow-hidden",
-          immersive ? "" : "rounded-2xl",
-        ]
-          .filter(Boolean)
-          .join(" ")}
-      >
+      {/* 装飾・本ビジュアル */}
+      <div className="absolute inset-0">
         <ForestBookshelfItem rect={itemLayout.plant} src={FOREST_BOOKSHELF_ASSETS.plant} alt="" />
         <ForestBookshelfItem
           rect={itemLayout.lanternShelf}
@@ -341,14 +336,6 @@ export function ForestBookshelfClient({
         />
         <ForestBookshelfItem rect={itemLayout.owl} src={FOREST_BOOKSHELF_ASSETS.owl} alt="" />
       </div>
-
-      {/* 外ランタン（本体外・前面） */}
-      <ForestBookshelfItem
-        rect={itemLayout.lanternFloor}
-        src={FOREST_BOOKSHELF_ASSETS.lanternFloor}
-        alt=""
-        zIndex={6}
-      />
 
       <ForestBookshelfTapSpot
         rect={spotLayout.kanteiCover}
@@ -446,7 +433,9 @@ export function ForestBookshelfClient({
             </div>
           )}
 
-          <div className="flex h-[100dvh] w-full items-center justify-center">{scene}</div>
+          <div className="relative flex h-[100dvh] w-[100vw] items-center justify-center overflow-hidden">
+            {scene}
+          </div>
         </>
       ) : (
         <>
