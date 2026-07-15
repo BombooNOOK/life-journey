@@ -63,13 +63,13 @@ export const GUIDE_OPERATION_TIPS: readonly GuideOperationTip[] = [
   {
     id: "bookshelf-binding",
     title: "製本を注文したいときの流れは？",
-    body: "本棚の日記ブックから「製本版を注文する」へ進みます。アプリで製本コードを用意したあと、お支払いは別途 BASE のショップで行います（外部の商品ページへ移動します）。",
+    body: "本棚で日記ブックを選び、開いたあとの画面から「製本版を注文する」へ進みます。アプリで製本コードを用意したあと、お支払いは別途 BASE のショップで行います（外部の商品ページへ移動します）。",
     link: { href: "/orders/bookshelf", label: "本棚を開く" },
   },
   {
     id: "pdf",
     title: "鑑定書PDFを端末に残したい",
-    body: "本棚の鑑定書からPDFを開けます。保存のしかたは機種によって少しちがうので、専用の手順ページを用意しています。",
+    body: "本棚で鑑定書を選ぶとPDFを開けます。保存のしかたは機種によって少しちがうので、専用の手順ページを用意しています。",
     link: { href: "/help/pdf-download", label: "PDFの保存方法を見る" },
   },
   {

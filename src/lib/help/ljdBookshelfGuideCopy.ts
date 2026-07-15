@@ -3,20 +3,20 @@
 export const LJD_BOOKSHELF_GUIDE_SECTION_TITLE = "本棚" as const;
 
 export const LJD_BOOKSHELF_GUIDE_SECTION_SUMMARY =
-  "鑑定書と日記ブックを読み、製本注文にも進む" as const;
+  "鑑定書と日記ブックを棚から選び、読み返す・つくる・製本する" as const;
 
 export const LJD_BOOKSHELF_GUIDE_LEAD =
-  "ログハウスの本棚には、鑑定書や、つくった日記ブックが並びます。読み返したり、製本版の注文へ進んだりできます。" as const;
+  "ログハウスの本棚をタップすると、棚の目の前に立ったような画面が開きます。鑑定書や日記ブックを選んで読み返したり、新しい日記ブックをつくったり、製本版の注文へ進んだりできます。" as const;
 
-export const LJD_BOOKSHELF_GUIDE_VIEW_TITLE = "本の見方" as const;
+export const LJD_BOOKSHELF_GUIDE_VIEW_TITLE = "棚の使い方" as const;
 
 export const LJD_BOOKSHELF_GUIDE_VIEW_BODY =
-  "本棚で本を選ぶと、「読む」から中身をひらけます。日記ブックはページをめくるように読み返せます。鑑定書も、本棚からいつでも確認できます。" as const;
+  "本やセットをタップすると小さなカードが出ます。「選ぶ」で詳細へ進めます。鑑定書のいちばん新しい（または代表の）1冊は表紙で、2冊目以降は横の背表紙をタップして一覧から選べます。日記ブックはいちばん新しい1冊が表紙、2冊目・3冊目は棚のプレースホルダーに並び、それ以降は背表紙の一覧から選べます。「日記ブックを作る」セットから、新しい本をつくれます。" as const;
 
 export const LJD_BOOKSHELF_GUIDE_BINDING_TITLE = "製本版を注文する" as const;
 
 export const LJD_BOOKSHELF_GUIDE_BINDING_BODY =
-  "紙の本にしたいときは、本棚の日記ブックから「製本版を注文する」へ進めます。アプリ内で製本コードを用意したあと、お支払いは別途 BASE のショップで行います（商品ページへ移動します）。" as const;
+  "紙の本にしたいときは、日記ブックを開いたあとの画面から「製本版を注文する」へ進めます。アプリ内で製本コードを用意したあと、お支払いは別途 BASE のショップで行います（商品ページへ移動します）。" as const;
 
 export const LJD_BOOKSHELF_GUIDE_BINDING_NOTE =
   "製本の注文はサブスクリプションとは別です。BASE でのお支払い・配送手続きが必要です。" as const;

@@ -6,7 +6,7 @@ export const LJD_DIARY_BOOK_GUIDE_SECTION_SUMMARY =
   "期間やタグでまとめて、1冊の本にする" as const;
 
 export const LJD_DIARY_BOOK_GUIDE_LEAD =
-  "日記ブックは、書いた日記をまとめて1冊の本にする機能です。本棚の「本にする」からつくれます。" as const;
+  "日記ブックは、書いた日記をまとめて1冊の本にする機能です。本棚の「日記ブックを作る」セットからつくれます。" as const;
 
 export type LjdDiaryBookGuideStep = {
   id: string;
@@ -18,8 +18,8 @@ export type LjdDiaryBookGuideStep = {
 export const LJD_DIARY_BOOK_GUIDE_STEPS: readonly LjdDiaryBookGuideStep[] = [
   {
     id: "open",
-    title: "本棚で「本にする」を開く",
-    body: "本棚の「日記ブックを作る」から「本にする」を押します。",
+    title: "本棚で「日記ブックを作る」を開く",
+    body: "ログハウスの本棚を開き、「日記ブックを作る」セットをタップして「作る」を押します。",
   },
   {
     id: "name-cover",
@@ -45,7 +45,7 @@ export const LJD_DIARY_BOOK_GUIDE_STEPS: readonly LjdDiaryBookGuideStep[] = [
   {
     id: "create",
     title: "日記ブックを作成する",
-    body: "作成すると本棚に並びます。「読む」で中身を確認できます。あとから期間やタグ条件、掲載する日記を直せます。",
+    body: "作成すると本棚に並びます。いちばん新しい本は表紙枠に、続いて2冊目・3冊目は棚のプレースホルダーに表示されます。本をタップして「選ぶ」で中身を確認できます。あとから期間やタグ条件、掲載する日記を直せます。",
   },
 ] as const;
 

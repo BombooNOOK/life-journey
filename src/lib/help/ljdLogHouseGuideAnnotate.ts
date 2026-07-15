@@ -50,7 +50,7 @@ export const LJD_LOG_HOUSE_GUIDE_MARKERS: LjdLogHouseGuideMarker[] = [
     x: 22,
     y: 30,
     title: "本棚",
-    body: "タップすると本棚が開きます。鑑定書や、つくった日記ブックを読み返せます。",
+    body: "タップすると棚の目の前の画面が開きます。本をタップしてカードから選び、鑑定書や日記ブックを読み返せます。背表紙から一覧も開けます。",
   },
   {
     id: "desk",
