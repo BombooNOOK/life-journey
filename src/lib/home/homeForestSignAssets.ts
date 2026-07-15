@@ -4,7 +4,7 @@ export const HOME_FOREST_SIGN_MOBILE_BG_DAY_SRC =
 
 /** トップ：森の案内板（スマホ縦長・夜） */
 export const HOME_FOREST_SIGN_MOBILE_BG_NIGHT_SRC =
-  "/images/ljd/top/top_forest_sign_mobile_night.png?v=1" as const;
+  "/images/ljd/top/top_forest_sign_mobile_night.png?v=2" as const;
 
 /** トップ：森の案内板（PC横長・昼） */
 export const HOME_FOREST_SIGN_DESKTOP_BG_DAY_SRC =
