@@ -51,7 +51,8 @@ export function ForestBookshelfItem({
         alt={alt}
         fill
         className={[
-          "object-contain",
+          // 480×480 寄りのPNGを棚枠に入れると、中央寄せだと棚板から浮く
+          "object-contain object-bottom",
           emphasized
             ? "drop-shadow-[0_10px_14px_rgba(60,40,20,0.35)]"
             : "drop-shadow-[0_6px_10px_rgba(60,40,20,0.22)]",

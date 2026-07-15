@@ -273,7 +273,7 @@ export function ForestBookshelfClient({
               alt="森の本棚"
               fill
               priority
-              className="object-cover object-top"
+              className="object-contain object-top"
               sizes="(max-width: 640px) 100vw, 512px"
               unoptimized
             />

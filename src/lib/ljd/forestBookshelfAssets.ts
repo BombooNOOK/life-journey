@@ -1,7 +1,7 @@
 /** 森の本棚 — アセットパス（576×1024 設計） */
 
 export const FOREST_BOOKSHELF_ASSET_DIR = "/images/ljd/bookshelf" as const;
-const ASSET_VERSION = 2;
+const ASSET_VERSION = 3;
 
 function asset(filename: string): string {
   return `${FOREST_BOOKSHELF_ASSET_DIR}/${filename}?v=${ASSET_VERSION}`;
