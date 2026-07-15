@@ -54,22 +54,38 @@ type Props = {
   /** レイアウト定規からの下書き反映など */
   itemLayoutOverride?: Partial<Record<ForestBookshelfItemId, ForestBookshelfRect>>;
   spotLayoutOverride?: Partial<Record<ForestBookshelfSpotId, ForestBookshelfRect>>;
-  /** 定規埋め込み時は説明バナーを隠す */
+  /** 定規埋め込み時は説明バナーを隠し、framed 表示 */
   compact?: boolean;
 };
 
-/** PCでもスマホ縦枠で森の本棚を確認するプレビュー */
+/** 本番と同じ没入全画面／定規用 framed */
 export function ForestBookshelfPreviewClient({
   itemLayoutOverride,
   spotLayoutOverride,
   compact = false,
 }: Props = {}) {
+  if (compact) {
+    return (
+      <ForestBookshelfClient
+        layout="framed"
+        activeProfileLabel="モグ"
+        activeProfileId="preview"
+        entitlement={PREVIEW_ENTITLEMENT}
+        kanteiBooks={[...PREVIEW_KANTEI]}
+        diaryBooks={[...PREVIEW_DIARY]}
+        blockCreate={false}
+        itemLayoutOverride={itemLayoutOverride}
+        spotLayoutOverride={spotLayoutOverride}
+      />
+    );
+  }
+
   return (
-    <div className={compact ? "w-full" : "mx-auto min-h-[100dvh] max-w-lg px-3 py-5"}>
-      {compact ? null : (
-        <div className="mb-3 rounded-xl border border-amber-200 bg-amber-50/95 px-3 py-2 text-[11px] leading-relaxed text-amber-950 shadow-sm">
+    <div className="relative min-h-[100dvh] w-full">
+      <div className="pointer-events-none absolute inset-x-0 top-0 z-40 px-3 pt-[max(0.5rem,env(safe-area-inset-top))]">
+        <div className="pointer-events-auto mx-auto max-w-md rounded-xl border border-amber-200/90 bg-amber-50/90 px-3 py-2 text-[11px] leading-relaxed text-amber-950 shadow-sm backdrop-blur-[2px]">
           <p>
-            <strong>プレビュー</strong>（ログイン不要）。森の本棚の配置・小カード・背表紙一覧を確認できます。
+            <strong>プレビュー</strong>（没入表示）。棚が画面幅いっぱいに収まります。
           </p>
           <p className="mt-1">
             <a href="/preview" className="font-medium underline-offset-2 hover:underline">
@@ -77,8 +93,9 @@ export function ForestBookshelfPreviewClient({
             </a>
           </p>
         </div>
-      )}
+      </div>
       <ForestBookshelfClient
+        layout="immersive"
         activeProfileLabel="モグ"
         activeProfileId="preview"
         entitlement={PREVIEW_ENTITLEMENT}

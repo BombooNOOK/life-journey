@@ -5,8 +5,9 @@ import { usePathname } from "next/navigation";
 import { SiteFooter } from "@/components/layout/SiteFooter";
 import { SiteHeader } from "@/components/layout/SiteHeader";
 import {
-  isLogHouseImmersivePath,
+  isForestBookshelfImmersivePath,
   isLogHouseImmersivePreviewPath,
+  isOrdersImmersiveMobilePath,
   useIsLogHouseMobileViewport,
 } from "@/lib/loghouse/logHouseViewport";
 import { isForestMapImmersivePath } from "@/lib/help/forestMapAssets";
@@ -16,7 +17,7 @@ type Props = {
   children: React.ReactNode;
 };
 
-/** トップ玄関・初回導線・スマホログハウス・森の案内図はヘッダー・フッターなしの全画面表示 */
+/** トップ玄関・初回導線・スマホログハウス／本棚・森の案内図はヘッダー・フッターなしの全画面表示 */
 export function ConditionalSiteChrome({ children }: Props) {
   const pathname = usePathname();
   const isMobile = useIsLogHouseMobileViewport();
@@ -25,7 +26,8 @@ export function ConditionalSiteChrome({ children }: Props) {
     isFirstVisitFullBleedPath(pathname) ||
     isForestMapImmersivePath(pathname) ||
     isLogHouseImmersivePreviewPath(pathname) ||
-    (isLogHouseImmersivePath(pathname) && isMobile);
+    isForestBookshelfImmersivePath(pathname) ||
+    (isOrdersImmersiveMobilePath(pathname) && isMobile);
 
   if (isFullBleedEntrance) {
     return <div className="flex min-h-[100dvh] flex-col">{children}</div>;

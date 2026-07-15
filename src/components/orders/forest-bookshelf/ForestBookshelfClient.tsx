@@ -64,6 +64,8 @@ type Props = {
   diaryBooks: ForestBookshelfDiaryItem[];
   blockCreate: boolean;
   deployRevision?: string | null;
+  /** immersive = 本番スマホ全画面 / framed = 定規埋め込みなど */
+  layout?: "immersive" | "framed";
   /** レイアウト定規の下書きなど、見た目配置の一時上書き */
   itemLayoutOverride?: Partial<Record<ForestBookshelfItemId, ForestBookshelfRect>>;
   /** レイアウト定規の下書きなど、タップ領域の一時上書き */
@@ -88,6 +90,7 @@ export function ForestBookshelfClient({
   diaryBooks,
   blockCreate,
   deployRevision = null,
+  layout = "immersive",
   itemLayoutOverride,
   spotLayoutOverride,
 }: Props) {
@@ -229,191 +232,254 @@ export function ForestBookshelfClient({
   const redCover = thirdDiary?.coverSrc ?? FOREST_BOOKSHELF_ASSETS.placeholderRed;
   const greenCover = secondDiary?.coverSrc ?? FOREST_BOOKSHELF_ASSETS.placeholderGreen;
   const kanteiCover = featuredKantei?.coverSrc ?? "/images/kantei-cover.png?v=1";
+  const immersive = layout === "immersive";
+  const { widthPx, heightPx } = FOREST_BOOKSHELF_INTRINSIC;
+
+  const scene = (
+    <div
+      className={[
+        "relative overflow-visible",
+        immersive ? "" : "mx-auto w-full rounded-2xl shadow-[0_14px_40px_rgba(60,40,20,0.18)]",
+      ]
+        .filter(Boolean)
+        .join(" ")}
+      style={
+        immersive
+          ? {
+              aspectRatio: `${widthPx} / ${heightPx}`,
+              width: `min(100vw, calc(100dvh * ${widthPx} / ${heightPx}))`,
+            }
+          : {
+              aspectRatio: `${widthPx} / ${heightPx}`,
+              width: "100%",
+            }
+      }
+    >
+      {/* 旧ディープリンク互換 */}
+      <div id="bookshelf-kantei-books" className="h-0 scroll-mt-24" aria-hidden />
+      <div id="bookshelf-diary-books" className="h-0 scroll-mt-24" aria-hidden />
+
+      {/* 本棚本体 */}
+      <div
+        className={[
+          "absolute inset-0 overflow-hidden",
+          immersive ? "" : "rounded-2xl",
+        ]
+          .filter(Boolean)
+          .join(" ")}
+      >
+        <Image
+          src={FOREST_BOOKSHELF_ASSETS.main}
+          alt="森の本棚"
+          fill
+          priority
+          className="object-contain object-center"
+          sizes="100vw"
+          unoptimized
+        />
+      </div>
+
+      {/* 装飾・本ビジュアル（本棚枠内） */}
+      <div
+        className={[
+          "absolute inset-0 overflow-hidden",
+          immersive ? "" : "rounded-2xl",
+        ]
+          .filter(Boolean)
+          .join(" ")}
+      >
+        <ForestBookshelfItem rect={itemLayout.plant} src={FOREST_BOOKSHELF_ASSETS.plant} alt="" />
+        <ForestBookshelfItem
+          rect={itemLayout.lanternShelf}
+          src={FOREST_BOOKSHELF_ASSETS.lanternShelf}
+          alt=""
+        />
+        <ForestBookshelfItem
+          rect={itemLayout.kanteiCover}
+          src={kanteiCover}
+          alt={featuredKantei ? featuredKantei.title : "鑑定書"}
+          className={featuredKantei ? "" : "opacity-55"}
+          emphasized={selectedSpot === "kanteiCover"}
+        />
+        <ForestBookshelfItem
+          rect={itemLayout.spinesFortune}
+          src={FOREST_BOOKSHELF_ASSETS.spinesFortune}
+          alt=""
+          emphasized={panel === "list-kantei"}
+        />
+        <ForestBookshelfItem
+          rect={itemLayout.createDiary}
+          src={FOREST_BOOKSHELF_ASSETS.createDiarySet}
+          alt=""
+          emphasized={selectedSpot === "createDiary" || panel === "create"}
+        />
+        {currentDiary ? (
+          <ForestBookshelfItem
+            rect={itemLayout.currentDiary}
+            src={currentDiary.coverSrc}
+            alt={currentDiary.title}
+            emphasized={selectedSpot === "currentDiary"}
+          />
+        ) : null}
+        <ForestBookshelfItem
+          rect={itemLayout.placeholderRed}
+          src={redCover}
+          alt=""
+          emphasized={selectedSpot === "placeholderRed"}
+        />
+        <ForestBookshelfItem
+          rect={itemLayout.placeholderGreen}
+          src={greenCover}
+          alt=""
+          emphasized={selectedSpot === "placeholderGreen"}
+        />
+        <ForestBookshelfItem
+          rect={itemLayout.spinesDiary}
+          src={FOREST_BOOKSHELF_ASSETS.spinesDiary}
+          alt=""
+          emphasized={panel === "list-diary"}
+        />
+        <ForestBookshelfItem rect={itemLayout.owl} src={FOREST_BOOKSHELF_ASSETS.owl} alt="" />
+      </div>
+
+      {/* 外ランタン（本体外・前面） */}
+      <ForestBookshelfItem
+        rect={itemLayout.lanternFloor}
+        src={FOREST_BOOKSHELF_ASSETS.lanternFloor}
+        alt=""
+        zIndex={6}
+      />
+
+      <ForestBookshelfTapSpot
+        rect={spotLayout.kanteiCover}
+        label="鑑定書を選ぶ"
+        disabled={!featuredKantei}
+        selected={selectedSpot === "kanteiCover"}
+        onActivate={() => activateSpot("kanteiCover")}
+      />
+      <ForestBookshelfTapSpot
+        rect={spotLayout.spinesFortune}
+        label="鑑定書一覧を開く"
+        selected={panel === "list-kantei"}
+        onActivate={() => activateSpot("spinesFortune")}
+      />
+      <ForestBookshelfTapSpot
+        rect={spotLayout.createDiary}
+        label="日記ブックを作る"
+        selected={selectedSpot === "createDiary" || panel === "create"}
+        onActivate={() => activateSpot("createDiary")}
+      />
+      <ForestBookshelfTapSpot
+        rect={spotLayout.currentDiary}
+        label="現在の日記ブックを選ぶ"
+        disabled={!currentDiary}
+        selected={selectedSpot === "currentDiary"}
+        onActivate={() => activateSpot("currentDiary")}
+      />
+      <ForestBookshelfTapSpot
+        rect={spotLayout.placeholderRed}
+        label="日記ブック（右側）"
+        selected={selectedSpot === "placeholderRed"}
+        onActivate={() => activateSpot("placeholderRed")}
+      />
+      <ForestBookshelfTapSpot
+        rect={spotLayout.placeholderGreen}
+        label="これまでの日記ブック（代表）"
+        selected={selectedSpot === "placeholderGreen"}
+        onActivate={() => activateSpot("placeholderGreen")}
+      />
+      <ForestBookshelfTapSpot
+        rect={spotLayout.spinesDiary}
+        label="これまでの日記ブック一覧を開く"
+        selected={panel === "list-diary"}
+        onActivate={() => activateSpot("spinesDiary")}
+      />
+
+      {peekCard ? (
+        <>
+          <button
+            type="button"
+            className="absolute inset-0 z-[25] bg-stone-900/20"
+            aria-label="カードを閉じる"
+            onClick={closeAll}
+          />
+          <ForestBookshelfPeekCard card={peekCard} onClose={closeAll} />
+        </>
+      ) : null}
+    </div>
+  );
 
   return (
-    <div className="relative" style={{ backgroundColor: FOREST_BOOKSHELF_PAGE_BG }}>
+    <div
+      className={immersive ? "relative isolate min-h-[100dvh] w-full overflow-hidden" : "relative"}
+      style={{ backgroundColor: FOREST_BOOKSHELF_PAGE_BG }}
+    >
       <FirstVisitFlowBrowserBackGuard />
 
-      <div className="mx-auto max-w-3xl space-y-3 px-3 pb-4 pt-3 sm:px-4 sm:pt-4">
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <Link href="/orders" className={`text-sm ${LJD_PAPER_LINK_CLASS}`}>
-            {LOG_HOUSE_BACK_TO_LINK_LABEL}
-          </Link>
-          <p className="text-xs text-[#6a5846]">
-            表示中: <span className="font-medium text-[#3f3428]">「{activeProfileLabel}」</span>
-            {deployRevision ? (
-              <span className="ml-2 text-[10px] text-[#9a8b78]" title="デプロイ確認用">
-                反映 {deployRevision}
-              </span>
-            ) : null}
-          </p>
-        </div>
-
-        <TrialStatusBanner entitlement={entitlement} />
-
-        {!featuredKantei && activeProfileId ? (
-          <KanteiMissingBanner profileId={activeProfileId} />
-        ) : null}
-      </div>
-
-      <div className="relative mx-auto w-full max-w-[28rem] px-2 pb-6 sm:max-w-[32rem] sm:px-4">
-        {/* 旧ディープリンク互換（#bookshelf-kantei-books など） */}
-        <div id="bookshelf-kantei-books" className="h-0 scroll-mt-24" aria-hidden />
-        <div id="bookshelf-diary-books" className="h-0 scroll-mt-24" aria-hidden />
-        <div
-          className="relative mx-auto w-full overflow-visible"
-          style={{
-            aspectRatio: `${FOREST_BOOKSHELF_INTRINSIC.widthPx} / ${FOREST_BOOKSHELF_INTRINSIC.heightPx}`,
-          }}
-        >
-          {/* 本棚本体 */}
-          <div className="absolute inset-0 overflow-hidden rounded-2xl shadow-[0_14px_40px_rgba(60,40,20,0.18)]">
-            <Image
-              src={FOREST_BOOKSHELF_ASSETS.main}
-              alt="森の本棚"
-              fill
-              priority
-              className="object-contain object-top"
-              sizes="(max-width: 640px) 100vw, 512px"
-              unoptimized
-            />
+      {immersive ? (
+        <>
+          <div className="pointer-events-none absolute inset-x-0 top-0 z-30 flex items-start justify-between gap-3 px-3 pb-2 pt-[max(0.75rem,env(safe-area-inset-top))]">
+            <Link
+              href="/orders"
+              className="pointer-events-auto inline-flex min-h-11 items-center rounded-full border border-[#d9cbb8]/90 bg-[#fffdf8]/88 px-3 text-sm font-medium text-[#5c4a3a] shadow-sm backdrop-blur-[3px]"
+            >
+              {LOG_HOUSE_BACK_TO_LINK_LABEL}
+            </Link>
+            <p className="pointer-events-none max-w-[46%] rounded-full border border-[#d9cbb8]/70 bg-[#fffdf8]/75 px-2.5 py-2 text-right text-[11px] leading-tight text-[#6a5846] shadow-sm backdrop-blur-[3px]">
+              「{activeProfileLabel}」
+              {deployRevision ? (
+                <span className="mt-0.5 block text-[9px] text-[#9a8b78]" title="デプロイ確認用">
+                  反映 {deployRevision}
+                </span>
+              ) : null}
+            </p>
           </div>
 
-          {/* 装飾・本ビジュアル（本棚枠内） */}
-          <div className="absolute inset-0 overflow-hidden rounded-2xl">
-            <ForestBookshelfItem
-              rect={itemLayout.plant}
-              src={FOREST_BOOKSHELF_ASSETS.plant}
-              alt=""
-            />
-            <ForestBookshelfItem
-              rect={itemLayout.lanternShelf}
-              src={FOREST_BOOKSHELF_ASSETS.lanternShelf}
-              alt=""
-            />
-            <ForestBookshelfItem
-              rect={itemLayout.kanteiCover}
-              src={kanteiCover}
-              alt={featuredKantei ? featuredKantei.title : "鑑定書"}
-              className={featuredKantei ? "" : "opacity-55"}
-              emphasized={selectedSpot === "kanteiCover"}
-            />
-            <ForestBookshelfItem
-              rect={itemLayout.spinesFortune}
-              src={FOREST_BOOKSHELF_ASSETS.spinesFortune}
-              alt=""
-              emphasized={panel === "list-kantei"}
-            />
-            <ForestBookshelfItem
-              rect={itemLayout.createDiary}
-              src={FOREST_BOOKSHELF_ASSETS.createDiarySet}
-              alt=""
-              emphasized={selectedSpot === "createDiary" || panel === "create"}
-            />
-            {currentDiary ? (
-              <ForestBookshelfItem
-                rect={itemLayout.currentDiary}
-                src={currentDiary.coverSrc}
-                alt={currentDiary.title}
-                emphasized={selectedSpot === "currentDiary"}
-              />
+          {(entitlement.showTrialBanner || (!featuredKantei && activeProfileId)) && (
+            <div className="pointer-events-none absolute inset-x-0 top-[4.5rem] z-30 px-3">
+              <div className="pointer-events-auto mx-auto max-w-md space-y-2">
+                <TrialStatusBanner entitlement={entitlement} />
+                {!featuredKantei && activeProfileId ? (
+                  <KanteiMissingBanner profileId={activeProfileId} />
+                ) : null}
+              </div>
+            </div>
+          )}
+
+          <div className="flex h-[100dvh] w-full items-center justify-center">{scene}</div>
+        </>
+      ) : (
+        <>
+          <div className="mx-auto max-w-3xl space-y-3 px-3 pb-4 pt-3 sm:px-4 sm:pt-4">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <Link href="/orders" className={`text-sm ${LJD_PAPER_LINK_CLASS}`}>
+                {LOG_HOUSE_BACK_TO_LINK_LABEL}
+              </Link>
+              <p className="text-xs text-[#6a5846]">
+                表示中: <span className="font-medium text-[#3f3428]">「{activeProfileLabel}」</span>
+                {deployRevision ? (
+                  <span className="ml-2 text-[10px] text-[#9a8b78]" title="デプロイ確認用">
+                    反映 {deployRevision}
+                  </span>
+                ) : null}
+              </p>
+            </div>
+
+            <TrialStatusBanner entitlement={entitlement} />
+
+            {!featuredKantei && activeProfileId ? (
+              <KanteiMissingBanner profileId={activeProfileId} />
             ) : null}
-            <ForestBookshelfItem
-              rect={itemLayout.placeholderRed}
-              src={redCover}
-              alt=""
-              emphasized={selectedSpot === "placeholderRed"}
-            />
-            <ForestBookshelfItem
-              rect={itemLayout.placeholderGreen}
-              src={greenCover}
-              alt=""
-              emphasized={selectedSpot === "placeholderGreen"}
-            />
-            <ForestBookshelfItem
-              rect={itemLayout.spinesDiary}
-              src={FOREST_BOOKSHELF_ASSETS.spinesDiary}
-              alt=""
-              emphasized={panel === "list-diary"}
-            />
-            <ForestBookshelfItem
-              rect={itemLayout.owl}
-              src={FOREST_BOOKSHELF_ASSETS.owl}
-              alt=""
-            />
           </div>
 
-          {/* 外ランタン（本体外・前面） */}
-          <ForestBookshelfItem
-            rect={itemLayout.lanternFloor}
-            src={FOREST_BOOKSHELF_ASSETS.lanternFloor}
-            alt=""
-            zIndex={6}
-          />
-
-          {/* タップ領域 */}
-          <ForestBookshelfTapSpot
-            rect={spotLayout.kanteiCover}
-            label="鑑定書を選ぶ"
-            disabled={!featuredKantei}
-            selected={selectedSpot === "kanteiCover"}
-            onActivate={() => activateSpot("kanteiCover")}
-          />
-          <ForestBookshelfTapSpot
-            rect={spotLayout.spinesFortune}
-            label="鑑定書一覧を開く"
-            selected={panel === "list-kantei"}
-            onActivate={() => activateSpot("spinesFortune")}
-          />
-          <ForestBookshelfTapSpot
-            rect={spotLayout.createDiary}
-            label="日記ブックを作る"
-            selected={selectedSpot === "createDiary" || panel === "create"}
-            onActivate={() => activateSpot("createDiary")}
-          />
-          <ForestBookshelfTapSpot
-            rect={spotLayout.currentDiary}
-            label="現在の日記ブックを選ぶ"
-            disabled={!currentDiary}
-            selected={selectedSpot === "currentDiary"}
-            onActivate={() => activateSpot("currentDiary")}
-          />
-          <ForestBookshelfTapSpot
-            rect={spotLayout.placeholderRed}
-            label="日記ブック（右側）"
-            selected={selectedSpot === "placeholderRed"}
-            onActivate={() => activateSpot("placeholderRed")}
-          />
-          <ForestBookshelfTapSpot
-            rect={spotLayout.placeholderGreen}
-            label="これまでの日記ブック（代表）"
-            selected={selectedSpot === "placeholderGreen"}
-            onActivate={() => activateSpot("placeholderGreen")}
-          />
-          <ForestBookshelfTapSpot
-            rect={spotLayout.spinesDiary}
-            label="これまでの日記ブック一覧を開く"
-            selected={panel === "list-diary"}
-            onActivate={() => activateSpot("spinesDiary")}
-          />
-
-          {peekCard ? (
-            <>
-              <button
-                type="button"
-                className="absolute inset-0 z-[25] bg-stone-900/20"
-                aria-label="カードを閉じる"
-                onClick={closeAll}
-              />
-              <ForestBookshelfPeekCard card={peekCard} onClose={closeAll} />
-            </>
-          ) : null}
-        </div>
-
-        <p className="mt-3 text-center text-[11px] leading-relaxed text-[#8a7b6a]">
-          本をタップしてカードを開き、「選ぶ」で詳細へ進みます。背表紙は一覧です。
-        </p>
-      </div>
+          <div className="relative mx-auto w-full max-w-[28rem] px-2 pb-6 sm:max-w-[32rem] sm:px-4">
+            {scene}
+            <p className="mt-3 text-center text-[11px] leading-relaxed text-[#8a7b6a]">
+              本をタップしてカードを開き、「選ぶ」で詳細へ進みます。背表紙は一覧です。
+            </p>
+          </div>
+        </>
+      )}
 
       {panel === "list-kantei" ? (
         <ForestBookshelfListPanel

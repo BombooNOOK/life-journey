@@ -1,6 +1,11 @@
-/** 森の本棚 — アセットパス（576×1024 設計） */
+/** 森の本棚 — アセットパス（576×1024 設計）
+ *
+ * 本体差し替え: `public/images/ljd/bookshelf/bookshelf_main.png` を上書きし、
+ * `ASSET_VERSION` を +1 する（キャッシュ破棄）。パーツ類は別ファイルのまま。
+ */
 
 export const FOREST_BOOKSHELF_ASSET_DIR = "/images/ljd/bookshelf" as const;
+/** 本体画像差し替え時に上げる */
 const ASSET_VERSION = 3;
 
 function asset(filename: string): string {
