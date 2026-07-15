@@ -5,7 +5,7 @@ import { MyPageManageMenuRow, MyPageManageMenuSection } from "@/components/order
 import { MyPageSubpageHeader } from "@/components/orders/MyPageSubpageHeader";
 import { getViewerEmailFromCookie } from "@/lib/auth/viewer";
 import { loadMyPageSettingsContext } from "@/lib/mypage/loadMyPageSettingsContext";
-import { LOG_HOUSE_BACK_TO_LABEL } from "@/lib/journal/logHouseLabels";
+import { LOG_HOUSE_RETURN_TO_LABEL } from "@/lib/journal/logHouseLabels";
 
 export const dynamic = "force-dynamic";
 
@@ -56,7 +56,7 @@ export default async function MyPageSettingsIndexPage() {
 
       <p>
         <Link href="/orders" className="text-sm text-stone-600 hover:text-stone-900">
-          {LOG_HOUSE_BACK_TO_LABEL}
+          {LOG_HOUSE_RETURN_TO_LABEL}
         </Link>
       </p>
     </div>

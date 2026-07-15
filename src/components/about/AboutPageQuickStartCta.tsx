@@ -10,7 +10,7 @@ import {
 import { OwlNavButton } from "@/components/ui/OwlNavButton";
 import { useAboutPageCtaAudienceContext } from "@/components/about/AboutPageCtaAudienceProvider";
 import {
-  LOG_HOUSE_BACK_TO_LABEL,
+  LOG_HOUSE_RETURN_TO_LABEL,
   LOG_HOUSE_LOADING_LABEL,
 } from "@/lib/journal/logHouseLabels";
 import { FIRST_VISIT_ROUTES } from "@/lib/onboarding/firstVisitWizard/routes";
@@ -59,7 +59,7 @@ export function AboutPageQuickStartCta() {
             loadingLabel={LOG_HOUSE_LOADING_LABEL}
             className={heroCtaSecondaryClass}
           >
-            {LOG_HOUSE_BACK_TO_LABEL}
+            {LOG_HOUSE_RETURN_TO_LABEL}
           </OwlNavButton>
         </div>
       </section>

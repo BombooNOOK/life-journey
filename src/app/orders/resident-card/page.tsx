@@ -7,7 +7,7 @@ import { MyPageSubpageHeader } from "@/components/orders/MyPageSubpageHeader";
 import { getViewerEmailFromCookie } from "@/lib/auth/viewer";
 import { withPrismaConnectionRetry } from "@/lib/db/prismaRetry";
 import { ensureForestResidentForEmail } from "@/lib/forestResident/forestResidentNumber";
-import { LOG_HOUSE_BACK_TO_LABEL } from "@/lib/journal/logHouseLabels";
+import { LOG_HOUSE_RETURN_TO_LABEL } from "@/lib/journal/logHouseLabels";
 
 export const dynamic = "force-dynamic";
 
@@ -47,7 +47,7 @@ export default async function LogHouseResidentCardPage() {
 
       <p>
         <Link href="/orders" className="text-sm text-stone-600 hover:text-stone-900">
-          {LOG_HOUSE_BACK_TO_LABEL}
+          {LOG_HOUSE_RETURN_TO_LABEL}
         </Link>
       </p>
     </div>

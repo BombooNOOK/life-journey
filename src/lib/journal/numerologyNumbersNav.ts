@@ -1,5 +1,5 @@
 import { NUMEROLOGY_NUMBER_MEANINGS_PATH } from "@/lib/journal/journalDiaryNumbersHelpCopy";
-import { LOG_HOUSE_BACK_TO_LABEL } from "@/lib/journal/logHouseLabels";
+import { LOG_HOUSE_RETURN_TO_LABEL } from "@/lib/journal/logHouseLabels";
 
 const ALLOWED_RETURN_PATHS = new Set([
   "/journal/preview",
@@ -84,7 +84,7 @@ export function numerologyNumbersBackLink(returnTo: string | null): {
     return { href: returnTo, label: "カレンダーへ戻る" };
   }
   if (returnTo === "/orders") {
-    return { href: returnTo, label: LOG_HOUSE_BACK_TO_LABEL };
+    return { href: returnTo, label: LOG_HOUSE_RETURN_TO_LABEL };
   }
   return { href: returnTo, label: "前の画面へ戻る" };
 }

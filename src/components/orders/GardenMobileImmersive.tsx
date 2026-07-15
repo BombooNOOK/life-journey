@@ -23,7 +23,7 @@ import type {
   GardenPlantView,
   GardenStateView,
 } from "@/lib/garden/gardenPlant";
-import { LOG_HOUSE_BACK_TO_LABEL } from "@/lib/journal/logHouseLabels";
+import { LOG_HOUSE_RETURN_TO_LABEL } from "@/lib/journal/logHouseLabels";
 import type { LogHouseRoomTimeOfDay } from "@/lib/loghouse/logHouseRoomTimeTheme";
 
 type Props = {
@@ -206,7 +206,7 @@ export function GardenMobileImmersive({
             href={backHref}
             className="inline-flex min-h-[40px] items-center rounded-full border border-stone-500/20 bg-[#fffdf9]/75 px-3 text-xs font-medium text-stone-700 shadow-sm backdrop-blur-[3px]"
           >
-            ← {previewMode ? "プレビュー一覧" : LOG_HOUSE_BACK_TO_LABEL}
+            ← {previewMode ? "プレビュー一覧" : LOG_HOUSE_RETURN_TO_LABEL}
           </Link>
           <p className="rounded-full border border-stone-500/15 bg-[#fffdf9]/7 px-3 py-2 text-xs font-medium text-stone-700 shadow-sm backdrop-blur-[2px]">
             {GARDEN_PAGE_TITLE}

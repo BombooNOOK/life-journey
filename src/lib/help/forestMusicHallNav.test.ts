@@ -21,7 +21,7 @@ describe("resolveForestMusicHallBackLink", () => {
   it("returns loghouse back link from orders", () => {
     expect(resolveForestMusicHallBackLink("/orders")).toEqual({
       href: "/orders",
-      label: "もといた場所に戻る",
+      label: "ログハウスへ戻る",
     });
   });
 

@@ -12,7 +12,7 @@ import {
   LOG_HOUSE_MAILBOX_PAGE_TITLE,
 } from "@/lib/loghouse/logHouseMailboxCopy";
 import type { MailboxNoticeView } from "@/lib/loghouse/mailboxNotices";
-import { LOG_HOUSE_BACK_TO_LABEL } from "@/lib/journal/logHouseLabels";
+import { LOG_HOUSE_RETURN_TO_LABEL } from "@/lib/journal/logHouseLabels";
 
 type Props = {
   initialNotices: MailboxNoticeView[];
@@ -50,7 +50,7 @@ export function LogHouseMailboxPageClient({ initialNotices }: Props) {
         title={LOG_HOUSE_MAILBOX_PAGE_TITLE}
         description={LOG_HOUSE_MAILBOX_PAGE_DESCRIPTION}
         backHref="/orders"
-        backLabel={LOG_HOUSE_BACK_TO_LABEL}
+        backLabel={LOG_HOUSE_RETURN_TO_LABEL}
       />
 
       {notices.length === 0 ? (

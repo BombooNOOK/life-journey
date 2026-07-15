@@ -19,7 +19,7 @@ import {
   LOG_HOUSE_DESK_WRITE_SOLO_HREF,
   LOG_HOUSE_DESK_WRITE_SOLO_TITLE,
 } from "@/lib/loghouse/logHouseDeskWritingChoice";
-import { LOG_HOUSE_BACK_TO_LABEL } from "@/lib/journal/logHouseLabels";
+import { LOG_HOUSE_RETURN_TO_LABEL } from "@/lib/journal/logHouseLabels";
 import {
   LJD_PAPER_CARD_CLASS,
   LJD_PAPER_CHIP_ACTIVE_CLASS,
@@ -69,7 +69,7 @@ export function LogHouseDeskWritingChoice({
         title={LOG_HOUSE_DESK_WRITE_PAGE_TITLE}
         description={LOG_HOUSE_DESK_WRITE_PAGE_DESCRIPTION}
         backHref="/orders"
-        backLabel={LOG_HOUSE_BACK_TO_LABEL}
+        backLabel={LOG_HOUSE_RETURN_TO_LABEL}
       />
 
       {showProfilePicker ? (

@@ -13,7 +13,7 @@ import {
   LOG_HOUSE_MAILBOX_PAGE_TITLE,
 } from "@/lib/loghouse/logHouseMailboxCopy";
 import { listMailboxNoticesForProfile } from "@/lib/loghouse/mailboxNotices";
-import { LOG_HOUSE_BACK_TO_LABEL } from "@/lib/journal/logHouseLabels";
+import { LOG_HOUSE_RETURN_TO_LABEL } from "@/lib/journal/logHouseLabels";
 import { listProfilesAndActiveProfileId } from "@/lib/profile/activeProfile";
 
 export const dynamic = "force-dynamic";
@@ -43,7 +43,7 @@ export default async function LogHouseMailboxPage() {
           />
           <p className="text-sm text-stone-600">ポストを使うには、プロフィールが必要です。</p>
           <Link href="/orders" className="text-sm text-emerald-900 underline-offset-2 hover:underline">
-            {LOG_HOUSE_BACK_TO_LABEL}
+            {LOG_HOUSE_RETURN_TO_LABEL}
           </Link>
         </div>
       );

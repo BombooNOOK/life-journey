@@ -1,7 +1,7 @@
 import { LogHouseGoOutDestinationList } from "@/components/orders/LogHouseGoOutDestinationCard";
 import { MyPageSubpageHeader } from "@/components/orders/MyPageSubpageHeader";
 import { LOG_HOUSE_GO_OUT_PAGE_DESCRIPTION, LOG_HOUSE_GO_OUT_PAGE_TITLE } from "@/lib/loghouse/logHouseGoOutCopy";
-import { LOG_HOUSE_BACK_TO_LABEL } from "@/lib/journal/logHouseLabels";
+import { LOG_HOUSE_RETURN_TO_LABEL } from "@/lib/journal/logHouseLabels";
 
 type Props = {
   kanteiHallHref: string;
@@ -15,7 +15,7 @@ export function LogHouseGoOutPageContent({ kanteiHallHref }: Props) {
         title={LOG_HOUSE_GO_OUT_PAGE_TITLE}
         description={LOG_HOUSE_GO_OUT_PAGE_DESCRIPTION}
         backHref="/orders"
-        backLabel={LOG_HOUSE_BACK_TO_LABEL}
+        backLabel={LOG_HOUSE_RETURN_TO_LABEL}
       />
 
       <LogHouseGoOutDestinationList kanteiHallHref={kanteiHallHref} />

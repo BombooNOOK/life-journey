@@ -19,7 +19,7 @@ import {
   GARDEN_WATER_BUTTON_LABEL,
 } from "@/lib/garden/gardenCopy";
 import type { GardenStateView } from "@/lib/garden/gardenPlant";
-import { LOG_HOUSE_BACK_TO_LABEL } from "@/lib/journal/logHouseLabels";
+import { LOG_HOUSE_RETURN_TO_LABEL } from "@/lib/journal/logHouseLabels";
 import { useIsLogHouseMobileViewport } from "@/lib/loghouse/logHouseViewport";
 
 type Props = {
@@ -46,7 +46,7 @@ function GardenDesktopPanel({ initialState }: Props) {
         title={GARDEN_PAGE_TITLE}
         description={GARDEN_PAGE_DESCRIPTION}
         backHref="/orders"
-        backLabel={LOG_HOUSE_BACK_TO_LABEL}
+        backLabel={LOG_HOUSE_RETURN_TO_LABEL}
       />
 
       <div className="space-y-5">

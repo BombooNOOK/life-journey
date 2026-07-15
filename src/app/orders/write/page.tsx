@@ -9,7 +9,7 @@ import { getViewerEmailFromCookie } from "@/lib/auth/viewer";
 import { withPrismaConnectionRetry } from "@/lib/db/prismaRetry";
 import { loadEntitlementContext } from "@/lib/entitlement/accountSettingsForEntitlement";
 import { calendarDayKeyInJapan, journalWithCompanionPath } from "@/lib/journal/journalNav";
-import { LOG_HOUSE_BACK_TO_LABEL } from "@/lib/journal/logHouseLabels";
+import { LOG_HOUSE_RETURN_TO_LABEL } from "@/lib/journal/logHouseLabels";
 import {
   LOG_HOUSE_DESK_WRITE_PAGE_DESCRIPTION,
   LOG_HOUSE_DESK_WRITE_PAGE_PATH,
@@ -58,7 +58,7 @@ export default async function LogHouseDeskWritePage() {
           />
           <p className="text-sm text-stone-600">日記を書くには、プロフィールが必要です。</p>
           <Link href="/orders" className="text-sm text-emerald-900 underline-offset-2 hover:underline">
-            {LOG_HOUSE_BACK_TO_LABEL}
+            {LOG_HOUSE_RETURN_TO_LABEL}
           </Link>
         </div>
       );

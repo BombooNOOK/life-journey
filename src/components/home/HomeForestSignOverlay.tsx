@@ -314,7 +314,13 @@ export function HomeForestSignOverlay({
           width={682}
           height={1024}
           sizes={viewport === "mobile" ? "46vw" : "224px"}
-          className="h-full w-full object-contain object-bottom"
+          className={[
+            "h-full w-full object-contain object-bottom transition-[filter,opacity] duration-700 ease-in-out",
+            // 夜背景に対して昼用の明るいトーンを一段落とす
+            timeOfDay === "night"
+              ? "brightness-[0.72] contrast-[0.96] saturate-[0.88] opacity-[0.92]"
+              : "brightness-100 opacity-100",
+          ].join(" ")}
           priority
           unoptimized
         />

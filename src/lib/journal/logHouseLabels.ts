@@ -3,13 +3,21 @@ export const LOG_HOUSE_PAGE_TITLE = "ログハウス";
 
 export const LOG_HOUSE_SHORT_LABEL = "ログハウス";
 
+/** 行き先がログハウス固定のときの戻る文言 */
+export const LOG_HOUSE_RETURN_TO_LABEL = "ログハウスへ戻る";
+
+/**
+ * 行き先がログハウス固定のときの戻る導線。
+ * 「もといた場所」は returnTo で行き先が変わる画面だけで使う。
+ */
 export const LOG_HOUSE_BACK_LINK = {
   href: "/orders" as const,
-  label: "← もといた場所に戻る",
+  label: `← ${LOG_HOUSE_RETURN_TO_LABEL}` as const,
 };
 
-export const LOG_HOUSE_BACK_TO_LINK_LABEL = "← もといた場所に戻る";
+export const LOG_HOUSE_BACK_TO_LINK_LABEL = `← ${LOG_HOUSE_RETURN_TO_LABEL}` as const;
 
+/** returnTo がある画面向けの汎用「戻る」文言（行き先は呼び出し側の href） */
 export const LOG_HOUSE_BACK_TO_LABEL = "もといた場所に戻る";
 
 export const LOG_HOUSE_LOADING_LABEL = "ログハウスを開いています…";

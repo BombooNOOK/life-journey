@@ -13,7 +13,7 @@ import {
   GARDEN_PAGE_TITLE,
 } from "@/lib/garden/gardenCopy";
 import { loadGardenStateForProfile } from "@/lib/garden/gardenPlant";
-import { LOG_HOUSE_BACK_TO_LABEL } from "@/lib/journal/logHouseLabels";
+import { LOG_HOUSE_RETURN_TO_LABEL } from "@/lib/journal/logHouseLabels";
 import { listProfilesAndActiveProfileId } from "@/lib/profile/activeProfile";
 
 export const dynamic = "force-dynamic";
@@ -53,7 +53,7 @@ export default async function GardenPage() {
           お庭を使うには、プロフィールが必要です。ログハウスの設定から追加できます。
         </p>
         <Link href="/orders" className="text-sm text-emerald-900 underline-offset-2 hover:underline">
-          {LOG_HOUSE_BACK_TO_LABEL}
+          {LOG_HOUSE_RETURN_TO_LABEL}
         </Link>
       </div>
     );

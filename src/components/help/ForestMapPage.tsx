@@ -20,7 +20,6 @@ import { FOREST_MAP_HOTSPOTS } from "@/lib/help/forestMapHotspots";
 import type {
   ForestGuideMapKanteiHallLink,
 } from "@/lib/help/forestGuideMapKanteiHallLink";
-import { LOG_HOUSE_NAV_LABEL } from "@/lib/journal/logHouseLabels";
 import type { LogHouseRoomTimeOfDay } from "@/lib/loghouse/logHouseRoomTimeTheme";
 import { FIRST_VISIT_ROUTES } from "@/lib/onboarding/firstVisitWizard/routes";
 
@@ -170,6 +169,11 @@ function MapStage({
   );
 }
 
+const FOREST_ENTRANCE_HOME = {
+  href: "/" as const,
+  label: "森の入口へ",
+};
+
 function ForestMapChrome({ backLink }: { backLink: BackLink }) {
   return (
     <div className="pointer-events-none absolute inset-x-0 top-0 z-40 flex items-start justify-between gap-2 px-3 pb-2 pt-[max(0.75rem,env(safe-area-inset-top))]">
@@ -185,10 +189,10 @@ function ForestMapChrome({ backLink }: { backLink: BackLink }) {
       </div>
       <div className="pointer-events-auto">
         <Link
-          href="/orders"
+          href={FOREST_ENTRANCE_HOME.href}
           className={chromeButtonClass}
-          aria-label={`${LOG_HOUSE_NAV_LABEL}へ`}
-          title={`${LOG_HOUSE_NAV_LABEL}へ`}
+          aria-label={FOREST_ENTRANCE_HOME.label}
+          title={FOREST_ENTRANCE_HOME.label}
         >
           <HomeIcon />
         </Link>
@@ -223,7 +227,7 @@ export function ForestMapPage({
       const dest = FOREST_MAP_DESTINATIONS[spot.id];
       if (dest.href && !dest.external) router.prefetch(dest.href);
     });
-    router.prefetch("/orders");
+    router.prefetch(FOREST_ENTRANCE_HOME.href);
     if (backLink.href) router.prefetch(backLink.href);
     if (kanteiLink?.href) router.prefetch(kanteiLink.href);
   }, [backLink.href, kanteiLink?.href, router]);
