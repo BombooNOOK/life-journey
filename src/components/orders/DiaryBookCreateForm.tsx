@@ -37,6 +37,10 @@ type CreatedBookSummary = {
 
 type Props = {
   blockContinuedFeatures?: boolean;
+  /** 森の本棚など、最初からフォームを開いた状態にする */
+  defaultOpen?: boolean;
+  /** 作成成功時（親が遷移・パネル閉じを担当する場合） */
+  onCreated?: (book: { id: string; title: string }) => void;
 };
 
 const DEFAULT_NO_ENTRIES_MESSAGE =
@@ -59,10 +63,14 @@ export function diaryBookCreateDisabledReason(params: {
   return null;
 }
 
-export function DiaryBookCreateForm({ blockContinuedFeatures = false }: Props) {
+export function DiaryBookCreateForm({
+  blockContinuedFeatures = false,
+  defaultOpen = false,
+  onCreated,
+}: Props) {
   const router = useRouter();
   const today = useMemo(() => new Date().toISOString().slice(0, 10), []);
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(defaultOpen);
   const [title, setTitle] = useState("");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState(today);
@@ -195,6 +203,7 @@ export function DiaryBookCreateForm({ blockContinuedFeatures = false }: Props) {
       }
       setCreatedBook({ id: createdId, title: createdTitle });
       setOpen(true);
+      onCreated?.({ id: createdId, title: createdTitle });
       router.refresh();
     } catch {
       setError("日記ブックの作成に失敗しました。");

@@ -89,6 +89,18 @@ const links: { href: string; label: string; note?: string; highlight?: boolean }
     highlight: true,
   },
   {
+    href: "/preview/forest-bookshelf",
+    label: "森の本棚",
+    note: "ログイン不要。本棚配置・小カード・背表紙一覧を確認。npm run dev 中のみ",
+    highlight: true,
+  },
+  {
+    href: "/preview/forest-bookshelf/layout",
+    label: "森の本棚レイアウト定規",
+    note: "576×1024 を 1:1。グリッド・見本半透明・パーツ枠・数値下書き。npm run dev 中のみ",
+    highlight: true,
+  },
+  {
     href: "/preview/garden",
     label: "お庭（モバイル没入）",
     note: "ログイン不要。ジョウロタップで成長確認。npm run dev 中のみ",
