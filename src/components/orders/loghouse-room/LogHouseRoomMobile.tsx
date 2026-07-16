@@ -27,7 +27,7 @@ import { OwlDelayedBusyOverlay } from "@/components/ui/OwlDelayedBusyOverlay";
 import { useLogHouseRadioPlayer } from "@/components/orders/loghouse-room/LogHouseRadioPlayerProvider";
 import { useLogHouseRoomTimeTheme } from "@/hooks/useLogHouseRoomTimeOfDay";
 import type { SerializedUserEntitlement } from "@/lib/entitlement/resolveUserEntitlement";
-import { getStubDonguriChoView, type DonguriChoView } from "@/lib/loghouse/donguriLedger";
+import { getStubDonguriChoView, type DonguriChoView } from "@/lib/loghouse/donguriTypes";
 import { buildForestMusicHallHref } from "@/lib/help/forestMusicHallNav";
 import {
   LOG_HOUSE_ROOM_MOBILE_BG_BY_TIME,

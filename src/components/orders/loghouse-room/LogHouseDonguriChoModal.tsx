@@ -18,7 +18,7 @@ import {
 import {
   formatDonguriDelta,
   type DonguriChoView,
-} from "@/lib/loghouse/donguriLedger";
+} from "@/lib/loghouse/donguriTypes";
 
 type Props = {
   open: boolean;

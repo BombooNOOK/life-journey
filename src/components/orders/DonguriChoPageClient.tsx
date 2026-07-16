@@ -12,7 +12,7 @@ import {
   DONGURI_RECENT_LEDGER_LABEL,
   DONGURI_TODAY_DELIVERY_LABEL,
 } from "@/lib/loghouse/donguriCopy";
-import { formatDonguriDelta, type DonguriChoView } from "@/lib/loghouse/donguriLedger";
+import { formatDonguriDelta, type DonguriChoView } from "@/lib/loghouse/donguriTypes";
 import { LJD_PAGE_BG_CLASS, LJD_PAPER_CARD_CLASS } from "@/lib/ljd/ljdPaperSurface";
 import { LOG_HOUSE_RETURN_TO_LABEL } from "@/lib/journal/logHouseLabels";
 

@@ -9,34 +9,20 @@ import {
   DONGURI_PAGE_PATH,
   DONGURI_REASON_LABELS,
   donguriReasonLabel,
+  type DonguriChoView,
   type DonguriCreatedBy,
+  type DonguriLedgerEntryView,
   type DonguriReason,
 } from "@/lib/loghouse/donguriTypes";
 import { MAILBOX_NOTICE_TYPE_DAILY_ACORN_DELIVERY } from "@/lib/loghouse/mailboxNoticeTypes";
 
-export type DonguriLedgerKind = "delivery" | "spend";
-
-export type DonguriLedgerEntryView = {
-  id: string;
-  kind: DonguriLedgerKind;
-  label: string;
-  reason: string;
-  title: string;
-  description: string | null;
-  delta: number;
-  dateKey: string | null;
-  relatedNoticeId: string | null;
-  createdBy: string;
-  createdAt: string;
-};
-
-export type DonguriChoView = {
-  balance: number;
-  todayDelivery: { label: string; delta: number } | null;
-  recent: DonguriLedgerEntryView[];
-};
-
-export type DonguriAdminLedgerRow = DonguriLedgerEntryView;
+export type {
+  DonguriAdminLedgerRow,
+  DonguriChoView,
+  DonguriLedgerEntryView,
+  DonguriLedgerKind,
+} from "@/lib/loghouse/donguriTypes";
+export { formatDonguriDelta, getStubDonguriChoView } from "@/lib/loghouse/donguriTypes";
 
 function toView(row: {
   id: string;
@@ -62,11 +48,6 @@ function toView(row: {
     createdBy: row.createdBy,
     createdAt: row.createdAt.toISOString(),
   };
-}
-
-export function formatDonguriDelta(delta: number): string {
-  if (delta > 0) return `+${delta}`;
-  return String(delta);
 }
 
 export async function sumDonguriBalance(params: {
@@ -330,13 +311,4 @@ export async function grantDonguriByAdmin(params: {
   });
 
   return { entry: toView(result.ledger), noticeId: result.noticeId };
-}
-
-/** @deprecated スタブ。本番は getDonguriChoView を使う */
-export function getStubDonguriChoView(): DonguriChoView {
-  return {
-    balance: 0,
-    todayDelivery: null,
-    recent: [],
-  };
 }

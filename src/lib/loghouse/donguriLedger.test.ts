@@ -1,8 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { calendarDayKeyInJapanFromDate } from "@/lib/date/japanCalendarDate";
-import { formatDonguriDelta } from "@/lib/loghouse/donguriLedger";
-import { donguriReasonLabel } from "@/lib/loghouse/donguriTypes";
+import { donguriReasonLabel, formatDonguriDelta } from "@/lib/loghouse/donguriTypes";
 
 describe("donguriTypes / format", () => {
   it("maps reason labels for users", () => {

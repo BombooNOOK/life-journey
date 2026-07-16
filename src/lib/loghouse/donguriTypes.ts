@@ -46,3 +46,43 @@ export const DONGURI_DAILY_MAIL_BODY = [
 ].join("\n");
 
 export const DONGURI_ADMIN_GRANT_TITLE = "森からのおとどけ" as const;
+
+/** クライアントでも使える表示用型・ヘルパー（DBアクセスなし） */
+
+export type DonguriLedgerKind = "delivery" | "spend";
+
+export type DonguriLedgerEntryView = {
+  id: string;
+  kind: DonguriLedgerKind;
+  label: string;
+  reason: string;
+  title: string;
+  description: string | null;
+  delta: number;
+  dateKey: string | null;
+  relatedNoticeId: string | null;
+  createdBy: string;
+  createdAt: string;
+};
+
+export type DonguriChoView = {
+  balance: number;
+  todayDelivery: { label: string; delta: number } | null;
+  recent: DonguriLedgerEntryView[];
+};
+
+export type DonguriAdminLedgerRow = DonguriLedgerEntryView;
+
+export function formatDonguriDelta(delta: number): string {
+  if (delta > 0) return `+${delta}`;
+  return String(delta);
+}
+
+/** プレビュー／フォールバック用の空どんぐり帳 */
+export function getStubDonguriChoView(): DonguriChoView {
+  return {
+    balance: 0,
+    todayDelivery: null,
+    recent: [],
+  };
+}

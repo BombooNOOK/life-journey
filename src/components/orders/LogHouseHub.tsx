@@ -17,7 +17,7 @@ import { MyPageManageHub } from "@/components/orders/MyPageManageMenu";
 import { TrialStatusBanner } from "@/components/entitlement/TrialStatusBanner";
 import type { SerializedUserEntitlement } from "@/lib/entitlement/resolveUserEntitlement";
 import type { FirstVisitGuideState } from "@/lib/onboarding/firstVisitGuideState";
-import type { DonguriChoView } from "@/lib/loghouse/donguriLedger";
+import type { DonguriChoView } from "@/lib/loghouse/donguriTypes";
 import { useIsLogHouseMobileViewport } from "@/lib/loghouse/logHouseViewport";
 
 type ProfileRow = { id: string; nickname: string };
