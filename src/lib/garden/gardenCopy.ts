@@ -64,6 +64,9 @@ export const GARDEN_PAGE_DESCRIPTION =
 
 export const GARDEN_WATER_BUTTON_LABEL = "お水をあげる" as const;
 
+/** ジョウロタップ直後の演出カード文言 */
+export const GARDEN_WATERING_FX_LABEL = "お水をあげています" as const;
+
 export const GARDEN_STATUS_NOT_WATERED = "気が向いたら、お水をあげてみてください" as const;
 export const GARDEN_STATUS_WATERED = "今日はもうお水をもらいました" as const;
 export const GARDEN_STATUS_COMPLETE = "きれいなお花が咲きました" as const;

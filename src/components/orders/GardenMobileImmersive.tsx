@@ -5,7 +5,9 @@ import Link from "next/link";
 import { useEffect, type CSSProperties } from "react";
 
 import { GardenBloomChoicePanel } from "@/components/orders/GardenBloomChoicePanel";
+import { GardenWateringTransitionOverlay } from "@/components/orders/GardenWateringTransitionOverlay";
 import { useGardenWatering } from "@/hooks/useGardenWatering";
+import { useGardenWateringFx } from "@/hooks/useGardenWateringFx";
 import { useLogHouseRoomTimeTheme } from "@/hooks/useLogHouseRoomTimeOfDay";
 import {
   GARDEN_BG_BY_TIME,
@@ -185,6 +187,12 @@ export function GardenMobileImmersive({
     clearNotice,
   } = useGardenWatering(initialState, { previewMode });
 
+  const canAnimateWater = previewMode ? !plant.isComplete : plant.canWater;
+  const { wateringFxActive, requestWater, completeFx } = useGardenWateringFx({
+    canAnimate: canAnimateWater,
+    water,
+  });
+
   useEffect(() => {
     if (!notice && !error) return;
     const timer = window.setTimeout(() => {
@@ -197,6 +205,7 @@ export function GardenMobileImmersive({
   const ambientBg = timeOfDay === "night" ? "#1a2430" : "#dfe8d4";
   const showBloom = plant.showBloomChoices;
   const showWateringCan = !plant.isComplete;
+  const stageBusy = busy || wateringFxActive;
 
   const chrome = (
     <>
@@ -270,14 +279,15 @@ export function GardenMobileImmersive({
             <GardenStage
               plant={plant}
               displayFlowers={displayFlowers}
-              busy={busy}
+              busy={stageBusy}
               showWateringCan={showWateringCan}
-              onWater={() => void water()}
+              onWater={requestWater}
               timeOfDay={timeOfDay}
             />
           </div>
           {chrome}
         </div>
+        {wateringFxActive ? <GardenWateringTransitionOverlay onComplete={completeFx} /> : null}
       </div>
     );
   }
@@ -295,14 +305,15 @@ export function GardenMobileImmersive({
           <GardenStage
             plant={plant}
             displayFlowers={displayFlowers}
-            busy={busy}
+            busy={stageBusy}
             showWateringCan={showWateringCan}
-            onWater={() => void water()}
+            onWater={requestWater}
             timeOfDay={timeOfDay}
           />
         </div>
       </div>
       {chrome}
+      {wateringFxActive ? <GardenWateringTransitionOverlay onComplete={completeFx} /> : null}
     </div>
   );
 }

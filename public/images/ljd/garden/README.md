@@ -37,6 +37,8 @@
 | ファイル名 | 用途 |
 |------------|------|
 | `garden_watering_can.png` | 水やり（モバイルはタップ対象） |
+| `garden_water_can_pose.png` | 水やり演出：通常ポーズ |
+| `garden_water_pouring.png` | 水やり演出：お水が出ている |
 | `garden_destination_icon.png` | おでかけ「お庭に出る」カード |
 
 ## 配置調整

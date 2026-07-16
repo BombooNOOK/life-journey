@@ -5,9 +5,11 @@ import Link from "next/link";
 
 import { GardenBloomChoicePanel } from "@/components/orders/GardenBloomChoicePanel";
 import { GardenMobileImmersive } from "@/components/orders/GardenMobileImmersive";
+import { GardenWateringTransitionOverlay } from "@/components/orders/GardenWateringTransitionOverlay";
 import { MyPageSubpageHeader } from "@/components/orders/MyPageSubpageHeader";
 import { OwlLoadingInline } from "@/components/ui/OwlLoadingInline";
 import { useGardenWatering } from "@/hooks/useGardenWatering";
+import { useGardenWateringFx } from "@/hooks/useGardenWateringFx";
 import { useLogHouseRoomTimeTheme } from "@/hooks/useLogHouseRoomTimeOfDay";
 import {
   GARDEN_BG_BY_TIME,
@@ -39,6 +41,12 @@ function GardenDesktopPanel({ initialState }: Props) {
     water,
     chooseBloom,
   } = useGardenWatering(initialState);
+
+  const { wateringFxActive, requestWater, completeFx } = useGardenWateringFx({
+    canAnimate: plant.canWater,
+    water,
+  });
+  const buttonBusy = busy || wateringFxActive;
 
   return (
     <div className="mx-auto w-full max-w-md space-y-5 sm:space-y-6">
@@ -151,11 +159,11 @@ function GardenDesktopPanel({ initialState }: Props) {
         {!plant.isComplete ? (
           <button
             type="button"
-            disabled={!plant.canWater || busy}
-            onClick={() => void water()}
+            disabled={!plant.canWater || buttonBusy}
+            onClick={requestWater}
             className="inline-flex min-h-[48px] w-full items-center justify-center gap-2 rounded-xl border border-emerald-300/80 bg-emerald-50/90 px-4 text-base font-semibold text-emerald-950 transition hover:bg-emerald-100 disabled:cursor-not-allowed disabled:opacity-55"
           >
-            {busy ? (
+            {buttonBusy ? (
               <OwlLoadingInline label="お水をあげています…" size="sm" />
             ) : (
               <>
@@ -180,6 +188,8 @@ function GardenDesktopPanel({ initialState }: Props) {
           ← おでかけに戻る
         </Link>
       </p>
+
+      {wateringFxActive ? <GardenWateringTransitionOverlay onComplete={completeFx} /> : null}
     </div>
   );
 }

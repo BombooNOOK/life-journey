@@ -3,7 +3,7 @@ import type { LogHouseRoomTimeOfDay } from "@/lib/loghouse/logHouseRoomTimeTheme
 
 export const GARDEN_ASSET_DIR = "/images/ljd/garden" as const;
 
-const GARDEN_ASSET_VERSION = 4;
+const GARDEN_ASSET_VERSION = 5;
 
 function gardenAsset(filename: string): string {
   return `${GARDEN_ASSET_DIR}/${filename}?v=${GARDEN_ASSET_VERSION}`;
@@ -11,6 +11,12 @@ function gardenAsset(filename: string): string {
 
 /** ジョウロ（水やり・没入UI） */
 export const GARDEN_WATERING_CAN_SRC = gardenAsset("garden_watering_can.png");
+
+/** 水やり演出：通常ポーズ */
+export const GARDEN_WATER_CAN_POSE_SRC = gardenAsset("garden_water_can_pose.png");
+
+/** 水やり演出：お水が出ている */
+export const GARDEN_WATER_POURING_SRC = gardenAsset("garden_water_pouring.png");
 
 /** おでかけ行き先アイコン */
 export const GARDEN_DESTINATION_ICON_SRC = gardenAsset("garden_destination_icon.png");

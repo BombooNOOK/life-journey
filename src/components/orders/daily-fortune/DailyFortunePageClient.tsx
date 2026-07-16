@@ -10,6 +10,9 @@ import {
   DAILY_FORTUNE_BG_SRC,
 } from "@/lib/ljd/dailyFortuneAssets";
 import {
+  DAILY_FORTUNE_FONT_SIZE_DISMISS,
+  DAILY_FORTUNE_FONT_SIZE_LINK_LABEL,
+  DAILY_FORTUNE_FONT_SIZE_MODAL_TITLE,
   DAILY_FORTUNE_HELP_BODY,
   DAILY_FORTUNE_HELP_BUTTON_LABEL,
   DAILY_FORTUNE_HELP_DISMISS,
@@ -164,12 +167,15 @@ export function DailyFortunePageClient({
 }: Props) {
   const helpTitleId = useId();
   const themeTitleId = useId();
+  const fontSizeTitleId = useId();
   const [helpOpen, setHelpOpen] = useState(false);
   const [themeOpen, setThemeOpen] = useState(false);
+  const [fontSizeOpen, setFontSizeOpen] = useState(false);
   const layout = { ...DAILY_FORTUNE_LAYOUT, ...layoutOverride };
 
   const closeHelp = useCallback(() => setHelpOpen(false), []);
   const closeTheme = useCallback(() => setThemeOpen(false), []);
+  const closeFontSize = useCallback(() => setFontSizeOpen(false), []);
 
   const yearLines = themeLines(yearTheme);
   const monthLines = themeLines(monthTheme);
@@ -243,7 +249,7 @@ export function DailyFortunePageClient({
 
           <p
             id="today-hint"
-            className="pointer-events-none absolute z-[3] flex items-center justify-center px-1.5 text-center text-[1.05rem] font-medium leading-snug text-[#3f3428]"
+            className="pointer-events-none absolute z-[3] flex items-center justify-center px-1.5 text-center text-[1.05rem] font-medium leading-snug text-[#5a4f42]"
             style={dailyFortuneRectStyle(layout.message)}
           >
             {message}
@@ -251,7 +257,7 @@ export function DailyFortunePageClient({
 
           <p
             id="guardian-color"
-            className="pointer-events-none absolute z-[3] flex items-center justify-center text-center text-[1.2rem] font-semibold text-[#5c3d28]"
+            className="pointer-events-none absolute z-[3] flex items-center justify-center text-center text-[1.2rem] font-medium text-[#6a5748]"
             style={dailyFortuneRectStyle(layout.colorLabel)}
           >
             {color.label}
@@ -288,7 +294,7 @@ export function DailyFortunePageClient({
           </div>
 
           <p
-            className="pointer-events-none absolute z-[3] flex items-center justify-center whitespace-normal px-1.5 text-center text-[1.05rem] font-medium leading-snug text-[#3f3428]"
+            className="pointer-events-none absolute z-[3] flex items-center justify-center whitespace-normal px-1.5 text-center text-[1.05rem] font-medium leading-snug text-[#5a4f42]"
             style={dailyFortuneRectStyle(layout.smallAction)}
           >
             {smallAction}
@@ -310,12 +316,29 @@ export function DailyFortunePageClient({
       </div>
 
       {hideChrome ? null : (
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 z-40 px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
-          <div className="pointer-events-auto mx-auto w-full max-w-[17rem] rounded-full border border-[#d9cbb8]/90 bg-[#fffdf8]/92 px-3 py-2 shadow-sm backdrop-blur-[2px]">
-            <ReadingFontSizeControl variant="hero" comfortable />
-          </div>
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 z-40 flex justify-center px-3 pb-[max(0.85rem,env(safe-area-inset-bottom))]">
+          <button
+            type="button"
+            onClick={() => setFontSizeOpen(true)}
+            className="pointer-events-auto text-[0.8125rem] font-medium text-[#8a7a68] underline decoration-[#cbbba8]/90 underline-offset-[3px] transition hover:text-[#6b5d4a]"
+          >
+            {DAILY_FORTUNE_FONT_SIZE_LINK_LABEL}
+          </button>
         </div>
       )}
+
+      {fontSizeOpen ? (
+        <PaperModal
+          titleId={fontSizeTitleId}
+          title={DAILY_FORTUNE_FONT_SIZE_MODAL_TITLE}
+          dismissLabel={DAILY_FORTUNE_FONT_SIZE_DISMISS}
+          onClose={closeFontSize}
+        >
+          <div className="rounded-full border border-[#d9cbb8]/90 bg-[#fffdf8] px-3 py-2.5 shadow-sm">
+            <ReadingFontSizeControl variant="hero" comfortable />
+          </div>
+        </PaperModal>
+      ) : null}
 
       {helpOpen ? (
         <PaperModal
