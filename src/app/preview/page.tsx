@@ -119,6 +119,12 @@ const links: { href: string; label: string; note?: string; highlight?: boolean }
     highlight: true,
   },
   {
+    href: "/preview/mailbox",
+    label: "ポスト（ヤギさん郵便）",
+    note: "ログイン不要。一覧・詳細・空状態（?empty=1）。npm run dev 中のみ",
+    highlight: true,
+  },
+  {
     href: "/preview/loghouse-room/layout",
     label: "ログハウス室内レイアウト定規",
     note: "576×1024 を 1:1 表示。グリッド・座標クリック・配置確認。npm run dev 中のみ",

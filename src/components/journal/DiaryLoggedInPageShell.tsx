@@ -27,6 +27,7 @@ function isDiaryPaperPath(pathname: string): boolean {
   if (pathname.startsWith("/orders/write")) return true;
   // 本棚トップは没入。日記ブック詳細など配下だけ紙トーン
   if (pathname.startsWith("/orders/bookshelf/")) return true;
+  if (pathname.startsWith("/orders/mailbox")) return true;
   return false;
 }
 

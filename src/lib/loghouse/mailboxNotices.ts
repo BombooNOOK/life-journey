@@ -1,33 +1,19 @@
 import { normalizeEmail } from "@/lib/auth/viewer";
 import { prisma } from "@/lib/db";
+import {
+  MAILBOX_NOTICE_TYPE_FORTUNE_REPORT_READY,
+  type MailboxNoticeView,
+} from "@/lib/loghouse/mailboxNoticeTypes";
 
-export const MAILBOX_NOTICE_TYPE_FORTUNE_REPORT_READY = "fortune_report_ready" as const;
+export {
+  MAILBOX_NOTICE_TYPE_FORTUNE_REPORT_READY,
+  type MailboxNoticeType,
+  type MailboxNoticeView,
+} from "@/lib/loghouse/mailboxNoticeTypes";
 
-export type MailboxNoticeType =
-  | typeof MAILBOX_NOTICE_TYPE_FORTUNE_REPORT_READY
-  | "daily_acorn_delivery"
-  | "subscription_acorn_delivery"
-  | "system_notice"
-  | "season_event"
-  | "memory_letter"
-  | (string & {});
-
-export type MailboxNoticeView = {
-  id: string;
-  type: string;
-  title: string;
-  message: string;
-  actionLabel: string | null;
-  actionRoute: string | null;
-  relatedOrderId: string | null;
-  createdAt: string;
-  readAt: string | null;
-  unread: boolean;
-};
-
-const FORTUNE_REPORT_READY_TITLE = "ヤギの郵便屋さんからのお知らせ";
+const FORTUNE_REPORT_READY_TITLE = "鑑定書が届きました";
 const FORTUNE_REPORT_READY_MESSAGE =
-  "あなたの鑑定書ができあがりました。\nログハウスの本棚にしまってあります。\n\n時間のあるときに、\nゆっくり開いてみてください。";
+  "あなたの鑑定書が本棚に届いています。\n必要なときに、森の本棚から開いてください。";
 
 export function toMailboxNoticeView(row: {
   id: string;
@@ -118,6 +104,22 @@ export async function countUnreadMailboxNotices(params: {
   return prisma.logHouseMailboxNotice.count({
     where: { email, profileId, readAt: null },
   });
+}
+
+export async function getMailboxNoticeForProfile(params: {
+  email: string;
+  profileId: string;
+  noticeId: string;
+}): Promise<MailboxNoticeView | null> {
+  const email = normalizeEmail(params.email);
+  const profileId = params.profileId.trim();
+  const noticeId = params.noticeId.trim();
+  if (!email || !profileId || !noticeId) return null;
+
+  const row = await prisma.logHouseMailboxNotice.findFirst({
+    where: { id: noticeId, email, profileId },
+  });
+  return row ? toMailboxNoticeView(row) : null;
 }
 
 export async function markMailboxNoticeRead(params: {
