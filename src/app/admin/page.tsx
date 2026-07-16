@@ -2,15 +2,10 @@ import { Prisma } from "@prisma/client";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
-import {
-  toggleAdminRole,
-  toggleMonitorRole,
-  toggleSubscriberPdfAccess,
-  updatePdfDownloadLimitPerOrder,
-  updateProfileLimit,
-} from "@/app/admin/actions";
+import { AdminUserDirectory, type AdminDirectoryRow } from "@/components/admin/AdminUserDirectory";
 import { getViewerEmailFromCookie, normalizeEmail } from "@/lib/auth/viewer";
 import { isAdminEmail } from "@/lib/admin/access";
+import { backfillMissingMemberNumbers } from "@/lib/account/accountMemberNumber";
 import { prisma } from "@/lib/db";
 import { formatAdminEffectiveProfileLimitLabel } from "@/lib/profile/effectiveProfileLimit";
 import { journalWithCompanionPath } from "@/lib/journal/journalNav";
@@ -30,6 +25,8 @@ type UserRow = {
   /** AccountSettings.createdAt（プラン開始日の暫定表示用） */
   accountSettingsCreatedAt: Date | null;
   firstAppraisalAt: Date | null;
+  /** 登録順の会員番号（AccountSettings.memberNumber） */
+  memberNumber: number | null;
   isAdmin: boolean;
   isMonitor: boolean;
   profileLimit: number;
@@ -243,6 +240,7 @@ async function loadRowsPostgres(
         profileNames: [],
         accountSettingsCreatedAt: setting?.createdAt ?? null,
         firstAppraisalAt: firstPurchaseAtByEmail.get(email) ?? null,
+        memberNumber: setting?.memberNumber ?? null,
         isAdmin: setting?.isAdmin ?? false,
         isMonitor: setting?.isMonitor ?? false,
         profileLimit: setting?.profileLimit ?? 1,
@@ -251,7 +249,7 @@ async function loadRowsPostgres(
       };
     })
     .sort((a, b) => a.email.localeCompare(b.email))
-    .slice(0, 200);
+    .slice(0, 2000);
 }
 
 type AccountSettingsAdminRow = {
@@ -264,6 +262,7 @@ type AccountSettingsAdminRow = {
   updatedAt: Date;
   pdfDownloadLimitPerOrder?: number | null;
   subscriberPdfAccess?: boolean | null;
+  memberNumber?: number | null;
 };
 
 type CollapsedAccountSettings = {
@@ -275,6 +274,7 @@ type CollapsedAccountSettings = {
   profileLimit: number;
   pdfDownloadLimitPerOrder: number;
   subscriberPdfAccess: boolean;
+  memberNumber: number | null;
   updatedAt: Date;
 };
 
@@ -308,6 +308,10 @@ function collapseAccountSettingsByNormalizedEmail(
     const isAdmin = arr.some((s) => s.isAdmin === true);
     const isMonitor = arr.some((s) => s.isMonitor === true);
     const profileLimit = Math.max(...arr.map((s) => s.profileLimit));
+    const memberNumbers = arr
+      .map((s) => s.memberNumber)
+      .filter((n): n is number => n != null && Number.isFinite(n));
+    const memberNumber = memberNumbers.length > 0 ? Math.min(...memberNumbers) : null;
 
     out.set(key, {
       id: latest.id,
@@ -318,6 +322,7 @@ function collapseAccountSettingsByNormalizedEmail(
       profileLimit,
       pdfDownloadLimitPerOrder,
       subscriberPdfAccess,
+      memberNumber,
       updatedAt: latest.updatedAt,
     });
   }
@@ -364,9 +369,10 @@ async function fetchAccountSettingsForAdminList(keyword: string): Promise<Accoun
           pdfDownloadLimitPerOrder: number | null;
           subscriberPdfAccess: boolean | null;
           isMonitor: boolean | null;
+          memberNumber: number | null;
         }>
       >`
-        SELECT "id", "pdfDownloadLimitPerOrder", "subscriberPdfAccess", "isMonitor"
+        SELECT "id", "pdfDownloadLimitPerOrder", "subscriberPdfAccess", "isMonitor", "memberNumber"
         FROM "AccountSettings"
         WHERE "id" IN (${Prisma.join(ids)})
       `;
@@ -378,15 +384,44 @@ async function fetchAccountSettingsForAdminList(keyword: string): Promise<Accoun
           pdfDownloadLimitPerOrder: x?.pdfDownloadLimitPerOrder ?? null,
           subscriberPdfAccess: x?.subscriberPdfAccess ?? null,
           isMonitor: x?.isMonitor ?? null,
+          memberNumber: x?.memberNumber ?? null,
         };
       });
     } catch {
-      return base.map((row) => ({
-        ...row,
-        pdfDownloadLimitPerOrder: null,
-        subscriberPdfAccess: null,
-        isMonitor: null,
-      }));
+      // memberNumber 列未適用時など: PDF / monitor だけ再試行
+      try {
+        const extras = await prisma.$queryRaw<
+          Array<{
+            id: string;
+            pdfDownloadLimitPerOrder: number | null;
+            subscriberPdfAccess: boolean | null;
+            isMonitor: boolean | null;
+          }>
+        >`
+          SELECT "id", "pdfDownloadLimitPerOrder", "subscriberPdfAccess", "isMonitor"
+          FROM "AccountSettings"
+          WHERE "id" IN (${Prisma.join(ids)})
+        `;
+        const byId = new Map(extras.map((x) => [x.id, x]));
+        return base.map((row) => {
+          const x = byId.get(row.id);
+          return {
+            ...row,
+            pdfDownloadLimitPerOrder: x?.pdfDownloadLimitPerOrder ?? null,
+            subscriberPdfAccess: x?.subscriberPdfAccess ?? null,
+            isMonitor: x?.isMonitor ?? null,
+            memberNumber: null,
+          };
+        });
+      } catch {
+        return base.map((row) => ({
+          ...row,
+          pdfDownloadLimitPerOrder: null,
+          subscriberPdfAccess: null,
+          isMonitor: null,
+          memberNumber: null,
+        }));
+      }
     }
   }
 
@@ -403,6 +438,7 @@ async function fetchAccountSettingsForAdminList(keyword: string): Promise<Accoun
         profileLimit: true,
         pdfDownloadLimitPerOrder: true,
         subscriberPdfAccess: true,
+        memberNumber: true,
         updatedAt: true,
       },
     });
@@ -567,6 +603,7 @@ async function loadRowsWithEmailMode(
         profileNames: [],
         accountSettingsCreatedAt: setting?.createdAt ?? null,
         firstAppraisalAt: null,
+        memberNumber: setting?.memberNumber ?? null,
         isAdmin: setting?.isAdmin ?? false,
         isMonitor: setting?.isMonitor ?? false,
         profileLimit: setting?.profileLimit ?? 1,
@@ -575,7 +612,7 @@ async function loadRowsWithEmailMode(
       };
     })
     .sort((a, b) => a.email.localeCompare(b.email))
-    .slice(0, 200);
+    .slice(0, 2000);
 }
 
 async function loadRows(keyword: string, matchedProfileEmails: Set<string>): Promise<UserRow[]> {
@@ -608,6 +645,7 @@ export default async function AdminPage({ searchParams }: Props) {
   let rows: UserRow[] = [];
   let loadError: string | null = null;
   try {
+    await backfillMissingMemberNumbers(200);
     const matchedProfileEmails = await searchMatchedEmailsByProfileId(q);
     rows = await loadRows(q, matchedProfileEmails);
     const profileMetaByEmail = await loadProfileMetaByEmails(rows.map((r) => r.email));
@@ -628,6 +666,33 @@ export default async function AdminPage({ searchParams }: Props) {
           : String(e)
         : "ユーザー一覧の取得に失敗しました";
   }
+
+  const directoryRows: AdminDirectoryRow[] = rows.map((row) => ({
+    email: row.email,
+    memberNumber: row.memberNumber,
+    registeredAt:
+      row.accountSettingsCreatedAt?.toISOString() ??
+      row.firstAppraisalAt?.toISOString() ??
+      null,
+    profileIds: row.profileIds,
+    profileNames: row.profileNames,
+    planLabel: derivePlanLabel(row.subscriberPdfAccess),
+    planStartedLabel: formatPlanStartedAt(row),
+    firstAppraisalLabel: formatFirstAppraisalAt(row.firstAppraisalAt),
+    sourceOrderCount: row.sourceOrderCount,
+    sourceJournalCount: row.sourceJournalCount,
+    isAdmin: row.isAdmin,
+    isMonitor: row.isMonitor,
+    profileLimit: row.profileLimit,
+    monitorLimitLabel: row.isMonitor
+      ? formatAdminEffectiveProfileLimitLabel({
+          isMonitor: true,
+          profileLimit: row.profileLimit,
+        })
+      : null,
+    pdfDownloadLimitPerOrder: row.pdfDownloadLimitPerOrder,
+    subscriberPdfAccess: row.subscriberPdfAccess,
+  }));
 
   return (
     <div className="space-y-6">
@@ -762,168 +827,7 @@ export default async function AdminPage({ searchParams }: Props) {
         </div>
       ) : null}
 
-      <div className="overflow-x-auto rounded-xl border border-stone-200 bg-white">
-        <table className="min-w-full text-sm">
-          <thead className="bg-stone-50 text-left text-stone-700">
-            <tr>
-              <th className="px-4 py-3 font-medium">メール</th>
-              <th className="px-4 py-3 font-medium">プロフィールID / 名</th>
-              <th className="px-4 py-3 font-medium">プラン名</th>
-              <th className="px-4 py-3 font-medium">プラン開始日</th>
-              <th className="px-4 py-3 font-medium">初回鑑定日</th>
-              <th className="px-4 py-3 font-medium">鑑定</th>
-              <th className="px-4 py-3 font-medium">日記</th>
-              <th className="px-4 py-3 font-medium">プロフィール上限</th>
-              <th className="px-4 py-3 font-medium">PDF無料回数</th>
-              <th className="px-4 py-3 font-medium">鑑定書 高画質PDF</th>
-              <th className="px-4 py-3 font-medium">モニター</th>
-              <th className="px-4 py-3 font-medium">管理者</th>
-              <th className="px-4 py-3 font-medium">操作</th>
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((row) => (
-              <tr key={row.email} className="border-t border-stone-100">
-                <td className="px-4 py-3 text-stone-800">{row.email}</td>
-                <td className="px-4 py-3 text-xs text-stone-700">
-                  {row.profileIds.length === 0 ? (
-                    <span className="text-stone-400">未設定</span>
-                  ) : (
-                    <div className="space-y-1">
-                      {row.profileIds.map((id, idx) => (
-                        <div key={`${row.email}-${id}`}>
-                          <p className="font-mono text-[11px]">{id}</p>
-                          <p className="text-stone-500">{row.profileNames[idx] ?? "プロフィール名未設定"}</p>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </td>
-                <td className="px-4 py-3 text-stone-700">{derivePlanLabel(row.subscriberPdfAccess)}</td>
-                <td className="px-4 py-3 text-xs text-stone-600">{formatPlanStartedAt(row)}</td>
-                <td className="px-4 py-3 text-xs text-stone-600">
-                  {formatFirstAppraisalAt(row.firstAppraisalAt)}
-                </td>
-                <td className="px-4 py-3 text-stone-600">{row.sourceOrderCount}</td>
-                <td className="px-4 py-3 text-stone-600">{row.sourceJournalCount}</td>
-                <td className="px-4 py-3">
-                  {row.isMonitor ? (
-                    <div className="space-y-1 text-xs text-stone-700">
-                      <p className="font-medium text-amber-900">
-                        {formatAdminEffectiveProfileLimitLabel({
-                          isMonitor: true,
-                          profileLimit: row.profileLimit,
-                        })}
-                      </p>
-                      <p className="text-stone-500">保存値: {row.profileLimit}</p>
-                    </div>
-                  ) : (
-                    <form action={updateProfileLimit} className="flex items-center gap-2">
-                      <input type="hidden" name="email" value={row.email} />
-                      <select
-                        name="profileLimit"
-                        defaultValue={String(row.profileLimit)}
-                        className="rounded-md border border-stone-300 px-2 py-1"
-                      >
-                        <option value="1">1</option>
-                        <option value="3">3</option>
-                      </select>
-                      <button
-                        type="submit"
-                        className="rounded-md border border-stone-300 px-2 py-1 text-xs hover:bg-stone-50"
-                      >
-                        上限更新
-                      </button>
-                    </form>
-                  )}
-                </td>
-                <td className="px-4 py-3">
-                  <form action={updatePdfDownloadLimitPerOrder} className="flex flex-wrap items-center gap-2">
-                    <input type="hidden" name="email" value={row.email} />
-                    <input
-                      type="number"
-                      name="pdfDownloadLimitPerOrder"
-                      min={0}
-                      max={999}
-                      defaultValue={String(row.pdfDownloadLimitPerOrder)}
-                      className="w-20 rounded-md border border-stone-300 px-2 py-1"
-                      title="鑑定1件あたりの無料PDFダウンロード回数（閲覧・DL共通）"
-                    />
-                    <button
-                      type="submit"
-                      className="rounded-md border border-stone-300 px-2 py-1 text-xs hover:bg-stone-50"
-                    >
-                      更新
-                    </button>
-                  </form>
-                  <p className="mt-1 text-[10px] leading-tight text-stone-400">
-                    保存するとこのメールの既存鑑定にも上限を反映します
-                  </p>
-                </td>
-                <td className="px-4 py-3">
-                  <form action={toggleSubscriberPdfAccess} className="flex items-center gap-2">
-                    <input type="hidden" name="email" value={row.email} />
-                    <input
-                      type="hidden"
-                      name="subscriberPdfAccess"
-                      value={row.subscriberPdfAccess ? "0" : "1"}
-                    />
-                    <span className={row.subscriberPdfAccess ? "text-violet-700" : "text-stone-500"}>
-                      {row.subscriberPdfAccess ? "ON" : "OFF"}
-                    </span>
-                    <button
-                      type="submit"
-                      className="rounded-md border border-stone-300 px-2 py-1 text-xs hover:bg-stone-50"
-                      title="鑑定書の高画質PDFダウンロード権限（プレビュー版は全員）"
-                    >
-                      切替
-                    </button>
-                  </form>
-                </td>
-                <td className="px-4 py-3">
-                  <form action={toggleMonitorRole} className="flex flex-col gap-1">
-                    <input type="hidden" name="email" value={row.email} />
-                    <input type="hidden" name="isMonitor" value={row.isMonitor ? "0" : "1"} />
-                    <span className={row.isMonitor ? "text-amber-800" : "text-stone-500"}>
-                      {row.isMonitor ? "モニター利用中" : "—"}
-                    </span>
-                    <button
-                      type="submit"
-                      className="w-fit rounded-md border border-stone-300 px-2 py-1 text-xs hover:bg-stone-50"
-                    >
-                      {row.isMonitor ? "OFF" : "ON"}
-                    </button>
-                  </form>
-                </td>
-                <td className="px-4 py-3">
-                  <form action={toggleAdminRole} className="flex items-center gap-2">
-                    <input type="hidden" name="email" value={row.email} />
-                    <input type="hidden" name="isAdmin" value={row.isAdmin ? "0" : "1"} />
-                    <span className={row.isAdmin ? "text-emerald-700" : "text-stone-500"}>
-                      {row.isAdmin ? "ON" : "OFF"}
-                    </span>
-                    <button
-                      type="submit"
-                      className="rounded-md border border-stone-300 px-2 py-1 text-xs hover:bg-stone-50"
-                    >
-                      切替
-                    </button>
-                  </form>
-                </td>
-                <td className="px-4 py-3">
-                  <Link
-                    href={`/admin/donguri/${encodeURIComponent(row.email)}`}
-                    className="text-xs font-medium text-emerald-800 underline-offset-2 hover:underline"
-                  >
-                    どんぐり
-                  </Link>
-                  <p className="mt-1 text-[11px] text-stone-400">保存は即時反映</p>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+      {!loadError ? <AdminUserDirectory rows={directoryRows} /> : null}
 
       <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-xs leading-6 text-amber-900">
         最初の管理者は、環境変数 <code>ADMIN_EMAILS</code>（カンマ区切り）で指定すると安全です。

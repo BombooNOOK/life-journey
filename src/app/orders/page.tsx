@@ -6,7 +6,6 @@ import { LogHouseLoadErrorPanel } from "@/components/orders/LogHouseLoadErrorPan
 import { LegalFooterLinks } from "@/components/legal/LegalFooterLinks";
 import { isAdminEmail } from "@/lib/admin/access";
 import { getViewerEmailFromCookie } from "@/lib/auth/viewer";
-import { prisma } from "@/lib/db";
 import { withPrismaConnectionRetry } from "@/lib/db/prismaRetry";
 import { resolvePrimaryKanteiOrderForProfile } from "@/lib/profile/orderPerProfile";
 import { listProfilesAndActiveProfileId } from "@/lib/profile/activeProfile";
@@ -18,6 +17,7 @@ import {
 } from "@/lib/entitlement/resolveUserEntitlement";
 import { countUnreadMailboxNotices } from "@/lib/loghouse/mailboxNotices";
 import {
+  ensureBirthdayAcornGift,
   ensureDailyAcornDelivery,
   getDonguriChoView,
   type DonguriChoView,
@@ -67,6 +67,10 @@ export default async function OrdersListPage() {
         await ensureDailyAcornDelivery({
           email: viewerEmail,
           profileId: profileData.activeProfileId,
+        });
+        await ensureBirthdayAcornGift({
+          email: viewerEmail,
+          activeProfileId: profileData.activeProfileId,
         });
       }
       const unread =

@@ -166,6 +166,9 @@ model AccountSettings {
   forestResidentIssuedAt DateTime?
   /// 住民票のおなまえ（プロフィール名とは別。最大10文字はアプリ側で検証）
   forestResidentDisplayName String?
+
+  /// 管理者一覧用の会員番号（登録順 1, 2, 3…。表示は 00001 形式）
+  memberNumber Int? @unique
 }
 
 /// 鑑定書製本版（BASE単発）の申込予定・製本進捗（決済前は pending）
@@ -441,7 +444,7 @@ model LogHouseDonguriLedgerEntry {
 
   /// 付与は正、消費は負
   amount Int
-  /// daily_delivery | admin_grant | diary_save | book_create | reward_ad | subscription_delivery | adjustment
+  /// daily_delivery | admin_grant | birthday_gift | diary_save | book_create | reward_ad | subscription_delivery | adjustment
   reason String
   title  String
   description String?

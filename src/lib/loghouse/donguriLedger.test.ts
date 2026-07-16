@@ -7,6 +7,7 @@ describe("donguriTypes / format", () => {
   it("maps reason labels for users", () => {
     expect(donguriReasonLabel("daily_delivery")).toBe("ヤギさん郵便");
     expect(donguriReasonLabel("admin_grant")).toBe("森からのおとどけ");
+    expect(donguriReasonLabel("birthday_gift")).toBe("お誕生日のおとどけ");
   });
 
   it("formats deltas", () => {

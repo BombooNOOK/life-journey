@@ -1,13 +1,12 @@
 import { notFound } from "next/navigation";
 
-import { GardenPreviewClient } from "@/components/orders/GardenPreviewClient";
-import { GardenMobileImmersive } from "@/components/orders/GardenMobileImmersive";
 import { buildGardenPreviewState } from "@/lib/garden/gardenPreviewFixture";
 
 type Props = {
   searchParams?: Promise<{ view?: string }>;
 };
 
+/** 開発用プレビュー。本番ビルドでは notFound（重いクライアントを import しない） */
 export default async function GardenPreviewPage({ searchParams }: Props) {
   if (process.env.NODE_ENV !== "development") {
     notFound();
@@ -15,6 +14,7 @@ export default async function GardenPreviewPage({ searchParams }: Props) {
 
   const params = searchParams ? await searchParams : {};
   if (params.view === "immersive") {
+    const { GardenMobileImmersive } = await import("@/components/orders/GardenMobileImmersive");
     return (
       <GardenMobileImmersive
         initialState={buildGardenPreviewState(0)}
@@ -25,5 +25,6 @@ export default async function GardenPreviewPage({ searchParams }: Props) {
     );
   }
 
+  const { GardenPreviewClient } = await import("@/components/orders/GardenPreviewClient");
   return <GardenPreviewClient />;
 }

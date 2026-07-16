@@ -2,6 +2,16 @@ import { normalizeEmail } from "@/lib/auth/viewer";
 import { calendarDayKeyInJapanFromDate } from "@/lib/date/japanCalendarDate";
 import { prisma } from "@/lib/db";
 import {
+  birthdayGiftDateKey,
+  isAccountBirthdayInJapan,
+  japanCalendarYearFromDate,
+} from "@/lib/loghouse/birthdayAcornGift";
+import {
+  DONGURI_BIRTHDAY_GIFT_AMOUNT,
+  DONGURI_BIRTHDAY_GIFT_DESCRIPTION,
+  DONGURI_BIRTHDAY_GIFT_TITLE,
+  DONGURI_BIRTHDAY_MAIL_BODY,
+  DONGURI_BIRTHDAY_MAIL_TITLE,
   DONGURI_DAILY_DELIVERY_DESCRIPTION,
   DONGURI_DAILY_DELIVERY_TITLE,
   DONGURI_DAILY_MAIL_BODY,
@@ -14,7 +24,10 @@ import {
   type DonguriLedgerEntryView,
   type DonguriReason,
 } from "@/lib/loghouse/donguriTypes";
-import { MAILBOX_NOTICE_TYPE_DAILY_ACORN_DELIVERY } from "@/lib/loghouse/mailboxNoticeTypes";
+import {
+  MAILBOX_NOTICE_TYPE_BIRTHDAY_ACORN_DELIVERY,
+  MAILBOX_NOTICE_TYPE_DAILY_ACORN_DELIVERY,
+} from "@/lib/loghouse/mailboxNoticeTypes";
 
 export type {
   DonguriAdminLedgerRow,
@@ -311,4 +324,99 @@ export async function grantDonguriByAdmin(params: {
   });
 
   return { entry: toView(result.ledger), noticeId: result.noticeId };
+}
+
+/**
+ * アカウント代表プロフィール（最初に作成された Profile）の誕生日に、
+ * 1アカウント年1回だけ birthday_gift +20 とポストをお届けする。
+ * 台帳の profileId は代表プロフィール。お手紙は訪問中の activeProfileId へ。
+ */
+export async function ensureBirthdayAcornGift(params: {
+  email: string;
+  /** お手紙を届けるプロフィール（ログハウス訪問中） */
+  activeProfileId: string;
+  now?: Date;
+}): Promise<{ delivered: boolean }> {
+  const email = normalizeEmail(params.email);
+  const activeProfileId = params.activeProfileId.trim();
+  if (!email || !activeProfileId) return { delivered: false };
+
+  const now = params.now ?? new Date();
+  const year = japanCalendarYearFromDate(now);
+  const dateKey = birthdayGiftDateKey(year);
+
+  try {
+    const already = await prisma.logHouseDonguriLedgerEntry.findFirst({
+      where: { email, reason: "birthday_gift", dateKey },
+      select: { id: true },
+    });
+    if (already) return { delivered: false };
+
+    const representative = await prisma.profile.findFirst({
+      where: { email },
+      orderBy: { createdAt: "asc" },
+      select: { id: true },
+    });
+    if (!representative) return { delivered: false };
+
+    const order = await prisma.order.findFirst({
+      where: { email, profileId: representative.id },
+      orderBy: { createdAt: "asc" },
+      select: { birthMonth: true, birthDay: true },
+    });
+    if (!order) return { delivered: false };
+
+    if (
+      !isAccountBirthdayInJapan({
+        birthMonth: order.birthMonth,
+        birthDay: order.birthDay,
+        now,
+      })
+    ) {
+      return { delivered: false };
+    }
+
+    await prisma.$transaction(async (tx) => {
+      const ledger = await tx.logHouseDonguriLedgerEntry.create({
+        data: {
+          email,
+          profileId: representative.id,
+          amount: DONGURI_BIRTHDAY_GIFT_AMOUNT,
+          reason: "birthday_gift",
+          title: DONGURI_BIRTHDAY_GIFT_TITLE,
+          description: DONGURI_BIRTHDAY_GIFT_DESCRIPTION,
+          dateKey,
+          createdBy: "system",
+        },
+      });
+
+      const notice = await tx.logHouseMailboxNotice.create({
+        data: {
+          email,
+          profileId: activeProfileId,
+          type: MAILBOX_NOTICE_TYPE_BIRTHDAY_ACORN_DELIVERY,
+          title: DONGURI_BIRTHDAY_MAIL_TITLE,
+          message: DONGURI_BIRTHDAY_MAIL_BODY,
+          actionLabel: "どんぐり帳を見る",
+          actionRoute: DONGURI_PAGE_PATH,
+          relatedLedgerId: ledger.id,
+        },
+      });
+
+      await tx.logHouseDonguriLedgerEntry.update({
+        where: { id: ledger.id },
+        data: { relatedNoticeId: notice.id },
+      });
+    });
+
+    return { delivered: true };
+  } catch (e) {
+    console.error("[birthday acorn gift failed]", {
+      email,
+      activeProfileId,
+      dateKey,
+      error: e instanceof Error ? e.message : e,
+    });
+    return { delivered: false };
+  }
 }
