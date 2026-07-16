@@ -77,11 +77,11 @@ export function DailyFortunePreviewClient() {
         backLabel="← プレビュー一覧"
       />
 
-      <div className="pointer-events-none fixed inset-x-0 bottom-0 z-[50] px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+      <div className="pointer-events-none fixed inset-x-0 bottom-[4.75rem] z-[50] px-3">
         <div className="pointer-events-auto mx-auto max-w-md rounded-xl border border-[#d9cbb8]/90 bg-[#fffdf8]/92 px-3 py-2 text-[11px] leading-relaxed text-[#5c4a3a] shadow-sm backdrop-blur-[2px]">
           <p className="font-medium">プレビュー（サンプル文言）</p>
           <p className="mt-1 break-all text-[#7a6856]">
-            guide=owl|hedgehog|squirrel|kerosion|sloth / color=赤|オレンジ|黄…
+            guide=owl|hedgehog|squirrel|kerosion|sloth / color=赤|オレンジ・茶|黄…
           </p>
           <div className="mt-1.5 flex flex-wrap gap-x-2 gap-y-1">
             {DAILY_FORTUNE_GUIDES.map((g) => (

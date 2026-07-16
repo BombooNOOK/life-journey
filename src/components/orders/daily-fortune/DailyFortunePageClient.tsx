@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useCallback, useEffect, useId, useState } from "react";
 
+import { ReadingFontSizeControl } from "@/components/reading/ReadingFontSizeControl";
 import {
   DAILY_FORTUNE_BG_INTRINSIC,
   DAILY_FORTUNE_BG_SRC,
@@ -234,7 +235,7 @@ export function DailyFortunePageClient({
           </div>
 
           <p
-            className="pointer-events-none absolute z-[3] flex items-center justify-center whitespace-pre-line text-center text-[clamp(0.62rem,2.4vw,0.8rem)] font-normal leading-snug text-[#9a8b78] [text-shadow:0_1px_0_rgba(255,251,245,0.45)]"
+            className="lj-reading-exempt pointer-events-none absolute z-[3] flex items-center justify-center whitespace-pre-line text-center text-[0.72rem] font-normal leading-snug text-[#9a8b78] [text-shadow:0_1px_0_rgba(255,251,245,0.45)] sm:text-[0.78rem]"
             style={dailyFortuneRectStyle(layout.guideText)}
           >
             {dailyFortuneGuideAnnouncement(guide.name)}
@@ -242,7 +243,7 @@ export function DailyFortunePageClient({
 
           <p
             id="today-hint"
-            className="pointer-events-none absolute z-[3] flex items-center justify-center px-1 text-center text-[clamp(0.78rem,3.2vw,0.98rem)] font-medium leading-snug text-[#3f3428]"
+            className="pointer-events-none absolute z-[3] flex items-center justify-center px-1.5 text-center text-[1.05rem] font-medium leading-snug text-[#3f3428]"
             style={dailyFortuneRectStyle(layout.message)}
           >
             {message}
@@ -250,7 +251,7 @@ export function DailyFortunePageClient({
 
           <p
             id="guardian-color"
-            className="pointer-events-none absolute z-[3] flex items-center justify-center text-center text-[clamp(0.95rem,3.8vw,1.2rem)] font-semibold text-[#5c3d28]"
+            className="pointer-events-none absolute z-[3] flex items-center justify-center text-center text-[1.2rem] font-semibold text-[#5c3d28]"
             style={dailyFortuneRectStyle(layout.colorLabel)}
           >
             {color.label}
@@ -287,7 +288,7 @@ export function DailyFortunePageClient({
           </div>
 
           <p
-            className="pointer-events-none absolute z-[3] flex items-center justify-center px-1 text-center text-[clamp(0.78rem,3.2vw,0.98rem)] font-medium leading-snug text-[#3f3428]"
+            className="pointer-events-none absolute z-[3] flex items-center justify-center whitespace-normal px-1.5 text-center text-[1.05rem] font-medium leading-snug text-[#3f3428]"
             style={dailyFortuneRectStyle(layout.smallAction)}
           >
             {smallAction}
@@ -308,6 +309,14 @@ export function DailyFortunePageClient({
         </div>
       </div>
 
+      {hideChrome ? null : (
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 z-40 px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+          <div className="pointer-events-auto mx-auto w-full max-w-[17rem] rounded-full border border-[#d9cbb8]/90 bg-[#fffdf8]/92 px-3 py-2 shadow-sm backdrop-blur-[2px]">
+            <ReadingFontSizeControl variant="hero" comfortable />
+          </div>
+        </div>
+      )}
+
       {helpOpen ? (
         <PaperModal
           titleId={helpTitleId}
@@ -315,7 +324,7 @@ export function DailyFortunePageClient({
           dismissLabel={DAILY_FORTUNE_HELP_DISMISS}
           onClose={closeHelp}
         >
-          <p className="whitespace-pre-line">{DAILY_FORTUNE_HELP_BODY}</p>
+          <p className="lj-read-desc whitespace-pre-line">{DAILY_FORTUNE_HELP_BODY}</p>
         </PaperModal>
       ) : null}
 
@@ -326,14 +335,14 @@ export function DailyFortunePageClient({
           dismissLabel={DAILY_FORTUNE_THEME_DISMISS}
           onClose={closeTheme}
         >
-          <div id="year-theme" className="space-y-1">
+          <div id="year-theme" className="lj-read-desc space-y-1">
             <h3 className="text-sm font-semibold text-[#5c4a3a]">{yearTheme.title}</h3>
             <p className="font-medium text-[#3f3428]">{yearLines.headline}</p>
             {yearLines.body ? (
               <p className="whitespace-pre-line text-[#5a4a3c]">{yearLines.body}</p>
             ) : null}
           </div>
-          <div id="month-theme" className="mt-4 space-y-1 border-t border-[#e4d8c6] pt-4">
+          <div id="month-theme" className="lj-read-desc mt-4 space-y-1 border-t border-[#e4d8c6] pt-4">
             <h3 className="text-sm font-semibold text-[#5c4a3a]">{monthTheme.title}</h3>
             <p className="font-medium text-[#3f3428]">{monthLines.headline}</p>
             {monthLines.body ? (
