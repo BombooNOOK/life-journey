@@ -910,7 +910,15 @@ export default async function AdminPage({ searchParams }: Props) {
                     </button>
                   </form>
                 </td>
-                <td className="px-4 py-3 text-stone-500">保存は即時反映</td>
+                <td className="px-4 py-3">
+                  <Link
+                    href={`/admin/donguri/${encodeURIComponent(row.email)}`}
+                    className="text-xs font-medium text-emerald-800 underline-offset-2 hover:underline"
+                  >
+                    どんぐり
+                  </Link>
+                  <p className="mt-1 text-[11px] text-stone-400">保存は即時反映</p>
+                </td>
               </tr>
             ))}
           </tbody>

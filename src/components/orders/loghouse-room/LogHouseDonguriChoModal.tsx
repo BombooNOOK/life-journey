@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { useEffect } from "react";
 
 import { DONGURI_CHO_CARD_SRC, DONGURI_ICON_SRC } from "@/lib/loghouse/donguriAssets";
@@ -9,6 +10,7 @@ import {
   DONGURI_CHO_TITLE,
   DONGURI_CLOSE_LABEL,
   DONGURI_EMPTY_LEDGER,
+  DONGURI_OPEN_LEDGER_LABEL,
   DONGURI_RECENT_LEDGER_LABEL,
   DONGURI_TODAY_DELIVERY_LABEL,
   DONGURI_UNIT,
@@ -131,13 +133,22 @@ export function LogHouseDonguriChoModal({ open, view, onClose }: Props) {
             )}
           </section>
 
-          <button
-            type="button"
-            onClick={onClose}
-            className="mt-3 inline-flex min-h-[42px] w-full shrink-0 items-center justify-center rounded-xl border border-stone-400/35 bg-[#fffdf9]/75 text-sm font-medium text-stone-700 transition hover:bg-white/90"
-          >
-            {DONGURI_CLOSE_LABEL}
-          </button>
+          <div className="mt-3 flex shrink-0 flex-col gap-2">
+            <Link
+              href="/orders/donguri"
+              onClick={onClose}
+              className="inline-flex min-h-[42px] w-full items-center justify-center rounded-xl border border-emerald-300/70 bg-emerald-50/80 text-sm font-semibold text-emerald-950 transition hover:bg-emerald-100"
+            >
+              {DONGURI_OPEN_LEDGER_LABEL}
+            </Link>
+            <button
+              type="button"
+              onClick={onClose}
+              className="inline-flex min-h-[42px] w-full items-center justify-center rounded-xl border border-stone-400/35 bg-[#fffdf9]/75 text-sm font-medium text-stone-700 transition hover:bg-white/90"
+            >
+              {DONGURI_CLOSE_LABEL}
+            </button>
+          </div>
         </div>
       </div>
     </div>

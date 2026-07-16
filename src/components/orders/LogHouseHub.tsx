@@ -17,6 +17,7 @@ import { MyPageManageHub } from "@/components/orders/MyPageManageMenu";
 import { TrialStatusBanner } from "@/components/entitlement/TrialStatusBanner";
 import type { SerializedUserEntitlement } from "@/lib/entitlement/resolveUserEntitlement";
 import type { FirstVisitGuideState } from "@/lib/onboarding/firstVisitGuideState";
+import type { DonguriChoView } from "@/lib/loghouse/donguriLedger";
 import { useIsLogHouseMobileViewport } from "@/lib/loghouse/logHouseViewport";
 
 type ProfileRow = { id: string; nickname: string };
@@ -27,6 +28,7 @@ type Props = {
   hasKanteiOrder: boolean;
   activeKanteiOrderId: string | null;
   mailboxUnreadCount?: number;
+  donguriCho?: DonguriChoView;
   entitlement: SerializedUserEntitlement;
   firstVisitGuideState: FirstVisitGuideState;
   companionWritingHref: string;
@@ -44,6 +46,7 @@ export function LogHouseHub({
   hasKanteiOrder,
   activeKanteiOrderId,
   mailboxUnreadCount = 0,
+  donguriCho,
   entitlement,
   firstVisitGuideState,
   companionWritingHref,
@@ -80,6 +83,7 @@ export function LogHouseHub({
           hasKanteiOrder={hasKanteiOrder}
           kanteiOrderId={activeKanteiOrderId}
           mailboxUnreadCount={mailboxUnreadCount}
+          donguriCho={donguriCho}
           companionWritingHref={companionWritingHref}
           deskWritingHref={deskWritingHref}
           onOpenManage={() => setManageOpen(true)}

@@ -1,9 +1,11 @@
 import { calendarDayKeyInJapanFromDate } from "@/lib/date/japanCalendarDate";
 import { MAILBOX_GOAT_FACE_ICON_SRC } from "@/lib/loghouse/mailboxAssets";
 import {
+  MAILBOX_NOTICE_TYPE_DAILY_ACORN_DELIVERY,
   MAILBOX_NOTICE_TYPE_FORTUNE_REPORT_READY,
   type MailboxNoticeView,
 } from "@/lib/loghouse/mailboxNoticeTypes";
+import { DONGURI_DAILY_MAIL_TITLE } from "@/lib/loghouse/donguriTypes";
 
 /** ユーザー向けのポスト表示形（DBの MailboxNoticeView を拡張しやすい形に寄せる） */
 export type MailboxPostKind = "letter" | "notice" | "delivery" | "reward";
@@ -48,12 +50,13 @@ function metaForNoticeType(type: string): SenderMeta {
         senderName: "ヤギさん郵便",
         senderType: "goat",
       };
-    case "daily_acorn_delivery":
+    case MAILBOX_NOTICE_TYPE_DAILY_ACORN_DELIVERY:
     case "subscription_acorn_delivery":
       return {
-        kind: "reward",
+        kind: "delivery",
         senderName: "ヤギさん郵便",
         senderType: "goat",
+        titleOverride: DONGURI_DAILY_MAIL_TITLE,
       };
     case "season_event":
     case "system_notice":

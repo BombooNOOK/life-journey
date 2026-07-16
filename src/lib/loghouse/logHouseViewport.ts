@@ -38,6 +38,7 @@ const ORDERS_RESERVED_TOP_SEGMENTS = new Set([
   "settings",
   "account",
   "mailbox",
+  "donguri",
   "kantei-hall",
   "support",
   "resident-card",

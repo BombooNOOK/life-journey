@@ -23,6 +23,7 @@ export function toMailboxNoticeView(row: {
   actionLabel: string | null;
   actionRoute: string | null;
   relatedOrderId: string | null;
+  relatedLedgerId?: string | null;
   createdAt: Date;
   readAt: Date | null;
 }): MailboxNoticeView {
@@ -34,6 +35,7 @@ export function toMailboxNoticeView(row: {
     actionLabel: row.actionLabel,
     actionRoute: row.actionRoute,
     relatedOrderId: row.relatedOrderId,
+    relatedLedgerId: row.relatedLedgerId ?? null,
     createdAt: row.createdAt.toISOString(),
     readAt: row.readAt?.toISOString() ?? null,
     unread: row.readAt == null,

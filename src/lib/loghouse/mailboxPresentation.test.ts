@@ -39,6 +39,7 @@ describe("mailboxPresentation", () => {
       actionLabel: "本棚で見る",
       actionRoute: "/orders/bookshelf",
       relatedOrderId: "o1",
+      relatedLedgerId: null,
       createdAt: "2026-07-16T03:00:00.000Z",
       readAt: null,
       unread: true,

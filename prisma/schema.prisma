@@ -421,9 +421,40 @@ model LogHouseMailboxNotice {
   actionLabel String?
   actionRoute String?
   relatedOrderId String?
+  /// どんぐり台帳との関連（LogHouseDonguriLedgerEntry.id）
+  relatedLedgerId String?
 
   readAt DateTime?
 
   @@index([email, profileId, createdAt])
   @@index([email, profileId, readAt])
+}
+
+/// どんぐり台帳（増減履歴。残高は amount の合計）
+model LogHouseDonguriLedgerEntry {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  email     String
+  profileId String
+
+  /// 付与は正、消費は負
+  amount Int
+  /// daily_delivery | admin_grant | diary_save | book_create | reward_ad | subscription_delivery | adjustment
+  reason String
+  title  String
+  description String?
+
+  /// daily_delivery の重複防止用（日本暦日 YYYY-MM-DD）
+  dateKey String?
+
+  relatedNoticeId String?
+
+  /// system | admin | user
+  createdBy String @default("system")
+
+  @@unique([email, profileId, reason, dateKey])
+  @@index([email, profileId, createdAt])
+  @@index([email, createdAt])
 }

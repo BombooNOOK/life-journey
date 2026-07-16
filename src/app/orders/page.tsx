@@ -17,6 +17,11 @@ import {
   type SerializedUserEntitlement,
 } from "@/lib/entitlement/resolveUserEntitlement";
 import { countUnreadMailboxNotices } from "@/lib/loghouse/mailboxNotices";
+import {
+  ensureDailyAcornDelivery,
+  getDonguriChoView,
+  type DonguriChoView,
+} from "@/lib/loghouse/donguriLedger";
 import { calendarDayKeyInJapan, journalWithCompanionPath } from "@/lib/journal/journalNav";
 import {
   resolveLogHouseDeskWritingHref,
@@ -39,6 +44,7 @@ export default async function OrdersListPage() {
   let hasKanteiOrder = true;
   let activeKanteiOrderId: string | null = null;
   let mailboxUnreadCount = 0;
+  let donguriCho: DonguriChoView = { balance: 0, todayDelivery: null, recent: [] };
   let journalEntryCount = 0;
   let entitlement: SerializedUserEntitlement = {
     tier: "trial_not_started",
@@ -57,6 +63,12 @@ export default async function OrdersListPage() {
         profileId: profileData.activeProfileId,
       });
       const entitlementCtx = await loadEntitlementContext(viewerEmail);
+      if (profileData.activeProfileId) {
+        await ensureDailyAcornDelivery({
+          email: viewerEmail,
+          profileId: profileData.activeProfileId,
+        });
+      }
       const unread =
         profileData.activeProfileId
           ? await countUnreadMailboxNotices({
@@ -64,13 +76,21 @@ export default async function OrdersListPage() {
               profileId: profileData.activeProfileId,
             })
           : 0;
-      return { profileData, kanteiOrder, entitlementCtx, unread };
+      const donguri =
+        profileData.activeProfileId
+          ? await getDonguriChoView({
+              email: viewerEmail,
+              profileId: profileData.activeProfileId,
+            })
+          : { balance: 0, todayDelivery: null, recent: [] };
+      return { profileData, kanteiOrder, entitlementCtx, unread, donguri };
     });
     profiles = loaded.profileData.profiles;
     activeProfileId = loaded.profileData.activeProfileId;
     hasKanteiOrder = loaded.kanteiOrder != null;
     activeKanteiOrderId = loaded.kanteiOrder?.id ?? null;
     mailboxUnreadCount = loaded.unread;
+    donguriCho = loaded.donguri;
     journalEntryCount = loaded.entitlementCtx.journalEntryCount;
     entitlement = serializeUserEntitlement(resolveUserEntitlement(loaded.entitlementCtx));
   } catch (e) {
@@ -106,6 +126,7 @@ export default async function OrdersListPage() {
       hasKanteiOrder={hasKanteiOrder}
       activeKanteiOrderId={activeKanteiOrderId}
       mailboxUnreadCount={mailboxUnreadCount}
+      donguriCho={donguriCho}
       entitlement={entitlement}
       firstVisitGuideState={firstVisitGuideState}
       companionWritingHref={companionWritingHref}

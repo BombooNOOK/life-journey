@@ -1,8 +1,25 @@
 import type { MailboxNoticeView } from "@/lib/loghouse/mailboxNoticeTypes";
-import { MAILBOX_NOTICE_TYPE_FORTUNE_REPORT_READY } from "@/lib/loghouse/mailboxNoticeTypes";
+import {
+  MAILBOX_NOTICE_TYPE_DAILY_ACORN_DELIVERY,
+  MAILBOX_NOTICE_TYPE_FORTUNE_REPORT_READY,
+} from "@/lib/loghouse/mailboxNoticeTypes";
+import { DONGURI_DAILY_MAIL_BODY, DONGURI_DAILY_MAIL_TITLE, DONGURI_PAGE_PATH } from "@/lib/loghouse/donguriTypes";
 
 /** プレビュー／UI確認用の仮お手紙 */
 export const MAILBOX_PREVIEW_FIXTURES: MailboxNoticeView[] = [
+  {
+    id: "preview-goat-acorn",
+    type: MAILBOX_NOTICE_TYPE_DAILY_ACORN_DELIVERY,
+    title: DONGURI_DAILY_MAIL_TITLE,
+    message: DONGURI_DAILY_MAIL_BODY,
+    actionLabel: "どんぐり帳を見る",
+    actionRoute: DONGURI_PAGE_PATH,
+    relatedOrderId: null,
+    relatedLedgerId: "preview-ledger-1",
+    createdAt: new Date().toISOString(),
+    readAt: null,
+    unread: true,
+  },
   {
     id: "preview-goat-thanks",
     type: "memory_letter",
@@ -12,6 +29,7 @@ export const MAILBOX_PREVIEW_FIXTURES: MailboxNoticeView[] = [
     actionLabel: null,
     actionRoute: null,
     relatedOrderId: null,
+    relatedLedgerId: null,
     createdAt: new Date().toISOString(),
     readAt: null,
     unread: true,
@@ -25,6 +43,7 @@ export const MAILBOX_PREVIEW_FIXTURES: MailboxNoticeView[] = [
     actionLabel: null,
     actionRoute: null,
     relatedOrderId: null,
+    relatedLedgerId: null,
     createdAt: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
     readAt: new Date(Date.now() - 20 * 60 * 60 * 1000).toISOString(),
     unread: false,
@@ -38,6 +57,7 @@ export const MAILBOX_PREVIEW_FIXTURES: MailboxNoticeView[] = [
     actionLabel: "本棚で見る",
     actionRoute: "/orders/bookshelf#bookshelf-kantei-books",
     relatedOrderId: "preview-order",
+    relatedLedgerId: null,
     createdAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
     readAt: null,
     unread: true,

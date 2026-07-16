@@ -27,7 +27,7 @@ import { OwlDelayedBusyOverlay } from "@/components/ui/OwlDelayedBusyOverlay";
 import { useLogHouseRadioPlayer } from "@/components/orders/loghouse-room/LogHouseRadioPlayerProvider";
 import { useLogHouseRoomTimeTheme } from "@/hooks/useLogHouseRoomTimeOfDay";
 import type { SerializedUserEntitlement } from "@/lib/entitlement/resolveUserEntitlement";
-import { getStubDonguriChoView } from "@/lib/loghouse/donguriLedger";
+import { getStubDonguriChoView, type DonguriChoView } from "@/lib/loghouse/donguriLedger";
 import { buildForestMusicHallHref } from "@/lib/help/forestMusicHallNav";
 import {
   LOG_HOUSE_ROOM_MOBILE_BG_BY_TIME,
@@ -97,6 +97,8 @@ type Props = {
   hasKanteiOrder?: boolean;
   kanteiOrderId: string | null;
   mailboxUnreadCount?: number;
+  /** サーバーで算出したどんぐり帳。未指定時は空 */
+  donguriCho?: DonguriChoView;
   companionWritingHref: string | null;
   /** 机タップ先。はじめて導線は伴走執筆、通常は `/orders/write` */
   deskWritingHref: string;
@@ -223,6 +225,7 @@ export function LogHouseRoomMobile({
   hasKanteiOrder = false,
   kanteiOrderId,
   mailboxUnreadCount = 0,
+  donguriCho: donguriChoProp,
   companionWritingHref,
   deskWritingHref,
   onOpenManage,
@@ -245,7 +248,7 @@ export function LogHouseRoomMobile({
   const [donguriChoOpen, setDonguriChoOpen] = useState(false);
   const [radioCassetteOpen, setRadioCassetteOpen] = useState(false);
   const radioPlayer = useLogHouseRadioPlayer();
-  const donguriCho = useMemo(() => getStubDonguriChoView(), []);
+  const donguriCho = donguriChoProp ?? getStubDonguriChoView();
   const busy = isPending || profileBusy;
   const ambientBg = timeOfDay === "night" ? "#2a2218" : "#ebe4d4";
 
