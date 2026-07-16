@@ -39,7 +39,6 @@ export default async function LogHouseMailboxPage() {
         <div className="mx-auto w-full max-w-md space-y-4">
           <MyPageSubpageHeader
             title={LOG_HOUSE_MAILBOX_PAGE_TITLE}
-            description={LOG_HOUSE_MAILBOX_PAGE_DESCRIPTION}
           />
           <p className="text-sm text-stone-600">ポストを使うには、プロフィールが必要です。</p>
           <Link href="/orders" className="text-sm text-emerald-900 underline-offset-2 hover:underline">

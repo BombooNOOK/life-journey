@@ -11,7 +11,6 @@ import { MyPageSubpageHeader } from "@/components/orders/MyPageSubpageHeader";
 import { LOG_HOUSE_RETURN_TO_LABEL } from "@/lib/journal/logHouseLabels";
 import { LJD_PAGE_BG_CLASS } from "@/lib/ljd/ljdPaperSurface";
 import {
-  LOG_HOUSE_MAILBOX_PAGE_DESCRIPTION,
   LOG_HOUSE_MAILBOX_PAGE_PATH,
   LOG_HOUSE_MAILBOX_PAGE_TITLE,
 } from "@/lib/loghouse/logHouseMailboxCopy";
@@ -46,7 +45,6 @@ export function LogHouseMailboxPageClient({
       <div className="mx-auto w-full max-w-md space-y-5 px-4 pb-12 pt-5 sm:space-y-6 sm:pt-6">
         <MyPageSubpageHeader
           title={LOG_HOUSE_MAILBOX_PAGE_TITLE}
-          description={LOG_HOUSE_MAILBOX_PAGE_DESCRIPTION}
           backHref={backHref}
           backLabel={backLabel}
         />

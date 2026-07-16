@@ -32,6 +32,15 @@ export const LOG_HOUSE_ROOM_SHOES_PLACEMENT = {
   objectPosition: "center bottom",
 } as const;
 
+/** 管理者専用入口（ラジカセ右下・控えめ） */
+export const LOG_HOUSE_ROOM_ADMIN_LINK_PLACEMENT = {
+  x: 81.5,
+  y: 93.2,
+  width: 11,
+  height: 5.2,
+  zIndex: 30,
+} as const;
+
 export const LOG_HOUSE_ROOM_RABBIT_PLACEMENT = {
   x: 38,
   /** 足元がじゅうたん中央付近になるよう配置（height 34 → 足元 y≈70） */

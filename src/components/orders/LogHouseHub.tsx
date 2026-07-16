@@ -83,6 +83,7 @@ export function LogHouseHub({
           companionWritingHref={companionWritingHref}
           deskWritingHref={deskWritingHref}
           onOpenManage={() => setManageOpen(true)}
+          viewerIsAdmin={viewerIsAdmin}
         />
 
         <LogHouseRoomManageSheet

@@ -16,6 +16,7 @@ import { LogHouseRoomChrome } from "@/components/orders/loghouse-room/LogHouseRo
 import { LogHouseDonguriChoModal } from "@/components/orders/loghouse-room/LogHouseDonguriChoModal";
 import { LogHouseRadioCassetteModal } from "@/components/orders/loghouse-room/LogHouseRadioCassetteModal";
 import { LogHouseRadioPlayingAura } from "@/components/orders/loghouse-room/LogHouseRadioPlayingAura";
+import { LogHouseRoomAdminLinkSpot } from "@/components/orders/loghouse-room/LogHouseRoomAdminLinkSpot";
 import { LogHouseRoomGoOutSpot } from "@/components/orders/loghouse-room/LogHouseRoomGoOutSpot";
 import { LogHouseRoomMailboxSpot } from "@/components/orders/loghouse-room/LogHouseRoomMailboxSpot";
 import { LogHouseRoomPartsLayer } from "@/components/orders/loghouse-room/LogHouseRoomPartsLayer";
@@ -105,6 +106,8 @@ type Props = {
   layout?: "immersive" | "framed";
   /** プレビュー確認用。本番では渡さない */
   timeOfDayOverride?: LogHouseRoomTimeOfDay;
+  /** 管理者のみラジカセ右下に入口を出す */
+  viewerIsAdmin?: boolean;
 };
 
 /** 576×1024 を viewport に cover 相当で広げる（座標は相対維持） */
@@ -130,6 +133,7 @@ function RoomStage({
   timeOfDay,
   mailboxUnread,
   radioPlaying,
+  showAdminLink,
 }: {
   busy: boolean;
   previewMode: boolean;
@@ -140,6 +144,7 @@ function RoomStage({
   timeOfDay: LogHouseRoomTimeOfDay;
   mailboxUnread: boolean;
   radioPlaying: boolean;
+  showAdminLink: boolean;
 }) {
   return (
     <>
@@ -200,6 +205,8 @@ function RoomStage({
           onActivate={() => onSpotActivate("goOut")}
         />
 
+        {showAdminLink ? <LogHouseRoomAdminLinkSpot /> : null}
+
         <div className="pointer-events-none absolute inset-0 overflow-hidden">
           <LogHouseRoomRabbitAvatar />
         </div>
@@ -223,6 +230,7 @@ export function LogHouseRoomMobile({
   previewMode = false,
   layout = "immersive",
   timeOfDayOverride,
+  viewerIsAdmin = false,
 }: Props) {
   const router = useRouter();
   const { timeOfDay: detectedTimeOfDay } = useLogHouseRoomTimeTheme();
@@ -507,6 +515,7 @@ export function LogHouseRoomMobile({
       timeOfDay={timeOfDay}
       mailboxUnread={mailboxUnreadCount > 0}
       radioPlaying={radioPlayer.isPlaying}
+      showAdminLink={viewerIsAdmin && !previewMode}
     />
   );
 
