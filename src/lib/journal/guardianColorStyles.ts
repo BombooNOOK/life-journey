@@ -27,6 +27,12 @@ export const GUARDIAN_COLOR_STYLES: Record<string, GuardianColorCardStyle> = {
     topAccent: "rgba(224, 142, 72, 0.55)",
     textColor: "#c87830",
   },
+  "オレンジ・茶": {
+    borderColor: "rgba(224, 142, 72, 0.42)",
+    backgroundColor: "rgba(255, 249, 242, 0.94)",
+    topAccent: "rgba(224, 142, 72, 0.55)",
+    textColor: "#c87830",
+  },
   黄: {
     borderColor: "rgba(190, 158, 48, 0.42)",
     backgroundColor: "rgba(255, 252, 236, 0.94)",
@@ -46,6 +52,24 @@ export const GUARDIAN_COLOR_STYLES: Record<string, GuardianColorCardStyle> = {
     textColor: "#3a7ab8",
   },
   藍: {
+    borderColor: "rgba(56, 82, 158, 0.42)",
+    backgroundColor: "rgba(242, 245, 255, 0.94)",
+    topAccent: "rgba(56, 82, 158, 0.55)",
+    textColor: "#3a5098",
+  },
+  "紺・藍色": {
+    borderColor: "rgba(56, 82, 158, 0.42)",
+    backgroundColor: "rgba(242, 245, 255, 0.94)",
+    topAccent: "rgba(56, 82, 158, 0.55)",
+    textColor: "#3a5098",
+  },
+  紺: {
+    borderColor: "rgba(56, 82, 158, 0.42)",
+    backgroundColor: "rgba(242, 245, 255, 0.94)",
+    topAccent: "rgba(56, 82, 158, 0.55)",
+    textColor: "#3a5098",
+  },
+  紺色: {
     borderColor: "rgba(56, 82, 158, 0.42)",
     backgroundColor: "rgba(242, 245, 255, 0.94)",
     topAccent: "rgba(56, 82, 158, 0.55)",

@@ -8,6 +8,7 @@ import { OnboardingNextStepBanner } from "@/components/onboarding/OnboardingNext
 import { OnboardingRouteGuard } from "@/components/onboarding/OnboardingRouteGuard";
 import { LJD_PAGE_BG_CLASS } from "@/lib/ljd/ljdPaperSurface";
 import {
+  isDailyFortuneImmersivePath,
   isForestBookshelfImmersivePath,
   isOrdersImmersiveMobilePath,
   useIsLogHouseMobileViewport,
@@ -35,6 +36,7 @@ export function DiaryLoggedInPageShell({ children }: Props) {
   const isMobile = useIsLogHouseMobileViewport();
   const immersiveOrders =
     isForestBookshelfImmersivePath(pathname) ||
+    isDailyFortuneImmersivePath(pathname) ||
     (isOrdersImmersiveMobilePath(pathname) && isMobile);
   const onCompanionWriting = pathname.startsWith("/journal/with-companion");
   const hideChrome = immersiveOrders || onCompanionWriting;

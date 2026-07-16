@@ -29,9 +29,39 @@ export function isForestBookshelfImmersivePath(pathname: string | null): boolean
   return pathname === "/orders/bookshelf";
 }
 
+const ORDERS_RESERVED_TOP_SEGMENTS = new Set([
+  "bookshelf",
+  "calendar",
+  "list",
+  "write",
+  "garden",
+  "settings",
+  "account",
+  "mailbox",
+  "kantei-hall",
+  "support",
+  "resident-card",
+  "go-out",
+  "profile",
+  "plans",
+]);
+
+/** 今日の鑑定結果（`/orders/[orderId]`）。他の /orders/* 固定パスは除外 */
+export function isDailyFortuneImmersivePath(pathname: string | null): boolean {
+  if (!pathname) return false;
+  const match = pathname.match(/^\/orders\/([^/]+)$/);
+  if (!match) return false;
+  const segment = match[1] ?? "";
+  return segment.length > 0 && !ORDERS_RESERVED_TOP_SEGMENTS.has(segment);
+}
+
 /** スマホでヘッダー／底ナビを外す注文まわり没入ルート */
 export function isOrdersImmersiveMobilePath(pathname: string | null): boolean {
-  return isLogHouseImmersivePath(pathname) || isForestBookshelfImmersivePath(pathname);
+  return (
+    isLogHouseImmersivePath(pathname) ||
+    isForestBookshelfImmersivePath(pathname) ||
+    isDailyFortuneImmersivePath(pathname)
+  );
 }
 
 /** 開発用プレビューもヘッダーなし全画面にする */
@@ -39,6 +69,8 @@ export function isLogHouseImmersivePreviewPath(pathname: string | null): boolean
   return (
     pathname === "/preview/loghouse-room" ||
     pathname === "/preview/garden" ||
-    pathname === "/preview/forest-bookshelf"
+    pathname === "/preview/forest-bookshelf" ||
+    pathname === "/preview/daily-fortune" ||
+    pathname === "/preview/daily-fortune/layout"
   );
 }

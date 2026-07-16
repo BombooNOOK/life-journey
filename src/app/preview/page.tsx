@@ -89,6 +89,18 @@ const links: { href: string; label: string; note?: string; highlight?: boolean }
     highlight: true,
   },
   {
+    href: "/preview/daily-fortune",
+    label: "今日の鑑定結果（スマホ没入）",
+    note: "ログイン不要。背景・届け役・お守りカラー配置を確認。npm run dev 中のみ",
+    highlight: true,
+  },
+  {
+    href: "/preview/daily-fortune/layout",
+    label: "今日の鑑定結果レイアウト定規",
+    note: "文字・画像位置を調整してファイル保存。npm run dev 中のみ",
+    highlight: true,
+  },
+  {
     href: "/preview/forest-bookshelf",
     label: "森の本棚",
     note: "ログイン不要。本棚配置・小カード・背表紙一覧を確認。npm run dev 中のみ",

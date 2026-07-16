@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { SiteFooter } from "@/components/layout/SiteFooter";
 import { SiteHeader } from "@/components/layout/SiteHeader";
 import {
+  isDailyFortuneImmersivePath,
   isForestBookshelfImmersivePath,
   isLogHouseImmersivePreviewPath,
   isOrdersImmersiveMobilePath,
@@ -27,6 +28,7 @@ export function ConditionalSiteChrome({ children }: Props) {
     isForestMapImmersivePath(pathname) ||
     isLogHouseImmersivePreviewPath(pathname) ||
     isForestBookshelfImmersivePath(pathname) ||
+    isDailyFortuneImmersivePath(pathname) ||
     (isOrdersImmersiveMobilePath(pathname) && isMobile);
 
   if (isFullBleedEntrance) {
