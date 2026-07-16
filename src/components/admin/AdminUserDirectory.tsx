@@ -49,7 +49,8 @@ function letterButtonClass(active: boolean, empty: boolean): string {
 }
 
 export function AdminUserDirectory({ rows }: Props) {
-  const [allMode, setAllMode] = useState(false);
+  // 初期は All（従来どおり全件）。アルファベット箱は All をオフにしたとき。
+  const [allMode, setAllMode] = useState(true);
   const [letter, setLetter] = useState<AdminEmailAlphabetBucket | null>(null);
   const [sortDir, setSortDir] = useState<AdminListSortDir>("asc");
 
