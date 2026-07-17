@@ -22,6 +22,11 @@ import { DONGURI_PAGE_PATH } from "@/lib/loghouse/donguriTypes";
 
 type GatePhase = "idle" | "shortage" | "draftResume" | "draftResetConfirm";
 
+type BeginWriteEntryOptions = {
+  /** 入力画面へ直接向かう導線だけ下書き復元確認を出す */
+  checkDraft?: boolean;
+};
+
 function todayDateKey(): string {
   const d = new Date();
   const y = d.getFullYear();
@@ -69,6 +74,7 @@ export function useDonguriWriteEntryGate(profileId?: string | null) {
   const [pendingHref, setPendingHref] = useState<string | null>(null);
   const [pendingDateKey, setPendingDateKey] = useState(todayDateKey());
   const [pendingPreferDraft, setPendingPreferDraft] = useState(false);
+  const [pendingCheckDraft, setPendingCheckDraft] = useState(true);
   const [hasDraft, setHasDraft] = useState(false);
 
   const go = useCallback(
@@ -84,22 +90,24 @@ export function useDonguriWriteEntryGate(profileId?: string | null) {
   );
 
   const continueAfterShortageOrOk = useCallback(
-    async (href: string, preferDraft: boolean, dateKey: string) => {
+    async (href: string, preferDraft: boolean, dateKey: string, checkDraft: boolean) => {
       setPendingPreferDraft(preferDraft);
-      try {
-        const qs = new URLSearchParams({ dateKey });
-        if (profileId) qs.set("profileId", profileId);
-        const res = await fetch(`/api/journal/drafts?${qs.toString()}`, {
-          credentials: "same-origin",
-        });
-        const data = (await res.json()) as { draft?: { id?: string } | null };
-        if (res.ok && data.draft?.id) {
-          setHasDraft(true);
-          setPhase("draftResume");
-          return;
+      if (checkDraft) {
+        try {
+          const qs = new URLSearchParams({ dateKey });
+          if (profileId) qs.set("profileId", profileId);
+          const res = await fetch(`/api/journal/drafts?${qs.toString()}`, {
+            credentials: "same-origin",
+          });
+          const data = (await res.json()) as { draft?: { id?: string } | null };
+          if (res.ok && data.draft?.id) {
+            setHasDraft(true);
+            setPhase("draftResume");
+            return;
+          }
+        } catch {
+          // ignore
         }
-      } catch {
-        // ignore
       }
       go(href, preferDraft);
     },
@@ -107,12 +115,14 @@ export function useDonguriWriteEntryGate(profileId?: string | null) {
   );
 
   const beginWriteEntry = useCallback(
-    async (href: string, dateKey?: string) => {
+    async (href: string, dateKey?: string, options?: BeginWriteEntryOptions) => {
       if (checking) return;
+      const checkDraft = options?.checkDraft !== false;
       const resolvedDateKey =
         dateKey && /^\d{4}-\d{2}-\d{2}$/.test(dateKey) ? dateKey : todayDateKey();
       setPendingHref(href);
       setPendingDateKey(resolvedDateKey);
+      setPendingCheckDraft(checkDraft);
       setChecking(true);
       try {
         const qs = new URLSearchParams();
@@ -127,7 +137,7 @@ export function useDonguriWriteEntryGate(profileId?: string | null) {
           setPhase("shortage");
           return;
         }
-        await continueAfterShortageOrOk(href, false, resolvedDateKey);
+        await continueAfterShortageOrOk(href, false, resolvedDateKey, checkDraft);
       } catch {
         go(href, false);
       } finally {
@@ -153,7 +163,7 @@ export function useDonguriWriteEntryGate(profileId?: string | null) {
             variant: "primary",
             onClick: () => {
               if (!pendingHref) return;
-              void continueAfterShortageOrOk(pendingHref, true, pendingDateKey);
+              void continueAfterShortageOrOk(pendingHref, true, pendingDateKey, pendingCheckDraft);
             },
           },
           {

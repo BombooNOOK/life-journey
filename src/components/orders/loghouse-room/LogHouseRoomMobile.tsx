@@ -464,7 +464,9 @@ export function LogHouseRoomMobile({
               return;
             }
           }
-          await beginWriteEntry(action.href!);
+          await beginWriteEntry(action.href!, undefined, {
+            checkDraft: action.href!.startsWith("/journal"),
+          });
         })();
         return;
       }
