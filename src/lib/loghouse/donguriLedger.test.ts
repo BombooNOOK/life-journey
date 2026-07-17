@@ -8,6 +8,7 @@ describe("donguriTypes / format", () => {
     expect(donguriReasonLabel("daily_delivery")).toBe("ヤギさん郵便");
     expect(donguriReasonLabel("admin_grant")).toBe("森からのおとどけ");
     expect(donguriReasonLabel("birthday_gift")).toBe("お誕生日のおとどけ");
+    expect(donguriReasonLabel("adjustment")).toBe("森からの調整");
   });
 
   it("formats deltas", () => {

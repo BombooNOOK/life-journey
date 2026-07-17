@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 
+import { AdminDonguriAdjustForm } from "@/components/admin/AdminDonguriAdjustForm";
 import { AdminDonguriGrantForm } from "@/components/admin/AdminDonguriGrantForm";
 import { isAdminEmail } from "@/lib/admin/access";
 import { getViewerEmailFromCookie, normalizeEmail } from "@/lib/auth/viewer";
@@ -72,6 +73,8 @@ export default async function AdminDonguriLedgerPage({ params }: Props) {
       </section>
 
       <AdminDonguriGrantForm email={email} profiles={profiles} />
+
+      <AdminDonguriAdjustForm email={email} profiles={perProfile} />
 
       <section className="overflow-hidden rounded-xl border border-stone-200 bg-white">
         <h2 className="border-b border-stone-200 px-4 py-3 text-sm font-semibold text-stone-900">

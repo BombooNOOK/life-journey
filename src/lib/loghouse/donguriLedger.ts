@@ -7,6 +7,8 @@ import {
   japanCalendarYearFromDate,
 } from "@/lib/loghouse/birthdayAcornGift";
 import {
+  DONGURI_ADMIN_ADJUSTMENT_TITLE,
+  DONGURI_ADMIN_ADJUSTMENT_USER_TITLE,
   DONGURI_BIRTHDAY_GIFT_AMOUNT,
   DONGURI_BIRTHDAY_GIFT_DESCRIPTION,
   DONGURI_BIRTHDAY_GIFT_TITLE,
@@ -148,7 +150,16 @@ export async function getDonguriChoView(params: {
     todayDelivery: todayRow
       ? { label: DONGURI_REASON_LABELS.daily_delivery, delta: todayRow.amount }
       : null,
-    recent,
+    recent: recent.map((row) =>
+      row.reason === "adjustment"
+        ? {
+            ...row,
+            // ユーザー帳では事務メモを出さず、柔らかい表示名だけにする
+            title: DONGURI_ADMIN_ADJUSTMENT_USER_TITLE,
+            description: null,
+          }
+        : row,
+    ),
   };
 }
 
@@ -336,6 +347,81 @@ export async function grantDonguriByAdmin(params: {
   });
 
   return { entry: toView(result.ledger), noticeId: result.noticeId };
+}
+
+/**
+ * 管理者による残高調整（台帳に adjustment を追加。残高の直接更新はしない）。
+ * ポスト通知は送らない（テスト調整用）。
+ */
+export async function adjustDonguriByAdmin(params: {
+  email: string;
+  profileId: string;
+  amount: number;
+  description?: string | null;
+}): Promise<{
+  entry: DonguriLedgerEntryView;
+  previousBalance: number;
+  nextBalance: number;
+}> {
+  const email = normalizeEmail(params.email);
+  const profileId = params.profileId.trim();
+  const amount = Math.trunc(params.amount);
+  if (!email || !profileId) throw new Error("email / profileId が必要です");
+  if (!Number.isFinite(amount) || amount === 0) {
+    throw new Error("調整数は 0 以外の整数にしてください");
+  }
+
+  const previousBalance = await sumDonguriBalance({ email, profileId });
+  const description = params.description?.trim() || null;
+
+  const entry = await appendDonguriLedgerEntry({
+    email,
+    profileId,
+    amount,
+    reason: "adjustment",
+    title: DONGURI_ADMIN_ADJUSTMENT_TITLE,
+    description,
+    createdBy: "admin",
+  });
+
+  const nextBalance = previousBalance + amount;
+  return { entry, previousBalance, nextBalance };
+}
+
+/** 指定残高になるよう adjustment を追加（例: 不足時導線確認で 2こにする） */
+export async function adjustDonguriByAdminToTarget(params: {
+  email: string;
+  profileId: string;
+  targetBalance: number;
+  description?: string | null;
+}): Promise<{
+  entry: DonguriLedgerEntryView;
+  previousBalance: number;
+  nextBalance: number;
+}> {
+  const target = Math.trunc(params.targetBalance);
+  if (!Number.isFinite(target)) {
+    throw new Error("目標残高が不正です");
+  }
+
+  const email = normalizeEmail(params.email);
+  const profileId = params.profileId.trim();
+  if (!email || !profileId) throw new Error("email / profileId が必要です");
+
+  const previousBalance = await sumDonguriBalance({ email, profileId });
+  const amount = target - previousBalance;
+  if (amount === 0) {
+    throw new Error(`すでに ${target}こです。調整は不要です。`);
+  }
+
+  return adjustDonguriByAdmin({
+    email,
+    profileId,
+    amount,
+    description:
+      params.description?.trim() ||
+      `残高を${target}こに調整（不足時導線確認）`,
+  });
 }
 
 /**

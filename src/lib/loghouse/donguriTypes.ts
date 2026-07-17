@@ -27,7 +27,7 @@ export const DONGURI_REASON_LABELS: Record<DonguriReason, string> = {
   reward_ad: "スポンサー上映",
   acorn_purchase: "どんぐり購入",
   subscription_delivery: "森の定期便",
-  adjustment: "調整",
+  adjustment: "森からの調整",
 };
 
 export function donguriReasonLabel(reason: string): string {
@@ -68,6 +68,9 @@ export const DONGURI_BIRTHDAY_MAIL_BODY = [
 export const DONGURI_DIARY_SAVE_COST = 3 as const;
 export const DONGURI_DIARY_SAVE_TITLE = "今日のあしあと" as const;
 export const DONGURI_DIARY_SAVE_DESCRIPTION = "日記を森に残しました" as const;
+
+export const DONGURI_ADMIN_ADJUSTMENT_TITLE = "管理者調整" as const;
+export const DONGURI_ADMIN_ADJUSTMENT_USER_TITLE = "森からの調整" as const;
 
 export const DONGURI_WELCOME_GIFT_AMOUNT = 50 as const;
 export const DONGURI_WELCOME_GIFT_TITLE = "森の住民登録のお祝い" as const;
