@@ -199,6 +199,63 @@ export async function sendIndividualForestMailboxNotice(params: {
   return { noticeId: row.id, email, profileId: profile.id };
 }
 
+/**
+ * 複数メールへ個別送信。各アカウントの代表プロフィール（作成が最も早い）へ届ける。
+ */
+export async function sendBulkIndividualForestMailboxNotices(params: {
+  emails: string[];
+  title: string;
+  body: string;
+  actionLabel?: string | null;
+  actionRoute?: string | null;
+}): Promise<{
+  sent: Array<{ email: string; profileId: string; noticeId: string }>;
+  skipped: Array<{ email: string; reason: string }>;
+}> {
+  const title = params.title.trim();
+  const body = params.body.trim();
+  if (!title) throw new Error("タイトルを入力してください。");
+  if (!body) throw new Error("本文を入力してください。");
+
+  const uniqueEmails = Array.from(
+    new Set(params.emails.map((e) => normalizeEmail(e)).filter(Boolean)),
+  );
+  if (uniqueEmails.length === 0) throw new Error("宛先メールがありません。");
+  if (uniqueEmails.length > 100) {
+    throw new Error("一度に送れるのは最大100件です。");
+  }
+
+  const sent: Array<{ email: string; profileId: string; noticeId: string }> = [];
+  const skipped: Array<{ email: string; reason: string }> = [];
+
+  for (const email of uniqueEmails) {
+    const profiles = await listActiveProfilesForEmail(email);
+    const profile = profiles[0];
+    if (!profile) {
+      skipped.push({ email, reason: "プロフィールなし" });
+      continue;
+    }
+    try {
+      const result = await sendIndividualForestMailboxNotice({
+        email,
+        profileId: profile.id,
+        title,
+        body,
+        actionLabel: params.actionLabel,
+        actionRoute: params.actionRoute,
+      });
+      sent.push(result);
+    } catch (e) {
+      skipped.push({
+        email,
+        reason: e instanceof Error ? e.message : "送信失敗",
+      });
+    }
+  }
+
+  return { sent, skipped };
+}
+
 export async function listActiveProfilesForEmail(
   emailRaw: string,
 ): Promise<Array<{ id: string; nickname: string }>> {

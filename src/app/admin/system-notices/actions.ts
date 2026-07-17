@@ -8,6 +8,7 @@ import { getViewerEmailFromCookie } from "@/lib/auth/viewer";
 import {
   createSystemNoticeDraft,
   publishSystemNotice,
+  sendBulkIndividualForestMailboxNotices,
   sendIndividualForestMailboxNotice,
   unpublishSystemNotice,
   updateSystemNoticeDraft,
@@ -162,5 +163,44 @@ export async function sendIndividualSystemNoticeAction(formData: FormData) {
     redirect(
       `${returnBase}?email=${encodeURIComponent(email)}&err=${encodeURIComponent(message)}`,
     );
+  }
+}
+
+export async function sendBulkIndividualSystemNoticeAction(formData: FormData) {
+  const returnBase = `${LIST_PATH}/individual`;
+  await requireAdminOrRedirect(returnBase);
+
+  const confirmed = formData.get("confirmed")?.toString() === "1";
+  const fields = readUpsertFields(formData);
+  const emails = formData
+    .getAll("emails")
+    .map((v) => v.toString().trim())
+    .filter(Boolean);
+
+  if (!confirmed) {
+    redirect(
+      `${returnBase}?from=pick&err=${encodeURIComponent(
+        "送信内容の確認にチェックを入れてください。",
+      )}`,
+    );
+  }
+
+  try {
+    const result = await sendBulkIndividualForestMailboxNotices({
+      emails,
+      ...fields,
+    });
+    revalidateSystemNoticePaths();
+    const qs = new URLSearchParams({
+      from: "pick",
+      saved: "bulk",
+      sent: String(result.sent.length),
+      skipped: String(result.skipped.length),
+    });
+    redirect(`${returnBase}?${qs.toString()}`);
+  } catch (e) {
+    if (e && typeof e === "object" && "digest" in e) throw e;
+    const message = e instanceof Error ? e.message : "一括個別送信に失敗しました。";
+    redirect(`${returnBase}?from=pick&err=${encodeURIComponent(message)}`);
   }
 }

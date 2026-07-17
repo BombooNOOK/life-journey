@@ -12,8 +12,16 @@ import {
 } from "@/app/admin/actions";
 import {
   ADMIN_EMAIL_ALPHABET,
+  ADMIN_FOREST_NOTICE_EMAILS_STORAGE_KEY,
+  DEFAULT_ADMIN_DIRECTORY_FILTERS,
   compareAdminDirectoryRows,
   emailAlphabetBucket,
+  matchesAdminDirectoryFilters,
+  pickRandomEmails,
+  type AdminDirectoryAudienceFilter,
+  type AdminDirectoryFilters,
+  type AdminDirectoryPlanFilter,
+  type AdminDirectoryPresenceFilter,
   type AdminEmailAlphabetBucket,
   type AdminListSortDir,
 } from "@/lib/admin/adminUserDirectory";
@@ -48,30 +56,105 @@ function letterButtonClass(active: boolean, empty: boolean): string {
   return "bg-white text-stone-700 hover:bg-stone-100";
 }
 
+function FilterSelect<T extends string>({
+  label,
+  value,
+  onChange,
+  options,
+}: {
+  label: string;
+  value: T;
+  onChange: (v: T) => void;
+  options: Array<{ value: T; label: string }>;
+}) {
+  return (
+    <label className="flex items-center gap-1.5 text-xs text-stone-600">
+      <span className="shrink-0">{label}</span>
+      <select
+        value={value}
+        onChange={(e) => onChange(e.target.value as T)}
+        className="rounded-md border border-stone-300 bg-white px-2 py-1 text-xs text-stone-800"
+      >
+        {options.map((o) => (
+          <option key={o.value} value={o.value}>
+            {o.label}
+          </option>
+        ))}
+      </select>
+    </label>
+  );
+}
+
 export function AdminUserDirectory({ rows }: Props) {
-  // 初期は All（従来どおり全件）。アルファベット箱は All をオフにしたとき。
   const [allMode, setAllMode] = useState(true);
   const [letter, setLetter] = useState<AdminEmailAlphabetBucket | null>(null);
   const [sortDir, setSortDir] = useState<AdminListSortDir>("asc");
+  const [filters, setFilters] = useState<AdminDirectoryFilters>(DEFAULT_ADMIN_DIRECTORY_FILTERS);
+  const [selected, setSelected] = useState<Set<string>>(() => new Set());
+  const [randomN, setRandomN] = useState(10);
 
   const countsByLetter = useMemo(() => {
     const map = new Map<AdminEmailAlphabetBucket, number>();
     for (const key of ADMIN_EMAIL_ALPHABET) map.set(key, 0);
     for (const row of rows) {
+      if (!matchesAdminDirectoryFilters(row, filters)) continue;
       const bucket = emailAlphabetBucket(row.email);
       map.set(bucket, (map.get(bucket) ?? 0) + 1);
     }
     return map;
-  }, [rows]);
+  }, [filters, rows]);
 
   const visibleRows = useMemo(() => {
-    let list = rows;
+    let list = rows.filter((r) => matchesAdminDirectoryFilters(r, filters));
     if (!allMode) {
       if (!letter) return [];
-      list = rows.filter((r) => emailAlphabetBucket(r.email) === letter);
+      list = list.filter((r) => emailAlphabetBucket(r.email) === letter);
     }
     return [...list].sort((a, b) => compareAdminDirectoryRows(a, b, allMode ? sortDir : "asc"));
-  }, [allMode, letter, rows, sortDir]);
+  }, [allMode, filters, letter, rows, sortDir]);
+
+  const selectedCount = selected.size;
+  const allVisibleSelected =
+    visibleRows.length > 0 && visibleRows.every((r) => selected.has(r.email));
+
+  function toggleEmail(email: string) {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(email)) next.delete(email);
+      else next.add(email);
+      return next;
+    });
+  }
+
+  function toggleAllVisible() {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (allVisibleSelected) {
+        for (const row of visibleRows) next.delete(row.email);
+      } else {
+        for (const row of visibleRows) next.add(row.email);
+      }
+      return next;
+    });
+  }
+
+  function selectRandomVisible() {
+    const pool = visibleRows.filter((r) => r.profileIds.length > 0);
+    const emails = pickRandomEmails(pool, randomN);
+    setSelected(new Set(emails));
+  }
+
+  function goToIndividualSend() {
+    const emails = Array.from(selected);
+    if (emails.length === 0) return;
+    try {
+      sessionStorage.setItem(ADMIN_FOREST_NOTICE_EMAILS_STORAGE_KEY, JSON.stringify(emails));
+    } catch {
+      window.alert("宛先の一時保存に失敗しました。件数を減らして再度お試しください。");
+      return;
+    }
+    window.location.href = "/admin/system-notices/individual?from=pick";
+  }
 
   return (
     <div className="space-y-3">
@@ -144,10 +227,109 @@ export function AdminUserDirectory({ rows }: Props) {
           </div>
         ) : null}
 
+        <div className="mt-4 flex flex-wrap gap-x-4 gap-y-2 border-t border-stone-100 pt-3">
+          <FilterSelect<AdminDirectoryPlanFilter>
+            label="プラン"
+            value={filters.plan}
+            onChange={(plan) => setFilters((f) => ({ ...f, plan }))}
+            options={[
+              { value: "all", label: "すべて" },
+              { value: "free", label: "フリー" },
+              { value: "light", label: "ライト" },
+            ]}
+          />
+          <FilterSelect<AdminDirectoryPresenceFilter>
+            label="鑑定"
+            value={filters.hasKantei}
+            onChange={(hasKantei) => setFilters((f) => ({ ...f, hasKantei }))}
+            options={[
+              { value: "all", label: "すべて" },
+              { value: "yes", label: "あり" },
+              { value: "no", label: "なし" },
+            ]}
+          />
+          <FilterSelect<AdminDirectoryPresenceFilter>
+            label="日記"
+            value={filters.hasJournal}
+            onChange={(hasJournal) => setFilters((f) => ({ ...f, hasJournal }))}
+            options={[
+              { value: "all", label: "すべて" },
+              { value: "yes", label: "あり" },
+              { value: "no", label: "なし" },
+            ]}
+          />
+          <FilterSelect<AdminDirectoryAudienceFilter>
+            label="対象"
+            value={filters.audience}
+            onChange={(audience) => setFilters((f) => ({ ...f, audience }))}
+            options={[
+              { value: "all", label: "すべて" },
+              { value: "customers", label: "一般のみ" },
+              { value: "monitor", label: "モニター" },
+              { value: "admin", label: "管理者" },
+            ]}
+          />
+          <label className="flex items-center gap-1.5 text-xs text-stone-600">
+            <input
+              type="checkbox"
+              checked={filters.sendableOnly}
+              onChange={(e) =>
+                setFilters((f) => ({ ...f, sendableOnly: e.target.checked }))
+              }
+            />
+            送信可（プロフィールあり）のみ
+          </label>
+        </div>
+
+        <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-stone-100 pt-3">
+          <button
+            type="button"
+            onClick={toggleAllVisible}
+            className="rounded-md border border-stone-300 px-2 py-1 text-xs text-stone-700 hover:bg-stone-50"
+          >
+            {allVisibleSelected ? "表示中のチェックを外す" : "表示中をすべてチェック"}
+          </button>
+          <label className="flex items-center gap-1 text-xs text-stone-600">
+            ランダム
+            <input
+              type="number"
+              min={1}
+              max={200}
+              value={randomN}
+              onChange={(e) => setRandomN(Number(e.target.value) || 1)}
+              className="w-14 rounded-md border border-stone-300 px-1.5 py-1 text-xs"
+            />
+            名
+          </label>
+          <button
+            type="button"
+            onClick={selectRandomVisible}
+            className="rounded-md border border-stone-300 px-2 py-1 text-xs text-stone-700 hover:bg-stone-50"
+          >
+            ランダムにチェック
+          </button>
+          <button
+            type="button"
+            onClick={() => setSelected(new Set())}
+            className="rounded-md border border-stone-300 px-2 py-1 text-xs text-stone-700 hover:bg-stone-50"
+          >
+            選択解除
+          </button>
+          <button
+            type="button"
+            disabled={selectedCount === 0}
+            onClick={goToIndividualSend}
+            className="rounded-md bg-emerald-800 px-3 py-1.5 text-xs font-medium text-white hover:bg-emerald-700 disabled:opacity-40"
+          >
+            選択した人に個別お手紙（{selectedCount}）
+          </button>
+        </div>
+
         <p className="mt-3 text-xs text-stone-500">
           表示中 {visibleRows.length} / 全 {rows.length} 件
           {!allMode && letter ? `（${letter}）` : null}
           {allMode ? `（All・${sortDir === "asc" ? "昇順" : "降順"}）` : null}
+          {selectedCount > 0 ? `・選択 ${selectedCount} 件` : null}
         </p>
       </div>
 
@@ -155,6 +337,9 @@ export function AdminUserDirectory({ rows }: Props) {
         <table className="min-w-full text-sm">
           <thead className="bg-stone-50 text-left text-stone-700">
             <tr>
+              <th className="px-3 py-3 font-medium">
+                <span className="sr-only">選択</span>
+              </th>
               <th className="px-4 py-3 font-medium">会員番号</th>
               <th className="px-4 py-3 font-medium">メール</th>
               <th className="px-4 py-3 font-medium">プロフィールID / 名</th>
@@ -174,9 +359,9 @@ export function AdminUserDirectory({ rows }: Props) {
           <tbody>
             {visibleRows.length === 0 ? (
               <tr>
-                <td colSpan={14} className="px-4 py-8 text-center text-sm text-stone-500">
+                <td colSpan={15} className="px-4 py-8 text-center text-sm text-stone-500">
                   {allMode
-                    ? "該当するユーザーがいません"
+                    ? "該当するユーザーがいません（絞り込み条件を見直してください）"
                     : letter
                       ? "この文字のメールはありません"
                       : "アルファベットボタンをタップするか、All で全件表示してください"}
@@ -184,7 +369,20 @@ export function AdminUserDirectory({ rows }: Props) {
               </tr>
             ) : (
               visibleRows.map((row) => (
-                <tr key={row.email} className="border-t border-stone-100">
+                <tr
+                  key={row.email}
+                  className={`border-t border-stone-100 ${
+                    selected.has(row.email) ? "bg-emerald-50/60" : ""
+                  }`}
+                >
+                  <td className="px-3 py-3">
+                    <input
+                      type="checkbox"
+                      checked={selected.has(row.email)}
+                      onChange={() => toggleEmail(row.email)}
+                      aria-label={`${row.email} を選択`}
+                    />
+                  </td>
                   <td className="px-4 py-3 font-mono text-xs text-stone-700">
                     {row.memberNumber != null
                       ? formatAccountMemberNumber(row.memberNumber)
