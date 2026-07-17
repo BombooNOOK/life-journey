@@ -28,29 +28,42 @@ type IntroProps = {
 /** 一覧上部：ヤギをしっかり見せる案内帯 */
 export function MailboxIntroBanner({ compact = false }: IntroProps) {
   return (
-    <section className={`overflow-hidden ${LJD_PAPER_CARD_CLASS}`}>
+    <section className={`relative isolate overflow-hidden ${LJD_PAPER_CARD_CLASS}`}>
+      <Image
+        src="/images/home/hero_forest_bg_soft_wide.png"
+        alt=""
+        fill
+        className="pointer-events-none -z-20 object-cover object-center"
+        sizes="(max-width: 640px) 100vw, 448px"
+        unoptimized
+        priority
+      />
       <div
-        className={`flex items-stretch ${
-          compact ? "min-h-[8.5rem] sm:min-h-[7.5rem]" : "min-h-[11rem] sm:min-h-[9.5rem]"
+        className="pointer-events-none absolute inset-0 -z-10 bg-gradient-to-r from-[#f7edd8]/25 via-[#fffaf0]/15 to-[#fffaf4]/65"
+        aria-hidden
+      />
+      <div
+        className={`relative flex items-stretch ${
+          compact ? "min-h-[9rem] sm:min-h-[8rem]" : "min-h-[12rem] sm:min-h-[10.5rem]"
         }`}
       >
         <div
           className={[
-            "relative shrink-0 self-stretch bg-[#f3ead9]/55",
-            compact ? "w-[42%] sm:w-[38%]" : "w-[44%] sm:w-[38%]",
+            "relative shrink-0 self-stretch",
+            compact ? "w-[41%] sm:w-[38%]" : "w-[45%] sm:w-[40%]",
           ].join(" ")}
         >
           <Image
             src={MAILBOX_GOAT_FULL_MAIN_SRC}
             alt=""
             fill
-            className="object-contain object-bottom p-1 sm:p-1.5"
+            className="object-contain object-bottom px-1 pt-2 drop-shadow-[0_4px_8px_rgba(82,64,38,0.16)] sm:px-2"
             sizes="(max-width: 640px) 44vw, 160px"
             unoptimized
             priority
           />
         </div>
-        <div className="flex min-w-0 flex-1 flex-col justify-center px-3.5 py-3.5 sm:px-4">
+        <div className="my-3 mr-3 flex min-w-0 flex-1 flex-col justify-center rounded-xl border border-white/55 bg-[#fffdf8]/72 px-3.5 py-3 shadow-[0_4px_18px_rgba(83,65,41,0.08)] backdrop-blur-[2px] sm:my-3.5 sm:mr-3.5 sm:px-4">
           <p className="text-[11px] font-medium tracking-wide text-[#8a735c]">
             {LOG_HOUSE_MAILBOX_PAGE_BRAND}
           </p>
