@@ -433,6 +433,50 @@ model LogHouseMailboxNotice {
   @@index([email, profileId, readAt])
 }
 
+/// 森からのお知らせ（全ユーザー共通。本文は1件のみ保存）
+model SystemNotice {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  title String
+  body  String
+
+  /// draft | published | unpublished
+  status String @default("draft")
+
+  publishedAt   DateTime?
+  unpublishedAt DateTime?
+
+  actionLabel String?
+  actionRoute String?
+
+  authorEmail String?
+
+  readStates SystemNoticeReadState[]
+
+  @@index([status, publishedAt])
+  @@index([createdAt])
+}
+
+/// 森からのお知らせのユーザー別既読
+model SystemNoticeReadState {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  noticeId  String
+  email     String
+  profileId String
+  readAt    DateTime @default(now())
+
+  notice SystemNotice @relation(fields: [noticeId], references: [id], onDelete: Cascade)
+
+  @@unique([noticeId, email, profileId])
+  @@index([email, profileId])
+  @@index([noticeId])
+}
+
 /// どんぐり台帳（増減履歴。残高は amount の合計）
 model LogHouseDonguriLedgerEntry {
   id        String   @id @default(cuid())

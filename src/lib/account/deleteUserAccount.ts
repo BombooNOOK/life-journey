@@ -182,6 +182,7 @@ export async function deleteUserAccount(params: {
     });
     const deletedMailboxNotices = await tx.logHouseMailboxNotice.deleteMany({ where: scope });
     const deletedDonguriLedger = await tx.logHouseDonguriLedgerEntry.deleteMany({ where: scope });
+    const deletedSystemNoticeReads = await tx.systemNoticeReadState.deleteMany({ where: scope });
     const deletedGardenPlants = await tx.gardenPlant.deleteMany({ where: scope });
     const deletedProfiles = await tx.profile.deleteMany({ where: scope });
     const deletedSupportInquiries = await tx.supportInquiry.deleteMany({ where: scope });
@@ -197,6 +198,7 @@ export async function deleteUserAccount(params: {
       deletedGardenDisplayFlowers: deletedGardenDisplayFlowers.count,
       deletedMailboxNotices: deletedMailboxNotices.count,
       deletedDonguriLedger: deletedDonguriLedger.count,
+      deletedSystemNoticeReads: deletedSystemNoticeReads.count,
       deletedGardenPlants: deletedGardenPlants.count,
       deletedProfiles: deletedProfiles.count,
       deletedSupportInquiries: deletedSupportInquiries.count,

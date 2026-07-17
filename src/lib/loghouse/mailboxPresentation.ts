@@ -10,6 +10,10 @@ import {
   DONGURI_BIRTHDAY_MAIL_TITLE,
   DONGURI_DAILY_MAIL_TITLE,
 } from "@/lib/loghouse/donguriTypes";
+import {
+  MAILBOX_NOTICE_TYPE_FOREST_SYSTEM,
+  SYSTEM_NOTICE_SENDER_NAME,
+} from "@/lib/loghouse/systemNoticeTypes";
 
 /** ユーザー向けのポスト表示形（DBの MailboxNoticeView を拡張しやすい形に寄せる） */
 export type MailboxPostKind = "letter" | "notice" | "delivery" | "reward";
@@ -70,10 +74,11 @@ function metaForNoticeType(type: string): SenderMeta {
         titleOverride: DONGURI_BIRTHDAY_MAIL_TITLE,
       };
     case "season_event":
+    case MAILBOX_NOTICE_TYPE_FOREST_SYSTEM:
     case "system_notice":
       return {
         kind: "notice",
-        senderName: "森からのお知らせ",
+        senderName: SYSTEM_NOTICE_SENDER_NAME,
         senderType: "system",
       };
     default:

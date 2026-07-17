@@ -4,6 +4,13 @@ import {
   MAILBOX_NOTICE_TYPE_FORTUNE_REPORT_READY,
   type MailboxNoticeView,
 } from "@/lib/loghouse/mailboxNoticeTypes";
+import { parseSystemNoticeMailboxId } from "@/lib/loghouse/systemNoticeTypes";
+import {
+  countUnreadPublishedSystemNotices,
+  getPublishedSystemNoticeForMailbox,
+  listPublishedSystemNoticesForMailbox,
+  markSystemNoticeRead,
+} from "@/lib/loghouse/systemNotices";
 
 export {
   MAILBOX_NOTICE_TYPE_FORTUNE_REPORT_READY,
@@ -78,6 +85,19 @@ export async function ensureFortuneReportReadyMailboxNotice(params: {
   });
 }
 
+function sortMailboxFeed(a: MailboxNoticeView, b: MailboxNoticeView): number {
+  const aAt = Date.parse(a.createdAt);
+  const bAt = Date.parse(b.createdAt);
+  if (Number.isFinite(aAt) && Number.isFinite(bAt) && aAt !== bAt) {
+    return bAt - aAt;
+  }
+  return b.id.localeCompare(a.id);
+}
+
+/**
+ * 個人ポスト（LogHouseMailboxNotice）と公開中の森からのお知らせ（SystemNotice）を統合。
+ * 並びは作成日／公開日（View.createdAt）の新しい順。
+ */
 export async function listMailboxNoticesForProfile(params: {
   email: string;
   profileId: string;
@@ -87,12 +107,18 @@ export async function listMailboxNoticesForProfile(params: {
   const profileId = params.profileId.trim();
   if (!email || !profileId) return [];
 
-  const rows = await prisma.logHouseMailboxNotice.findMany({
-    where: { email, profileId },
-    orderBy: { createdAt: "desc" },
-    take: params.take ?? 40,
-  });
-  return rows.map(toMailboxNoticeView);
+  const take = params.take ?? 40;
+  const [personalRows, systemNotices] = await Promise.all([
+    prisma.logHouseMailboxNotice.findMany({
+      where: { email, profileId },
+      orderBy: { createdAt: "desc" },
+      take,
+    }),
+    listPublishedSystemNoticesForMailbox({ email, profileId, take }),
+  ]);
+
+  const personal = personalRows.map(toMailboxNoticeView);
+  return [...personal, ...systemNotices].sort(sortMailboxFeed).slice(0, take);
 }
 
 export async function countUnreadMailboxNotices(params: {
@@ -103,9 +129,13 @@ export async function countUnreadMailboxNotices(params: {
   const profileId = params.profileId.trim();
   if (!email || !profileId) return 0;
 
-  return prisma.logHouseMailboxNotice.count({
-    where: { email, profileId, readAt: null },
-  });
+  const [personalUnread, systemUnread] = await Promise.all([
+    prisma.logHouseMailboxNotice.count({
+      where: { email, profileId, readAt: null },
+    }),
+    countUnreadPublishedSystemNotices({ email, profileId }),
+  ]);
+  return personalUnread + systemUnread;
 }
 
 export async function getMailboxNoticeForProfile(params: {
@@ -117,6 +147,11 @@ export async function getMailboxNoticeForProfile(params: {
   const profileId = params.profileId.trim();
   const noticeId = params.noticeId.trim();
   if (!email || !profileId || !noticeId) return null;
+
+  const systemId = parseSystemNoticeMailboxId(noticeId);
+  if (systemId) {
+    return getPublishedSystemNoticeForMailbox({ email, profileId, noticeId: systemId });
+  }
 
   const row = await prisma.logHouseMailboxNotice.findFirst({
     where: { id: noticeId, email, profileId },
@@ -133,6 +168,11 @@ export async function markMailboxNoticeRead(params: {
   const profileId = params.profileId.trim();
   const noticeId = params.noticeId.trim();
   if (!email || !profileId || !noticeId) return null;
+
+  const systemId = parseSystemNoticeMailboxId(noticeId);
+  if (systemId) {
+    return markSystemNoticeRead({ email, profileId, noticeId: systemId });
+  }
 
   const existing = await prisma.logHouseMailboxNotice.findFirst({
     where: { id: noticeId, email, profileId },

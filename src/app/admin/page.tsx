@@ -748,6 +748,12 @@ export default async function AdminPage({ searchParams }: Props) {
           >
             BambooNOOK 投稿アトリエ →
           </Link>
+          <Link
+            href="/admin/system-notices"
+            className="text-sm font-medium text-sky-800 underline-offset-2 hover:underline"
+          >
+            森からのお知らせ →
+          </Link>
         </p>
       </div>
 
