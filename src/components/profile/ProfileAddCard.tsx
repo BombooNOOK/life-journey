@@ -85,12 +85,14 @@ export function ProfileAddCard({
             <p>
               新しい記録を始めたい場合は、バックアップ・製本後に不要なプロフィールを整理する流れをおすすめしています。
             </p>
-            <p>今後、さらに多くのプロフィールを記録できるプレミアムプランも検討中です。</p>
+            <p>
+              今後、さらに多くのプロフィールを記録できるしくみや、森のお預かり棚も検討中です。
+            </p>
           </div>
         ) : (
           <div className="mt-3 space-y-3 lj-read-desc text-stone-700">
-            <p>現在のプランではプロフィールを追加できません。</p>
-            <p>プロフィールを増やすには、プラン変更が必要です。</p>
+            <p>現在のご利用枠ではプロフィールを追加できません。</p>
+            <p>プロフィールを増やすには、どんぐりと森の定期便のご案内をご確認ください。</p>
           </div>
         )
       ) : (
@@ -127,7 +129,7 @@ export function ProfileAddCard({
           href="/plans"
           className="inline-flex min-h-[44px] items-center rounded-lg border border-violet-300 bg-violet-50 px-4 py-2 text-sm font-medium text-violet-950 transition hover:bg-violet-100"
         >
-          プラン変更 →
+          どんぐりと森の定期便 →
         </Link>
       </div>
 

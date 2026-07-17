@@ -2,13 +2,22 @@ import Link from "next/link";
 
 import { LegalFooterLinks } from "@/components/legal/LegalFooterLinks";
 import { PlanCards } from "@/components/plans/PlanCards";
+import { StripeIsolationNote } from "@/components/plans/StripeIsolationNote";
+import { isAdminEmail } from "@/lib/admin/access";
 import { getViewerEmailFromCookie } from "@/lib/auth/viewer";
 import { LOG_HOUSE_BACK_LINK } from "@/lib/journal/logHouseLabels";
+import { getStripeMode, isStripeCheckoutEnabled } from "@/lib/stripe/mode";
 
 export const dynamic = "force-dynamic";
 
 export default async function PlansPage() {
   const viewerEmail = await getViewerEmailFromCookie();
+  const isAdmin = viewerEmail ? await isAdminEmail(viewerEmail) : false;
+  const showIsolationNote =
+    Boolean(viewerEmail) &&
+    isAdmin &&
+    !isStripeCheckoutEnabled() &&
+    process.env.NODE_ENV !== "production";
 
   return (
     <div className="space-y-6">
@@ -32,6 +41,8 @@ export default async function PlansPage() {
       </div>
 
       <PlanCards />
+
+      <StripeIsolationNote enabled={showIsolationNote} stripeMode={getStripeMode()} />
 
       <section className="space-y-2 rounded-xl border border-stone-200 bg-white px-4 py-4 text-sm leading-relaxed text-stone-700 shadow-sm sm:px-5">
         <h2 className="text-base font-semibold text-stone-900">いまできること</h2>

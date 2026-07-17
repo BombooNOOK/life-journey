@@ -110,7 +110,7 @@ export default async function DiaryBookBindingPage({ params }: Props) {
       <ul className="list-inside list-disc space-y-0.5 text-xs leading-relaxed text-stone-500">
         <li>BASEでお支払い（製本コード入力が必要）</li>
         <li>受注生産のため、注文後のキャンセルは原則できません</li>
-        <li>月額プランとは別料金です</li>
+        <li>森の定期便・どんぐりとは別料金です</li>
       </ul>
     </div>
   );

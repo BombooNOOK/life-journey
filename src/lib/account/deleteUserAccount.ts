@@ -117,7 +117,7 @@ export async function buildAccountDeletePreview(emailInput: string): Promise<Acc
       email,
       canDelete: false,
       blockCode: "PAID_PLAN_ACTIVE",
-      blockMessage: "有料プランをご利用中の場合は、先に有料プランの解約が必要です。",
+      blockMessage: "森の定期便をご利用中の場合は、先に解約が必要です。",
       profileCount: 0,
       journalEntryCount: 0,
       orderCount: 0,
@@ -282,7 +282,7 @@ export function accountDeleteBlockMessageForSettings(
   cancelAtPeriodEnd: boolean,
 ): string | null {
   if (isPaidSubscriber(settings ?? null) && !cancelAtPeriodEnd) {
-    return "有料プランをご利用中の場合は、先に有料プランの解約が必要です。";
+    return "森の定期便をご利用中の場合は、先に解約が必要です。";
   }
   return null;
 }

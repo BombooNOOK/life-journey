@@ -1,6 +1,10 @@
-import { resolveStripePriceId } from "@/lib/stripe/mode";
+import { resolveStripePriceId, type StripePricePlan } from "@/lib/stripe/mode";
 
+/** 既存 AccountSettings.subscriptionPlan 互換（light / standard） */
 export type SubscriptionPlanId = "light" | "standard";
+
+/** Checkout で扱う商品（どんぐり経済圏） */
+export type CheckoutPlanId = "forest_delivery" | "acorn_50" | "light" | "standard";
 
 export const SUBSCRIPTION_PLAN_PROFILE_LIMIT: Record<SubscriptionPlanId, number> = {
   light: 1,
@@ -13,22 +17,37 @@ export function isSubscriptionPlanId(value: string): value is SubscriptionPlanId
   return value === "light" || value === "standard";
 }
 
+export function isCheckoutPlanId(value: string): value is CheckoutPlanId {
+  return (
+    value === "forest_delivery" ||
+    value === "acorn_50" ||
+    value === "light" ||
+    value === "standard"
+  );
+}
+
 export function deriveSubscriptionPlanLabel(plan: string | null | undefined): string {
-  if (plan === "light") return "ライトプラン";
-  if (plan === "standard") return "スタンダードプラン";
-  if (plan === "forest_delivery") return "森の定期便";
+  if (plan === "light" || plan === "forest_delivery") return "森の定期便";
+  if (plan === "standard") return "森の定期便";
+  if (plan === "acorn_50") return "どんぐり50こ";
   return "フリープラン";
 }
 
-export function priceIdForPlan(plan: SubscriptionPlanId): string | null {
-  return resolveStripePriceId({ plan });
+export function priceIdForPlan(plan: CheckoutPlanId): string | null {
+  return resolveStripePriceId({ plan: plan as StripePricePlan });
+}
+
+export function checkoutModeForPlan(plan: CheckoutPlanId): "subscription" | "payment" {
+  return plan === "acorn_50" ? "payment" : "subscription";
 }
 
 export function planFromPriceId(priceId: string | null | undefined): SubscriptionPlanId | null {
   if (!priceId) return null;
   const light = resolveStripePriceId({ plan: "light" });
   const standard = resolveStripePriceId({ plan: "standard" });
+  const forest = resolveStripePriceId({ plan: "forest_delivery" });
   if (light && priceId === light) return "light";
+  if (forest && priceId === forest) return "light";
   if (standard && priceId === standard) return "standard";
   return null;
 }

@@ -520,7 +520,7 @@ model LogHouseDonguriLedgerEntry {
 
   /// 付与は正、消費は負
   amount Int
-  /// daily_delivery | admin_grant | birthday_gift | diary_save | book_create | reward_ad | subscription_delivery | adjustment
+  /// daily_delivery | admin_grant | birthday_gift | diary_save | book_create | reward_ad | acorn_purchase | subscription_delivery | adjustment
   reason String
   title  String
   description String?

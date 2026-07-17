@@ -67,7 +67,9 @@ export function planFromCheckoutMetadata(
   metadata: Stripe.Metadata | null | undefined,
 ): SubscriptionPlanId | null {
   const raw = metadata?.plan;
-  return raw === "light" || raw === "standard" ? raw : null;
+  if (raw === "light" || raw === "standard") return raw;
+  if (raw === "forest_delivery") return "light";
+  return null;
 }
 
 export function emailFromCheckoutMetadata(
@@ -85,10 +87,20 @@ export function emailFromCheckoutMetadata(
 export async function handleCheckoutSessionCompleted(
   session: Stripe.Checkout.Session,
 ): Promise<void> {
+  // TODO(実課金開始時):
+  // checkout.session.completed を受け取ったら、購入内容に応じて acornLedger に反映する。
+  // - 森の定期便: subscription_delivery として毎月 +100
+  // - 単発どんぐり: acorn_purchase として +50
+  // 現状は本番課金を開始していないため、台帳への付与は行わない。
+
   const subscriptionId =
     typeof session.subscription === "string" ? session.subscription : session.subscription?.id;
   if (!subscriptionId) {
-    console.warn("[stripe] checkout.session.completed without subscription", { sessionId: session.id });
+    console.warn("[stripe] checkout.session.completed without subscription", {
+      sessionId: session.id,
+      mode: session.mode,
+      plan: session.metadata?.plan,
+    });
     return;
   }
 

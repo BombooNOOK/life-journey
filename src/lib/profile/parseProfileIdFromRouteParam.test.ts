@@ -1,21 +1,21 @@
-import assert from "node:assert/strict";
-import test from "node:test";
+import { describe, expect, it } from "vitest";
 
 import { parseProfileIdFromRouteParam } from "./parseProfileIdFromRouteParam";
 
-test("parseProfileIdFromRouteParam decodes legacy colon in path", () => {
-  assert.equal(
-    parseProfileIdFromRouteParam("legacy%3A1888dd05fa3c123c1b723aeeb371acc2"),
-    "legacy:1888dd05fa3c123c1b723aeeb371acc2",
-  );
-});
+describe("parseProfileIdFromRouteParam", () => {
+  it("decodes legacy colon in path", () => {
+    expect(parseProfileIdFromRouteParam("legacy%3A1888dd05fa3c123c1b723aeeb371acc2")).toBe(
+      "legacy:1888dd05fa3c123c1b723aeeb371acc2",
+    );
+  });
 
-test("parseProfileIdFromRouteParam leaves already-decoded ids unchanged", () => {
-  const id = "legacy:1888dd05fa3c123c1b723aeeb371acc2";
-  assert.equal(parseProfileIdFromRouteParam(id), id);
-});
+  it("leaves already-decoded ids unchanged", () => {
+    const id = "legacy:1888dd05fa3c123c1b723aeeb371acc2";
+    expect(parseProfileIdFromRouteParam(id)).toBe(id);
+  });
 
-test("parseProfileIdFromRouteParam leaves cuid unchanged", () => {
-  const id = "cmoomthbz0000l7047ngrx3co";
-  assert.equal(parseProfileIdFromRouteParam(id), id);
+  it("leaves cuid unchanged", () => {
+    const id = "cmoomthbz0000l7047ngrx3co";
+    expect(parseProfileIdFromRouteParam(id)).toBe(id);
+  });
 });

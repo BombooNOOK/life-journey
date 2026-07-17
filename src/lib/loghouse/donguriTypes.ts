@@ -7,6 +7,7 @@ export const DONGURI_REASONS = [
   "diary_save",
   "book_create",
   "reward_ad",
+  "acorn_purchase",
   "subscription_delivery",
   "adjustment",
 ] as const;
@@ -24,6 +25,7 @@ export const DONGURI_REASON_LABELS: Record<DonguriReason, string> = {
   diary_save: "今日のあしあと",
   book_create: "日記ブックを作成",
   reward_ad: "スポンサー上映",
+  acorn_purchase: "どんぐり購入",
   subscription_delivery: "森の定期便",
   adjustment: "調整",
 };

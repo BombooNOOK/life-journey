@@ -217,7 +217,7 @@ export function DiaryBookCreateForm({
       <section className="rounded-xl border border-stone-200 bg-stone-50/80 px-4 py-3.5 shadow-sm">
         <h2 className="text-base font-semibold text-stone-900">日記ブックを作る</h2>
         <p className="mt-2 text-sm leading-relaxed text-stone-700">
-          日記ブックの新規作成は、日記の無料お試し開始後、またはサブスクリプション加入後にご利用いただけます。
+          日記ブックの新規作成は、日記の無料お試し開始後、または森の定期便のご利用開始後にご利用いただけます。
         </p>
       </section>
     );

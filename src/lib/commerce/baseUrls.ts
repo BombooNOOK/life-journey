@@ -3,7 +3,7 @@
  * 日記製本（ページ数別）は `bookBindingPlan.ts` を参照。
  */
 
-/** ライトプラン（月額・定期便） */
+/** ライトプラン相当（旧 BASE 月額・定期便 URL。Stripe 移行後は参照のみ） */
 export const BASE_LIGHT_SUBSCRIPTION_URL =
   process.env.NEXT_PUBLIC_BASE_LIGHT_SUBSCRIPTION_URL ??
   "https://bamboonook.base.shop/items/144880129";

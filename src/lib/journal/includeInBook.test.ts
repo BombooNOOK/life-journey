@@ -1,7 +1,28 @@
 import { describe, expect, it } from "vitest";
 
+import type { BoundDiaryEntry } from "@/components/journal/DiaryYearBoundPages";
+
 import { buildBoundDiaryBookPages } from "./diaryBookPages";
 import { filterEntriesForDiaryBook, isEntryIncludedInDiaryBook } from "./includeInBook";
+
+function createTestBoundDiaryEntry(
+  overrides: Partial<BoundDiaryEntry> = {},
+): BoundDiaryEntry {
+  return {
+    id: "entry_test",
+    content: "テスト本文",
+    createdAt: "2025-10-15T03:00:00.000Z",
+    updatedAt: "2025-10-15T03:00:00.000Z",
+    mood: "calm",
+    activity: "record_anyway",
+    companionType: "owl",
+    designTheme: "simple",
+    generatedComment: null,
+    includeInBook: true,
+    contentFontMode: "standard",
+    ...overrides,
+  };
+}
 
 describe("includeInBook", () => {
   it("treats undefined as included", () => {
@@ -11,16 +32,16 @@ describe("includeInBook", () => {
   });
 
   it("excludes OFF entries from bound diary book pages", () => {
-    const included = {
+    const included = createTestBoundDiaryEntry({
       id: "e1",
       content: "a",
-      createdAt: "2025-10-15T03:00:00.000Z",
-      mood: "calm",
-      activity: "record_anyway",
-      companionType: "owl",
       includeInBook: true,
-    };
-    const excluded = { ...included, id: "e2", includeInBook: false };
+    });
+    const excluded = createTestBoundDiaryEntry({
+      id: "e2",
+      content: "a",
+      includeInBook: false,
+    });
     const pagesAll = buildBoundDiaryBookPages([included, excluded], "2025-10-01", "2025-10-31");
     const pagesIncluded = buildBoundDiaryBookPages([included], "2025-10-01", "2025-10-31");
     const entryPagesAll = pagesAll.filter((p) => p.kind === "entry").length;

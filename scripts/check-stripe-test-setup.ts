@@ -25,6 +25,14 @@ function loadEnvLocal(): Record<string, string> {
   return out;
 }
 
+function pick(env: Record<string, string>, ...keys: string[]): string | undefined {
+  for (const key of keys) {
+    const v = env[key]?.trim();
+    if (v) return v;
+  }
+  return undefined;
+}
+
 async function checkDb(url: string | undefined): Promise<{ ok: boolean; detail: string }> {
   if (!url) return { ok: false, detail: "DATABASE_URL が未設定です" };
   try {
@@ -32,11 +40,20 @@ async function checkDb(url: string | undefined): Promise<{ ok: boolean; detail: 
     const prisma = new PrismaClient({ datasources: { db: { url } } });
     await prisma.$queryRaw`SELECT 1`;
     await prisma.$disconnect();
-    return { ok: true, detail: url.includes("127.0.0.1") || url.includes("localhost") ? "ローカル DB に接続 OK" : "リモート DB に接続 OK" };
+    return {
+      ok: true,
+      detail:
+        url.includes("127.0.0.1") || url.includes("localhost")
+          ? "ローカル DB に接続 OK"
+          : "リモート DB に接続 OK",
+    };
   } catch (error) {
     const msg = error instanceof Error ? error.message : String(error);
     if (msg.includes("Can't reach database")) {
-      return { ok: false, detail: "DB に接続できません（Docker Desktop を起動して npm run db:local:up）" };
+      return {
+        ok: false,
+        detail: "DB に接続できません（Docker Desktop を起動して npm run db:local:up）",
+      };
     }
     return { ok: false, detail: msg };
   }
@@ -44,25 +61,56 @@ async function checkDb(url: string | undefined): Promise<{ ok: boolean; detail: 
 
 async function main() {
   const env = loadEnvLocal();
-  const secret = env.STRIPE_SECRET_KEY?.trim();
-  const light = env.STRIPE_PRICE_LIGHT?.trim();
-  const standard = env.STRIPE_PRICE_STANDARD?.trim();
-  const webhook = env.STRIPE_WEBHOOK_SECRET?.trim();
+  const mode = (env.STRIPE_MODE?.trim().toLowerCase() || "test") as string;
+  const secret =
+    mode === "live"
+      ? pick(env, "STRIPE_SECRET_KEY_LIVE", "STRIPE_SECRET_KEY")
+      : pick(env, "STRIPE_SECRET_KEY_TEST", "STRIPE_SECRET_KEY");
+  const webhook =
+    mode === "live"
+      ? pick(env, "STRIPE_WEBHOOK_SECRET_LIVE", "STRIPE_WEBHOOK_SECRET")
+      : pick(env, "STRIPE_WEBHOOK_SECRET_TEST", "STRIPE_WEBHOOK_SECRET");
+  const forest = pick(
+    env,
+    mode === "live" ? "STRIPE_PRICE_FOREST_DELIVERY_LIVE" : "STRIPE_PRICE_FOREST_DELIVERY_TEST",
+    "STRIPE_PRICE_FOREST_DELIVERY",
+    mode === "live" ? "STRIPE_PRICE_LIGHT_LIVE" : "STRIPE_PRICE_LIGHT_TEST",
+    "STRIPE_PRICE_LIGHT",
+  );
+  const acorn = pick(
+    env,
+    mode === "live" ? "STRIPE_PRICE_ACORN_50_LIVE" : "STRIPE_PRICE_ACORN_50_TEST",
+    "STRIPE_PRICE_ACORN_50",
+  );
+  const checkoutEnabled = ["1", "true"].includes(
+    (env.STRIPE_CHECKOUT_ENABLED ?? "").trim().toLowerCase(),
+  );
   const appUrl = env.NEXT_PUBLIC_APP_URL?.trim() || "http://127.0.0.1:3000";
 
   console.log("=== LJD Stripe テスト環境チェック ===\n");
+  console.log(`STRIPE_MODE: ${mode}`);
+  console.log(
+    `STRIPE_CHECKOUT_ENABLED: ${checkoutEnabled ? "true（ユーザー向け Checkout 許可）" : "false（準備中・確認用のみ）"}`,
+  );
 
   if (!secret) {
-    console.log("❌ STRIPE_SECRET_KEY: 未設定");
+    console.log("❌ STRIPE_SECRET_KEY(_TEST): 未設定");
   } else if (secret.startsWith("sk_test_")) {
-    console.log("✅ STRIPE_SECRET_KEY: テストモード (sk_test_...)");
+    console.log("✅ secret key: テストモード (sk_test_...)");
   } else if (secret.startsWith("sk_live_")) {
-    console.log("⚠️  STRIPE_SECRET_KEY: 本番モード (sk_live_...) — テストには sk_test_ を使ってください");
+    console.log("⚠️  secret key: 本番モード (sk_live_...) — テストには sk_test_ を使ってください");
   } else {
-    console.log("❌ STRIPE_SECRET_KEY: 形式が不明");
+    console.log("❌ secret key: 形式が不明");
   }
 
-  console.log(webhook ? "✅ STRIPE_WEBHOOK_SECRET: 設定済み" : "❌ STRIPE_WEBHOOK_SECRET: 未設定");
+  if (mode === "test" && secret?.startsWith("sk_live_")) {
+    console.log("❌ test/live 混在: STRIPE_MODE=test なのに sk_live_");
+  }
+  if (mode === "live" && secret?.startsWith("sk_test_")) {
+    console.log("❌ test/live 混在: STRIPE_MODE=live なのに sk_test_");
+  }
+
+  console.log(webhook ? "✅ webhook secret: 設定済み" : "❌ webhook secret: 未設定");
 
   if (!secret?.startsWith("sk_test_")) {
     console.log("\nStripe API の詳細確認はスキップしました。");
@@ -72,18 +120,21 @@ async function main() {
   const stripe = new Stripe(secret, { apiVersion: "2025-02-24.acacia" });
 
   for (const [label, priceId] of [
-    ["STRIPE_PRICE_LIGHT", light],
-    ["STRIPE_PRICE_STANDARD", standard],
+    ["STRIPE_PRICE_FOREST_DELIVERY / LIGHT", forest],
+    ["STRIPE_PRICE_ACORN_50", acorn],
   ] as const) {
     if (!priceId) {
-      console.log(`❌ ${label}: 未設定`);
+      console.log(`⚠️  ${label}: 未設定（test Checkout 確認時に必要）`);
+      continue;
+    }
+    if (priceId.includes("_live")) {
+      console.log(`❌ ${label}: live 風 ID が test に設定されています (${priceId})`);
       continue;
     }
     try {
       const price = await stripe.prices.retrieve(priceId);
-      const ok = price.active === true;
       console.log(
-        `${ok ? "✅" : "⚠️ "} ${label}: ${price.id} (${price.recurring?.interval ?? "?"}, active=${price.active})`,
+        `✅ ${label}: ${price.id} (${price.recurring?.interval ?? "one_time"}, active=${price.active})`,
       );
     } catch (error) {
       const msg = error instanceof Error ? error.message : String(error);
@@ -95,21 +146,19 @@ async function main() {
   console.log(`${db.ok ? "✅" : "❌"} DATABASE: ${db.detail}`);
 
   try {
-    const res = await fetch(`${appUrl.replace(/\/$/, "")}/api/health`, { signal: AbortSignal.timeout(5000) });
+    const res = await fetch(`${appUrl.replace(/\/$/, "")}/api/health`, {
+      signal: AbortSignal.timeout(5000),
+    });
     console.log(`${res.ok ? "✅" : "⚠️ "} 開発サーバー (${appUrl}): HTTP ${res.status}`);
   } catch {
     console.log(`❌ 開発サーバー (${appUrl}): 応答なし — npm run dev を起動してください`);
   }
 
-  console.log("\n--- 解約テストの流れ（ローカル）---");
-  console.log("1. Docker Desktop 起動 → npm run db:local:up");
-  console.log("2. 別ターミナル: npm run stripe:listen（whsec が変わったら .env.local を更新）");
-  console.log("3. npm run dev");
-  console.log("4. ブラウザ: /login → /plans → テストカード 4242 4242 4242 4242");
-  console.log("5. npm run db:local:stripe-status -- your@email.com");
-  console.log("6. /orders/account で「有料プランを解約する」を確認");
-  console.log("\n--- Preview で試す場合 ---");
-  console.log("Preview URL の /plans から加入（Vercel の Stripe 環境変数が sk_test_ であること）");
+  console.log("\n--- test Checkout 確認（ローカル / 管理者）---");
+  console.log("1. STRIPE_MODE=test / STRIPE_CHECKOUT_ENABLED=false");
+  console.log("2. npm run stripe:listen（whsec が変わったら .env.local を更新）");
+  console.log("3. npm run dev → /plans の「管理者・開発用（test Checkout）」から確認");
+  console.log("4. ユーザー向け購入ボタンは「準備中」のまま（本番販売は開始しない）");
 }
 
 main().catch((error) => {

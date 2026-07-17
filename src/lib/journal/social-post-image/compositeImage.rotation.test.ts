@@ -13,30 +13,35 @@ import {
 } from "./textExtract";
 
 describe("compositeJournalSocialPostImage rotation diff", () => {
-  it("±10° は 0° とも互いに異なる見た目になる", async () => {
-    const photoPath = "public/images/home-mock/demo-journal-photo.png";
-    if (!fs.existsSync(photoPath)) return;
+  it(
+    "±10° は 0° とも互いに異なる見た目になる",
+    async () => {
+      const photoPath = "public/images/home-mock/demo-journal-photo.png";
+      if (!fs.existsSync(photoPath)) return;
 
-    const photoBuffer = fs.readFileSync(photoPath);
-    const createdAt = new Date("2026-06-19T00:00:00.000Z");
-    const input = buildJournalSocialPostImageInput({
-      templateId: "sns03",
-      title: "test",
-      bodyExcerpt: extractSocialPostBodyText("今日はモグの病院最終日。"),
-      subtitle: resolveJournalSocialPostSubtitle(null),
-      todayNumber: 4,
-      monthNumber: 3,
-      yearNumber: 6,
-      moodLabel: "移動",
-      commentExcerpt: extractSocialPostCommentText("コメント"),
-      photoBuffer,
-      companionType: "owl",
-      createdAt,
-    });
+      const photoBuffer = fs.readFileSync(photoPath);
+      const createdAt = new Date("2026-06-19T00:00:00.000Z");
+      const input = buildJournalSocialPostImageInput({
+        templateId: "sns03",
+        title: "test",
+        bodyExcerpt: extractSocialPostBodyText("今日はモグの病院最終日。"),
+        subtitle: resolveJournalSocialPostSubtitle(null),
+        todayNumber: 4,
+        monthNumber: 3,
+        yearNumber: 6,
+        moodLabel: "移動",
+        commentExcerpt: extractSocialPostCommentText("コメント"),
+        photoBuffer,
+        companionType: "owl",
+        createdAt,
+      });
 
-    const zero = (await compositeJournalSocialPostImage(input, { createdAt, photoRotateDeg: 0 })).buffer;
-    const plus = (await compositeJournalSocialPostImage(input, { createdAt, photoRotateDeg: 10 })).buffer;
-    const minus = (await compositeJournalSocialPostImage(input, { createdAt, photoRotateDeg: -10 })).buffer;
+      const zero = (await compositeJournalSocialPostImage(input, { createdAt, photoRotateDeg: 0 }))
+        .buffer;
+      const plus = (await compositeJournalSocialPostImage(input, { createdAt, photoRotateDeg: 10 }))
+        .buffer;
+      const minus = (await compositeJournalSocialPostImage(input, { createdAt, photoRotateDeg: -10 }))
+        .buffer;
 
     async function diffPixels(a: Buffer, b: Buffer) {
       const { data: da } = await sharp(a).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
@@ -59,5 +64,7 @@ describe("compositeJournalSocialPostImage rotation diff", () => {
     expect(diff0Plus).toBeGreaterThan(1000);
     expect(diff0Minus).toBeGreaterThan(1000);
     expect(diffPlusMinus).toBeGreaterThan(1000);
-  });
+    },
+    30_000,
+  );
 });

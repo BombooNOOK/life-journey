@@ -68,7 +68,7 @@ export default async function KanteiBookBindingConfirmPage({ params }: Props) {
       <ul className="list-inside list-disc space-y-1 text-xs leading-relaxed text-stone-500">
         <li>BASEの商品ページでお支払いします。</li>
         <li>受注生産のため、注文後のキャンセルは原則できません。</li>
-        <li>月額プランとは別料金です。</li>
+        <li>森の定期便・どんぐりとは別料金です。</li>
       </ul>
     </div>
   );

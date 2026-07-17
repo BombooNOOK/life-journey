@@ -52,9 +52,9 @@ export function MyPageAccountSection({
         </dl>
       </MyPageAccountSectionCard>
 
-      <MyPageAccountSectionCard title="プラン・契約">
+      <MyPageAccountSectionCard title="どんぐり・定期便">
         <dl className="lj-read-desc grid gap-3 sm:grid-cols-[7.5rem_1fr]">
-          <dt className="text-stone-500">現在のプラン</dt>
+          <dt className="text-stone-500">現在のご利用</dt>
           <dd className="text-stone-900">{planLabel}</dd>
 
           <dt className="text-stone-500">プロフィール上限</dt>
@@ -68,7 +68,7 @@ export function MyPageAccountSection({
             href="/plans"
             className="inline-flex min-h-[44px] items-center rounded-lg border border-violet-300 bg-violet-50 px-4 py-2.5 text-base font-medium text-violet-950 transition hover:bg-violet-100"
           >
-            プランを変更する →
+            どんぐりと森の定期便 →
           </Link>
 
           {subscriptionCancelState.cancelAtPeriodEnd ? (
@@ -86,7 +86,7 @@ export function MyPageAccountSection({
               href="/orders/account/cancel-plan"
               className="inline-flex min-h-[44px] items-center rounded-lg border border-stone-300 bg-white px-4 py-2.5 text-base font-medium text-stone-800 transition hover:bg-stone-50"
             >
-              有料プランを解約する →
+              森の定期便を解約する →
             </Link>
           ) : null}
         </div>

@@ -28,7 +28,7 @@ export async function POST() {
 
   if (!isPaidSubscriber(settings)) {
     return NextResponse.json(
-      { error: "有料プランをご利用中ではありません。", code: "NOT_PAID" },
+      { error: "森の定期便をご利用中ではありません。", code: "NOT_PAID" },
       { status: 400 },
     );
   }

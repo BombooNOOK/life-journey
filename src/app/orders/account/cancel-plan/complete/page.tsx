@@ -11,7 +11,7 @@ export default function AccountCancelPlanCompletePage() {
 
       <section className="space-y-5 rounded-xl border border-stone-200 bg-white p-4 shadow-sm sm:p-5">
         <div className={mobileReadable.notice} role="status">
-          <p>有料プランの解約申込を受け付けました。</p>
+          <p>森の定期便の解約申込を受け付けました。</p>
           <p className="mt-2">{SUBSCRIPTION_CANCEL_COMPLETE_NOTE}</p>
         </div>
 

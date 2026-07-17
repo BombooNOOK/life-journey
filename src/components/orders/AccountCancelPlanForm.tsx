@@ -36,7 +36,7 @@ export function AccountCancelPlanForm() {
   return (
     <div className="space-y-6">
       <div className={`space-y-3 ${mobileReadable.body}`}>
-        <p>有料プランを解約すると、次回以降の請求が停止されます。</p>
+        <p>森の定期便を解約すると、次回以降の請求が停止されます。</p>
         <p>現在の利用期間中は、引き続きログハウスをご利用いただけます。</p>
         <p>利用期間終了後は、日記の作成・閲覧などの有料機能は利用できなくなります。</p>
         <div className="rounded-lg border border-stone-200 bg-stone-50/80 px-4 py-3">

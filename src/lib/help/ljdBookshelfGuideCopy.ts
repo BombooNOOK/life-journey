@@ -19,7 +19,7 @@ export const LJD_BOOKSHELF_GUIDE_BINDING_BODY =
   "紙の本にしたいときは、日記ブックを開いたあとの画面から「製本版を注文する」へ進めます。アプリ内で製本コードを用意したあと、お支払いは別途 BASE のショップで行います（商品ページへ移動します）。" as const;
 
 export const LJD_BOOKSHELF_GUIDE_BINDING_NOTE =
-  "製本の注文はサブスクリプションとは別です。BASE でのお支払い・配送手続きが必要です。" as const;
+  "製本の注文は森の定期便やどんぐりとは別です。BASE でのお支払い・配送手続きが必要です。" as const;
 
 export const LJD_BOOKSHELF_GUIDE_CROSSREF =
   "日記ブックそのもののつくり方は、下の「日記ブック」をご覧ください。" as const;

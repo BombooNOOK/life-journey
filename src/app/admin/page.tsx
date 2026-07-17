@@ -55,7 +55,7 @@ function countCell(v: bigint | number): number {
 }
 
 function derivePlanLabel(subscriberPdfAccess: boolean): string {
-  return subscriberPdfAccess ? "ライトプラン" : "フリープラン";
+  return subscriberPdfAccess ? "森の定期便" : "フリープラン";
 }
 
 function formatPlanStartedAt(row: UserRow): string {

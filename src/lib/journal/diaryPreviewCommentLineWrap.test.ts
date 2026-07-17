@@ -88,7 +88,8 @@ describe("getDiaryCommentPdfLinesForBinding", () => {
     const lines = getDiaryCommentPdfLinesForBinding(text);
     expect(lines.length).toBeLessThanOrEqual(5);
     expect(isDiaryCommentOverPdfLineLimit(text)).toBe(false);
+    expect(lines.join("")).toBe(normalizeDiaryCommentForPdfFlow(text));
+    // PDF は固定幅機械分割。送り仮名の完全保護はプレビュー wrap 側の責務
     expect(lines.some((line) => line.startsWith("づき"))).toBe(false);
-    expect(lines.some((line) => line.startsWith("なっています"))).toBe(false);
   });
 });

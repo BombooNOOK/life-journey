@@ -123,7 +123,7 @@ function findLineBreakIndex(text: string, start: number, maxCharsPerLine: number
 function isAwkwardLineStart(fragment: string): boolean {
   if (!fragment) return false;
   if (fragment.length <= 3) return true;
-  return /^(日。|に|は、|を|が|の|と|て|も|で、|から|まで|より|ので|のに|ため|よう|になり|につな)/.test(
+  return /^(日。|に|は、|を|が|の|と|て|も|で、|から|まで|より|ので|のに|ため|よう|になり|につな|なっています|づき)/.test(
     fragment,
   );
 }

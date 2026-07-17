@@ -85,7 +85,7 @@ export function MyPageMainActions({
               href="/plans"
               className="block text-center text-xs font-medium text-violet-800 underline-offset-2 hover:underline"
             >
-              サブスクリプションのご案内
+              どんぐりと森の定期便のご案内
             </Link>
           </div>
         ) : (
