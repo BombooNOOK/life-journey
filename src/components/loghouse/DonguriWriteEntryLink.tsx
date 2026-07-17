@@ -3,6 +3,7 @@
 import type { ReactNode } from "react";
 
 import { useDonguriWriteEntryGate } from "@/hooks/useDonguriWriteEntryGate";
+import { OwlDelayedBusyOverlay } from "@/components/ui/OwlDelayedBusyOverlay";
 
 type Props = {
   href: string;
@@ -40,6 +41,12 @@ export function DonguriWriteEntryLink({
       >
         {children}
       </a>
+      <OwlDelayedBusyOverlay
+        busy={checking}
+        spinnerDelayMs={0}
+        message="日記の準備をしています…"
+        className="bg-white/20"
+      />
       {gateModals}
     </>
   );

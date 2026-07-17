@@ -260,9 +260,10 @@ export function LogHouseRoomMobile({
     if (hinted === null) return base;
     return { ...base, balance: hinted };
   });
-  const busy = isPending || profileBusy;
+  const { beginWriteEntry, checking: writeEntryChecking, gateModals } =
+    useDonguriWriteEntryGate(activeProfileId);
+  const busy = isPending || profileBusy || writeEntryChecking;
   const ambientBg = timeOfDay === "night" ? "#2a2218" : "#ebe4d4";
-  const { beginWriteEntry, gateModals } = useDonguriWriteEntryGate(activeProfileId);
 
   useEffect(() => {
     if (!donguriChoProp) return;
@@ -559,7 +560,12 @@ export function LogHouseRoomMobile({
     ) : null;
 
   const busyOverlay = (
-    <OwlDelayedBusyOverlay busy={busy} spinnerDelayMs={0} className="bg-white/15" />
+    <OwlDelayedBusyOverlay
+      busy={busy}
+      spinnerDelayMs={0}
+      message={writeEntryChecking ? "日記の準備をしています…" : undefined}
+      className="bg-white/15"
+    />
   );
 
   const chrome = (
