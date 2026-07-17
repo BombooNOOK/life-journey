@@ -8,6 +8,7 @@ import { getViewerEmailFromCookie } from "@/lib/auth/viewer";
 import {
   createSystemNoticeDraft,
   publishSystemNotice,
+  sendIndividualForestMailboxNotice,
   unpublishSystemNotice,
   updateSystemNoticeDraft,
 } from "@/lib/loghouse/systemNotices";
@@ -125,5 +126,41 @@ export async function unpublishSystemNoticeAction(formData: FormData) {
     if (e && typeof e === "object" && "digest" in e) throw e;
     const message = e instanceof Error ? e.message : "非公開に失敗しました。";
     redirect(`${LIST_PATH}/${id}?err=${encodeURIComponent(message)}`);
+  }
+}
+
+export async function sendIndividualSystemNoticeAction(formData: FormData) {
+  const returnBase = `${LIST_PATH}/individual`;
+  await requireAdminOrRedirect(returnBase);
+
+  const email = formData.get("email")?.toString() ?? "";
+  const profileId = formData.get("profileId")?.toString() ?? "";
+  const confirmed = formData.get("confirmed")?.toString() === "1";
+  const fields = readUpsertFields(formData);
+
+  if (!confirmed) {
+    redirect(
+      `${returnBase}?email=${encodeURIComponent(email)}&err=${encodeURIComponent(
+        "送信内容の確認にチェックを入れてください。",
+      )}`,
+    );
+  }
+
+  try {
+    const result = await sendIndividualForestMailboxNotice({
+      email,
+      profileId,
+      ...fields,
+    });
+    revalidateSystemNoticePaths();
+    redirect(
+      `${returnBase}?email=${encodeURIComponent(result.email)}&saved=1&noticeId=${encodeURIComponent(result.noticeId)}`,
+    );
+  } catch (e) {
+    if (e && typeof e === "object" && "digest" in e) throw e;
+    const message = e instanceof Error ? e.message : "個別送信に失敗しました。";
+    redirect(
+      `${returnBase}?email=${encodeURIComponent(email)}&err=${encodeURIComponent(message)}`,
+    );
   }
 }

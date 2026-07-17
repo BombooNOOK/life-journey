@@ -151,6 +151,67 @@ export async function unpublishSystemNotice(id: string): Promise<SystemNoticeAdm
   return toAdminView(row);
 }
 
+/**
+ * 特定メール＋プロフィールだけへの「森からのお知らせ」。
+ * 共通 SystemNotice ではなく、個人ポスト（LogHouseMailboxNotice）として届ける。
+ */
+export async function sendIndividualForestMailboxNotice(params: {
+  email: string;
+  profileId: string;
+  title: string;
+  body: string;
+  actionLabel?: string | null;
+  actionRoute?: string | null;
+}): Promise<{ noticeId: string; email: string; profileId: string }> {
+  const email = normalizeEmail(params.email);
+  const profileId = params.profileId.trim();
+  const title = params.title.trim();
+  const body = params.body.trim();
+  if (!email) throw new Error("メールアドレスを入力してください。");
+  if (!profileId) throw new Error("プロフィールを選んでください。");
+  if (!title) throw new Error("タイトルを入力してください。");
+  if (!body) throw new Error("本文を入力してください。");
+
+  const profile = await prisma.profile.findFirst({
+    where: { id: profileId, email, isArchived: false },
+    select: { id: true },
+  });
+  if (!profile) {
+    throw new Error("そのメールに紐づくプロフィールが見つかりません。");
+  }
+
+  const actionLabel = params.actionLabel?.trim() || null;
+  const actionRoute = params.actionRoute?.trim() || null;
+
+  const row = await prisma.logHouseMailboxNotice.create({
+    data: {
+      email,
+      profileId: profile.id,
+      type: MAILBOX_NOTICE_TYPE_FOREST_SYSTEM,
+      title,
+      message: body,
+      actionLabel,
+      actionRoute,
+    },
+    select: { id: true },
+  });
+
+  return { noticeId: row.id, email, profileId: profile.id };
+}
+
+export async function listActiveProfilesForEmail(
+  emailRaw: string,
+): Promise<Array<{ id: string; nickname: string }>> {
+  const email = normalizeEmail(emailRaw);
+  if (!email) return [];
+  const rows = await prisma.profile.findMany({
+    where: { email, isArchived: false },
+    orderBy: { createdAt: "asc" },
+    select: { id: true, nickname: true },
+  });
+  return rows.map((r) => ({ id: r.id, nickname: r.nickname }));
+}
+
 /** 公開中のお知らせをポスト用 View に変換（既読付き） */
 export async function listPublishedSystemNoticesForMailbox(params: {
   email: string;
