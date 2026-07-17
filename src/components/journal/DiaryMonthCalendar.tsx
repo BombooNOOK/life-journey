@@ -29,6 +29,8 @@ export type DiaryMonthCalendarEntry = {
 type Props = {
   cursorMonth: Date;
   entries: DiaryMonthCalendarEntry[];
+  /** その月で下書きがある日（1–31） */
+  draftDays?: ReadonlySet<number>;
   selectedDay: number | null;
   isFetching?: boolean;
   loadingLabel?: string;
@@ -60,6 +62,7 @@ function buildMonthCells(year: number, monthIndex: number): Array<number | null>
 export function DiaryMonthCalendar({
   cursorMonth,
   entries,
+  draftDays,
   selectedDay,
   isFetching = false,
   loadingLabel = "フクロウ先生が日記のあしあとを確認しています…",
@@ -161,6 +164,7 @@ export function DiaryMonthCalendar({
             const dayKey = calendarDayKeyFromParts(year, monthIndex, day);
             const isToday = dayKey === todayKey;
             const hasEntry = daysWithEntry.has(day);
+            const hasDraft = draftDays?.has(day) ?? false;
             const isSelected = selectedDay === day;
             const count = entryCountByDay.get(day) ?? 0;
 
@@ -183,7 +187,7 @@ export function DiaryMonthCalendar({
                       : "border-[#ebe2d4] bg-[#fffaf4]/95 hover:border-[#c5b089] hover:bg-[#f7efe3]/80 focus-visible:outline-[#9a8b78]",
                 ].join(" ")}
                 style={isSelected ? { borderColor: LJD_SAGE } : undefined}
-                aria-label={`${day}日${hasEntry ? `・日記${count}件` : ""}${isToday ? "・今日" : ""}`}
+                aria-label={`${day}日${hasEntry ? `・日記${count}件` : ""}${hasDraft ? "・下書きあり" : ""}${isToday ? "・今日" : ""}`}
                 aria-pressed={isSelected}
               >
                 {isToday ? (
@@ -198,22 +202,34 @@ export function DiaryMonthCalendar({
                   ].join(" ")}
                 >
                   <span className="font-medium leading-none text-[#3f3428]">{day}</span>
-                  {hasEntry ? (
-                    <span className="mt-0.5 flex items-center gap-0.5 leading-none" aria-hidden>
-                      <Image
-                        src={diaryBookCalendarPawprintImagePath()}
-                        alt=""
-                        width={14}
-                        height={14}
-                        className="object-contain opacity-85"
-                        unoptimized
-                      />
-                      {count > 1 ? (
+                  {hasEntry || hasDraft ? (
+                    <span className="mt-0.5 flex items-center justify-center gap-0.5 leading-none" aria-hidden>
+                      {hasEntry ? (
+                        <>
+                          <Image
+                            src={diaryBookCalendarPawprintImagePath()}
+                            alt=""
+                            width={14}
+                            height={14}
+                            className="object-contain opacity-85"
+                            unoptimized
+                          />
+                          {count > 1 ? (
+                            <span
+                              className="tabular-nums text-[9px]"
+                              style={{ color: LJD_SAGE_DEEP }}
+                            >
+                              +{count - 1}
+                            </span>
+                          ) : null}
+                        </>
+                      ) : null}
+                      {hasDraft ? (
                         <span
-                          className="tabular-nums text-[9px]"
-                          style={{ color: LJD_SAGE_DEEP }}
+                          className="rounded-[3px] border border-dashed border-[#c4a574] bg-[#f6ecd8] px-0.5 text-[8px] font-semibold leading-tight text-[#8a6b3d]"
+                          title="下書きあり"
                         >
-                          +{count - 1}
+                          下
                         </span>
                       ) : null}
                     </span>
@@ -238,7 +254,7 @@ export function DiaryMonthCalendar({
       ) : null}
       </div>
       <p className="mt-1.5 hidden min-h-[2.5rem] text-[11px] leading-relaxed text-[#8a7b6a] sm:block">
-        日記がある日をタップすると、下に一覧が表示されます。「今日」と表示されている日が本日です。
+        あしあと（肉球）がある日は正式に残した日記、破線の「下」は下書きです。日付をタップすると下に一覧が表示されます。
       </p>
     </div>
   );

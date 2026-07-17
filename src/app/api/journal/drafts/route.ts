@@ -4,6 +4,8 @@ import { getViewerEmailFromCookie } from "@/lib/auth/viewer";
 import {
   deleteJournalDraft,
   getJournalDraft,
+  listJournalDraftDateKeysInMonth,
+  parsePhotoPatchFromRequestBody,
   upsertJournalDraft,
 } from "@/lib/journal/journalDrafts";
 import { profileByIdForViewer, resolveActiveProfileId } from "@/lib/profile/activeProfile";
@@ -16,16 +18,30 @@ export async function GET(req: Request) {
 
   const url = new URL(req.url);
   const dateKey = (url.searchParams.get("dateKey") ?? "").trim();
+  const monthKey = (url.searchParams.get("month") ?? "").trim();
   const rawProfileId = (url.searchParams.get("profileId") ?? "").trim();
   const activeProfileId = await resolveActiveProfileId(viewerEmail);
   const profileId = rawProfileId || activeProfileId;
-  if (!profileId || !dateKey) {
-    return NextResponse.json({ draft: null });
+  if (!profileId) {
+    return NextResponse.json({ draft: null, draftDateKeys: [] });
   }
 
   const p = await profileByIdForViewer(profileId, viewerEmail);
   if (!p) {
     return NextResponse.json({ error: "プロフィールが不正です。" }, { status: 403 });
+  }
+
+  if (monthKey) {
+    const draftDateKeys = await listJournalDraftDateKeysInMonth({
+      email: viewerEmail,
+      profileId,
+      monthKey,
+    });
+    return NextResponse.json({ draftDateKeys });
+  }
+
+  if (!dateKey) {
+    return NextResponse.json({ draft: null });
   }
 
   const draft = await getJournalDraft({
@@ -76,6 +92,7 @@ export async function PUT(req: Request) {
       designTheme: String(body.designTheme ?? "simple"),
       contentFontMode: String(body.contentFontMode ?? "standard"),
       writingMode: String(body.writingMode ?? "alone"),
+      photoPatch: parsePhotoPatchFromRequestBody(json),
     });
     return NextResponse.json({ draft, code: "OK" });
   } catch (e) {

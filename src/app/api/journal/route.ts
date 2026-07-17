@@ -20,7 +20,7 @@ import { prisma } from "@/lib/db";
 import { buildDiaryNumbers } from "@/lib/journal/numbers";
 import { guardianColorNameForEntryDate } from "@/lib/journal/guardianColorForEntryDate";
 import { journalEntryDateToIsoDateInput } from "@/lib/journal/referenceDateParts";
-import { deleteJournalDraft } from "@/lib/journal/journalDrafts";
+import { deleteJournalDraft, transferJournalDraftPhotoToEntry } from "@/lib/journal/journalDrafts";
 import {
   chargeDiarySaveAcorns,
   sumDonguriBalance,
@@ -653,6 +653,49 @@ export async function POST(req: Request) {
       });
     }
 
+    const draftDateKey = journalEntryDateToIsoDateInput(parsedEntryDate);
+
+    // 下書きにだけ写真がある場合（復元後に photoDirty なしで正式保存）は移譲する
+    if (
+      entry &&
+      profileId &&
+      draftDateKey &&
+      photoPatch.kind !== "set" &&
+      photoPatch.kind !== "remove" &&
+      !entry.photoBlobUrl &&
+      !entry.photoDataUrl
+    ) {
+      const transferred = await transferJournalDraftPhotoToEntry({
+        email: viewerEmail,
+        profileId,
+        dateKey: draftDateKey,
+        entryId: entry.id,
+      });
+      if (transferred) {
+        entry = await prisma.journalEntry.findUnique({
+          where: { id: entry.id },
+          select: {
+            id: true,
+            content: true,
+            createdAt: true,
+            mood: true,
+            activity: true,
+            companionType: true,
+            designTheme: true,
+            contentFontMode: true,
+            photoDataUrl: true,
+            photoBlobUrl: true,
+            photoBlobPathname: true,
+            photoMimeType: true,
+            photoSizeBytes: true,
+            photoStorageProvider: true,
+            generatedComment: true,
+            includeInBook: true,
+          },
+        });
+      }
+    }
+
     if (entry && wasFirstJournal) {
       await markFreeTrialStartedIfFirstJournal({ email: viewerEmail, wasFirstJournal: true });
     }
@@ -676,12 +719,11 @@ export async function POST(req: Request) {
         );
       }
 
-      const dateKey = journalEntryDateToIsoDateInput(parsedEntryDate);
-      if (dateKey) {
+      if (draftDateKey) {
         await deleteJournalDraft({
           email: viewerEmail,
           profileId,
-          dateKey,
+          dateKey: draftDateKey,
         });
       }
     }

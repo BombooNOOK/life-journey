@@ -114,6 +114,20 @@ async function fetchJournalMonth(monthKey: string, profileId: string): Promise<D
   return data.entries ?? [];
 }
 
+async function fetchDraftDateKeys(monthKey: string, profileId: string): Promise<string[]> {
+  const qs = new URLSearchParams({
+    month: monthKey,
+    profileId,
+  });
+  const res = await fetch(`/api/journal/drafts?${qs.toString()}`, {
+    cache: "no-store",
+    credentials: "same-origin",
+  });
+  if (!res.ok) return [];
+  const data = (await res.json()) as { draftDateKeys?: string[] };
+  return Array.isArray(data.draftDateKeys) ? data.draftDateKeys : [];
+}
+
 function formatSelectedDayLabel(year: number, monthIndex: number, day: number): string {
   return `${year}年${monthIndex + 1}月${day}日`;
 }
@@ -151,6 +165,7 @@ export function DiaryCalendarHome({
   });
   const [selectedDay, setSelectedDay] = useState<number | null>(initialDay?.day ?? null);
   const [entries, setEntries] = useState<DiaryCalendarEntry[]>([]);
+  const [draftDateKeys, setDraftDateKeys] = useState<string[]>([]);
   const [isFetching, setIsFetching] = useState(true);
   const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -294,10 +309,14 @@ export function DiaryCalendarHome({
       if (!opts?.quiet) setIsFetching(true);
       setError(null);
       try {
-        const list = await fetchJournalMonth(key, effectiveProfileId);
+        const [list, drafts] = await Promise.all([
+          fetchJournalMonth(key, effectiveProfileId),
+          fetchDraftDateKeys(key, effectiveProfileId),
+        ]);
         if (generation !== fetchGenerationRef.current) return;
         setViewMonth(targetMonth);
         setEntries(list);
+        setDraftDateKeys(drafts);
         setHasLoadedOnce(true);
         if (opts?.clearSelection) setSelectedDay(null);
       } catch {
@@ -390,6 +409,20 @@ export function DiaryCalendarHome({
     selectedDay !== null
       ? calendarDayKeyFromParts(viewMonth.getFullYear(), viewMonth.getMonth(), selectedDay)
       : null;
+
+  const draftDays = useMemo(() => {
+    const days = new Set<number>();
+    const prefix = `${monthKey}-`;
+    for (const key of draftDateKeys) {
+      if (!key.startsWith(prefix)) continue;
+      const day = Number(key.slice(-2));
+      if (Number.isFinite(day)) days.add(day);
+    }
+    return days;
+  }, [draftDateKeys, monthKey]);
+
+  const selectedDayHasDraft =
+    selectedDayKey !== null && draftDateKeys.includes(selectedDayKey);
 
   const todayDayKey = useMemo(() => calendarDayKeyInJapan(new Date()), []);
 
@@ -517,6 +550,7 @@ export function DiaryCalendarHome({
           <DiaryMonthCalendar
             cursorMonth={viewMonth}
             entries={entries}
+            draftDays={draftDays}
             selectedDay={selectedDay}
             isFetching={isFetching}
             loadingLabel={calendarLoadingLabel}
@@ -579,9 +613,24 @@ export function DiaryCalendarHome({
                 </span>
               </h2>
 
+              {selectedDayHasDraft ? (
+                <div
+                  className={`${LJD_PAPER_CARD_CLASS} border-dashed border-[#c4a574]/90 bg-[#faf3e4]/90 px-4 py-3 text-sm text-[#5c4a35]`}
+                >
+                  <p className="font-medium text-[#8a6b3d]">この日に書きかけの下書きがあります</p>
+                  <p className="mt-1 text-xs leading-relaxed text-[#7a6856]">
+                    「日記を書く」から続けると、下書きを復元できます。
+                  </p>
+                </div>
+              ) : null}
+
               {selectedDayEntries.length === 0 ? (
                 <div className={`${LJD_PAPER_CARD_CLASS} px-4 py-6 text-center text-sm text-[#5c4a35]`}>
-                  <p>この日の日記はまだありません。</p>
+                  <p>
+                    {selectedDayHasDraft
+                      ? "正式なあしあとはまだありません（下書きのみ）。"
+                      : "この日の日記はまだありません。"}
+                  </p>
                 </div>
               ) : (
                 <ul className="space-y-2">

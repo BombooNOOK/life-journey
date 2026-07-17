@@ -295,6 +295,7 @@ function JournalPageContent() {
     activity: string;
     companionType: string;
     contentFontMode: string;
+    photoSrc: string | null;
   } | null>(null);
   const [draftNotice, setDraftNotice] = useState<string | null>(null);
 
@@ -528,27 +529,34 @@ function JournalPageContent() {
             activity?: string;
             companionType?: string;
             contentFontMode?: string;
+            hasPhoto?: boolean;
+            photoSrc?: string | null;
           } | null;
         };
         if (cancelled || !draftRes.ok || !draftData.draft) return;
         const d = draftData.draft;
-        if (!(d.content ?? "").trim() && !preferDraftFromQuery) {
-          // empty draft: still offer resume if any fields? skip if empty content
-        }
+        const photoSrc = d.hasPhoto && d.photoSrc ? d.photoSrc : null;
+        const hasMeaningfulDraft = Boolean((d.content ?? "").trim() || photoSrc);
         setPendingServerDraft({
           content: d.content ?? "",
           mood: d.mood ?? "calm",
           activity: d.activity ?? "record_anyway",
           companionType: d.companionType ?? "owl",
           contentFontMode: d.contentFontMode ?? "standard",
+          photoSrc,
         });
-        if (!(d.content ?? "").trim()) return;
+        if (!hasMeaningfulDraft) return;
         if (resumeDraftFromQuery) {
           setContent(d.content ?? "");
           setMood((d.mood ?? "calm") as MoodId);
           setActivity((d.activity ?? "record_anyway") as ActivityId);
           setCompanionType((d.companionType ?? "owl") as CompanionType);
           setContentFontMode((d.contentFontMode ?? "standard") as ContentFontMode);
+          if (photoSrc) {
+            setExistingPhotoSrc(photoSrc);
+            setPhotoDataUrl("");
+            setPhotoDirty(false);
+          }
           setPendingServerDraft(null);
           return;
         }
@@ -1074,6 +1082,15 @@ function JournalPageContent() {
 
     setSaving(true);
     try {
+      const photoPayload = (() => {
+        if (photoDirty) {
+          if (photoDataUrl.trim()) return { photoDataUrl: photoDataUrl.trim() };
+          return { photoRemoved: true };
+        }
+        if (existingPhotoSrc.trim()) return { photoUnchanged: true };
+        return {};
+      })();
+
       const res = await fetch("/api/journal/drafts", {
         method: "PUT",
         credentials: "same-origin",
@@ -1088,14 +1105,28 @@ function JournalPageContent() {
           designTheme,
           contentFontMode,
           writingMode: "alone",
+          ...photoPayload,
         }),
       });
-      const data = (await res.json()) as { error?: string };
+      const data = (await res.json()) as {
+        error?: string;
+        draft?: { photoSrc?: string | null; hasPhoto?: boolean };
+      };
       if (!res.ok) {
         setError(data.error ?? "下書きを残せませんでした。");
         return;
       }
       localDraft.clearDraftAfterSuccessfulSave();
+      if (data.draft?.hasPhoto && data.draft.photoSrc) {
+        setExistingPhotoSrc(data.draft.photoSrc);
+        setPhotoDataUrl("");
+        setPhotoDirty(false);
+        setSelectedPhotoFile(null);
+      } else if (photoPayload && "photoRemoved" in photoPayload) {
+        setExistingPhotoSrc("");
+        setPhotoDataUrl("");
+        setPhotoDirty(false);
+      }
       setDraftNotice("下書きとして残しました。どんぐりは使っていません。");
       if (safeReturnTo) {
         router.push(safeReturnTo);
@@ -1114,6 +1145,11 @@ function JournalPageContent() {
     setActivity(pendingServerDraft.activity as ActivityId);
     setCompanionType(pendingServerDraft.companionType as CompanionType);
     setContentFontMode(pendingServerDraft.contentFontMode as ContentFontMode);
+    if (pendingServerDraft.photoSrc) {
+      setExistingPhotoSrc(pendingServerDraft.photoSrc);
+      setPhotoDataUrl("");
+      setPhotoDirty(false);
+    }
     setPendingServerDraft(null);
     setServerDraftDialog("none");
   }

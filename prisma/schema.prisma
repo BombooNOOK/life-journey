@@ -114,6 +114,8 @@ model JournalDraft {
   photoBlobPathname String?
   photoMimeType     String?
   photoSizeBytes    Int?
+  /// Blob 未設定時のフォールバック（data URL）
+  photoDataUrl      String? @db.Text
 
   /// alone | with_appraiser
   writingMode String @default("alone")
