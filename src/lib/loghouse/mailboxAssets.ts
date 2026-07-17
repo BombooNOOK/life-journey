@@ -1,7 +1,7 @@
 /** ポスト（ヤギさん郵便）イラスト */
 export const MAILBOX_ASSET_DIR = "/images/ljd/mailbox" as const;
 
-const MAILBOX_ASSET_VERSION = 1;
+const MAILBOX_ASSET_VERSION = 2;
 
 function mailboxAsset(filename: string): string {
   return `${MAILBOX_ASSET_DIR}/${filename}?v=${MAILBOX_ASSET_VERSION}`;
@@ -13,5 +13,8 @@ export const MAILBOX_GOAT_FULL_MAIN_SRC = mailboxAsset("goat_postman_full_main.p
 /** 全身・別ポーズ（空状態差し替え・装飾） */
 export const MAILBOX_GOAT_FULL_SUB_SRC = mailboxAsset("goat_postman_full_sub.png");
 
-/** 顔アイコン（一覧の差出人） */
+/** 顔アイコン（一覧の差出人・ヤギ） */
 export const MAILBOX_GOAT_FACE_ICON_SRC = mailboxAsset("goat_postman_face_icon.png");
+
+/** 森からのお知らせ用アイコン（一覧・詳細の差出人） */
+export const MAILBOX_FOREST_SYSTEM_ICON_SRC = mailboxAsset("forest_system_notice_icon.png");

@@ -1,5 +1,8 @@
 import { calendarDayKeyInJapanFromDate } from "@/lib/date/japanCalendarDate";
-import { MAILBOX_GOAT_FACE_ICON_SRC } from "@/lib/loghouse/mailboxAssets";
+import {
+  MAILBOX_FOREST_SYSTEM_ICON_SRC,
+  MAILBOX_GOAT_FACE_ICON_SRC,
+} from "@/lib/loghouse/mailboxAssets";
 import {
   MAILBOX_NOTICE_TYPE_BIRTHDAY_ACORN_DELIVERY,
   MAILBOX_NOTICE_TYPE_DAILY_ACORN_DELIVERY,
@@ -148,9 +151,10 @@ export function presentMailboxNotices(
   return notices.map((n) => presentMailboxNotice(n, now));
 }
 
-/** 差出人アイコン（ヤギ以外は当面顔アイコンなし＝頭文字） */
+/** 差出人アイコン（ヤギ／森。未設定タイプは頭文字） */
 export function mailboxSenderIconSrc(senderType: MailboxSenderType): string | null {
   if (senderType === "goat") return MAILBOX_GOAT_FACE_ICON_SRC;
+  if (senderType === "system") return MAILBOX_FOREST_SYSTEM_ICON_SRC;
   return null;
 }
 

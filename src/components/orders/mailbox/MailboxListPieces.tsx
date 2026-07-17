@@ -29,19 +29,23 @@ type IntroProps = {
 export function MailboxIntroBanner({ compact = false }: IntroProps) {
   return (
     <section className={`overflow-hidden ${LJD_PAPER_CARD_CLASS}`}>
-      <div className={`flex items-stretch ${compact ? "min-h-[7.5rem]" : "min-h-[9.5rem]"}`}>
-        <div className="flex w-[38%] shrink-0 items-end justify-center bg-[#f3ead9]/55 px-1.5 pt-3">
+      <div
+        className={`flex items-stretch ${
+          compact ? "min-h-[8.5rem] sm:min-h-[7.5rem]" : "min-h-[11rem] sm:min-h-[9.5rem]"
+        }`}
+      >
+        <div
+          className={[
+            "relative shrink-0 self-stretch bg-[#f3ead9]/55",
+            compact ? "w-[42%] sm:w-[38%]" : "w-[44%] sm:w-[38%]",
+          ].join(" ")}
+        >
           <Image
             src={MAILBOX_GOAT_FULL_MAIN_SRC}
             alt=""
-            width={200}
-            height={200}
-            className={
-              compact
-                ? "h-[6.5rem] w-auto max-w-full object-contain object-bottom"
-                : "h-[8.25rem] w-auto max-w-full object-contain object-bottom"
-            }
-            sizes="160px"
+            fill
+            className="object-contain object-bottom p-1 sm:p-1.5"
+            sizes="(max-width: 640px) 44vw, 160px"
             unoptimized
             priority
           />
@@ -111,7 +115,11 @@ function SenderAvatar({
           alt=""
           width={sizePx}
           height={sizePx}
-          className="h-full w-full object-cover object-top"
+          className={
+            post.senderType === "system"
+              ? "h-full w-full object-contain p-[3px]"
+              : "h-full w-full object-cover object-top"
+          }
           sizes={`${sizePx}px`}
           unoptimized
         />
