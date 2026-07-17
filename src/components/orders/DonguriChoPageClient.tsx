@@ -10,6 +10,8 @@ import {
   DONGURI_BALANCE_LABEL,
   DONGURI_CHO_TITLE,
   DONGURI_EMPTY_LEDGER,
+  DONGURI_RECEIVE_WAYS,
+  DONGURI_RECEIVE_WAYS_TITLE,
   DONGURI_RECENT_LEDGER_LABEL,
   DONGURI_TODAY_DELIVERY_LABEL,
 } from "@/lib/loghouse/donguriCopy";
@@ -88,6 +90,22 @@ export function DonguriChoPageClient({ view: initialView, unit }: Props) {
               </span>
             </p>
           ) : null}
+        </section>
+
+        <section className={`overflow-hidden ${LJD_PAPER_CARD_CLASS}`}>
+          <h2 className="border-b border-[#ebe2d4] px-4 py-3 text-sm font-semibold text-[#3d3226]">
+            {DONGURI_RECEIVE_WAYS_TITLE}
+          </h2>
+          <ul className="divide-y divide-[#ebe2d4]">
+            {DONGURI_RECEIVE_WAYS.map((way) => (
+              <li key={way.title} className="px-4 py-3.5">
+                <p className="text-sm font-medium text-[#3d3226]">{way.title}</p>
+                <p className="mt-1 whitespace-pre-wrap text-xs leading-relaxed text-[#6e5c48]">
+                  {way.body}
+                </p>
+              </li>
+            ))}
+          </ul>
         </section>
 
         <section className={`overflow-hidden ${LJD_PAPER_CARD_CLASS}`}>

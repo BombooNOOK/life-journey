@@ -4,6 +4,19 @@ export const DONGURI_SHORTAGE_THRESHOLD = 2 as const;
 
 export const DONGURI_SHORTAGE_PRE_TITLE = "どんぐりが少なくなっています" as const;
 
+export const DONGURI_SHORTAGE_SAVE_TITLE = "どんぐりが足りません" as const;
+
+export const DONGURI_SHORTAGE_SAVE_BODY = [
+  "今日のページを「森のあしあと」として残すには、",
+  "どんぐりが3こ必要です。",
+  "",
+  "今は下書きとして残しておくことができます。",
+  "どんぐりがたまったら、あとから森に残せます。",
+  "",
+  "どんぐりの受け取り方は、",
+  "どんぐり帳から確認できます。",
+].join("\n");
+
 export function donguriShortagePreBody(balance: number): string {
   return [
     `今のどんぐりは、${balance}こです。`,
@@ -13,18 +26,11 @@ export function donguriShortagePreBody(balance: number): string {
     "",
     "今は、下書きとして書いておくことができます。",
     "どんぐりがたまったら、あとから森に残せます。",
+    "",
+    "どんぐりの受け取り方は、",
+    "どんぐり帳から確認できます。",
   ].join("\n");
 }
-
-export const DONGURI_SHORTAGE_SAVE_TITLE = "どんぐりが足りません" as const;
-
-export const DONGURI_SHORTAGE_SAVE_BODY = [
-  "今日のページを「森のあしあと」として残すには、",
-  "どんぐりが3こ必要です。",
-  "",
-  "今は下書きとして残しておくことができます。",
-  "どんぐりがたまったら、あとから森に残せます。",
-].join("\n");
 
 export const DONGURI_FOOTPRINT_CONFIRM_TITLE = "今日のページを森に残しますか？" as const;
 

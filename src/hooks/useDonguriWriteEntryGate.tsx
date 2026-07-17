@@ -9,7 +9,6 @@ import {
   BTN_CONTINUE_DRAFT,
   BTN_DRAFT_WRITE,
   BTN_REWRITE_DRAFT,
-  BTN_SKIP_TODAY,
   BTN_VIEW_DONGURI,
   DONGURI_DRAFT_RESET_CONFIRM,
   DONGURI_DRAFT_RESUME_BODY,
@@ -176,7 +175,7 @@ export function useDonguriWriteEntryGate(profileId?: string | null) {
             },
           },
           {
-            label: BTN_SKIP_TODAY,
+            label: BTN_CLOSE,
             variant: "ghost",
             onClick: () => {
               setPhase("idle");

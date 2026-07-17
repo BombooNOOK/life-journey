@@ -24,5 +24,6 @@ describe("donguri footprint copy", () => {
   it("mentions current balance in pre-gate body", () => {
     expect(donguriShortagePreBody(1)).toContain("1こ");
     expect(donguriShortagePreBody(1)).toContain("下書き");
+    expect(donguriShortagePreBody(1)).toContain("どんぐり帳から確認できます");
   });
 });

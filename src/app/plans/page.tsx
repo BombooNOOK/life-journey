@@ -27,7 +27,7 @@ export default async function PlansPage() {
         </Link>
         <h1 className="mt-2 text-2xl font-bold text-stone-900">どんぐりと森の定期便</h1>
         <p className="mt-1 text-sm text-stone-600">
-          日記を「森のあしあと」として残すときなどに使うどんぐりの、受け取り方の案内です。いまは準備中のため、購入はできません。
+          日記を「森のあしあと」として残すときなどに使うどんぐりの、受け取り方の案内です。いまは準備中のため、新たなおとどけのお手続きはできません。
         </p>
         {!viewerEmail ? (
           <p className="mt-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">
@@ -64,7 +64,7 @@ export default async function PlansPage() {
       </section>
 
       <div className="space-y-2 rounded-xl border border-stone-200 bg-[#faf8f5] px-4 py-4 text-xs leading-relaxed text-stone-600 sm:text-sm">
-        <p>課金機能は現在準備中です。公開時に改めてご案内します。</p>
+        <p>おとどけの受け取りは現在準備中です。公開時に改めてご案内します。</p>
         <LegalFooterLinks />
       </div>
     </div>

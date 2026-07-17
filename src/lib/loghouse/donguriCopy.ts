@@ -18,3 +18,21 @@ export const DONGURI_UNIT = "こ" as const;
 
 export const DONGURI_EMPTY_LEDGER =
   "まだきろくはありません。森で使うと、ここに残ります。" as const;
+
+/** どんぐり帳：受け取り方案内（購入・課金の強い表現は使わない） */
+export const DONGURI_RECEIVE_WAYS_TITLE = "どんぐりの受け取り方" as const;
+
+export const DONGURI_RECEIVE_WAYS = [
+  {
+    title: "ヤギさん郵便",
+    body: "毎日ログハウスに来ると、どんぐりが届きます。",
+  },
+  {
+    title: "森の定期便",
+    body: "毎月どんぐり100こが届く予定です。\n現在準備中です。",
+  },
+  {
+    title: "必要なときのおとどけ",
+    body: "必要な時だけ、どんぐりを受け取れるように準備中です。",
+  },
+] as const;

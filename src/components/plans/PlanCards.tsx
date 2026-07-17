@@ -25,8 +25,9 @@ export function PlanCards() {
       </article>
 
       <article className="flex flex-col rounded-2xl border border-amber-200 bg-gradient-to-br from-white to-amber-50/80 p-5 shadow-sm">
-        <h2 className="text-lg font-semibold text-stone-900">どんぐり50こ</h2>
-        <p className="mt-1 text-2xl font-bold text-amber-900">200円予定</p>
+        <h2 className="text-lg font-semibold text-stone-900">必要なときのおとどけ</h2>
+        <p className="mt-1 text-2xl font-bold text-amber-900">どんぐり50こ</p>
+        <p className="mt-1 text-sm font-medium text-amber-900/80">200円（予定）</p>
         <p className="mt-3 text-sm leading-relaxed text-stone-700">
           必要な時だけ、どんぐりを受け取れるように準備中です。
         </p>
