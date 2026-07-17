@@ -1,5 +1,5 @@
-import type { ForestResidentCardData } from "@/lib/forestResident/forestResidentNumber";
-import { FOREST_RESIDENT_DEFAULT_DISPLAY_NAME } from "@/lib/forestResident/forestResidentNumber";
+import type { ForestResidentCardData } from "@/lib/forestResident/forestResidentCardShared";
+import { FOREST_RESIDENT_DEFAULT_DISPLAY_NAME } from "@/lib/forestResident/forestResidentCardShared";
 
 /** 初回導線プレビュー用のサンプル住民票 */
 export const FIRST_VISIT_RESIDENT_CARD_PREVIEW_FIXTURE: ForestResidentCardData = {

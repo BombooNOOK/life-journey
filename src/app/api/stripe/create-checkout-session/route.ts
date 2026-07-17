@@ -5,9 +5,17 @@ import { getViewerEmailFromCookie, normalizeEmail } from "@/lib/auth/viewer";
 import { findAccountSettingsStripeIds } from "@/lib/stripe/accountSettingsSync";
 import { getAppBaseUrl } from "@/lib/stripe/appBaseUrl";
 import { getStripeClient } from "@/lib/stripe/client";
+import { isStripeCheckoutEnabled } from "@/lib/stripe/mode";
 import { isSubscriptionPlanId, priceIdForPlan } from "@/lib/stripe/plans";
 
 export async function POST(req: Request) {
+  if (!isStripeCheckoutEnabled()) {
+    return NextResponse.json(
+      { error: "決済は現在準備中です。", code: "CHECKOUT_DISABLED" },
+      { status: 503 },
+    );
+  }
+
   const viewerEmail = normalizeEmail(await getViewerEmailFromCookie());
   if (!viewerEmail) {
     return NextResponse.json({ error: "ログインが必要です。", code: "AUTH_REQUIRED" }, { status: 401 });

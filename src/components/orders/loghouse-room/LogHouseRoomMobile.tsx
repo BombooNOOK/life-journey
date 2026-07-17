@@ -25,6 +25,7 @@ import { LogHouseRoomSpotSheet } from "@/components/orders/loghouse-room/LogHous
 import { LogHouseRoomTapSpot } from "@/components/orders/loghouse-room/LogHouseRoomTapSpot";
 import { OwlDelayedBusyOverlay } from "@/components/ui/OwlDelayedBusyOverlay";
 import { useLogHouseRadioPlayer } from "@/components/orders/loghouse-room/LogHouseRadioPlayerProvider";
+import { useDonguriWriteEntryGate } from "@/hooks/useDonguriWriteEntryGate";
 import { useLogHouseRoomTimeTheme } from "@/hooks/useLogHouseRoomTimeOfDay";
 import type { SerializedUserEntitlement } from "@/lib/entitlement/resolveUserEntitlement";
 import { getStubDonguriChoView, type DonguriChoView } from "@/lib/loghouse/donguriTypes";
@@ -251,6 +252,7 @@ export function LogHouseRoomMobile({
   const donguriCho = donguriChoProp ?? getStubDonguriChoView();
   const busy = isPending || profileBusy;
   const ambientBg = timeOfDay === "night" ? "#2a2218" : "#ebe4d4";
+  const { beginWriteEntry, gateModals } = useDonguriWriteEntryGate(activeProfileId);
 
   const canWriteJournal =
     entitlement.canUseContinuedFeatures || entitlement.canCreateFirstJournal;
@@ -392,9 +394,33 @@ export function LogHouseRoomMobile({
       }
       if (!action.href) return;
       setFlashSpotId(spotId);
+      if (spotId === "desk" && !previewMode) {
+        void (async () => {
+          if (action.needsProfile && !isActiveProfile) {
+            setProfileBusy(true);
+            const result = await selectViewerProfile(profileId);
+            setProfileBusy(false);
+            if (!result.ok) {
+              window.alert(result.error);
+              return;
+            }
+          }
+          await beginWriteEntry(action.href!);
+        })();
+        return;
+      }
       void navigate(action.href, action.needsProfile === true);
     },
-    [dismissFirstVisitTip, hintActive, navigate, spotActions],
+    [
+      beginWriteEntry,
+      dismissFirstVisitTip,
+      hintActive,
+      isActiveProfile,
+      navigate,
+      previewMode,
+      profileId,
+      spotActions,
+    ],
   );
 
   const selectedAction = selectedSpotId ? spotActions[selectedSpotId] : null;
@@ -547,6 +573,7 @@ export function LogHouseRoomMobile({
         </div>
         {donguriChoModal}
         {radioCassetteModal}
+        {gateModals}
       </>
     );
   }
@@ -578,6 +605,7 @@ export function LogHouseRoomMobile({
       </div>
       {donguriChoModal}
       {radioCassetteModal}
+      {gateModals}
     </>
   );
 }

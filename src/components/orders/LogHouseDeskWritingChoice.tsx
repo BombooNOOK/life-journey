@@ -1,9 +1,9 @@
 "use client";
 
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
+import { DonguriWriteEntryLink } from "@/components/loghouse/DonguriWriteEntryLink";
 import { MyPageActionCard } from "@/components/orders/MyPageActionCard";
 import { MyPageSubpageHeader } from "@/components/orders/MyPageSubpageHeader";
 import { SoftIllustrationAccent } from "@/components/ui/SoftIllustrationAccent";
@@ -129,13 +129,11 @@ export function LogHouseDeskWritingChoice({
       ) : null}
 
       <div className="flex flex-col gap-3.5">
-        <Link
+        <DonguriWriteEntryLink
           href={LOG_HOUSE_DESK_WRITE_SOLO_HREF}
+          profileId={activeProfileId}
           className="block w-full rounded-[1.25rem] text-left transition-[transform,opacity] duration-75 active:scale-[0.99]"
-          aria-disabled={Boolean(busyId)}
-          onClick={(event) => {
-            if (busyId) event.preventDefault();
-          }}
+          disabled={Boolean(busyId)}
         >
           <MyPageActionCard
             illustration={myPageActionIllustrations.writeDiary}
@@ -143,15 +141,13 @@ export function LogHouseDeskWritingChoice({
             description={LOG_HOUSE_DESK_WRITE_SOLO_DESCRIPTION}
             tone="wood"
           />
-        </Link>
+        </DonguriWriteEntryLink>
 
-        <Link
+        <DonguriWriteEntryLink
           href={companionWritingHref}
+          profileId={activeProfileId}
           className="block w-full rounded-[1.25rem] text-left transition-[transform,opacity] duration-75 active:scale-[0.99]"
-          aria-disabled={Boolean(busyId)}
-          onClick={(event) => {
-            if (busyId) event.preventDefault();
-          }}
+          disabled={Boolean(busyId)}
         >
           <MyPageActionCard
             illustration={myPageActionIllustrations.writeCompanion}
@@ -159,7 +155,7 @@ export function LogHouseDeskWritingChoice({
             description={LOG_HOUSE_DESK_WRITE_COMPANION_DESCRIPTION}
             tone="emerald"
           />
-        </Link>
+        </DonguriWriteEntryLink>
       </div>
     </div>
   );

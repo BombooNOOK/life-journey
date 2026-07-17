@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { useFirebaseAuth } from "@/components/auth/FirebaseAuthProvider";
@@ -12,6 +12,7 @@ import {
   companionWritingWizardStepBodyClass,
   companionWritingWizardStepClass,
 } from "@/components/journal/companion-writing/companionWritingGuideStyles";
+import { DonguriFootprintModal } from "@/components/loghouse/DonguriFootprintModal";
 import { MoodOwlIcon } from "@/components/journal/MoodOwlIcon";
 import { TrialStatusBanner } from "@/components/entitlement/TrialStatusBanner";
 import { useEntitlement } from "@/components/entitlement/useEntitlement";
@@ -60,6 +61,20 @@ import {
   type ActivityId,
   type MoodId,
 } from "@/lib/journal/meta";
+import {
+  BTN_BACK,
+  BTN_CLOSE,
+  BTN_DRAFT_SAVE,
+  BTN_FOOTPRINT_CONFIRM,
+  BTN_FOOTPRINT_SAVE,
+  BTN_MAKE_DRAFT,
+  BTN_VIEW_DONGURI,
+  DONGURI_FOOTPRINT_CONFIRM_BODY,
+  DONGURI_FOOTPRINT_CONFIRM_TITLE,
+  DONGURI_SHORTAGE_SAVE_BODY,
+  DONGURI_SHORTAGE_SAVE_TITLE,
+} from "@/lib/loghouse/donguriFootprintCopy";
+import { DONGURI_DIARY_SAVE_COST, DONGURI_PAGE_PATH } from "@/lib/loghouse/donguriTypes";
 
 function toDateInputValue(date: Date): string {
   const y = date.getFullYear();
@@ -103,11 +118,13 @@ function scrollCompanionWritingInputIntoView(element: HTMLElement) {
 }
 
 export function CompanionWritingPage() {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const { user, loading: authLoading } = useFirebaseAuth();
   const { entitlement, loading: entitlementLoading } = useEntitlement();
   const profileId = (searchParams.get("profile") ?? "").trim();
   const dateFromQuery = searchParams.get("date");
+  const preferDraftFromQuery = searchParams.get("preferDraft") === "1";
   const safeReturnTo = useMemo(
     () => parseSafeJournalReturnTo(searchParams.get("returnTo")),
     [searchParams],
@@ -135,6 +152,9 @@ export function CompanionWritingPage() {
   const [tagInput, setTagInput] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [acornBalance, setAcornBalance] = useState<number | null>(null);
+  const [preferDraftMode, setPreferDraftMode] = useState(preferDraftFromQuery);
+  const [saveDialog, setSaveDialog] = useState<"none" | "confirm" | "shortage">("none");
   const answer1InputRef = useRef<HTMLInputElement>(null);
 
   const companionType = COMPANION_WRITING_AVAILABLE_COMPANION;
@@ -183,6 +203,32 @@ export function CompanionWritingPage() {
     }
     setEntryDate(dateFromQuery);
   }, [dateFromQuery]);
+
+  useEffect(() => {
+    setPreferDraftMode(preferDraftFromQuery);
+  }, [preferDraftFromQuery]);
+
+  useEffect(() => {
+    if (!effectiveProfileId) return;
+    let cancelled = false;
+    void (async () => {
+      try {
+        const qs = new URLSearchParams({ profileId: effectiveProfileId });
+        const res = await fetch(`/api/loghouse/donguri/status?${qs.toString()}`, {
+          credentials: "same-origin",
+        });
+        const data = (await res.json()) as { balance?: number };
+        if (cancelled || typeof data.balance !== "number") return;
+        setAcornBalance(data.balance);
+        if (data.balance < DONGURI_DIARY_SAVE_COST) setPreferDraftMode(true);
+      } catch {
+        // ignore
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [effectiveProfileId]);
 
   useEffect(() => {
     if (step !== "write" || questionSet) return;
@@ -283,14 +329,20 @@ export function CompanionWritingPage() {
         }),
       });
 
-      let data: { entry?: { id: string }; error?: string };
+      let data: { entry?: { id: string }; error?: string; code?: string };
       try {
-        data = (await res.json()) as { entry?: { id: string }; error?: string };
+        data = (await res.json()) as { entry?: { id: string }; error?: string; code?: string };
       } catch {
         throw new Error("サーバーからの応答を読み取れませんでした。");
       }
       if (!res.ok) {
-        throw new Error(data.error ?? `保存に失敗しました。（${res.status}）`);
+        if (data.code === "ACORN_INSUFFICIENT") {
+          setPreferDraftMode(true);
+          setSaveDialog("shortage");
+          setSaving(false);
+          return;
+        }
+        throw new Error(data.error ?? `あしあとを残せませんでした。（${res.status}）`);
       }
       if (!data.entry?.id) {
         throw new Error("保存に失敗しました。日記IDを取得できませんでした。");
@@ -327,6 +379,82 @@ export function CompanionWritingPage() {
     questionSet,
     tagInput,
   ]);
+
+  const saveServerDraft = useCallback(async () => {
+    if (!questionSet || !answer1.trim() || !answer2.trim()) {
+      setError("2つの質問に、短い言葉で答えてみてください。");
+      return;
+    }
+    if (!effectiveProfileId) {
+      setError("プロフィールを確認できませんでした。ページを再読み込みしてください。");
+      return;
+    }
+    if (!isValidDateInput(entryDate)) {
+      setError("記録日を正しく入力してください。");
+      return;
+    }
+    const content = mergeTagsIntoContent(
+      buildCompanionWritingEntryContent({
+        mood,
+        activity,
+        companionName: getAppraiserDisplayName(companionType),
+        companionShortLine: pickCompanionShortLine(companionType, mood, activity),
+        generatedBody: composeOwlGeneratedBody(questionSet, { answer1, answer2 }),
+      }),
+      tagInput,
+    );
+    if (content.length > 2000) {
+      setError("本文とタグを合わせて2000文字以内にしてください。");
+      return;
+    }
+
+    setError(null);
+    setSaving(true);
+    try {
+      const res = await fetch("/api/journal/drafts", {
+        method: "PUT",
+        credentials: "same-origin",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          dateKey: entryDate,
+          profileId: effectiveProfileId,
+          content,
+          mood,
+          activity: "record_anyway",
+          companionType,
+          designTheme: "simple_plain",
+          contentFontMode: COMPANION_WRITING_DEFAULT_CONTENT_FONT_MODE,
+          writingMode: "with_appraiser",
+        }),
+      });
+      const data = (await res.json()) as { error?: string };
+      if (!res.ok) throw new Error(data.error ?? "下書きを残せませんでした。");
+      if (safeReturnTo) {
+        router.push(safeReturnTo);
+      } else {
+        router.push("/orders/calendar");
+      }
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "下書きを残せませんでした。");
+      setSaving(false);
+    }
+  }, [
+    activity,
+    answer1,
+    answer2,
+    companionType,
+    effectiveProfileId,
+    entryDate,
+    mood,
+    questionSet,
+    router,
+    safeReturnTo,
+    tagInput,
+  ]);
+
+  const canFootprint =
+    acornBalance === null ? true : acornBalance >= DONGURI_DIARY_SAVE_COST;
+  const draftPrimary = preferDraftMode || !canFootprint;
 
   if (authLoading || entitlementLoading || !profileState.ready) {
     return (
@@ -636,7 +764,7 @@ export function CompanionWritingPage() {
             onChange={setTagInput}
             disabled={saving}
           />
-          <div className="flex gap-2 border-t border-stone-100 pt-3">
+          <div className="flex flex-col gap-2 border-t border-stone-100 pt-3 sm:flex-row">
             <button
               type="button"
               disabled={saving}
@@ -645,21 +773,121 @@ export function CompanionWritingPage() {
             >
               もどる
             </button>
-            <button
-              type="button"
-              disabled={saving}
-              onClick={() => void saveEntry()}
-              className="min-h-[44px] flex-[2] rounded-lg bg-[#b8893d] px-4 py-2.5 text-sm font-medium text-white hover:bg-[#a67a32] disabled:opacity-60"
-            >
-              {saving ? (
-                <OwlLoadingInline label="保存中…" size="sm" />
-              ) : (
-                "今日のあしあとを残す"
-              )}
-            </button>
+            {draftPrimary ? (
+              <>
+                <button
+                  type="button"
+                  disabled={saving}
+                  onClick={() => void saveServerDraft()}
+                  className="min-h-[44px] flex-[2] rounded-lg bg-[#b8893d] px-4 py-2.5 text-sm font-medium text-white hover:bg-[#a67a32] disabled:opacity-60"
+                >
+                  {saving ? (
+                    <OwlLoadingInline label={COMPANION_WRITING_SAVE_LOADING_LABEL} size="sm" />
+                  ) : (
+                    BTN_DRAFT_SAVE
+                  )}
+                </button>
+                <button
+                  type="button"
+                  disabled={saving}
+                  onClick={() => {
+                    if (!canFootprint) {
+                      setSaveDialog("shortage");
+                      return;
+                    }
+                    setSaveDialog("confirm");
+                  }}
+                  className="min-h-[44px] flex-1 rounded-lg border border-[#e0d2bc]/95 bg-[#faf3e8] px-4 py-2.5 text-sm font-medium text-[#5c4a35] hover:bg-[#f3ead8] disabled:opacity-60"
+                >
+                  {BTN_FOOTPRINT_SAVE}
+                </button>
+              </>
+            ) : (
+              <>
+                <button
+                  type="button"
+                  disabled={saving}
+                  onClick={() => setSaveDialog("confirm")}
+                  className="min-h-[44px] flex-[2] rounded-lg bg-[#b8893d] px-4 py-2.5 text-sm font-medium text-white hover:bg-[#a67a32] disabled:opacity-60"
+                >
+                  {saving ? (
+                    <OwlLoadingInline label={COMPANION_WRITING_SAVE_LOADING_LABEL} size="sm" />
+                  ) : (
+                    BTN_FOOTPRINT_SAVE
+                  )}
+                </button>
+                <button
+                  type="button"
+                  disabled={saving}
+                  onClick={() => void saveServerDraft()}
+                  className="min-h-[44px] flex-1 rounded-lg border border-[#e0d2bc]/95 bg-[#faf3e8] px-4 py-2.5 text-sm font-medium text-[#5c4a35] hover:bg-[#f3ead8] disabled:opacity-60"
+                >
+                  {BTN_DRAFT_SAVE}
+                </button>
+              </>
+            )}
           </div>
         </section>
       ) : null}
+
+      <DonguriFootprintModal
+        open={saveDialog === "confirm"}
+        title={DONGURI_FOOTPRINT_CONFIRM_TITLE}
+        body={DONGURI_FOOTPRINT_CONFIRM_BODY}
+        onDismiss={() => setSaveDialog("none")}
+        actions={[
+          {
+            label: BTN_FOOTPRINT_CONFIRM,
+            variant: "primary",
+            onClick: () => {
+              setSaveDialog("none");
+              void saveEntry();
+            },
+          },
+          {
+            label: BTN_MAKE_DRAFT,
+            variant: "secondary",
+            onClick: () => {
+              setSaveDialog("none");
+              void saveServerDraft();
+            },
+          },
+          {
+            label: BTN_BACK,
+            variant: "ghost",
+            onClick: () => setSaveDialog("none"),
+          },
+        ]}
+      />
+      <DonguriFootprintModal
+        open={saveDialog === "shortage"}
+        title={DONGURI_SHORTAGE_SAVE_TITLE}
+        body={DONGURI_SHORTAGE_SAVE_BODY}
+        onDismiss={() => setSaveDialog("none")}
+        actions={[
+          {
+            label: BTN_DRAFT_SAVE,
+            variant: "primary",
+            onClick: () => {
+              setSaveDialog("none");
+              void saveServerDraft();
+            },
+          },
+          {
+            label: BTN_VIEW_DONGURI,
+            variant: "secondary",
+            onClick: () => {
+              setSaveDialog("none");
+              router.push(DONGURI_PAGE_PATH);
+            },
+          },
+          {
+            label: BTN_CLOSE,
+            variant: "ghost",
+            onClick: () => setSaveDialog("none"),
+          },
+        ]}
+      />
 
       {error && step !== "write" && step !== "confirm" ? (
         <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-800" role="alert">

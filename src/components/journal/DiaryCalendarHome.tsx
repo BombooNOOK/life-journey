@@ -12,6 +12,7 @@ import {
   DiaryMonthCalendar,
   type DiaryMonthCalendarEntry,
 } from "@/components/journal/DiaryMonthCalendar";
+import { DonguriWriteEntryLink } from "@/components/loghouse/DonguriWriteEntryLink";
 import { ProfileSwitcher } from "@/components/profile/ProfileSwitcher";
 import { useEnsureServerAuthSession } from "@/hooks/useEnsureServerAuthSession";
 import {
@@ -533,13 +534,23 @@ export function DiaryCalendarHome({
         <div className="py-1 sm:py-2">
           {canWriteJournal ? (
             <div className="flex flex-col items-center gap-2 sm:flex-row sm:flex-wrap sm:justify-center sm:gap-3">
-              <Link href={journalTodayHref} className={writeTodayButtonClass}>
+              <DonguriWriteEntryLink
+                href={journalTodayHref}
+                dateKey={todayDayKey}
+                profileId={effectiveProfileId}
+                className={writeTodayButtonClass}
+              >
                 {entitlement.tier === "trial_not_started" ? "はじめての日記を書く" : "今日の日記を書く"}
-              </Link>
-              {showSelectedDayWriteButton && journalSelectedHref ? (
-                <Link href={journalSelectedHref} className={writeSelectedDayButtonClass}>
+              </DonguriWriteEntryLink>
+              {showSelectedDayWriteButton && journalSelectedHref && selectedDayKey ? (
+                <DonguriWriteEntryLink
+                  href={journalSelectedHref}
+                  dateKey={selectedDayKey}
+                  profileId={effectiveProfileId}
+                  className={writeSelectedDayButtonClass}
+                >
                   選択した日の日記を書く
-                </Link>
+                </DonguriWriteEntryLink>
               ) : null}
             </div>
           ) : (

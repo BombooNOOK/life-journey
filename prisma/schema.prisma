@@ -92,6 +92,36 @@ model JournalEntry {
   @@index([email, profileId])
 }
 
+/// 日記下書き（プロフィール × 日本暦日ごとに1件。どんぐり非消費）
+model JournalDraft {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  email     String
+  profileId String
+  /// 日本暦日 YYYY-MM-DD
+  dateKey   String
+
+  content String @default("")
+  mood    String @default("calm")
+  activity String @default("record_anyway")
+  companionType String @default("owl")
+  designTheme String @default("simple")
+  contentFontMode String @default("standard")
+
+  photoBlobUrl      String?
+  photoBlobPathname String?
+  photoMimeType     String?
+  photoSizeBytes    Int?
+
+  /// alone | with_appraiser
+  writingMode String @default("alone")
+
+  @@unique([email, profileId, dateKey])
+  @@index([email, profileId])
+}
+
 /// アプリ内日記ブック（ユーザーが明示的に生成）
 model DiaryBook {
   id        String   @id @default(cuid())
@@ -493,10 +523,12 @@ model LogHouseDonguriLedgerEntry {
   title  String
   description String?
 
-  /// daily_delivery の重複防止用（日本暦日 YYYY-MM-DD）
+  /// daily_delivery の重複防止用（日本暦日 YYYY-MM-DD）。diary_save は entry:{journalId}
   dateKey String?
 
   relatedNoticeId String?
+  /// diary_save 時の JournalEntry.id
+  relatedDiaryId String?
 
   /// system | admin | user
   createdBy String @default("system")
@@ -504,4 +536,5 @@ model LogHouseDonguriLedgerEntry {
   @@unique([email, profileId, reason, dateKey])
   @@index([email, profileId, createdAt])
   @@index([email, createdAt])
+  @@index([relatedDiaryId])
 }

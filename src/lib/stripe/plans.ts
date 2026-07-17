@@ -1,3 +1,5 @@
+import { resolveStripePriceId } from "@/lib/stripe/mode";
+
 export type SubscriptionPlanId = "light" | "standard";
 
 export const SUBSCRIPTION_PLAN_PROFILE_LIMIT: Record<SubscriptionPlanId, number> = {
@@ -14,19 +16,18 @@ export function isSubscriptionPlanId(value: string): value is SubscriptionPlanId
 export function deriveSubscriptionPlanLabel(plan: string | null | undefined): string {
   if (plan === "light") return "ライトプラン";
   if (plan === "standard") return "スタンダードプラン";
+  if (plan === "forest_delivery") return "森の定期便";
   return "フリープラン";
 }
 
 export function priceIdForPlan(plan: SubscriptionPlanId): string | null {
-  const envKey = plan === "light" ? "STRIPE_PRICE_LIGHT" : "STRIPE_PRICE_STANDARD";
-  const id = process.env[envKey]?.trim();
-  return id || null;
+  return resolveStripePriceId({ plan });
 }
 
 export function planFromPriceId(priceId: string | null | undefined): SubscriptionPlanId | null {
   if (!priceId) return null;
-  const light = process.env.STRIPE_PRICE_LIGHT?.trim();
-  const standard = process.env.STRIPE_PRICE_STANDARD?.trim();
+  const light = resolveStripePriceId({ plan: "light" });
+  const standard = resolveStripePriceId({ plan: "standard" });
   if (light && priceId === light) return "light";
   if (standard && priceId === standard) return "standard";
   return null;

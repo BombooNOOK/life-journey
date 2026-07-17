@@ -1,4 +1,4 @@
-import type { ForestResidentBadge, ForestResidentFaceIcon } from "@/lib/forestResident/forestResidentNumber";
+import type { ForestResidentBadge, ForestResidentFaceIcon } from "@/lib/forestResident/forestResidentCardShared";
 
 const BASE = "/images/ljd/forest-resident" as const;
 

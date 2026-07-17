@@ -20,6 +20,12 @@ import { prisma } from "@/lib/db";
 import { buildDiaryNumbers } from "@/lib/journal/numbers";
 import { guardianColorNameForEntryDate } from "@/lib/journal/guardianColorForEntryDate";
 import { journalEntryDateToIsoDateInput } from "@/lib/journal/referenceDateParts";
+import { deleteJournalDraft } from "@/lib/journal/journalDrafts";
+import {
+  chargeDiarySaveAcorns,
+  sumDonguriBalance,
+} from "@/lib/loghouse/donguriLedger";
+import { DONGURI_DIARY_SAVE_COST } from "@/lib/loghouse/donguriTypes";
 import {
   journalProfileIdsForQuery,
   profileByIdForViewer,
@@ -439,6 +445,23 @@ export async function POST(req: Request) {
       { status: 400 },
     );
   }
+
+  // 森にあしあとを残す：事前にどんぐり残高を確認
+  const acornBalance = await sumDonguriBalance({
+    email: viewerEmail,
+    profileId: profileId || "",
+  });
+  if (!profileId || acornBalance < DONGURI_DIARY_SAVE_COST) {
+    return NextResponse.json(
+      {
+        error: "どんぐりが足りません。下書きとして残すか、どんぐりをためてから森に残してください。",
+        code: "ACORN_INSUFFICIENT",
+        balance: acornBalance,
+        required: DONGURI_DIARY_SAVE_COST,
+      },
+      { status: 402 },
+    );
+  }
   if (!isMoodId(mood)) {
     return NextResponse.json(
       { error: "気分の値が不正です。", code: "BAD_MOOD" },
@@ -632,6 +655,35 @@ export async function POST(req: Request) {
 
     if (entry && wasFirstJournal) {
       await markFreeTrialStartedIfFirstJournal({ email: viewerEmail, wasFirstJournal: true });
+    }
+
+    if (entry && profileId) {
+      const charge = await chargeDiarySaveAcorns({
+        email: viewerEmail,
+        profileId,
+        journalEntryId: entry.id,
+      });
+      if (charge.insufficient) {
+        await prisma.journalEntry.delete({ where: { id: entry.id } }).catch(() => undefined);
+        return NextResponse.json(
+          {
+            error: "どんぐりが足りません。下書きとして残すか、どんぐりをためてから森に残してください。",
+            code: "ACORN_INSUFFICIENT",
+            balance: charge.balance,
+            required: DONGURI_DIARY_SAVE_COST,
+          },
+          { status: 402 },
+        );
+      }
+
+      const dateKey = journalEntryDateToIsoDateInput(parsedEntryDate);
+      if (dateKey) {
+        await deleteJournalDraft({
+          email: viewerEmail,
+          profileId,
+          dateKey,
+        });
+      }
     }
 
     const kanteiOrderExists = await profileHasKanteiOrder(viewerEmail, profileId);

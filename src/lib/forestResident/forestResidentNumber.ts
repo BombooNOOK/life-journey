@@ -1,19 +1,30 @@
 import { Prisma } from "@prisma/client";
 
 import { prisma } from "@/lib/db";
+import { ensureWelcomeAcornGift } from "@/lib/loghouse/donguriLedger";
 import {
   clampForestResidentDisplayName,
   parseForestResidentDisplayNameInput,
 } from "@/lib/forestResident/forestResidentDisplayName";
+import {
+  FOREST_RESIDENT_DEFAULT_DISPLAY_NAME,
+  type ForestResidentBadge,
+  type ForestResidentCardData,
+  type ForestResidentFaceIcon,
+} from "@/lib/forestResident/forestResidentCardShared";
+
+export {
+  FOREST_RESIDENT_DEFAULT_DISPLAY_NAME,
+  type ForestResidentBadge,
+  type ForestResidentCardData,
+  type ForestResidentFaceIcon,
+} from "@/lib/forestResident/forestResidentCardShared";
 
 const RESIDENT_NUMBER_PREFIX = "BN-";
 /** 初回サンプル BN-000802079 から 1 ずつ採番 */
 const RESIDENT_NUMBER_START = 802_079;
 const RESIDENT_NUMBER_DIGITS = 9;
 const ASSIGN_MAX_ATTEMPTS = 8;
-
-/** キャラ名選択実装まではサンプル名を表示 */
-export const FOREST_RESIDENT_DEFAULT_DISPLAY_NAME = "森の住民" as const;
 
 export function formatForestResidentNumber(sequence: number): string {
   return `${RESIDENT_NUMBER_PREFIX}${String(sequence).padStart(RESIDENT_NUMBER_DIGITS, "0")}`;
@@ -24,18 +35,6 @@ export function parseForestResidentSequence(residentNumber: string): number | nu
   if (!match) return null;
   return Number.parseInt(match[1]!, 10);
 }
-
-export type ForestResidentBadge = "green" | "silver" | "gold";
-export type ForestResidentFaceIcon = "rabbit";
-
-export type ForestResidentCardData = {
-  residentNumber: string;
-  displayName: string;
-  registeredAtLabel: string;
-  faceIcon: ForestResidentFaceIcon;
-  badge: ForestResidentBadge;
-  issuedAt: string;
-};
 
 export function formatForestResidentRegisteredLabel(date: Date): string {
   return new Intl.DateTimeFormat("ja-JP", {
@@ -59,6 +58,16 @@ export function deriveForestResidentDisplayName(
     return clampForestResidentDisplayName(trimmedNickname);
   }
   return FOREST_RESIDENT_DEFAULT_DISPLAY_NAME;
+}
+
+async function maybeDeliverWelcomeGift(email: string): Promise<void> {
+  const profile = await prisma.profile.findFirst({
+    where: { email, isArchived: false },
+    orderBy: { createdAt: "asc" },
+    select: { id: true },
+  });
+  if (!profile) return;
+  await ensureWelcomeAcornGift({ email, profileId: profile.id });
 }
 
 async function allocateNextForestResidentNumber(): Promise<string> {
@@ -95,12 +104,14 @@ export async function ensureForestResidentForEmail(email: string): Promise<Fores
   });
 
   if (existing?.forestResidentNumber && existing.forestResidentIssuedAt) {
-    return loadForestResidentCardData(normalized, {
+    const card = await loadForestResidentCardData(normalized, {
       forestResidentNumber: existing.forestResidentNumber,
       forestResidentIssuedAt: existing.forestResidentIssuedAt,
       forestResidentDisplayName: existing.forestResidentDisplayName,
       createdAt: existing.createdAt,
     });
+    await maybeDeliverWelcomeGift(normalized);
+    return card;
   }
 
   const issuedAt = new Date();
@@ -122,12 +133,14 @@ export async function ensureForestResidentForEmail(email: string): Promise<Fores
             createdAt: true,
           },
         });
-        return loadForestResidentCardData(normalized, {
+        const card = await loadForestResidentCardData(normalized, {
           forestResidentNumber: updated.forestResidentNumber!,
           forestResidentIssuedAt: updated.forestResidentIssuedAt!,
           forestResidentDisplayName: updated.forestResidentDisplayName,
           createdAt: updated.createdAt,
         });
+        await maybeDeliverWelcomeGift(normalized);
+        return card;
       }
 
       const created = await prisma.accountSettings.create({
@@ -148,12 +161,14 @@ export async function ensureForestResidentForEmail(email: string): Promise<Fores
           createdAt: true,
         },
       });
-      return loadForestResidentCardData(normalized, {
+      const card = await loadForestResidentCardData(normalized, {
         forestResidentNumber: created.forestResidentNumber!,
         forestResidentIssuedAt: created.forestResidentIssuedAt!,
         forestResidentDisplayName: created.forestResidentDisplayName,
         createdAt: created.createdAt,
       });
+      await maybeDeliverWelcomeGift(normalized);
+      return card;
     } catch (e) {
       if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === "P2002") {
         const retry = await prisma.accountSettings.findUnique({
@@ -166,12 +181,14 @@ export async function ensureForestResidentForEmail(email: string): Promise<Fores
           },
         });
         if (retry?.forestResidentNumber && retry.forestResidentIssuedAt) {
-          return loadForestResidentCardData(normalized, {
+          const card = await loadForestResidentCardData(normalized, {
             forestResidentNumber: retry.forestResidentNumber,
             forestResidentIssuedAt: retry.forestResidentIssuedAt,
             forestResidentDisplayName: retry.forestResidentDisplayName,
             createdAt: retry.createdAt,
           });
+          await maybeDeliverWelcomeGift(normalized);
+          return card;
         }
         continue;
       }

@@ -16,8 +16,16 @@ import {
   DONGURI_DAILY_DELIVERY_TITLE,
   DONGURI_DAILY_MAIL_BODY,
   DONGURI_DAILY_MAIL_TITLE,
+  DONGURI_DIARY_SAVE_COST,
+  DONGURI_DIARY_SAVE_DESCRIPTION,
+  DONGURI_DIARY_SAVE_TITLE,
   DONGURI_PAGE_PATH,
   DONGURI_REASON_LABELS,
+  DONGURI_WELCOME_GIFT_AMOUNT,
+  DONGURI_WELCOME_GIFT_DESCRIPTION,
+  DONGURI_WELCOME_GIFT_TITLE,
+  DONGURI_WELCOME_MAIL_BODY,
+  DONGURI_WELCOME_MAIL_TITLE,
   donguriReasonLabel,
   type DonguriChoView,
   type DonguriCreatedBy,
@@ -45,6 +53,7 @@ function toView(row: {
   description: string | null;
   dateKey: string | null;
   relatedNoticeId: string | null;
+  relatedDiaryId?: string | null;
   createdBy: string;
   createdAt: Date;
 }): DonguriLedgerEntryView {
@@ -58,6 +67,7 @@ function toView(row: {
     delta: row.amount,
     dateKey: row.dateKey,
     relatedNoticeId: row.relatedNoticeId,
+    relatedDiaryId: row.relatedDiaryId ?? null,
     createdBy: row.createdBy,
     createdAt: row.createdAt.toISOString(),
   };
@@ -152,6 +162,7 @@ export type AppendDonguriEntryInput = {
   dateKey?: string | null;
   createdBy?: DonguriCreatedBy;
   relatedNoticeId?: string | null;
+  relatedDiaryId?: string | null;
 };
 
 export async function appendDonguriLedgerEntry(
@@ -177,6 +188,7 @@ export async function appendDonguriLedgerEntry(
       dateKey: input.dateKey ?? null,
       createdBy: input.createdBy ?? "system",
       relatedNoticeId: input.relatedNoticeId ?? null,
+      relatedDiaryId: input.relatedDiaryId ?? null,
     },
   });
   return toView(row);
@@ -415,6 +427,171 @@ export async function ensureBirthdayAcornGift(params: {
       email,
       activeProfileId,
       dateKey,
+      error: e instanceof Error ? e.message : e,
+    });
+    return { delivered: false };
+  }
+}
+
+export function diarySaveLedgerDateKey(journalEntryId: string): string {
+  return `entry:${journalEntryId.trim()}`;
+}
+
+/**
+ * 森にあしあとを残す：日記1件につき -3（二重消費防止）。
+ * 残高不足時は charged:false / insufficient:true。
+ */
+export async function chargeDiarySaveAcorns(params: {
+  email: string;
+  profileId: string;
+  journalEntryId: string;
+}): Promise<{
+  charged: boolean;
+  alreadyCharged: boolean;
+  insufficient: boolean;
+  balance: number;
+  entry: DonguriLedgerEntryView | null;
+}> {
+  const email = normalizeEmail(params.email);
+  const profileId = params.profileId.trim();
+  const journalEntryId = params.journalEntryId.trim();
+  if (!email || !profileId || !journalEntryId) {
+    return {
+      charged: false,
+      alreadyCharged: false,
+      insufficient: false,
+      balance: 0,
+      entry: null,
+    };
+  }
+
+  const dateKey = diarySaveLedgerDateKey(journalEntryId);
+  const existing = await prisma.logHouseDonguriLedgerEntry.findFirst({
+    where: {
+      OR: [
+        { relatedDiaryId: journalEntryId, reason: "diary_save" },
+        { email, profileId, reason: "diary_save", dateKey },
+      ],
+    },
+  });
+  if (existing) {
+    return {
+      charged: false,
+      alreadyCharged: true,
+      insufficient: false,
+      balance: await sumDonguriBalance({ email, profileId }),
+      entry: toView(existing),
+    };
+  }
+
+  const balance = await sumDonguriBalance({ email, profileId });
+  if (balance < DONGURI_DIARY_SAVE_COST) {
+    return {
+      charged: false,
+      alreadyCharged: false,
+      insufficient: true,
+      balance,
+      entry: null,
+    };
+  }
+
+  try {
+    const entry = await appendDonguriLedgerEntry({
+      email,
+      profileId,
+      amount: -DONGURI_DIARY_SAVE_COST,
+      reason: "diary_save",
+      title: DONGURI_DIARY_SAVE_TITLE,
+      description: DONGURI_DIARY_SAVE_DESCRIPTION,
+      dateKey,
+      createdBy: "user",
+      relatedDiaryId: journalEntryId,
+    });
+    return {
+      charged: true,
+      alreadyCharged: false,
+      insufficient: false,
+      balance: await sumDonguriBalance({ email, profileId }),
+      entry,
+    };
+  } catch (e) {
+    // unique 競合 → 既課金扱い
+    const again = await prisma.logHouseDonguriLedgerEntry.findFirst({
+      where: { relatedDiaryId: journalEntryId, reason: "diary_save" },
+    });
+    if (again) {
+      return {
+        charged: false,
+        alreadyCharged: true,
+        insufficient: false,
+        balance: await sumDonguriBalance({ email, profileId }),
+        entry: toView(again),
+      };
+    }
+    console.error("[diary save acorn charge failed]", {
+      email,
+      profileId,
+      journalEntryId,
+      error: e instanceof Error ? e.message : e,
+    });
+    throw e;
+  }
+}
+
+/** 森の住民登録お祝い +50（アカウントにつき1回） */
+export async function ensureWelcomeAcornGift(params: {
+  email: string;
+  profileId: string;
+}): Promise<{ delivered: boolean }> {
+  const email = normalizeEmail(params.email);
+  const profileId = params.profileId.trim();
+  if (!email || !profileId) return { delivered: false };
+
+  const already = await prisma.logHouseDonguriLedgerEntry.findFirst({
+    where: { email, reason: "welcome_gift" },
+    select: { id: true },
+  });
+  if (already) return { delivered: false };
+
+  const dateKey = "welcome";
+  try {
+    await prisma.$transaction(async (tx) => {
+      const ledger = await tx.logHouseDonguriLedgerEntry.create({
+        data: {
+          email,
+          profileId,
+          amount: DONGURI_WELCOME_GIFT_AMOUNT,
+          reason: "welcome_gift",
+          title: DONGURI_WELCOME_GIFT_TITLE,
+          description: DONGURI_WELCOME_GIFT_DESCRIPTION,
+          dateKey,
+          createdBy: "system",
+        },
+      });
+
+      const notice = await tx.logHouseMailboxNotice.create({
+        data: {
+          email,
+          profileId,
+          type: MAILBOX_NOTICE_TYPE_DAILY_ACORN_DELIVERY,
+          title: DONGURI_WELCOME_MAIL_TITLE,
+          message: DONGURI_WELCOME_MAIL_BODY,
+          actionLabel: "どんぐり帳を見る",
+          actionRoute: DONGURI_PAGE_PATH,
+          relatedLedgerId: ledger.id,
+        },
+      });
+
+      await tx.logHouseDonguriLedgerEntry.update({
+        where: { id: ledger.id },
+        data: { relatedNoticeId: notice.id },
+      });
+    });
+    return { delivered: true };
+  } catch (e) {
+    console.error("[welcome acorn gift failed]", {
+      email,
+      profileId,
       error: e instanceof Error ? e.message : e,
     });
     return { delivered: false };

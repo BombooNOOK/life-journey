@@ -3,6 +3,7 @@ export const DONGURI_REASONS = [
   "daily_delivery",
   "admin_grant",
   "birthday_gift",
+  "welcome_gift",
   "diary_save",
   "book_create",
   "reward_ad",
@@ -19,7 +20,8 @@ export const DONGURI_REASON_LABELS: Record<DonguriReason, string> = {
   daily_delivery: "ヤギさん郵便",
   admin_grant: "森からのおとどけ",
   birthday_gift: "お誕生日のおとどけ",
-  diary_save: "日記を本棚に保存",
+  welcome_gift: "森の住民登録のお祝い",
+  diary_save: "今日のあしあと",
   book_create: "日記ブックを作成",
   reward_ad: "スポンサー上映",
   subscription_delivery: "森の定期便",
@@ -61,6 +63,22 @@ export const DONGURI_BIRTHDAY_MAIL_BODY = [
   "今日という日が、やさしい光に包まれますように。",
 ].join("\n");
 
+export const DONGURI_DIARY_SAVE_COST = 3 as const;
+export const DONGURI_DIARY_SAVE_TITLE = "今日のあしあと" as const;
+export const DONGURI_DIARY_SAVE_DESCRIPTION = "日記を森に残しました" as const;
+
+export const DONGURI_WELCOME_GIFT_AMOUNT = 50 as const;
+export const DONGURI_WELCOME_GIFT_TITLE = "森の住民登録のお祝い" as const;
+export const DONGURI_WELCOME_GIFT_DESCRIPTION = "BambooNOOKの森へようこそ" as const;
+export const DONGURI_WELCOME_MAIL_TITLE = "森の住民登録のお祝い" as const;
+export const DONGURI_WELCOME_MAIL_BODY = [
+  "BambooNOOKの森へようこそ。",
+  "ヤギさん郵便から、はじめてのおとどけです。",
+  "",
+  "どんぐりを50こ、お届けしました。",
+  "まずは気軽に、森での時間を楽しんでください。",
+].join("\n");
+
 /** クライアントでも使える表示用型・ヘルパー（DBアクセスなし） */
 
 export type DonguriLedgerKind = "delivery" | "spend";
@@ -75,6 +93,7 @@ export type DonguriLedgerEntryView = {
   delta: number;
   dateKey: string | null;
   relatedNoticeId: string | null;
+  relatedDiaryId: string | null;
   createdBy: string;
   createdAt: string;
 };

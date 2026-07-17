@@ -28,10 +28,12 @@ import {
 import { JournalWritingComposer } from "@/components/journal/JournalWritingComposer";
 import { JournalContentLengthAlerts } from "@/components/journal/JournalContentLengthAlerts";
 import { DiaryTagInput } from "@/components/journal/DiaryTagInput";
+import { JournalFootprintActions } from "@/components/journal/JournalFootprintActions";
 import {
   JournalLocalDraftBanner,
   JOURNAL_LOCAL_DRAFT_PHOTO_NOTICE,
 } from "@/components/journal/JournalLocalDraftBanner";
+import { DonguriFootprintModal } from "@/components/loghouse/DonguriFootprintModal";
 import { JournalSaveStoryTransitionOverlay } from "@/components/journal/JournalSaveStoryTransitionOverlay";
 import { ActiveProfileLabel } from "@/components/profile/ActiveProfileLabel";
 import { useEnsureActiveViewerProfile } from "@/hooks/useEnsureActiveViewerProfile";
@@ -107,6 +109,15 @@ import { OwlSuspenseFallback } from "@/components/ui/OwlSuspenseFallback";
 import { TrialStatusBanner } from "@/components/entitlement/TrialStatusBanner";
 import { useEntitlement } from "@/components/entitlement/useEntitlement";
 import { useJournalLocalDraft } from "@/hooks/useJournalLocalDraft";
+import {
+  BTN_CLOSE,
+  BTN_CONTINUE_DRAFT,
+  BTN_REWRITE_DRAFT,
+  DONGURI_DRAFT_RESET_CONFIRM,
+  DONGURI_DRAFT_RESUME_BODY,
+  DONGURI_DRAFT_RESUME_TITLE,
+} from "@/lib/loghouse/donguriFootprintCopy";
+import { DONGURI_DIARY_SAVE_COST } from "@/lib/loghouse/donguriTypes";
 import {
   buildJournalLocalDraftKey,
   isJournalLocalDraftFeatureEnabled,
@@ -211,6 +222,9 @@ function JournalPageContent() {
     (editingId ? canEditJournal : canWriteJournal);
   const profileId = (searchParams.get("profile") ?? "").trim();
   const dateFromQuery = searchParams.get("date");
+  const preferDraftFromQuery = searchParams.get("preferDraft") === "1";
+  const freshDraftFromQuery = searchParams.get("freshDraft") === "1";
+  const resumeDraftFromQuery = searchParams.get("resumeDraft") === "1";
   const focusFromQuery = searchParams.get("focus");
   const showNumerologyDebug = searchParams.get("numerologyDebug") === "1";
   const showSyncDebug = searchParams.get("syncDebug") === "1";
@@ -270,6 +284,19 @@ function JournalPageContent() {
     useState<JournalCompanionHandoffFocus | null>(null);
   const [companionSpotlightFocus, setCompanionSpotlightFocus] =
     useState<JournalCompanionHandoffFocus | null>(null);
+  const [acornBalance, setAcornBalance] = useState<number | null>(null);
+  const [preferDraftMode, setPreferDraftMode] = useState(preferDraftFromQuery);
+  const [serverDraftDialog, setServerDraftDialog] = useState<
+    "none" | "resume" | "resetConfirm"
+  >("none");
+  const [pendingServerDraft, setPendingServerDraft] = useState<{
+    content: string;
+    mood: string;
+    activity: string;
+    companionType: string;
+    contentFontMode: string;
+  } | null>(null);
+  const [draftNotice, setDraftNotice] = useState<string | null>(null);
 
   const photoInputRef = useRef<HTMLInputElement>(null);
   const editLoadGenerationRef = useRef(0);
@@ -456,6 +483,86 @@ function JournalPageContent() {
     }
     setEntryDate(dateFromQuery);
   }, [editingId, dateFromQuery]);
+
+  useEffect(() => {
+    setPreferDraftMode(preferDraftFromQuery);
+  }, [preferDraftFromQuery]);
+
+  useEffect(() => {
+    if (editingId || !effectiveProfileId || !profileState.ready) return;
+    let cancelled = false;
+    void (async () => {
+      try {
+        const qs = new URLSearchParams({ profileId: effectiveProfileId });
+        const res = await fetch(`/api/loghouse/donguri/status?${qs.toString()}`, {
+          credentials: "same-origin",
+        });
+        const data = (await res.json()) as { balance?: number };
+        if (!cancelled && typeof data.balance === "number") {
+          setAcornBalance(data.balance);
+          if (data.balance < DONGURI_DIARY_SAVE_COST) {
+            setPreferDraftMode(true);
+          }
+        }
+      } catch {
+        // ignore
+      }
+
+      if (freshDraftFromQuery) return;
+
+      try {
+        const dateKey = isValidDateInput(dateFromQuery ?? "")
+          ? (dateFromQuery as string)
+          : entryDate;
+        const draftQs = new URLSearchParams({
+          dateKey,
+          profileId: effectiveProfileId,
+        });
+        const draftRes = await fetch(`/api/journal/drafts?${draftQs.toString()}`, {
+          credentials: "same-origin",
+        });
+        const draftData = (await draftRes.json()) as {
+          draft?: {
+            content?: string;
+            mood?: string;
+            activity?: string;
+            companionType?: string;
+            contentFontMode?: string;
+          } | null;
+        };
+        if (cancelled || !draftRes.ok || !draftData.draft) return;
+        const d = draftData.draft;
+        if (!(d.content ?? "").trim() && !preferDraftFromQuery) {
+          // empty draft: still offer resume if any fields? skip if empty content
+        }
+        setPendingServerDraft({
+          content: d.content ?? "",
+          mood: d.mood ?? "calm",
+          activity: d.activity ?? "record_anyway",
+          companionType: d.companionType ?? "owl",
+          contentFontMode: d.contentFontMode ?? "standard",
+        });
+        if (!(d.content ?? "").trim()) return;
+        if (resumeDraftFromQuery) {
+          setContent(d.content ?? "");
+          setMood((d.mood ?? "calm") as MoodId);
+          setActivity((d.activity ?? "record_anyway") as ActivityId);
+          setCompanionType((d.companionType ?? "owl") as CompanionType);
+          setContentFontMode((d.contentFontMode ?? "standard") as ContentFontMode);
+          setPendingServerDraft(null);
+          return;
+        }
+        setServerDraftDialog("resume");
+      } catch {
+        // ignore
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+    // entryDate は初回ロード用。日付変更時は別途手動で下書き確認しない
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- mount / profile / date query
+  }, [editingId, effectiveProfileId, profileState.ready, dateFromQuery, freshDraftFromQuery, resumeDraftFromQuery]);
 
   useEffect(() => {
     if (!editingId || loadingEdit) {
@@ -679,6 +786,7 @@ function JournalPageContent() {
     redirectMode: "preview" | "returnTo" | "stay" | "companionFinish" = "preview",
   ) {
     setError(null);
+    setDraftNotice(null);
 
     if (editingId && !canEditJournal) {
       setError("無料お試し期間が終了したため、記録の編集はできません。");
@@ -749,6 +857,7 @@ function JournalPageContent() {
       });
       const data = (await res.json()) as {
         error?: string;
+        code?: string;
         entry?: { id?: string };
         guardianColorName?: string | null;
       };
@@ -758,7 +867,15 @@ function JournalPageContent() {
           saveTransitionStartedAtRef.current = null;
           saveTransitionAnimalShownAtRef.current = null;
         }
-        setError(data.error ?? "保存に失敗しました。");
+        if (data.code === "ACORN_INSUFFICIENT") {
+          setAcornBalance((prev) =>
+            prev !== null && prev < DONGURI_DIARY_SAVE_COST ? prev : DONGURI_DIARY_SAVE_COST - 1,
+          );
+          setPreferDraftMode(true);
+          setError("どんぐりが足りません。下書きとして残すか、どんぐりをためてから森に残してください。");
+          return;
+        }
+        setError(data.error ?? "あしあとを残せませんでした。");
         return;
       }
       const savedId = data.entry?.id ? String(data.entry.id) : editingId;
@@ -922,11 +1039,83 @@ function JournalPageContent() {
 
   async function onSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    if (!editingId) {
+      // 新規は専用ボタン（下書き / あしあと）から実行
+      return;
+    }
     if (companionEditSession) {
       await saveEntry("stay");
       return;
     }
     await saveEntry();
+  }
+
+  async function saveServerDraft() {
+    setError(null);
+    setDraftNotice(null);
+    if (!effectiveProfileId) {
+      setError("プロフィールを確認できませんでした。");
+      return;
+    }
+    if (!isValidDateInput(entryDate)) {
+      setError("記録日を正しく入力してください。");
+      return;
+    }
+    const text = content.trim();
+    if (!text) {
+      setError("本文を入力してください。");
+      return;
+    }
+    const mergedContent = mergeTagsIntoContent(text, tagInput);
+    if (mergedContent.length > 2000) {
+      setError("本文とタグを合わせて2000文字以内にしてください。");
+      return;
+    }
+
+    setSaving(true);
+    try {
+      const res = await fetch("/api/journal/drafts", {
+        method: "PUT",
+        credentials: "same-origin",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          dateKey: entryDate,
+          profileId: effectiveProfileId,
+          content: mergedContent,
+          mood,
+          activity,
+          companionType,
+          designTheme,
+          contentFontMode,
+          writingMode: "alone",
+        }),
+      });
+      const data = (await res.json()) as { error?: string };
+      if (!res.ok) {
+        setError(data.error ?? "下書きを残せませんでした。");
+        return;
+      }
+      localDraft.clearDraftAfterSuccessfulSave();
+      setDraftNotice("下書きとして残しました。どんぐりは使っていません。");
+      if (safeReturnTo) {
+        router.push(safeReturnTo);
+      }
+    } catch {
+      setError("通信に失敗しました。");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  function applyPendingServerDraft() {
+    if (!pendingServerDraft) return;
+    setContent(pendingServerDraft.content);
+    setMood(pendingServerDraft.mood as MoodId);
+    setActivity(pendingServerDraft.activity as ActivityId);
+    setCompanionType(pendingServerDraft.companionType as CompanionType);
+    setContentFontMode(pendingServerDraft.contentFontMode as ContentFontMode);
+    setPendingServerDraft(null);
+    setServerDraftDialog("none");
   }
 
   async function deleteEntry(id: string) {
@@ -1479,49 +1668,92 @@ function JournalPageContent() {
           disabled={saving || loadingEdit || processingPhoto}
         />
 
-        <div className="flex flex-col gap-2 border-t border-[#ebe2d4] pt-3 sm:flex-row sm:flex-wrap sm:justify-end">
-            <button
-              type="submit"
-              disabled={saving || processingPhoto}
-              className="min-h-[44px] whitespace-nowrap rounded-xl border border-[#b8893d]/80 bg-[#b8893d] px-4 py-2.5 text-base font-medium text-white shadow-[0_2px_8px_rgba(90,70,45,0.12)] transition hover:border-[#a67a32] hover:bg-[#a67a32] disabled:opacity-60"
-            >
-              {saving ? (
-                <OwlLoadingInline label="保存中…" size="sm" />
-              ) : (
-                "保存する"
-              )}
-            </button>
-            {editingId ? (
-              <>
-                <button
-                  type="button"
-                  disabled={saving || processingPhoto}
-                  onClick={() => void saveEntry("returnTo")}
-                  className="min-h-[44px] whitespace-nowrap rounded-xl border border-[#e0d2bc]/95 bg-[#faf3e8] px-4 py-2.5 text-base font-medium text-[#5c4a35] transition hover:border-[#d5c3a8] hover:bg-[#f3ead8] disabled:opacity-60"
-                >
-                  {saving ? (
-                    <OwlLoadingInline label="保存中…" size="sm" />
-                  ) : (
-                    "保存して戻る"
-                  )}
-                </button>
-                <button
-                  type="button"
-                  disabled={
-                    saving || processingPhoto || deletingId === editingId || navigatingToCalendar
-                  }
-                  onClick={cancelEditingAndReturnToCalendar}
-                  className="min-h-[44px] whitespace-nowrap rounded-xl border border-[#e0d2bc]/95 bg-[#faf3e8] px-4 py-2.5 text-base font-medium text-[#5c4a35] transition hover:border-[#d5c3a8] hover:bg-[#f3ead8] disabled:opacity-60"
-                >
-                  編集をやめる
-                </button>
-              </>
-            ) : null}
-        </div>
+        <JournalFootprintActions
+          isEditing={Boolean(editingId)}
+          acornBalance={acornBalance}
+          preferDraft={preferDraftMode}
+          saving={saving}
+          processingPhoto={processingPhoto}
+          onSaveDraft={() => void saveServerDraft()}
+          onFootprintSave={() => void saveEntry("preview")}
+          onEditSave={() => void saveEntry("preview")}
+          onEditSaveAndReturn={() => void saveEntry("returnTo")}
+          onCancelEdit={cancelEditingAndReturnToCalendar}
+          cancelEditDisabled={deletingId === editingId || navigatingToCalendar}
+        />
       </form>
       )}
 
+      {draftNotice ? (
+        <p className="rounded-md bg-emerald-50 px-3 py-2 text-sm text-emerald-900">{draftNotice}</p>
+      ) : null}
       {error ? <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-800">{error}</p> : null}
+
+      <DonguriFootprintModal
+        open={serverDraftDialog === "resume"}
+        title={DONGURI_DRAFT_RESUME_TITLE}
+        body={DONGURI_DRAFT_RESUME_BODY}
+        onDismiss={() => setServerDraftDialog("none")}
+        actions={[
+          {
+            label: BTN_CONTINUE_DRAFT,
+            variant: "primary",
+            onClick: () => applyPendingServerDraft(),
+          },
+          {
+            label: BTN_REWRITE_DRAFT,
+            variant: "secondary",
+            onClick: () => setServerDraftDialog("resetConfirm"),
+          },
+          {
+            label: BTN_CLOSE,
+            variant: "ghost",
+            onClick: () => {
+              setPendingServerDraft(null);
+              setServerDraftDialog("none");
+            },
+          },
+        ]}
+      />
+      <DonguriFootprintModal
+        open={serverDraftDialog === "resetConfirm"}
+        title={BTN_REWRITE_DRAFT}
+        body={DONGURI_DRAFT_RESET_CONFIRM}
+        onDismiss={() => setServerDraftDialog("resume")}
+        actions={[
+          {
+            label: "書き直す",
+            variant: "primary",
+            onClick: () => {
+              void (async () => {
+                try {
+                  const qs = new URLSearchParams({
+                    dateKey: entryDate,
+                    profileId: effectiveProfileId,
+                  });
+                  await fetch(`/api/journal/drafts?${qs.toString()}`, {
+                    method: "DELETE",
+                    credentials: "same-origin",
+                  });
+                } catch {
+                  // ignore
+                }
+                setPendingServerDraft(null);
+                setServerDraftDialog("none");
+                resetJournalFormState();
+                if (dateFromQuery && isValidDateInput(dateFromQuery)) {
+                  setEntryDate(dateFromQuery);
+                }
+              })();
+            },
+          },
+          {
+            label: BTN_CLOSE,
+            variant: "ghost",
+            onClick: () => setServerDraftDialog("resume"),
+          },
+        ]}
+      />
     </div>
   );
 }

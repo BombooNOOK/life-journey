@@ -177,6 +177,7 @@ export async function deleteUserAccount(params: {
     const deletedDiaryBooks = await tx.diaryBook.deleteMany({ where: scope });
     const deletedBookshelfBooks = await tx.diaryBookshelfBook.deleteMany({ where: scope });
     const deletedJournalEntries = await tx.journalEntry.deleteMany({ where: scope });
+    const deletedJournalDrafts = await tx.journalDraft.deleteMany({ where: scope });
     const deletedGardenDisplayFlowers = await tx.gardenDisplayFlower.deleteMany({
       where: scope,
     });
@@ -195,6 +196,7 @@ export async function deleteUserAccount(params: {
       deletedDiaryBooks: deletedDiaryBooks.count,
       deletedBookshelfBooks: deletedBookshelfBooks.count,
       deletedJournalEntries: deletedJournalEntries.count,
+      deletedJournalDrafts: deletedJournalDrafts.count,
       deletedGardenDisplayFlowers: deletedGardenDisplayFlowers.count,
       deletedMailboxNotices: deletedMailboxNotices.count,
       deletedDonguriLedger: deletedDonguriLedger.count,

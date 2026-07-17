@@ -89,7 +89,7 @@ export default async function AdminDonguriLedgerPage({ params }: Props) {
                   <th className="px-3 py-2 font-medium">reason</th>
                   <th className="px-3 py-2 font-medium">title</th>
                   <th className="px-3 py-2 font-medium">description</th>
-                  <th className="px-3 py-2 font-medium">dateKey</th>
+                  <th className="px-3 py-2 font-medium">relatedDiaryId</th>
                   <th className="px-3 py-2 font-medium">relatedNoticeId</th>
                   <th className="px-3 py-2 font-medium">createdBy</th>
                 </tr>
@@ -106,7 +106,7 @@ export default async function AdminDonguriLedgerPage({ params }: Props) {
                     <td className="px-3 py-2">{row.reason}</td>
                     <td className="px-3 py-2">{row.title}</td>
                     <td className="max-w-[12rem] truncate px-3 py-2">{row.description ?? "—"}</td>
-                    <td className="px-3 py-2">{row.dateKey ?? "—"}</td>
+                    <td className="max-w-[8rem] truncate px-3 py-2">{row.relatedDiaryId ?? "—"}</td>
                     <td className="max-w-[8rem] truncate px-3 py-2">{row.relatedNoticeId ?? "—"}</td>
                     <td className="px-3 py-2">{row.createdBy}</td>
                   </tr>
