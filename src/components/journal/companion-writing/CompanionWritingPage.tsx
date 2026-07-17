@@ -74,6 +74,7 @@ import {
   DONGURI_SHORTAGE_SAVE_BODY,
   DONGURI_SHORTAGE_SAVE_TITLE,
 } from "@/lib/loghouse/donguriFootprintCopy";
+import { writeDonguriBalanceHint } from "@/lib/loghouse/donguriBalanceHint";
 import { DONGURI_DIARY_SAVE_COST, DONGURI_PAGE_PATH } from "@/lib/loghouse/donguriTypes";
 
 function toDateInputValue(date: Date): string {
@@ -329,9 +330,19 @@ export function CompanionWritingPage() {
         }),
       });
 
-      let data: { entry?: { id: string }; error?: string; code?: string };
+      let data: {
+        entry?: { id: string };
+        error?: string;
+        code?: string;
+        donguriBalance?: number | null;
+      };
       try {
-        data = (await res.json()) as { entry?: { id: string }; error?: string; code?: string };
+        data = (await res.json()) as {
+          entry?: { id: string };
+          error?: string;
+          code?: string;
+          donguriBalance?: number | null;
+        };
       } catch {
         throw new Error("サーバーからの応答を読み取れませんでした。");
       }
@@ -346,6 +357,11 @@ export function CompanionWritingPage() {
       }
       if (!data.entry?.id) {
         throw new Error("保存に失敗しました。日記IDを取得できませんでした。");
+      }
+
+      if (typeof data.donguriBalance === "number") {
+        writeDonguriBalanceHint(effectiveProfileId, data.donguriBalance);
+        setAcornBalance(data.donguriBalance);
       }
 
       writeCompanionWritingCalendarComplete({

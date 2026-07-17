@@ -109,6 +109,7 @@ import { OwlSuspenseFallback } from "@/components/ui/OwlSuspenseFallback";
 import { TrialStatusBanner } from "@/components/entitlement/TrialStatusBanner";
 import { useEntitlement } from "@/components/entitlement/useEntitlement";
 import { useJournalLocalDraft } from "@/hooks/useJournalLocalDraft";
+import { writeDonguriBalanceHint } from "@/lib/loghouse/donguriBalanceHint";
 import {
   BTN_CLOSE,
   BTN_CONTINUE_DRAFT,
@@ -868,6 +869,7 @@ function JournalPageContent() {
         code?: string;
         entry?: { id?: string };
         guardianColorName?: string | null;
+        donguriBalance?: number | null;
       };
       if (!res.ok) {
         if (isNewEntrySave) {
@@ -893,8 +895,17 @@ function JournalPageContent() {
           saveTransitionStartedAtRef.current = null;
           saveTransitionAnimalShownAtRef.current = null;
         }
-        setError("保存に失敗しました。");
+        setError("あしあとを残せませんでした。");
         return;
+      }
+
+      if (
+        isNewEntrySave &&
+        effectiveProfileId &&
+        typeof data.donguriBalance === "number"
+      ) {
+        writeDonguriBalanceHint(effectiveProfileId, data.donguriBalance);
+        setAcornBalance(data.donguriBalance);
       }
 
       localDraft.clearDraftAfterSuccessfulSave();

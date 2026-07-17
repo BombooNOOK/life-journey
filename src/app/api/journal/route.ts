@@ -700,6 +700,7 @@ export async function POST(req: Request) {
       await markFreeTrialStartedIfFirstJournal({ email: viewerEmail, wasFirstJournal: true });
     }
 
+    let donguriBalanceAfterSave: number | null = null;
     if (entry && profileId) {
       const charge = await chargeDiarySaveAcorns({
         email: viewerEmail,
@@ -718,6 +719,7 @@ export async function POST(req: Request) {
           { status: 402 },
         );
       }
+      donguriBalanceAfterSave = charge.balance;
 
       if (draftDateKey) {
         await deleteJournalDraft({
@@ -745,6 +747,7 @@ export async function POST(req: Request) {
       entry: entry ? formatJournalEntryForApiResponse(entry) : null,
       kanteiOrderExists,
       guardianColorName,
+      donguriBalance: donguriBalanceAfterSave,
       code: "OK",
     });
   } catch (e) {

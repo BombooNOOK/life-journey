@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { useEffect, useState } from "react";
 
 import { MyPageSubpageHeader } from "@/components/orders/MyPageSubpageHeader";
 import { DONGURI_ICON_SRC } from "@/lib/loghouse/donguriAssets";
@@ -12,6 +13,8 @@ import {
   DONGURI_RECENT_LEDGER_LABEL,
   DONGURI_TODAY_DELIVERY_LABEL,
 } from "@/lib/loghouse/donguriCopy";
+import { fetchDonguriStatus } from "@/lib/loghouse/fetchDonguriStatus";
+import { clearDonguriBalanceHint } from "@/lib/loghouse/donguriBalanceHint";
 import { formatDonguriDelta, type DonguriChoView } from "@/lib/loghouse/donguriTypes";
 import { LJD_PAGE_BG_CLASS, LJD_PAPER_CARD_CLASS } from "@/lib/ljd/ljdPaperSurface";
 import { LOG_HOUSE_RETURN_TO_LABEL } from "@/lib/journal/logHouseLabels";
@@ -22,7 +25,34 @@ type Props = {
 };
 
 /** ユーザー向けどんぐり帳（半没入） */
-export function DonguriChoPageClient({ view, unit }: Props) {
+export function DonguriChoPageClient({ view: initialView, unit }: Props) {
+  const [view, setView] = useState(initialView);
+
+  useEffect(() => {
+    setView(initialView);
+  }, [initialView]);
+
+  useEffect(() => {
+    let cancelled = false;
+    const refresh = async () => {
+      const status = await fetchDonguriStatus({ includeCho: true });
+      if (cancelled || !status?.cho) return;
+      setView(status.cho);
+      if (status.profileId) clearDonguriBalanceHint(status.profileId);
+    };
+    void refresh();
+    const onVisible = () => {
+      if (document.visibilityState === "visible") void refresh();
+    };
+    document.addEventListener("visibilitychange", onVisible);
+    window.addEventListener("focus", onVisible);
+    return () => {
+      cancelled = true;
+      document.removeEventListener("visibilitychange", onVisible);
+      window.removeEventListener("focus", onVisible);
+    };
+  }, []);
+
   return (
     <div className={`min-h-[100dvh] ${LJD_PAGE_BG_CLASS}`}>
       <div className="mx-auto w-full max-w-md space-y-5 px-4 pb-12 pt-5 sm:space-y-6">

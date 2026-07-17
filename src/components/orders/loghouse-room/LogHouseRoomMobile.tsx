@@ -27,6 +27,11 @@ import { OwlDelayedBusyOverlay } from "@/components/ui/OwlDelayedBusyOverlay";
 import { useLogHouseRadioPlayer } from "@/components/orders/loghouse-room/LogHouseRadioPlayerProvider";
 import { useDonguriWriteEntryGate } from "@/hooks/useDonguriWriteEntryGate";
 import { useLogHouseRoomTimeTheme } from "@/hooks/useLogHouseRoomTimeOfDay";
+import { fetchDonguriStatus } from "@/lib/loghouse/fetchDonguriStatus";
+import {
+  clearDonguriBalanceHint,
+  readDonguriBalanceHint,
+} from "@/lib/loghouse/donguriBalanceHint";
 import type { SerializedUserEntitlement } from "@/lib/entitlement/resolveUserEntitlement";
 import { getStubDonguriChoView, type DonguriChoView } from "@/lib/loghouse/donguriTypes";
 import { buildForestMusicHallHref } from "@/lib/help/forestMusicHallNav";
@@ -249,10 +254,64 @@ export function LogHouseRoomMobile({
   const [donguriChoOpen, setDonguriChoOpen] = useState(false);
   const [radioCassetteOpen, setRadioCassetteOpen] = useState(false);
   const radioPlayer = useLogHouseRadioPlayer();
-  const donguriCho = donguriChoProp ?? getStubDonguriChoView();
+  const [donguriCho, setDonguriCho] = useState<DonguriChoView>(() => {
+    const base = donguriChoProp ?? getStubDonguriChoView();
+    const hinted = readDonguriBalanceHint(activeProfileId);
+    if (hinted === null) return base;
+    return { ...base, balance: hinted };
+  });
   const busy = isPending || profileBusy;
   const ambientBg = timeOfDay === "night" ? "#2a2218" : "#ebe4d4";
   const { beginWriteEntry, gateModals } = useDonguriWriteEntryGate(activeProfileId);
+
+  useEffect(() => {
+    if (!donguriChoProp) return;
+    const hinted = readDonguriBalanceHint(activeProfileId);
+    if (hinted !== null) {
+      setDonguriCho({ ...donguriChoProp, balance: hinted });
+      return;
+    }
+    setDonguriCho(donguriChoProp);
+  }, [donguriChoProp, activeProfileId]);
+
+  const refreshDonguriCho = useCallback(async () => {
+    if (previewMode) return;
+    const status = await fetchDonguriStatus({
+      profileId: activeProfileId,
+      includeCho: true,
+    });
+    if (status?.cho) {
+      setDonguriCho(status.cho);
+      clearDonguriBalanceHint(activeProfileId);
+      return;
+    }
+    if (typeof status?.balance === "number") {
+      setDonguriCho((prev) => ({ ...prev, balance: status.balance }));
+      clearDonguriBalanceHint(activeProfileId);
+    }
+  }, [activeProfileId, previewMode]);
+
+  useEffect(() => {
+    if (previewMode) return;
+    void refreshDonguriCho();
+    const onVisible = () => {
+      if (document.visibilityState === "visible") void refreshDonguriCho();
+    };
+    const onPageShow = () => void refreshDonguriCho();
+    document.addEventListener("visibilitychange", onVisible);
+    window.addEventListener("pageshow", onPageShow);
+    window.addEventListener("focus", onPageShow);
+    return () => {
+      document.removeEventListener("visibilitychange", onVisible);
+      window.removeEventListener("pageshow", onPageShow);
+      window.removeEventListener("focus", onPageShow);
+    };
+  }, [previewMode, refreshDonguriCho]);
+
+  const openDonguriCho = useCallback(() => {
+    setDonguriChoOpen(true);
+    void refreshDonguriCho();
+  }, [refreshDonguriCho]);
 
   const canWriteJournal =
     entitlement.canUseContinuedFeatures || entitlement.canCreateFirstJournal;
@@ -508,7 +567,7 @@ export function LogHouseRoomMobile({
       onToggleHint={toggleHint}
       timeOfDay={timeOfDay}
       donguriBalance={donguriCho.balance}
-      onOpenDonguriCho={() => setDonguriChoOpen(true)}
+      onOpenDonguriCho={openDonguriCho}
     />
   );
 
