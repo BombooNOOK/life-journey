@@ -31,18 +31,28 @@ export async function POST(req: Request) {
     await deleteUserAccount({ emailInput: viewerEmail, confirmationWord });
   } catch (error) {
     const message =
-      error instanceof Error ? error.message : "アカウントの削除に失敗しました。";
+      error instanceof Error ? error.message : "住民登録の解除に失敗しました。";
     const code =
       typeof error === "object" && error !== null && "code" in error
         ? String((error as { code: unknown }).code)
         : "DELETE_FAILED";
-    const status = code === "CONFIRMATION_WORD_MISMATCH" ? 400 : 409;
+    const status =
+      code === "CONFIRMATION_WORD_MISMATCH"
+        ? 400
+        : code === "FIREBASE_AUTH_DELETE_FAILED" || code === "DB_DELETE_FAILED"
+          ? 500
+          : 409;
     return NextResponse.json({ error: message, code }, { status });
   }
 
   const res = NextResponse.json({ code: "OK" });
   res.cookies.set("lj_logged_in", "", { ...cookieBase, maxAge: 0 });
   res.cookies.set("lj_user_email", "", { ...cookieBase, maxAge: 0 });
+  // 初回導線 Cookie もサーバー側で消す（端末に残ると再登録後の演出がおかしくなる）
+  res.cookies.set("lj_first_visit_from_register", "", { ...cookieBase, maxAge: 0 });
+  res.cookies.set("lj_onboarding_ch1", "", { ...cookieBase, maxAge: 0 });
+  res.cookies.set("lj_onboarding_ch2", "", { ...cookieBase, maxAge: 0 });
+  res.cookies.set("lj_onboarding_ch3_started", "", { ...cookieBase, maxAge: 0 });
   return res;
 }
 

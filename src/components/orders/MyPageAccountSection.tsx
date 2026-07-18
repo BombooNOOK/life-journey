@@ -174,7 +174,7 @@ export function MyPageAccountSection({
             href="/orders/account/delete"
             className="inline-flex min-h-[44px] items-center rounded-lg border border-red-200 bg-white px-4 py-2.5 text-base font-medium text-red-800 transition hover:bg-red-50"
           >
-            アカウントを削除する
+            住民登録をやめる
           </Link>
         </div>
       </MyPageAccountSectionCard>

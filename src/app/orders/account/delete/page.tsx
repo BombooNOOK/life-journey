@@ -16,7 +16,7 @@ const ADMIN_ACCOUNT_DELETE_BLOCK_MESSAGE =
   "管理者アカウントはここから削除できません。別のテスト用アカウントをご利用ください。" as const;
 
 const FIREBASE_ADMIN_NOT_CONFIGURED_MESSAGE =
-  "現在、アカウント削除を完了できません。しばらくしてから再度お試しいただくか、お問い合わせください。" as const;
+  "現在、住民登録の解除を完了できません。しばらくしてから再度お試しいただくか、お問い合わせください。" as const;
 
 export default async function AccountDeletePage() {
   const viewerEmail = await getViewerEmailFromCookie();
@@ -54,8 +54,8 @@ export default async function AccountDeletePage() {
   return (
     <div className="space-y-5 sm:space-y-6">
       <MyPageSubpageHeader
-        title="アカウント削除"
-        description="削除内容をよくご確認ください"
+        title="住民登録をやめる"
+        description="解除すると、日記やログイン情報も削除されます。内容をよくご確認ください"
       />
 
       <section className="rounded-xl border border-stone-200 bg-white p-4 shadow-sm sm:p-5">

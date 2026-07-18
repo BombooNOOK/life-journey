@@ -280,3 +280,42 @@ export function clearFirstVisitKanteiVideoOrderId(): void {
   if (!canUseSessionStorage()) return;
   window.sessionStorage.removeItem(KANTEI_VIDEO_ORDER_ID);
 }
+
+/**
+ * 住民登録解除・ログアウト後の再導線用に、はじめての方まわりの端末状態をまとめて消す。
+ * 古い chapter / 鑑定動画 orderId が残ると、再登録後に演出がおかしくなる。
+ */
+export function clearAllFirstVisitClientState(): void {
+  if (canUseSessionStorage()) {
+    const keysToRemove: string[] = [];
+    for (let i = 0; i < window.sessionStorage.length; i += 1) {
+      const key = window.sessionStorage.key(i);
+      if (!key) continue;
+      if (
+        key.startsWith("ljd:firstGuide:") ||
+        key.startsWith("lj-cw-") ||
+        key.startsWith("lj-journal-companion-handoff:")
+      ) {
+        keysToRemove.push(key);
+      }
+    }
+    for (const key of keysToRemove) {
+      window.sessionStorage.removeItem(key);
+    }
+  }
+
+  clearFirstVisitFromRegisterFlag();
+  clearFirstVisitChapter3StartedFlag();
+
+  if (typeof document !== "undefined") {
+    const secure = window.location.protocol === "https:" ? "; Secure" : "";
+    for (const name of [
+      ONBOARDING_CHAPTER1_COMPLETE_COOKIE,
+      ONBOARDING_CHAPTER2_COMPLETE_COOKIE,
+      ONBOARDING_CHAPTER3_STARTED_COOKIE,
+      FROM_REGISTER_COOKIE,
+    ]) {
+      document.cookie = `${name}=; Path=/; Max-Age=0; SameSite=Lax${secure}`;
+    }
+  }
+}

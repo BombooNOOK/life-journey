@@ -49,16 +49,24 @@ export function FirstVisitKanteiCreatePage() {
   const handleStart = useCallback(() => {
     const video = videoRef.current;
     if (!video) return;
+    setVideoError(false);
     setPhase("playing");
-    void video.play();
+    void video.play().catch(() => {
+      setVideoError(true);
+      setPhase("ready");
+    });
   }, []);
 
   const handleReplay = useCallback(() => {
     const video = videoRef.current;
     if (!video) return;
+    setVideoError(false);
     setPhase("playing");
     video.currentTime = 0;
-    void video.play();
+    void video.play().catch(() => {
+      setVideoError(true);
+      setPhase("ready");
+    });
   }, []);
 
   const handleSkip = useCallback(() => {
