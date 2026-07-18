@@ -25,6 +25,13 @@ function resolveTourMailboxHref(): string {
   return `/preview/mailbox?returnTo=${encodeURIComponent(TOUR_PREVIEW_PATH)}`;
 }
 
+function resolveTourBookshelfHref(): string {
+  if (process.env.NODE_ENV !== "development") {
+    return "/orders/bookshelf";
+  }
+  return `/preview/forest-bookshelf?returnTo=${encodeURIComponent(TOUR_PREVIEW_PATH)}`;
+}
+
 /** はじめてのログハウス案内だけを繰り返し確認するプレビュー */
 export function LogHouseTourPreviewClient() {
   const [manageOpen, setManageOpen] = useState(false);
@@ -77,7 +84,8 @@ export function LogHouseTourPreviewClient() {
         firstVisitGuideState="ready_first_journal"
         forceTourPreview
         tourGuideReturnTo={TOUR_PREVIEW_PATH}
-        tourMailboxHref={TOUR_MAILBOX_HREF}
+        tourMailboxHref={resolveTourMailboxHref()}
+        tourBookshelfHref={resolveTourBookshelfHref()}
         onOpenManage={() => setManageOpen(true)}
         previewMode
         layout="immersive"

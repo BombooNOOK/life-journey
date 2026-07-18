@@ -6,23 +6,27 @@ export const LOGHOUSE_TOUR_DESK_OWL_QUOTE =
 export const LOGHOUSE_TOUR_DESK_NEXT = "次へ" as const;
 
 export const LOGHOUSE_TOUR_MAILBOX_OWL_QUOTE =
-  "さっきの鑑定書、もうできているみたいですね。\n\n玄関のポストに、お手紙が届いています。\nあとでゆっくり開いてみてください。" as const;
+  "さっきの鑑定書、もうできているみたいですね。\n\n玄関のポストに、お手紙が届いています。\nまずはポストをのぞいてみましょう。" as const;
 
-export const LOGHOUSE_TOUR_MAILBOX_PEEK = "ポストをのぞく" as const;
-export const LOGHOUSE_TOUR_MAILBOX_LATER = "あとで見る" as const;
+export const LOGHOUSE_TOUR_MAILBOX_OPEN = "ポストを開く" as const;
+
+/** ポスト画面に重ねる、はじめて案内の補足 */
+export const LOGHOUSE_TOUR_MAILBOX_PAGE_BANNER =
+  "ヤギさん郵便から、どんぐりやお知らせが届きます。\n\n「森の住民登録のお祝い」や「今日のおとどけ」では、どんぐりが毎日届くしくみがわかります。\n「鑑定書が届きました」のお手紙も、このなかにありますよ。\n\n読み終わったら、下のボタンで案内に戻ってください。" as const;
 
 export const LOGHOUSE_TOUR_BOOKSHELF_OWL_QUOTE =
-  "鑑定書や、あしあとブックは、\nこちらの本棚にしまわれていきます。\n\n残したあしあとは、ここで一冊の本（あしあとブック）にすることができます。" as const;
+  "鑑定書や、あしあとブックは、\nこちらの本棚にしまわれていきます。\n\n残したあしあとは、ここで一冊の本（あしあとブック）にすることができます。\n\n今、本棚で鑑定書を見ますか？" as const;
 
 export const LOGHOUSE_TOUR_BOOKSHELF_GUIDE_LINK_LABEL = "詳しい手順はこちらをご覧ください" as const;
 
 /** 森の案内所・あしあとブック説明（returnTo 付きは build 関数を使う） */
 export const LOGHOUSE_TOUR_BOOKSHELF_GUIDE_HASH = "diary-book" as const;
 
-export const LOGHOUSE_TOUR_BOOKSHELF_NEXT = "次へ" as const;
+export const LOGHOUSE_TOUR_BOOKSHELF_OPEN_NOW = "今、本棚を見る" as const;
+export const LOGHOUSE_TOUR_BOOKSHELF_LATER = "あとにする" as const;
 
 export const LOGHOUSE_TOUR_HINT_OWL_QUOTE =
-  "どこに何があるか迷ったら、\n上の「？」をタップしてみてください。\n\nタップできる場所が、やさしく教えてくれます。" as const;
+  "どこに何があるか迷ったら、\n上の「？」をタップしてみてください。\n\n小さな名前ラベルが出た場所には、中へ入れます。" as const;
 
 export const LOGHOUSE_TOUR_HINT_NEXT = "次へ" as const;
 
@@ -47,7 +51,8 @@ export const LOGHOUSE_TOUR_PLEASE_CONTINUE =
 
 export const LOGHOUSE_TOUR_A11Y_LABEL = "ログハウスのご案内" as const;
 
-export const LOGHOUSE_TOUR_MAILBOX_BACK_LABEL = "案内に戻る（ログハウス）" as const;
+/** ポスト／本棚などから案内へ戻るときのラベル */
+export const LOGHOUSE_TOUR_RETURN_LABEL = "案内に戻る（ログハウス）" as const;
 
 export const LOGHOUSE_TOUR_PREVIEW_COMPLETE_MESSAGE =
   "案内はここまでです。本番では、このあとあしあとを残す画面へ進みます。" as const;

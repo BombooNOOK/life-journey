@@ -7,6 +7,7 @@ import {
   MailboxIntroBanner,
   MailboxNoticeList,
 } from "@/components/orders/mailbox/MailboxListPieces";
+import { LogHouseTourMailboxAssist } from "@/components/orders/loghouse-room/LogHouseTourMailboxAssist";
 import { MyPageSubpageHeader } from "@/components/orders/MyPageSubpageHeader";
 import { LOG_HOUSE_RETURN_TO_LABEL } from "@/lib/journal/logHouseLabels";
 import { LJD_PAGE_BG_CLASS } from "@/lib/ljd/ljdPaperSurface";
@@ -16,8 +17,8 @@ import {
 } from "@/lib/loghouse/logHouseMailboxCopy";
 import type { MailboxNoticeView } from "@/lib/loghouse/mailboxNoticeTypes";
 import { presentMailboxNotices } from "@/lib/loghouse/mailboxPresentation";
-import { readLoghouseTourStep } from "@/lib/onboarding/firstVisitWizard/loghouseTour";
-import { LOGHOUSE_TOUR_MAILBOX_BACK_LABEL } from "@/lib/onboarding/firstVisitWizard/loghouseTourCopy";
+import { readLoghouseTourReturnHref, readLoghouseTourStep } from "@/lib/onboarding/firstVisitWizard/loghouseTour";
+import { LOGHOUSE_TOUR_RETURN_LABEL } from "@/lib/onboarding/firstVisitWizard/loghouseTourCopy";
 
 type Props = {
   initialNotices: MailboxNoticeView[];
@@ -38,6 +39,7 @@ export function LogHouseMailboxPageClient({
   refreshFromApi = true,
 }: Props) {
   const [notices, setNotices] = useState(initialNotices);
+  const [resolvedBackHref, setResolvedBackHref] = useState(backHref);
   const [resolvedBackLabel, setResolvedBackLabel] = useState(
     backLabel ?? LOG_HOUSE_RETURN_TO_LABEL,
   );
@@ -47,14 +49,14 @@ export function LogHouseMailboxPageClient({
   }, [initialNotices]);
 
   useEffect(() => {
-    if (backLabel) {
-      setResolvedBackLabel(backLabel);
+    if (readLoghouseTourStep()) {
+      setResolvedBackHref(readLoghouseTourReturnHref());
+      setResolvedBackLabel(LOGHOUSE_TOUR_RETURN_LABEL);
       return;
     }
-    setResolvedBackLabel(
-      readLoghouseTourStep() ? LOGHOUSE_TOUR_MAILBOX_BACK_LABEL : LOG_HOUSE_RETURN_TO_LABEL,
-    );
-  }, [backLabel]);
+    setResolvedBackHref(backHref);
+    setResolvedBackLabel(backLabel ?? LOG_HOUSE_RETURN_TO_LABEL);
+  }, [backHref, backLabel]);
 
   const refreshNotices = useCallback(async () => {
     if (!refreshFromApi) return;
@@ -91,11 +93,13 @@ export function LogHouseMailboxPageClient({
       <div className="mx-auto w-full max-w-md space-y-5 px-4 pb-12 pt-5 sm:space-y-6 sm:pt-6">
         <MyPageSubpageHeader
           title={LOG_HOUSE_MAILBOX_PAGE_TITLE}
-          backHref={backHref}
+          backHref={resolvedBackHref}
           backLabel={resolvedBackLabel}
         />
 
         <MailboxIntroBanner />
+
+        <LogHouseTourMailboxAssist />
 
         {posts.length === 0 ? (
           <MailboxEmptyState />

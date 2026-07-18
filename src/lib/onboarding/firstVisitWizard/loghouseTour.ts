@@ -3,6 +3,7 @@ import type { FirstVisitGuideState } from "@/lib/onboarding/firstVisitGuideState
 
 export const LOGHOUSE_TOUR_DONE_STORAGE_KEY = "ljd:firstGuide:loghouseTourDone" as const;
 export const LOGHOUSE_TOUR_STEP_STORAGE_KEY = "ljd:firstGuide:loghouseTourStep" as const;
+export const LOGHOUSE_TOUR_RETURN_HREF_KEY = "ljd:firstGuide:loghouseTourReturnHref" as const;
 
 export const LOGHOUSE_TOUR_STEPS = [
   "desk",
@@ -54,6 +55,7 @@ export function setLoghouseTourDoneFlag(): void {
     // ignore
   }
   clearLoghouseTourStep();
+  clearLoghouseTourReturnHref();
 }
 
 export function clearLoghouseTourDoneFlag(): void {
@@ -88,6 +90,37 @@ export function clearLoghouseTourStep(): void {
   if (typeof window === "undefined") return;
   try {
     window.sessionStorage.removeItem(LOGHOUSE_TOUR_STEP_STORAGE_KEY);
+  } catch {
+    // ignore
+  }
+}
+
+export function readLoghouseTourReturnHref(): string {
+  if (typeof window === "undefined") return "/orders";
+  try {
+    const raw = window.sessionStorage.getItem(LOGHOUSE_TOUR_RETURN_HREF_KEY)?.trim();
+    if (raw && raw.startsWith("/") && !raw.startsWith("//")) return raw;
+  } catch {
+    // ignore
+  }
+  return "/orders";
+}
+
+export function setLoghouseTourReturnHref(href: string): void {
+  if (typeof window === "undefined") return;
+  try {
+    const trimmed = href.trim();
+    if (!trimmed.startsWith("/") || trimmed.startsWith("//")) return;
+    window.sessionStorage.setItem(LOGHOUSE_TOUR_RETURN_HREF_KEY, trimmed);
+  } catch {
+    // ignore
+  }
+}
+
+export function clearLoghouseTourReturnHref(): void {
+  if (typeof window === "undefined") return;
+  try {
+    window.sessionStorage.removeItem(LOGHOUSE_TOUR_RETURN_HREF_KEY);
   } catch {
     // ignore
   }

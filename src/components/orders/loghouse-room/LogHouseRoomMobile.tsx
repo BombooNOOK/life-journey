@@ -58,11 +58,13 @@ import type { LogHouseRoomTimeOfDay } from "@/lib/loghouse/logHouseRoomTimeTheme
 import type { FirstVisitGuideState } from "@/lib/onboarding/firstVisitGuideState";
 import { FIRST_VISIT_ROUTES } from "@/lib/onboarding/firstVisitWizard/routes";
 import {
+  clearLoghouseTourReturnHref,
   clearLoghouseTourStep,
   nextLoghouseTourStep,
   readLoghouseTourDoneFlag,
   readLoghouseTourStep,
   setLoghouseTourDoneFlag,
+  setLoghouseTourReturnHref,
   setLoghouseTourStep,
   shouldOfferLoghouseTour,
   spotlightSpotForTourStep,
@@ -137,6 +139,8 @@ type Props = {
   tourGuideReturnTo?: string;
   /** ポストのぞき先（既定本番ポスト） */
   tourMailboxHref?: string;
+  /** 本棚を開く先（既定本番本棚） */
+  tourBookshelfHref?: string;
   onOpenManage: () => void;
   className?: string;
   previewMode?: boolean;
@@ -277,6 +281,7 @@ export function LogHouseRoomMobile({
   forceTourPreview = false,
   tourGuideReturnTo = "/orders",
   tourMailboxHref = LOG_HOUSE_MAILBOX_PAGE_PATH,
+  tourBookshelfHref = "/orders/bookshelf",
   onOpenManage,
   className = "",
   previewMode = false,
@@ -380,6 +385,7 @@ export function LogHouseRoomMobile({
     if (forceTourPreview) {
       setTourPreviewFinished(false);
       setAwaitingDeskTap(false);
+      setLoghouseTourReturnHref(tourGuideReturnTo);
       const resumed = readLoghouseTourStep();
       setTourStep(resumed ?? "desk");
       setShowFirstVisitTip(false);
@@ -397,6 +403,7 @@ export function LogHouseRoomMobile({
       setTourStep(null);
       return;
     }
+    setLoghouseTourReturnHref(tourGuideReturnTo);
     const resumed = readLoghouseTourStep();
     setTourStep(resumed ?? "desk");
     setShowFirstVisitTip(false);
@@ -405,7 +412,7 @@ export function LogHouseRoomMobile({
     } catch {
       // ignore
     }
-  }, [firstVisitGuideState, forceTourPreview, hasKantei, previewMode]);
+  }, [firstVisitGuideState, forceTourPreview, hasKantei, previewMode, tourGuideReturnTo]);
 
   useEffect(() => {
     if (tourActive || forceTourPreview) return;
@@ -462,6 +469,7 @@ export function LogHouseRoomMobile({
   const completeTour = useCallback(() => {
     if (forceTourPreview) {
       clearLoghouseTourStep();
+      clearLoghouseTourReturnHref();
       setTourStep(null);
       setAwaitingDeskTap(false);
       setTourPreviewFinished(true);
@@ -474,11 +482,13 @@ export function LogHouseRoomMobile({
 
   const restartTourPreview = useCallback(() => {
     clearLoghouseTourStep();
+    clearLoghouseTourReturnHref();
+    setLoghouseTourReturnHref(tourGuideReturnTo);
     setTourPreviewFinished(false);
     setAwaitingDeskTap(false);
     setNotice(null);
     setTourStep("desk");
-  }, []);
+  }, [tourGuideReturnTo]);
 
   const toggleHint = useCallback(() => {
     if (tourStep === "hint") {
@@ -491,12 +501,22 @@ export function LogHouseRoomMobile({
   }, [advanceTour, dismissFirstVisitTip, tourStep]);
 
   const peekMailboxFromTour = useCallback(() => {
+    // 戻ってきたら本棚の選択カードを出す
     setTourStep("bookshelf");
     setLoghouseTourStep("bookshelf");
     startTransition(() => {
       router.push(tourMailboxHref);
     });
   }, [router, startTransition, tourMailboxHref]);
+
+  const openBookshelfFromTour = useCallback(() => {
+    // 戻ってきたら？の説明へ進む
+    setTourStep("hint");
+    setLoghouseTourStep("hint");
+    startTransition(() => {
+      router.push(tourBookshelfHref);
+    });
+  }, [router, startTransition, tourBookshelfHref]);
 
   const goToDeskFromTour = useCallback(() => {
     setAwaitingDeskTap(true);
@@ -577,8 +597,11 @@ export function LogHouseRoomMobile({
         } else if (tourStep === "mailbox" && spotId === "mailbox") {
           peekMailboxFromTour();
           return;
+        } else if (tourStep === "bookshelf" && spotId === "bookshelf") {
+          openBookshelfFromTour();
+          return;
         } else if (target && spotId === target && !awaitingDeskTap) {
-          if (tourStep === "desk" || tourStep === "bookshelf") {
+          if (tourStep === "desk") {
             advanceTour();
             return;
           }
@@ -648,6 +671,7 @@ export function LogHouseRoomMobile({
       hintActive,
       isActiveProfile,
       navigate,
+      openBookshelfFromTour,
       peekMailboxFromTour,
       previewMode,
       profileId,
@@ -718,7 +742,8 @@ export function LogHouseRoomMobile({
         awaitingDeskTap={awaitingDeskTap}
         guideReturnTo={tourGuideReturnTo}
         onNext={advanceTour}
-        onPeekMailbox={peekMailboxFromTour}
+        onOpenMailbox={peekMailboxFromTour}
+        onOpenBookshelf={openBookshelfFromTour}
         onGoToDesk={goToDeskFromTour}
       />
     ) : null;

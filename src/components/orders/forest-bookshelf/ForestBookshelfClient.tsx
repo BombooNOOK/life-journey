@@ -1,7 +1,6 @@
 "use client";
 
 import Image from "next/image";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useMemo, useState } from "react";
 
@@ -19,6 +18,7 @@ import {
   type ForestBookshelfPeekCardModel,
 } from "@/components/orders/forest-bookshelf/ForestBookshelfPeekCard";
 import { ForestBookshelfHelp } from "@/components/orders/forest-bookshelf/ForestBookshelfHelp";
+import { LogHouseTourAwareBackLink } from "@/components/orders/loghouse-room/LogHouseTourAwareBackLink";
 import { TrialStatusBanner } from "@/components/entitlement/TrialStatusBanner";
 import { KanteiMissingBanner } from "@/components/orders/KanteiMissingBanner";
 import { FirstVisitFlowBrowserBackGuard } from "@/components/orders/FirstVisitFlowBrowserBackGuard";
@@ -401,12 +401,11 @@ export function ForestBookshelfClient({
       {immersive ? (
         <>
           <div className="pointer-events-none absolute inset-x-0 top-0 z-40 flex items-start justify-between gap-3 px-3 pb-2 pt-[max(0.75rem,env(safe-area-inset-top))]">
-            <Link
+            <LogHouseTourAwareBackLink
               href="/orders"
+              fallbackLabel={LOG_HOUSE_BACK_TO_LINK_LABEL}
               className="pointer-events-auto inline-flex min-h-11 items-center rounded-full border border-[#d9cbb8]/90 bg-[#fffdf8]/88 px-3 text-sm font-medium text-[#5c4a3a] shadow-sm backdrop-blur-[3px]"
-            >
-              {LOG_HOUSE_BACK_TO_LINK_LABEL}
-            </Link>
+            />
             <div className="pointer-events-auto relative flex max-w-[58%] items-start justify-end gap-2">
               <ForestBookshelfHelp enableFirstVisitTip />
               <p className="pointer-events-none min-w-0 rounded-full border border-[#d9cbb8]/70 bg-[#fffdf8]/75 px-2.5 py-2 text-right text-[11px] leading-tight text-[#6a5846] shadow-sm backdrop-blur-[3px]">
@@ -439,9 +438,11 @@ export function ForestBookshelfClient({
         <>
           <div className="mx-auto max-w-3xl space-y-3 px-3 pb-4 pt-3 sm:px-4 sm:pt-4">
             <div className="flex flex-wrap items-center justify-between gap-2">
-              <Link href="/orders" className={`text-sm ${LJD_PAPER_LINK_CLASS}`}>
-                {LOG_HOUSE_BACK_TO_LINK_LABEL}
-              </Link>
+              <LogHouseTourAwareBackLink
+                href="/orders"
+                fallbackLabel={LOG_HOUSE_BACK_TO_LINK_LABEL}
+                className={`text-sm ${LJD_PAPER_LINK_CLASS}`}
+              />
               <div className="relative flex items-center gap-2">
                 <ForestBookshelfHelp enableFirstVisitTip={false} />
                 <p className="text-xs text-[#6a5846]">

@@ -17,7 +17,8 @@ import {
   LOGHOUSE_TOUR_AWAITING_DESK_OWL_QUOTE,
   LOGHOUSE_TOUR_BOOKSHELF_GUIDE_HASH,
   LOGHOUSE_TOUR_BOOKSHELF_GUIDE_LINK_LABEL,
-  LOGHOUSE_TOUR_BOOKSHELF_NEXT,
+  LOGHOUSE_TOUR_BOOKSHELF_LATER,
+  LOGHOUSE_TOUR_BOOKSHELF_OPEN_NOW,
   LOGHOUSE_TOUR_BOOKSHELF_OWL_QUOTE,
   LOGHOUSE_TOUR_DESK_NEXT,
   LOGHOUSE_TOUR_DESK_OWL_QUOTE,
@@ -25,9 +26,8 @@ import {
   LOGHOUSE_TOUR_HINT_OWL_QUOTE,
   LOGHOUSE_TOUR_INVITE_CTA,
   LOGHOUSE_TOUR_INVITE_OWL_QUOTE,
-  LOGHOUSE_TOUR_MAILBOX_LATER,
+  LOGHOUSE_TOUR_MAILBOX_OPEN,
   LOGHOUSE_TOUR_MAILBOX_OWL_QUOTE,
-  LOGHOUSE_TOUR_MAILBOX_PEEK,
   LOGHOUSE_TOUR_WRAP_UP_NEXT,
   LOGHOUSE_TOUR_WRAP_UP_OWL_QUOTE,
 } from "@/lib/onboarding/firstVisitWizard/loghouseTourCopy";
@@ -39,7 +39,8 @@ type Props = {
   /** 案内所から戻る先（本番=/orders、プレビュー用パス） */
   guideReturnTo?: string;
   onNext: () => void;
-  onPeekMailbox: () => void;
+  onOpenMailbox: () => void;
+  onOpenBookshelf: () => void;
   onGoToDesk: () => void;
 };
 
@@ -72,7 +73,8 @@ export function LogHouseRoomFirstVisitTour({
   awaitingDeskTap = false,
   guideReturnTo = "/orders",
   onNext,
-  onPeekMailbox,
+  onOpenMailbox,
+  onOpenBookshelf,
   onGoToDesk,
 }: Props) {
   if (awaitingDeskTap) {
@@ -103,16 +105,9 @@ export function LogHouseRoomFirstVisitTour({
         <button
           type="button"
           className={companionWritingGuidePrimaryButtonClass}
-          onClick={onNext}
+          onClick={onOpenMailbox}
         >
-          {LOGHOUSE_TOUR_MAILBOX_LATER}
-        </button>
-        <button
-          type="button"
-          className={companionWritingGuideSecondaryButtonClass}
-          onClick={onPeekMailbox}
-        >
-          {LOGHOUSE_TOUR_MAILBOX_PEEK}
+          {LOGHOUSE_TOUR_MAILBOX_OPEN}
         </button>
       </OwlCard>
     );
@@ -125,8 +120,19 @@ export function LogHouseRoomFirstVisitTour({
         >
           {LOGHOUSE_TOUR_BOOKSHELF_GUIDE_LINK_LABEL}
         </Link>
-        <button type="button" className={companionWritingGuidePrimaryButtonClass} onClick={onNext}>
-          {LOGHOUSE_TOUR_BOOKSHELF_NEXT}
+        <button
+          type="button"
+          className={companionWritingGuidePrimaryButtonClass}
+          onClick={onOpenBookshelf}
+        >
+          {LOGHOUSE_TOUR_BOOKSHELF_OPEN_NOW}
+        </button>
+        <button
+          type="button"
+          className={companionWritingGuideSecondaryButtonClass}
+          onClick={onNext}
+        >
+          {LOGHOUSE_TOUR_BOOKSHELF_LATER}
         </button>
       </OwlCard>
     );
