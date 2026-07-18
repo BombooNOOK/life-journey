@@ -16,6 +16,8 @@ import {
 } from "@/lib/loghouse/logHouseMailboxCopy";
 import type { MailboxNoticeView } from "@/lib/loghouse/mailboxNoticeTypes";
 import { presentMailboxNotices } from "@/lib/loghouse/mailboxPresentation";
+import { readLoghouseTourStep } from "@/lib/onboarding/firstVisitWizard/loghouseTour";
+import { LOGHOUSE_TOUR_MAILBOX_BACK_LABEL } from "@/lib/onboarding/firstVisitWizard/loghouseTourCopy";
 
 type Props = {
   initialNotices: MailboxNoticeView[];
@@ -32,14 +34,27 @@ export function LogHouseMailboxPageClient({
   initialNotices,
   detailHrefBase = LOG_HOUSE_MAILBOX_PAGE_PATH,
   backHref = "/orders",
-  backLabel = LOG_HOUSE_RETURN_TO_LABEL,
+  backLabel,
   refreshFromApi = true,
 }: Props) {
   const [notices, setNotices] = useState(initialNotices);
+  const [resolvedBackLabel, setResolvedBackLabel] = useState(
+    backLabel ?? LOG_HOUSE_RETURN_TO_LABEL,
+  );
 
   useEffect(() => {
     setNotices(initialNotices);
   }, [initialNotices]);
+
+  useEffect(() => {
+    if (backLabel) {
+      setResolvedBackLabel(backLabel);
+      return;
+    }
+    setResolvedBackLabel(
+      readLoghouseTourStep() ? LOGHOUSE_TOUR_MAILBOX_BACK_LABEL : LOG_HOUSE_RETURN_TO_LABEL,
+    );
+  }, [backLabel]);
 
   const refreshNotices = useCallback(async () => {
     if (!refreshFromApi) return;
@@ -77,7 +92,7 @@ export function LogHouseMailboxPageClient({
         <MyPageSubpageHeader
           title={LOG_HOUSE_MAILBOX_PAGE_TITLE}
           backHref={backHref}
-          backLabel={backLabel}
+          backLabel={resolvedBackLabel}
         />
 
         <MailboxIntroBanner />

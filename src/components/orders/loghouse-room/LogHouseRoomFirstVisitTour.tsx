@@ -10,16 +10,17 @@ import {
   companionWritingGuidePrimaryButtonClass,
   companionWritingGuideSecondaryButtonClass,
 } from "@/components/journal/companion-writing/companionWritingGuideStyles";
+import { buildForestGuideStationHref } from "@/lib/help/forestGuideStationNav";
 import type { LoghouseTourStepId } from "@/lib/onboarding/firstVisitWizard/loghouseTour";
 import {
   LOGHOUSE_TOUR_A11Y_LABEL,
-  LOGHOUSE_TOUR_BOOKSHELF_GUIDE_HREF,
+  LOGHOUSE_TOUR_AWAITING_DESK_OWL_QUOTE,
+  LOGHOUSE_TOUR_BOOKSHELF_GUIDE_HASH,
   LOGHOUSE_TOUR_BOOKSHELF_GUIDE_LINK_LABEL,
   LOGHOUSE_TOUR_BOOKSHELF_NEXT,
   LOGHOUSE_TOUR_BOOKSHELF_OWL_QUOTE,
   LOGHOUSE_TOUR_DESK_NEXT,
   LOGHOUSE_TOUR_DESK_OWL_QUOTE,
-  LOGHOUSE_TOUR_DESK_TAP_HINT,
   LOGHOUSE_TOUR_HINT_NEXT,
   LOGHOUSE_TOUR_HINT_OWL_QUOTE,
   LOGHOUSE_TOUR_INVITE_CTA,
@@ -33,8 +34,10 @@ import {
 
 type Props = {
   step: LoghouseTourStepId;
-  /** inviteWrite で机ハイライト待ちのときカードを控えめに */
+  /** inviteWrite で机ハイライト待ち */
   awaitingDeskTap?: boolean;
+  /** 案内所から戻る先（本番=/orders、プレビュー用パス） */
+  guideReturnTo?: string;
   onNext: () => void;
   onPeekMailbox: () => void;
   onGoToDesk: () => void;
@@ -45,7 +48,7 @@ function OwlCard({
   children,
 }: {
   quote: string;
-  children: ReactNode;
+  children?: ReactNode;
 }) {
   return (
     <section
@@ -58,7 +61,7 @@ function OwlCard({
           {quote}
         </p>
       </div>
-      <div className="mt-4 space-y-2">{children}</div>
+      {children ? <div className="mt-4 space-y-2">{children}</div> : null}
     </section>
   );
 }
@@ -67,21 +70,24 @@ function OwlCard({
 export function LogHouseRoomFirstVisitTour({
   step,
   awaitingDeskTap = false,
+  guideReturnTo = "/orders",
   onNext,
   onPeekMailbox,
   onGoToDesk,
 }: Props) {
   if (awaitingDeskTap) {
     return (
-      <div className="pointer-events-none absolute inset-x-0 bottom-8 z-[58] flex justify-center px-4">
-        <p className="pointer-events-none rounded-full border border-amber-200/80 bg-[#fffdf9]/92 px-3 py-1.5 text-xs font-medium text-amber-950 shadow-sm">
-          {LOGHOUSE_TOUR_DESK_TAP_HINT}
-        </p>
+      <div className="pointer-events-none absolute inset-x-0 bottom-6 z-[58] flex justify-center px-4 pb-[env(safe-area-inset-bottom)]">
+        <OwlCard quote={LOGHOUSE_TOUR_AWAITING_DESK_OWL_QUOTE} />
       </div>
     );
   }
 
   let body: ReactNode = null;
+  const guideHref = buildForestGuideStationHref({
+    returnTo: guideReturnTo,
+    hash: LOGHOUSE_TOUR_BOOKSHELF_GUIDE_HASH,
+  });
 
   if (step === "desk") {
     body = (
@@ -114,7 +120,7 @@ export function LogHouseRoomFirstVisitTour({
     body = (
       <OwlCard quote={LOGHOUSE_TOUR_BOOKSHELF_OWL_QUOTE}>
         <Link
-          href={LOGHOUSE_TOUR_BOOKSHELF_GUIDE_HREF}
+          href={guideHref}
           className="block text-center text-sm font-medium text-emerald-900 underline-offset-2 hover:underline"
         >
           {LOGHOUSE_TOUR_BOOKSHELF_GUIDE_LINK_LABEL}

@@ -69,7 +69,10 @@ import {
   type LoghouseTourStepId,
 } from "@/lib/onboarding/firstVisitWizard/loghouseTour";
 import {
+  LOGHOUSE_TOUR_MAILBOX_BACK_LABEL,
   LOGHOUSE_TOUR_PLEASE_CONTINUE,
+  LOGHOUSE_TOUR_PREVIEW_COMPLETE_MESSAGE,
+  LOGHOUSE_TOUR_PREVIEW_RESTART,
 } from "@/lib/onboarding/firstVisitWizard/loghouseTourCopy";
 import { selectViewerProfile } from "@/lib/profile/selectViewerProfile";
 
@@ -126,6 +129,15 @@ type Props = {
   /** 机タップ先。はじめて導線は伴走執筆、通常は `/orders/write` */
   deskWritingHref: string;
   firstVisitGuideState?: FirstVisitGuideState;
+  /**
+   * 開発プレビュー：案内を強制表示し、完了しても localStorage に「見た」を残さない。
+   * 机タップ後は執筆へ進まず完了メッセージを出す。
+   */
+  forceTourPreview?: boolean;
+  /** 案内所リンクの戻り先（既定 `/orders`） */
+  tourGuideReturnTo?: string;
+  /** ポストのぞき先（既定本番ポスト） */
+  tourMailboxHref?: string;
   onOpenManage: () => void;
   className?: string;
   previewMode?: boolean;
@@ -263,6 +275,9 @@ export function LogHouseRoomMobile({
   companionWritingHref,
   deskWritingHref,
   firstVisitGuideState = "returning",
+  forceTourPreview = false,
+  tourGuideReturnTo = "/orders",
+  tourMailboxHref = LOG_HOUSE_MAILBOX_PAGE_PATH,
   onOpenManage,
   className = "",
   previewMode = false,
@@ -280,6 +295,7 @@ export function LogHouseRoomMobile({
   const [showFirstVisitTip, setShowFirstVisitTip] = useState(false);
   const [tourStep, setTourStep] = useState<LoghouseTourStepId | null>(null);
   const [awaitingDeskTap, setAwaitingDeskTap] = useState(false);
+  const [tourPreviewFinished, setTourPreviewFinished] = useState(false);
   const [selectedSpotId, setSelectedSpotId] = useState<LogHouseRoomSpotId | null>(null);
   const [flashSpotId, setFlashSpotId] = useState<LogHouseRoomSpotId | null>(null);
   const [donguriChoOpen, setDonguriChoOpen] = useState(false);
@@ -362,6 +378,14 @@ export function LogHouseRoomMobile({
   }, [notice]);
 
   useEffect(() => {
+    if (forceTourPreview) {
+      setTourPreviewFinished(false);
+      setAwaitingDeskTap(false);
+      const resumed = readLoghouseTourStep();
+      setTourStep(resumed ?? "desk");
+      setShowFirstVisitTip(false);
+      return;
+    }
     if (previewMode) return;
     if (
       !shouldOfferLoghouseTour({
@@ -382,10 +406,10 @@ export function LogHouseRoomMobile({
     } catch {
       // ignore
     }
-  }, [firstVisitGuideState, hasKantei, previewMode]);
+  }, [firstVisitGuideState, forceTourPreview, hasKantei, previewMode]);
 
   useEffect(() => {
-    if (tourActive) return;
+    if (tourActive || forceTourPreview) return;
     if (previewMode) {
       setShowFirstVisitTip(true);
       return;
@@ -396,15 +420,15 @@ export function LogHouseRoomMobile({
     } catch {
       setShowFirstVisitTip(true);
     }
-  }, [previewMode, tourActive]);
+  }, [forceTourPreview, previewMode, tourActive]);
 
   useEffect(() => {
     if (!tourStep) {
-      clearLoghouseTourStep();
+      if (!forceTourPreview) clearLoghouseTourStep();
       return;
     }
     setLoghouseTourStep(tourStep);
-  }, [tourStep]);
+  }, [forceTourPreview, tourStep]);
 
   useEffect(() => {
     if (!hintActive) return;
@@ -420,13 +444,13 @@ export function LogHouseRoomMobile({
 
   const dismissFirstVisitTip = useCallback(() => {
     setShowFirstVisitTip(false);
-    if (previewMode) return;
+    if (previewMode || forceTourPreview) return;
     try {
       window.localStorage.setItem(LOG_HOUSE_ROOM_FIRST_VISIT_TIP_STORAGE_KEY, "1");
     } catch {
       // ignore
     }
-  }, [previewMode]);
+  }, [forceTourPreview, previewMode]);
 
   const advanceTour = useCallback(() => {
     setTourStep((prev) => {
@@ -437,9 +461,24 @@ export function LogHouseRoomMobile({
   }, []);
 
   const completeTour = useCallback(() => {
+    if (forceTourPreview) {
+      clearLoghouseTourStep();
+      setTourStep(null);
+      setAwaitingDeskTap(false);
+      setTourPreviewFinished(true);
+      return;
+    }
     setLoghouseTourDoneFlag();
     setTourStep(null);
     setAwaitingDeskTap(false);
+  }, [forceTourPreview]);
+
+  const restartTourPreview = useCallback(() => {
+    clearLoghouseTourStep();
+    setTourPreviewFinished(false);
+    setAwaitingDeskTap(false);
+    setNotice(null);
+    setTourStep("desk");
   }, []);
 
   const toggleHint = useCallback(() => {
@@ -456,12 +495,13 @@ export function LogHouseRoomMobile({
     setTourStep("bookshelf");
     setLoghouseTourStep("bookshelf");
     startTransition(() => {
-      router.push(LOG_HOUSE_MAILBOX_PAGE_PATH);
+      router.push(tourMailboxHref);
     });
-  }, [router, startTransition]);
+  }, [router, startTransition, tourMailboxHref]);
 
   const goToDeskFromTour = useCallback(() => {
     setAwaitingDeskTap(true);
+    setNotice(null);
   }, []);
 
   const navigate = useCallback(
@@ -529,18 +569,25 @@ export function LogHouseRoomMobile({
       if (tourActive) {
         const target = spotlightSpotForTourStep(tourStep!);
         if (awaitingDeskTap && spotId === "desk") {
-          // fall through to write entry after completing tour
           completeTour();
+          if (forceTourPreview) {
+            setFlashSpotId("desk");
+            return;
+          }
+          // 本番：案内完了後、机の通常処理へ続く
         } else if (tourStep === "mailbox" && spotId === "mailbox") {
           peekMailboxFromTour();
           return;
         } else if (target && spotId === target && !awaitingDeskTap) {
-          // ハイライト中の家具タップは「次へ」相当（机の最終誘導以外）
           if (tourStep === "desk" || tourStep === "bookshelf") {
             advanceTour();
             return;
           }
-        } else if (!(awaitingDeskTap && spotId === "desk")) {
+        } else if (awaitingDeskTap) {
+          // 机以外を触っても下に別メッセージを重ねない（机のカード案内を優先）
+          setFlashSpotId("desk");
+          return;
+        } else {
           setFlashSpotId(spotId);
           setNotice({ message: LOGHOUSE_TOUR_PLEASE_CONTINUE });
           return;
@@ -598,6 +645,7 @@ export function LogHouseRoomMobile({
       beginWriteEntry,
       completeTour,
       dismissFirstVisitTip,
+      forceTourPreview,
       hintActive,
       isActiveProfile,
       navigate,
@@ -669,10 +717,29 @@ export function LogHouseRoomMobile({
       <LogHouseRoomFirstVisitTour
         step={tourStep}
         awaitingDeskTap={awaitingDeskTap}
+        guideReturnTo={tourGuideReturnTo}
         onNext={advanceTour}
         onPeekMailbox={peekMailboxFromTour}
         onGoToDesk={goToDeskFromTour}
       />
+    ) : null;
+
+  const tourPreviewFinishedOverlay =
+    forceTourPreview && tourPreviewFinished ? (
+      <div className="pointer-events-none absolute inset-x-0 bottom-6 z-[58] flex justify-center px-4 pb-[env(safe-area-inset-bottom)]">
+        <div className="pointer-events-auto max-w-sm rounded-2xl border border-[#e4d5c0]/95 bg-[#fffbf5] px-4 py-4 text-center shadow-lg">
+          <p className="whitespace-pre-line text-sm leading-relaxed text-[#5c4a35]">
+            {LOGHOUSE_TOUR_PREVIEW_COMPLETE_MESSAGE}
+          </p>
+          <button
+            type="button"
+            onClick={restartTourPreview}
+            className="mt-3 inline-flex min-h-[44px] w-full items-center justify-center rounded-xl border border-[#b8893d]/80 bg-[#b8893d] px-4 text-sm font-medium text-white"
+          >
+            {LOGHOUSE_TOUR_PREVIEW_RESTART}
+          </button>
+        </div>
+      </div>
     ) : null;
 
   const spotSheet =
@@ -777,6 +844,7 @@ export function LogHouseRoomMobile({
           <div className="absolute inset-0 isolate overflow-hidden">{stage}</div>
           {chrome}
           {tourOverlay}
+          {tourPreviewFinishedOverlay}
           {firstVisitTipOverlay}
           {noticeOverlay}
           {spotSheet}
@@ -810,6 +878,7 @@ export function LogHouseRoomMobile({
 
         {chrome}
         {tourOverlay}
+        {tourPreviewFinishedOverlay}
         {firstVisitTipOverlay}
         {noticeOverlay}
         {spotSheet}

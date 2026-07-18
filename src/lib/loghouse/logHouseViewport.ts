@@ -69,6 +69,7 @@ export function isOrdersImmersiveMobilePath(pathname: string | null): boolean {
 export function isLogHouseImmersivePreviewPath(pathname: string | null): boolean {
   return (
     pathname === "/preview/loghouse-room" ||
+    pathname === "/preview/loghouse-tour" ||
     pathname === "/preview/garden" ||
     pathname === "/preview/forest-bookshelf" ||
     pathname === "/preview/daily-fortune" ||

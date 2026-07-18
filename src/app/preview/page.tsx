@@ -77,6 +77,12 @@ const links: { href: string; label: string; note?: string; highlight?: boolean }
     highlight: true,
   },
   {
+    href: "/preview/loghouse-tour",
+    label: "ログハウス・はじめて案内ツアー",
+    note: "ログイン不要。机→ポスト→本棚→？→あしあと誘導を何度でも確認。npm run dev 中のみ",
+    highlight: true,
+  },
+  {
     href: "/preview/loghouse-room",
     label: "ログハウス室内UI（スマホ）",
     note: "ログイン不要。没入型全画面。Cursor Simple Browser 用。npm run dev 中のみ",

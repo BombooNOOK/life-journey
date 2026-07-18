@@ -16,8 +16,8 @@ export const LOGHOUSE_TOUR_BOOKSHELF_OWL_QUOTE =
 
 export const LOGHOUSE_TOUR_BOOKSHELF_GUIDE_LINK_LABEL = "詳しい手順はこちらをご覧ください" as const;
 
-/** 森の案内所・あしあとブック説明 */
-export const LOGHOUSE_TOUR_BOOKSHELF_GUIDE_HREF = "/help/ljd#diary-book" as const;
+/** 森の案内所・あしあとブック説明（returnTo 付きは build 関数を使う） */
+export const LOGHOUSE_TOUR_BOOKSHELF_GUIDE_HASH = "diary-book" as const;
 
 export const LOGHOUSE_TOUR_BOOKSHELF_NEXT = "次へ" as const;
 
@@ -36,9 +36,20 @@ export const LOGHOUSE_TOUR_INVITE_OWL_QUOTE =
 
 export const LOGHOUSE_TOUR_INVITE_CTA = "机に向かう" as const;
 
-export const LOGHOUSE_TOUR_DESK_TAP_HINT = "ここをタップ" as const;
+/** 机ハイライト待ち：カード内の案内（下の別チップは出さない） */
+export const LOGHOUSE_TOUR_AWAITING_DESK_OWL_QUOTE =
+  "机がやわらかく光っています。\n\n光っている机（「今日のあしあとを残す」）をタップしてください。" as const;
+
+export const LOGHOUSE_TOUR_DESK_TAP_HINT = "光っている机をタップ" as const;
 
 export const LOGHOUSE_TOUR_PLEASE_CONTINUE =
   "まずはご案内の続きを見てみましょう" as const;
 
 export const LOGHOUSE_TOUR_A11Y_LABEL = "ログハウスのご案内" as const;
+
+export const LOGHOUSE_TOUR_MAILBOX_BACK_LABEL = "案内に戻る（ログハウス）" as const;
+
+export const LOGHOUSE_TOUR_PREVIEW_COMPLETE_MESSAGE =
+  "案内はここまでです。本番では、このあとあしあとを残す画面へ進みます。" as const;
+
+export const LOGHOUSE_TOUR_PREVIEW_RESTART = "はじめから案内を見る" as const;
