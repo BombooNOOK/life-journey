@@ -21,15 +21,10 @@ import {
 const TOUR_PREVIEW_PATH = "/preview/loghouse-tour";
 
 function resolveTourMailboxHref(): string {
-  // /preview/mailbox は開発専用。本番プレビューでは本物のポストへ。
-  if (process.env.NODE_ENV !== "development") {
-    return "/orders/mailbox";
-  }
   return `/preview/mailbox?returnTo=${encodeURIComponent(TOUR_PREVIEW_PATH)}`;
 }
 
 function resolveTourBookshelfHref(): string {
-  // プレビュー本棚なら（管理者）ログイン後も案内へ戻りやすい。鑑定書は案内用ポップアップ。
   return `/preview/forest-bookshelf?returnTo=${encodeURIComponent(TOUR_PREVIEW_PATH)}`;
 }
 

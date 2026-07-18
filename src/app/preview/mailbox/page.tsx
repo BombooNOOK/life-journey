@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { notFound } from "next/navigation";
 
 import { LogHouseMailboxPageClient } from "@/components/orders/LogHouseMailboxPageClient";
 import { MAILBOX_PREVIEW_FIXTURES } from "@/lib/loghouse/mailboxPreviewFixture";
@@ -9,12 +8,8 @@ type Props = {
   searchParams?: Promise<{ empty?: string; returnTo?: string }>;
 };
 
-/** 開発用：ポスト一覧（ログイン不要・ヘッダーなし半没入） */
+/** ポスト一覧プレビュー（フィクスチャ・ログイン不要） */
 export default async function MailboxPreviewPage({ searchParams }: Props) {
-  if (process.env.NODE_ENV !== "development") {
-    notFound();
-  }
-
   const params = searchParams ? await searchParams : {};
   const empty = params.empty === "1" || params.empty === "true";
   const returnTo = params.returnTo?.trim();
