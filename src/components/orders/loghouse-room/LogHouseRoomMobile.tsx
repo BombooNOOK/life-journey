@@ -36,6 +36,10 @@ import {
 import type { SerializedUserEntitlement } from "@/lib/entitlement/resolveUserEntitlement";
 import { getStubDonguriChoView, type DonguriChoView } from "@/lib/loghouse/donguriTypes";
 import { buildForestMusicHallHref } from "@/lib/help/forestMusicHallNav";
+import {
+  resolveLogHouseRoomCoverFocus,
+  shouldPinTourCardToTop,
+} from "@/lib/loghouse/logHouseRoomCoverFocus";
 import { TERM_WRITE_FOOTPRINT } from "@/lib/journal/footprintTerminology";
 import {
   LOG_HOUSE_ROOM_MOBILE_BG_BY_TIME,
@@ -152,15 +156,35 @@ type Props = {
 };
 
 /** 576×1024 を viewport に cover 相当で広げる（座標は相対維持） */
-function coverStageStyle(size: { widthPx: number; heightPx: number }): CSSProperties {
+function coverStageStyle(
+  size: { widthPx: number; heightPx: number },
+  focus?: { xPct: number; yPct: number; viewportYPct: number } | null,
+): CSSProperties {
   const ratio = size.widthPx / size.heightPx;
+  const width = `max(100vw, calc(100dvh * ${ratio}))`;
+  const height = `max(100dvh, calc(100vw / ${ratio}))`;
+
+  if (!focus) {
+    return {
+      position: "absolute",
+      left: "50%",
+      top: "50%",
+      width,
+      height,
+      transform: "translate(-50%, -50%)",
+      transition: "top 420ms ease, left 420ms ease, transform 420ms ease",
+    };
+  }
+
+  // 焦点（ステージ上の %）を、ビューポート上の指定位置に合わせる
   return {
     position: "absolute",
     left: "50%",
-    top: "50%",
-    width: `max(100vw, calc(100dvh * ${ratio}))`,
-    height: `max(100dvh, calc(100vw / ${ratio}))`,
-    transform: "translate(-50%, -50%)",
+    top: `${focus.viewportYPct}%`,
+    width,
+    height,
+    transform: `translate(-${focus.xPct}%, -${focus.yPct}%)`,
+    transition: "top 420ms ease, left 420ms ease, transform 420ms ease",
   };
 }
 
@@ -757,6 +781,13 @@ export function LogHouseRoomMobile({
         step={tourStep}
         awaitingDeskTap={awaitingDeskTap}
         guideReturnTo={tourGuideReturnTo}
+        cardPlacement={
+          shouldPinTourCardToTop(
+            awaitingDeskTap ? "desk" : spotlightSpotForTourStep(tourStep),
+          )
+            ? "top"
+            : "bottom"
+        }
         onNext={advanceTour}
         onOpenBookshelf={openBookshelfFromTour}
         onGoToDesk={goToDeskFromTour}
@@ -852,6 +883,10 @@ export function LogHouseRoomMobile({
       tourStep === "bookshelf" ||
       tourStep === "inviteWrite");
 
+  const coverFocus = resolveLogHouseRoomCoverFocus(
+    awaitingDeskTap ? "desk" : spotlightSpotId,
+  );
+
   const stage = (
     <RoomStage
       busy={busy}
@@ -919,7 +954,10 @@ export function LogHouseRoomMobile({
         style={{ touchAction: "none", backgroundColor: ambientBg }}
       >
         <div className="absolute inset-0 overflow-hidden">
-          <div className="relative isolate overflow-hidden" style={coverStageStyle(LOG_HOUSE_ROOM_MOBILE_INTRINSIC)}>
+          <div
+            className="relative isolate overflow-hidden"
+            style={coverStageStyle(LOG_HOUSE_ROOM_MOBILE_INTRINSIC, coverFocus)}
+          >
             {stage}
           </div>
         </div>

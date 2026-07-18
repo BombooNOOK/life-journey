@@ -37,6 +37,8 @@ type Props = {
   awaitingDeskTap?: boolean;
   /** 案内所から戻る先（本番=/orders、プレビュー用パス） */
   guideReturnTo?: string;
+  /** ポストなど下側を隠さないよう、案内カードを上に置く */
+  cardPlacement?: "top" | "bottom";
   onNext: () => void;
   onOpenBookshelf: () => void;
   onGoToDesk: () => void;
@@ -70,13 +72,19 @@ export function LogHouseRoomFirstVisitTour({
   step,
   awaitingDeskTap = false,
   guideReturnTo = "/orders",
+  cardPlacement = "bottom",
   onNext,
   onOpenBookshelf,
   onGoToDesk,
 }: Props) {
+  const cardShellClass =
+    cardPlacement === "top"
+      ? "pointer-events-none absolute inset-x-0 top-[4.75rem] z-[58] flex justify-center px-4"
+      : "pointer-events-none absolute inset-x-0 bottom-6 z-[58] flex justify-center px-4 pb-[env(safe-area-inset-bottom)]";
+
   if (awaitingDeskTap) {
     return (
-      <div className="pointer-events-none absolute inset-x-0 bottom-6 z-[58] flex justify-center px-4 pb-[env(safe-area-inset-bottom)]">
+      <div className={cardShellClass}>
         <OwlCard quote={LOGHOUSE_TOUR_AWAITING_DESK_OWL_QUOTE} />
       </div>
     );
@@ -154,9 +162,5 @@ export function LogHouseRoomFirstVisitTour({
     );
   }
 
-  return (
-    <div className="pointer-events-none absolute inset-x-0 bottom-6 z-[58] flex justify-center px-4 pb-[env(safe-area-inset-bottom)]">
-      {body}
-    </div>
-  );
+  return <div className={cardShellClass}>{body}</div>;
 }
