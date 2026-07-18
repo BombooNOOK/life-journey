@@ -5,23 +5,17 @@ import {
 } from "@/lib/loghouse/logHouseRoomHotspots";
 import { LOG_HOUSE_ROOM_MAILBOX_HOTSPOT } from "@/lib/loghouse/logHouseMailboxLayout";
 
+/** cover 時に部屋のどこを画面内に残すか（横長画面の切り落ち対策） */
+export type LogHouseRoomCoverAlign = "center" | "top" | "bottom";
+
 export type LogHouseRoomCoverFocus = {
-  /** ステージ上の焦点 X（%） */
+  align: LogHouseRoomCoverAlign;
+  /** ステージ上の焦点 X（%・左右の寄せ用） */
   xPct: number;
-  /** ステージ上の焦点 Y（%） */
-  yPct: number;
-  /** 焦点を合わせるビューポート上の Y（%・上端=0） */
-  viewportYPct: number;
 };
 
-function hotspotCenter(spot: { x: number; y: number; width: number; height: number }): {
-  xPct: number;
-  yPct: number;
-} {
-  return {
-    xPct: spot.x + spot.width / 2,
-    yPct: spot.y + spot.height / 2,
-  };
+function hotspotCenterX(spot: { x: number; width: number }): number {
+  return spot.x + spot.width / 2;
 }
 
 function resolveHotspot(spotId: LogHouseRoomSpotId) {
@@ -31,8 +25,8 @@ function resolveHotspot(spotId: LogHouseRoomSpotId) {
 }
 
 /**
- * cover 表示で切り落ちやすい家具を、案内中にビューポート内へ寄せる焦点。
- * 下寄りのポストなどはカードを上に逃がす前提で viewportY をやや下にする。
+ * cover 表示で切り落ちやすい家具を、案内中にビューポート内へ寄せる。
+ * top/bottom は親が実寸を持つ前提で、上下端合わせ（%焦点より壊れにくい）。
  */
 export function resolveLogHouseRoomCoverFocus(
   spotId: LogHouseRoomSpotId | null | undefined,
@@ -40,16 +34,15 @@ export function resolveLogHouseRoomCoverFocus(
   if (!spotId) return null;
   const hotspot = resolveHotspot(spotId);
   if (!hotspot) return null;
-  const { xPct, yPct } = hotspotCenter(hotspot);
+  const xPct = hotspotCenterX(hotspot);
 
   if (spotId === "mailbox" || spotId === "goOut" || spotId === "radio") {
-    return { xPct, yPct, viewportYPct: 64 };
+    return { align: "bottom", xPct };
   }
   if (spotId === "bookshelf" || spotId === "residentCard") {
-    return { xPct, yPct, viewportYPct: 36 };
+    return { align: "top", xPct };
   }
-  // desk / todayResult
-  return { xPct, yPct, viewportYPct: 40 };
+  return { align: "center", xPct };
 }
 
 /** 案内カードを画面上に置くか（下の家具を隠さない） */

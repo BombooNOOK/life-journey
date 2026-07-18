@@ -26,6 +26,7 @@ import {
   LOGHOUSE_TOUR_HINT_OWL_QUOTE,
   LOGHOUSE_TOUR_INVITE_CTA,
   LOGHOUSE_TOUR_INVITE_OWL_QUOTE,
+  LOGHOUSE_TOUR_MAILBOX_OPEN,
   LOGHOUSE_TOUR_MAILBOX_OWL_QUOTE,
   LOGHOUSE_TOUR_WRAP_UP_NEXT,
   LOGHOUSE_TOUR_WRAP_UP_OWL_QUOTE,
@@ -40,6 +41,7 @@ type Props = {
   /** ポストなど下側を隠さないよう、案内カードを上に置く */
   cardPlacement?: "top" | "bottom";
   onNext: () => void;
+  onOpenMailbox: () => void;
   onOpenBookshelf: () => void;
   onGoToDesk: () => void;
 };
@@ -74,6 +76,7 @@ export function LogHouseRoomFirstVisitTour({
   guideReturnTo = "/orders",
   cardPlacement = "bottom",
   onNext,
+  onOpenMailbox,
   onOpenBookshelf,
   onGoToDesk,
 }: Props) {
@@ -105,8 +108,17 @@ export function LogHouseRoomFirstVisitTour({
       </OwlCard>
     );
   } else if (step === "mailbox") {
-    // ボタンではなく、光るポストを自分でタップしてもらう
-    body = <OwlCard quote={LOGHOUSE_TOUR_MAILBOX_OWL_QUOTE} />;
+    body = (
+      <OwlCard quote={LOGHOUSE_TOUR_MAILBOX_OWL_QUOTE}>
+        <button
+          type="button"
+          className={companionWritingGuidePrimaryButtonClass}
+          onClick={onOpenMailbox}
+        >
+          {LOGHOUSE_TOUR_MAILBOX_OPEN}
+        </button>
+      </OwlCard>
+    );
   } else if (step === "bookshelf") {
     body = (
       <OwlCard quote={LOGHOUSE_TOUR_BOOKSHELF_OWL_QUOTE}>

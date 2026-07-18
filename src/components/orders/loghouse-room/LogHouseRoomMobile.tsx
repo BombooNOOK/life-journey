@@ -158,33 +158,49 @@ type Props = {
 /** 576×1024 を viewport に cover 相当で広げる（座標は相対維持） */
 function coverStageStyle(
   size: { widthPx: number; heightPx: number },
-  focus?: { xPct: number; yPct: number; viewportYPct: number } | null,
+  focus?: { align: "center" | "top" | "bottom"; xPct: number } | null,
 ): CSSProperties {
   const ratio = size.widthPx / size.heightPx;
   const width = `max(100vw, calc(100dvh * ${ratio}))`;
   const height = `max(100dvh, calc(100vw / ${ratio}))`;
+  const xPct = focus?.xPct ?? 50;
+  const transition = "top 420ms ease, bottom 420ms ease, left 420ms ease, transform 420ms ease";
 
-  if (!focus) {
+  if (focus?.align === "bottom") {
     return {
       position: "absolute",
       left: "50%",
-      top: "50%",
+      bottom: 0,
+      top: "auto",
       width,
       height,
-      transform: "translate(-50%, -50%)",
-      transition: "top 420ms ease, left 420ms ease, transform 420ms ease",
+      transform: `translateX(-${xPct}%)`,
+      transition,
     };
   }
 
-  // 焦点（ステージ上の %）を、ビューポート上の指定位置に合わせる
+  if (focus?.align === "top") {
+    return {
+      position: "absolute",
+      left: "50%",
+      top: 0,
+      bottom: "auto",
+      width,
+      height,
+      transform: `translateX(-${xPct}%)`,
+      transition,
+    };
+  }
+
   return {
     position: "absolute",
     left: "50%",
-    top: `${focus.viewportYPct}%`,
+    top: "50%",
+    bottom: "auto",
     width,
     height,
-    transform: `translate(-${focus.xPct}%, -${focus.yPct}%)`,
-    transition: "top 420ms ease, left 420ms ease, transform 420ms ease",
+    transform: `translate(-${xPct}%, -50%)`,
+    transition,
   };
 }
 
@@ -789,6 +805,7 @@ export function LogHouseRoomMobile({
             : "bottom"
         }
         onNext={advanceTour}
+        onOpenMailbox={peekMailboxFromTour}
         onOpenBookshelf={openBookshelfFromTour}
         onGoToDesk={goToDeskFromTour}
       />
@@ -954,10 +971,7 @@ export function LogHouseRoomMobile({
         style={{ touchAction: "none", backgroundColor: ambientBg }}
       >
         <div className="absolute inset-0 overflow-hidden">
-          <div
-            className="relative isolate overflow-hidden"
-            style={coverStageStyle(LOG_HOUSE_ROOM_MOBILE_INTRINSIC, coverFocus)}
-          >
+          <div className="isolate" style={coverStageStyle(LOG_HOUSE_ROOM_MOBILE_INTRINSIC, coverFocus)}>
             {stage}
           </div>
         </div>

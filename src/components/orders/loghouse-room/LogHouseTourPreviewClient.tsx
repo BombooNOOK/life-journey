@@ -13,7 +13,10 @@ import {
   LOG_HOUSE_ROOM_PREVIEW_PROFILES,
 } from "@/lib/loghouse/logHouseRoomPreviewFixture";
 import { LOG_HOUSE_DESK_WRITE_PAGE_PATH } from "@/lib/loghouse/logHouseDeskWritingChoice";
-import { clearLoghouseTourStep } from "@/lib/onboarding/firstVisitWizard/loghouseTour";
+import {
+  clearLoghouseTourReturnHref,
+  clearLoghouseTourStep,
+} from "@/lib/onboarding/firstVisitWizard/loghouseTour";
 
 const TOUR_PREVIEW_PATH = "/preview/loghouse-tour";
 
@@ -37,6 +40,7 @@ export function LogHouseTourPreviewClient() {
 
   const restart = () => {
     clearLoghouseTourStep();
+    clearLoghouseTourReturnHref();
     setRemountKey((n) => n + 1);
   };
 
