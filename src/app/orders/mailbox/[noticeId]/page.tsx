@@ -1,7 +1,6 @@
 import { notFound, redirect } from "next/navigation";
 import type { Metadata } from "next";
 import Link from "next/link";
-import { revalidatePath } from "next/cache";
 
 import { LogHouseMailboxDetailClient } from "@/components/orders/LogHouseMailboxDetailClient";
 import { LogHouseLoadErrorPanel } from "@/components/orders/LogHouseLoadErrorPanel";
@@ -30,6 +29,19 @@ export async function generateMetadata(): Promise<Metadata> {
   return {
     title: `お手紙｜${LOG_HOUSE_MAILBOX_PAGE_TITLE}`,
   };
+}
+
+/** notFound() / redirect() を load error UI で潰さない */
+function isNextNavigationError(error: unknown): boolean {
+  if (
+    typeof error === "object" &&
+    error !== null &&
+    "digest" in error &&
+    typeof (error as { digest?: unknown }).digest === "string"
+  ) {
+    return (error as { digest: string }).digest.startsWith("NEXT_");
+  }
+  return false;
 }
 
 export default async function LogHouseMailboxDetailPage({ params }: Props) {
@@ -74,6 +86,7 @@ export default async function LogHouseMailboxDetailPage({ params }: Props) {
       notFound();
     }
 
+    // 開いた時点で既読にする（一覧更新はクライアント refresh / API の revalidatePath）
     if (notice.unread) {
       notice =
         (await withPrismaConnectionRetry(() =>
@@ -83,12 +96,11 @@ export default async function LogHouseMailboxDetailPage({ params }: Props) {
             noticeId,
           }),
         )) ?? notice;
-      revalidatePath(LOG_HOUSE_MAILBOX_PAGE_PATH);
-      revalidatePath("/orders");
     }
 
     return <LogHouseMailboxDetailClient notice={notice} />;
   } catch (e) {
+    if (isNextNavigationError(e)) throw e;
     return (
       <LogHouseLoadErrorPanel
         detail={e instanceof Error ? e.message : "お手紙を読み込めませんでした。"}
