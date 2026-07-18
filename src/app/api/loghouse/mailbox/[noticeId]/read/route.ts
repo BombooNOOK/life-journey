@@ -1,6 +1,8 @@
+import { revalidatePath } from "next/cache";
 import { NextResponse } from "next/server";
 
 import { getViewerEmailFromCookie } from "@/lib/auth/viewer";
+import { LOG_HOUSE_MAILBOX_PAGE_PATH } from "@/lib/loghouse/logHouseMailboxCopy";
 import { markMailboxNoticeRead } from "@/lib/loghouse/mailboxNotices";
 import { listProfilesAndActiveProfileId } from "@/lib/profile/activeProfile";
 
@@ -27,6 +29,9 @@ export async function POST(_req: Request, { params }: Params) {
     if (!notice) {
       return NextResponse.json({ error: "お知らせが見つかりません。" }, { status: 404 });
     }
+
+    revalidatePath(LOG_HOUSE_MAILBOX_PAGE_PATH);
+    revalidatePath("/orders");
 
     return NextResponse.json({ notice });
   } catch (e) {

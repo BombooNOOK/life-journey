@@ -1,6 +1,8 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useEffect, useRef, useState } from "react";
 
 import { MailboxSenderRow } from "@/components/orders/mailbox/MailboxListPieces";
 import { MyPageSubpageHeader } from "@/components/orders/MyPageSubpageHeader";
@@ -20,12 +22,54 @@ type Props = {
   backLabel?: string;
 };
 
-/** お手紙詳細（別ページ） */
+/** お手紙詳細（別ページ）。開いた時点で既読にする */
 export function LogHouseMailboxDetailClient({
-  notice,
+  notice: initialNotice,
   backHref = LOG_HOUSE_MAILBOX_PAGE_PATH,
   backLabel = LOG_HOUSE_MAILBOX_DETAIL_BACK_LABEL,
 }: Props) {
+  const router = useRouter();
+  const [notice, setNotice] = useState(initialNotice);
+  const markedRef = useRef(false);
+
+  useEffect(() => {
+    setNotice(initialNotice);
+  }, [initialNotice]);
+
+  useEffect(() => {
+    if (markedRef.current) return;
+    if (!notice.unread) {
+      markedRef.current = true;
+      return;
+    }
+
+    markedRef.current = true;
+    const noticeId = notice.id;
+
+    void (async () => {
+      try {
+        const res = await fetch(
+          `/api/loghouse/mailbox/${encodeURIComponent(noticeId)}/read`,
+          { method: "POST" },
+        );
+        if (!res.ok) return;
+        const json = (await res.json()) as { notice?: MailboxNoticeView };
+        if (json.notice) {
+          setNotice(json.notice);
+        } else {
+          setNotice((prev) => ({
+            ...prev,
+            unread: false,
+            readAt: prev.readAt ?? new Date().toISOString(),
+          }));
+        }
+        router.refresh();
+      } catch {
+        markedRef.current = false;
+      }
+    })();
+  }, [notice.id, notice.unread, router]);
+
   const post = presentMailboxNotice(notice);
 
   return (

@@ -37,7 +37,7 @@ export function DiaryLoggedInPageShell({ children }: Props) {
   const pathname = usePathname();
   const isMobile = useIsLogHouseMobileViewport();
   const immersiveOrders =
-    isForestBookshelfImmersivePath(pathname) ||
+    (isForestBookshelfImmersivePath(pathname) && isMobile) ||
     isDailyFortuneImmersivePath(pathname) ||
     (isOrdersImmersiveMobilePath(pathname) && isMobile);
   const onCompanionWriting = pathname.startsWith("/journal/with-companion");

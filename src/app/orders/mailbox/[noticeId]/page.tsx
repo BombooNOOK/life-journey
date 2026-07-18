@@ -1,6 +1,7 @@
 import { notFound, redirect } from "next/navigation";
 import type { Metadata } from "next";
 import Link from "next/link";
+import { revalidatePath } from "next/cache";
 
 import { LogHouseMailboxDetailClient } from "@/components/orders/LogHouseMailboxDetailClient";
 import { LogHouseLoadErrorPanel } from "@/components/orders/LogHouseLoadErrorPanel";
@@ -82,6 +83,8 @@ export default async function LogHouseMailboxDetailPage({ params }: Props) {
             noticeId,
           }),
         )) ?? notice;
+      revalidatePath(LOG_HOUSE_MAILBOX_PAGE_PATH);
+      revalidatePath("/orders");
     }
 
     return <LogHouseMailboxDetailClient notice={notice} />;

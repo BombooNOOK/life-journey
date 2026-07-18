@@ -16,6 +16,16 @@ describe("buildSubscriptionCancelState", () => {
     expect(state.cancelAtPeriodEnd).toBe(false);
   });
 
+  it("does not treat stale paid flags without Stripe id as cancellable", () => {
+    const state = freeSubscriptionCancelState({
+      subscriptionPlan: "light",
+      subscriptionStatus: "active",
+      stripeSubscriptionId: null,
+    });
+    expect(state.isPaidPlan).toBe(false);
+    expect(state.canRequestCancel).toBe(false);
+  });
+
   it("shows cancel action for active paid plan", () => {
     const state = buildSubscriptionCancelState({
       settings: {

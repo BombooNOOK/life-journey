@@ -45,7 +45,7 @@ export default async function MyPageAccountPage() {
     <div className="space-y-5 sm:space-y-6">
       <MyPageSubpageHeader
         title="アカウント情報"
-        description="登録情報・プラン・解約手続きなどを確認できます"
+        description="登録情報・森の定期便・解約手続きなどを確認できます"
       />
 
       <MyPageAccountSection

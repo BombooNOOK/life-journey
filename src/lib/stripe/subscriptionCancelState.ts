@@ -36,14 +36,26 @@ export function buildSubscriptionCancelState(params: {
   };
 }
 
+/** Stripe 契約なし（または確認できない）ときの解約 UI / 削除ゲート用 */
 export function freeSubscriptionCancelState(
-  settings: AccountSubscriptionSettings | null | undefined = null,
+  _settings?: AccountSubscriptionSettings | null,
 ): SubscriptionCancelState {
-  return buildSubscriptionCancelState({
-    settings,
+  return {
+    isPaidPlan: false,
     cancelAtPeriodEnd: false,
-    periodEndUnix: null,
-  });
+    periodEndLabel: null,
+    canRequestCancel: false,
+  };
+}
+
+/**
+ * 解約手続き・アカウント削除のブロック対象か。
+ * DB に light/standard + active が残っていても、stripeSubscriptionId が無い古いデータは対象外。
+ */
+export function hasActiveCancellableSubscription(
+  settings: AccountSubscriptionSettings | null | undefined,
+): boolean {
+  return Boolean(settings?.stripeSubscriptionId?.trim()) && isPaidSubscriber(settings ?? null);
 }
 
 export async function resolveSubscriptionCancelState(
@@ -51,7 +63,7 @@ export async function resolveSubscriptionCancelState(
 ): Promise<SubscriptionCancelState> {
   const subscriptionId = settings?.stripeSubscriptionId?.trim();
   if (!subscriptionId || !isPaidSubscriber(settings ?? null)) {
-    return freeSubscriptionCancelState(settings);
+    return freeSubscriptionCancelState();
   }
 
   try {
@@ -66,7 +78,12 @@ export async function resolveSubscriptionCancelState(
       subscriptionId,
       error,
     });
-    return freeSubscriptionCancelState(settings);
+    // 契約 ID はあるが Stripe 参照に失敗 → 解約済み扱いにせず削除もブロック
+    return buildSubscriptionCancelState({
+      settings,
+      cancelAtPeriodEnd: false,
+      periodEndUnix: null,
+    });
   }
 }
 

@@ -1,5 +1,4 @@
 import { normalizeEmail } from "@/lib/auth/viewer";
-import { isPaidSubscriber } from "@/lib/entitlement/resolveUserEntitlement";
 import {
   deleteFirebaseAuthUserByEmail,
   isFirebaseAdminConfigured,
@@ -8,6 +7,7 @@ import { deleteJournalEntryPhotoBlobWithResult } from "@/lib/journal/journalEntr
 import { deleteOrderPdfBlobWithResult } from "@/lib/pdf/orderPdfBlobCache";
 import { prisma } from "@/lib/db";
 import {
+  hasActiveCancellableSubscription,
   resolveSubscriptionCancelState,
   type AccountSubscriptionSettings,
 } from "@/lib/stripe/subscriptionCancelState";
@@ -111,17 +111,19 @@ export async function buildAccountDeletePreview(emailInput: string): Promise<Acc
     };
   }
 
-  const cancelState = await resolveSubscriptionCancelState(settings);
-  if (cancelState.isPaidPlan && !cancelState.cancelAtPeriodEnd) {
-    return {
-      email,
-      canDelete: false,
-      blockCode: "PAID_PLAN_ACTIVE",
-      blockMessage: "森の定期便をご利用中の場合は、先に解約が必要です。",
-      profileCount: 0,
-      journalEntryCount: 0,
-      orderCount: 0,
-    };
+  if (hasActiveCancellableSubscription(settings)) {
+    const cancelState = await resolveSubscriptionCancelState(settings);
+    if (!cancelState.cancelAtPeriodEnd) {
+      return {
+        email,
+        canDelete: false,
+        blockCode: "PAID_PLAN_ACTIVE",
+        blockMessage: "森の定期便をご利用中の場合は、先に解約が必要です。",
+        profileCount: 0,
+        journalEntryCount: 0,
+        orderCount: 0,
+      };
+    }
   }
 
   const [profileCount, journalEntryCount, orderCount] = await Promise.all([
@@ -281,7 +283,7 @@ export function accountDeleteBlockMessageForSettings(
   settings: AccountSubscriptionSettings | null | undefined,
   cancelAtPeriodEnd: boolean,
 ): string | null {
-  if (isPaidSubscriber(settings ?? null) && !cancelAtPeriodEnd) {
+  if (hasActiveCancellableSubscription(settings) && !cancelAtPeriodEnd) {
     return "森の定期便をご利用中の場合は、先に解約が必要です。";
   }
   return null;

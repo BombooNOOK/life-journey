@@ -27,7 +27,7 @@ export function ConditionalSiteChrome({ children }: Props) {
     isFirstVisitFullBleedPath(pathname) ||
     isForestMapImmersivePath(pathname) ||
     isLogHouseImmersivePreviewPath(pathname) ||
-    isForestBookshelfImmersivePath(pathname) ||
+    (isForestBookshelfImmersivePath(pathname) && isMobile) ||
     isDailyFortuneImmersivePath(pathname) ||
     (isOrdersImmersiveMobilePath(pathname) && isMobile);
 

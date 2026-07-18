@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 import {
   MailboxEmptyState,
@@ -23,6 +23,8 @@ type Props = {
   detailHrefBase?: string;
   backHref?: string;
   backLabel?: string;
+  /** false のとき API 再取得しない（プレビュー用） */
+  refreshFromApi?: boolean;
 };
 
 /** ログハウス・ポスト一覧（半没入） */
@@ -31,12 +33,41 @@ export function LogHouseMailboxPageClient({
   detailHrefBase = LOG_HOUSE_MAILBOX_PAGE_PATH,
   backHref = "/orders",
   backLabel = LOG_HOUSE_RETURN_TO_LABEL,
+  refreshFromApi = true,
 }: Props) {
   const [notices, setNotices] = useState(initialNotices);
 
   useEffect(() => {
     setNotices(initialNotices);
   }, [initialNotices]);
+
+  const refreshNotices = useCallback(async () => {
+    if (!refreshFromApi) return;
+    try {
+      const res = await fetch("/api/loghouse/mailbox", { cache: "no-store" });
+      if (!res.ok) return;
+      const json = (await res.json()) as { notices?: MailboxNoticeView[] };
+      if (Array.isArray(json.notices)) {
+        setNotices(json.notices);
+      }
+    } catch {
+      /* keep current list */
+    }
+  }, [refreshFromApi]);
+
+  useEffect(() => {
+    if (!refreshFromApi) return;
+    void refreshNotices();
+    const onVisible = () => {
+      if (document.visibilityState === "visible") void refreshNotices();
+    };
+    window.addEventListener("focus", onVisible);
+    document.addEventListener("visibilitychange", onVisible);
+    return () => {
+      window.removeEventListener("focus", onVisible);
+      document.removeEventListener("visibilitychange", onVisible);
+    };
+  }, [refreshFromApi, refreshNotices]);
 
   const posts = presentMailboxNotices(notices);
 

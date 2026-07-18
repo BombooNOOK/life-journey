@@ -30,7 +30,19 @@ export function deriveSubscriptionPlanLabel(plan: string | null | undefined): st
   if (plan === "light" || plan === "forest_delivery") return "森の定期便";
   if (plan === "standard") return "森の定期便";
   if (plan === "acorn_50") return "どんぐり50こ";
+  if (plan === "acorn_20") return "どんぐり20こ";
   return "フリープラン";
+}
+
+/** アカウント情報向け：契約中かどうかで世界観のある文言にする */
+export function deriveForestDeliveryStatusLabel(params: {
+  isOnForestDelivery: boolean;
+  subscriptionPlan?: string | null;
+}): string {
+  if (params.isOnForestDelivery) {
+    return "森の定期便に加わっています";
+  }
+  return "まだ森の定期便には加わっていません";
 }
 
 export function priceIdForPlan(plan: CheckoutPlanId): string | null {

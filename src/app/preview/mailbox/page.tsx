@@ -24,6 +24,7 @@ export default async function MailboxPreviewPage({ searchParams }: Props) {
         detailHrefBase="/preview/mailbox"
         backHref="/preview"
         backLabel="プレビュー一覧"
+        refreshFromApi={false}
       />
       <p className="fixed bottom-3 left-0 right-0 z-50 px-4 text-center text-[11px] text-[#8a735c]">
         空状態：

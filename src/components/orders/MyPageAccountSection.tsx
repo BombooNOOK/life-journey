@@ -8,7 +8,7 @@ import { OwlLoadingInline } from "@/components/ui/OwlLoadingInline";
 import { mobileReadable } from "@/lib/auth/mobileReadableStyles";
 import { MYPAGE_CONTACT_FORM_PATH } from "@/lib/legal/legalDocumentLinks";
 import { formatMyPageProfileLimitLabel } from "@/lib/profile/effectiveProfileLimit";
-import { deriveSubscriptionPlanLabel } from "@/lib/stripe/plans";
+import { deriveForestDeliveryStatusLabel } from "@/lib/stripe/plans";
 import { SUBSCRIPTION_CANCEL_PENDING_BILLING_NOTE } from "@/lib/stripe/subscriptionBillingCopy";
 import type { SubscriptionCancelState } from "@/lib/stripe/subscriptionCancelState";
 
@@ -37,7 +37,11 @@ export function MyPageAccountSection({
   subscriptionCancelState,
 }: Props) {
   const { user, loading: authLoading } = useFirebaseAuth();
-  const planLabel = deriveSubscriptionPlanLabel(subscriptionPlan);
+  const onForestDelivery = subscriptionCancelState.isPaidPlan;
+  const forestStatusLabel = deriveForestDeliveryStatusLabel({
+    isOnForestDelivery: onForestDelivery,
+    subscriptionPlan,
+  });
   const googleOnly = usesGoogleSignInOnly(user);
 
   return (
@@ -52,10 +56,10 @@ export function MyPageAccountSection({
         </dl>
       </MyPageAccountSectionCard>
 
-      <MyPageAccountSectionCard title="どんぐり・定期便">
+      <MyPageAccountSectionCard title="プラン・契約">
         <dl className="lj-read-desc grid gap-3 sm:grid-cols-[7.5rem_1fr]">
-          <dt className="text-stone-500">現在のご利用</dt>
-          <dd className="text-stone-900">{planLabel}</dd>
+          <dt className="text-stone-500">森の定期便</dt>
+          <dd className="text-stone-900">{forestStatusLabel}</dd>
 
           <dt className="text-stone-500">プロフィール上限</dt>
           <dd className="text-stone-900">
@@ -64,16 +68,29 @@ export function MyPageAccountSection({
         </dl>
 
         <div className="space-y-3 border-t border-stone-100 pt-4">
+          {onForestDelivery ? (
+            <p className={`${mobileReadable.bodyMuted} text-sm`}>
+              毎月どんぐりが届く、森とのつながりです。解約はいつでも手続きできます。
+            </p>
+          ) : (
+            <div className="space-y-2 text-sm leading-relaxed text-stone-700">
+              <p>
+                森の定期便や、必要なときのおとどけ（どんぐり50こ／20こ）のご案内はこちらから確認できます。
+              </p>
+              <p className="text-stone-600">いまは準備中のため、新たなお手続きはまだできません。</p>
+            </div>
+          )}
+
           <Link
             href="/plans"
-            className="inline-flex min-h-[44px] items-center rounded-lg border border-violet-300 bg-violet-50 px-4 py-2.5 text-base font-medium text-violet-950 transition hover:bg-violet-100"
+            className="inline-flex min-h-[44px] items-center rounded-lg border border-emerald-300 bg-emerald-50 px-4 py-2.5 text-base font-medium text-emerald-950 transition hover:bg-emerald-100"
           >
-            どんぐりと森の定期便 →
+            {onForestDelivery ? "どんぐりの受け取り方を見る →" : "森の定期便・おとどけの案内 →"}
           </Link>
 
           {subscriptionCancelState.cancelAtPeriodEnd ? (
             <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-base leading-[1.6] text-amber-950">
-              <p className="font-medium">解約申込済み</p>
+              <p className="font-medium">解約の手続き済み</p>
               {subscriptionCancelState.periodEndLabel ? (
                 <>
                   <p className="mt-1">{subscriptionCancelState.periodEndLabel} までご利用いただけます</p>
