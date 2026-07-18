@@ -66,6 +66,10 @@ export function KanteiFirstReadCompleteOverlay({
 
   const handleStay = () => {
     finish();
+    if (readLoghouseTourStep()) {
+      router.replace(readLoghouseTourReturnHref());
+      return;
+    }
     router.replace("/");
   };
 
