@@ -5,8 +5,7 @@ import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 
 import { DiaryBookIncludeInBookMonthList } from "@/components/journal/DiaryBookIncludeInBookMonthList";
-import { DiaryBookTagFilterFields } from "@/components/journal/DiaryBookTagFilterFields";
-import { OwlLoadingInline } from "@/components/ui/OwlLoadingInline";
+import { TAG_INPUT_PLACEHOLDER } from "@/components/journal/DiaryTagInput";
 import {
   diaryCoverImagePath,
   diaryCoverStyleOptions,
@@ -14,11 +13,9 @@ import {
 } from "@/lib/journal/coverAssets";
 import type { DiaryBookIncludePickerEntryDto } from "@/lib/journal/diaryBookIncludePicker";
 import { NO_INCLUDED_ENTRIES_IN_DIARY_BOOK_PERIOD_MESSAGE } from "@/lib/journal/diaryBookPeriod";
-import type { DiaryBookTagFilterMode } from "@/lib/journal/diaryTags";
 
 type PreviewResponse = {
   entryCount?: number;
-  matchingEntryCount?: number;
   totalEntryCount?: number;
   canCreate?: boolean;
   message?: string;
@@ -62,7 +59,7 @@ export function diaryBookCreateDisabledReason(params: {
   if (!params.title.trim()) return "あしあとブック名を入力してください";
   if (!params.startDate || !params.endDate) return "開始日と終了日を設定してください";
   if (!params.periodChecked) return "掲載する日記を確認してください";
-  if (!params.canCreate) return "本に入れる日記がありません";
+  if (!params.canCreate) return "本に入れるあしあとがありません";
   return null;
 }
 
@@ -79,10 +76,8 @@ export function DiaryBookCreateForm({
   const [endDate, setEndDate] = useState(today);
   const [coverTheme, setCoverTheme] = useState<DiaryCoverStyleId>("casual");
   const [tagFilter, setTagFilter] = useState("");
-  const [tagFilterMode, setTagFilterMode] = useState<DiaryBookTagFilterMode>("AND");
   const [checking, setChecking] = useState(false);
   const [entryCount, setEntryCount] = useState<number | null>(null);
-  const [matchingEntryCount, setMatchingEntryCount] = useState<number | null>(null);
   const [canCreate, setCanCreate] = useState<boolean>(false);
   const [previewMessage, setPreviewMessage] = useState<string | null>(null);
   const [pickerEntries, setPickerEntries] = useState<DiaryBookIncludePickerEntryDto[] | null>(
@@ -122,8 +117,7 @@ export function DiaryBookCreateForm({
           startDate,
           endDate,
           coverTheme,
-          tagFilter: tagFilter.trim() || undefined,
-          tagFilterMode,
+          tag: tagFilter.trim() || undefined,
         }),
       });
       const data = (await res.json()) as PreviewResponse;
@@ -134,15 +128,9 @@ export function DiaryBookCreateForm({
         return;
       }
       const count = Number.isFinite(data.entryCount) ? Number(data.entryCount) : 0;
-      const matching = Number.isFinite(data.matchingEntryCount)
-        ? Number(data.matchingEntryCount)
-        : Number.isFinite(data.totalEntryCount)
-          ? Number(data.totalEntryCount)
-          : count;
       const list = Array.isArray(data.entries) ? data.entries : [];
       const creatable = data.canCreate === true && count > 0;
       setEntryCount(count);
-      setMatchingEntryCount(matching);
       setCanCreate(creatable);
       setPickerEntries(list.length > 0 ? list : null);
       setPeriodChecked(true);
@@ -166,9 +154,7 @@ export function DiaryBookCreateForm({
     setEndDate(today);
     setCoverTheme("casual");
     setTagFilter("");
-    setTagFilterMode("AND");
     setEntryCount(null);
-    setMatchingEntryCount(null);
     setCanCreate(false);
     setPreviewMessage(null);
     setPickerEntries(null);
@@ -202,8 +188,6 @@ export function DiaryBookCreateForm({
           startDate,
           endDate,
           coverTheme,
-          tagFilter: tagFilter.trim() || undefined,
-          tagFilterMode,
         }),
       });
       const data = (await res.json()) as CreateResponse;
@@ -381,44 +365,34 @@ export function DiaryBookCreateForm({
             </label>
           </div>
 
-          <DiaryBookTagFilterFields
-            tagFilter={tagFilter}
-            tagFilterMode={tagFilterMode}
-            onTagFilterChange={(value) => {
-              setTagFilter(value);
-              setPeriodChecked(false);
-              setPickerEntries(null);
-              setEntryCount(null);
-              setMatchingEntryCount(null);
-              setCanCreate(false);
-              setPreviewMessage(null);
-            }}
-            onTagFilterModeChange={(mode) => {
-              setTagFilterMode(mode);
-              setPeriodChecked(false);
-              setPickerEntries(null);
-              setEntryCount(null);
-              setMatchingEntryCount(null);
-              setCanCreate(false);
-              setPreviewMessage(null);
-            }}
-            idPrefix="create-diary-book"
-          />
+          <label className="block text-sm">
+            <span className="mb-1 block text-stone-700">タグで絞り込む（任意）</span>
+            <input
+              type="text"
+              value={tagFilter}
+              onChange={(e) => {
+                setTagFilter(e.target.value);
+                setPeriodChecked(false);
+                setPickerEntries(null);
+                setEntryCount(null);
+                setCanCreate(false);
+                setPreviewMessage(null);
+              }}
+              placeholder={TAG_INPUT_PLACEHOLDER}
+              autoComplete="off"
+              className="w-full rounded-md border border-stone-300 px-3 py-2 text-sm placeholder:text-stone-400"
+            />
+            <span className="mt-1 block text-xs text-stone-500">
+              期間内の日記のうち、指定タグが付いた日記だけを一覧に表示します。
+            </span>
+          </label>
 
           <div className="rounded-lg border border-stone-200 bg-stone-50 px-3 py-2 text-sm text-stone-700">
             {entryCount == null ? (
               "この期間の日記は、確認後に表示されます。"
-            ) : matchingEntryCount != null && tagFilter.trim() ? (
-              <>
-                条件に合う日記：{" "}
-                <span className="font-semibold text-stone-900">{matchingEntryCount}件</span>
-                <span className="mx-2 text-stone-400">/</span>
-                本に入れる日記：{" "}
-                <span className="font-semibold text-stone-900">{entryCount}件</span>
-              </>
             ) : (
               <>
-                本に入れる日記：{" "}
+                この期間の日記:{" "}
                 <span className="font-semibold text-stone-900">{entryCount}件</span>
               </>
             )}
@@ -457,11 +431,7 @@ export function DiaryBookCreateForm({
                 onClick={() => void checkPreview()}
                 className="rounded-lg border border-stone-300 bg-white px-3 py-2 text-sm font-medium text-stone-800 hover:bg-stone-100 disabled:opacity-50"
               >
-                {checking ? (
-                  <OwlLoadingInline label="確認中…" size="sm" />
-                ) : (
-                  "掲載する日記を確認"
-                )}
+                {checking ? "確認中…" : "掲載する日記を確認"}
               </button>
               <button
                 type="button"
@@ -469,11 +439,7 @@ export function DiaryBookCreateForm({
                 onClick={() => void createDiaryBook()}
                 className="rounded-lg bg-emerald-800 px-3 py-2 text-sm font-medium text-white hover:bg-emerald-900 disabled:opacity-50"
               >
-                {creating ? (
-                  <OwlLoadingInline label="作成中…" size="sm" />
-                ) : (
-                  "あしあとブックを作成"
-                )}
+                {creating ? "作成中…" : "あしあとブックを作成"}
               </button>
             </div>
             {createDisabledReason ? (

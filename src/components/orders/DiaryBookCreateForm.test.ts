@@ -42,7 +42,7 @@ describe("diaryBookCreateDisabledReason", () => {
 
   it("reports no included entries last", () => {
     expect(diaryBookCreateDisabledReason({ ...base, canCreate: false })).toBe(
-      "本に入れる日記がありません",
+      "本に入れるあしあとがありません",
     );
   });
 });
