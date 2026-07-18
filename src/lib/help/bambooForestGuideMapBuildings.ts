@@ -26,7 +26,7 @@ export const FOREST_GUIDE_MAP_BUILDINGS: Record<ForestGuideMapBuildingId, Forest
   loghouse: {
     id: "loghouse",
     title: "ログハウス",
-    body: "日記を書いたり、鑑定書や日記ブックを読み返したりする、あなたの拠点です。",
+    body: "日記を書いたり、鑑定書やあしあとブックを読み返したりする、あなたの拠点です。",
     href: "/orders",
     linkLabel: "ログハウスを開く",
   },

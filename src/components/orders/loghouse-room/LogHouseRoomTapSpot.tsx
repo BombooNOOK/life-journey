@@ -15,6 +15,10 @@ type Props = {
   showHintLabel?: boolean;
   /** タップ直後のふわっと光 */
   flash?: boolean;
+  /** はじめて案内：次にタップしてほしい場所の継続ハイライト */
+  spotlight?: boolean;
+  /** ヒント／スポットライト時のラベル上書き */
+  hintLabelOverride?: string | null;
   children?: ReactNode;
 };
 
@@ -41,15 +45,19 @@ export function LogHouseRoomTapSpot({
   showDebugOutline = false,
   showHintLabel = false,
   flash = false,
+  spotlight = false,
+  hintLabelOverride = null,
   children,
 }: Props) {
   const copy = LOG_HOUSE_ROOM_SPOT_COPY[spot.id];
+  const label = hintLabelOverride?.trim() || copy.label;
+  const showLabel = showHintLabel || spotlight;
 
   return (
     <button
       type="button"
       disabled={disabled}
-      aria-label={`${copy.label}：${copy.description}`}
+      aria-label={`${label}：${copy.description}`}
       onClick={onActivate}
       className={[
         "absolute z-[24] rounded-xl border-2 transition duration-200",
@@ -59,7 +67,10 @@ export function LogHouseRoomTapSpot({
           : showDebugOutline
             ? "border-blue-400/55 border-dashed bg-blue-50/10 hover:border-amber-200/50 hover:bg-amber-50/15 active:scale-[0.99]"
             : "border-transparent bg-transparent hover:bg-amber-50/10 active:scale-[0.99]",
-        flash ? "border-amber-200/80 bg-amber-100/35 shadow-[0_0_24px_rgba(251,191,36,0.35)]" : "",
+        flash || spotlight
+          ? "border-amber-200/80 bg-amber-100/35 shadow-[0_0_24px_rgba(251,191,36,0.35)]"
+          : "",
+        spotlight ? "animate-pulse" : "",
       ]
         .filter(Boolean)
         .join(" ")}
@@ -70,7 +81,7 @@ export function LogHouseRoomTapSpot({
         height: `${spot.height}%`,
       }}
     >
-      {showHintLabel ? (
+      {showLabel ? (
         <span
           className={[
             "pointer-events-none absolute z-10",
@@ -79,7 +90,7 @@ export function LogHouseRoomTapSpot({
           ].join(" ")}
         >
           <span className="inline-block whitespace-nowrap rounded-full bg-[#fffdf9]/72 px-2.5 py-0.5 text-[10px] font-medium tracking-wide text-stone-700 shadow-sm ring-1 ring-stone-300/35 backdrop-blur-[2px]">
-            {copy.label}
+            {label}
           </span>
         </span>
       ) : null}

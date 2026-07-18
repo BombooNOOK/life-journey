@@ -15,6 +15,8 @@ type Props = {
   onOpenSettings: () => void;
   hintActive?: boolean;
   onToggleHint?: () => void;
+  /** はじめて案内：？ボタンを光らせる */
+  hintSpotlight?: boolean;
   /** 夜背景時はアイコンの下地を少し濃くして可読性を保つ */
   timeOfDay?: "day" | "night";
   donguriBalance?: number;
@@ -75,6 +77,7 @@ export function LogHouseRoomChrome({
   onOpenSettings,
   hintActive = false,
   onToggleHint,
+  hintSpotlight = false,
   timeOfDay = "day",
   donguriBalance = 0,
   onOpenDonguriCho,
@@ -107,7 +110,10 @@ export function LogHouseRoomChrome({
             type="button"
             className={[
               buttonClass,
-              hintActive ? "border-emerald-400/50 bg-emerald-50/80 text-emerald-900" : "",
+              hintActive || hintSpotlight
+                ? "border-emerald-400/50 bg-emerald-50/80 text-emerald-900"
+                : "",
+              hintSpotlight ? "animate-pulse ring-2 ring-amber-300/70" : "",
             ].join(" ")}
             aria-pressed={hintActive}
             aria-label={hintActive ? LOG_HOUSE_ROOM_HINT_HIDE_LABEL : LOG_HOUSE_ROOM_HINT_BUTTON_LABEL}

@@ -1,12 +1,12 @@
-/** 森の案内所「日記ブック」 */
+/** 森の案内所「あしあとブック」 */
 
-export const LJD_DIARY_BOOK_GUIDE_SECTION_TITLE = "日記ブック" as const;
+export const LJD_DIARY_BOOK_GUIDE_SECTION_TITLE = "あしあとブック" as const;
 
 export const LJD_DIARY_BOOK_GUIDE_SECTION_SUMMARY =
   "期間やタグでまとめて、1冊の本にする" as const;
 
 export const LJD_DIARY_BOOK_GUIDE_LEAD =
-  "日記ブックは、書いた日記をまとめて1冊の本にする機能です。本棚の「日記ブックを作る」セットからつくれます。" as const;
+  "あしあとブックは、書いた日記をまとめて1冊の本にする機能です。本棚の「あしあとブックを作る」セットからつくれます。" as const;
 
 export type LjdDiaryBookGuideStep = {
   id: string;
@@ -18,13 +18,13 @@ export type LjdDiaryBookGuideStep = {
 export const LJD_DIARY_BOOK_GUIDE_STEPS: readonly LjdDiaryBookGuideStep[] = [
   {
     id: "open",
-    title: "本棚で「日記ブックを作る」を開く",
-    body: "ログハウスの本棚を開き、「日記ブックを作る」セットをタップして「作る」を押します。",
+    title: "本棚で「あしあとブックを作る」を開く",
+    body: "ログハウスの本棚を開き、「あしあとブックを作る」セットをタップして「作る」を押します。",
   },
   {
     id: "name-cover",
     title: "名前と表紙を選ぶ",
-    body: "日記ブック名を付け、表紙の雰囲気（きれいめ／シンプルなど）を選びます。",
+    body: "あしあとブック名を付け、表紙の雰囲気（きれいめ／シンプルなど）を選びます。",
   },
   {
     id: "period",
@@ -44,7 +44,7 @@ export const LJD_DIARY_BOOK_GUIDE_STEPS: readonly LjdDiaryBookGuideStep[] = [
   },
   {
     id: "create",
-    title: "日記ブックを作成する",
+    title: "あしあとブックを作成する",
     body: "作成すると本棚に並びます。いちばん新しい本は表紙枠に、続いて2冊目・3冊目は棚のプレースホルダーに表示されます。本をタップして「選ぶ」で中身を確認できます。あとから期間やタグ条件、掲載する日記を直せます。",
   },
 ] as const;

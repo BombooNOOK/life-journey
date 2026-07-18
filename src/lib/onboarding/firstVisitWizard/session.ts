@@ -6,6 +6,7 @@ import {
   ONBOARDING_CHAPTER3_STARTED_COOKIE,
   ONBOARDING_CHAPTER3_STARTED_COOKIE_MAX_AGE_SECONDS,
 } from "@/lib/onboarding/onboardingStageCookies";
+import { clearLoghouseTourDoneFlag } from "@/lib/onboarding/firstVisitWizard/loghouseTour";
 
 const ORDER_GUIDE_FLAG = "ljd:firstGuide:orderGuide";
 const BOOKSHELF_KANTEI_GUIDE_FLAG = "ljd:firstGuide:bookshelfKanteiGuide";
@@ -306,6 +307,7 @@ export function clearAllFirstVisitClientState(): void {
 
   clearFirstVisitFromRegisterFlag();
   clearFirstVisitChapter3StartedFlag();
+  clearLoghouseTourDoneFlag();
 
   if (typeof document !== "undefined") {
     const secure = window.location.protocol === "https:" ? "; Secure" : "";

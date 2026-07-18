@@ -6,6 +6,10 @@ import { MyPageActionCard } from "@/components/orders/MyPageActionCard";
 import { CompanionWritingButtonLabel } from "@/components/journal/companion-writing/CompanionWritingButtonLabel";
 import { FieldLabelWithHelp } from "@/components/ui/InlineHelpButton";
 import { ProfileSelectNavButton } from "@/components/profile/ProfileSelectNavButton";
+import {
+  TERM_FOOTPRINT_LEDGER,
+  TERM_WRITE_FOOTPRINT,
+} from "@/lib/journal/footprintTerminology";
 import { myPageActionIllustrations } from "@/lib/mypage/myPageActionAssets";
 import { COMPANION_WRITING_FORMAL_TITLE } from "@/lib/journal/companionWriting/types";
 import type { SerializedUserEntitlement } from "@/lib/entitlement/resolveUserEntitlement";
@@ -55,7 +59,7 @@ export function MyPageMainActions({
         helpAriaLabel="ログハウスの操作説明"
         help={
           <p>
-            選んだプロフィールの日記を書いたり、記録や本棚・ポスト・鑑定結果を開けます。森の住民票はアカウント共通です。
+            選んだプロフィールのあしあとを残したり、あしあと帳や本棚・ポスト・鑑定結果を開けます。森の住民票はアカウント共通です。
           </p>
         }
       />
@@ -83,7 +87,7 @@ export function MyPageMainActions({
           <div className="space-y-2">
             <MyPageActionCard
               illustration={myPageActionIllustrations.writeDiary}
-              title="日記を書く"
+              title={TERM_WRITE_FOOTPRINT}
               description="今日の出来事や気持ちを記録します"
               tone="emerald"
               disabled
@@ -100,12 +104,12 @@ export function MyPageMainActions({
             profileId={profileId}
             href="/orders/calendar"
             directNav={isActive}
-            loadingLabel="日記を開いています…"
+            loadingLabel={`${TERM_WRITE_FOOTPRINT}を開いています…`}
             className={navButtonClass}
           >
             <MyPageActionCard
               illustration={myPageActionIllustrations.writeDiary}
-              title={journalEmphasis ? "はじめての日記を書く" : "日記を書く"}
+              title={journalEmphasis ? "はじめてのあしあと" : TERM_WRITE_FOOTPRINT}
               description="今日の出来事や気持ちを記録します"
               tone="emerald"
               emphasis={journalEmphasis}
@@ -117,13 +121,13 @@ export function MyPageMainActions({
           profileId={profileId}
           href="/orders/list"
           directNav={isActive}
-          loadingLabel="日記一覧を開いています…"
+          loadingLabel="あしあと帳を開いています…"
           className={navButtonClass}
         >
           <MyPageActionCard
             illustration={myPageActionIllustrations.readDiary}
-            title="日記を読む"
-            description="書いた記録を読みやすく見返します"
+            title={TERM_FOOTPRINT_LEDGER}
+            description="残したあしあとを読みやすく見返します"
             tone="wood"
           />
         </ProfileSelectNavButton>

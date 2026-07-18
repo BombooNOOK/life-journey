@@ -37,7 +37,7 @@ export const FOREST_GUIDE_FIRST_VISIT_STEPS: ForestGuideFirstVisitStep[] = [
   {
     step: 2,
     title: "Life Journey Diaryとは",
-    body: "写真と言葉で日々を残し、世界に一冊の日記ブックへ育てるサービスです。",
+    body: "写真と言葉で日々を残し、世界に一冊のあしあとブックへ育てるサービスです。",
   },
   {
     step: 3,
@@ -90,7 +90,7 @@ export const FOREST_GUIDE_FIRST_VISIT_STEPS: ForestGuideFirstVisitStep[] = [
   },
   {
     step: 12,
-    title: "日記を書く / 今日はここまで",
+    title: "今日のあしあとを残す / 今日はここまで",
     body: "写真とことばで今日の1ページを残すか、また明日に続けます。",
   },
 ];

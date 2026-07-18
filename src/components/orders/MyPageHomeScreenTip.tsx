@@ -14,7 +14,7 @@ export function MyPageHomeScreenTip() {
           </h2>
           <p className="mt-2 lj-read-desc text-stone-700">
             スマホのホーム画面に追加すると、アプリのようにすぐ開けます。
-            日記を書くときに、毎回ブラウザで探さなくて済みます。
+            今日のあしあとを残すときに、毎回ブラウザで探さなくて済みます。
           </p>
           <p className="mt-3.5">
             <Link

@@ -124,8 +124,8 @@ export function ForestBookshelfClient({
     if (selectedSpot === "createDiary") {
       return {
         id: "create",
-        title: "日記ブックを作る",
-        lines: ["新しい表紙と名前を決めて、新しい日記ブックを作ります。"],
+        title: "あしあとブックを作る",
+        lines: ["新しい表紙と名前を決めて、新しいあしあとブックを作ります。"],
         actionLabel: "作る",
         onAction: () => {
           setSelectedSpot(null);
@@ -167,7 +167,7 @@ export function ForestBookshelfClient({
       return {
         id: "placeholder-red",
         title: "これから増えていきます",
-        lines: ["新しい日記ブックを作ると、ここに並びます。"],
+        lines: ["新しいあしあとブックを作ると、ここに並びます。"],
         actionLabel: "作る",
         onAction: () => {
           setSelectedSpot(null);
@@ -188,8 +188,8 @@ export function ForestBookshelfClient({
       }
       return {
         id: "placeholder-green",
-        title: "これまでの日記ブック",
-        lines: ["過去の日記ブックが増えると、ここに代表の一冊を置けます。"],
+        title: "これまでのあしあとブック",
+        lines: ["過去のあしあとブックが増えると、ここに代表の一冊を置けます。"],
         actionLabel: "一覧を見る",
         onAction: () => {
           setSelectedSpot(null);
@@ -347,32 +347,32 @@ export function ForestBookshelfClient({
       />
       <ForestBookshelfTapSpot
         rect={spotLayout.createDiary}
-        label="日記ブックを作る"
+        label="あしあとブックを作る"
         selected={selectedSpot === "createDiary" || panel === "create"}
         onActivate={() => activateSpot("createDiary")}
       />
       <ForestBookshelfTapSpot
         rect={spotLayout.currentDiary}
-        label="現在の日記ブックを選ぶ"
+        label="現在のあしあとブックを選ぶ"
         disabled={!currentDiary}
         selected={selectedSpot === "currentDiary"}
         onActivate={() => activateSpot("currentDiary")}
       />
       <ForestBookshelfTapSpot
         rect={spotLayout.placeholderRed}
-        label="日記ブック（右側）"
+        label="あしあとブック（右側）"
         selected={selectedSpot === "placeholderRed"}
         onActivate={() => activateSpot("placeholderRed")}
       />
       <ForestBookshelfTapSpot
         rect={spotLayout.placeholderGreen}
-        label="これまでの日記ブック（代表）"
+        label="これまでのあしあとブック（代表）"
         selected={selectedSpot === "placeholderGreen"}
         onActivate={() => activateSpot("placeholderGreen")}
       />
       <ForestBookshelfTapSpot
         rect={spotLayout.spinesDiary}
-        label="これまでの日記ブック一覧を開く"
+        label="これまでのあしあとブック一覧を開く"
         selected={panel === "list-diary"}
         onActivate={() => activateSpot("spinesDiary")}
       />
@@ -482,8 +482,8 @@ export function ForestBookshelfClient({
 
       {panel === "list-diary" ? (
         <ForestBookshelfListPanel
-          title="これまでの日記ブック"
-          emptyMessage="まだ日記ブックがありません。左のセットから作れます。"
+          title="これまでのあしあとブック"
+          emptyMessage="まだあしあとブックがありません。左のセットから作れます。"
           items={diaryListItems}
           onClose={closeAll}
         />

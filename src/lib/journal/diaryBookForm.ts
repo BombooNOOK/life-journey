@@ -3,12 +3,18 @@ import {
   normalizeDiaryCoverStyle,
 } from "@/lib/journal/coverAssets";
 import { parseDiaryBookDateRange } from "@/lib/journal/diaryBookPeriod";
+import {
+  parseDiaryBookTagFilterFromRequest,
+  type DiaryBookTagScope,
+} from "@/lib/journal/diaryBookTagFilter";
 
 export type DiaryBookCreateFields = {
   title: string;
   startDate: string;
   endDate: string;
   coverTheme: string;
+  tagFilter: string;
+  tagFilterMode: DiaryBookTagScope["tagFilterMode"];
 };
 
 export type DiaryBookFormParseResult =
@@ -29,14 +35,14 @@ export function parseDiaryBookCreateFields(json: unknown): DiaryBookFormParseRes
 
   const title = rawTitle.trim();
   if (!title) {
-    return { ok: false, status: 400, code: "BAD_TITLE", error: "日記ブック名を入力してください。" };
+    return { ok: false, status: 400, code: "BAD_TITLE", error: "あしあとブック名を入力してください。" };
   }
   if (title.length > 80) {
     return {
       ok: false,
       status: 400,
       code: "BAD_TITLE",
-      error: "日記ブック名は80文字以内にしてください。",
+      error: "あしあとブック名は80文字以内にしてください。",
     };
   }
 
@@ -54,6 +60,8 @@ export function parseDiaryBookCreateFields(json: unknown): DiaryBookFormParseRes
     return { ok: false, status: 400, code: "BAD_COVER", error: "表紙デザインの値が不正です。" };
   }
 
+  const tagScope = parseDiaryBookTagFilterFromRequest(json);
+
   return {
     ok: true,
     data: {
@@ -61,6 +69,8 @@ export function parseDiaryBookCreateFields(json: unknown): DiaryBookFormParseRes
       startDate: dateRange.startDate,
       endDate: dateRange.endDate,
       coverTheme: normalizeDiaryCoverStyle(rawCover.trim() || "casual"),
+      tagFilter: tagScope.tagFilter,
+      tagFilterMode: tagScope.tagFilterMode,
     },
   };
 }
@@ -91,6 +101,7 @@ export function parseDiaryBookPreviewFields(json: unknown): DiaryBookFormParseRe
   }
 
   const rawTitle = "title" in json ? String((json as { title: unknown }).title).trim() : "";
+  const tagScope = parseDiaryBookTagFilterFromRequest(json);
 
   return {
     ok: true,
@@ -99,6 +110,8 @@ export function parseDiaryBookPreviewFields(json: unknown): DiaryBookFormParseRe
       startDate: dateRange.startDate,
       endDate: dateRange.endDate,
       coverTheme: normalizeDiaryCoverStyle(rawCover.trim() || "casual"),
+      tagFilter: tagScope.tagFilter,
+      tagFilterMode: tagScope.tagFilterMode,
     },
   };
 }

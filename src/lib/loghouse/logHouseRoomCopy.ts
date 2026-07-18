@@ -1,3 +1,4 @@
+import { TERM_WRITE_FOOTPRINT } from "@/lib/journal/footprintTerminology";
 import type { LogHouseRoomSpotId } from "@/lib/loghouse/logHouseRoomHotspots";
 
 export type LogHouseRoomSpotCopy = {
@@ -10,13 +11,13 @@ export type LogHouseRoomSpotCopy = {
 export const LOG_HOUSE_ROOM_SPOT_COPY: Record<LogHouseRoomSpotId, LogHouseRoomSpotCopy> = {
   bookshelf: {
     label: "本棚",
-    description: "鑑定書や日記を見返す",
+    description: "鑑定書やあしあとブックを見返す",
     actionLabel: "本棚を開く",
   },
   desk: {
-    label: "日記を書く",
-    description: "今日の日記の書き方を選ぶ",
-    actionLabel: "書き方を選ぶ",
+    label: TERM_WRITE_FOOTPRINT,
+    description: "今日のあしあとの残し方を選ぶ",
+    actionLabel: "残し方を選ぶ",
   },
   residentCard: {
     label: "森の住民票",
@@ -53,7 +54,7 @@ export const LOG_HOUSE_ROOM_KANTEI_LOCK_MESSAGE =
 
 /** 鑑定前に机をタップしたとき */
 export const LOG_HOUSE_ROOM_DESK_KANTEI_LOCK_MESSAGE =
-  "無料鑑定が終わると、ここから日記が書けるようになります。" as const;
+  "無料鑑定が終わると、ここからあしあとを残せるようになります。" as const;
 
 /** 鑑定済みだが今日の鑑定結果がまだ開かないとき */
 export const LOG_HOUSE_ROOM_TODAY_RESULT_PREPARING_MESSAGE =
@@ -63,7 +64,7 @@ export const LOG_HOUSE_ROOM_TODAY_RESULT_PREPARING_MESSAGE =
 export const LOG_HOUSE_ROOM_KANTEI_LOCK_CTA_LABEL = "無料鑑定を受ける" as const;
 
 export const LOG_HOUSE_ROOM_JOURNAL_LOCK_MESSAGE =
-  "いまは日記を書けない状態です。アカウント設定をご確認ください。" as const;
+  "いまはあしあとを残せない状態です。アカウント設定をご確認ください。" as const;
 
 export const LOG_HOUSE_ROOM_MANAGE_BUTTON_LABEL = "その他";
 
@@ -83,8 +84,8 @@ export const LOG_HOUSE_ROOM_HINT_BUTTON_LABEL = "タップできる場所を見�
 export const LOG_HOUSE_ROOM_HINT_HIDE_LABEL = "ヒントを閉じる" as const;
 export const LOG_HOUSE_ROOM_HINT_AUTO_HIDE_MS = 6500 as const;
 
-/** 初回ログハウス案内 */
+/** 初回ログハウス案内（ツアー未実施時の短いヒント） */
 export const LOG_HOUSE_ROOM_FIRST_VISIT_TIP =
-  "ログハウスでは、本棚や「日記を書く」をタップできます。\n迷ったら、？を押してみてください。\n玄関のポストにはお手紙が、左上ではどんぐりも確認できます。" as const;
+  "ログハウスでは、本棚や机をタップできます。\n迷ったら、？を押してみてください。\n玄関のポストにはお手紙が、左上ではどんぐりも確認できます。" as const;
 export const LOG_HOUSE_ROOM_FIRST_VISIT_TIP_STORAGE_KEY =
   "ljd.loghouseRoom.tapHintIntroSeen.v1" as const;

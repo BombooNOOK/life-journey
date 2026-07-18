@@ -29,9 +29,9 @@ export const BOOKSHELF_KANTEI_GUIDE_CARD1_ILLUSTRATION_SRC =
 export const BOOKSHELF_KANTEI_GUIDE_CARD2_TITLE = "日記にも、ことばが届きます" as const;
 
 export const BOOKSHELF_KANTEI_GUIDE_CARD2_BODY =
-  "鑑定を受けたことで、\n日記を書くときに\nどうぶつ鑑定士からのメッセージが\n届くようになりました。\n\nその日のすうじや、\nあなたが残した気持ちを手がかりに、\n森のどうぶつ鑑定士たちが\nそっと言葉を添えてくれます。\n\nこのあと、どうしますか？" as const;
+  "鑑定を受けたことで、\n今日のあしあとを残すときに\nどうぶつ鑑定士からのメッセージが\n届くようになりました。\n\nその日のすうじや、\nあなたが残した気持ちを手がかりに、\n森のどうぶつ鑑定士たちが\nそっと言葉を添えてくれます。\n\nこのあと、どうしますか？" as const;
 
-export const BOOKSHELF_KANTEI_GUIDE_CARD2_PRIMARY_BUTTON = "日記を書いてみる" as const;
+export const BOOKSHELF_KANTEI_GUIDE_CARD2_PRIMARY_BUTTON = "あしあとを残してみる" as const;
 
 export const BOOKSHELF_KANTEI_GUIDE_CARD2_SECONDARY_BUTTON = FIRST_VISIT_MILESTONE_HOME_BUTTON;
 

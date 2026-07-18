@@ -19,6 +19,7 @@ type Props = {
   showDebugOutline?: boolean;
   showHintLabel?: boolean;
   flash?: boolean;
+  spotlight?: boolean;
   /** 未読があるとき、お手紙ありポスト画像を使う */
   hasUnread?: boolean;
 };
@@ -32,6 +33,7 @@ export function LogHouseRoomMailboxSpot({
   showDebugOutline = false,
   showHintLabel = false,
   flash = false,
+  spotlight = false,
   hasUnread = false,
 }: Props) {
   const spot = LOG_HOUSE_ROOM_MAILBOX_HOTSPOT;
@@ -69,7 +71,8 @@ export function LogHouseRoomMailboxSpot({
           : showDebugOutline
             ? "rounded-xl border-2 border-dashed border-blue-400/55 bg-blue-50/10"
             : "rounded-lg border-2 border-transparent hover:brightness-105 active:scale-[0.98]",
-        flash ? "brightness-110 drop-shadow-[0_0_12px_rgba(251,191,36,0.45)]" : "",
+        flash || spotlight ? "brightness-110 drop-shadow-[0_0_12px_rgba(251,191,36,0.45)]" : "",
+        spotlight ? "animate-pulse" : "",
       ]
         .filter(Boolean)
         .join(" ")}
@@ -83,7 +86,7 @@ export function LogHouseRoomMailboxSpot({
       <span
         className={[
           "pointer-events-none absolute left-1/2 top-1/2 block -translate-x-1/2 -translate-y-1/2",
-          hasUnread ? "loghouse-mailbox-glow" : "",
+          hasUnread || spotlight ? "loghouse-mailbox-glow" : "",
           shakeOnce ? "loghouse-mailbox-shake" : "",
         ]
           .filter(Boolean)
@@ -107,7 +110,7 @@ export function LogHouseRoomMailboxSpot({
         </span>
       </span>
 
-      {showHintLabel ? (
+      {showHintLabel || spotlight ? (
         <span className="pointer-events-none absolute left-1/2 top-0 z-10 -translate-x-1/2">
           <span className="inline-block whitespace-nowrap rounded-full bg-[#fffdf9]/85 px-2.5 py-0.5 text-center text-[10px] font-medium tracking-wide text-stone-700 shadow-sm ring-1 ring-stone-300/35">
             {copy.label}

@@ -106,9 +106,9 @@ export const LJD_DIARY_WRITING_GUIDE_NORMAL_CALENDAR_NOTE =
 export const LJD_DIARY_WRITING_GUIDE_CALENDAR_PREVIEW_LABEL =
   "カレンダー画面のイメージ（今日と、選んだ日）" as const;
 
-export const LJD_DIARY_WRITING_GUIDE_WRITE_TODAY_BUTTON = "今日の日記を書く" as const;
+export const LJD_DIARY_WRITING_GUIDE_WRITE_TODAY_BUTTON = "今日のあしあとを残す" as const;
 
-export const LJD_DIARY_WRITING_GUIDE_WRITE_SELECTED_BUTTON = "選択した日の日記を書く" as const;
+export const LJD_DIARY_WRITING_GUIDE_WRITE_SELECTED_BUTTON = "選択した日のあしあとを残す" as const;
 
 /** 通常執筆の流れ */
 export const LJD_DIARY_WRITING_GUIDE_NORMAL_FLOW: readonly LjdDiaryWritingGuideStep[] = [
@@ -126,7 +126,7 @@ export const LJD_DIARY_WRITING_GUIDE_NORMAL_FLOW: readonly LjdDiaryWritingGuideS
     id: "write-other-day",
     title: "今日以外の日を書く（緑）",
     body: `今日以外の出来事や気持ちを残したいときは、まずカレンダーで書きたい日付をタップします。選んだ日は緑色にハイライトされ、下に緑の「${LJD_DIARY_WRITING_GUIDE_WRITE_SELECTED_BUTTON}」ボタンが現れます。そこから入力画面へ進みます。`,
-    note: "日付をタップすると、その日の日記一覧も下に表示されます。すでに記録がある日を選ぶと、続きの編集や読み返しにも進めます。",
+    note: "日付をタップすると、その日のあしあと帳も下に表示されます。すでに記録がある日を選ぶと、続きの編集や読み返しにも進めます。",
   },
   {
     id: "body",
@@ -146,7 +146,7 @@ export const LJD_DIARY_WRITING_GUIDE_NORMAL_FLOW: readonly LjdDiaryWritingGuideS
   {
     id: "tags",
     title: "タグをつける（任意）",
-    body: "「タグをつける」から、あとで探しやすいしるしを付けられます。例）#おでかけ #家族。日記一覧からの検索や、日記ブックのテーマ絞り込みに使えます。なくても保存できます。",
+    body: "「タグをつける」から、あとで探しやすいしるしを付けられます。例）#おでかけ #家族。あしあと帳からの検索や、あしあとブックのテーマ絞り込みに使えます。なくても保存できます。",
   },
   {
     id: "save",
@@ -184,7 +184,7 @@ export const LJD_DIARY_WRITING_GUIDE_DETAILS_ITEMS: readonly { title: string; bo
   },
   {
     title: "タグ",
-    body: "任意のしるしです。「タグをつける」で付けられます。日記一覧の「日記を探す」からタグで探したり、日記ブックを作るときにテーマで絞り込んだりできます。ひとりで書く場合も、鑑定士といっしょに書く場合も同じように付けられます。",
+    body: "任意のしるしです。「タグをつける」で付けられます。あしあと帳の「日記を探す」からタグで探したり、あしあとブックを作るときにテーマで絞り込んだりできます。ひとりで書く場合も、鑑定士といっしょに書く場合も同じように付けられます。",
   },
 ] as const;
 

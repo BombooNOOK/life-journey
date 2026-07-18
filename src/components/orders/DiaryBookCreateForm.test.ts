@@ -25,7 +25,7 @@ describe("diaryBookCreateDisabledReason", () => {
   it("requires title before dates", () => {
     expect(
       diaryBookCreateDisabledReason({ ...base, title: "  ", startDate: "" }),
-    ).toBe("日記ブック名を入力してください");
+    ).toBe("あしあとブック名を入力してください");
   });
 
   it("requires dates before preview", () => {

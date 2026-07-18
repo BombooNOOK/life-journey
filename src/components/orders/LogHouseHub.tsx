@@ -86,6 +86,7 @@ export function LogHouseHub({
           donguriCho={donguriCho}
           companionWritingHref={companionWritingHref}
           deskWritingHref={deskWritingHref}
+          firstVisitGuideState={firstVisitGuideState}
           onOpenManage={() => setManageOpen(true)}
           viewerIsAdmin={viewerIsAdmin}
         />

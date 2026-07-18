@@ -102,7 +102,7 @@ describe("onboardingStage", () => {
     expect(resolveOnboardingNextStep(4)).toBeNull();
     expect(resolveOnboardingNextStep(2)?.label).toContain("第2章");
     expect(resolveOnboardingNextStep(3)?.href).toBe(ONBOARDING_CHAPTER3_DESK_WRITING_HREF);
-    expect(resolveOnboardingNextStep(3)?.label).toBe("机で日記を書く");
+    expect(resolveOnboardingNextStep(3)?.label).toBe("机であしあとを残す");
     expect(resolveOnboardingNextStep(3, { chapter3Started: true })?.href).toBe(
       ONBOARDING_CHAPTER3_DESK_WRITING_HREF,
     );

@@ -126,7 +126,7 @@ const TOC_ITEMS: TocItem[] = [
     body: (
       <>
         <p>
-          無料鑑定でコアナンバーの鑑定書を受け取ります。日記を保存したあとに届く「読み解きコメント」は、この鑑定を土台にしています。
+          無料鑑定でコアナンバーの鑑定書を受け取ります。森にあしあとを残すしたあとに届く「読み解きコメント」は、この鑑定を土台にしています。
         </p>
         <p className="mt-2 text-sm text-stone-600">
           数秘術のくわしい説明は
@@ -170,7 +170,7 @@ const TOC_ITEMS: TocItem[] = [
     body: (
       <>
         <p>
-          日記を保存すると、どうぶつ鑑定士による読み解きコメントが届きます。プレビュー画面でいつでも読み返せます。保存前の入力中には表示されません。
+          森にあしあとを残すすると、どうぶつ鑑定士による読み解きコメントが届きます。プレビュー画面でいつでも読み返せます。保存前の入力中には表示されません。
         </p>
         <GuideAppLink
           href="/orders/calendar"
@@ -204,7 +204,7 @@ const TOC_ITEMS: TocItem[] = [
           </div>
         </div>
         <GuideAppLink href="/orders/calendar" label="カレンダーを開く" feature="guide_calendar" />
-        <GuideAppLink href="/orders/list" label="日記一覧を開く" feature="guide_list" />
+        <GuideAppLink href="/orders/list" label="あしあと帳を開く" feature="guide_list" />
       </>
     ),
   },

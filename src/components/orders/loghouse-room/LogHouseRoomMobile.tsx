@@ -17,6 +17,7 @@ import { LogHouseDonguriChoModal } from "@/components/orders/loghouse-room/LogHo
 import { LogHouseRadioCassetteModal } from "@/components/orders/loghouse-room/LogHouseRadioCassetteModal";
 import { LogHouseRadioPlayingAura } from "@/components/orders/loghouse-room/LogHouseRadioPlayingAura";
 import { LogHouseRoomAdminLinkSpot } from "@/components/orders/loghouse-room/LogHouseRoomAdminLinkSpot";
+import { LogHouseRoomFirstVisitTour } from "@/components/orders/loghouse-room/LogHouseRoomFirstVisitTour";
 import { LogHouseRoomGoOutSpot } from "@/components/orders/loghouse-room/LogHouseRoomGoOutSpot";
 import { LogHouseRoomMailboxSpot } from "@/components/orders/loghouse-room/LogHouseRoomMailboxSpot";
 import { LogHouseRoomPartsLayer } from "@/components/orders/loghouse-room/LogHouseRoomPartsLayer";
@@ -35,6 +36,7 @@ import {
 import type { SerializedUserEntitlement } from "@/lib/entitlement/resolveUserEntitlement";
 import { getStubDonguriChoView, type DonguriChoView } from "@/lib/loghouse/donguriTypes";
 import { buildForestMusicHallHref } from "@/lib/help/forestMusicHallNav";
+import { TERM_WRITE_FOOTPRINT } from "@/lib/journal/footprintTerminology";
 import {
   LOG_HOUSE_ROOM_MOBILE_BG_BY_TIME,
   LOG_HOUSE_ROOM_MOBILE_INTRINSIC,
@@ -53,7 +55,22 @@ import { LOG_HOUSE_MAILBOX_PAGE_PATH } from "@/lib/loghouse/logHouseMailboxCopy"
 import { LOG_HOUSE_ROOM_HOTSPOTS, type LogHouseRoomSpotId } from "@/lib/loghouse/logHouseRoomHotspots";
 import { LOG_HOUSE_GO_OUT_PAGE_PATH } from "@/lib/loghouse/logHouseGoOutCopy";
 import type { LogHouseRoomTimeOfDay } from "@/lib/loghouse/logHouseRoomTimeTheme";
+import type { FirstVisitGuideState } from "@/lib/onboarding/firstVisitGuideState";
 import { FIRST_VISIT_ROUTES } from "@/lib/onboarding/firstVisitWizard/routes";
+import {
+  clearLoghouseTourStep,
+  nextLoghouseTourStep,
+  readLoghouseTourDoneFlag,
+  readLoghouseTourStep,
+  setLoghouseTourDoneFlag,
+  setLoghouseTourStep,
+  shouldOfferLoghouseTour,
+  spotlightSpotForTourStep,
+  type LoghouseTourStepId,
+} from "@/lib/onboarding/firstVisitWizard/loghouseTour";
+import {
+  LOGHOUSE_TOUR_PLEASE_CONTINUE,
+} from "@/lib/onboarding/firstVisitWizard/loghouseTourCopy";
 import { selectViewerProfile } from "@/lib/profile/selectViewerProfile";
 
 type ProfileRow = { id: string; nickname: string };
@@ -108,6 +125,7 @@ type Props = {
   companionWritingHref: string | null;
   /** 机タップ先。はじめて導線は伴走執筆、通常は `/orders/write` */
   deskWritingHref: string;
+  firstVisitGuideState?: FirstVisitGuideState;
   onOpenManage: () => void;
   className?: string;
   previewMode?: boolean;
@@ -138,6 +156,8 @@ function RoomStage({
   onSpotActivate,
   hintActive,
   flashSpotId,
+  spotlightSpotId,
+  deskSpotlightLabel,
   timeOfDay,
   mailboxUnread,
   radioPlaying,
@@ -149,6 +169,8 @@ function RoomStage({
   onSpotActivate: (spotId: LogHouseRoomSpotId) => void;
   hintActive: boolean;
   flashSpotId: LogHouseRoomSpotId | null;
+  spotlightSpotId: LogHouseRoomSpotId | null;
+  deskSpotlightLabel?: string | null;
   timeOfDay: LogHouseRoomTimeOfDay;
   mailboxUnread: boolean;
   radioPlaying: boolean;
@@ -182,6 +204,7 @@ function RoomStage({
           const action = spotActions[spot.id];
           const locked = Boolean(action.lockMessage);
           const disabled = busy || (!locked && action.href == null);
+          const spotlit = spotlightSpotId === spot.id;
 
           return (
             <LogHouseRoomTapSpot
@@ -191,6 +214,10 @@ function RoomStage({
               showDebugOutline={previewMode}
               showHintLabel={hintActive}
               flash={flashSpotId === spot.id}
+              spotlight={spotlit}
+              hintLabelOverride={
+                spotlit && spot.id === "desk" ? deskSpotlightLabel ?? null : null
+              }
               onActivate={() => onSpotActivate(spot.id)}
             />
           );
@@ -201,6 +228,7 @@ function RoomStage({
           showDebugOutline={previewMode}
           showHintLabel={hintActive}
           flash={flashSpotId === "mailbox"}
+          spotlight={spotlightSpotId === "mailbox"}
           hasUnread={mailboxUnread}
           onActivate={() => onSpotActivate("mailbox")}
         />
@@ -234,6 +262,7 @@ export function LogHouseRoomMobile({
   donguriCho: donguriChoProp,
   companionWritingHref,
   deskWritingHref,
+  firstVisitGuideState = "returning",
   onOpenManage,
   className = "",
   previewMode = false,
@@ -249,6 +278,8 @@ export function LogHouseRoomMobile({
   const [notice, setNotice] = useState<SpotNotice | null>(null);
   const [hintActive, setHintActive] = useState(false);
   const [showFirstVisitTip, setShowFirstVisitTip] = useState(false);
+  const [tourStep, setTourStep] = useState<LoghouseTourStepId | null>(null);
+  const [awaitingDeskTap, setAwaitingDeskTap] = useState(false);
   const [selectedSpotId, setSelectedSpotId] = useState<LogHouseRoomSpotId | null>(null);
   const [flashSpotId, setFlashSpotId] = useState<LogHouseRoomSpotId | null>(null);
   const [donguriChoOpen, setDonguriChoOpen] = useState(false);
@@ -319,6 +350,9 @@ export function LogHouseRoomMobile({
   const journalBlocked = entitlement.tier === "trial_expired" || !canWriteJournal;
   const isActiveProfile = profileId === activeProfileId;
   const hasKantei = hasKanteiOrder || Boolean(kanteiOrderId);
+  const tourActive = tourStep != null;
+  const spotlightSpotId =
+    tourStep != null ? spotlightSpotForTourStep(tourStep) : null;
 
   useEffect(() => {
     if (!notice) return;
@@ -328,6 +362,30 @@ export function LogHouseRoomMobile({
   }, [notice]);
 
   useEffect(() => {
+    if (previewMode) return;
+    if (
+      !shouldOfferLoghouseTour({
+        firstVisitGuideState,
+        hasKantei,
+        previewMode,
+      }) ||
+      readLoghouseTourDoneFlag()
+    ) {
+      setTourStep(null);
+      return;
+    }
+    const resumed = readLoghouseTourStep();
+    setTourStep(resumed ?? "desk");
+    setShowFirstVisitTip(false);
+    try {
+      window.localStorage.setItem(LOG_HOUSE_ROOM_FIRST_VISIT_TIP_STORAGE_KEY, "1");
+    } catch {
+      // ignore
+    }
+  }, [firstVisitGuideState, hasKantei, previewMode]);
+
+  useEffect(() => {
+    if (tourActive) return;
     if (previewMode) {
       setShowFirstVisitTip(true);
       return;
@@ -338,7 +396,15 @@ export function LogHouseRoomMobile({
     } catch {
       setShowFirstVisitTip(true);
     }
-  }, [previewMode]);
+  }, [previewMode, tourActive]);
+
+  useEffect(() => {
+    if (!tourStep) {
+      clearLoghouseTourStep();
+      return;
+    }
+    setLoghouseTourStep(tourStep);
+  }, [tourStep]);
 
   useEffect(() => {
     if (!hintActive) return;
@@ -362,10 +428,41 @@ export function LogHouseRoomMobile({
     }
   }, [previewMode]);
 
+  const advanceTour = useCallback(() => {
+    setTourStep((prev) => {
+      if (!prev) return null;
+      return nextLoghouseTourStep(prev);
+    });
+    setAwaitingDeskTap(false);
+  }, []);
+
+  const completeTour = useCallback(() => {
+    setLoghouseTourDoneFlag();
+    setTourStep(null);
+    setAwaitingDeskTap(false);
+  }, []);
+
   const toggleHint = useCallback(() => {
+    if (tourStep === "hint") {
+      setHintActive(true);
+      advanceTour();
+      return;
+    }
     setHintActive((prev) => !prev);
     dismissFirstVisitTip();
-  }, [dismissFirstVisitTip]);
+  }, [advanceTour, dismissFirstVisitTip, tourStep]);
+
+  const peekMailboxFromTour = useCallback(() => {
+    setTourStep("bookshelf");
+    setLoghouseTourStep("bookshelf");
+    startTransition(() => {
+      router.push(LOG_HOUSE_MAILBOX_PAGE_PATH);
+    });
+  }, [router, startTransition]);
+
+  const goToDeskFromTour = useCallback(() => {
+    setAwaitingDeskTap(true);
+  }, []);
 
   const navigate = useCallback(
     async (href: string, needsProfileSelect: boolean) => {
@@ -428,6 +525,28 @@ export function LogHouseRoomMobile({
   const onSpotActivate = useCallback(
     (spotId: LogHouseRoomSpotId) => {
       dismissFirstVisitTip();
+
+      if (tourActive) {
+        const target = spotlightSpotForTourStep(tourStep!);
+        if (awaitingDeskTap && spotId === "desk") {
+          // fall through to write entry after completing tour
+          completeTour();
+        } else if (tourStep === "mailbox" && spotId === "mailbox") {
+          peekMailboxFromTour();
+          return;
+        } else if (target && spotId === target && !awaitingDeskTap) {
+          // ハイライト中の家具タップは「次へ」相当（机の最終誘導以外）
+          if (tourStep === "desk" || tourStep === "bookshelf") {
+            advanceTour();
+            return;
+          }
+        } else if (!(awaitingDeskTap && spotId === "desk")) {
+          setFlashSpotId(spotId);
+          setNotice({ message: LOGHOUSE_TOUR_PLEASE_CONTINUE });
+          return;
+        }
+      }
+
       const action = spotActions[spotId];
 
       // ？ヒント中だけ説明シート。普段はタップで直接移動／開く
@@ -474,14 +593,20 @@ export function LogHouseRoomMobile({
       void navigate(action.href, action.needsProfile === true);
     },
     [
+      advanceTour,
+      awaitingDeskTap,
       beginWriteEntry,
+      completeTour,
       dismissFirstVisitTip,
       hintActive,
       isActiveProfile,
       navigate,
+      peekMailboxFromTour,
       previewMode,
       profileId,
       spotActions,
+      tourActive,
+      tourStep,
     ],
   );
 
@@ -521,7 +646,8 @@ export function LogHouseRoomMobile({
     </div>
   ) : null;
 
-  const firstVisitTipOverlay = showFirstVisitTip ? (
+  const firstVisitTipOverlay =
+    showFirstVisitTip && !tourActive ? (
     <div className="pointer-events-none absolute inset-x-0 bottom-8 z-[54] flex justify-center px-4">
       <div className="pointer-events-auto max-w-sm rounded-xl border border-emerald-200/80 bg-[#fffdf9]/96 px-3.5 py-3 text-center shadow-lg backdrop-blur-[1px]">
         <p className="whitespace-pre-line text-xs leading-relaxed text-stone-700">
@@ -537,6 +663,17 @@ export function LogHouseRoomMobile({
       </div>
     </div>
   ) : null;
+
+  const tourOverlay =
+    tourStep != null ? (
+      <LogHouseRoomFirstVisitTour
+        step={tourStep}
+        awaitingDeskTap={awaitingDeskTap}
+        onNext={advanceTour}
+        onPeekMailbox={peekMailboxFromTour}
+        onGoToDesk={goToDeskFromTour}
+      />
+    ) : null;
 
   const spotSheet =
     selectedSpotId && selectedAction ? (
@@ -563,7 +700,7 @@ export function LogHouseRoomMobile({
     <OwlDelayedBusyOverlay
       busy={busy}
       spinnerDelayMs={0}
-      message={writeEntryChecking ? "日記の準備をしています…" : undefined}
+      message={writeEntryChecking ? `${TERM_WRITE_FOOTPRINT}の準備をしています…` : undefined}
       className="bg-white/15"
     />
   );
@@ -573,6 +710,7 @@ export function LogHouseRoomMobile({
       onOpenSettings={onOpenManage}
       hintActive={hintActive}
       onToggleHint={toggleHint}
+      hintSpotlight={tourStep === "hint"}
       timeOfDay={timeOfDay}
       donguriBalance={donguriCho.balance}
       onOpenDonguriCho={openDonguriCho}
@@ -608,6 +746,12 @@ export function LogHouseRoomMobile({
       onSpotActivate={onSpotActivate}
       hintActive={hintActive}
       flashSpotId={flashSpotId}
+      spotlightSpotId={spotlightSpotId}
+      deskSpotlightLabel={
+        awaitingDeskTap || tourStep === "desk" || tourStep === "inviteWrite"
+          ? TERM_WRITE_FOOTPRINT
+          : null
+      }
       timeOfDay={timeOfDay}
       mailboxUnread={mailboxUnreadCount > 0}
       radioPlaying={radioPlayer.isPlaying}
@@ -632,6 +776,7 @@ export function LogHouseRoomMobile({
         >
           <div className="absolute inset-0 isolate overflow-hidden">{stage}</div>
           {chrome}
+          {tourOverlay}
           {firstVisitTipOverlay}
           {noticeOverlay}
           {spotSheet}
@@ -664,6 +809,7 @@ export function LogHouseRoomMobile({
         </div>
 
         {chrome}
+        {tourOverlay}
         {firstVisitTipOverlay}
         {noticeOverlay}
         {spotSheet}

@@ -23,7 +23,7 @@ export const DONGURI_REASON_LABELS: Record<DonguriReason, string> = {
   birthday_gift: "お誕生日のおとどけ",
   welcome_gift: "森の住民登録のお祝い",
   diary_save: "今日のあしあと",
-  book_create: "日記ブックを作成",
+  book_create: "あしあとブックを作成",
   reward_ad: "スポンサー上映",
   acorn_purchase: "どんぐり購入",
   subscription_delivery: "森の定期便",

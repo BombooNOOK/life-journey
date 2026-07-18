@@ -7,7 +7,7 @@ export const FOREST_BOOKSHELF_HELP_MODAL_TITLE = "本棚の見方";
 export const FOREST_BOOKSHELF_HELP_MODAL_LINES = [
   "表紙の本をタップすると、中身を選べます。",
   "背表紙が並んだ本は、一覧につながっています。",
-  "「日記ブックを作る」から、新しい日記ブックを作れます。",
+  "「あしあとブックを作る」から、新しいあしあとブックを作れます。",
 ] as const;
 
 export const FOREST_BOOKSHELF_HELP_MODAL_DISMISS = "わかりました";

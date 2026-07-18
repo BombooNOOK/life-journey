@@ -119,7 +119,7 @@ export function resolveOnboardingNextStep(
     if (options.onCompanionWritingPath) return null;
     return {
       href: ONBOARDING_CHAPTER3_DESK_WRITING_HREF,
-      label: "机で日記を書く",
+      label: "机であしあとを残す",
       body: "ログハウスの机から、どうぶつ鑑定士といっしょに、はじめての日記を書いてみましょう。",
     };
   }

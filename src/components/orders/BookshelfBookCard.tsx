@@ -54,7 +54,7 @@ function isExternalHref(href: string): boolean {
 }
 
 const KIND_LABEL = {
-  "diary-book": "日記ブック",
+  "diary-book": "あしあとブック",
   report: "鑑定書",
 } as const;
 
@@ -172,7 +172,7 @@ export function BookshelfBookCard({
             <OwlNavButton
               href={href}
               loadingLabel={
-                kind === "diary-book" ? "日記ブックを開いています…" : readLoadingLabel
+                kind === "diary-book" ? "あしあとブックを開いています…" : readLoadingLabel
               }
               className={[
                 "flex min-h-[40px] w-full items-center justify-center rounded-lg px-3 text-sm font-medium text-white",

@@ -6,17 +6,17 @@ export const LJD_CALENDAR_LIST_GUIDE_SECTION_SUMMARY =
   "日付で振り返り、タグで日記を探す" as const;
 
 export const LJD_CALENDAR_LIST_GUIDE_LEAD =
-  "書いた日記は、カレンダーで日付から振り返る方法と、日記一覧でキーワードやタグから探す方法があります。" as const;
+  "書いた日記は、カレンダーで日付から振り返る方法と、あしあと帳でキーワードやタグから探す方法があります。" as const;
 
 export const LJD_CALENDAR_LIST_GUIDE_CALENDAR_TITLE = "カレンダーで日付から見る" as const;
 
 export const LJD_CALENDAR_LIST_GUIDE_CALENDAR_BODY =
   "画面下の「カレンダー」タブ、またはひとりで書く流れからカレンダーを開けます。月ごとに記録のある日がわかり、日付をタップするとその日の日記を読み返せます。" as const;
 
-export const LJD_CALENDAR_LIST_GUIDE_LIST_TITLE = "日記一覧で探す" as const;
+export const LJD_CALENDAR_LIST_GUIDE_LIST_TITLE = "あしあと帳で探す" as const;
 
 export const LJD_CALENDAR_LIST_GUIDE_LIST_BODY =
-  "画面下の「日記一覧」タブを開くと、月別の日記が並びます。上部の「日記を探す」から、次のように探せます。" as const;
+  "画面下の「あしあと帳」タブを開くと、月別の日記が並びます。上部の「日記を探す」から、次のように探せます。" as const;
 
 export const LJD_CALENDAR_LIST_GUIDE_LIST_BULLETS = [
   "日付の範囲：「この月」「この年」「全期間」から選ぶ",
@@ -25,4 +25,4 @@ export const LJD_CALENDAR_LIST_GUIDE_LIST_BULLETS = [
 ] as const;
 
 export const LJD_CALENDAR_LIST_GUIDE_TAG_NOTE =
-  "タグは、日記を書くときに「タグをつける」で付けておくとしるしになります。よく使うタグは、探しやすいよう候補として出ることもあります。" as const;
+  "タグは、今日のあしあとを残すときに「タグをつける」で付けておくとしるしになります。よく使うタグは、探しやすいよう候補として出ることもあります。" as const;

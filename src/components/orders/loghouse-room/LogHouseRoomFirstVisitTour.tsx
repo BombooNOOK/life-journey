@@ -1,0 +1,162 @@
+"use client";
+
+import Link from "next/link";
+import type { ReactNode } from "react";
+
+import { CharacterFaceIcon } from "@/components/home/CharacterFaceIcon";
+import {
+  companionWritingFloatingGuideClass,
+  companionWritingGuideBodyClass,
+  companionWritingGuidePrimaryButtonClass,
+  companionWritingGuideSecondaryButtonClass,
+} from "@/components/journal/companion-writing/companionWritingGuideStyles";
+import type { LoghouseTourStepId } from "@/lib/onboarding/firstVisitWizard/loghouseTour";
+import {
+  LOGHOUSE_TOUR_A11Y_LABEL,
+  LOGHOUSE_TOUR_BOOKSHELF_GUIDE_HREF,
+  LOGHOUSE_TOUR_BOOKSHELF_GUIDE_LINK_LABEL,
+  LOGHOUSE_TOUR_BOOKSHELF_NEXT,
+  LOGHOUSE_TOUR_BOOKSHELF_OWL_QUOTE,
+  LOGHOUSE_TOUR_DESK_NEXT,
+  LOGHOUSE_TOUR_DESK_OWL_QUOTE,
+  LOGHOUSE_TOUR_DESK_TAP_HINT,
+  LOGHOUSE_TOUR_HINT_NEXT,
+  LOGHOUSE_TOUR_HINT_OWL_QUOTE,
+  LOGHOUSE_TOUR_INVITE_CTA,
+  LOGHOUSE_TOUR_INVITE_OWL_QUOTE,
+  LOGHOUSE_TOUR_MAILBOX_LATER,
+  LOGHOUSE_TOUR_MAILBOX_OWL_QUOTE,
+  LOGHOUSE_TOUR_MAILBOX_PEEK,
+  LOGHOUSE_TOUR_WRAP_UP_NEXT,
+  LOGHOUSE_TOUR_WRAP_UP_OWL_QUOTE,
+} from "@/lib/onboarding/firstVisitWizard/loghouseTourCopy";
+
+type Props = {
+  step: LoghouseTourStepId;
+  /** inviteWrite で机ハイライト待ちのときカードを控えめに */
+  awaitingDeskTap?: boolean;
+  onNext: () => void;
+  onPeekMailbox: () => void;
+  onGoToDesk: () => void;
+};
+
+function OwlCard({
+  quote,
+  children,
+}: {
+  quote: string;
+  children: ReactNode;
+}) {
+  return (
+    <section
+      aria-label={LOGHOUSE_TOUR_A11Y_LABEL}
+      className={`${companionWritingFloatingGuideClass} pointer-events-auto max-w-sm`}
+    >
+      <div className="flex items-start gap-2.5">
+        <CharacterFaceIcon name="character-owl-face" />
+        <p className={`min-w-0 flex-1 whitespace-pre-line ${companionWritingGuideBodyClass} mt-0`}>
+          {quote}
+        </p>
+      </div>
+      <div className="mt-4 space-y-2">{children}</div>
+    </section>
+  );
+}
+
+/** ログハウス室内：はじめて案内カード（生成り・フクロウ先生） */
+export function LogHouseRoomFirstVisitTour({
+  step,
+  awaitingDeskTap = false,
+  onNext,
+  onPeekMailbox,
+  onGoToDesk,
+}: Props) {
+  if (awaitingDeskTap) {
+    return (
+      <div className="pointer-events-none absolute inset-x-0 bottom-8 z-[58] flex justify-center px-4">
+        <p className="pointer-events-none rounded-full border border-amber-200/80 bg-[#fffdf9]/92 px-3 py-1.5 text-xs font-medium text-amber-950 shadow-sm">
+          {LOGHOUSE_TOUR_DESK_TAP_HINT}
+        </p>
+      </div>
+    );
+  }
+
+  let body: ReactNode = null;
+
+  if (step === "desk") {
+    body = (
+      <OwlCard quote={LOGHOUSE_TOUR_DESK_OWL_QUOTE}>
+        <button type="button" className={companionWritingGuidePrimaryButtonClass} onClick={onNext}>
+          {LOGHOUSE_TOUR_DESK_NEXT}
+        </button>
+      </OwlCard>
+    );
+  } else if (step === "mailbox") {
+    body = (
+      <OwlCard quote={LOGHOUSE_TOUR_MAILBOX_OWL_QUOTE}>
+        <button
+          type="button"
+          className={companionWritingGuidePrimaryButtonClass}
+          onClick={onNext}
+        >
+          {LOGHOUSE_TOUR_MAILBOX_LATER}
+        </button>
+        <button
+          type="button"
+          className={companionWritingGuideSecondaryButtonClass}
+          onClick={onPeekMailbox}
+        >
+          {LOGHOUSE_TOUR_MAILBOX_PEEK}
+        </button>
+      </OwlCard>
+    );
+  } else if (step === "bookshelf") {
+    body = (
+      <OwlCard quote={LOGHOUSE_TOUR_BOOKSHELF_OWL_QUOTE}>
+        <Link
+          href={LOGHOUSE_TOUR_BOOKSHELF_GUIDE_HREF}
+          className="block text-center text-sm font-medium text-emerald-900 underline-offset-2 hover:underline"
+        >
+          {LOGHOUSE_TOUR_BOOKSHELF_GUIDE_LINK_LABEL}
+        </Link>
+        <button type="button" className={companionWritingGuidePrimaryButtonClass} onClick={onNext}>
+          {LOGHOUSE_TOUR_BOOKSHELF_NEXT}
+        </button>
+      </OwlCard>
+    );
+  } else if (step === "hint") {
+    body = (
+      <OwlCard quote={LOGHOUSE_TOUR_HINT_OWL_QUOTE}>
+        <button type="button" className={companionWritingGuidePrimaryButtonClass} onClick={onNext}>
+          {LOGHOUSE_TOUR_HINT_NEXT}
+        </button>
+      </OwlCard>
+    );
+  } else if (step === "wrapUp") {
+    body = (
+      <OwlCard quote={LOGHOUSE_TOUR_WRAP_UP_OWL_QUOTE}>
+        <button type="button" className={companionWritingGuidePrimaryButtonClass} onClick={onNext}>
+          {LOGHOUSE_TOUR_WRAP_UP_NEXT}
+        </button>
+      </OwlCard>
+    );
+  } else {
+    body = (
+      <OwlCard quote={LOGHOUSE_TOUR_INVITE_OWL_QUOTE}>
+        <button
+          type="button"
+          className={companionWritingGuidePrimaryButtonClass}
+          onClick={onGoToDesk}
+        >
+          {LOGHOUSE_TOUR_INVITE_CTA}
+        </button>
+      </OwlCard>
+    );
+  }
+
+  return (
+    <div className="pointer-events-none absolute inset-x-0 bottom-6 z-[58] flex justify-center px-4 pb-[env(safe-area-inset-bottom)]">
+      {body}
+    </div>
+  );
+}

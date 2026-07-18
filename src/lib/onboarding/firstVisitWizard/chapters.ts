@@ -46,5 +46,5 @@ export const FIRST_VISIT_CHAPTER_2_NUMEROLOGY_REVIEW_HREF =
 
 export const FIRST_VISIT_CHAPTER_3_SIGN_HREF = FIRST_VISIT_ROUTES.chapter3Sign;
 
-/** 第3章看板の「ログハウスで日記を書く」→ ログハウス②へ */
+/** 第3章看板の「ログハウスへ」→ ログハウス②へ */
 export const FIRST_VISIT_CHAPTER_3_ENTRY_HREF = LOG_HOUSE_MAIN_ACTIONS_HREF;
