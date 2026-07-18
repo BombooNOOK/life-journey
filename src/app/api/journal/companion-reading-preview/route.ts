@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 import { getViewerEmailFromCookie } from "@/lib/auth/viewer";
 import { extractReadingFirstSentence } from "@/lib/journal/companionWriting/readingFirstSentence";
 import { buildJournalGeneratedComment } from "@/lib/journal/kanteiCommentEligibility";
-import { normalizeCompanionType } from "@/lib/journal/meta";
+import { isActivityId, normalizeCompanionType } from "@/lib/journal/meta";
 
 function parseEntryDateYmd(value: string): Date | null {
   const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value.trim());
@@ -25,6 +25,8 @@ export async function GET(req: Request) {
   const url = new URL(req.url);
   const profileId = url.searchParams.get("profileId")?.trim() ?? "";
   const mood = url.searchParams.get("mood")?.trim() ?? "";
+  const rawActivity = url.searchParams.get("activity")?.trim() ?? "record_anyway";
+  const activity = isActivityId(rawActivity) ? rawActivity : "record_anyway";
   const companionType = normalizeCompanionType(url.searchParams.get("companionType"));
   const entryDateYmd = url.searchParams.get("entryDate")?.trim() ?? "";
   const referenceDate = parseEntryDateYmd(entryDateYmd);
@@ -36,7 +38,7 @@ export async function GET(req: Request) {
   const generatedComment = await buildJournalGeneratedComment({
     viewerEmail,
     profileId,
-    activity: "record_anyway",
+    activity,
     mood,
     companionType,
     referenceDate,

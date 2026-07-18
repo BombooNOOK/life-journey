@@ -31,6 +31,8 @@ import {
   type OwlQuestionSet,
 } from "@/lib/journal/companionWriting/owlQuestionSets";
 import {
+  ensureOmakaseCompanionResolved,
+  isOmakaseChoice,
   type CompanionWritingChoiceId,
 } from "@/lib/journal/companionWriting/omakase";
 import { writeCompanionWritingCalendarComplete } from "@/lib/journal/companionWriting/session";
@@ -38,13 +40,12 @@ import {
   COMPANION_WRITING_ACTIVITY_HEADING,
   COMPANION_WRITING_APPRAISER_PICK_HEADING,
   COMPANION_WRITING_APPRAISER_PICK_HINT,
-  COMPANION_WRITING_AVAILABLE_COMPANION,
   COMPANION_WRITING_CONFIRM_HEADING,
   COMPANION_WRITING_FORMAL_TITLE,
   COMPANION_WRITING_MOOD_PICK_HEADING,
-  COMPANION_WRITING_QUESTIONS_HEADING,
+  companionWritingQuestionsHeading,
   COMPANION_WRITING_QUESTIONS_HINT,
-  COMPANION_WRITING_SAVE_LOADING_LABEL,
+  companionWritingSaveLoadingLabel,
   type CompanionWritingWizardStep,
 } from "@/lib/journal/companionWriting/types";
 import { COMPANION_WRITING_DEFAULT_CONTENT_FONT_MODE } from "@/lib/journal/contentFontMode";
@@ -59,6 +60,7 @@ import {
   activityOptions,
   moodOptions,
   type ActivityId,
+  type CompanionType,
   type MoodId,
 } from "@/lib/journal/meta";
 import {
@@ -98,7 +100,6 @@ function isValidDateInput(value: string): boolean {
 const stepHeadingByStep: Partial<Record<CompanionWritingWizardStep, string>> = {
   mood: COMPANION_WRITING_MOOD_PICK_HEADING,
   activity: COMPANION_WRITING_ACTIVITY_HEADING,
-  write: COMPANION_WRITING_QUESTIONS_HEADING,
   confirm: COMPANION_WRITING_CONFIRM_HEADING,
 };
 
@@ -141,9 +142,8 @@ export function CompanionWritingPage() {
     entitlement?.canUseContinuedFeatures || entitlement?.canCreateFirstJournal;
 
   const [step, setStep] = useState<CompanionWritingWizardStep>("companion");
-  const [companionChoice, setCompanionChoice] = useState<CompanionWritingChoiceId>(
-    COMPANION_WRITING_AVAILABLE_COMPANION,
-  );
+  const [companionChoice, setCompanionChoice] = useState<CompanionWritingChoiceId>("owl");
+  const [omakaseResolved, setOmakaseResolved] = useState<CompanionType | null>(null);
   const [mood, setMood] = useState<MoodId>("calm");
   const [activity, setActivity] = useState<ActivityId>("record_anyway");
   const [questionSet, setQuestionSet] = useState<OwlQuestionSet | null>(null);
@@ -158,7 +158,22 @@ export function CompanionWritingPage() {
   const [saveDialog, setSaveDialog] = useState<"none" | "confirm" | "shortage">("none");
   const answer1InputRef = useRef<HTMLInputElement>(null);
 
-  const companionType = COMPANION_WRITING_AVAILABLE_COMPANION;
+  const companionType = useMemo((): CompanionType => {
+    if (isOmakaseChoice(companionChoice)) {
+      return omakaseResolved ?? "owl";
+    }
+    return companionChoice;
+  }, [companionChoice, omakaseResolved]);
+
+  const saveLoadingLabel = useMemo(
+    () => companionWritingSaveLoadingLabel(getAppraiserDisplayName(companionType)),
+    [companionType],
+  );
+
+  const writeStepHeading = useMemo(
+    () => companionWritingQuestionsHeading(getAppraiserDisplayName(companionType)),
+    [companionType],
+  );
 
   const acknowledgmentLine = useMemo(
     () => buildCompanionAcknowledgmentLine(activity),
@@ -245,8 +260,10 @@ export function CompanionWritingPage() {
   }, []);
 
   const handleCompanionChoice = useCallback((next: CompanionWritingChoiceId) => {
-    if (next !== COMPANION_WRITING_AVAILABLE_COMPANION) return;
     setCompanionChoice(next);
+    if (!isOmakaseChoice(next)) {
+      setOmakaseResolved(null);
+    }
   }, []);
 
   const beginQuestionStep = useCallback(() => {
@@ -258,13 +275,24 @@ export function CompanionWritingPage() {
   }, [activity]);
 
   const advanceFromCompanionStep = useCallback(() => {
-    if (companionChoice !== COMPANION_WRITING_AVAILABLE_COMPANION) {
-      setError("現在はフクロウ先生のみ選べます。");
-      return;
+    if (isOmakaseChoice(companionChoice)) {
+      const resolved = ensureOmakaseCompanionResolved(companionChoice, omakaseResolved);
+      setOmakaseResolved(resolved);
+    } else {
+      setOmakaseResolved(null);
     }
     setError(null);
     setStep("mood");
-  }, [companionChoice]);
+  }, [companionChoice, omakaseResolved]);
+
+  const resolveCompanionTypeForSave = useCallback((): CompanionType => {
+    if (!isOmakaseChoice(companionChoice)) return companionChoice;
+    const resolved = ensureOmakaseCompanionResolved(companionChoice, omakaseResolved);
+    if (resolved !== omakaseResolved) {
+      setOmakaseResolved(resolved);
+    }
+    return resolved;
+  }, [companionChoice, omakaseResolved]);
 
   const advanceToConfirmStep = useCallback(() => {
     if (!answer1.trim() || !answer2.trim()) {
@@ -293,12 +321,15 @@ export function CompanionWritingPage() {
       return;
     }
 
+    const resolvedCompanionType = resolveCompanionTypeForSave();
+    const resolvedCompanionName = getAppraiserDisplayName(resolvedCompanionType);
+
     const content = mergeTagsIntoContent(
       buildCompanionWritingEntryContent({
         mood,
         activity,
-        companionName: getAppraiserDisplayName(companionType),
-        companionShortLine: pickCompanionShortLine(companionType, mood, activity),
+        companionName: resolvedCompanionName,
+        companionShortLine: pickCompanionShortLine(resolvedCompanionType, mood, activity),
         generatedBody: composeOwlGeneratedBody(questionSet, { answer1, answer2 }),
       }),
       tagInput,
@@ -319,9 +350,8 @@ export function CompanionWritingPage() {
         body: JSON.stringify({
           content,
           mood,
-          // 伴走の18択は保存本文に残す。通常の読み解きロジックには渡さない。
-          activity: "record_anyway",
-          companionType,
+          activity,
+          companionType: resolvedCompanionType,
           designTheme: "simple_plain",
           contentFontMode: COMPANION_WRITING_DEFAULT_CONTENT_FONT_MODE,
           entryDate,
@@ -368,7 +398,7 @@ export function CompanionWritingPage() {
         version: 1,
         entryId: data.entry.id,
         entryDateYmd: entryDate,
-        companionType,
+        companionType: resolvedCompanionType,
         profileId: effectiveProfileId,
         designTheme: "simple_plain",
       });
@@ -388,11 +418,11 @@ export function CompanionWritingPage() {
     answer1,
     answer2,
     canWriteJournal,
-    companionType,
     effectiveProfileId,
     entryDate,
     mood,
     questionSet,
+    resolveCompanionTypeForSave,
     tagInput,
   ]);
 
@@ -409,12 +439,13 @@ export function CompanionWritingPage() {
       setError("記録日を正しく入力してください。");
       return;
     }
+    const resolvedCompanionType = resolveCompanionTypeForSave();
     const content = mergeTagsIntoContent(
       buildCompanionWritingEntryContent({
         mood,
         activity,
-        companionName: getAppraiserDisplayName(companionType),
-        companionShortLine: pickCompanionShortLine(companionType, mood, activity),
+        companionName: getAppraiserDisplayName(resolvedCompanionType),
+        companionShortLine: pickCompanionShortLine(resolvedCompanionType, mood, activity),
         generatedBody: composeOwlGeneratedBody(questionSet, { answer1, answer2 }),
       }),
       tagInput,
@@ -436,8 +467,8 @@ export function CompanionWritingPage() {
           profileId: effectiveProfileId,
           content,
           mood,
-          activity: "record_anyway",
-          companionType,
+          activity,
+          companionType: resolvedCompanionType,
           designTheme: "simple_plain",
           contentFontMode: COMPANION_WRITING_DEFAULT_CONTENT_FONT_MODE,
           writingMode: "with_appraiser",
@@ -458,11 +489,11 @@ export function CompanionWritingPage() {
     activity,
     answer1,
     answer2,
-    companionType,
     effectiveProfileId,
     entryDate,
     mood,
     questionSet,
+    resolveCompanionTypeForSave,
     router,
     safeReturnTo,
     tagInput,
@@ -519,7 +550,7 @@ export function CompanionWritingPage() {
           role="status"
         >
           <OwlLoadingInline
-            label={COMPANION_WRITING_SAVE_LOADING_LABEL}
+            label={saveLoadingLabel}
             size="md"
             className="rounded-xl border border-[#e4d5c0]/95 bg-[#fdf8f0] px-5 py-4 text-sm text-[#5c4a35] shadow-[0_4px_14px_rgba(90,70,45,0.05)]"
           />
@@ -561,7 +592,7 @@ export function CompanionWritingPage() {
               </span>
             </p>
             <h1 className="text-xl font-bold leading-snug text-stone-900 sm:text-2xl">
-              {stepHeadingByStep[step]}
+              {step === "write" ? writeStepHeading : stepHeadingByStep[step]}
             </h1>
           </>
         ) : null}
@@ -798,7 +829,7 @@ export function CompanionWritingPage() {
                   className="min-h-[44px] flex-[2] rounded-lg bg-[#b8893d] px-4 py-2.5 text-sm font-medium text-white hover:bg-[#a67a32] disabled:opacity-60"
                 >
                   {saving ? (
-                    <OwlLoadingInline label={COMPANION_WRITING_SAVE_LOADING_LABEL} size="sm" />
+                    <OwlLoadingInline label={saveLoadingLabel} size="sm" />
                   ) : (
                     BTN_DRAFT_SAVE
                   )}
@@ -827,7 +858,7 @@ export function CompanionWritingPage() {
                   className="min-h-[44px] flex-[2] rounded-lg bg-[#b8893d] px-4 py-2.5 text-sm font-medium text-white hover:bg-[#a67a32] disabled:opacity-60"
                 >
                   {saving ? (
-                    <OwlLoadingInline label={COMPANION_WRITING_SAVE_LOADING_LABEL} size="sm" />
+                    <OwlLoadingInline label={saveLoadingLabel} size="sm" />
                   ) : (
                     BTN_FOOTPRINT_SAVE
                   )}

@@ -20,7 +20,17 @@ export function resolveCompanionWritingChoice(
   omakaseResolved: CompanionType | null,
 ): CompanionType {
   if (isOmakaseChoice(choice)) {
+    // おまかせは保存前（案内役ステップ離脱時）に確定済みであること
     return omakaseResolved ?? pickOmakaseCompanion();
   }
   return choice;
+}
+
+/** おまかせ選択時に、まだ未確定なら1人を確定して返す */
+export function ensureOmakaseCompanionResolved(
+  choice: CompanionWritingChoiceId,
+  omakaseResolved: CompanionType | null,
+): CompanionType {
+  if (!isOmakaseChoice(choice)) return choice;
+  return omakaseResolved ?? pickOmakaseCompanion();
 }

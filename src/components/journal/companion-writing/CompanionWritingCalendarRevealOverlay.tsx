@@ -2,17 +2,20 @@
 
 import { DiaryMonthCalendar, type DiaryMonthCalendarEntry } from "@/components/journal/DiaryMonthCalendar";
 import { OwlLoadingInline } from "@/components/ui/OwlLoadingInline";
+import { getAppraiserDisplayName } from "@/lib/journal/companionWriting/messages";
 import {
   COMPANION_WRITING_CALENDAR_GUIDE_TITLE,
   COMPANION_WRITING_CALENDAR_REVEAL_STATUS,
-  COMPANION_WRITING_SAVE_LOADING_LABEL,
+  companionWritingSaveLoadingLabel,
 } from "@/lib/journal/companionWriting/types";
+import type { CompanionType } from "@/lib/journal/meta";
 
 type Props = {
   cursorMonth: Date;
   entries: DiaryMonthCalendarEntry[];
   selectedDay: number | null;
   isFetching?: boolean;
+  companionType: CompanionType;
 };
 
 export function CompanionWritingCalendarRevealOverlay({
@@ -20,7 +23,12 @@ export function CompanionWritingCalendarRevealOverlay({
   entries,
   selectedDay,
   isFetching = false,
+  companionType,
 }: Props) {
+  const saveLoadingLabel = companionWritingSaveLoadingLabel(
+    getAppraiserDisplayName(companionType),
+  );
+
   return (
     <div
       className="fixed inset-0 z-[60] flex flex-col items-center justify-center bg-[#faf8f5] px-2 py-6 sm:px-4"
@@ -34,7 +42,7 @@ export function CompanionWritingCalendarRevealOverlay({
         {isFetching ? (
           <div className="flex flex-col items-center py-8" role="status">
             <OwlLoadingInline
-              label={COMPANION_WRITING_SAVE_LOADING_LABEL}
+              label={saveLoadingLabel}
               size="md"
               className="text-sm text-stone-700"
             />

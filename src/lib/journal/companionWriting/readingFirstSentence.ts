@@ -1,6 +1,6 @@
 import { buildDiaryReadingFromJournalInput } from "@/lib/diary-reading/fromJournal";
 import { extractSocialPostCommentText } from "@/lib/journal/social-post-image/textExtract";
-import type { CompanionType, MoodId } from "@/lib/journal/meta";
+import type { ActivityId, CompanionType, MoodId } from "@/lib/journal/meta";
 
 /** 読み解き全文から、保存本文用の最初の1文を取り出す */
 export function extractReadingFirstSentence(readingText: string): string {
@@ -9,6 +9,7 @@ export function extractReadingFirstSentence(readingText: string): string {
 
 type BuildReadingPreviewParams = {
   mood: MoodId;
+  activity: ActivityId;
   companionType: CompanionType;
   entryDateYmd: string;
   birthMonth: number;
@@ -28,7 +29,7 @@ export function buildCompanionWritingReadingFirstSentence(
 
   const referenceDate = new Date(Date.UTC(year, month - 1, day, 12, 0, 0));
   const { text } = buildDiaryReadingFromJournalInput({
-    activity: "record_anyway",
+    activity: params.activity,
     mood: params.mood,
     companionType: params.companionType,
     referenceDate,
@@ -42,6 +43,7 @@ export function buildCompanionWritingReadingFirstSentence(
 type FetchReadingPreviewParams = {
   profileId: string;
   mood: MoodId;
+  activity: ActivityId;
   companionType: CompanionType;
   entryDateYmd: string;
 };
@@ -53,6 +55,7 @@ export async function fetchCompanionWritingReadingFirstSentence(
   const qs = new URLSearchParams({
     profileId: params.profileId,
     mood: params.mood,
+    activity: params.activity,
     companionType: params.companionType,
     entryDate: params.entryDateYmd,
   });

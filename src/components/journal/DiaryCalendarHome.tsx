@@ -39,11 +39,12 @@ import {
 } from "@/lib/journal/companionWriting/session";
 import type { CompanionWritingCalendarCompletePayload } from "@/lib/journal/companionWriting/session";
 import { preloadCompanionSaveForestAssets } from "@/lib/journal/companionWriting/companionSaveForestAssets";
+import { getAppraiserDisplayName } from "@/lib/journal/companionWriting/messages";
 import {
   COMPANION_WRITING_CALENDAR_GUIDE_QUERY,
   COMPANION_WRITING_CALENDAR_REVEAL_MS,
   COMPANION_WRITING_FOREST_DELIVERY_MS,
-  COMPANION_WRITING_SAVE_LOADING_LABEL,
+  companionWritingSaveLoadingLabel,
   parseCompanionWritingCalendarGuidePhase,
   type CompanionWritingCalendarGuidePhase,
 } from "@/lib/journal/companionWriting/types";
@@ -215,7 +216,9 @@ export function DiaryCalendarHome({
   const monthKey = useMemo(() => toMonthKey(viewMonth), [viewMonth]);
   const calendarLoadingLabel = !hasLoadedOnce
     ? "カレンダーを読み込み中です…"
-    : COMPANION_WRITING_SAVE_LOADING_LABEL;
+    : companionWritingSaveLoadingLabel(
+        getAppraiserDisplayName(companionComplete?.companionType ?? "owl"),
+      );
   const CALENDAR_FETCH_ERROR =
     "日記のあしあとを読み込めませんでした。時間をおいて再度お試しください。";
   const returnToBase = useMemo(() => {
@@ -462,11 +465,12 @@ export function DiaryCalendarHome({
           entries={entries}
           selectedDay={selectedDay}
           isFetching={isFetching || awaitingCompanionBootstrap}
+          companionType={companionComplete?.companionType ?? "owl"}
         />
       ) : null}
 
       {companionComplete && companionGuidePhase === "forest" ? (
-        <CompanionWritingForestDeliveryOverlay />
+        <CompanionWritingForestDeliveryOverlay companionType={companionComplete.companionType} />
       ) : null}
 
       {companionComplete && companionGuidePhase === "actions" ? (

@@ -1,21 +1,23 @@
 "use client";
 
 import Image from "next/image";
-import { useLayoutEffect, useState } from "react";
+import { useLayoutEffect, useMemo, useState } from "react";
 
 import { CompanionSaveForestDeliveryIndicator } from "@/components/journal/companion-writing/CompanionSaveForestDeliveryIndicator";
 import { OwlLoadingInline } from "@/components/ui/OwlLoadingInline";
 import { guardianColorStyleForName } from "@/lib/journal/guardianColorDisplay";
+import { getAppraiserDisplayName } from "@/lib/journal/companionWriting/messages";
 import {
   COMPANION_SAVE_FOREST_FRAMES,
   COMPANION_SAVE_FOREST_FRAME_STEP_MS,
   preloadCompanionSaveForestAssets,
 } from "@/lib/journal/companionWriting/companionSaveForestAssets";
 import {
-  COMPANION_WRITING_FOREST_DELIVERY_ARRIVED_TEXT,
   COMPANION_WRITING_FOREST_DELIVERY_CARD_TEXT,
-  COMPANION_WRITING_SAVE_LOADING_LABEL,
+  companionWritingForestDeliveryArrivedText,
+  companionWritingSaveLoadingLabel,
 } from "@/lib/journal/companionWriting/types";
+import type { CompanionType } from "@/lib/journal/meta";
 import {
   SAVE_TRANSITION_FOREST_BG_DESKTOP_SRC,
   SAVE_TRANSITION_FOREST_BG_MOBILE_SRC,
@@ -24,9 +26,25 @@ import {
 const CARD_STYLE = guardianColorStyleForName(null);
 const ARRIVED_FRAME_INDEX = COMPANION_SAVE_FOREST_FRAMES.length - 1;
 
-export function CompanionWritingForestDeliveryOverlay() {
+type Props = {
+  companionType: CompanionType;
+};
+
+export function CompanionWritingForestDeliveryOverlay({ companionType }: Props) {
   const [assetsReady, setAssetsReady] = useState(false);
   const [visibleCount, setVisibleCount] = useState(0);
+  const companionName = useMemo(
+    () => getAppraiserDisplayName(companionType),
+    [companionType],
+  );
+  const saveLoadingLabel = useMemo(
+    () => companionWritingSaveLoadingLabel(companionName),
+    [companionName],
+  );
+  const arrivedText = useMemo(
+    () => companionWritingForestDeliveryArrivedText(companionName),
+    [companionName],
+  );
 
   useLayoutEffect(() => {
     let cancelled = false;
@@ -69,9 +87,7 @@ export function CompanionWritingForestDeliveryOverlay() {
   }, [assetsReady]);
 
   const arrived = visibleCount > ARRIVED_FRAME_INDEX;
-  const deliveryText = arrived
-    ? COMPANION_WRITING_FOREST_DELIVERY_ARRIVED_TEXT
-    : COMPANION_WRITING_FOREST_DELIVERY_CARD_TEXT;
+  const deliveryText = arrived ? arrivedText : COMPANION_WRITING_FOREST_DELIVERY_CARD_TEXT;
 
   return (
     <div
@@ -123,7 +139,7 @@ export function CompanionWritingForestDeliveryOverlay() {
               </>
             ) : (
               <OwlLoadingInline
-                label={COMPANION_WRITING_SAVE_LOADING_LABEL}
+                label={saveLoadingLabel}
                 size="md"
                 className="text-sm text-stone-700"
               />

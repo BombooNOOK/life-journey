@@ -65,7 +65,7 @@ export function DiaryMonthCalendar({
   draftDays,
   selectedDay,
   isFetching = false,
-  loadingLabel = "フクロウ先生が日記のあしあとを確認しています…",
+  loadingLabel = "案内役が日記のあしあとを確認しています…",
   onSelectDay,
   onPrevMonth,
   onNextMonth,

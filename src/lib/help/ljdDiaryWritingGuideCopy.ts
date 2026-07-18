@@ -74,7 +74,7 @@ export const LJD_DIARY_WRITING_GUIDE_COMPANION_FLOW: readonly LjdDiaryWritingGui
   {
     id: "questions",
     title: "質問に答えながら書く",
-    body: "フクロウ先生の質問に、短い言葉で答えていきます。",
+    body: "今日の案内役からの質問に、短い言葉で答えていきます。",
   },
   {
     id: "confirm",

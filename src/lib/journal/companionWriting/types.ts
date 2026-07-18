@@ -33,19 +33,16 @@ export const COMPANION_WRITING_WRITE_HEADING = "あなたの言葉で残して�
 
 export const COMPANION_WRITING_WRITE_HINT = "短くても大丈夫です";
 
-/** 伴走ウィザード：質問穴埋め */
-export const COMPANION_WRITING_QUESTIONS_HEADING = "フクロウ先生の質問に答えてみてください";
+/** 伴走ウィザード：質問穴埋め（鑑定士名を差し込む） */
+export function companionWritingQuestionsHeading(companionName: string): string {
+  const name = companionName.trim() || "今日の案内役";
+  return `${name}からの質問に答えてみてください`;
+}
 
 export const COMPANION_WRITING_QUESTIONS_HINT = "単語や短い文で大丈夫です。";
 
 /** 伴走ウィザード：保存前確認 */
 export const COMPANION_WRITING_CONFIRM_HEADING = "こんな感じで残しますか？";
-
-/** 案内役選択：未実装キャラ */
-export const COMPANION_WRITING_APPRAISER_COMING_SOON_LABEL = "準備中";
-
-/** 現時点で選択可能な案内役 */
-export const COMPANION_WRITING_AVAILABLE_COMPANION: CompanionType = "owl";
 
 export const COMPANION_WRITING_OMAKASE_LABEL = "おまかせ";
 
@@ -75,17 +72,21 @@ export const COMPANION_WRITING_COMPLETE_GROW_LABEL = "今日のページをも�
 
 export const COMPANION_WRITING_COMPLETE_FINISH_LABEL = "確認しておしまい";
 
-/** 伴走保存〜カレンダー表示までのフクロウ文言 */
-export const COMPANION_WRITING_SAVE_LOADING_LABEL =
-  "フクロウ先生が日記のあしあとを確認しています…";
+/** 伴走保存〜カレンダー表示までの確認文言（鑑定士名を差し込む） */
+export function companionWritingSaveLoadingLabel(companionName: string): string {
+  const name = companionName.trim() || "案内役";
+  return `${name}が日記のあしあとを確認しています…`;
+}
 
 /** 届け演出：飛行中（鑑定のへやへ） */
 export const COMPANION_WRITING_FOREST_DELIVERY_CARD_TEXT =
   "今日の1ページが、鑑定のへやに向かっています…";
 
-/** 届け演出：到着（フクロウ先生の受け取り） */
-export const COMPANION_WRITING_FOREST_DELIVERY_ARRIVED_TEXT =
-  "今日の1ページ、受け取りましたよ\nフクロウ先生より";
+/** 届け演出：到着（選んだ鑑定士の受け取り） */
+export function companionWritingForestDeliveryArrivedText(companionName: string): string {
+  const name = companionName.trim() || "案内役";
+  return `今日の1ページ、受け取りましたよ\n${name}より`;
+}
 
 /** カレンダー表示中の仮ギミック文言（本番用は後で差し替え可） */
 export const COMPANION_WRITING_CALENDAR_REVEAL_STATUS =
