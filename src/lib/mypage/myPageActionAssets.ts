@@ -30,6 +30,12 @@ export const myPageActionIllustrations = {
     height: 570,
     alt: "",
   },
+  mailbox: {
+    src: "/images/ljd/mailbox/goat_postman_face_icon.png?v=2",
+    width: 480,
+    height: 480,
+    alt: "",
+  },
   fortune: {
     src: "/images/mypage/mypage_action_fortune.png?v=1",
     width: 688,

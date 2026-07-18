@@ -135,6 +135,7 @@ export function LogHouseHub({
           kanteiOrderId={activeKanteiOrderId}
           firstVisitGuideState={firstVisitGuideState}
           companionWritingHref={companionWritingHref}
+          mailboxUnreadCount={mailboxUnreadCount}
         />
       ) : null}
 

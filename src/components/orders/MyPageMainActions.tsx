@@ -10,6 +10,10 @@ import { myPageActionIllustrations } from "@/lib/mypage/myPageActionAssets";
 import { COMPANION_WRITING_FORMAL_TITLE } from "@/lib/journal/companionWriting/types";
 import type { SerializedUserEntitlement } from "@/lib/entitlement/resolveUserEntitlement";
 import type { FirstVisitGuideState } from "@/lib/onboarding/firstVisitGuideState";
+import {
+  LOG_HOUSE_MAILBOX_PAGE_PATH,
+  LOG_HOUSE_MAILBOX_UNREAD_LABEL,
+} from "@/lib/loghouse/logHouseMailboxCopy";
 
 type Props = {
   profileId: string;
@@ -18,6 +22,7 @@ type Props = {
   kanteiOrderId: string | null;
   firstVisitGuideState: FirstVisitGuideState;
   companionWritingHref: string;
+  mailboxUnreadCount?: number;
 };
 
 const navButtonClass =
@@ -31,6 +36,7 @@ export function MyPageMainActions({
   kanteiOrderId,
   firstVisitGuideState,
   companionWritingHref,
+  mailboxUnreadCount = 0,
 }: Props) {
   const canWriteJournal =
     entitlement.canUseContinuedFeatures || entitlement.canCreateFirstJournal;
@@ -39,6 +45,7 @@ export function MyPageMainActions({
   const showCompanionWriting =
     canWriteJournal && kanteiOrderId != null && firstVisitGuideState !== "needs_kantei";
   const companionEmphasis = firstVisitGuideState === "ready_first_journal";
+  const hasMailboxUnread = mailboxUnreadCount > 0;
 
   return (
     <section id="main-actions" className="space-y-3">
@@ -48,7 +55,7 @@ export function MyPageMainActions({
         helpAriaLabel="ログハウスの操作説明"
         help={
           <p>
-            選んだプロフィールの日記を書いたり、記録や本棚・鑑定結果を開けます。森の住民票はアカウント共通です。
+            選んだプロフィールの日記を書いたり、記録や本棚・ポスト・鑑定結果を開けます。森の住民票はアカウント共通です。
           </p>
         }
       />
@@ -133,6 +140,23 @@ export function MyPageMainActions({
             title="本棚を見る"
             description="育ってきた本や記録を見ます"
             tone="shelf"
+          />
+        </ProfileSelectNavButton>
+
+        <ProfileSelectNavButton
+          profileId={profileId}
+          href={LOG_HOUSE_MAILBOX_PAGE_PATH}
+          directNav={isActive}
+          loadingLabel="ポストを開いています…"
+          className={navButtonClass}
+        >
+          <MyPageActionCard
+            illustration={myPageActionIllustrations.mailbox}
+            title="ポストを見る"
+            description="ヤギさん郵便や、森からのお手紙を受け取ります"
+            tone="wood"
+            emphasis={hasMailboxUnread}
+            supplementLabel={hasMailboxUnread ? LOG_HOUSE_MAILBOX_UNREAD_LABEL : undefined}
           />
         </ProfileSelectNavButton>
 
