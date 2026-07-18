@@ -16,7 +16,14 @@ import { LOG_HOUSE_DESK_WRITE_PAGE_PATH } from "@/lib/loghouse/logHouseDeskWriti
 import { clearLoghouseTourStep } from "@/lib/onboarding/firstVisitWizard/loghouseTour";
 
 const TOUR_PREVIEW_PATH = "/preview/loghouse-tour";
-const TOUR_MAILBOX_HREF = `/preview/mailbox?returnTo=${encodeURIComponent(TOUR_PREVIEW_PATH)}`;
+
+function resolveTourMailboxHref(): string {
+  // 本番プレビューでは本物のポストへ（/preview/mailbox は dev 専用）
+  if (process.env.NODE_ENV !== "development") {
+    return "/orders/mailbox";
+  }
+  return `/preview/mailbox?returnTo=${encodeURIComponent(TOUR_PREVIEW_PATH)}`;
+}
 
 /** はじめてのログハウス案内だけを繰り返し確認するプレビュー */
 export function LogHouseTourPreviewClient() {

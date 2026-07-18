@@ -79,7 +79,7 @@ const links: { href: string; label: string; note?: string; highlight?: boolean }
   {
     href: "/preview/loghouse-tour",
     label: "ログハウス・はじめて案内ツアー",
-    note: "ログイン不要。机→ポスト→本棚→？→あしあと誘導を何度でも確認。npm run dev 中のみ",
+    note: "ローカルはログイン不要。本番は管理者ログイン後に同じURLで確認可",
     highlight: true,
   },
   {
