@@ -69,7 +69,6 @@ import {
   type LoghouseTourStepId,
 } from "@/lib/onboarding/firstVisitWizard/loghouseTour";
 import {
-  LOGHOUSE_TOUR_MAILBOX_BACK_LABEL,
   LOGHOUSE_TOUR_PLEASE_CONTINUE,
   LOGHOUSE_TOUR_PREVIEW_COMPLETE_MESSAGE,
   LOGHOUSE_TOUR_PREVIEW_RESTART,
