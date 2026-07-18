@@ -6,12 +6,17 @@ import {
 import { deleteJournalEntryPhotoBlobWithResult } from "@/lib/journal/journalEntryPhotoBlob";
 import { deleteOrderPdfBlobWithResult } from "@/lib/pdf/orderPdfBlobCache";
 import { prisma } from "@/lib/db";
+import { withPrismaConnectionRetry } from "@/lib/db/prismaRetry";
 import {
   hasActiveCancellableSubscription,
   resolveSubscriptionCancelState,
   type AccountSubscriptionSettings,
 } from "@/lib/stripe/subscriptionCancelState";
 import { ACCOUNT_DELETE_CONFIRMATION_WORD } from "@/lib/account/accountDeleteTypes";
+
+/** Neon 上で複数テーブル削除が長引くことがあるため余裕を持たせる */
+const ACCOUNT_DELETE_TX_TIMEOUT_MS = 45_000;
+const ACCOUNT_DELETE_TX_MAX_WAIT_MS = 10_000;
 
 export class AccountDeleteError extends Error {
   constructor(
@@ -184,35 +189,24 @@ export async function deleteUserAccount(params: {
   const scope = { email };
 
   /**
-   * 重要: Firebase Auth を先に消す。
-   * 以前は DB→Auth の順で、Auth 失敗時に「データだけ消えてログインだけ残る」状態になり、
-   * 初回は失敗・2回目で成功、という見え方になっていた。
+   * 重要: アプリDBを先に消してから Firebase Auth を消す。
+   * Auth を先に消すと、DB失敗時にログインだけ消えてセッションが切れ、
+   * 再試行できずループしたように見える（本番で発生）。
+   * Auth だけ残っても、もう一度削除すれば掃除できる。
    */
-  let firebaseAuthDeleted = false;
-  if (isFirebaseAdminConfigured()) {
-    try {
-      await deleteFirebaseAuthWithRetry(email);
-      firebaseAuthDeleted = true;
-    } catch (error) {
-      console.error("[account-delete] firebase auth delete failed", { email, error });
-      throw new AccountDeleteError(
-        "ログイン情報を削除できませんでした。時間をおいて再度お試しください。",
-        "FIREBASE_AUTH_DELETE_FAILED",
-      );
-    }
-  } else {
-    console.warn("[account-delete] skipping firebase auth delete (FIREBASE_SERVICE_ACCOUNT_JSON unset)");
-  }
-
   const [entries, orders] = await Promise.all([
-    prisma.journalEntry.findMany({
-      where: scope,
-      select: { photoBlobPathname: true, photoBlobUrl: true },
-    }),
-    prisma.order.findMany({
-      where: scope,
-      select: { pdfPreviewBlobUrl: true, pdfPrintBlobUrl: true },
-    }),
+    withPrismaConnectionRetry(() =>
+      prisma.journalEntry.findMany({
+        where: scope,
+        select: { photoBlobPathname: true, photoBlobUrl: true },
+      }),
+    ),
+    withPrismaConnectionRetry(() =>
+      prisma.order.findMany({
+        where: scope,
+        select: { pdfPreviewBlobUrl: true, pdfPrintBlobUrl: true },
+      }),
+    ),
   ]);
 
   let deleted: {
@@ -233,53 +227,79 @@ export async function deleteUserAccount(params: {
   };
 
   try {
-    deleted = await prisma.$transaction(async (tx) => {
-      const deletedDiaryBindings = await tx.diaryBookBindingRequest.deleteMany({ where: scope });
-      const deletedKanteiBindings = await tx.kanteiBookBindingRequest.deleteMany({ where: scope });
-      const deletedOrders = await tx.order.deleteMany({ where: scope });
-      const deletedDiaryBooks = await tx.diaryBook.deleteMany({ where: scope });
-      const deletedBookshelfBooks = await tx.diaryBookshelfBook.deleteMany({ where: scope });
-      const deletedJournalEntries = await tx.journalEntry.deleteMany({ where: scope });
-      const deletedJournalDrafts = await tx.journalDraft.deleteMany({ where: scope });
-      const deletedGardenDisplayFlowers = await tx.gardenDisplayFlower.deleteMany({
-        where: scope,
-      });
-      const deletedMailboxNotices = await tx.logHouseMailboxNotice.deleteMany({ where: scope });
-      const deletedDonguriLedger = await tx.logHouseDonguriLedgerEntry.deleteMany({ where: scope });
-      const deletedSystemNoticeReads = await tx.systemNoticeReadState.deleteMany({ where: scope });
-      const deletedGardenPlants = await tx.gardenPlant.deleteMany({ where: scope });
-      const deletedProfiles = await tx.profile.deleteMany({ where: scope });
-      const deletedSupportInquiries = await tx.supportInquiry.deleteMany({ where: scope });
-      await tx.accountSettings.deleteMany({ where: scope });
+    deleted = await withPrismaConnectionRetry(() =>
+      prisma.$transaction(
+        async (tx) => {
+          const deletedDiaryBindings = await tx.diaryBookBindingRequest.deleteMany({ where: scope });
+          const deletedKanteiBindings = await tx.kanteiBookBindingRequest.deleteMany({
+            where: scope,
+          });
+          const deletedOrders = await tx.order.deleteMany({ where: scope });
+          const deletedDiaryBooks = await tx.diaryBook.deleteMany({ where: scope });
+          const deletedBookshelfBooks = await tx.diaryBookshelfBook.deleteMany({ where: scope });
+          const deletedJournalEntries = await tx.journalEntry.deleteMany({ where: scope });
+          const deletedJournalDrafts = await tx.journalDraft.deleteMany({ where: scope });
+          const deletedGardenDisplayFlowers = await tx.gardenDisplayFlower.deleteMany({
+            where: scope,
+          });
+          const deletedMailboxNotices = await tx.logHouseMailboxNotice.deleteMany({ where: scope });
+          const deletedDonguriLedger = await tx.logHouseDonguriLedgerEntry.deleteMany({
+            where: scope,
+          });
+          const deletedSystemNoticeReads = await tx.systemNoticeReadState.deleteMany({
+            where: scope,
+          });
+          const deletedGardenPlants = await tx.gardenPlant.deleteMany({ where: scope });
+          const deletedProfiles = await tx.profile.deleteMany({ where: scope });
+          const deletedSupportInquiries = await tx.supportInquiry.deleteMany({ where: scope });
+          await tx.accountSettings.deleteMany({ where: scope });
 
-      return {
-        deletedDiaryBindings: deletedDiaryBindings.count,
-        deletedKanteiBindings: deletedKanteiBindings.count,
-        deletedOrders: deletedOrders.count,
-        deletedDiaryBooks: deletedDiaryBooks.count,
-        deletedBookshelfBooks: deletedBookshelfBooks.count,
-        deletedJournalEntries: deletedJournalEntries.count,
-        deletedJournalDrafts: deletedJournalDrafts.count,
-        deletedGardenDisplayFlowers: deletedGardenDisplayFlowers.count,
-        deletedMailboxNotices: deletedMailboxNotices.count,
-        deletedDonguriLedger: deletedDonguriLedger.count,
-        deletedSystemNoticeReads: deletedSystemNoticeReads.count,
-        deletedGardenPlants: deletedGardenPlants.count,
-        deletedProfiles: deletedProfiles.count,
-        deletedSupportInquiries: deletedSupportInquiries.count,
-      };
-    });
+          return {
+            deletedDiaryBindings: deletedDiaryBindings.count,
+            deletedKanteiBindings: deletedKanteiBindings.count,
+            deletedOrders: deletedOrders.count,
+            deletedDiaryBooks: deletedDiaryBooks.count,
+            deletedBookshelfBooks: deletedBookshelfBooks.count,
+            deletedJournalEntries: deletedJournalEntries.count,
+            deletedJournalDrafts: deletedJournalDrafts.count,
+            deletedGardenDisplayFlowers: deletedGardenDisplayFlowers.count,
+            deletedMailboxNotices: deletedMailboxNotices.count,
+            deletedDonguriLedger: deletedDonguriLedger.count,
+            deletedSystemNoticeReads: deletedSystemNoticeReads.count,
+            deletedGardenPlants: deletedGardenPlants.count,
+            deletedProfiles: deletedProfiles.count,
+            deletedSupportInquiries: deletedSupportInquiries.count,
+          };
+        },
+        {
+          maxWait: ACCOUNT_DELETE_TX_MAX_WAIT_MS,
+          timeout: ACCOUNT_DELETE_TX_TIMEOUT_MS,
+        },
+      ),
+    );
   } catch (error) {
-    console.error("[account-delete] db cleanup failed after auth delete", {
-      email,
-      firebaseAuthDeleted,
-      error,
-    });
+    console.error("[account-delete] db cleanup failed", { email, error });
     throw new AccountDeleteError(
-      firebaseAuthDeleted
-        ? "ログイン情報は削除しましたが、データの整理に失敗しました。もう一度「削除」を実行してください。"
-        : "データの削除に失敗しました。時間をおいて再度お試しください。",
+      "データの削除に失敗しました。時間をおいて再度お試しください。",
       "DB_DELETE_FAILED",
+    );
+  }
+
+  let firebaseAuthDeleted = false;
+  if (isFirebaseAdminConfigured()) {
+    try {
+      await deleteFirebaseAuthWithRetry(email);
+      firebaseAuthDeleted = true;
+    } catch (error) {
+      // DB は消えているので、ここでの失敗は「完了扱い」。ログインが残っても再削除で掃除できる。
+      console.error("[account-delete] firebase auth delete failed after db cleanup", {
+        email,
+        error,
+      });
+    }
+  } else {
+    console.warn(
+      "[account-delete] skipping firebase auth delete (FIREBASE_SERVICE_ACCOUNT_JSON unset)",
     );
   }
 
