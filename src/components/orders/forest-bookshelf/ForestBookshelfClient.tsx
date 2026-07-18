@@ -24,6 +24,16 @@ import { KanteiMissingBanner } from "@/components/orders/KanteiMissingBanner";
 import { FirstVisitFlowBrowserBackGuard } from "@/components/orders/FirstVisitFlowBrowserBackGuard";
 import type { SerializedUserEntitlement } from "@/lib/entitlement/resolveUserEntitlement";
 import {
+  readLoghouseTourReturnHref,
+  readLoghouseTourStep,
+} from "@/lib/onboarding/firstVisitWizard/loghouseTour";
+import {
+  LOGHOUSE_TOUR_KANTEI_PREVIEW_PEEK,
+  LOGHOUSE_TOUR_RETURN_LABEL,
+} from "@/lib/onboarding/firstVisitWizard/loghouseTourCopy";
+import { companionWritingGuidePrimaryButtonClass } from "@/components/journal/companion-writing/companionWritingGuideStyles";
+import Link from "next/link";
+import {
   FOREST_BOOKSHELF_ASSETS,
   FOREST_BOOKSHELF_INTRINSIC,
   FOREST_BOOKSHELF_PAGE_BG,
@@ -98,6 +108,21 @@ export function ForestBookshelfClient({
   const router = useRouter();
   const [selectedSpot, setSelectedSpot] = useState<ForestBookshelfSpotId | null>(null);
   const [panel, setPanel] = useState<PanelMode>("none");
+  const [tourKanteiPeekOpen, setTourKanteiPeekOpen] = useState(false);
+
+  const openKanteiHref = useCallback(
+    (href: string) => {
+      const inTour = Boolean(readLoghouseTourStep());
+      const isRealOrderRead = href.startsWith("/orders/") && href.includes("/read");
+      if (inTour && !isRealOrderRead) {
+        setSelectedSpot(null);
+        setTourKanteiPeekOpen(true);
+        return;
+      }
+      router.push(href);
+    },
+    [router],
+  );
 
   const itemLayout = useMemo(
     () => ({ ...FOREST_BOOKSHELF_ITEM_LAYOUT, ...itemLayoutOverride }),
@@ -140,7 +165,7 @@ export function ForestBookshelfClient({
         title: featuredKantei.title,
         lines: [`作成日：${featuredKantei.createdLabel}`, featuredKantei.subtitle],
         actionLabel: "選ぶ",
-        onAction: () => router.push(featuredKantei.href),
+        onAction: () => openKanteiHref(featuredKantei.href),
       };
     }
 
@@ -199,7 +224,7 @@ export function ForestBookshelfClient({
     }
 
     return null;
-  }, [selectedSpot, featuredKantei, currentDiary, secondDiary, thirdDiary, router]);
+  }, [selectedSpot, featuredKantei, currentDiary, secondDiary, thirdDiary, router, openKanteiHref]);
 
   const kanteiListItems: ForestBookshelfListItem[] = kanteiBooks.map((b) => ({
     id: b.id,
@@ -478,6 +503,16 @@ export function ForestBookshelfClient({
           emptyMessage="まだ鑑定書がありません。"
           items={kanteiListItems}
           onClose={closeAll}
+          onItemSelect={(item) => {
+            const inTour = Boolean(readLoghouseTourStep());
+            const isRealOrderRead = item.href.startsWith("/orders/") && item.href.includes("/read");
+            if (inTour && !isRealOrderRead) {
+              closeAll();
+              setTourKanteiPeekOpen(true);
+              return true;
+            }
+            return false;
+          }}
         />
       ) : null}
 
@@ -517,6 +552,42 @@ export function ForestBookshelfClient({
                 router.push(`/orders/bookshelf/diary-book/${book.id}`);
               }}
             />
+          </div>
+        </div>
+      ) : null}
+
+      {tourKanteiPeekOpen ? (
+        <div className="fixed inset-0 z-[90] flex items-end justify-center bg-stone-900/40 px-3 pb-[max(1rem,env(safe-area-inset-bottom))] pt-16 sm:items-center sm:pb-8">
+          <button
+            type="button"
+            className="absolute inset-0 cursor-default"
+            aria-label="閉じる"
+            onClick={() => setTourKanteiPeekOpen(false)}
+          />
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-label="鑑定書のご案内"
+            className="relative z-[1] w-full max-w-sm rounded-[1.25rem] border border-[#e4d5c0]/95 bg-[#fffbf5] p-4 shadow-[0_16px_40px_rgba(60,40,20,0.28)]"
+          >
+            <p className="whitespace-pre-line text-sm leading-relaxed text-[#5c4a35]">
+              {LOGHOUSE_TOUR_KANTEI_PREVIEW_PEEK}
+            </p>
+            <div className="mt-4 flex flex-col gap-2">
+              <Link
+                href={readLoghouseTourReturnHref()}
+                className={companionWritingGuidePrimaryButtonClass}
+              >
+                ← {LOGHOUSE_TOUR_RETURN_LABEL}
+              </Link>
+              <button
+                type="button"
+                onClick={() => setTourKanteiPeekOpen(false)}
+                className="inline-flex min-h-11 items-center justify-center rounded-xl text-sm font-medium text-[#6a5846]"
+              >
+                本棚に戻る
+              </button>
+            </div>
           </div>
         </div>
       ) : null}

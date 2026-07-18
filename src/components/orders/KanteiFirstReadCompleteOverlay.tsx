@@ -20,6 +20,10 @@ import { FIRST_VISIT_MILESTONE_HOME_BUTTON } from "@/lib/onboarding/firstVisitWi
 import { calendarDayKeyInJapan, journalWithCompanionPath } from "@/lib/journal/journalNav";
 import { clearBookshelfKanteiGuideFlag } from "@/lib/onboarding/firstVisitWizard/session";
 import { markKanteiFirstReadComplete } from "@/lib/pdf/kanteiFirstReadGuide";
+import {
+  readLoghouseTourReturnHref,
+  readLoghouseTourStep,
+} from "@/lib/onboarding/firstVisitWizard/loghouseTour";
 
 const OVERLAY_Z_CLASS = "z-[240]" as const;
 

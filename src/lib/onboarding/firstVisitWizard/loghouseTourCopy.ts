@@ -6,9 +6,11 @@ export const LOGHOUSE_TOUR_DESK_OWL_QUOTE =
 export const LOGHOUSE_TOUR_DESK_NEXT = "次へ" as const;
 
 export const LOGHOUSE_TOUR_MAILBOX_OWL_QUOTE =
-  "さっきの鑑定書、もうできているみたいですね。\n\n玄関のポストに、お手紙が届いています。\nまずはポストをのぞいてみましょう。" as const;
+  "さっきの鑑定書、もうできているみたいですね。\n\n玄関のポストに、お手紙が届いています。\n光っているポストをタップして、のぞいてみましょう。" as const;
 
 export const LOGHOUSE_TOUR_MAILBOX_OPEN = "ポストを開く" as const;
+
+export const LOGHOUSE_TOUR_MAILBOX_TAP_HINT = "光っているポストをタップ" as const;
 
 /** ポスト画面に重ねる、はじめて案内の補足 */
 export const LOGHOUSE_TOUR_MAILBOX_PAGE_BANNER =
@@ -26,12 +28,12 @@ export const LOGHOUSE_TOUR_BOOKSHELF_OPEN_NOW = "今、本棚を見る" as const
 export const LOGHOUSE_TOUR_BOOKSHELF_LATER = "あとにする" as const;
 
 export const LOGHOUSE_TOUR_HINT_OWL_QUOTE =
-  "どこに何があるか迷ったら、\n上の「？」をタップしてみてください。\n\n小さな名前ラベルが出た場所には、中へ入れます。" as const;
+  "どこに何があるか迷ったら、\n上の「？」をタップしてみてください。\n\n小さな名前ラベルが出た場所は、中に入ることができます。" as const;
 
 export const LOGHOUSE_TOUR_HINT_NEXT = "次へ" as const;
 
 export const LOGHOUSE_TOUR_WRAP_UP_OWL_QUOTE =
-  "ざっとですが、ログハウスのご案内はここまでです。\n\n他にもラジカセや今日の鑑定結果など色々あるので、少しずつのぞいてみてくださいね。" as const;
+  "ざっとですが、ログハウスのご案内はここまでです。\n\n他にも、ラジカセや今日の鑑定結果など、楽しく過ごせる場所がたくさんあるので、少しずつのぞいてみてくださいね。" as const;
 
 export const LOGHOUSE_TOUR_WRAP_UP_NEXT = "次へ" as const;
 
@@ -53,6 +55,14 @@ export const LOGHOUSE_TOUR_A11Y_LABEL = "ログハウスのご案内" as const;
 
 /** ポスト／本棚などから案内へ戻るときのラベル */
 export const LOGHOUSE_TOUR_RETURN_LABEL = "案内に戻る（ログハウス）" as const;
+
+/** 鑑定書ビューア上の案内中バナー */
+export const LOGHOUSE_TOUR_KANTEI_PAGE_BANNER =
+  "案内の途中です。読み終わったら、下のボタンでログハウスの案内に戻れます。" as const;
+
+/** プレビュー本棚で鑑定書を開いたときの説明 */
+export const LOGHOUSE_TOUR_KANTEI_PREVIEW_PEEK =
+  "ここが鑑定書の置き場です。本番では、この本から鑑定書を開けます。\n\n案内に戻って、続きを見てみましょう。" as const;
 
 export const LOGHOUSE_TOUR_PREVIEW_COMPLETE_MESSAGE =
   "案内はここまでです。本番では、このあとあしあとを残す画面へ進みます。" as const;

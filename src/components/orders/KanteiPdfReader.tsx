@@ -29,6 +29,12 @@ import {
   resolveKanteiPdfNamedDestination,
 } from "@/lib/pdf/loadKanteiPdfJs";
 import { clearBookshelfKanteiGuideFlag } from "@/lib/onboarding/firstVisitWizard/session";
+import {
+  readLoghouseTourReturnHref,
+  readLoghouseTourStep,
+} from "@/lib/onboarding/firstVisitWizard/loghouseTour";
+import { LOGHOUSE_TOUR_RETURN_LABEL } from "@/lib/onboarding/firstVisitWizard/loghouseTourCopy";
+import { LogHouseTourKanteiAssist } from "@/components/orders/loghouse-room/LogHouseTourKanteiAssist";
 
 const PDF_FETCH_TIMEOUT_MS = 310_000;
 const LOAD_HINT_MS = 8_000;
@@ -103,6 +109,22 @@ export function KanteiPdfReader({
   useEffect(() => {
     clearBookshelfKanteiGuideFlag();
   }, []);
+
+  const [tourBack, setTourBack] = useState<{ href: string; label: string } | null>(null);
+  useEffect(() => {
+    if (readLoghouseTourStep()) {
+      setTourBack({
+        href: readLoghouseTourReturnHref(),
+        label: `← ${LOGHOUSE_TOUR_RETURN_LABEL}`,
+      });
+      return;
+    }
+    setTourBack(null);
+  }, []);
+
+  const resolvedBackHref = tourBack?.href ?? backHref;
+  const resolvedBackLabel = tourBack?.label ?? "← 本棚";
+  const resolvedBackLabelLong = tourBack?.label ?? "← 本棚へ戻る";
 
   const restrictedFirstRead = guideMode != null;
   const isCompact = useCompactReader();
@@ -428,8 +450,8 @@ export function KanteiPdfReader({
   const showControls = !loading && !error && pdfDoc != null;
 
   const handleBackToBookshelf = useCallback(() => {
-    router.replace(backHref);
-  }, [backHref, router]);
+    router.replace(resolvedBackHref);
+  }, [resolvedBackHref, router]);
 
   const compactBackControl = restrictedFirstRead ? (
     <button
@@ -437,14 +459,14 @@ export function KanteiPdfReader({
       onClick={handleBackToBookshelf}
       className="pointer-events-auto shrink-0 rounded-lg bg-black/45 px-2.5 py-1.5 text-xs font-medium text-white backdrop-blur-sm hover:bg-black/55"
     >
-      ← 本棚
+      {resolvedBackLabel}
     </button>
   ) : (
     <Link
-      href={backHref}
+      href={resolvedBackHref}
       className="pointer-events-auto shrink-0 rounded-lg bg-black/45 px-2.5 py-1.5 text-xs font-medium text-white backdrop-blur-sm"
     >
-      ← 本棚
+      {resolvedBackLabel}
     </Link>
   );
 
@@ -454,14 +476,14 @@ export function KanteiPdfReader({
       onClick={handleBackToBookshelf}
       className="shrink-0 rounded-lg px-2 py-1.5 text-sm font-medium text-stone-700 hover:bg-stone-100 hover:text-stone-900"
     >
-      ← 本棚
+      {resolvedBackLabel}
     </button>
   ) : (
     <Link
-      href={backHref}
+      href={resolvedBackHref}
       className="shrink-0 rounded-lg px-2 py-1.5 text-sm font-medium text-stone-700 hover:bg-stone-100 hover:text-stone-900"
     >
-      ← 本棚
+      {resolvedBackLabel}
     </Link>
   );
 
@@ -508,8 +530,8 @@ export function KanteiPdfReader({
       >
         もう一度試す
       </button>
-      <Link href={backHref} className="text-sm text-stone-600 hover:text-stone-900">
-        ← 本棚へ戻る
+      <Link href={resolvedBackHref} className="text-sm text-stone-600 hover:text-stone-900">
+        {resolvedBackLabelLong}
       </Link>
     </div>
   );
@@ -635,10 +657,11 @@ export function KanteiPdfReader({
             open={firstReadCompleteOpen}
             orderId={orderId}
             activeProfileId={activeProfileId}
-            backHref={backHref}
+            backHref={resolvedBackHref}
             onClose={() => setFirstReadCompleteOpen(false)}
           />
         </div>
+        <LogHouseTourKanteiAssist />
       </BodyPortal>
     );
   }
@@ -714,9 +737,10 @@ export function KanteiPdfReader({
         open={firstReadCompleteOpen}
         orderId={orderId}
         activeProfileId={activeProfileId}
-        backHref={backHref}
+        backHref={resolvedBackHref}
         onClose={() => setFirstReadCompleteOpen(false)}
       />
+      <LogHouseTourKanteiAssist />
     </div>
   );
 }

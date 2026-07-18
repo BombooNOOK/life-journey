@@ -16,10 +16,12 @@ type Props = {
   emptyMessage: string;
   items: ForestBookshelfListItem[];
   onClose: () => void;
+  /** true を返すと Link 遷移を止める（案内中のプレビュー鑑定書など） */
+  onItemSelect?: (item: ForestBookshelfListItem) => boolean;
 };
 
 /** 背表紙タップ後の一覧パネル */
-export function ForestBookshelfListPanel({ title, emptyMessage, items, onClose }: Props) {
+export function ForestBookshelfListPanel({ title, emptyMessage, items, onClose, onItemSelect }: Props) {
   return (
     <div className="fixed inset-0 z-[80] flex items-end justify-center bg-stone-900/35 px-3 pb-[max(1rem,env(safe-area-inset-bottom))] pt-16 sm:items-center sm:pb-8">
       <button
@@ -60,7 +62,13 @@ export function ForestBookshelfListPanel({ title, emptyMessage, items, onClose }
                   <Link
                     href={item.href}
                     className="flex min-h-[56px] flex-col justify-center px-3 py-3 transition hover:bg-[#f3ead8]/70 active:bg-[#f3ead8]"
-                    onClick={onClose}
+                    onClick={(e) => {
+                      if (onItemSelect?.(item)) {
+                        e.preventDefault();
+                        return;
+                      }
+                      onClose();
+                    }}
                   >
                     <span className="text-sm font-medium text-[#3f3428]">{item.title}</span>
                     {item.subtitle ? (

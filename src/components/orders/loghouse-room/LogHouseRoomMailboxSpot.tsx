@@ -20,6 +20,10 @@ type Props = {
   showHintLabel?: boolean;
   flash?: boolean;
   spotlight?: boolean;
+  /** 案内中の強調度（tour は暗幕＋強い光） */
+  spotlightIntensity?: "normal" | "tour";
+  /** 案内中にスポットを暗幕より手前へ */
+  elevateAboveDim?: boolean;
   /** 未読があるとき、お手紙ありポスト画像を使う */
   hasUnread?: boolean;
 };
@@ -34,11 +38,14 @@ export function LogHouseRoomMailboxSpot({
   showHintLabel = false,
   flash = false,
   spotlight = false,
+  spotlightIntensity = "normal",
+  elevateAboveDim = false,
   hasUnread = false,
 }: Props) {
   const spot = LOG_HOUSE_ROOM_MAILBOX_HOTSPOT;
   const copy = LOG_HOUSE_ROOM_SPOT_COPY.mailbox;
   const src = hasUnread ? LOG_HOUSE_ROOM_MAILBOX_MAIL_SRC : LOG_HOUSE_ROOM_MAILBOX_SRC;
+  const tourBold = spotlight && spotlightIntensity === "tour";
   const [shakeOnce, setShakeOnce] = useState(false);
 
   useEffect(() => {
@@ -64,15 +71,20 @@ export function LogHouseRoomMailboxSpot({
       aria-label={`${copy.label}：${copy.description}${hasUnread ? "（お手紙あり）" : ""}`}
       onClick={onActivate}
       className={[
-        "absolute z-[24] transition duration-200",
+        elevateAboveDim ? "absolute z-[26]" : "absolute z-[24]",
+        "transition duration-200",
         "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-700",
         disabled
           ? "cursor-not-allowed opacity-40"
           : showDebugOutline
             ? "rounded-xl border-2 border-dashed border-blue-400/55 bg-blue-50/10"
             : "rounded-lg border-2 border-transparent hover:brightness-105 active:scale-[0.98]",
-        flash || spotlight ? "brightness-110 drop-shadow-[0_0_12px_rgba(251,191,36,0.45)]" : "",
-        spotlight ? "animate-pulse" : "",
+        flash || spotlight
+          ? tourBold
+            ? "brightness-125 drop-shadow-[0_0_22px_rgba(251,191,36,0.85)]"
+            : "brightness-110 drop-shadow-[0_0_12px_rgba(251,191,36,0.45)]"
+          : "",
+        spotlight ? (tourBold ? "loghouse-mailbox-tour-pulse" : "animate-pulse") : "",
       ]
         .filter(Boolean)
         .join(" ")}
@@ -86,7 +98,7 @@ export function LogHouseRoomMailboxSpot({
       <span
         className={[
           "pointer-events-none absolute left-1/2 top-1/2 block -translate-x-1/2 -translate-y-1/2",
-          hasUnread || spotlight ? "loghouse-mailbox-glow" : "",
+          hasUnread || spotlight ? (tourBold ? "loghouse-mailbox-glow-bold" : "loghouse-mailbox-glow") : "",
           shakeOnce ? "loghouse-mailbox-shake" : "",
         ]
           .filter(Boolean)
@@ -105,14 +117,21 @@ export function LogHouseRoomMailboxSpot({
             className="object-contain object-bottom"
             sizes="28vw"
             unoptimized
-            priority={hasUnread}
+            priority={hasUnread || tourBold}
           />
         </span>
       </span>
 
       {showHintLabel || spotlight ? (
         <span className="pointer-events-none absolute left-1/2 top-0 z-10 -translate-x-1/2">
-          <span className="inline-block whitespace-nowrap rounded-full bg-[#fffdf9]/85 px-2.5 py-0.5 text-center text-[10px] font-medium tracking-wide text-stone-700 shadow-sm ring-1 ring-stone-300/35">
+          <span
+            className={[
+              "inline-block whitespace-nowrap rounded-full text-center font-medium tracking-wide text-stone-800 shadow-md ring-1 ring-amber-200/70",
+              tourBold
+                ? "bg-[#fffdf9]/95 px-3 py-1 text-[11px]"
+                : "bg-[#fffdf9]/85 px-2.5 py-0.5 text-[10px] text-stone-700 ring-stone-300/35",
+            ].join(" ")}
+          >
             {copy.label}
           </span>
         </span>
@@ -122,6 +141,17 @@ export function LogHouseRoomMailboxSpot({
         .loghouse-mailbox-glow {
           filter: drop-shadow(0 0 7px rgba(242, 210, 140, 0.55))
             drop-shadow(0 0 14px rgba(232, 190, 110, 0.28));
+        }
+        .loghouse-mailbox-glow-bold {
+          filter: drop-shadow(0 0 10px rgba(251, 191, 36, 0.85))
+            drop-shadow(0 0 22px rgba(245, 158, 11, 0.55));
+        }
+        .loghouse-mailbox-tour-pulse {
+          animation: loghouse-mailbox-tour-pulse 1.35s ease-in-out infinite;
+        }
+        @keyframes loghouse-mailbox-tour-pulse {
+          0%, 100% { filter: brightness(1.1); }
+          50% { filter: brightness(1.28); }
         }
         .loghouse-mailbox-shake {
           animation: loghouse-mailbox-shake 0.85s ease-in-out 1;

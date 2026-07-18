@@ -17,8 +17,12 @@ type Props = {
   flash?: boolean;
   /** はじめて案内：次にタップしてほしい場所の継続ハイライト */
   spotlight?: boolean;
+  /** 案内中の強調度（tour は暗幕＋強い光） */
+  spotlightIntensity?: "normal" | "tour";
   /** ヒント／スポットライト時のラベル上書き */
   hintLabelOverride?: string | null;
+  /** 案内中にスポットを暗幕より手前へ */
+  elevateAboveDim?: boolean;
   children?: ReactNode;
 };
 
@@ -46,12 +50,15 @@ export function LogHouseRoomTapSpot({
   showHintLabel = false,
   flash = false,
   spotlight = false,
+  spotlightIntensity = "normal",
   hintLabelOverride = null,
+  elevateAboveDim = false,
   children,
 }: Props) {
   const copy = LOG_HOUSE_ROOM_SPOT_COPY[spot.id];
   const label = hintLabelOverride?.trim() || copy.label;
   const showLabel = showHintLabel || spotlight;
+  const tourBold = spotlight && spotlightIntensity === "tour";
 
   return (
     <button
@@ -60,7 +67,8 @@ export function LogHouseRoomTapSpot({
       aria-label={`${label}：${copy.description}`}
       onClick={onActivate}
       className={[
-        "absolute z-[24] rounded-xl border-2 transition duration-200",
+        elevateAboveDim ? "absolute z-[26]" : "absolute z-[24]",
+        "rounded-xl border-2 transition duration-200",
         "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-700",
         disabled
           ? "cursor-not-allowed border-transparent opacity-40"
@@ -68,9 +76,11 @@ export function LogHouseRoomTapSpot({
             ? "border-blue-400/55 border-dashed bg-blue-50/10 hover:border-amber-200/50 hover:bg-amber-50/15 active:scale-[0.99]"
             : "border-transparent bg-transparent hover:bg-amber-50/10 active:scale-[0.99]",
         flash || spotlight
-          ? "border-amber-200/80 bg-amber-100/35 shadow-[0_0_24px_rgba(251,191,36,0.35)]"
+          ? tourBold
+            ? "border-amber-100 bg-amber-100/55 shadow-[0_0_0_3px_rgba(251,191,36,0.55),0_0_36px_rgba(251,191,36,0.65)]"
+            : "border-amber-200/80 bg-amber-100/35 shadow-[0_0_24px_rgba(251,191,36,0.35)]"
           : "",
-        spotlight ? "animate-pulse" : "",
+        spotlight ? (tourBold ? "loghouse-tour-spotlight-pulse" : "animate-pulse") : "",
       ]
         .filter(Boolean)
         .join(" ")}
@@ -89,12 +99,30 @@ export function LogHouseRoomTapSpot({
             hintLabelPositionClass(spot.hintLabelAlign),
           ].join(" ")}
         >
-          <span className="inline-block whitespace-nowrap rounded-full bg-[#fffdf9]/72 px-2.5 py-0.5 text-[10px] font-medium tracking-wide text-stone-700 shadow-sm ring-1 ring-stone-300/35 backdrop-blur-[2px]">
+          <span
+            className={[
+              "inline-block whitespace-nowrap rounded-full font-medium tracking-wide text-stone-800 shadow-md ring-1 ring-amber-200/70 backdrop-blur-[2px]",
+              tourBold
+                ? "bg-[#fffdf9]/95 px-3 py-1 text-[11px]"
+                : "bg-[#fffdf9]/72 px-2.5 py-0.5 text-[10px] text-stone-700 ring-stone-300/35",
+            ].join(" ")}
+          >
             {label}
           </span>
         </span>
       ) : null}
       {children}
+      {tourBold ? (
+        <style>{`
+          .loghouse-tour-spotlight-pulse {
+            animation: loghouse-tour-spotlight-pulse 1.35s ease-in-out infinite;
+          }
+          @keyframes loghouse-tour-spotlight-pulse {
+            0%, 100% { filter: brightness(1.05); box-shadow: 0 0 0 3px rgba(251,191,36,0.5), 0 0 28px rgba(251,191,36,0.45); }
+            50% { filter: brightness(1.18); box-shadow: 0 0 0 5px rgba(251,191,36,0.75), 0 0 44px rgba(251,191,36,0.8); }
+          }
+        `}</style>
+      ) : null}
     </button>
   );
 }

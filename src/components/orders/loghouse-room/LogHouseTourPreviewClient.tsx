@@ -18,7 +18,7 @@ import { clearLoghouseTourStep } from "@/lib/onboarding/firstVisitWizard/loghous
 const TOUR_PREVIEW_PATH = "/preview/loghouse-tour";
 
 function resolveTourMailboxHref(): string {
-  // 本番プレビューでは本物のポストへ（/preview/mailbox は dev 専用）
+  // /preview/mailbox は開発専用。本番プレビューでは本物のポストへ。
   if (process.env.NODE_ENV !== "development") {
     return "/orders/mailbox";
   }
@@ -26,9 +26,7 @@ function resolveTourMailboxHref(): string {
 }
 
 function resolveTourBookshelfHref(): string {
-  if (process.env.NODE_ENV !== "development") {
-    return "/orders/bookshelf";
-  }
+  // プレビュー本棚なら（管理者）ログイン後も案内へ戻りやすい。鑑定書は案内用ポップアップ。
   return `/preview/forest-bookshelf?returnTo=${encodeURIComponent(TOUR_PREVIEW_PATH)}`;
 }
 

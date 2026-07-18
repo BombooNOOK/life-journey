@@ -172,6 +172,7 @@ function RoomStage({
   hintActive,
   flashSpotId,
   spotlightSpotId,
+  tourSpotlightActive = false,
   deskSpotlightLabel,
   timeOfDay,
   mailboxUnread,
@@ -185,6 +186,8 @@ function RoomStage({
   hintActive: boolean;
   flashSpotId: LogHouseRoomSpotId | null;
   spotlightSpotId: LogHouseRoomSpotId | null;
+  /** 机・ポストなど案内中の強い「ここだよ」演出 */
+  tourSpotlightActive?: boolean;
   deskSpotlightLabel?: string | null;
   timeOfDay: LogHouseRoomTimeOfDay;
   mailboxUnread: boolean;
@@ -215,6 +218,13 @@ function RoomStage({
       <LogHouseRadioPlayingAura active={radioPlaying} />
 
       <div className="absolute inset-0 z-[20]" style={{ touchAction: "manipulation" }}>
+        {tourSpotlightActive && spotlightSpotId ? (
+          <div
+            className="pointer-events-none absolute inset-0 z-[23] bg-stone-950/45 transition-opacity duration-300"
+            aria-hidden
+          />
+        ) : null}
+
         {LOG_HOUSE_ROOM_HOTSPOTS.map((spot) => {
           const action = spotActions[spot.id];
           const locked = Boolean(action.lockMessage);
@@ -230,6 +240,8 @@ function RoomStage({
               showHintLabel={hintActive}
               flash={flashSpotId === spot.id}
               spotlight={spotlit}
+              spotlightIntensity={tourSpotlightActive && spotlit ? "tour" : "normal"}
+              elevateAboveDim={Boolean(tourSpotlightActive && spotlit)}
               hintLabelOverride={
                 spotlit && spot.id === "desk" ? deskSpotlightLabel ?? null : null
               }
@@ -244,6 +256,10 @@ function RoomStage({
           showHintLabel={hintActive}
           flash={flashSpotId === "mailbox"}
           spotlight={spotlightSpotId === "mailbox"}
+          spotlightIntensity={
+            tourSpotlightActive && spotlightSpotId === "mailbox" ? "tour" : "normal"
+          }
+          elevateAboveDim={Boolean(tourSpotlightActive && spotlightSpotId === "mailbox")}
           hasUnread={mailboxUnread}
           onActivate={() => onSpotActivate("mailbox")}
         />
@@ -742,7 +758,6 @@ export function LogHouseRoomMobile({
         awaitingDeskTap={awaitingDeskTap}
         guideReturnTo={tourGuideReturnTo}
         onNext={advanceTour}
-        onOpenMailbox={peekMailboxFromTour}
         onOpenBookshelf={openBookshelfFromTour}
         onGoToDesk={goToDeskFromTour}
       />
@@ -829,6 +844,14 @@ export function LogHouseRoomMobile({
     />
   );
 
+  const tourSpotlightActive =
+    tourActive &&
+    (awaitingDeskTap ||
+      tourStep === "desk" ||
+      tourStep === "mailbox" ||
+      tourStep === "bookshelf" ||
+      tourStep === "inviteWrite");
+
   const stage = (
     <RoomStage
       busy={busy}
@@ -838,6 +861,7 @@ export function LogHouseRoomMobile({
       hintActive={hintActive}
       flashSpotId={flashSpotId}
       spotlightSpotId={spotlightSpotId}
+      tourSpotlightActive={tourSpotlightActive}
       deskSpotlightLabel={
         awaitingDeskTap || tourStep === "desk" || tourStep === "inviteWrite"
           ? TERM_WRITE_FOOTPRINT
