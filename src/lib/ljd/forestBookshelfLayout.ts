@@ -36,22 +36,22 @@ export type ForestBookshelfSpotId =
   | "spinesDiary";
 
 export const FOREST_BOOKSHELF_ITEM_LAYOUT: Record<ForestBookshelfItemId, ForestBookshelfRect> = {
-  /** 非表示（天板装飾） */
-  plant: { left: 1, top: -1, width: 24, height: 15 },
-  /** 非表示（天板装飾） */
-  lanternShelf: { left: 74, top: -1, width: 24, height: 15 },
+  /** 天板左：観葉（本体天板 ≈24%） */
+  plant: { left: 2, top: 10, width: 22, height: 14.5 },
+  /** 天板右：ランタン */
+  lanternShelf: { left: 76, top: 9.5, width: 22, height: 14.5 },
   /** 1段目：鑑定書 */
-  kanteiCover: { left: 4, top: 37, width: 34, height: 16 },
-  spinesFortune: { left: 36.5, top: 29.5, width: 64, height: 33 },
+  kanteiCover: { left: 4, top: 39, width: 34, height: 14.5 },
+  spinesFortune: { left: 35.5, top: 31.5, width: 60.5, height: 30.5 },
   /** 2段目：あしあとブック */
-  createDiary: { left: 3.5, top: 43, width: 36.5, height: 35.5 },
+  createDiary: { left: 2.5, top: 56.5, width: 42, height: 22 },
   currentDiary: { left: 36.5, top: 62.5, width: 30, height: 14.5 },
-  placeholderRed: { left: 62.5, top: 60.5, width: 37.5, height: 18.5 },
+  placeholderRed: { left: 61.5, top: 61.5, width: 37.5, height: 17 },
   /** 3段目：これまでのあしあとブック */
   placeholderGreen: { left: 2.5, top: 82, width: 36, height: 16 },
-  spinesDiary: { left: 25.5, top: 70.5, width: 56, height: 35 },
+  spinesDiary: { left: 24.5, top: 71.5, width: 56, height: 34 },
   owl: { left: 73, top: 80, width: 29.5, height: 17 },
-  /** 非表示（床ランタン） */
+  /** 非表示（アップ構図では床が出ない） */
   lanternFloor: { left: 0, top: 0, width: 1, height: 1 },
 };
 
