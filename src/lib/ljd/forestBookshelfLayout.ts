@@ -45,7 +45,7 @@ export const FOREST_BOOKSHELF_ITEM_LAYOUT: Record<ForestBookshelfItemId, ForestB
   spinesFortune: { left: 35.5, top: 31.5, width: 60.5, height: 30.5 },
   /** 2段目：あしあとブック */
   createDiary: { left: 2.5, top: 56.5, width: 42, height: 22 },
-  currentDiary: { left: 36.5, top: 62.5, width: 30, height: 14.5 },
+  currentDiary: { left: 38, top: 62.5, width: 30, height: 14.5 },
   placeholderRed: { left: 61.5, top: 61.5, width: 37.5, height: 17 },
   /** 3段目：これまでのあしあとブック */
   placeholderGreen: { left: 2.5, top: 82, width: 36, height: 16 },
