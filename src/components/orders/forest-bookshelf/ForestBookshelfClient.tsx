@@ -89,6 +89,8 @@ type Props = {
   deployRevision?: string | null;
   /** immersive = 本番スマホ全画面 / framed = 定規埋め込みなど */
   layout?: "immersive" | "framed";
+  /** framed 時：戻る／ヘルプ／バナーを隠して棚だけ見せる（定規・校正向け） */
+  hideChrome?: boolean;
   /** レイアウト定規の下書きなど、見た目配置の一時上書き */
   itemLayoutOverride?: Partial<Record<ForestBookshelfItemId, ForestBookshelfRect>>;
   /** レイアウト定規の下書きなど、タップ領域の一時上書き */
@@ -114,6 +116,7 @@ export function ForestBookshelfClient({
   blockCreate,
   deployRevision = null,
   layout = "immersive",
+  hideChrome = false,
   itemLayoutOverride,
   spotLayoutOverride,
 }: Props) {
@@ -128,6 +131,7 @@ export function ForestBookshelfClient({
   const secondDiary = diaryBooks[1] ?? null;
   const thirdDiary = diaryBooks[2] ?? null;
   const immersive = layout === "immersive";
+  const showChrome = !hideChrome;
 
   useEffect(() => {
     if (!immersive) {
@@ -345,7 +349,7 @@ export function ForestBookshelfClient({
       <div id="bookshelf-kantei-books" className="h-0 scroll-mt-24" aria-hidden />
       <div id="bookshelf-diary-books" className="h-0 scroll-mt-24" aria-hidden />
 
-      {/* 本棚本体 */}
+      {/* 鑑定結果と同じ部屋背景 → 本棚本体（上部透明）→ 本 */}
       <div
         className={[
           "absolute inset-0",
@@ -355,11 +359,20 @@ export function ForestBookshelfClient({
           .join(" ")}
       >
         <Image
+          src={FOREST_BOOKSHELF_ASSETS.background}
+          alt=""
+          fill
+          priority
+          className="object-cover object-center"
+          sizes="100vw"
+          unoptimized
+        />
+        <Image
           src={FOREST_BOOKSHELF_ASSETS.main}
           alt="森の本棚"
           fill
           priority
-          className="object-cover object-center"
+          className="object-contain object-bottom"
           sizes="100vw"
           unoptimized
         />
@@ -553,38 +566,47 @@ export function ForestBookshelfClient({
         </>
       ) : (
         <>
-          <div className="mx-auto max-w-3xl space-y-3 px-3 pb-4 pt-3 sm:px-4 sm:pt-4">
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <LogHouseTourAwareBackLink
-                href="/orders"
-                fallbackLabel={LOG_HOUSE_BACK_TO_LINK_LABEL}
-                className={`text-sm ${LJD_PAPER_LINK_CLASS}`}
-              />
-              <div className="relative flex items-center gap-2">
-                <ForestBookshelfHelp enableFirstVisitTip={false} />
-                <p className="text-xs text-[#6a5846]">
-                  表示中: <span className="font-medium text-[#3f3428]">「{activeProfileLabel}」</span>
-                  {deployRevision ? (
-                    <span className="ml-2 text-[10px] text-[#9a8b78]" title="デプロイ確認用">
-                      反映 {deployRevision}
-                    </span>
-                  ) : null}
-                </p>
+          {showChrome ? (
+            <div className="mx-auto max-w-3xl space-y-3 px-3 pb-4 pt-3 sm:px-4 sm:pt-4">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <LogHouseTourAwareBackLink
+                  href="/orders"
+                  fallbackLabel={LOG_HOUSE_BACK_TO_LINK_LABEL}
+                  className={`text-sm ${LJD_PAPER_LINK_CLASS}`}
+                />
+                <div className="relative flex items-center gap-2">
+                  <ForestBookshelfHelp enableFirstVisitTip={false} />
+                  <p className="text-xs text-[#6a5846]">
+                    表示中: <span className="font-medium text-[#3f3428]">「{activeProfileLabel}」</span>
+                    {deployRevision ? (
+                      <span className="ml-2 text-[10px] text-[#9a8b78]" title="デプロイ確認用">
+                        反映 {deployRevision}
+                      </span>
+                    ) : null}
+                  </p>
+                </div>
               </div>
+
+              <TrialStatusBanner entitlement={entitlement} />
+
+              {!featuredKantei && activeProfileId ? (
+                <KanteiMissingBanner profileId={activeProfileId} />
+              ) : null}
             </div>
+          ) : null}
 
-            <TrialStatusBanner entitlement={entitlement} />
-
-            {!featuredKantei && activeProfileId ? (
-              <KanteiMissingBanner profileId={activeProfileId} />
-            ) : null}
-          </div>
-
-          <div className="relative mx-auto w-full max-w-[28rem] px-2 pb-6 sm:max-w-[32rem] sm:px-4">
+          <div
+            className={[
+              "relative mx-auto w-full px-2 pb-6",
+              hideChrome ? "max-w-[22rem] sm:max-w-[24rem]" : "max-w-[28rem] sm:max-w-[32rem] sm:px-4",
+            ].join(" ")}
+          >
             {scene}
-            <p className="mt-3 text-center text-[11px] leading-relaxed text-[#8a7b6a]">
-              本をタップしてカードを開き、「選ぶ」で詳細へ進みます。背表紙は一覧です。
-            </p>
+            {showChrome ? (
+              <p className="mt-3 text-center text-[11px] leading-relaxed text-[#8a7b6a]">
+                本をタップしてカードを開き、「選ぶ」で詳細へ進みます。背表紙は一覧です。
+              </p>
+            ) : null}
           </div>
         </>
       )}

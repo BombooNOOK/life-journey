@@ -72,6 +72,8 @@ export function isLogHouseImmersivePreviewPath(pathname: string | null): boolean
     pathname === "/preview/loghouse-tour" ||
     pathname === "/preview/garden" ||
     pathname === "/preview/forest-bookshelf" ||
+    pathname === "/preview/forest-bookshelf/layout" ||
+    Boolean(pathname?.startsWith("/preview/forest-bookshelf/")) ||
     pathname === "/preview/daily-fortune" ||
     pathname === "/preview/daily-fortune/layout" ||
     pathname === "/preview/mailbox" ||

@@ -36,7 +36,7 @@ type EditTarget =
   | { kind: "item"; id: ForestBookshelfItemId }
   | { kind: "spot"; id: ForestBookshelfSpotId };
 
-const DRAFT_STORAGE_KEY = "forest-bookshelf-layout-draft-v1";
+const DRAFT_STORAGE_KEY = "forest-bookshelf-layout-draft-v2";
 
 /** 今回は描画しない装飾（定規の一覧からも外す） */
 const HIDDEN_ITEM_IDS = new Set<ForestBookshelfItemId>([
@@ -87,6 +87,8 @@ export function ForestBookshelfLayoutDebugClient() {
   const [showShelfFloors, setShowShelfFloors] = useState(true);
   /** 高さ変更時に下端を固定（上方向へ伸びる） */
   const [pinBottom, setPinBottom] = useState(true);
+  /** Cursor内ブラウザ向け：既定は縮小表示（ページスクロールで全体を見る） */
+  const [viewScalePercent, setViewScalePercent] = useState(55);
   const [cursor, setCursor] = useState<ForestBookshelfLayoutPin | null>(null);
   const [pin, setPin] = useState<ForestBookshelfLayoutPin | null>(null);
   const [copyState, setCopyState] = useState<"idle" | "ok" | "fail">("idle");
@@ -124,6 +126,19 @@ export function ForestBookshelfLayoutDebugClient() {
 
   const { widthPx, heightPx } = FOREST_BOOKSHELF_LAYOUT_SIZE_PX;
   const padLeft = FOREST_BOOKSHELF_LAYOUT_PAD_LEFT_PX;
+  const viewScale = viewScalePercent / 100;
+  const stageLogicalW = widthPx + padLeft;
+  const stageLogicalH = heightPx;
+
+  const pinFromEvent = useCallback(
+    (e: React.MouseEvent<HTMLDivElement>) => {
+      const rect = e.currentTarget.getBoundingClientRect();
+      const x = Math.round(((e.clientX - rect.left) / rect.width) * stageLogicalW - padLeft);
+      const y = Math.round(((e.clientY - rect.top) / rect.height) * stageLogicalH);
+      return { x, y };
+    },
+    [padLeft, stageLogicalH, stageLogicalW],
+  );
 
   const regions = useMemo(
     () => forestBookshelfLayoutRegions({ items: itemDraft, spots: spotDraft }),
@@ -160,21 +175,14 @@ export function ForestBookshelfLayoutDebugClient() {
 
   const handleMouseMove = useCallback(
     (e: React.MouseEvent<HTMLDivElement>) => {
-      const rect = e.currentTarget.getBoundingClientRect();
-      setCursor({
-        x: Math.round(e.clientX - rect.left - padLeft),
-        y: Math.round(e.clientY - rect.top),
-      });
+      setCursor(pinFromEvent(e));
     },
-    [padLeft],
+    [pinFromEvent],
   );
 
   const handleClick = useCallback(
     async (e: React.MouseEvent<HTMLDivElement>) => {
-      const rect = e.currentTarget.getBoundingClientRect();
-      const x = Math.round(e.clientX - rect.left - padLeft);
-      const y = Math.round(e.clientY - rect.top);
-      const nextPin = { x, y };
+      const nextPin = pinFromEvent(e);
       setPin(nextPin);
       const snippet = forestBookshelfLayoutCopyHint(nextPin);
       try {
@@ -185,7 +193,7 @@ export function ForestBookshelfLayoutDebugClient() {
         setCopyState("fail");
       }
     },
-    [padLeft],
+    [pinFromEvent],
   );
 
   const copyPlacement = useCallback(async () => {
@@ -259,7 +267,7 @@ export function ForestBookshelfLayoutDebugClient() {
   };
 
   return (
-    <div className="grid gap-10 xl:grid-cols-2">
+    <div className="grid gap-10 xl:grid-cols-1">
       <div className="space-y-4">
         <div className="rounded-xl border border-amber-200 bg-amber-50/80 p-4 text-sm leading-relaxed text-amber-950">
           <p className="font-medium">
@@ -269,7 +277,10 @@ export function ForestBookshelfLayoutDebugClient() {
           </p>
           <ul className="mt-2 list-disc space-y-1 pl-5 text-xs">
             <li>
-              <strong>基準</strong>：いまのアップ本棚（鑑定書／日記ブックのラベルが入った木の棚）。
+              <strong>表示</strong>：下の拡大率で縮小できます。このページ全体は上下スクロールできます（Cursor内ブラウザ向け）。
+            </li>
+            <li>
+              <strong>基準</strong>：あしあと表記のアップ本棚。上部余白は本棚用の部屋背景。
             </li>
             <li>
               「旧・全体見本」は<strong>別構図の古い絵</strong>です。重ねると迷子になるので、通常はOFFのまま。
@@ -282,19 +293,27 @@ export function ForestBookshelfLayoutDebugClient() {
               ）。
             </li>
             <li>
-              左の下書きは右プレビューへ即反映。ブラウザにも自動保存されます。
-            </li>
-            <li>
               終わったら下の<strong className="text-amber-950">「この配置をファイルに保存」</strong>
               を押すだけでOKです（手動コピペ不要）。
-            </li>
-            <li>
-              <strong>底合わせ</strong>は「下端 %」か棚板スナップが簡単（高さ維持のまま棚に乗せられます）。
             </li>
           </ul>
         </div>
 
-        <div className="flex flex-wrap gap-3 text-xs">
+        <div className="flex flex-wrap items-center gap-3 text-xs">
+          <label className="flex items-center gap-2 rounded-lg border border-stone-200 bg-white px-2 py-1.5">
+            <span className="font-medium text-stone-700">拡大率</span>
+            <select
+              value={viewScalePercent}
+              onChange={(e) => setViewScalePercent(Number(e.target.value))}
+              className="rounded border border-stone-300 bg-white px-1.5 py-1 text-stone-800"
+            >
+              <option value={45}>45%</option>
+              <option value={55}>55%</option>
+              <option value={70}>70%</option>
+              <option value={85}>85%</option>
+              <option value={100}>100%</option>
+            </select>
+          </label>
           <label className="flex items-center gap-2">
             <input type="checkbox" checked={showGrid} onChange={(e) => setShowGrid(e.target.checked)} />
             5px グリッド
@@ -321,14 +340,34 @@ export function ForestBookshelfLayoutDebugClient() {
           </label>
         </div>
 
-        <div
-          className="relative cursor-crosshair overflow-hidden border border-stone-300 bg-[#2c1f14]"
-          style={{ width: widthPx + padLeft, height: heightPx }}
-          onMouseMove={handleMouseMove}
-          onClick={handleClick}
-          role="presentation"
-        >
-          <div className="absolute inset-y-0 right-0" style={{ left: padLeft, width: widthPx }}>
+        <div className="w-full overflow-x-auto overflow-y-visible rounded-xl border border-stone-300 bg-stone-200/60 p-2">
+          <div
+            style={{
+              width: stageLogicalW * viewScale,
+              height: stageLogicalH * viewScale,
+            }}
+          >
+            <div
+              className="relative cursor-crosshair overflow-hidden border border-stone-400 bg-stone-300"
+              style={{
+                width: stageLogicalW,
+                height: stageLogicalH,
+                transform: `scale(${viewScale})`,
+                transformOrigin: "top left",
+              }}
+              onMouseMove={handleMouseMove}
+              onClick={handleClick}
+              role="presentation"
+            >
+          <div className="absolute inset-0" style={{ left: padLeft, width: widthPx }}>
+            <Image
+              src={FOREST_BOOKSHELF_ASSETS.background}
+              alt=""
+              width={widthPx}
+              height={heightPx}
+              className="absolute inset-0 z-[5] block object-cover object-center"
+              unoptimized
+            />
             <Image
               src={FOREST_BOOKSHELF_ASSETS.main}
               alt="本棚本体（合わせ先）"
@@ -421,6 +460,8 @@ export function ForestBookshelfLayoutDebugClient() {
               />
             ) : null}
           </div>
+            </div>
+          </div>
         </div>
 
         <div className="space-y-2 text-sm text-stone-700">
@@ -444,9 +485,9 @@ export function ForestBookshelfLayoutDebugClient() {
         <div className="rounded-xl border border-stone-200 bg-white p-4 shadow-sm">
           <p className="text-sm font-medium text-stone-900">配置の下書き調整</p>
           <p className="mt-1 text-xs text-stone-500">
-            ここで動かした枠は左の定規と右の実物プレビューに即反映されます。ファイルへ残すには下のコピー→{" "}
+            ここで動かした枠は上の定規と下の実物プレビューに即反映されます。「この配置をファイルに保存」で{" "}
             <code className="rounded bg-stone-100 px-1">forestBookshelfLayout.ts</code>{" "}
-            へ貼り付けて保存してください。
+            を更新できます。
           </p>
 
           <div className="mt-3 flex flex-wrap gap-2">
@@ -652,11 +693,11 @@ export function ForestBookshelfLayoutDebugClient() {
       </div>
 
       <div>
-        <p className="text-sm font-medium text-stone-800">実際の本棚UI（プレビュー）</p>
+        <p className="text-sm font-medium text-stone-800">実際の本棚UI（枠付きプレビュー）</p>
         <p className="mt-1 text-xs text-stone-500">
-          左の下書きがここに即反映されます。終わったら左の「ファイルに保存」を押してください。
+          上の下書きがここに即反映されます。終わったら「ファイルに保存」を押してください。
         </p>
-        <div className="mt-4 overflow-hidden rounded-xl border border-stone-200 bg-[#ebe2d4]">
+        <div className="mt-4 overflow-visible rounded-xl border border-stone-200 bg-[#ebe2d4] p-3">
           <ForestBookshelfPreviewClient
             compact
             itemLayoutOverride={itemDraft}

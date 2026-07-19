@@ -8,6 +8,7 @@ import { OnboardingLockedTap } from "@/components/onboarding/OnboardingLockedTap
 import { useOnboardingStage } from "@/components/onboarding/OnboardingStageProvider";
 import { OwlNavButton } from "@/components/ui/OwlNavButton";
 import { LOG_HOUSE_LOADING_LABEL, LOG_HOUSE_NAV_LABEL } from "@/lib/journal/logHouseLabels";
+import { TERM_FOOTPRINT_LEDGER } from "@/lib/journal/footprintTerminology";
 import { LJD_NAV_ICONS } from "@/lib/ljd/ljdPaperSurface";
 
 const TAB_CLASS =
@@ -28,8 +29,8 @@ const NAV_ITEMS = [
   },
   {
     href: "/orders/list",
-    label: "日記一覧",
-    loadingLabel: "日記一覧を開いています…",
+    label: TERM_FOOTPRINT_LEDGER,
+    loadingLabel: "あしあと帳を開いています…",
     feature: "bottom_list" as const,
     iconSrc: LJD_NAV_ICONS.diaryList,
     isActive: (pathname: string) => pathname === "/orders/list",
@@ -145,7 +146,7 @@ function BottomNavTab({
   );
 }
 
-/** ログイン後の主要画面用・下部ナビ（カレンダー / 日記一覧 / 本棚 / ログハウス） */
+/** ログイン後の主要画面用・下部ナビ（カレンダー / あしあと帳 / 本棚 / ログハウス） */
 export function DiaryHomeBottomNav({
   forceActivePath,
 }: {

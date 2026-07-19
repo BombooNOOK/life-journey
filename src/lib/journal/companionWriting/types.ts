@@ -145,7 +145,7 @@ export const COMPANION_WRITING_FAREWELL_MESSAGE =
 export const COMPANION_WRITING_PREVIEW_GUIDE_READ_TITLE = "書いた記録は、いつでも見返せます";
 
 export const COMPANION_WRITING_PREVIEW_GUIDE_READ_BODY =
-  "下のメニュー「日記一覧」や、ログハウスの「日記を読む」から、今日のページをまた開けます。";
+  "下のメニュー「あしあと帳」や、ログハウスの本棚から、今日のページをまた開けます。";
 
 /** 伴走プレビュー：最下部到達後の案内（2枚目） */
 export const COMPANION_WRITING_PREVIEW_GUIDE_WRITE_TITLE = "また書きたくなったら";

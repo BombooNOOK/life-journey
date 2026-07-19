@@ -41,15 +41,15 @@ export const FOREST_BOOKSHELF_ITEM_LAYOUT: Record<ForestBookshelfItemId, ForestB
   /** 非表示（天板装飾） */
   lanternShelf: { left: 74, top: -1, width: 24, height: 15 },
   /** 1段目：鑑定書 */
-  kanteiCover: { left: 4, top: 20.5, width: 34, height: 19 },
-  spinesFortune: { left: 36.5, top: 14.5, width: 64, height: 33 },
-  /** 2段目：日記ブック */
-  createDiary: { left: -2, top: 35.5, width: 42, height: 35.5 },
-  currentDiary: { left: 36.5, top: 51, width: 30, height: 19 },
-  placeholderRed: { left: 66, top: 41.5, width: 37.5, height: 30 },
-  /** 3段目：これまでの日記ブック */
-  placeholderGreen: { left: -2, top: 75, width: 36, height: 22.5 },
-  spinesDiary: { left: 23.5, top: 68.5, width: 56, height: 36 },
+  kanteiCover: { left: 4, top: 37, width: 34, height: 16 },
+  spinesFortune: { left: 36.5, top: 29.5, width: 64, height: 33 },
+  /** 2段目：あしあとブック */
+  createDiary: { left: 3.5, top: 43, width: 36.5, height: 35.5 },
+  currentDiary: { left: 36.5, top: 62.5, width: 30, height: 14.5 },
+  placeholderRed: { left: 62.5, top: 60.5, width: 37.5, height: 18.5 },
+  /** 3段目：これまでのあしあとブック */
+  placeholderGreen: { left: 2.5, top: 82, width: 36, height: 16 },
+  spinesDiary: { left: 25.5, top: 70.5, width: 56, height: 35 },
   owl: { left: 73, top: 80, width: 29.5, height: 17 },
   /** 非表示（床ランタン） */
   lanternFloor: { left: 0, top: 0, width: 1, height: 1 },

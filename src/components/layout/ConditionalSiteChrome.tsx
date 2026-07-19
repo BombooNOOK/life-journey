@@ -32,7 +32,7 @@ export function ConditionalSiteChrome({ children }: Props) {
     (isOrdersImmersiveMobilePath(pathname) && isMobile);
 
   if (isFullBleedEntrance) {
-    return <div className="flex min-h-[100dvh] flex-col">{children}</div>;
+    return <div className="min-h-[100dvh]">{children}</div>;
   }
 
   return (

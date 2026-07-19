@@ -14,7 +14,7 @@ export function HomeMockJournalPreviewCapture() {
     <div className="space-y-5">
       <div className="space-y-3">
         <div>
-          <h1 className="text-[1.375rem] font-bold text-stone-900 sm:text-[1.75rem]">日記プレビュー</h1>
+          <h1 className="text-[1.375rem] font-bold text-stone-900 sm:text-[1.75rem]">あしあとプレビュー</h1>
           <ActiveProfileLabel nickname="メイン" className="mt-2" />
         </div>
         <div className="flex flex-wrap gap-2">

@@ -38,6 +38,7 @@ import {
   LJD_PAPER_SELECTED_CLASS,
   LJD_PAPER_CHIP_IDLE_CLASS,
 } from "@/lib/ljd/ljdPaperSurface";
+import { TERM_FOOTPRINT_LEDGER } from "@/lib/journal/footprintTerminology";
 
 type ProfileOption = { id: string; nickname: string };
 
@@ -275,11 +276,11 @@ export function DiaryJournalListHome({
     });
   }, [searchParams]);
 
-  const loadingLabel = !hasLoadedOnce ? "日記一覧を読み込み中…" : "日記を読み込み中…";
+  const loadingLabel = !hasLoadedOnce ? "あしあと帳を読み込み中…" : "あしあとを読み込み中…";
 
   const emptyMessage = isSearchActive
-    ? "条件に合う日記は見つかりませんでした。"
-    : "この月の日記はまだありません。";
+    ? "条件に合うあしあとは見つかりませんでした。"
+    : "この月のあしあとはまだありません。";
 
   const searchScopeLabel =
     appliedSearchScope === "all"
@@ -293,8 +294,8 @@ export function DiaryJournalListHome({
       <div className="space-y-4">
         <div>
           <div className="flex flex-wrap items-center gap-2">
-            <h1 className="text-xl font-bold text-[#3f3428] sm:text-2xl">日記一覧</h1>
-            <InlineHelpButton ariaLabel="日記一覧の説明" panelZIndexClass="z-50">
+            <h1 className="text-xl font-bold text-[#3f3428] sm:text-2xl">{TERM_FOOTPRINT_LEDGER}</h1>
+            <InlineHelpButton ariaLabel="あしあと帳の説明" panelZIndexClass="z-50">
               {JOURNAL_LIST_HELP_TEXT}
             </InlineHelpButton>
           </div>
@@ -358,7 +359,7 @@ export function DiaryJournalListHome({
           </div>
 
           <fieldset className="mt-3 border-t border-[#ebe2d4] pt-3">
-            <legend className="text-sm font-medium text-[#4a3a28]">日記を探す</legend>
+            <legend className="text-sm font-medium text-[#4a3a28]">あしあとを探す</legend>
             <div className="mt-2 flex flex-wrap gap-2">
               {(
                 [
@@ -454,7 +455,7 @@ export function DiaryJournalListHome({
             <p>{emptyMessage}</p>
             {!isSearchActive ? (
               <p className="mt-2 lj-read-caption text-stone-500">
-                上の年・月を変えると、別の月の日記を表示できます。
+                上の年・月を変えると、別の月のあしあとを表示できます。
               </p>
             ) : null}
             {!isSearchActive ? (
@@ -462,7 +463,7 @@ export function DiaryJournalListHome({
                 href="/orders/calendar"
                 className={`mt-3 inline-flex min-h-[44px] items-center text-base ${LJD_PAPER_LINK_CLASS}`}
               >
-                カレンダーから日記を書く
+                カレンダーからあしあとを書く
               </Link>
             ) : null}
           </div>

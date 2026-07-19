@@ -40,8 +40,8 @@ const ITEM_COMMENTS: Partial<Record<ForestBookshelfItemId, string>> = {
   plant: "/** 非表示（天板装飾） */",
   lanternShelf: "/** 非表示（天板装飾） */",
   kanteiCover: "/** 1段目：鑑定書 */",
-  createDiary: "/** 2段目：日記ブック */",
-  placeholderGreen: "/** 3段目：これまでの日記ブック */",
+  createDiary: "/** 2段目：あしあとブック */",
+  placeholderGreen: "/** 3段目：これまでのあしあとブック */",
   lanternFloor: "/** 非表示（床ランタン） */",
 };
 

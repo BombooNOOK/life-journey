@@ -75,10 +75,10 @@ export function numerologyNumbersBackLink(returnTo: string | null): {
     return { href: "/orders/calendar", label: "カレンダーへ戻る" };
   }
   if (returnTo.startsWith("/journal/preview")) {
-    return { href: returnTo, label: "日記プレビューへ戻る" };
+    return { href: returnTo, label: "あしあとプレビューへ戻る" };
   }
   if (returnTo.startsWith("/orders/list")) {
-    return { href: returnTo, label: "日記一覧へ戻る" };
+    return { href: returnTo, label: "あしあと帳へ戻る" };
   }
   if (returnTo.startsWith("/orders/calendar")) {
     return { href: returnTo, label: "カレンダーへ戻る" };

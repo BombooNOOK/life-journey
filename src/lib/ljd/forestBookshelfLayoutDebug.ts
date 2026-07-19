@@ -16,8 +16,8 @@ export const FOREST_BOOKSHELF_LAYOUT_SIZE_PX = FOREST_BOOKSHELF_INTRINSIC;
 /** こころ予報／ログハウス定規と同じ 5px マス */
 export const FOREST_BOOKSHELF_LAYOUT_RULER_SQUARE_PX = 5 as const;
 
-/** 外ランタンなど負座標が見えるよう左余白（px） */
-export const FOREST_BOOKSHELF_LAYOUT_PAD_LEFT_PX = 56 as const;
+/** 外ランタンなど負座標用の左余白。天板装飾非表示のため 0 */
+export const FOREST_BOOKSHELF_LAYOUT_PAD_LEFT_PX = 0 as const;
 
 export type ForestBookshelfLayoutPin = {
   x: number;
@@ -41,11 +41,11 @@ const ITEM_LABELS: Record<ForestBookshelfItemId, string> = {
   lanternShelf: "棚ランタン",
   kanteiCover: "鑑定書表紙",
   spinesFortune: "鑑定背表紙",
-  createDiary: "日記ブックを作る",
-  currentDiary: "現在の日記ブック",
+  createDiary: "あしあとブックを作る",
+  currentDiary: "現在のあしあとブック",
   placeholderRed: "赤プレースホルダー",
   placeholderGreen: "緑プレースホルダー",
-  spinesDiary: "日記背表紙",
+  spinesDiary: "あしあと背表紙",
   owl: "フクロウ",
   lanternFloor: "外ランタン",
 };

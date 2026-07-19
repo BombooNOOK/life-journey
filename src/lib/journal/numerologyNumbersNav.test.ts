@@ -50,11 +50,11 @@ describe("parsePersonalDiaryNumbersFromSearchParams", () => {
 describe("numerologyNumbersBackLink", () => {
   it("labels preview return", () => {
     expect(numerologyNumbersBackLink("/journal/preview?entry=abc").label).toBe(
-      "日記プレビューへ戻る",
+      "あしあとプレビューへ戻る",
     );
   });
 
   it("labels list return", () => {
-    expect(numerologyNumbersBackLink("/orders/list").label).toBe("日記一覧へ戻る");
+    expect(numerologyNumbersBackLink("/orders/list").label).toBe("あしあと帳へ戻る");
   });
 });

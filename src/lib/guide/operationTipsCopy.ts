@@ -34,8 +34,8 @@ export const GUIDE_OPERATION_TIPS: readonly GuideOperationTip[] = [
   },
   {
     id: "find-diary",
-    title: "書いた日記を、あとから探すには？",
-    body: "日付で振り返るときは画面下の「カレンダー」。タグやキーワードで探したいときは「あしあと帳」の上部にある「日記を探す」を使います。",
+    title: "書いたあしあとを、あとから探すには？",
+    body: "日付で振り返るときは画面下の「カレンダー」。タグやキーワードで探したいときは「あしあと帳」の上部にある「あしあとを探す」を使います。",
     link: { href: "/orders/list", label: "あしあと帳を開く" },
   },
   {

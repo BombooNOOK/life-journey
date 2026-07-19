@@ -23,6 +23,10 @@ type ItemProps = {
   className?: string;
   /** 選択中：少し浮いて明るく */
   emphasized?: boolean;
+  /** 棚上の本: bottom / 表札など: contain */
+  objectPosition?: "bottom" | "center";
+  /** 表札など影なし */
+  flat?: boolean;
   children?: ReactNode;
 };
 
@@ -34,6 +38,8 @@ export function ForestBookshelfItem({
   zIndex = 2,
   className = "",
   emphasized = false,
+  objectPosition = "bottom",
+  flat = false,
   children,
 }: ItemProps) {
   return (
@@ -52,11 +58,15 @@ export function ForestBookshelfItem({
         fill
         className={[
           // 480×480 寄りのPNGを棚枠に入れると、中央寄せだと棚板から浮く
-          "object-contain object-bottom",
-          emphasized
-            ? "drop-shadow-[0_10px_14px_rgba(60,40,20,0.35)]"
-            : "drop-shadow-[0_6px_10px_rgba(60,40,20,0.22)]",
-        ].join(" ")}
+          objectPosition === "center" ? "object-contain object-center" : "object-contain object-bottom",
+          flat
+            ? ""
+            : emphasized
+              ? "drop-shadow-[0_10px_14px_rgba(60,40,20,0.35)]"
+              : "drop-shadow-[0_6px_10px_rgba(60,40,20,0.22)]",
+        ]
+          .filter(Boolean)
+          .join(" ")}
         sizes="(max-width: 640px) 40vw, 220px"
         unoptimized
         draggable={false}

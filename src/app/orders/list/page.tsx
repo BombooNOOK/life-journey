@@ -10,7 +10,7 @@ import { listProfilesAndActiveProfileId } from "@/lib/profile/activeProfile";
 export const dynamic = "force-dynamic";
 
 function ListFallback() {
-  return <OwlSuspenseFallback label="日記一覧を読み込んでいます…" />;
+  return <OwlSuspenseFallback label="あしあと帳を読み込んでいます…" />;
 }
 
 export default async function OrdersJournalListPage() {

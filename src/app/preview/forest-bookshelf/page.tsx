@@ -9,6 +9,11 @@ export const metadata: Metadata = {
 };
 
 /** 森の本棚プレビュー（フィクスチャ・ログイン不要） */
-export default function ForestBookshelfPreviewPage() {
-  return <ForestBookshelfPreviewClient />;
+export default async function ForestBookshelfPreviewPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ immersive?: string }>;
+}) {
+  const params = await searchParams;
+  return <ForestBookshelfPreviewClient immersive={params.immersive === "1"} />;
 }

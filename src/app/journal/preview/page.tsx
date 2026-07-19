@@ -20,6 +20,10 @@ import { journalEditPath } from "@/lib/journal/journalNav";
 import { normalizeCompanionType, normalizeDiaryDesignTheme, type CompanionType, type DiaryDesignId } from "@/lib/journal/meta";
 import { matchCompanionWritingPreviewGuide } from "@/lib/journal/companionWriting/session";
 import type { JournalPreviewNeighbors } from "@/lib/journal/journalPreviewNeighbors";
+import {
+  TERM_BACK_TO_FOOTPRINT_LEDGER,
+  TERM_FOOTPRINT_PREVIEW,
+} from "@/lib/journal/footprintTerminology";
 
 type PreviewEntry = {
   id: string;
@@ -206,7 +210,7 @@ function JournalPreviewPageContent() {
   const returnHomeLabel = returnTo?.startsWith("/orders/calendar")
     ? "カレンダーへ戻る"
     : returnTo?.startsWith("/orders/list")
-      ? "日記一覧へ戻る"
+      ? TERM_BACK_TO_FOOTPRINT_LEDGER
       : "一覧に戻る";
 
   const afterDeleteHref = returnTo ?? "/orders/list";
@@ -310,7 +314,7 @@ function JournalPreviewPageContent() {
       <div className="space-y-5">
       <div className="space-y-3">
         <div>
-          <h1 className="text-[1.375rem] font-bold text-stone-900 sm:text-[1.75rem]">日記プレビュー</h1>
+          <h1 className="text-[1.375rem] font-bold text-stone-900 sm:text-[1.75rem]">{TERM_FOOTPRINT_PREVIEW}</h1>
           {profileState.ready && profileState.hasProfiles ? (
             <ActiveProfileLabel nickname={profileState.activeProfileNickname} className="mt-2" />
           ) : null}
