@@ -36,8 +36,8 @@ type EditTarget =
   | { kind: "item"; id: ForestBookshelfItemId }
   | { kind: "spot"; id: ForestBookshelfSpotId };
 
-/** v3: 植物・棚ランタンを編集対象に戻したため、古い下書きを読み込まない */
-const DRAFT_STORAGE_KEY = "forest-bookshelf-layout-draft-v3";
+/** v4: プレビュー配置を本番に同期（自動下げ込みを取り消し） */
+const DRAFT_STORAGE_KEY = "forest-bookshelf-layout-draft-v4";
 
 /** アップ構図では床ランタンのみ一覧外 */
 const HIDDEN_ITEM_IDS = new Set<ForestBookshelfItemId>(["lanternFloor"]);
@@ -102,8 +102,9 @@ export function ForestBookshelfLayoutDebugClient() {
 
   useEffect(() => {
     try {
-      // 旧キーの下書きが植物位置などを上書きしないよう破棄
+      // 旧キーの下書きが本番と食い違わないよう破棄
       window.localStorage.removeItem("forest-bookshelf-layout-draft-v2");
+      window.localStorage.removeItem("forest-bookshelf-layout-draft-v3");
     } catch {
       /* ignore */
     }
@@ -305,7 +306,10 @@ export function ForestBookshelfLayoutDebugClient() {
               を押すだけでOKです（手動コピペ不要）。
             </li>
             <li>
-              <strong>実機へ反映</strong>：保存だけでは本番に出ません。保存後に本番反映（main へ push）し、実機はソフトを一度終了するかページを強制再読み込みしてください。
+              <strong>合わせ方</strong>：色枠ではなく、定規上の<strong>実画像</strong>と下のプレビューで棚板に乗せてください。
+            </li>
+            <li>
+              <strong>実機へ反映</strong>：定規で揃っても、保存→本番反映するまで実機は古いままです。ブラウザ下書きと本番の配置は別物です。
             </li>
           </ul>
         </div>
@@ -424,11 +428,19 @@ export function ForestBookshelfLayoutDebugClient() {
                 ))
               : null}
 
-            {/* 天板装飾は枠だけでなく実画像も重ねる（棚板合わせの参考） */}
+            {/* 色枠と見た目下端はズレるので、全パーツを実画像で重ねる */}
             {(
               [
                 ["plant", FOREST_BOOKSHELF_ASSETS.plant],
                 ["lanternShelf", FOREST_BOOKSHELF_ASSETS.lanternShelf],
+                ["kanteiCover", "/images/kantei-cover.png?v=1"],
+                ["spinesFortune", FOREST_BOOKSHELF_ASSETS.spinesFortune],
+                ["createDiary", FOREST_BOOKSHELF_ASSETS.createDiarySet],
+                ["currentDiary", "/images/kantei-cover.png?v=1"],
+                ["placeholderRed", FOREST_BOOKSHELF_ASSETS.placeholderRed],
+                ["placeholderGreen", FOREST_BOOKSHELF_ASSETS.placeholderGreen],
+                ["spinesDiary", FOREST_BOOKSHELF_ASSETS.spinesDiary],
+                ["owl", FOREST_BOOKSHELF_ASSETS.owl],
               ] as const
             ).map(([id, src]) => {
               const rect = itemDraft[id];
@@ -737,7 +749,7 @@ export function ForestBookshelfLayoutDebugClient() {
       <div>
         <p className="text-sm font-medium text-stone-800">実際の本棚UI（枠付きプレビュー）</p>
         <p className="mt-1 text-xs text-stone-500">
-          上の下書きがここに即反映されます。終わったら「ファイルに保存」を押してください。
+          このプレビューはブラウザ下書きです。実機と同じ値にするには「ファイルに保存」→本番反映が必要です。
         </p>
         <div className="mt-4 overflow-visible rounded-xl border border-stone-200 bg-[#ebe2d4] p-3">
           <ForestBookshelfPreviewClient

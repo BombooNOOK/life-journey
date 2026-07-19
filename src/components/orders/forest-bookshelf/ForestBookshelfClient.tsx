@@ -334,10 +334,10 @@ export function ForestBookshelfClient({
       style={
         immersive
           ? {
-              // 画面を覆う（幅優先でガツン。上下は構図の余白）
+              // 画面を覆う。高さは aspect-ratio に任せ、幅と高さの二重指定で比率が崩れないようにする
               aspectRatio: `${widthPx} / ${heightPx}`,
               width: `max(100vw, calc(100dvh * ${widthPx} / ${heightPx}))`,
-              height: `max(100dvh, calc(100vw * ${heightPx} / ${widthPx}))`,
+              height: "auto",
             }
           : {
               aspectRatio: `${widthPx} / ${heightPx}`,
@@ -372,8 +372,8 @@ export function ForestBookshelfClient({
           alt="森の本棚"
           fill
           priority
-          // 設計比率どおりのシーン枠いっぱいに敷く（contain だと端末でわずかにレターボックスし本が浮く）
-          className="object-fill"
+          // 定規と同じ比率で収める（aspect を崩す object-fill は使わない）
+          className="object-contain object-bottom"
           sizes="100vw"
           unoptimized
         />
