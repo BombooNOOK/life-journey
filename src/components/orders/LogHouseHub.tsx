@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 
 import {
   FirstVisitGuidePanel,
@@ -16,9 +17,13 @@ import { MyPageProfileList } from "@/components/orders/MyPageProfileList";
 import { MyPageManageHub } from "@/components/orders/MyPageManageMenu";
 import { TrialStatusBanner } from "@/components/entitlement/TrialStatusBanner";
 import type { SerializedUserEntitlement } from "@/lib/entitlement/resolveUserEntitlement";
-import type { FirstVisitGuideState } from "@/lib/onboarding/firstVisitGuideState";
+import {
+  resolveFirstVisitGuideState,
+  type FirstVisitGuideState,
+} from "@/lib/onboarding/firstVisitGuideState";
 import type { DonguriChoView } from "@/lib/loghouse/donguriTypes";
 import { useIsLogHouseMobileViewport } from "@/lib/loghouse/logHouseViewport";
+import type { FirstVisitReadyContext } from "@/lib/viewer/firstVisitReadyContext";
 
 type ProfileRow = { id: string; nickname: string };
 
@@ -39,16 +44,69 @@ type Props = {
   legalFooter: React.ReactNode;
 };
 
+/**
+ * 鑑定直後に /orders の SSR が古いと「未鑑定ロック」と「鑑定済み」が食い違う。
+ * API で再確認し、あれば即時アンロック＋refresh する。
+ */
+function useReconcileKanteiUnlock(input: {
+  hasKanteiOrder: boolean;
+  activeKanteiOrderId: string | null;
+  firstVisitGuideState: FirstVisitGuideState;
+}) {
+  const router = useRouter();
+  const [hasKanteiOrder, setHasKanteiOrder] = useState(input.hasKanteiOrder);
+  const [activeKanteiOrderId, setActiveKanteiOrderId] = useState(input.activeKanteiOrderId);
+  const [firstVisitGuideState, setFirstVisitGuideState] = useState(input.firstVisitGuideState);
+
+  useEffect(() => {
+    setHasKanteiOrder(input.hasKanteiOrder);
+    setActiveKanteiOrderId(input.activeKanteiOrderId);
+    setFirstVisitGuideState(input.firstVisitGuideState);
+  }, [input.hasKanteiOrder, input.activeKanteiOrderId, input.firstVisitGuideState]);
+
+  useEffect(() => {
+    if (input.hasKanteiOrder && input.activeKanteiOrderId) return;
+
+    let cancelled = false;
+    void fetch("/api/viewer/first-visit-ready-context", { credentials: "same-origin" })
+      .then(async (res) => {
+        if (!res.ok) throw new Error("ready context failed");
+        return (await res.json()) as FirstVisitReadyContext;
+      })
+      .then((ctx) => {
+        if (cancelled || ctx.branch !== "hasKantei") return;
+        setHasKanteiOrder(true);
+        if (ctx.kanteiOrderId) setActiveKanteiOrderId(ctx.kanteiOrderId);
+        setFirstVisitGuideState(
+          resolveFirstVisitGuideState({
+            hasKanteiOrder: true,
+            journalEntryCount: ctx.journalEntryCount,
+          }),
+        );
+        router.refresh();
+      })
+      .catch(() => {
+        // SSR のまま続行
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [input.hasKanteiOrder, input.activeKanteiOrderId, router]);
+
+  return { hasKanteiOrder, activeKanteiOrderId, firstVisitGuideState };
+}
+
 /** ログハウス：スマホ＝没入室内UI、PC＝既存カードUI */
 export function LogHouseHub({
   profiles,
   activeProfileId,
-  hasKanteiOrder,
-  activeKanteiOrderId,
+  hasKanteiOrder: hasKanteiOrderProp,
+  activeKanteiOrderId: activeKanteiOrderIdProp,
   mailboxUnreadCount = 0,
   donguriCho,
   entitlement,
-  firstVisitGuideState,
+  firstVisitGuideState: firstVisitGuideStateProp,
   companionWritingHref,
   deskWritingHref,
   viewerEmail,
@@ -58,6 +116,11 @@ export function LogHouseHub({
 }: Props) {
   const isMobile = useIsLogHouseMobileViewport();
   const [manageOpen, setManageOpen] = useState(false);
+  const { hasKanteiOrder, activeKanteiOrderId, firstVisitGuideState } = useReconcileKanteiUnlock({
+    hasKanteiOrder: hasKanteiOrderProp,
+    activeKanteiOrderId: activeKanteiOrderIdProp,
+    firstVisitGuideState: firstVisitGuideStateProp,
+  });
 
   const activeProfile = profiles.find((p) => p.id === activeProfileId) ?? null;
 

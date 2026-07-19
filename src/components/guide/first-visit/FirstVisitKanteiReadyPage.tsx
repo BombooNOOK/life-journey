@@ -40,7 +40,9 @@ export function FirstVisitKanteiReadyPage() {
       .then((data) => {
         if (cancelled) return;
         if (data.branch === "hasKantei") {
-          router.replace(FIRST_VISIT_ROUTES.alreadyReady);
+          // ログハウス側の表示が古いときでも、鑑定済みなら再鑑定へ進ませず戻す
+          router.replace("/orders");
+          router.refresh();
           return;
         }
         if (data.branch === "guest") {

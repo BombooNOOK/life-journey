@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 
 import { getViewerEmailFromCookie } from "@/lib/auth/viewer";
 import { prisma } from "@/lib/db";
@@ -223,6 +224,8 @@ export async function POST(req: Request) {
         error: e,
       });
     }
+    revalidatePath("/orders");
+    revalidatePath("/orders/bookshelf");
     return NextResponse.json({ id: order.id, profileId: order.profileId, code: "OK" });
   } catch (err) {
     const desc = describeSaveError(err);

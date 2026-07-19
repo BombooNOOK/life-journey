@@ -58,6 +58,7 @@ export function FirstVisitAlreadyReadyPage() {
     (action: FirstVisitGuideCardAction, _cardId: string) => {
       if (action === "orders") {
         push("/orders");
+        router.refresh();
         return;
       }
 
@@ -65,7 +66,7 @@ export function FirstVisitAlreadyReadyPage() {
         push("/");
       }
     },
-    [push],
+    [push, router],
   );
 
   if (authLoading || redirecting || !isLoggedIn) {

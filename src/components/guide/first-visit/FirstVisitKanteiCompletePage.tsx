@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useCallback, useEffect } from "react";
 
 import {
@@ -27,6 +28,7 @@ import {
 
 /** 第2章完了：鑑定書は本棚・ポストへ。次は第3章 */
 export function FirstVisitKanteiCompletePage() {
+  const router = useRouter();
   const { replace, isPending } = useTransitionNavigation();
 
   useEffect(() => {
@@ -46,7 +48,8 @@ export function FirstVisitKanteiCompletePage() {
 
   const goLoghouse = useCallback(() => {
     replace("/orders");
-  }, [replace]);
+    router.refresh();
+  }, [replace, router]);
 
   return (
     <section

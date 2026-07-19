@@ -11,6 +11,8 @@ export type FirstVisitReadyContext = {
   journalEntryCount: number;
   /** 住民票カードが発行済みか（道しるべ再開先の判定用） */
   hasResidentCard: boolean;
+  /** アクティブプロフィールの鑑定 orderId（なければ null） */
+  kanteiOrderId: string | null;
 };
 
 /** /guide/first/ready の旧URL保険導線 */
@@ -18,7 +20,12 @@ export async function resolveFirstVisitReadyContext(
   viewerEmail: string | null | undefined,
 ): Promise<FirstVisitReadyContext> {
   if (!viewerEmail?.trim()) {
-    return { branch: "guest", journalEntryCount: 0, hasResidentCard: false };
+    return {
+      branch: "guest",
+      journalEntryCount: 0,
+      hasResidentCard: false,
+      kanteiOrderId: null,
+    };
   }
 
   const [{ activeProfileId }, entitlementCtx, account] = await Promise.all([
@@ -39,6 +46,7 @@ export async function resolveFirstVisitReadyContext(
       branch: "needsKantei",
       journalEntryCount: entitlementCtx.journalEntryCount,
       hasResidentCard,
+      kanteiOrderId: null,
     };
   }
 
@@ -52,6 +60,7 @@ export async function resolveFirstVisitReadyContext(
       branch: "hasKantei",
       journalEntryCount: entitlementCtx.journalEntryCount,
       hasResidentCard,
+      kanteiOrderId: kanteiOrder.id,
     };
   }
 
@@ -59,6 +68,7 @@ export async function resolveFirstVisitReadyContext(
     branch: "needsKantei",
     journalEntryCount: entitlementCtx.journalEntryCount,
     hasResidentCard,
+    kanteiOrderId: null,
   };
 }
 
