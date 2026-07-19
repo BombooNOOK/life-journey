@@ -17,14 +17,14 @@ export const LOGHOUSE_TOUR_MAILBOX_PAGE_BANNER =
   "ヤギさん郵便から、どんぐりやお知らせが届きます。\n\n「森の住民登録のお祝い」や「今日のおとどけ」では、どんぐりが毎日届くしくみがわかります。\n「鑑定書が届きました」のお手紙も、このなかにありますよ。\n\n読み終わったら、下のボタンで案内に戻ってください。" as const;
 
 export const LOGHOUSE_TOUR_BOOKSHELF_OWL_QUOTE =
-  "鑑定書や、あしあとブックは、\nこちらの本棚にしまわれていきます。\n\n残したあしあとは、ここで一冊の本（あしあとブック）にすることができます。\n\n今、本棚で鑑定書を見ますか？" as const;
+  "鑑定書は、こちらの本棚にしまわれています。\n\n光っている本棚をタップして、のぞいてみましょう。" as const;
 
 export const LOGHOUSE_TOUR_BOOKSHELF_GUIDE_LINK_LABEL = "詳しい手順はこちらをご覧ください" as const;
 
 /** 森の案内所・あしあとブック説明（returnTo 付きは build 関数を使う） */
 export const LOGHOUSE_TOUR_BOOKSHELF_GUIDE_HASH = "diary-book" as const;
 
-export const LOGHOUSE_TOUR_BOOKSHELF_OPEN_NOW = "今、本棚を見る" as const;
+export const LOGHOUSE_TOUR_BOOKSHELF_OPEN_NOW = "本棚を開く" as const;
 export const LOGHOUSE_TOUR_BOOKSHELF_LATER = "あとにする" as const;
 
 export const LOGHOUSE_TOUR_HINT_OWL_QUOTE =

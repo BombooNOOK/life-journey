@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import type { ReactNode } from "react";
 
 import { CharacterFaceIcon } from "@/components/home/CharacterFaceIcon";
@@ -10,13 +9,10 @@ import {
   companionWritingGuidePrimaryButtonClass,
   companionWritingGuideSecondaryButtonClass,
 } from "@/components/journal/companion-writing/companionWritingGuideStyles";
-import { buildForestGuideStationHref } from "@/lib/help/forestGuideStationNav";
 import type { LoghouseTourStepId } from "@/lib/onboarding/firstVisitWizard/loghouseTour";
 import {
   LOGHOUSE_TOUR_A11Y_LABEL,
   LOGHOUSE_TOUR_AWAITING_DESK_OWL_QUOTE,
-  LOGHOUSE_TOUR_BOOKSHELF_GUIDE_HASH,
-  LOGHOUSE_TOUR_BOOKSHELF_GUIDE_LINK_LABEL,
   LOGHOUSE_TOUR_BOOKSHELF_LATER,
   LOGHOUSE_TOUR_BOOKSHELF_OPEN_NOW,
   LOGHOUSE_TOUR_BOOKSHELF_OWL_QUOTE,
@@ -36,8 +32,6 @@ type Props = {
   step: LoghouseTourStepId;
   /** inviteWrite で机ハイライト待ち */
   awaitingDeskTap?: boolean;
-  /** 案内所から戻る先（本番=/orders、プレビュー用パス） */
-  guideReturnTo?: string;
   /** ポストなど下側を隠さないよう、案内カードを上に置く */
   cardPlacement?: "top" | "bottom";
   onNext: () => void;
@@ -73,7 +67,6 @@ function OwlCard({
 export function LogHouseRoomFirstVisitTour({
   step,
   awaitingDeskTap = false,
-  guideReturnTo = "/orders",
   cardPlacement = "bottom",
   onNext,
   onOpenMailbox,
@@ -94,10 +87,6 @@ export function LogHouseRoomFirstVisitTour({
   }
 
   let body: ReactNode = null;
-  const guideHref = buildForestGuideStationHref({
-    returnTo: guideReturnTo,
-    hash: LOGHOUSE_TOUR_BOOKSHELF_GUIDE_HASH,
-  });
 
   if (step === "desk") {
     body = (
@@ -120,14 +109,9 @@ export function LogHouseRoomFirstVisitTour({
       </OwlCard>
     );
   } else if (step === "bookshelf") {
+    // 詳しい「どれが鑑定書か」は本棚内のスポットライトに任せる（二重案内を避ける）
     body = (
       <OwlCard quote={LOGHOUSE_TOUR_BOOKSHELF_OWL_QUOTE}>
-        <Link
-          href={guideHref}
-          className="block text-center text-sm font-medium text-emerald-900 underline-offset-2 hover:underline"
-        >
-          {LOGHOUSE_TOUR_BOOKSHELF_GUIDE_LINK_LABEL}
-        </Link>
         <button
           type="button"
           className={companionWritingGuidePrimaryButtonClass}

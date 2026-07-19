@@ -796,7 +796,6 @@ export function LogHouseRoomMobile({
       <LogHouseRoomFirstVisitTour
         step={tourStep}
         awaitingDeskTap={awaitingDeskTap}
-        guideReturnTo={tourGuideReturnTo}
         cardPlacement={
           shouldPinTourCardToTop(
             awaitingDeskTap ? "desk" : spotlightSpotForTourStep(tourStep),
