@@ -6,7 +6,7 @@
 
 export const FOREST_BOOKSHELF_ASSET_DIR = "/images/ljd/bookshelf" as const;
 /** 本体画像差し替え時に上げる */
-const ASSET_VERSION = 4;
+const ASSET_VERSION = 5;
 
 function asset(filename: string): string {
   return `${FOREST_BOOKSHELF_ASSET_DIR}/${filename}?v=${ASSET_VERSION}`;

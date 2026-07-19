@@ -1,9 +1,16 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
+import { CharacterFaceIcon } from "@/components/home/CharacterFaceIcon";
+import {
+  companionWritingFloatingGuideClass,
+  companionWritingGuideBodyClass,
+  companionWritingGuidePrimaryButtonClass,
+} from "@/components/journal/companion-writing/companionWritingGuideStyles";
 import { DiaryBookCreateForm } from "@/components/orders/DiaryBookCreateForm";
 import {
   ForestBookshelfItem,
@@ -31,13 +38,18 @@ import {
   LOGHOUSE_TOUR_KANTEI_PREVIEW_PEEK,
   LOGHOUSE_TOUR_RETURN_LABEL,
 } from "@/lib/onboarding/firstVisitWizard/loghouseTourCopy";
-import { companionWritingGuidePrimaryButtonClass } from "@/components/journal/companion-writing/companionWritingGuideStyles";
-import Link from "next/link";
 import {
   FOREST_BOOKSHELF_ASSETS,
   FOREST_BOOKSHELF_INTRINSIC,
   FOREST_BOOKSHELF_PAGE_BG,
 } from "@/lib/ljd/forestBookshelfAssets";
+import {
+  markForestBookshelfSpotGuideSeen,
+  owlQuoteForBookshelfGuide,
+  resolveForestBookshelfSpotGuide,
+  spotIdForBookshelfGuide,
+  type ForestBookshelfSpotGuideKind,
+} from "@/lib/ljd/forestBookshelfFirstVisitGuide";
 import {
   FOREST_BOOKSHELF_ITEM_LAYOUT,
   FOREST_BOOKSHELF_SPOT_LAYOUT,
@@ -109,9 +121,41 @@ export function ForestBookshelfClient({
   const [selectedSpot, setSelectedSpot] = useState<ForestBookshelfSpotId | null>(null);
   const [panel, setPanel] = useState<PanelMode>("none");
   const [tourKanteiPeekOpen, setTourKanteiPeekOpen] = useState(false);
+  const [spotGuideKind, setSpotGuideKind] = useState<ForestBookshelfSpotGuideKind | null>(null);
+
+  const featuredKantei = kanteiBooks[0] ?? null;
+  const currentDiary = diaryBooks[0] ?? null;
+  const secondDiary = diaryBooks[1] ?? null;
+  const thirdDiary = diaryBooks[2] ?? null;
+  const immersive = layout === "immersive";
+
+  useEffect(() => {
+    if (!immersive) {
+      setSpotGuideKind(null);
+      return;
+    }
+    setSpotGuideKind(
+      resolveForestBookshelfSpotGuide({
+        hasKantei: Boolean(featuredKantei),
+        hasAshiatoBook: Boolean(currentDiary),
+      }),
+    );
+  }, [immersive, featuredKantei, currentDiary]);
+
+  const spotlightSpotId = spotGuideKind ? spotIdForBookshelfGuide(spotGuideKind) : null;
+
+  const completeSpotGuideIfMatching = useCallback((spotId: ForestBookshelfSpotId) => {
+    setSpotGuideKind((prev) => {
+      if (!prev) return null;
+      if (spotIdForBookshelfGuide(prev) !== spotId) return prev;
+      markForestBookshelfSpotGuideSeen(prev);
+      return null;
+    });
+  }, []);
 
   const openKanteiHref = useCallback(
     (href: string) => {
+      completeSpotGuideIfMatching("kanteiCover");
       const inTour = Boolean(readLoghouseTourStep());
       const isRealOrderRead = href.startsWith("/orders/") && href.includes("/read");
       if (inTour && !isRealOrderRead) {
@@ -121,7 +165,7 @@ export function ForestBookshelfClient({
       }
       router.push(href);
     },
-    [router],
+    [completeSpotGuideIfMatching, router],
   );
 
   const itemLayout = useMemo(
@@ -132,11 +176,6 @@ export function ForestBookshelfClient({
     () => ({ ...FOREST_BOOKSHELF_SPOT_LAYOUT, ...spotLayoutOverride }),
     [spotLayoutOverride],
   );
-
-  const featuredKantei = kanteiBooks[0] ?? null;
-  const currentDiary = diaryBooks[0] ?? null;
-  const secondDiary = diaryBooks[1] ?? null;
-  const thirdDiary = diaryBooks[2] ?? null;
 
   const closeAll = useCallback(() => {
     setSelectedSpot(null);
@@ -175,7 +214,10 @@ export function ForestBookshelfClient({
         title: currentDiary.title,
         lines: formatDiaryLines(currentDiary),
         actionLabel: "選ぶ",
-        onAction: () => router.push(currentDiary.href),
+        onAction: () => {
+          completeSpotGuideIfMatching("currentDiary");
+          router.push(currentDiary.href);
+        },
       };
     }
 
@@ -224,7 +266,16 @@ export function ForestBookshelfClient({
     }
 
     return null;
-  }, [selectedSpot, featuredKantei, currentDiary, secondDiary, thirdDiary, router, openKanteiHref]);
+  }, [
+    selectedSpot,
+    featuredKantei,
+    currentDiary,
+    secondDiary,
+    thirdDiary,
+    router,
+    openKanteiHref,
+    completeSpotGuideIfMatching,
+  ]);
 
   const kanteiListItems: ForestBookshelfListItem[] = kanteiBooks.map((b) => ({
     id: b.id,
@@ -241,6 +292,11 @@ export function ForestBookshelfClient({
   }));
 
   const activateSpot = (id: ForestBookshelfSpotId) => {
+    if (spotlightSpotId && id !== spotlightSpotId) {
+      // 案内中は光っている場所以外は触らせない（迷わない）
+      return;
+    }
+    completeSpotGuideIfMatching(id);
     setPanel("none");
     if (id === "spinesFortune") {
       setSelectedSpot(null);
@@ -258,8 +314,10 @@ export function ForestBookshelfClient({
   const redCover = thirdDiary?.coverSrc ?? FOREST_BOOKSHELF_ASSETS.placeholderRed;
   const greenCover = secondDiary?.coverSrc ?? FOREST_BOOKSHELF_ASSETS.placeholderGreen;
   const kanteiCover = featuredKantei?.coverSrc ?? "/images/kantei-cover.png?v=1";
-  const immersive = layout === "immersive";
   const { widthPx, heightPx } = FOREST_BOOKSHELF_INTRINSIC;
+  const spotGuideQuote = spotGuideKind ? owlQuoteForBookshelfGuide(spotGuideKind) : null;
+  /** 鑑定書は上段なのでカードは下、あしあとブックは中段なのでカードは上 */
+  const spotGuideCardAtTop = spotGuideKind === "ashiato";
 
   const scene = (
     <div
@@ -314,7 +372,7 @@ export function ForestBookshelfClient({
           src={kanteiCover}
           alt={featuredKantei ? featuredKantei.title : "鑑定書"}
           className={featuredKantei ? "" : "opacity-55"}
-          emphasized={selectedSpot === "kanteiCover"}
+          emphasized={selectedSpot === "kanteiCover" || spotlightSpotId === "kanteiCover"}
         />
         <ForestBookshelfItem
           rect={itemLayout.spinesFortune}
@@ -333,7 +391,7 @@ export function ForestBookshelfClient({
             rect={itemLayout.currentDiary}
             src={currentDiary.coverSrc}
             alt={currentDiary.title}
-            emphasized={selectedSpot === "currentDiary"}
+            emphasized={selectedSpot === "currentDiary" || spotlightSpotId === "currentDiary"}
           />
         ) : null}
         <ForestBookshelfItem
@@ -357,11 +415,19 @@ export function ForestBookshelfClient({
         <ForestBookshelfItem rect={itemLayout.owl} src={FOREST_BOOKSHELF_ASSETS.owl} alt="" />
       </div>
 
+      {spotlightSpotId ? (
+        <div
+          className="pointer-events-none absolute inset-0 z-[23] bg-stone-950/45 transition-opacity duration-300"
+          aria-hidden
+        />
+      ) : null}
+
       <ForestBookshelfTapSpot
         rect={spotLayout.kanteiCover}
         label="鑑定書を選ぶ"
         disabled={!featuredKantei}
         selected={selectedSpot === "kanteiCover"}
+        spotlight={spotlightSpotId === "kanteiCover"}
         onActivate={() => activateSpot("kanteiCover")}
       />
       <ForestBookshelfTapSpot
@@ -381,6 +447,7 @@ export function ForestBookshelfClient({
         label="現在のあしあとブックを選ぶ"
         disabled={!currentDiary}
         selected={selectedSpot === "currentDiary"}
+        spotlight={spotlightSpotId === "currentDiary"}
         onActivate={() => activateSpot("currentDiary")}
       />
       <ForestBookshelfTapSpot
@@ -429,10 +496,10 @@ export function ForestBookshelfClient({
             <LogHouseTourAwareBackLink
               href="/orders"
               fallbackLabel={LOG_HOUSE_BACK_TO_LINK_LABEL}
-              className="pointer-events-auto inline-flex min-h-11 items-center rounded-full border border-[#d9cbb8]/90 bg-[#fffdf8]/88 px-3 text-sm font-medium text-[#5c4a3a] shadow-sm backdrop-blur-[3px]"
+              className="pointer-events-auto inline-flex min-h-11 items-center rounded-full border-2 border-[#b8893d]/70 bg-[#fffdf8]/95 px-3.5 text-sm font-semibold text-[#5c4a3a] shadow-md backdrop-blur-[3px]"
             />
             <div className="pointer-events-auto relative flex max-w-[58%] items-start justify-end gap-2">
-              <ForestBookshelfHelp enableFirstVisitTip />
+              <ForestBookshelfHelp enableFirstVisitTip={!spotGuideKind} />
               <p className="pointer-events-none min-w-0 rounded-full border border-[#d9cbb8]/70 bg-[#fffdf8]/75 px-2.5 py-2 text-right text-[11px] leading-tight text-[#6a5846] shadow-sm backdrop-blur-[3px]">
                 「{activeProfileLabel}」
                 {deployRevision ? (
@@ -443,6 +510,31 @@ export function ForestBookshelfClient({
               </p>
             </div>
           </div>
+
+          {spotGuideKind && spotGuideQuote ? (
+            <div
+              className={[
+                "pointer-events-none absolute inset-x-0 z-[58] flex justify-center px-4",
+                spotGuideCardAtTop
+                  ? "top-[4.75rem]"
+                  : "bottom-6 pb-[env(safe-area-inset-bottom)]",
+              ].join(" ")}
+            >
+              <section
+                aria-label="本棚のご案内"
+                className={`${companionWritingFloatingGuideClass} pointer-events-auto max-w-sm`}
+              >
+                <div className="flex items-start gap-2.5">
+                  <CharacterFaceIcon name="character-owl-face" />
+                  <p
+                    className={`min-w-0 flex-1 whitespace-pre-line ${companionWritingGuideBodyClass} mt-0`}
+                  >
+                    {spotGuideQuote}
+                  </p>
+                </div>
+              </section>
+            </div>
+          ) : null}
 
           {(entitlement.showTrialBanner || (!featuredKantei && activeProfileId)) && (
             <div className="pointer-events-none absolute inset-x-0 top-[4.5rem] z-30 px-3">

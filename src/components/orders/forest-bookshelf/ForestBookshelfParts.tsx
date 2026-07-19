@@ -78,6 +78,8 @@ type SpotProps = {
   onActivate: () => void;
   disabled?: boolean;
   selected?: boolean;
+  /** はじめて案内：次にタップしてほしい場所 */
+  spotlight?: boolean;
 };
 
 /** 見た目より少し広いタップ領域 */
@@ -87,6 +89,7 @@ export function ForestBookshelfTapSpot({
   onActivate,
   disabled = false,
   selected = false,
+  spotlight = false,
 }: SpotProps) {
   return (
     <button
@@ -95,7 +98,8 @@ export function ForestBookshelfTapSpot({
       aria-label={label}
       onClick={onActivate}
       className={[
-        "absolute z-[4] rounded-lg transition duration-150",
+        spotlight ? "absolute z-[26]" : "absolute z-[4]",
+        "rounded-lg transition duration-150",
         "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#a67c3d]",
         disabled
           ? "pointer-events-none opacity-0"
@@ -103,8 +107,23 @@ export function ForestBookshelfTapSpot({
         selected
           ? "ring-2 ring-[#a8b08f]/90 ring-offset-1 ring-offset-[#ebe2d4] brightness-105"
           : "hover:brightness-105",
+        spotlight
+          ? "border-2 border-amber-100 bg-amber-100/40 shadow-[0_0_0_3px_rgba(251,191,36,0.55),0_0_36px_rgba(251,191,36,0.65)] forest-bookshelf-spot-pulse"
+          : "",
       ].join(" ")}
       style={rectStyle(rect)}
-    />
+    >
+      {spotlight ? (
+        <style>{`
+          .forest-bookshelf-spot-pulse {
+            animation: forest-bookshelf-spot-pulse 1.35s ease-in-out infinite;
+          }
+          @keyframes forest-bookshelf-spot-pulse {
+            0%, 100% { filter: brightness(1.05); box-shadow: 0 0 0 3px rgba(251,191,36,0.5), 0 0 28px rgba(251,191,36,0.45); }
+            50% { filter: brightness(1.18); box-shadow: 0 0 0 5px rgba(251,191,36,0.75), 0 0 44px rgba(251,191,36,0.8); }
+          }
+        `}</style>
+      ) : null}
+    </button>
   );
 }
