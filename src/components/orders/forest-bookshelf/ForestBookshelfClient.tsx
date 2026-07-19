@@ -372,7 +372,8 @@ export function ForestBookshelfClient({
           alt="森の本棚"
           fill
           priority
-          className="object-contain object-bottom"
+          // 設計比率どおりのシーン枠いっぱいに敷く（contain だと端末でわずかにレターボックスし本が浮く）
+          className="object-fill"
           sizes="100vw"
           unoptimized
         />

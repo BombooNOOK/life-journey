@@ -62,8 +62,9 @@ export function ForestBookshelfItem({
           flat
             ? ""
             : emphasized
-              ? "drop-shadow-[0_10px_14px_rgba(60,40,20,0.35)]"
-              : "drop-shadow-[0_6px_10px_rgba(60,40,20,0.22)]",
+              ? "drop-shadow-[0_6px_8px_rgba(60,40,20,0.28)]"
+              : // 常時ドロップシャドウは棚から浮いて見えるため付けない
+                "",
         ]
           .filter(Boolean)
           .join(" ")}

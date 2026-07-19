@@ -188,11 +188,11 @@ export { ITEM_LABELS as FOREST_BOOKSHELF_ITEM_LABELS };
  * 本の下端をここへ合わせると棚に乗った見え方になりやすい。
  * 見本に合わせて微調整可。
  */
-/** bookshelf_main.png（上部透明パッド込み）の棚板上面付近 */
+/** bookshelf_main.png（上部透明パッド込み）の棚板上面付近（本の描画下端＝見た目接地） */
 export const FOREST_BOOKSHELF_SHELF_FLOOR_Y_PERCENT = [
-  { id: "shelf1", label: "1段目（鑑定書）", y: 54.5 },
-  { id: "shelf2", label: "2段目（あしあとブック）", y: 78 },
-  { id: "shelf3", label: "3段目（これまでの）", y: 97.5 },
+  { id: "shelf1", label: "1段目（鑑定書）", y: 57.2 },
+  { id: "shelf2", label: "2段目（あしあとブック）", y: 81 },
+  { id: "shelf3", label: "3段目（これまでの）", y: 99 },
 ] as const;
 
 /** 下端（上からの %）= top + height */

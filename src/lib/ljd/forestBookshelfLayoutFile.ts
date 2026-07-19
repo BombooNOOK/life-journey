@@ -39,9 +39,9 @@ const SPOT_ORDER: ForestBookshelfSpotId[] = [
 const ITEM_COMMENTS: Partial<Record<ForestBookshelfItemId, string>> = {
   plant: "/** 天板左：観葉（本体天板 ≈24%） */",
   lanternShelf: "/** 天板右：ランタン */",
-  kanteiCover: "/** 1段目：鑑定書 */",
-  createDiary: "/** 2段目：あしあとブック */",
-  placeholderGreen: "/** 3段目：これまでのあしあとブック */",
+  kanteiCover: "/** 1段目：鑑定書（不透明下端 ≈ 棚板57.2%） */",
+  createDiary: "/** 2段目：あしあとブック（不透明下端 ≈ 棚板81%） */",
+  placeholderGreen: "/** 3段目：これまでのあしあとブック（不透明下端 ≈ 棚板99%） */",
   lanternFloor: "/** 非表示（アップ構図では床が出ない） */",
 };
 
