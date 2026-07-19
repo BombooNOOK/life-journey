@@ -37,12 +37,12 @@ const SPOT_ORDER: ForestBookshelfSpotId[] = [
 ];
 
 const ITEM_COMMENTS: Partial<Record<ForestBookshelfItemId, string>> = {
-  plant: "/** 非表示（天板装飾） */",
-  lanternShelf: "/** 非表示（天板装飾） */",
+  plant: "/** 天板左：観葉（本体天板 ≈24%） */",
+  lanternShelf: "/** 天板右：ランタン */",
   kanteiCover: "/** 1段目：鑑定書 */",
   createDiary: "/** 2段目：あしあとブック */",
   placeholderGreen: "/** 3段目：これまでのあしあとブック */",
-  lanternFloor: "/** 非表示（床ランタン） */",
+  lanternFloor: "/** 非表示（アップ構図では床が出ない） */",
 };
 
 /** 定規の下書きから forestBookshelfLayout.ts 全文を生成 */

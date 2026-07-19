@@ -36,14 +36,11 @@ type EditTarget =
   | { kind: "item"; id: ForestBookshelfItemId }
   | { kind: "spot"; id: ForestBookshelfSpotId };
 
-const DRAFT_STORAGE_KEY = "forest-bookshelf-layout-draft-v2";
+/** v3: 植物・棚ランタンを編集対象に戻したため、古い下書きを読み込まない */
+const DRAFT_STORAGE_KEY = "forest-bookshelf-layout-draft-v3";
 
-/** 今回は描画しない装飾（定規の一覧からも外す） */
-const HIDDEN_ITEM_IDS = new Set<ForestBookshelfItemId>([
-  "plant",
-  "lanternShelf",
-  "lanternFloor",
-]);
+/** アップ構図では床ランタンのみ一覧外 */
+const HIDDEN_ITEM_IDS = new Set<ForestBookshelfItemId>(["lanternFloor"]);
 
 const EDITABLE_ITEM_IDS = FOREST_BOOKSHELF_ITEM_IDS.filter((id) => !HIDDEN_ITEM_IDS.has(id));
 
@@ -104,6 +101,12 @@ export function ForestBookshelfLayoutDebugClient() {
   const [draftHydrated, setDraftHydrated] = useState(false);
 
   useEffect(() => {
+    try {
+      // 旧キーの下書きが植物位置などを上書きしないよう破棄
+      window.localStorage.removeItem("forest-bookshelf-layout-draft-v2");
+    } catch {
+      /* ignore */
+    }
     const stored = readStoredDraft();
     if (stored) {
       setItemDraft(stored.items);
@@ -221,7 +224,9 @@ export function ForestBookshelfLayoutDebugClient() {
         throw new Error(data.error || "save failed");
       }
       setSaveState("ok");
-      setSaveMessage(`保存しました → ${data.path ?? "forestBookshelfLayout.ts"}`);
+      setSaveMessage(
+        `保存しました → ${data.path ?? "forestBookshelfLayout.ts"}（このあと本番反映が必要です）`,
+      );
       window.setTimeout(() => setSaveState("idle"), 2500);
     } catch (error) {
       setSaveState("fail");
@@ -280,7 +285,10 @@ export function ForestBookshelfLayoutDebugClient() {
               <strong>表示</strong>：下の拡大率で縮小できます。このページ全体は上下スクロールできます（Cursor内ブラウザ向け）。
             </li>
             <li>
-              <strong>基準</strong>：あしあと表記のアップ本棚。上部余白は本棚用の部屋背景。
+              <strong>基準</strong>：あしあと表記のアップ本棚。上部余白は本棚用の部屋背景。植物・棚ランタンも対象一覧から選べます。
+            </li>
+            <li>
+              棚板ラインは<strong>現在の本体PNG</strong>基準です。昔の41%付近のラインは使いません。
             </li>
             <li>
               「旧・全体見本」は<strong>別構図の古い絵</strong>です。重ねると迷子になるので、通常はOFFのまま。
@@ -295,6 +303,9 @@ export function ForestBookshelfLayoutDebugClient() {
             <li>
               終わったら下の<strong className="text-amber-950">「この配置をファイルに保存」</strong>
               を押すだけでOKです（手動コピペ不要）。
+            </li>
+            <li>
+              <strong>実機へ反映</strong>：保存だけでは本番に出ません。保存後に本番反映（main へ push）し、実機はソフトを一度終了するかページを強制再読み込みしてください。
             </li>
           </ul>
         </div>
@@ -412,6 +423,37 @@ export function ForestBookshelfLayoutDebugClient() {
                   </div>
                 ))
               : null}
+
+            {/* 天板装飾は枠だけでなく実画像も重ねる（棚板合わせの参考） */}
+            {(
+              [
+                ["plant", FOREST_BOOKSHELF_ASSETS.plant],
+                ["lanternShelf", FOREST_BOOKSHELF_ASSETS.lanternShelf],
+              ] as const
+            ).map(([id, src]) => {
+              const rect = itemDraft[id];
+              return (
+                <div
+                  key={`sprite-${id}`}
+                  className="pointer-events-none absolute z-[27]"
+                  style={{
+                    left: `${rect.left}%`,
+                    top: `${rect.top}%`,
+                    width: `${rect.width}%`,
+                    height: `${rect.height}%`,
+                  }}
+                >
+                  <Image
+                    src={src}
+                    alt=""
+                    fill
+                    className="object-contain object-bottom"
+                    sizes="140px"
+                    unoptimized
+                  />
+                </div>
+              );
+            })}
 
             {showItems
               ? itemRegions.map((region) => (
@@ -683,7 +725,7 @@ export function ForestBookshelfLayoutDebugClient() {
             <p className="mt-2 text-xs text-stone-500">
               「ファイルに保存」で{" "}
               <code className="rounded bg-stone-100 px-1">forestBookshelfLayout.ts</code>{" "}
-              を自動更新します。コピペ作業は不要です。
+              を自動更新します。実機へ出すときは、このあと本番反映が必要です。
             </p>
           )}
           {copyState === "ok" ? (

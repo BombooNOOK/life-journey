@@ -37,9 +37,9 @@ export type ForestBookshelfSpotId =
 
 export const FOREST_BOOKSHELF_ITEM_LAYOUT: Record<ForestBookshelfItemId, ForestBookshelfRect> = {
   /** 天板左：観葉（本体天板 ≈24%） */
-  plant: { left: 2, top: 10, width: 22, height: 14.5 },
+  plant: { left: 5, top: -6, width: 37, height: 33.5 },
   /** 天板右：ランタン */
-  lanternShelf: { left: 76, top: 9.5, width: 22, height: 14.5 },
+  lanternShelf: { left: 55, top: 2, width: 38, height: 24 },
   /** 1段目：鑑定書 */
   kanteiCover: { left: 4, top: 39, width: 34, height: 14.5 },
   spinesFortune: { left: 35.5, top: 31.5, width: 60.5, height: 30.5 },
