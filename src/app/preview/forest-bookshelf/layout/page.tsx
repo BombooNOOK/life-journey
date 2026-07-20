@@ -22,7 +22,7 @@ export default async function ForestBookshelfLayoutPage() {
         <p className="text-xs font-medium uppercase tracking-wide text-amber-800">Layout tool</p>
         <h1 className="mt-1 text-lg font-semibold sm:text-xl">森の本棚レイアウト定規</h1>
         <p className="mt-1 text-xs leading-relaxed text-stone-600 sm:text-sm">
-          実線枠＝見た目（本・装飾）／点線枠＝タップ領域。種類で「タップ（spot）」を選ぶとタップ範囲を合わせられます。緑の棚板ラインに本の下端を合わせてから保存してください。
+          Cursor内ブラウザ向け：下の枠を上下スクロール、拡大率は既定45%。点線枠＝タップ領域（最初からタップ編集）。実線枠＝見た目。終わったら「この配置をファイルに保存」→本番反映を依頼してください。
         </p>
       </header>
 

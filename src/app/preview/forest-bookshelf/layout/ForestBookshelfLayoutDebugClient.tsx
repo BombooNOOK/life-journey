@@ -82,10 +82,12 @@ export function ForestBookshelfLayoutDebugClient() {
   const [showItems, setShowItems] = useState(true);
   const [showSpots, setShowSpots] = useState(true);
   const [showShelfFloors, setShowShelfFloors] = useState(true);
+  /** オンにすると、いま編集中の枠（と対応する実画像）だけ表示 */
+  const [soloEditing, setSoloEditing] = useState(false);
   /** 高さ変更時に下端を固定（上方向へ伸びる） */
   const [pinBottom, setPinBottom] = useState(true);
   /** Cursor内ブラウザ向け：既定は縮小表示（ページスクロールで全体を見る） */
-  const [viewScalePercent, setViewScalePercent] = useState(55);
+  const [viewScalePercent, setViewScalePercent] = useState(45);
   const [cursor, setCursor] = useState<ForestBookshelfLayoutPin | null>(null);
   const [pin, setPin] = useState<ForestBookshelfLayoutPin | null>(null);
   const [copyState, setCopyState] = useState<"idle" | "ok" | "fail">("idle");
@@ -94,8 +96,9 @@ export function ForestBookshelfLayoutDebugClient() {
 
   const [itemDraft, setItemDraft] = useState(FOREST_BOOKSHELF_ITEM_LAYOUT);
   const [spotDraft, setSpotDraft] = useState(FOREST_BOOKSHELF_SPOT_LAYOUT);
+  /** タップずれ直し向け：最初はタップ枠を編集 */
   const [editTarget, setEditTarget] = useState<EditTarget>({
-    kind: "item",
+    kind: "spot",
     id: "kanteiCover",
   });
   const [draftHydrated, setDraftHydrated] = useState(false);
@@ -156,6 +159,23 @@ export function ForestBookshelfLayoutDebugClient() {
     [regions],
   );
   const spotRegions = useMemo(() => regions.filter((r) => r.kind === "spot"), [regions]);
+
+  const visibleItemRegions = useMemo(() => {
+    if (!soloEditing) return itemRegions;
+    if (editTarget.kind !== "item") return [];
+    return itemRegions.filter((r) => r.id === editTarget.id);
+  }, [soloEditing, itemRegions, editTarget]);
+
+  const visibleSpotRegions = useMemo(() => {
+    if (!soloEditing) return spotRegions;
+    if (editTarget.kind !== "spot") return [];
+    return spotRegions.filter((r) => r.id === editTarget.id);
+  }, [soloEditing, spotRegions, editTarget]);
+
+  const visibleSpriteIds = useMemo(() => {
+    if (!soloEditing) return null; // null = 全部
+    return new Set<string>([editTarget.id]);
+  }, [soloEditing, editTarget.id]);
 
   const gridDataUrl = useMemo(() => {
     const svg = buildForestBookshelfLayoutGridSvg();
@@ -353,6 +373,17 @@ export function ForestBookshelfLayoutDebugClient() {
             <input type="checkbox" checked={showSpots} onChange={(e) => setShowSpots(e.target.checked)} />
             タップ枠
           </label>
+          <label
+            className="flex items-center gap-2 rounded-lg border border-fuchsia-300 bg-fuchsia-50 px-2 py-1.5 font-medium text-fuchsia-950"
+            title="オンにすると、下の「対象」で選んでいる枠だけ表示します"
+          >
+            <input
+              type="checkbox"
+              checked={soloEditing}
+              onChange={(e) => setSoloEditing(e.target.checked)}
+            />
+            調整中だけ表示
+          </label>
         </div>
 
         <div className="w-full overflow-x-auto overflow-y-visible rounded-xl border border-stone-300 bg-stone-200/60 p-2">
@@ -442,7 +473,9 @@ export function ForestBookshelfLayoutDebugClient() {
                 ["spinesDiary", FOREST_BOOKSHELF_ASSETS.spinesDiary],
                 ["owl", FOREST_BOOKSHELF_ASSETS.owl],
               ] as const
-            ).map(([id, src]) => {
+            )
+              .filter(([id]) => !visibleSpriteIds || visibleSpriteIds.has(id))
+              .map(([id, src]) => {
               const rect = itemDraft[id];
               return (
                 <div
@@ -468,10 +501,15 @@ export function ForestBookshelfLayoutDebugClient() {
             })}
 
             {showItems
-              ? itemRegions.map((region) => (
+              ? visibleItemRegions.map((region) => (
                   <div
                     key={region.id}
-                    className="pointer-events-none absolute z-30 border-2"
+                    className={[
+                      "pointer-events-none absolute z-30 border-2",
+                      soloEditing && editTarget.kind === "item" && editTarget.id === region.id
+                        ? "ring-2 ring-fuchsia-500 ring-offset-1"
+                        : "",
+                    ].join(" ")}
                     style={{
                       left: `${region.left}%`,
                       top: `${region.top}%`,
@@ -490,10 +528,15 @@ export function ForestBookshelfLayoutDebugClient() {
               : null}
 
             {showSpots
-              ? spotRegions.map((region) => (
+              ? visibleSpotRegions.map((region) => (
                   <div
                     key={region.id}
-                    className="pointer-events-none absolute z-[28] border-2 border-dashed"
+                    className={[
+                      "pointer-events-none absolute z-[28] border-2 border-dashed",
+                      soloEditing && editTarget.kind === "spot" && editTarget.id === region.id
+                        ? "ring-2 ring-fuchsia-500 ring-offset-1"
+                        : "",
+                    ].join(" ")}
                     style={{
                       left: `${region.left}%`,
                       top: `${region.top}%`,
@@ -503,7 +546,11 @@ export function ForestBookshelfLayoutDebugClient() {
                       borderColor: region.border,
                     }}
                     title={region.label}
-                  />
+                  >
+                    <span className="absolute left-0 top-0 max-w-full truncate bg-white/90 px-1 text-[9px] font-medium text-stone-800">
+                      {region.label}
+                    </span>
+                  </div>
                 ))
               : null}
 

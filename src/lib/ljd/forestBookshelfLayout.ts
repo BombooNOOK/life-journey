@@ -57,11 +57,11 @@ export const FOREST_BOOKSHELF_ITEM_LAYOUT: Record<ForestBookshelfItemId, ForestB
 
 /** タップ領域は見た目より少し広め */
 export const FOREST_BOOKSHELF_SPOT_LAYOUT: Record<ForestBookshelfSpotId, ForestBookshelfRect> = {
-  kanteiCover: { left: 2, top: 19, width: 38, height: 22 },
-  spinesFortune: { left: 34.5, top: 13, width: 68, height: 36 },
-  createDiary: { left: -3.5, top: 34, width: 45.5, height: 38.5 },
-  currentDiary: { left: 34.5, top: 49.5, width: 34, height: 22 },
-  placeholderRed: { left: 64, top: 40, width: 41, height: 33 },
-  placeholderGreen: { left: -3.5, top: 73.5, width: 40, height: 25 },
-  spinesDiary: { left: 21.5, top: 67, width: 60, height: 39 },
+  kanteiCover: { left: 8.5, top: 37.5, width: 24.5, height: 16.5 },
+  spinesFortune: { left: 37.5, top: 37, width: 57, height: 17.5 },
+  createDiary: { left: 7, top: 57.5, width: 31, height: 20.5 },
+  currentDiary: { left: 40.5, top: 59.5, width: 24, height: 18.5 },
+  placeholderRed: { left: 69, top: 61, width: 22, height: 17 },
+  placeholderGreen: { left: 8.5, top: 81.5, width: 22, height: 25 },
+  spinesDiary: { left: 32, top: 81.5, width: 44, height: 39 },
 };
