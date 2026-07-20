@@ -2,7 +2,7 @@
 
 import type { LogHouseRoomTimeOfDay } from "@/lib/loghouse/logHouseRoomTimeTheme";
 
-const BAMBOO_FOREST_GUIDE_MAP_ASSET_VERSION = 3;
+const BAMBOO_FOREST_GUIDE_MAP_ASSET_VERSION = 4;
 
 /** 旧画風・建物配置は単独案内図（`forestMapHotspots`）と同じ */
 export const BAMBOO_FOREST_GUIDE_MAP_SRC =

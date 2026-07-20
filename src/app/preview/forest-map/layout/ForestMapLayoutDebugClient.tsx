@@ -13,13 +13,21 @@ export function ForestMapLayoutDebugClient() {
     <div className="mx-auto max-w-lg space-y-4 px-3 py-6">
       <div className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-[11px] leading-relaxed text-amber-950">
         <p>
-          <strong>案内図タップ領域</strong>の確認。枠は常時表示。数値は{" "}
+          <strong>案内図タップ領域</strong>の確認。緑枠がタップ範囲です。ずれていたら{" "}
           <code className="rounded bg-amber-100 px-1">src/lib/help/forestMapHotspots.ts</code>{" "}
-          を編集。設計サイズ {FOREST_MAP_INTRINSIC.widthPx}×{FOREST_MAP_INTRINSIC.heightPx}。
+          を直し、本番反映してください。設計サイズ {FOREST_MAP_INTRINSIC.widthPx}×
+          {FOREST_MAP_INTRINSIC.heightPx}。
         </p>
         <p className="mt-1">
           <Link href="/help/forest-map" className="font-medium underline-offset-2 hover:underline">
-            本番ページ
+            本番の案内図
+          </Link>
+          {" · "}
+          <Link
+            href="/preview/forest-bookshelf/layout"
+            className="font-medium underline-offset-2 hover:underline"
+          >
+            森の本棚の定規
           </Link>
           {" · "}
           <Link href="/preview" className="font-medium underline-offset-2 hover:underline">

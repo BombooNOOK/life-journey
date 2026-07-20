@@ -1,3 +1,4 @@
+import { DONGURI_STALL_PAGE_PATH } from "@/lib/help/donguriStallCopy";
 import type { ForestMapSpotId } from "@/lib/help/forestMapDestinations";
 
 export type ForestGuideMapBuildingId = ForestMapSpotId;
@@ -39,6 +40,13 @@ export const FOREST_GUIDE_MAP_BUILDINGS: Record<ForestGuideMapBuildingId, Forest
     id: "forestShop",
     title: "森のショップ",
     body: "準備中です。どんぐりでログハウスや着せ替えを楽しめる、クマ店長のお店になる予定です。",
+  },
+  donguriStall: {
+    id: "donguriStall",
+    title: "どんぐり売店",
+    body: "森の入口すぐの小さな補給所です。どんぐりをふやしたいときに立ち寄れます（購入は現在準備中）。",
+    href: `${DONGURI_STALL_PAGE_PATH}?returnTo=${encodeURIComponent("/help/ljd")}`,
+    linkLabel: "どんぐり売店を開く",
   },
   musicHall: {
     id: "musicHall",

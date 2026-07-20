@@ -1,12 +1,12 @@
-/** BambooNOOKの森・案内図（単独ページ用・1枚絵） */
+/** BambooNOOKの森・案内図（単独ページ用・1枚絵＋屋台オーバーレイ） */
 
 import type { LogHouseRoomTimeOfDay } from "@/lib/loghouse/logHouseRoomTimeTheme";
 
 export const FOREST_MAP_ASSET_DIR = "/images/ljd/forest-map" as const;
 
-const FOREST_MAP_ASSET_VERSION = 3;
+const FOREST_MAP_ASSET_VERSION = 6;
 
-function forestMapAsset(filename: string): string {
+export function forestMapAsset(filename: string): string {
   return `${FOREST_MAP_ASSET_DIR}/${filename}?v=${FOREST_MAP_ASSET_VERSION}`;
 }
 

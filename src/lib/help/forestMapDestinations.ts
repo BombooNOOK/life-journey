@@ -1,3 +1,4 @@
+import { DONGURI_STALL_PAGE_PATH } from "@/lib/help/donguriStallCopy";
 import { FOREST_MAP_PAGE_PATH } from "@/lib/help/forestMapAssets";
 import { buildForestMusicHallHref } from "@/lib/help/forestMusicHallNav";
 
@@ -6,6 +7,7 @@ export type ForestMapSpotId =
   | "loghouse"
   | "forestTheater"
   | "forestShop"
+  | "donguriStall"
   | "musicHall"
   | "handicraftShop"
   | "kanteiHall"
@@ -46,6 +48,11 @@ export const FOREST_MAP_DESTINATIONS: Record<ForestMapSpotId, ForestMapDestinati
     label: "森のショップ",
     comingSoonMessage:
       "森のショップは準備中です。どんぐりでログハウスや着せ替えを楽しめる、クマ店長のお店になる予定です。",
+  },
+  donguriStall: {
+    id: "donguriStall",
+    label: "どんぐり売店",
+    href: `${DONGURI_STALL_PAGE_PATH}?returnTo=${encodeURIComponent(FOREST_MAP_PAGE_PATH)}`,
   },
   musicHall: {
     id: "musicHall",

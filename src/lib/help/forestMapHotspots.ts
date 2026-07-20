@@ -10,8 +10,10 @@ export type ForestMapHotspot = {
 };
 
 /**
- * bamboo_nook_forest_map.png（576×1024）向けの仮配置。
- * 調整: `/preview/forest-map/layout` → `FOREST_MAP_HOTSPOTS` を更新。
+ * bamboo_nook_forest_map.png（576×1024）向け。
+ * 建物は案内図1枚絵に焼き込み。調整: `/preview/forest-map/layout`
+ *
+ * どんぐり売店は案内図差し替え後に位置を合わせる（広めタップ）。
  */
 export const FOREST_MAP_HOTSPOTS: ForestMapHotspot[] = [
   /** シアターと重ならないよう左端を少し右へ */
@@ -22,5 +24,7 @@ export const FOREST_MAP_HOTSPOTS: ForestMapHotspot[] = [
   { id: "handicraftShop", x: 65, y: 33, width: 30, height: 16 },
   { id: "kanteiHall", x: 60, y: 50, width: 42, height: 20 },
   { id: "guideStation", x: 60, y: 75, width: 40, height: 20 },
+  /** 案内所の道を挟んだ向かい・入口すぐ（広めタップ） */
+  { id: "donguriStall", x: 14, y: 56, width: 30, height: 16 },
   { id: "forestEntrance", x: 4, y: 72, width: 30, height: 14 },
 ];
