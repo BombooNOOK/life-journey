@@ -17,9 +17,9 @@ import {
   formatAshiatoVerticalDateColumns,
   ashiatoHorizontalBodyLineIndentChars,
   getAshiatoHorizontalBodyLayoutLines,
+  getAshiatoVerticalBodyColumns,
   resolveAshiatoEntryRenderPlan,
   splitDailyNumberSlots,
-  splitVerticalJapaneseColumns,
 } from "@/lib/journal/ashiatoEntryRender";
 import { DIARY_BOOK_ENTRY_V2_COLORS } from "@/lib/journal/diaryBookEntryPrintLayout";
 import { resolveDiaryBookPublicImagePath } from "@/lib/journal/diaryBookPrintPdfAssets";
@@ -163,8 +163,8 @@ export function DiaryBookAshiatoEntryPdfPage({
       bodyFont.fontSizePx,
       ASHIATO_VERTICAL_BODY_COLUMN_LINE_HEIGHT,
     );
-    verticalColumns = splitVerticalJapaneseColumns(
-      entry.content.trim(),
+    verticalColumns = getAshiatoVerticalBodyColumns(
+      entry.content,
       maxCharsPerColumn,
       maxColumns,
     );

@@ -18,6 +18,7 @@ import {
   formatAshiatoVerticalDateColumns,
   ashiatoHorizontalBodyLineIndentChars,
   getAshiatoHorizontalBodyLayoutLines,
+  normalizeAshiatoBodyContent,
   resolveAshiatoEntryRenderPlan,
   splitDailyNumberSlots,
 } from "@/lib/journal/ashiatoEntryRender";
@@ -154,6 +155,11 @@ export function DiaryBookAshiatoEntryPreviewPage({
         )
       : getDiaryBookEntryV2BodyLayoutLines(content, contentFontMode);
   }
+
+  const bodyDisplayText =
+    showBody && plan.bodyWritingMode === "vertical"
+      ? normalizeAshiatoBodyContent(content)
+      : "";
 
   const bodyAlign = plan.bodyTextLayout?.align ?? "left";
   const bodyShrinkChars = plan.bodyTextLayout?.shrinkChars ?? 0;
@@ -431,7 +437,7 @@ export function DiaryBookAshiatoEntryPreviewPage({
         </div>
       ) : null}
 
-      {showBody && plan.bodyWritingMode === "vertical" ? (
+      {showBody && plan.bodyWritingMode === "vertical" && bodyDisplayText ? (
         <div
           className="absolute overflow-hidden p-1"
           style={{
@@ -443,7 +449,7 @@ export function DiaryBookAshiatoEntryPreviewPage({
             color: DIARY_BOOK_ENTRY_V2_COLORS.text,
           }}
         >
-          {content.trim()}
+          {bodyDisplayText}
         </div>
       ) : null}
 
