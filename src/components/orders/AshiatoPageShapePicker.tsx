@@ -61,7 +61,11 @@ export function AshiatoPageShapePicker({ value, onChange }: Props) {
                 {opt.badges.map((badge) => (
                   <span
                     key={badge}
-                    className="rounded-full border border-emerald-200/80 bg-emerald-50 px-1.5 py-0.5 text-[10px] font-medium text-emerald-900"
+                    className={
+                      badge === "右とじ"
+                        ? "rounded-full border border-rose-300 bg-rose-100 px-1.5 py-0.5 text-[10px] font-semibold text-rose-900"
+                        : "rounded-full border border-emerald-200/80 bg-emerald-50 px-1.5 py-0.5 text-[10px] font-medium text-emerald-900"
+                    }
                   >
                     {badge}
                   </span>
@@ -193,7 +197,11 @@ function AshiatoPageShapePreviewModal({
           {opt.badges.map((badge) => (
             <span
               key={badge}
-              className="rounded-full border border-emerald-200/80 bg-emerald-50 px-1.5 py-0.5 text-[10px] font-medium text-emerald-900"
+              className={
+                badge === "右とじ"
+                  ? "rounded-full border border-rose-300 bg-rose-100 px-1.5 py-0.5 text-[10px] font-semibold text-rose-900"
+                  : "rounded-full border border-emerald-200/80 bg-emerald-50 px-1.5 py-0.5 text-[10px] font-medium text-emerald-900"
+              }
             >
               {badge}
             </span>

@@ -70,6 +70,9 @@ type CompanionFiles = {
   fallbackFileName?: string;
 };
 
+/** 製本・プレビューめくりのとじ方向（左とじ=西洋本、右とじ=縦書き日本語本） */
+export type AshiatoPageBindingSide = "left" | "right";
+
 export type AshiatoPageTemplateDefinition = {
   id: string;
   label: string;
@@ -79,6 +82,8 @@ export type AshiatoPageTemplateDefinition = {
   includes: readonly AshiatoPageTemplateContentKey[];
   excludes: readonly AshiatoPageTemplateContentKey[];
   notice: string;
+  /** デフォルトは左とじ。縦書きの森の絵日記のみ右とじ */
+  bindingSide: AshiatoPageBindingSide;
   files: LayeredFiles | CompanionFiles;
 };
 
@@ -89,11 +94,12 @@ export const ashiatoPageTemplateOptions = [
     category: "シンプル思い出型",
     description:
       "写真と縦書きの言葉で、今日のあしあとを絵日記のように残します。短めの文章や、印象に残った一場面を残したい日におすすめです。",
-    badges: ["写真", "本文", "気分", "縦書き", "シンプル"],
+    badges: ["写真", "本文", "気分", "縦書き", "右とじ", "シンプル"],
     includes: ["photo", "date", "mood", "body"],
     excludes: ["dailyNumber", "themes", "reading"],
     notice:
-      "このテンプレートは、読み解きやすうじは入りません。純粋に思い出帳として残したい方向けです。",
+      "このテンプレートは、読み解きやすうじは入りません。純粋に思い出帳として残したい方向けです。製本時は右とじで注文してください。",
+    bindingSide: "right",
     files: {
       kind: "layered",
       backgroundFileName: "ashiato_template_mori_enikki_background.png",
@@ -111,6 +117,7 @@ export const ashiatoPageTemplateOptions = [
     excludes: ["dailyNumber", "themes", "reading"],
     notice:
       "このテンプレートは、読み解きやすうじは入りません。純粋に思い出帳として残したい方向けです。",
+    bindingSide: "left",
     files: {
       kind: "layered",
       backgroundFileName: "ashiato_template_mori_yohaku_note_background.png",
@@ -128,6 +135,7 @@ export const ashiatoPageTemplateOptions = [
     includes: ["photo", "date", "mood", "body", "dailyNumber", "themes", "reading"],
     excludes: [],
     notice: "白背景で読みやすく、製本しやすい標準版です。",
+    bindingSide: "left",
     files: {
       kind: "companion",
       previewFileName: "ashiato_template_suuji_standard_drfukuro.png",
@@ -145,6 +153,7 @@ export const ashiatoPageTemplateOptions = [
     excludes: [],
     notice:
       "このテンプレートは全面カラーのため、製本時の料金が高くなる場合があります。",
+    bindingSide: "left",
     files: {
       kind: "companion",
       previewFileName: "ashiato_template_suuji_irodori_drfukuro.png",
@@ -182,6 +191,19 @@ export function getAshiatoPageTemplate(
   return ashiatoPageTemplateOptions.find((o) => o.id === canon)!;
 }
 
+export function ashiatoPageTemplateBindingSide(
+  id: string | null | undefined,
+): AshiatoPageBindingSide {
+  return getAshiatoPageTemplate(id).bindingSide;
+}
+
+/** 右とじ（縦書き本）か。プレビューめくり反転・製本注文の目印に使う */
+export function isAshiatoPageTemplateRightBound(
+  id: string | null | undefined,
+): boolean {
+  return ashiatoPageTemplateBindingSide(id) === "right";
+}
+
 function withCache(fileName: string): string {
   return `/images/ashiato/${fileName}?v=${ASHIATO_PAGE_TEMPLATE_ASSET_VERSION}`;
 }
@@ -209,10 +231,10 @@ export function ashiatoPageTemplatePhotoOverlayPath(
 ): string | null {
   const def = getAshiatoPageTemplate(id);
   if (def.files.kind !== "layered") return null;
-  const overlay =
+  const overlayFileName =
     "photoOverlayFileName" in def.files ? def.files.photoOverlayFileName : undefined;
-  if (!overlay) return null;
-  return withCache(overlay);
+  if (!overlayFileName) return null;
+  return withCache(overlayFileName);
 }
 
 /**

@@ -6,6 +6,7 @@ import {
 } from "@/lib/journal/coverAssets";
 import {
   ashiatoPageTemplatePreviewPath,
+  isAshiatoPageTemplateRightBound,
   normalizeAshiatoPageTemplateId,
 } from "@/lib/journal/ashiatoPageTemplates";
 import { parseDiaryBookCreateFields } from "@/lib/journal/diaryBookForm";
@@ -20,6 +21,13 @@ describe("ashiato cover / page template", () => {
   it("defaults unknown page templates to irodori", () => {
     expect(normalizeAshiatoPageTemplateId("")).toBe("suuji_ashiato_irodori");
     expect(normalizeAshiatoPageTemplateId("mori_enikki")).toBe("mori_enikki");
+  });
+
+  it("marks mori_enikki as right-bound only", () => {
+    expect(isAshiatoPageTemplateRightBound("mori_enikki")).toBe(true);
+    expect(isAshiatoPageTemplateRightBound("mori_yohaku_note")).toBe(false);
+    expect(isAshiatoPageTemplateRightBound("suuji_ashiato_irodori")).toBe(false);
+    expect(isAshiatoPageTemplateRightBound(null)).toBe(false);
   });
 
   it("builds ashiato asset paths under /images/ashiato/", () => {
