@@ -17,7 +17,7 @@ export function DiaryBookDeleteButton({
   bookTitle,
   redirectHref = "/orders/bookshelf",
   className = "text-xs font-medium text-rose-700 underline-offset-2 hover:text-rose-900 hover:underline",
-  buttonLabel = "この日記ブックを削除",
+  buttonLabel = "このあしあとブックを削除",
 }: Props) {
   const router = useRouter();
   const titleId = useId();
@@ -50,13 +50,13 @@ export function DiaryBookDeleteButton({
       });
       const data = (await res.json()) as { error?: string; code?: string };
       if (!res.ok) {
-        throw new Error(data.error ?? "日記ブックの削除に失敗しました。");
+        throw new Error(data.error ?? "あしあとブックの削除に失敗しました。");
       }
       setOpen(false);
       router.push(redirectHref);
       router.refresh();
     } catch (e) {
-      setError(e instanceof Error ? e.message : "日記ブックの削除に失敗しました。");
+      setError(e instanceof Error ? e.message : "あしあとブックの削除に失敗しました。");
     } finally {
       setDeleting(false);
     }
@@ -69,7 +69,7 @@ export function DiaryBookDeleteButton({
       </button>
 
       {open ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-stone-900/40 p-4">
+        <div className="fixed inset-0 z-[240] flex items-center justify-center bg-stone-900/40 p-4">
           <div
             role="dialog"
             aria-modal="true"
@@ -77,14 +77,14 @@ export function DiaryBookDeleteButton({
             className="w-full max-w-md rounded-xl border border-stone-200 bg-white p-5 shadow-lg"
           >
             <h2 id={titleId} className="text-base font-semibold text-stone-900">
-              日記ブックを削除しますか？
+              あしあとブックを削除しますか？
             </h2>
             <p className="mt-3 text-sm leading-relaxed text-stone-700">
               <span className="font-medium text-stone-900">「{bookTitle}」</span>
               を削除します。
             </p>
             <p className="mt-2 text-sm leading-relaxed text-stone-700">
-              この日記ブックを削除します。日記本文は削除されません。
+              このあしあとブックを削除します。あしあと本文は削除されません。
             </p>
             {error ? (
               <p className="mt-3 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-900">
