@@ -2,18 +2,56 @@ import {
   isDiaryCoverStyleRawAllowed,
   normalizeDiaryCoverStyle,
 } from "@/lib/journal/coverAssets";
+import {
+  isAshiatoPageTemplateRawAllowed,
+  normalizeAshiatoPageTemplateId,
+} from "@/lib/journal/ashiatoPageTemplates";
 import { parseDiaryBookDateRange } from "@/lib/journal/diaryBookPeriod";
+import {
+  parseDiaryBookTagFilterFromRequest,
+  type DiaryBookTagScope,
+} from "@/lib/journal/diaryBookTagFilter";
 
 export type DiaryBookCreateFields = {
   title: string;
   startDate: string;
   endDate: string;
   coverTheme: string;
+  pageTemplate: string;
+  tagFilter: string;
+  tagFilterMode: DiaryBookTagScope["tagFilterMode"];
 };
 
 export type DiaryBookFormParseResult =
   | { ok: true; data: DiaryBookCreateFields }
   | { ok: false; status: number; code: string; error: string };
+
+function parseCoverAndPageTemplate(json: object):
+  | { ok: true; coverTheme: string; pageTemplate: string }
+  | { ok: false; status: number; code: string; error: string } {
+  const rawCover =
+    "coverTheme" in json ? String((json as { coverTheme: unknown }).coverTheme) : "";
+  const rawPage =
+    "pageTemplate" in json ? String((json as { pageTemplate: unknown }).pageTemplate) : "";
+
+  if (rawCover.trim() && !isDiaryCoverStyleRawAllowed(rawCover)) {
+    return { ok: false, status: 400, code: "BAD_COVER", error: "表紙デザインの値が不正です。" };
+  }
+  if (rawPage.trim() && !isAshiatoPageTemplateRawAllowed(rawPage)) {
+    return {
+      ok: false,
+      status: 400,
+      code: "BAD_PAGE_TEMPLATE",
+      error: "ページのかたちの値が不正です。",
+    };
+  }
+
+  return {
+    ok: true,
+    coverTheme: normalizeDiaryCoverStyle(rawCover.trim() || "cover_mori_standard"),
+    pageTemplate: normalizeAshiatoPageTemplateId(rawPage.trim() || undefined),
+  };
+}
 
 export function parseDiaryBookCreateFields(json: unknown): DiaryBookFormParseResult {
   if (typeof json !== "object" || json === null) {
@@ -24,8 +62,6 @@ export function parseDiaryBookCreateFields(json: unknown): DiaryBookFormParseRes
   const rawStart =
     "startDate" in json ? String((json as { startDate: unknown }).startDate) : "";
   const rawEnd = "endDate" in json ? String((json as { endDate: unknown }).endDate) : "";
-  const rawCover =
-    "coverTheme" in json ? String((json as { coverTheme: unknown }).coverTheme) : "";
 
   const title = rawTitle.trim();
   if (!title) {
@@ -50,9 +86,10 @@ export function parseDiaryBookCreateFields(json: unknown): DiaryBookFormParseRes
     };
   }
 
-  if (!isDiaryCoverStyleRawAllowed(rawCover)) {
-    return { ok: false, status: 400, code: "BAD_COVER", error: "表紙デザインの値が不正です。" };
-  }
+  const coverPage = parseCoverAndPageTemplate(json);
+  if (!coverPage.ok) return coverPage;
+
+  const tagScope = parseDiaryBookTagFilterFromRequest(json);
 
   return {
     ok: true,
@@ -60,7 +97,10 @@ export function parseDiaryBookCreateFields(json: unknown): DiaryBookFormParseRes
       title,
       startDate: dateRange.startDate,
       endDate: dateRange.endDate,
-      coverTheme: normalizeDiaryCoverStyle(rawCover.trim() || "casual"),
+      coverTheme: coverPage.coverTheme,
+      pageTemplate: coverPage.pageTemplate,
+      tagFilter: tagScope.tagFilter,
+      tagFilterMode: tagScope.tagFilterMode,
     },
   };
 }
@@ -73,8 +113,6 @@ export function parseDiaryBookPreviewFields(json: unknown): DiaryBookFormParseRe
   const rawStart =
     "startDate" in json ? String((json as { startDate: unknown }).startDate) : "";
   const rawEnd = "endDate" in json ? String((json as { endDate: unknown }).endDate) : "";
-  const rawCover =
-    "coverTheme" in json ? String((json as { coverTheme: unknown }).coverTheme) : "casual";
 
   const dateRange = parseDiaryBookDateRange(rawStart, rawEnd);
   if (!dateRange) {
@@ -86,11 +124,11 @@ export function parseDiaryBookPreviewFields(json: unknown): DiaryBookFormParseRe
     };
   }
 
-  if (rawCover.trim() && !isDiaryCoverStyleRawAllowed(rawCover)) {
-    return { ok: false, status: 400, code: "BAD_COVER", error: "表紙デザインの値が不正です。" };
-  }
+  const coverPage = parseCoverAndPageTemplate(json);
+  if (!coverPage.ok) return coverPage;
 
   const rawTitle = "title" in json ? String((json as { title: unknown }).title).trim() : "";
+  const tagScope = parseDiaryBookTagFilterFromRequest(json);
 
   return {
     ok: true,
@@ -98,7 +136,10 @@ export function parseDiaryBookPreviewFields(json: unknown): DiaryBookFormParseRe
       title: rawTitle,
       startDate: dateRange.startDate,
       endDate: dateRange.endDate,
-      coverTheme: normalizeDiaryCoverStyle(rawCover.trim() || "casual"),
+      coverTheme: coverPage.coverTheme,
+      pageTemplate: coverPage.pageTemplate,
+      tagFilter: tagScope.tagFilter,
+      tagFilterMode: tagScope.tagFilterMode,
     },
   };
 }

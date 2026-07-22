@@ -4,9 +4,10 @@ import { getViewerEmailFromCookie } from "@/lib/auth/viewer";
 import { prisma } from "@/lib/db";
 import { assertFullAccessForApi } from "@/lib/entitlement/requireFullAccess";
 import { parseDiaryBookCreateFields } from "@/lib/journal/diaryBookForm";
+import { countDiaryBookPeriodEntriesWithTagScope } from "@/lib/journal/diaryBookIncludePicker";
 import {
-  countJournalEntriesInDiaryBookPeriod,
   NO_ENTRIES_IN_DIARY_BOOK_PERIOD_MESSAGE,
+  NO_INCLUDED_ENTRIES_IN_DIARY_BOOK_PERIOD_MESSAGE,
 } from "@/lib/journal/diaryBookPeriod";
 import { resolveDiaryBookProfileId } from "@/lib/journal/diaryBookProfile";
 import { refreshDiaryBookContent } from "@/lib/journal/diaryBookSnapshot";
@@ -89,18 +90,34 @@ export async function POST(req: Request) {
     );
   }
 
-  const entryCount = await countJournalEntriesInDiaryBookPeriod({
+  const tagScope = {
+    tagFilter: parsed.data.tagFilter,
+    tagFilterMode: parsed.data.tagFilterMode,
+  };
+
+  const counts = await countDiaryBookPeriodEntriesWithTagScope({
     email: viewerEmail,
     profileId: profileResult.profileId,
     startDate: parsed.data.startDate,
     endDate: parsed.data.endDate,
+    tagScope,
   });
 
-  if (entryCount < 1) {
+  if (counts.matchingCount < 1) {
     return NextResponse.json(
       {
         error: NO_ENTRIES_IN_DIARY_BOOK_PERIOD_MESSAGE,
         code: "NO_ENTRIES_IN_PERIOD",
+      },
+      { status: 422, ...JSON_NO_STORE },
+    );
+  }
+
+  if (counts.includedCount < 1) {
+    return NextResponse.json(
+      {
+        error: NO_INCLUDED_ENTRIES_IN_DIARY_BOOK_PERIOD_MESSAGE,
+        code: "NO_INCLUDED_ENTRIES_IN_PERIOD",
       },
       { status: 422, ...JSON_NO_STORE },
     );
@@ -114,6 +131,9 @@ export async function POST(req: Request) {
       startDate: parsed.data.startDate,
       endDate: parsed.data.endDate,
       coverTheme: parsed.data.coverTheme,
+      pageTemplate: parsed.data.pageTemplate,
+      tagFilter: parsed.data.tagFilter,
+      tagFilterMode: parsed.data.tagFilterMode,
     },
   });
 
@@ -121,7 +141,7 @@ export async function POST(req: Request) {
     bookId: row.id,
     viewerEmail,
   });
-  const snapshotEntryCount = refreshed.ok ? refreshed.entryCount : entryCount;
+  const snapshotEntryCount = refreshed.ok ? refreshed.entryCount : counts.includedCount;
 
   return NextResponse.json(
     {
@@ -131,6 +151,7 @@ export async function POST(req: Request) {
         startDate: row.startDate,
         endDate: row.endDate,
         coverTheme: row.coverTheme,
+        pageTemplate: row.pageTemplate,
         entryCount: snapshotEntryCount,
         createdAt: row.createdAt.toISOString(),
       },

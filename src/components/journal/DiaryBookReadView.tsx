@@ -14,6 +14,7 @@ type Props = {
   startDate: string;
   endDate: string;
   coverTheme: string;
+  pageTemplate?: string;
   profileId: string;
   rangeLabel: string;
   entryCount: number;
@@ -28,6 +29,7 @@ export function DiaryBookReadView({
   startDate,
   endDate,
   coverTheme,
+  pageTemplate,
   profileId,
   rangeLabel,
   entryCount,
@@ -66,6 +68,7 @@ export function DiaryBookReadView({
           startDate={startDate}
           endDate={endDate}
           coverTheme={coverTheme}
+          pageTemplate={pageTemplate}
           profileId={profileId}
           initialNeedsContentRefresh={initialNeedsContentRefresh}
           onNeedsContentRefreshChange={setNeedsContentRefresh}

@@ -4,6 +4,12 @@ import {
   journalEntryCreatedAtRangeForBookPeriod,
   parseDiaryBookDateRange,
 } from "@/lib/journal/diaryBookPeriod";
+import {
+  diaryBookTagScopeFromRow,
+  hasDiaryBookTagScope,
+  type DiaryBookTagScope,
+} from "@/lib/journal/diaryBookTagFilter";
+import { matchDiaryBookTagFilter } from "@/lib/journal/diaryTags";
 
 /** 記事の最終変更時刻（DB の updatedAt。createdAt は記録日 UTC 正午のため比較に使わない） */
 export function journalEntryLastChangedAt(entry: {
@@ -43,6 +49,7 @@ export async function countDiaryBookSnapshotEntries(params: {
   startDate: string;
   endDate: string;
   bookUpdatedAt: Date;
+  tagScope?: DiaryBookTagScope;
 }): Promise<number> {
   const range = parseDiaryBookDateRange(params.startDate, params.endDate);
   if (!range) return 0;
@@ -51,8 +58,9 @@ export async function countDiaryBookSnapshotEntries(params: {
   const asOf = params.bookUpdatedAt;
   const periodEndLte =
     asOf.getTime() < createdAt.lte.getTime() ? asOf : createdAt.lte;
+  const scope = params.tagScope ?? { tagFilter: "", tagFilterMode: "AND" };
 
-  return prisma.journalEntry.count({
+  const rows = await prisma.journalEntry.findMany({
     where: {
       email: params.email,
       profileId: params.profileId,
@@ -63,7 +71,14 @@ export async function countDiaryBookSnapshotEntries(params: {
       updatedAt: { lte: asOf },
       includeInBook: true,
     },
+    select: { content: true },
   });
+
+  if (!hasDiaryBookTagScope(scope)) return rows.length;
+
+  return rows.filter((row) =>
+    matchDiaryBookTagFilter(row.content, scope.tagFilter, scope.tagFilterMode),
+  ).length;
 }
 
 /** 期間内に、日記ブックの最終更新より新しい変更があるか */
@@ -118,6 +133,7 @@ export async function refreshDiaryBookContent(params: {
     startDate: row.startDate,
     endDate: row.endDate,
     bookUpdatedAt: updated.updatedAt,
+    tagScope: diaryBookTagScopeFromRow(row),
   });
 
   return {

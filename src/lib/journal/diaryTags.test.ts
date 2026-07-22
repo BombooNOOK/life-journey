@@ -4,6 +4,7 @@ import {
   collectDiaryTagsFromContents,
   extractTagsFromContent,
   formatDiaryTagsForInput,
+  matchDiaryBookTagFilter,
   matchTag,
   matchesDiaryKeyword,
   mergeTagsIntoContent,
@@ -85,6 +86,15 @@ describe("diaryTags", () => {
     expect(matchTag(content, "モグ")).toBe(true);
     expect(matchTag(content, "メモ")).toBe(false);
     expect(matchTag(content, "#モグ")).toBe(true);
+  });
+
+  it("matchDiaryBookTagFilter は AND/OR を切り替える", () => {
+    const content = "本文\n\n#こども #おでかけ";
+    expect(matchDiaryBookTagFilter(content, "#こども #おでかけ", "AND")).toBe(true);
+    expect(matchDiaryBookTagFilter(content, "#こども #家族", "AND")).toBe(false);
+    expect(matchDiaryBookTagFilter(content, "#こども #家族", "OR")).toBe(true);
+    expect(matchDiaryBookTagFilter(content, "#家族", "OR")).toBe(false);
+    expect(matchDiaryBookTagFilter(content, "", "AND")).toBe(true);
   });
 
   it("matchesDiaryKeyword はタグ行を検索対象にしない", () => {

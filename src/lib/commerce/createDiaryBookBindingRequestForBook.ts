@@ -6,6 +6,11 @@ import {
 } from "@/lib/commerce/diaryBookBindingPendingLifecycle";
 import { prisma } from "@/lib/db";
 import { countBoundDiaryBookTotalPages } from "@/lib/journal/diaryBookBindingOffer";
+import {
+  getAshiatoPageTemplate,
+  normalizeAshiatoPageTemplateId,
+  type AshiatoPageTemplateId,
+} from "@/lib/journal/ashiatoPageTemplates";
 import { listJournalEntriesForDiaryBookRow } from "@/lib/journal/listDiaryBookEntries";
 import { buildDiaryBindingCode } from "@/lib/order/diaryBindingCode";
 import { getBookPlan, type BookPlanId } from "@/lib/order/bookBindingPlan";
@@ -31,6 +36,8 @@ export type DiaryBookBindingBookSnapshot = {
   pageCount: number;
   planId: BookPlanId;
   baseShopUrl: string;
+  pageTemplate: AshiatoPageTemplateId;
+  pageTemplateLabel: string;
 };
 
 export type DiaryBookBindingForBookPublic = {
@@ -93,6 +100,9 @@ export async function loadDiaryBookBindingSnapshotForBook(
     };
   }
 
+  const pageTemplate = normalizeAshiatoPageTemplateId(row.pageTemplate);
+  const pageTemplateDef = getAshiatoPageTemplate(pageTemplate);
+
   return {
     diaryBookId: row.id,
     email: row.email,
@@ -103,6 +113,8 @@ export async function loadDiaryBookBindingSnapshotForBook(
     pageCount,
     planId: plan.plan,
     baseShopUrl: plan.baseUrl,
+    pageTemplate,
+    pageTemplateLabel: pageTemplateDef.label,
   };
 }
 

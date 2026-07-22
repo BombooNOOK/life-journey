@@ -19,7 +19,7 @@ import {
   DiaryBookPreBackCoverIllustrationPage,
 } from "@/components/journal/DiaryBookBoundPages";
 import { DiaryBookPageViewport } from "@/components/journal/DiaryBookPageViewport";
-import { DiaryBookEntryV2PreviewPage } from "@/components/journal/DiaryBookEntryV2PreviewPage";
+import { DiaryBookAshiatoEntryPreviewPage } from "@/components/journal/DiaryBookAshiatoEntryPreviewPage";
 import { BodyPortal, IMMERSIVE_OVERLAY_Z_CLASS } from "@/components/ui/BodyPortal";
 import { InlineHelpButton } from "@/components/ui/InlineHelpButton";
 import { OwlLoadingInline } from "@/components/ui/OwlLoadingInline";
@@ -37,28 +37,44 @@ import {
   diaryBookDisplayYear,
 } from "@/lib/journal/diaryBookPages";
 import { normalizeContentFontMode } from "@/lib/journal/contentFontMode";
+import { isAshiatoPageTemplateRightBound } from "@/lib/journal/ashiatoPageTemplates";
 
-const READER_HELP_TEXT =
-  "表紙・中表紙のあと、期間内の月カレンダーと日記本文が続きます。PCはキーボードの左右矢印、スマホはスワイプでもめくれます。";
+const READER_HELP_TEXT_LEFT =
+  "表紙・中表紙のあと、期間内の月カレンダーと日記本文が続きます。PCはキーボードの左右矢印、スマホはスワイプでもめくれます。左スワイプ（→キー）で次のページです。";
 
-const FULLSCREEN_HELP_TOUCH =
-  "左右にスワイプしてページをめくれます。画面をタップするとメニューを表示できます。";
+const READER_HELP_TEXT_RIGHT =
+  "表紙・中表紙のあと、期間内の月カレンダーと日記本文が続きます。この本は右とじです。PCはキーボードの左右矢印、スマホはスワイプでもめくれます。右スワイプ（←キー）で次のページです。";
 
-const FULLSCREEN_HELP_POINTER =
-  "左右の矢印キーでページをめくれます。画面をクリックするとメニューを表示できます。";
+const FULLSCREEN_HELP_TOUCH_LEFT =
+  "左右にスワイプしてページをめくれます。左にスワイプで次のページです。画面をタップするとメニューを表示できます。";
 
-function useFullscreenReaderHintText(): string {
-  const [hint, setHint] = useState(FULLSCREEN_HELP_POINTER);
+const FULLSCREEN_HELP_TOUCH_RIGHT =
+  "左右にスワイプしてページをめくれます。右とじのため、右にスワイプで次のページです。画面をタップするとメニューを表示できます。";
+
+const FULLSCREEN_HELP_POINTER_LEFT =
+  "左右の矢印キーでページをめくれます。→キーで次のページです。画面をクリックするとメニューを表示できます。";
+
+const FULLSCREEN_HELP_POINTER_RIGHT =
+  "左右の矢印キーでページをめくれます。右とじのため、←キーで次のページです。画面をクリックするとメニューを表示できます。";
+
+function useFullscreenReaderHintText(rightBound: boolean): string {
+  const [hint, setHint] = useState(
+    rightBound ? FULLSCREEN_HELP_POINTER_RIGHT : FULLSCREEN_HELP_POINTER_LEFT,
+  );
 
   useEffect(() => {
     const touchQuery = window.matchMedia("(pointer: coarse)");
     const update = () => {
-      setHint(touchQuery.matches ? FULLSCREEN_HELP_TOUCH : FULLSCREEN_HELP_POINTER);
+      if (touchQuery.matches) {
+        setHint(rightBound ? FULLSCREEN_HELP_TOUCH_RIGHT : FULLSCREEN_HELP_TOUCH_LEFT);
+      } else {
+        setHint(rightBound ? FULLSCREEN_HELP_POINTER_RIGHT : FULLSCREEN_HELP_POINTER_LEFT);
+      }
     };
     update();
     touchQuery.addEventListener("change", update);
     return () => touchQuery.removeEventListener("change", update);
-  }, []);
+  }, [rightBound]);
 
   return hint;
 }
@@ -72,6 +88,7 @@ type Props = {
   startDate: string;
   endDate: string;
   coverTheme: string;
+  pageTemplate?: string;
   profileId: string;
   /** SSR 初期値。ヘッダーバッジと黄色カードで共有 */
   initialNeedsContentRefresh?: boolean;
@@ -91,6 +108,7 @@ export function DiaryBookFlipReader({
   startDate,
   endDate,
   coverTheme,
+  pageTemplate,
   profileId,
   initialNeedsContentRefresh = false,
   onNeedsContentRefreshChange,
@@ -116,7 +134,9 @@ export function DiaryBookFlipReader({
   const [fullscreenOpen, setFullscreenOpen] = useState(false);
   const [fullscreenChromeVisible, setFullscreenChromeVisible] = useState(false);
   const viewportDock = useVisualViewportDock(fullscreenOpen);
-  const fullscreenHintText = useFullscreenReaderHintText();
+  const rightBound = isAshiatoPageTemplateRightBound(pageTemplate);
+  const readerHelpText = rightBound ? READER_HELP_TEXT_RIGHT : READER_HELP_TEXT_LEFT;
+  const fullscreenHintText = useFullscreenReaderHintText(rightBound);
   const touchStartRef = useRef<{ x: number; y: number } | null>(null);
   const didSwipeRef = useRef(false);
   const tapHandledRef = useRef(false);
@@ -377,16 +397,16 @@ export function DiaryBookFlipReader({
       if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
       if (e.key === "ArrowRight") {
         e.preventDefault();
-        tryGoDelta(1);
+        tryGoDelta(rightBound ? -1 : 1);
       }
       if (e.key === "ArrowLeft") {
         e.preventDefault();
-        tryGoDelta(-1);
+        tryGoDelta(rightBound ? 1 : -1);
       }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [fullscreenOpen, tryGoDelta]);
+  }, [fullscreenOpen, rightBound, tryGoDelta]);
 
   const onTouchStart = useCallback((e: React.TouchEvent<HTMLElement>) => {
     didSwipeRef.current = false;
@@ -420,13 +440,14 @@ export function DiaryBookFlipReader({
         return;
       }
       didSwipeRef.current = true;
+      // 左とじ: 左スワイプ=次 / 右とじ: 右スワイプ=次
       if (dx < 0) {
-        tryGoDelta(1);
+        tryGoDelta(rightBound ? -1 : 1);
       } else {
-        tryGoDelta(-1);
+        tryGoDelta(rightBound ? 1 : -1);
       }
     },
-    [fullscreenOpen, openFullscreen, tryGoDelta],
+    [fullscreenOpen, openFullscreen, rightBound, tryGoDelta],
   );
 
   const onNormalViewerClick = useCallback(() => {
@@ -482,7 +503,8 @@ export function DiaryBookFlipReader({
         const photoLoading =
           shouldShowPhotoLoading(entry.id, entry.hasPhoto) && !resolvedPhoto;
         return (
-          <DiaryBookEntryV2PreviewPage
+          <DiaryBookAshiatoEntryPreviewPage
+            pageTemplate={pageTemplate}
             companionType={entry.companionType}
             mood={entry.mood}
             activity={entry.activity}
@@ -501,7 +523,7 @@ export function DiaryBookFlipReader({
       default:
         return null;
     }
-  }, [current, coverTheme, endDate, entries, getPhotoDataUrl, shouldShowPhotoLoading, startDate, title]);
+  }, [current, coverTheme, endDate, entries, getPhotoDataUrl, pageTemplate, shouldShowPhotoLoading, startDate, title]);
 
   if (loading && entries.length === 0) {
     return <OwlLoadingPanel layout="section" label="日記ブックを読み込んでいます…" size="sm" />;
@@ -534,7 +556,11 @@ export function DiaryBookFlipReader({
     <div
       className={[
         "w-full transition duration-300 ease-out",
-        panelVisible ? "translate-x-0 opacity-100" : "-translate-x-4 opacity-0 sm:-translate-x-6",
+        panelVisible
+          ? "translate-x-0 opacity-100"
+          : rightBound
+            ? "translate-x-4 opacity-0 sm:translate-x-6"
+            : "-translate-x-4 opacity-0 sm:-translate-x-6",
       ].join(" ")}
     >
       <DiaryBookPageViewport fitMode="width">{pageContent}</DiaryBookPageViewport>
@@ -659,13 +685,13 @@ export function DiaryBookFlipReader({
             >
               最後 ≫
             </button>
-            <InlineHelpButton ariaLabel="日記ブックの読み方">{READER_HELP_TEXT}</InlineHelpButton>
+            <InlineHelpButton ariaLabel="日記ブックの読み方">{readerHelpText}</InlineHelpButton>
           </div>
 
           <div className="space-y-1.5 sm:hidden">
             <div className="flex items-center justify-center gap-2">
               {pageStatus}
-              <InlineHelpButton ariaLabel="日記ブックの読み方">{READER_HELP_TEXT}</InlineHelpButton>
+              <InlineHelpButton ariaLabel="日記ブックの読み方">{readerHelpText}</InlineHelpButton>
             </div>
             <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1">
               <button

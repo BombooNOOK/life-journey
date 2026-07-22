@@ -3,7 +3,7 @@
 import Image from "next/image";
 
 import { MoodOwlIcon } from "@/components/journal/MoodOwlIcon";
-import { diaryCoverImagePath, normalizeDiaryCoverStyle } from "@/lib/journal/coverAssets";
+import { diaryCoverImagePath, getDiaryCoverStyleLabel, normalizeDiaryCoverStyle } from "@/lib/journal/coverAssets";
 import {
   diaryBookCalendarPawprintImagePath,
   diaryBookMonthIndexMoonImagePath,
@@ -192,7 +192,7 @@ export function DiaryBoundFrontCover({
       >
         <Image
           src={coverSrc}
-          alt={`${year}年の日記・表紙（${coverStyle === "kireime" ? "きれいめ" : "シンプル"}）`}
+          alt={`${year}年の日記・表紙（${getDiaryCoverStyleLabel(coverStyle)}）`}
           fill
           className="object-cover"
           sizes="540px"

@@ -25,6 +25,7 @@ export type DiaryBookPrintPdfPayload = {
   startDate: string;
   endDate: string;
   coverTheme: string;
+  pageTemplate: string;
   pages: DiaryBookPageKind[];
   entries: BoundDiaryEntry[];
   photoDataUriByEntryId: Record<string, string>;
@@ -116,6 +117,7 @@ export async function loadDiaryBookPrintPdfPayload(
     startDate: book.startDate,
     endDate: book.endDate,
     coverTheme: book.coverTheme,
+    pageTemplate: book.pageTemplate ?? "suuji_ashiato_irodori",
     pages,
     entries,
     photoDataUriByEntryId,

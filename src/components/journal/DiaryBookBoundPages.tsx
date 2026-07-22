@@ -18,7 +18,7 @@ import {
   diaryBookPreBackCoverIllustrationImagePath,
 } from "@/lib/journal/diaryBookAssets";
 import { DIARY_BOOK_INSIDE_COVER_TEXT } from "@/lib/journal/diaryBookInsideCoverLayout";
-import { diaryCoverImagePath, normalizeDiaryCoverStyle } from "@/lib/journal/coverAssets";
+import { diaryCoverImagePath, getDiaryCoverStyleLabel, normalizeDiaryCoverStyle } from "@/lib/journal/coverAssets";
 import {
   DiaryBoundMonthCalendarPage,
   type BoundDiaryEntry,
@@ -40,7 +40,7 @@ export function DiaryBookFrontCoverPage({
     <div className="relative overflow-hidden bg-[#f7f4ee]" style={PAGE_STYLE}>
       <Image
         src={coverSrc}
-        alt={`日記ブック・表紙（${coverStyle === "kireime" ? "きれいめ" : "シンプル"}）`}
+        alt={`あしあとブック・表紙（${getDiaryCoverStyleLabel(coverStyle)}）`}
         fill
         className="object-cover"
         sizes="540px"
