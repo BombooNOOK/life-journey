@@ -130,7 +130,15 @@ export function ashiatoPlanShows(
   return plan.includes.includes(key);
 }
 
-/** 縦書き本文：右から左へ列、各列は上から下へ */
+/** あしあと本文表示用：末尾のタグ行（#モグ など）を除く */
+export function normalizeAshiatoBodyContent(content: string): string {
+  return stripTagsFromContent(content)
+    .replace(/\r\n/g, "\n")
+    .replace(/\r/g, "\n")
+    .trim();
+}
+
+/** 縦書き本文：右から左へ列、各列は上から下へ（呼び出し側でタグ除去済みを渡す） */
 export function splitVerticalJapaneseColumns(
   text: string,
   maxCharsPerColumn: number,
@@ -150,6 +158,17 @@ export function splitVerticalJapaneseColumns(
     i += maxCharsPerColumn;
   }
   return columns;
+}
+
+/** 縦書きあしあと本文の列分割（末尾タグ行を除く） */
+export function getAshiatoVerticalBodyColumns(
+  content: string,
+  maxCharsPerColumn: number,
+  maxColumns: number,
+): string[] {
+  const body = normalizeAshiatoBodyContent(content);
+  if (!body) return [];
+  return splitVerticalJapaneseColumns(body, maxCharsPerColumn, maxColumns);
 }
 
 /** 森の絵日記など縦書き：罫線間隔に合わせた列間（CSS line-height） */
@@ -222,10 +241,8 @@ export function getAshiatoHorizontalBodyLayoutLines(
   bodyRect: AshiatoLayoutPercentRect,
   bodyTextLayout?: AshiatoHorizontalBodyTextLayout | null,
 ): string[] {
-  const normalized = stripTagsFromContent(content)
-    .replace(/\r\n/g, "\n")
-    .replace(/\r/g, "\n");
-  if (!normalized.trim()) return [];
+  const normalized = normalizeAshiatoBodyContent(content);
+  if (!normalized) return [];
 
   const capacity = getAshiatoHorizontalBodyCapacity(
     contentFontMode,

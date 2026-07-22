@@ -12,6 +12,8 @@ import {
   formatAshiatoVerticalDateText,
   getAshiatoHorizontalBodyCapacity,
   getAshiatoHorizontalBodyLayoutLines,
+  getAshiatoVerticalBodyColumns,
+  normalizeAshiatoBodyContent,
   resolveAshiatoEntryRenderPlan,
   splitDailyNumberSlots,
   splitVerticalJapaneseColumns,
@@ -150,5 +152,28 @@ describe("ashiatoEntryRender", () => {
   it("splits vertical columns", () => {
     const cols = splitVerticalJapaneseColumns("あいうえおかきくけこ", 5, 3);
     expect(cols).toEqual(["あいうえお", "かきくけこ"]);
+  });
+
+  it("strips trailing tag lines from ashiato body display", () => {
+    expect(normalizeAshiatoBodyContent("今日は楽しかった。\n\n#モグ #おでかけ")).toBe(
+      "今日は楽しかった。",
+    );
+    expect(getAshiatoVerticalBodyColumns("絵日記です。\n\n#森", 20, 3)).toEqual(["絵日記です。"]);
+    expect(
+      getAshiatoHorizontalBodyLayoutLines(
+        "余白ノートです。\n\n#家族",
+        "standard",
+        { left: 10, top: 40, width: 80, height: 30 },
+        null,
+      ).join(""),
+    ).toContain("余白ノートです。");
+    expect(
+      getAshiatoHorizontalBodyLayoutLines(
+        "余白ノートです。\n\n#家族",
+        "standard",
+        { left: 10, top: 40, width: 80, height: 30 },
+        null,
+      ).join(""),
+    ).not.toContain("#");
   });
 });
