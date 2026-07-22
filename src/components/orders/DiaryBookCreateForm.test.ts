@@ -37,7 +37,7 @@ describe("diaryBookCreateDisabledReason", () => {
   it("requires preview before included entries", () => {
     expect(
       diaryBookCreateDisabledReason({ ...base, periodChecked: false, canCreate: false }),
-    ).toBe("掲載する日記を確認してください");
+    ).toBe("掲載するあしあとを確認してください");
   });
 
   it("reports no included entries last", () => {

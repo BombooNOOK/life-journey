@@ -4,13 +4,18 @@ import Image from "next/image";
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 
+import { AshiatoPageShapePicker } from "@/components/orders/AshiatoPageShapePicker";
 import { DiaryBookIncludeInBookMonthList } from "@/components/journal/DiaryBookIncludeInBookMonthList";
 import { TAG_INPUT_PLACEHOLDER } from "@/components/journal/DiaryTagInput";
 import {
+  ashiatoCoverOptions,
   diaryCoverImagePath,
-  diaryCoverStyleOptions,
-  type DiaryCoverStyleId,
+  type AshiatoCoverId,
 } from "@/lib/journal/coverAssets";
+import {
+  DEFAULT_ASHIATO_PAGE_TEMPLATE_ID,
+  type AshiatoPageTemplateId,
+} from "@/lib/journal/ashiatoPageTemplates";
 import type { DiaryBookIncludePickerEntryDto } from "@/lib/journal/diaryBookIncludePicker";
 import { NO_INCLUDED_ENTRIES_IN_DIARY_BOOK_PERIOD_MESSAGE } from "@/lib/journal/diaryBookPeriod";
 
@@ -58,7 +63,7 @@ export function diaryBookCreateDisabledReason(params: {
   if (params.creating) return "作成中です";
   if (!params.title.trim()) return "あしあとブック名を入力してください";
   if (!params.startDate || !params.endDate) return "開始日と終了日を設定してください";
-  if (!params.periodChecked) return "掲載する日記を確認してください";
+  if (!params.periodChecked) return "掲載するあしあとを確認してください";
   if (!params.canCreate) return "本に入れるあしあとがありません";
   return null;
 }
@@ -74,7 +79,10 @@ export function DiaryBookCreateForm({
   const [title, setTitle] = useState("");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState(today);
-  const [coverTheme, setCoverTheme] = useState<DiaryCoverStyleId>("casual");
+  const [coverTheme, setCoverTheme] = useState<AshiatoCoverId>("cover_mori_standard");
+  const [pageTemplate, setPageTemplate] = useState<AshiatoPageTemplateId>(
+    DEFAULT_ASHIATO_PAGE_TEMPLATE_ID,
+  );
   const [tagFilter, setTagFilter] = useState("");
   const [checking, setChecking] = useState(false);
   const [entryCount, setEntryCount] = useState<number | null>(null);
@@ -117,6 +125,7 @@ export function DiaryBookCreateForm({
           startDate,
           endDate,
           coverTheme,
+          pageTemplate,
           tag: tagFilter.trim() || undefined,
         }),
       });
@@ -152,7 +161,8 @@ export function DiaryBookCreateForm({
     setTitle("");
     setStartDate("");
     setEndDate(today);
-    setCoverTheme("casual");
+    setCoverTheme("cover_mori_standard");
+    setPageTemplate(DEFAULT_ASHIATO_PAGE_TEMPLATE_ID);
     setTagFilter("");
     setEntryCount(null);
     setCanCreate(false);
@@ -188,6 +198,8 @@ export function DiaryBookCreateForm({
           startDate,
           endDate,
           coverTheme,
+          pageTemplate,
+          tag: tagFilter.trim() || undefined,
         }),
       });
       const data = (await res.json()) as CreateResponse;
@@ -217,7 +229,7 @@ export function DiaryBookCreateForm({
       <section className="rounded-xl border border-stone-200 bg-stone-50/80 px-4 py-3.5 shadow-sm">
         <h2 className="text-base font-semibold text-stone-900">あしあとブックを作る</h2>
         <p className="mt-2 text-sm leading-relaxed text-stone-700">
-          あしあとブックの新規作成は、日記の無料お試し開始後、または森の定期便のご利用開始後にご利用いただけます。
+          あしあとブックの新規作成は、あしあとの無料お試し開始後、または森の定期便のご利用開始後にご利用いただけます。
         </p>
       </section>
     );
@@ -227,7 +239,7 @@ export function DiaryBookCreateForm({
     <section className="rounded-xl border border-emerald-200/70 bg-gradient-to-br from-[#faf8f5] via-emerald-50/50 to-emerald-50/70 px-4 py-3.5 shadow-sm">
       <h2 className="text-base font-semibold text-stone-900">あしあとブックを作る</h2>
       <p className="mt-1 text-sm leading-relaxed text-stone-600">
-        日記をまとめて、1冊の本にします。
+        あしあとをまとめて、1冊の本にします。
       </p>
       {createdBook ? (
         <div className="mt-4 rounded-lg border border-emerald-200 bg-emerald-50/80 px-4 py-4">
@@ -272,7 +284,7 @@ export function DiaryBookCreateForm({
       )}
 
       {open && !createdBook ? (
-        <div className="mt-4 space-y-3">
+        <div className="mt-4 space-y-4">
           <label className="block text-sm">
             <span className="mb-1 block text-stone-700">あしあとブック名</span>
             <input
@@ -287,8 +299,8 @@ export function DiaryBookCreateForm({
 
           <div className="block text-sm">
             <span className="mb-2 block text-stone-700">表紙を選ぶ</span>
-            <div className="grid grid-cols-2 gap-3">
-              {diaryCoverStyleOptions.map((opt) => {
+            <div className="grid grid-cols-3 gap-2 sm:gap-3">
+              {ashiatoCoverOptions.map((opt) => {
                 const selected = coverTheme === opt.id;
                 return (
                   <button
@@ -296,7 +308,7 @@ export function DiaryBookCreateForm({
                     type="button"
                     aria-pressed={selected}
                     onClick={() => setCoverTheme(opt.id)}
-                    className={`rounded-lg border-2 p-2 text-left transition ${
+                    className={`rounded-lg border-2 p-1.5 text-left transition sm:p-2 ${
                       selected
                         ? "border-emerald-600 bg-emerald-50 ring-2 ring-emerald-200"
                         : "border-stone-200 bg-white hover:border-stone-300"
@@ -304,17 +316,20 @@ export function DiaryBookCreateForm({
                   >
                     <div className="relative aspect-[724/1024] overflow-hidden rounded-md border border-stone-200 bg-stone-100">
                       <Image
-                        src={diaryCoverImagePath(opt.id, "owl")}
+                        src={diaryCoverImagePath(opt.id)}
                         alt={`${opt.label}の表紙`}
                         fill
                         className="object-cover"
-                        sizes="(max-width: 640px) 40vw, 160px"
+                        sizes="(max-width: 640px) 30vw, 140px"
+                        unoptimized
                       />
                     </div>
-                    <div className="mt-2 flex items-center justify-between gap-2">
-                      <span className="text-sm font-medium text-stone-900">{opt.label}</span>
+                    <div className="mt-1.5 flex items-start justify-between gap-1">
+                      <span className="text-[11px] font-medium leading-snug text-stone-900 sm:text-sm">
+                        {opt.label}
+                      </span>
                       <span
-                        className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-xs ${
+                        className={`mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full text-[10px] sm:h-5 sm:w-5 sm:text-xs ${
                           selected
                             ? "bg-emerald-700 text-white"
                             : "border border-stone-300 text-stone-400"
@@ -329,6 +344,8 @@ export function DiaryBookCreateForm({
               })}
             </div>
           </div>
+
+          <AshiatoPageShapePicker value={pageTemplate} onChange={setPageTemplate} />
 
           <div className="grid gap-2 sm:grid-cols-2">
             <label className="block text-sm">
@@ -383,16 +400,16 @@ export function DiaryBookCreateForm({
               className="w-full rounded-md border border-stone-300 px-3 py-2 text-sm placeholder:text-stone-400"
             />
             <span className="mt-1 block text-xs text-stone-500">
-              期間内の日記のうち、指定タグが付いた日記だけを一覧に表示します。
+              期間内のあしあとのうち、指定タグが付いたものだけを一覧に表示します。
             </span>
           </label>
 
           <div className="rounded-lg border border-stone-200 bg-stone-50 px-3 py-2 text-sm text-stone-700">
             {entryCount == null ? (
-              "この期間の日記は、確認後に表示されます。"
+              "この期間のあしあとは、確認後に表示されます。"
             ) : (
               <>
-                この期間の日記:{" "}
+                この期間のあしあと:{" "}
                 <span className="font-semibold text-stone-900">{entryCount}件</span>
               </>
             )}
@@ -431,7 +448,7 @@ export function DiaryBookCreateForm({
                 onClick={() => void checkPreview()}
                 className="rounded-lg border border-stone-300 bg-white px-3 py-2 text-sm font-medium text-stone-800 hover:bg-stone-100 disabled:opacity-50"
               >
-                {checking ? "確認中…" : "掲載する日記を確認"}
+                {checking ? "確認中…" : "掲載するあしあとを確認"}
               </button>
               <button
                 type="button"

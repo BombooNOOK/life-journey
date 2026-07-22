@@ -43,6 +43,24 @@ const links: { href: string; label: string; note?: string; highlight?: boolean }
     highlight: true,
   },
   {
+    href: "/preview/ashiato-templates",
+    label: "あしあとブック：表紙・ページのかたち",
+    note: "表紙3種＋本文4種の選択UI・大きく見る・キャラ切替。ローカルまたは管理者",
+    highlight: true,
+  },
+  {
+    href: "/preview/ashiato-templates/layout",
+    label: "あしあとブック：ページのかたち レイアウト定規",
+    note: "721×1024・%座標。写真・日付・本文・すうじ・読み解きの枠合わせ。保存でファイル反映",
+    highlight: true,
+  },
+  {
+    href: "/preview/ashiato-templates/render",
+    label: "あしあとブック：ページのかたち（実描画）",
+    note: "サンプル写真・本文で本番と同じ描画を確認。テンプレ／キャラ切替",
+    highlight: true,
+  },
+  {
     href: "/preview/diary-book-tail",
     label: "日記ブック末尾（早見表・自由記入など）",
     note: "今日のすうじ 早見表を含む製本イメージ。npm run dev 中のみ",

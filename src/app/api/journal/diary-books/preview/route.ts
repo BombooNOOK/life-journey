@@ -4,8 +4,8 @@ import { getViewerEmailFromCookie } from "@/lib/auth/viewer";
 import { assertFullAccessForApi } from "@/lib/entitlement/requireFullAccess";
 import { parseDiaryBookPreviewFields } from "@/lib/journal/diaryBookForm";
 import {
-  countDiaryBookPeriodEntriesWithOptionalTag,
-  filterDiaryBookPickerEntriesByTag,
+  countDiaryBookPeriodEntriesWithTagScope,
+  filterDiaryBookPickerEntriesByTagScope,
   listJournalEntriesForDiaryBookIncludePicker,
 } from "@/lib/journal/diaryBookIncludePicker";
 import {
@@ -13,6 +13,7 @@ import {
   NO_INCLUDED_ENTRIES_IN_DIARY_BOOK_PERIOD_MESSAGE,
 } from "@/lib/journal/diaryBookPeriod";
 import { resolveDiaryBookProfileId } from "@/lib/journal/diaryBookProfile";
+import { parseDiaryBookTagFilterFromRequest } from "@/lib/journal/diaryBookTagFilter";
 
 const JSON_NO_STORE = {
   headers: {
@@ -62,18 +63,15 @@ export async function POST(req: Request) {
     );
   }
 
-  const rawTag =
-    typeof json === "object" && json !== null && "tag" in json
-      ? String((json as { tag: unknown }).tag).trim()
-      : "";
+  const tagScope = parseDiaryBookTagFilterFromRequest(json);
 
   const [counts, pickerEntriesAll] = await Promise.all([
-    countDiaryBookPeriodEntriesWithOptionalTag({
+    countDiaryBookPeriodEntriesWithTagScope({
       email: viewerEmail,
       profileId: profileResult.profileId,
       startDate: parsed.data.startDate,
       endDate: parsed.data.endDate,
-      tag: rawTag || undefined,
+      tagScope,
     }),
     listJournalEntriesForDiaryBookIncludePicker({
       email: viewerEmail,
@@ -83,28 +81,31 @@ export async function POST(req: Request) {
     }),
   ]);
 
-  const pickerEntries = await filterDiaryBookPickerEntriesByTag({
+  const pickerEntries = await filterDiaryBookPickerEntriesByTagScope({
     email: viewerEmail,
     profileId: profileResult.profileId,
     entries: pickerEntriesAll,
-    tag: rawTag || undefined,
+    tagScope,
   });
 
   const entryCount = counts.includedCount;
-  const totalEntryCount = counts.totalCount;
+  const matchingEntryCount = counts.matchingCount;
   const canCreate = entryCount > 0;
   const message = canCreate
     ? undefined
-    : totalEntryCount === 0
+    : matchingEntryCount === 0
       ? NO_ENTRIES_IN_DIARY_BOOK_PERIOD_MESSAGE
       : NO_INCLUDED_ENTRIES_IN_DIARY_BOOK_PERIOD_MESSAGE;
 
   return NextResponse.json(
     {
       entryCount,
-      totalEntryCount,
+      matchingEntryCount,
+      totalEntryCount: matchingEntryCount,
       canCreate,
       entries: pickerEntries,
+      tagFilter: tagScope.tagFilter,
+      tagFilterMode: tagScope.tagFilterMode,
       ...(message ? { message } : {}),
       code: "OK",
     },

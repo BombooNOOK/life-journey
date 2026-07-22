@@ -136,7 +136,9 @@ model DiaryBook {
   title      String
   startDate  String /// YYYY-MM-DD（記録日の下限・含む）
   endDate    String /// YYYY-MM-DD（記録日の上限・含む）
-  coverTheme String @default("casual")
+  coverTheme String @default("casual") /// 正規化後: cover_mori_standard | cover_komorebi | cover_mori_irodori
+  /// 本文ページのかたち（ashiatoPageTemplates の ID）
+  pageTemplate String @default("suuji_ashiato_irodori")
 
   /// 日記ブックのタグ絞り込み（例: "#こども #おでかけ"、空なら条件なし）
   tagFilter     String @default("")

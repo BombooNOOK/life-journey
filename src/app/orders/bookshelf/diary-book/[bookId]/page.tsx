@@ -89,6 +89,7 @@ export default async function DiaryBookReadPage({ params, searchParams }: Props)
           startDate={book.startDate}
           endDate={book.endDate}
           coverTheme={book.coverTheme}
+          pageTemplate={book.pageTemplate}
           profileId={profileId}
           rangeLabel={rangeLabel}
           entryCount={book.entryCount}

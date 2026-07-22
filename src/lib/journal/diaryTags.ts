@@ -122,15 +122,30 @@ export function mergeTagsIntoContent(body: string, tagInput: string): string {
   return `${trimmedBody}\n\n${tagLine}`;
 }
 
-/** 末尾タグ行に query が含まれるか（タグ検索用） */
+/** 末尾タグ行に query が含まれるか（タグ検索用・複数タグは OR） */
 export function matchTag(content: string, tagQuery: string): boolean {
-  const queryTags = parseDiaryTagInput(tagQuery);
+  return matchDiaryBookTagFilter(content, tagQuery, "OR");
+}
+
+export type DiaryBookTagFilterMode = "AND" | "OR";
+
+/** 日記ブックのタグ条件（末尾タグ行のみ・AND/OR） */
+export function matchDiaryBookTagFilter(
+  content: string,
+  tagFilter: string,
+  mode: DiaryBookTagFilterMode = "AND",
+): boolean {
+  const queryTags = parseDiaryTagInput(tagFilter);
   if (queryTags.length === 0) return true;
 
   const { tags } = extractTagsFromContent(content);
   const normalizedEntryTags = new Set(tags.map((tag) => tag.toLowerCase()));
+  const normalizedQuery = queryTags.map((query) => query.toLowerCase());
 
-  return queryTags.some((query) => normalizedEntryTags.has(query.toLowerCase()));
+  if (mode === "OR") {
+    return normalizedQuery.some((query) => normalizedEntryTags.has(query));
+  }
+  return normalizedQuery.every((query) => normalizedEntryTags.has(query));
 }
 
 /** キーワード検索（本文全体・タグ行は対象外） */

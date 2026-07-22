@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/db";
 import { serializeDiaryBook, type DiaryBookDto } from "@/lib/journal/diaryBookDto";
+import { diaryBookTagScopeFromRow } from "@/lib/journal/diaryBookTagFilter";
 import {
   countDiaryBookSnapshotEntries,
   diaryBookNeedsContentRefresh,
@@ -16,6 +17,7 @@ export async function listDiaryBooksForViewer(params: {
 
   return Promise.all(
     rows.map(async (row) => {
+      const tagScope = diaryBookTagScopeFromRow(row);
       const [entryCount, needsContentRefresh] = await Promise.all([
         countDiaryBookSnapshotEntries({
           email: params.email,
@@ -23,6 +25,7 @@ export async function listDiaryBooksForViewer(params: {
           startDate: row.startDate,
           endDate: row.endDate,
           bookUpdatedAt: row.updatedAt,
+          tagScope,
         }),
         diaryBookNeedsContentRefresh({
           email: params.email,

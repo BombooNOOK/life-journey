@@ -19,7 +19,7 @@ import {
   DiaryBookPreBackCoverIllustrationPage,
 } from "@/components/journal/DiaryBookBoundPages";
 import { DiaryBookPageViewport } from "@/components/journal/DiaryBookPageViewport";
-import { DiaryBookEntryV2PreviewPage } from "@/components/journal/DiaryBookEntryV2PreviewPage";
+import { DiaryBookAshiatoEntryPreviewPage } from "@/components/journal/DiaryBookAshiatoEntryPreviewPage";
 import { BodyPortal, IMMERSIVE_OVERLAY_Z_CLASS } from "@/components/ui/BodyPortal";
 import { InlineHelpButton } from "@/components/ui/InlineHelpButton";
 import { OwlLoadingInline } from "@/components/ui/OwlLoadingInline";
@@ -72,6 +72,7 @@ type Props = {
   startDate: string;
   endDate: string;
   coverTheme: string;
+  pageTemplate?: string;
   profileId: string;
   /** SSR 初期値。ヘッダーバッジと黄色カードで共有 */
   initialNeedsContentRefresh?: boolean;
@@ -91,6 +92,7 @@ export function DiaryBookFlipReader({
   startDate,
   endDate,
   coverTheme,
+  pageTemplate,
   profileId,
   initialNeedsContentRefresh = false,
   onNeedsContentRefreshChange,
@@ -482,7 +484,8 @@ export function DiaryBookFlipReader({
         const photoLoading =
           shouldShowPhotoLoading(entry.id, entry.hasPhoto) && !resolvedPhoto;
         return (
-          <DiaryBookEntryV2PreviewPage
+          <DiaryBookAshiatoEntryPreviewPage
+            pageTemplate={pageTemplate}
             companionType={entry.companionType}
             mood={entry.mood}
             activity={entry.activity}
@@ -501,7 +504,7 @@ export function DiaryBookFlipReader({
       default:
         return null;
     }
-  }, [current, coverTheme, endDate, entries, getPhotoDataUrl, shouldShowPhotoLoading, startDate, title]);
+  }, [current, coverTheme, endDate, entries, getPhotoDataUrl, pageTemplate, shouldShowPhotoLoading, startDate, title]);
 
   if (loading && entries.length === 0) {
     return <OwlLoadingPanel layout="section" label="日記ブックを読み込んでいます…" size="sm" />;
