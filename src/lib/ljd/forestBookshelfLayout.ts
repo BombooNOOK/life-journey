@@ -62,6 +62,6 @@ export const FOREST_BOOKSHELF_SPOT_LAYOUT: Record<ForestBookshelfSpotId, ForestB
   createDiary: { left: 7, top: 57.5, width: 31, height: 20.5 },
   currentDiary: { left: 40.5, top: 59.5, width: 24, height: 18.5 },
   placeholderRed: { left: 69, top: 61, width: 22.2, height: 14.5 },
-  placeholderGreen: { left: 8.5, top: 81.5, width: 22, height: 14.5 },
+  placeholderGreen: { left: 8.5, top: 82.5, width: 22, height: 14.5 },
   spinesDiary: { left: 32, top: 81.5, width: 44, height: 39 },
 };
