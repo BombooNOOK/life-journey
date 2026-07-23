@@ -47,10 +47,10 @@ export default async function OrdersListPage() {
   let donguriCho: DonguriChoView = { balance: 0, todayDelivery: null, recent: [] };
   let journalEntryCount = 0;
   let entitlement: SerializedUserEntitlement = {
-    tier: "trial_not_started",
+    tier: "free",
     showTrialBanner: false,
     bannerVariant: "none",
-    canUseContinuedFeatures: false,
+    canUseContinuedFeatures: true,
     canCreateFirstJournal: true,
     trialDaysRemaining: null,
     trialDayIndex: null,

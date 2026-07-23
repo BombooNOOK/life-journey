@@ -187,7 +187,7 @@ export function LogHouseHub({
       {activeProfile && !hasKanteiOrder ? (
         <KanteiMissingBanner
           profileId={activeProfile.id}
-          blockNewKantei={entitlement.tier === "trial_expired"}
+          blockNewKantei={false}
         />
       ) : null}
 

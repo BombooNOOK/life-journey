@@ -423,7 +423,7 @@ export function LogHouseRoomMobile({
 
   const canWriteJournal =
     entitlement.canUseContinuedFeatures || entitlement.canCreateFirstJournal;
-  const journalBlocked = entitlement.tier === "trial_expired" || !canWriteJournal;
+  const journalBlocked = !canWriteJournal;
   const isActiveProfile = profileId === activeProfileId;
   const hasKantei = hasKanteiOrder || Boolean(kanteiOrderId);
   const tourActive = tourStep != null;

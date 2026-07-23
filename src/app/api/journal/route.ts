@@ -8,7 +8,6 @@ import {
   continuedFeaturesDeniedMessage,
   resolveUserEntitlement,
 } from "@/lib/entitlement/resolveUserEntitlement";
-import { markFreeTrialStartedIfFirstJournal } from "@/lib/entitlement/startFreeTrialOnFirstJournal";
 
 /** Browsers and intermediaries must not cache per-user diary payloads. */
 const JSON_NO_STORE = {
@@ -333,7 +332,7 @@ export async function GET(req: Request) {
       JSON_NO_STORE,
     );
   } catch (e) {
-    const message = e instanceof Error ? e.message : "日記の取得に失敗しました。";
+    const message = e instanceof Error ? e.message : "あしあとの取得に失敗しました。";
     return NextResponse.json({ error: message, code: "DB_READ" }, { status: 500 });
   }
 }
@@ -348,7 +347,6 @@ export async function POST(req: Request) {
   }
 
   const entitlementCtx = await loadEntitlementContext(viewerEmail);
-  const wasFirstJournal = entitlementCtx.journalEntryCount === 0;
   if (!canCreateJournalEntry(entitlementCtx)) {
     const entitlement = resolveUserEntitlement(entitlementCtx);
     return NextResponse.json(
@@ -696,10 +694,6 @@ export async function POST(req: Request) {
       }
     }
 
-    if (entry && wasFirstJournal) {
-      await markFreeTrialStartedIfFirstJournal({ email: viewerEmail, wasFirstJournal: true });
-    }
-
     let donguriBalanceAfterSave: number | null = null;
     if (entry && profileId) {
       const charge = await chargeDiarySaveAcorns({
@@ -751,7 +745,7 @@ export async function POST(req: Request) {
       code: "OK",
     });
   } catch (e) {
-    const message = e instanceof Error ? e.message : "日記の保存に失敗しました。";
+    const message = e instanceof Error ? e.message : "あしあとの保存に失敗しました。";
     return NextResponse.json({ error: message, code: "DB_SAVE" }, { status: 500 });
   }
 }
