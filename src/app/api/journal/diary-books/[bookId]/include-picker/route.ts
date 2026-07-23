@@ -48,7 +48,7 @@ export async function GET(_: Request, { params }: RouteParams) {
 
   if (!row) {
     return NextResponse.json(
-      { error: "日記ブックが見つかりません。", code: "NOT_FOUND" },
+      { error: "あしあとブックが見つかりません。", code: "NOT_FOUND" },
       { status: 404, ...JSON_NO_STORE },
     );
   }
@@ -62,6 +62,7 @@ export async function GET(_: Request, { params }: RouteParams) {
       profileId: row.profileId,
       startDate: row.startDate,
       endDate: row.endDate,
+      pageTemplate: row.pageTemplate,
     });
     entries = await filterDiaryBookPickerEntriesByTagScope({
       email: viewerEmail,
@@ -73,7 +74,7 @@ export async function GET(_: Request, { params }: RouteParams) {
     console.error("[include-picker] list failed", { bookId: row.id, error: e });
     return NextResponse.json(
       {
-        error: "日記一覧の取得に失敗しました。時間をおいて再度お試しください。",
+        error: "あしあと一覧の取得に失敗しました。時間をおいて再度お試しください。",
         code: "LIST_FAILED",
       },
       { status: 500, ...JSON_NO_STORE },
@@ -90,6 +91,7 @@ export async function GET(_: Request, { params }: RouteParams) {
         title: row.title,
         startDate: row.startDate,
         endDate: row.endDate,
+        pageTemplate: row.pageTemplate,
         tagFilter: tagScope.tagFilter,
         tagFilterMode: tagScope.tagFilterMode,
         tagScopeSummary: formatDiaryBookTagScopeSummary(tagScope),

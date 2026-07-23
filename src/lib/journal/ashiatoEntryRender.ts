@@ -23,6 +23,10 @@ import {
   type AshiatoSlashYmdWeekdayDateParts,
 } from "@/lib/journal/ashiatoPageTemplateLayout";
 import { getDiaryBookEntryV2BodyFontLayout } from "@/lib/journal/diaryBookEntryBodyFontLayout";
+import {
+  journalEntryLayoutLengthFlag,
+  type JournalContentLengthFlag,
+} from "@/lib/journal/contentFontMode";
 import { getDiaryPreviewDateRowSegments } from "@/lib/journal/diaryPreviewFixedLayout";
 import { stripTagsFromContent } from "@/lib/journal/diaryTags";
 import { splitFixedWidthJapaneseLines } from "@/lib/pdf/splitFixedWidthJapaneseLines";
@@ -241,6 +245,26 @@ export function getAshiatoHorizontalBodyLayoutLines(
   bodyRect: AshiatoLayoutPercentRect,
   bodyTextLayout?: AshiatoHorizontalBodyTextLayout | null,
 ): string[] {
+  const capacity = getAshiatoHorizontalBodyCapacity(
+    contentFontMode,
+    bodyRect,
+    bodyTextLayout,
+  );
+  return getAshiatoHorizontalBodyLayoutLinesAll(
+    content,
+    contentFontMode,
+    bodyRect,
+    bodyTextLayout,
+  ).slice(0, capacity.maxLines);
+}
+
+/** 横書きあしあと本文：行数上限なし（はみ出し判定用） */
+export function getAshiatoHorizontalBodyLayoutLinesAll(
+  content: string,
+  contentFontMode: string | null | undefined,
+  bodyRect: AshiatoLayoutPercentRect,
+  bodyTextLayout?: AshiatoHorizontalBodyTextLayout | null,
+): string[] {
   const normalized = normalizeAshiatoBodyContent(content);
   if (!normalized) return [];
 
@@ -252,13 +276,12 @@ export function getAshiatoHorizontalBodyLayoutLines(
 
   const lines: string[] = [];
   for (const segment of normalized.split("\n")) {
-    if (lines.length >= capacity.maxLines) break;
     if (segment.length === 0) {
       lines.push("");
       continue;
     }
     let rest = segment;
-    while (rest.length > 0 && lines.length < capacity.maxLines) {
+    while (rest.length > 0) {
       const maxChars = capacity.maxCharsByLine[lines.length] ?? capacity.baseMaxCharsPerLine;
       const parts = splitFixedWidthJapaneseLines(rest, maxChars);
       const head = parts[0] ?? "";
@@ -267,6 +290,55 @@ export function getAshiatoHorizontalBodyLayoutLines(
     }
   }
   return lines;
+}
+
+/**
+ * 選んだページテンプレ＋文字サイズで、本文が1ページに収まるか。
+ * テンプレ未指定時は字数ソフト上限にフォールバック。
+ */
+export function ashiatoEntryBodyLengthFlag(params: {
+  content: string;
+  contentFontMode: string | null | undefined;
+  pageTemplate?: string | null;
+}): JournalContentLengthFlag {
+  const { content, contentFontMode, pageTemplate } = params;
+  if (!pageTemplate) {
+    return journalEntryLayoutLengthFlag(contentFontMode, content);
+  }
+
+  const plan = resolveAshiatoEntryRenderPlan({ pageTemplate });
+  const body = plan.slotsPercent.body;
+  if (!body) {
+    return journalEntryLayoutLengthFlag(contentFontMode, content);
+  }
+
+  if (plan.bodyWritingMode === "vertical") {
+    const font = getDiaryBookEntryV2BodyFontLayout(contentFontMode);
+    const px = ashiatoPercentRectToPx(body);
+    const { maxCharsPerColumn, maxColumns } = estimateVerticalBodyCapacity(px, font.fontSizePx);
+    const capacityChars = maxCharsPerColumn * maxColumns;
+    const usedChars = normalizeAshiatoBodyContent(content).replace(/\n/g, "").length;
+    if (usedChars <= 0) return "ok";
+    if (usedChars <= capacityChars) return "ok";
+    if (usedChars <= Math.ceil(capacityChars * 1.34)) return "soft";
+    return "strong";
+  }
+
+  const capacity = getAshiatoHorizontalBodyCapacity(
+    contentFontMode,
+    body,
+    plan.bodyTextLayout,
+  );
+  const linesAll = getAshiatoHorizontalBodyLayoutLinesAll(
+    content,
+    contentFontMode,
+    body,
+    plan.bodyTextLayout,
+  );
+  if (linesAll.length <= capacity.maxLines) return "ok";
+  const excessLines = linesAll.length - capacity.maxLines;
+  if (excessLines <= 2) return "soft";
+  return "strong";
 }
 
 export function estimateVerticalBodyCapacity(

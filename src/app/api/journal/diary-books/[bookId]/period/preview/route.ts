@@ -78,6 +78,7 @@ export async function POST(req: Request, { params }: RouteParams) {
     profileId: eligibility.book.profileId,
     startDate: parsed.data.startDate,
     endDate: parsed.data.endDate,
+    pageTemplate: eligibility.book.pageTemplate,
   });
 
   const pickerEntries = await filterDiaryBookPickerEntriesByTagScope({

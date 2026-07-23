@@ -59,12 +59,17 @@ export function diaryBookCreateDisabledReason(params: {
   periodChecked: boolean;
   canCreate: boolean;
   creating: boolean;
+  /** 本に入れるあしあとにページはみ出しがある */
+  hasOverflowIncluded?: boolean;
 }): string | null {
   if (params.creating) return "作成中です";
   if (!params.title.trim()) return "あしあとブック名を入力してください";
   if (!params.startDate || !params.endDate) return "開始日と終了日を設定してください";
   if (!params.periodChecked) return "掲載するあしあとを確認してください";
   if (!params.canCreate) return "本に入れるあしあとがありません";
+  if (params.hasOverflowIncluded) {
+    return "はみ出しのあるあしあとを直してから作成してください";
+  }
   return null;
 }
 
@@ -98,7 +103,11 @@ export function DiaryBookCreateForm({
   const [createdBook, setCreatedBook] = useState<CreatedBookSummary | null>(null);
 
   const canPreview = Boolean(startDate && endDate);
-  const canSubmit = Boolean(title.trim()) && canPreview && canCreate && !creating;
+  const hasOverflowIncluded = Boolean(
+    pickerEntries?.some((e) => e.includeInBook && e.lengthFlag !== "ok"),
+  );
+  const canSubmit =
+    Boolean(title.trim()) && canPreview && canCreate && !creating && !hasOverflowIncluded;
   const createDisabledReason = diaryBookCreateDisabledReason({
     title,
     startDate,
@@ -106,10 +115,12 @@ export function DiaryBookCreateForm({
     periodChecked,
     canCreate,
     creating,
+    hasOverflowIncluded,
   });
 
-  async function checkPreview() {
+  async function checkPreview(overridePageTemplate?: AshiatoPageTemplateId) {
     if (!canPreview) return;
+    const templateForPreview = overridePageTemplate ?? pageTemplate;
     setChecking(true);
     setError(null);
     setPreviewMessage(null);
@@ -125,7 +136,7 @@ export function DiaryBookCreateForm({
           startDate,
           endDate,
           coverTheme,
-          pageTemplate,
+          pageTemplate: templateForPreview,
           tag: tagFilter.trim() || undefined,
         }),
       });
@@ -154,6 +165,13 @@ export function DiaryBookCreateForm({
       setError("件数確認に失敗しました。");
     } finally {
       setChecking(false);
+    }
+  }
+
+  function handlePageTemplateChange(next: AshiatoPageTemplateId) {
+    setPageTemplate(next);
+    if (periodChecked) {
+      void checkPreview(next);
     }
   }
 
@@ -229,7 +247,7 @@ export function DiaryBookCreateForm({
       <section className="rounded-xl border border-stone-200 bg-stone-50/80 px-4 py-3.5 shadow-sm">
         <h2 className="text-base font-semibold text-stone-900">あしあとブックを作る</h2>
         <p className="mt-2 text-sm leading-relaxed text-stone-700">
-          あしあとブックの新規作成は、あしあとの無料お試し開始後、または森の定期便のご利用開始後にご利用いただけます。
+          あしあとブックの新規作成は、はじめてのあしあとを残したあと、または森の定期便のご利用開始後にご利用いただけます。
         </p>
       </section>
     );
@@ -345,7 +363,7 @@ export function DiaryBookCreateForm({
             </div>
           </div>
 
-          <AshiatoPageShapePicker value={pageTemplate} onChange={setPageTemplate} />
+          <AshiatoPageShapePicker value={pageTemplate} onChange={handlePageTemplateChange} />
 
           <div className="grid gap-2 sm:grid-cols-2">
             <label className="block text-sm">
@@ -418,6 +436,7 @@ export function DiaryBookCreateForm({
           {periodChecked && pickerEntries && pickerEntries.length > 0 ? (
             <DiaryBookIncludeInBookMonthList
               entries={pickerEntries}
+              pageTemplate={pageTemplate}
               onSaved={({ includedCount, entries }) => {
                 setPickerEntries(entries);
                 setEntryCount(includedCount);
@@ -428,6 +447,12 @@ export function DiaryBookCreateForm({
                 );
               }}
             />
+          ) : null}
+
+          {hasOverflowIncluded ? (
+            <p className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm leading-relaxed text-amber-950">
+              本に入れるあしあとにページのはみ出しがあります。文字サイズや文章を直してから、あしあとブックを作成してください。
+            </p>
           ) : null}
 
           {previewMessage ? (

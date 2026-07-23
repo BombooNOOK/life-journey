@@ -27,6 +27,8 @@ type Props = {
   /** あしあと編集から戻る先。省略時は現在の path（許可リスト内のみ） */
   editReturnTo?: string;
   profileId?: string;
+  /** あしあとブックのページテンプレ。編集リンクに付与し、枠容量ヒントに使う */
+  pageTemplate?: string | null;
 };
 
 function includeSnapshot(entries: DiaryBookIncludePickerEntryDto[]): string {
@@ -42,11 +44,14 @@ function journalEditHref(params: {
   entryId: string;
   returnTo: string | null;
   profileId?: string;
+  pageTemplate?: string | null;
 }): string {
   const qs = new URLSearchParams();
   qs.set("edit", params.entryId);
   if (params.profileId) qs.set("profile", params.profileId);
   if (params.returnTo) qs.set("returnTo", params.returnTo);
+  const template = params.pageTemplate?.trim();
+  if (template) qs.set("pageTemplate", template);
   return `/journal?${qs.toString()}`;
 }
 
@@ -56,6 +61,7 @@ export function DiaryBookIncludeInBookMonthList({
   onDirtyChange,
   editReturnTo,
   profileId,
+  pageTemplate,
 }: Props) {
   const pathname = usePathname();
   const [entries, setEntries] = useState(initialEntries);
@@ -287,6 +293,7 @@ export function DiaryBookIncludeInBookMonthList({
                                   entryId: entry.id,
                                   returnTo: safeReturnTo,
                                   profileId,
+                                  pageTemplate,
                                 })}
                                 className="rounded border border-amber-300 bg-white px-1.5 py-0.5 text-[10px] font-medium text-amber-950 underline-offset-2 hover:bg-amber-50 hover:underline"
                               >

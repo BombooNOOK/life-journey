@@ -64,6 +64,13 @@ import {
   normalizeContentFontMode,
 } from "@/lib/journal/contentFontMode";
 import {
+  ashiatoEntryBodyLengthFlag,
+  getAshiatoHorizontalBodyCapacity,
+  getAshiatoHorizontalBodyLayoutLinesAll,
+  resolveAshiatoEntryRenderPlan,
+} from "@/lib/journal/ashiatoEntryRender";
+import { isAshiatoPageTemplateId } from "@/lib/journal/ashiatoPageTemplates";
+import {
   countBodyLayoutLines,
   getDiaryBodyLineLimit,
   isDiaryBodyOverLineLimit,
@@ -127,7 +134,7 @@ import {
   type JournalLocalDraftPayload,
 } from "@/lib/journal/journalLocalDraftStorage";
 
-const JOURNAL_EDIT_LOADING_LABEL = "フクロウ先生が日記を開いています…";
+const JOURNAL_EDIT_LOADING_LABEL = "フクロウ先生があしあとを開いています…";
 const CALENDAR_RETURN_LOADING_LABEL = "カレンダーに戻っています…";
 
 type Entry = {
@@ -176,7 +183,7 @@ function isValidDateInput(value: string): boolean {
   );
 }
 
-/** 日記写真はテンプレ上おおよそ5cm角の製本表示を想定し、720pxで十分な解像度を確保する */
+/** あしあと写真はテンプレ上おおよそ5cm角の製本表示を想定し、720pxで十分な解像度を確保する */
 async function compressToSquareDataUrl(file: File, offsetPercent: number): Promise<string> {
   const imageBitmap = await createImageBitmap(file);
   const targetSize = 720;
@@ -233,6 +240,10 @@ function JournalPageContent() {
     showNumerologyDebug ||
     showSyncDebug ||
     process.env.NODE_ENV === "development";
+  const pageTemplateFromQuery = (searchParams.get("pageTemplate") ?? "").trim();
+  const ashiatoPageTemplate = isAshiatoPageTemplateId(pageTemplateFromQuery)
+    ? pageTemplateFromQuery
+    : null;
   const safeReturnTo = useMemo(
     () => parseSafeJournalReturnTo(searchParams.get("returnTo")),
     [searchParams],
@@ -735,7 +746,7 @@ function JournalPageContent() {
         setEditServerSnapshot(null);
         if (draft) {
           setError(
-            "オフラインまたは通信エラーのため、サーバーから日記を開けませんでした。端末内の下書きから復元できます。",
+            "オフラインまたは通信エラーのため、サーバーからあしあとを開けませんでした。端末内の下書きから復元できます。",
           );
           return;
         }
@@ -798,11 +809,11 @@ function JournalPageContent() {
     setDraftNotice(null);
 
     if (editingId && !canEditJournal) {
-      setError("無料お試し期間が終了したため、記録の編集はできません。");
+      setError("あしあとを編集する操作は、いまご利用いただけません。どんぐりと森の定期便のご案内をご確認ください。");
       return;
     }
     if (!editingId && !canWriteJournal) {
-      setError("無料お試し期間が終了したため、新しい記録の作成はできません。");
+      setError("新しいあしあとを森に残す操作は、いまご利用いただけません。どんぐりと森の定期便のご案内をご確認ください。");
       return;
     }
 
@@ -1169,7 +1180,7 @@ function JournalPageContent() {
     const entryId = id.trim();
     if (!entryId) return;
 
-    const ok = window.confirm("この日記を本当に削除しますか？");
+    const ok = window.confirm("このあしあとを本当に削除しますか？");
     if (!ok) return;
 
     const monthKey = monthKeyFromEditingContext();
@@ -1202,21 +1213,54 @@ function JournalPageContent() {
 
   const trimmedContent = content.trim();
   const charCount = trimmedContent.length;
-  const charMax = JOURNAL_CONTENT_SOFT_MAX_BY_MODE[contentFontMode];
-  const { maxLines: bodyMaxLines } = getDiaryBodyLineLimit(contentFontMode);
-  const bodyLineCount = useMemo(
-    () => countBodyLayoutLines(trimmedContent, contentFontMode),
-    [trimmedContent, contentFontMode],
-  );
-  const bodyOverflows = useMemo(
-    () => isDiaryBodyOverLineLimit(trimmedContent, contentFontMode),
-    [trimmedContent, contentFontMode],
-  );
+  const ashiatoBodyCapacity = useMemo(() => {
+    if (!ashiatoPageTemplate) return null;
+    const plan = resolveAshiatoEntryRenderPlan({ pageTemplate: ashiatoPageTemplate });
+    const body = plan.slotsPercent.body;
+    if (!body || plan.bodyWritingMode === "vertical") return null;
+    return {
+      capacity: getAshiatoHorizontalBodyCapacity(
+        contentFontMode,
+        body,
+        plan.bodyTextLayout,
+      ),
+      body,
+      bodyTextLayout: plan.bodyTextLayout,
+    };
+  }, [ashiatoPageTemplate, contentFontMode]);
+  const charMax =
+    ashiatoBodyCapacity?.capacity.maxBindingChars ??
+    JOURNAL_CONTENT_SOFT_MAX_BY_MODE[contentFontMode];
+  const { maxLines: defaultBodyMaxLines } = getDiaryBodyLineLimit(contentFontMode);
+  const bodyMaxLines = ashiatoBodyCapacity?.capacity.maxLines ?? defaultBodyMaxLines;
+  const bodyLineCount = useMemo(() => {
+    if (ashiatoBodyCapacity) {
+      return getAshiatoHorizontalBodyLayoutLinesAll(
+        trimmedContent,
+        contentFontMode,
+        ashiatoBodyCapacity.body,
+        ashiatoBodyCapacity.bodyTextLayout,
+      ).length;
+    }
+    return countBodyLayoutLines(trimmedContent, contentFontMode);
+  }, [ashiatoBodyCapacity, trimmedContent, contentFontMode]);
+  const bodyOverflows = useMemo(() => {
+    if (ashiatoPageTemplate) {
+      return (
+        ashiatoEntryBodyLengthFlag({
+          content: trimmedContent,
+          contentFontMode,
+          pageTemplate: ashiatoPageTemplate,
+        }) !== "ok"
+      );
+    }
+    return isDiaryBodyOverLineLimit(trimmedContent, contentFontMode);
+  }, [ashiatoPageTemplate, trimmedContent, contentFontMode]);
   const commentOverflows = false;
 
   const isEditEntryLoading = Boolean(editingId && loadingEdit);
   const recordPageTitle = isEditEntryLoading
-    ? "日記を開いています"
+    ? "あしあとを開いています"
     : formatJournalRecordPageTitle(entryDate);
   const bodyInputHeading = journalBodyInputHeading(entryDate);
 
@@ -1291,7 +1335,7 @@ function JournalPageContent() {
           {diaryTargetLabel !== null ? (
             <span
               className="hidden rounded-full border border-violet-200/90 bg-violet-50 px-2.5 py-0.5 text-xs font-medium text-violet-900 sm:inline"
-              title="いま書いている日記の対象"
+              title="いま書いているあしあとの対象"
             >
               {diaryTargetLabel}
             </span>
@@ -1369,10 +1413,10 @@ function JournalPageContent() {
         </div>
       ) : !showJournalForm ? (
         <div className="lj-read-desc rounded-xl border border-violet-200 bg-violet-50/70 px-4 py-5 text-violet-950">
-          <p>無料お試し期間が終了したため、新しい日記の作成はできません。</p>
+          <p>新しいあしあとを森に残す操作は、いまご利用いただけません。どんぐりと森の定期便のご案内をご確認ください。</p>
           <p className="mt-2">
             <Link href="/orders/calendar" className="font-medium underline-offset-2 hover:underline">
-              カレンダーで過去の日記を見る
+              カレンダーで過去のあしあとを見る
             </Link>
           </p>
         </div>
@@ -1395,7 +1439,7 @@ function JournalPageContent() {
               onClick={() => void deleteEntry(editingId)}
               className="shrink-0 self-start text-xs font-medium text-red-700 underline underline-offset-2 hover:text-red-800 disabled:opacity-50 sm:self-center"
             >
-              {deletingId === editingId ? "削除中…" : "この日記を削除する"}
+              {deletingId === editingId ? "削除中…" : "このあしあとを削除する"}
             </button>
           </div>
         ) : null}

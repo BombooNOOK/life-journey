@@ -26,6 +26,7 @@ type Props = {
   initialStartDate: string;
   initialEndDate: string;
   currentRangeLabel: string;
+  pageTemplate?: string | null;
 };
 
 const DEFAULT_NO_ENTRIES_MESSAGE =
@@ -37,6 +38,7 @@ export function DiaryBookEditPeriodPanel({
   initialStartDate,
   initialEndDate,
   currentRangeLabel,
+  pageTemplate,
 }: Props) {
   const router = useRouter();
   const [startDate, setStartDate] = useState(initialStartDate);
@@ -251,6 +253,7 @@ export function DiaryBookEditPeriodPanel({
             </p>
             <DiaryBookIncludeInBookMonthList
               entries={pickerEntries}
+              pageTemplate={pageTemplate}
               onSaved={({ includedCount, entries }) => {
                 setPickerEntries(entries);
                 setEntryCount(includedCount);

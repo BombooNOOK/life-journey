@@ -554,7 +554,13 @@ export function DiaryBookFlipReader({
   const lastDisabled = pageIndex >= totalPages - 1;
   const entryEditHref =
     current.kind === "entry"
-      ? `/journal?profile=${encodeURIComponent(profileId)}&edit=${encodeURIComponent(current.entry.id)}&returnTo=${editReturnToParam}`
+      ? (() => {
+          const base = `/journal?profile=${encodeURIComponent(profileId)}&edit=${encodeURIComponent(current.entry.id)}&returnTo=${editReturnToParam}`;
+          const template = pageTemplate?.trim();
+          return template
+            ? `${base}&pageTemplate=${encodeURIComponent(template)}`
+            : base;
+        })()
       : null;
 
   const normalPageViewport = (

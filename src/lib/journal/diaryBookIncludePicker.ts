@@ -1,8 +1,9 @@
 import { Prisma } from "@prisma/client";
 
 import { prisma } from "@/lib/db";
+import { ashiatoEntryBodyLengthFlag } from "@/lib/journal/ashiatoEntryRender";
 import {
-  journalEntryContentLengthFlag,
+  journalEntryLayoutLengthFlag,
   type JournalContentLengthFlag,
 } from "@/lib/journal/contentFontMode";
 import {
@@ -76,19 +77,23 @@ type IncludePickerRow = {
   id: string;
   createdAt: Date;
   mood: string;
-  contentSnippet: string | null;
+  content: string;
   includeInBook: boolean;
   contentFontMode: string;
-  contentCharLength: number | bigint;
   hasPhoto: boolean;
 };
 
-/** 月別一覧用。photoDataUrl 本文・content 全文は Neon から読まない */
+/**
+ * 月別一覧用。photoDataUrl / photoBlob は読まない。
+ * 期間リストは件数上限があるため content 全文を取り、改行込みのはみ出し判定に使う。
+ */
 export async function listJournalEntriesForDiaryBookIncludePicker(params: {
   email: string;
   profileId: string;
   startDate: string;
   endDate: string;
+  /** あしあとブックのページテンプレ。指定時は枠容量ベースの lengthFlag */
+  pageTemplate?: string | null;
 }): Promise<DiaryBookIncludePickerEntryDto[]> {
   const range = parseDiaryBookDateRange(params.startDate, params.endDate);
   if (!range) return [];
@@ -99,10 +104,9 @@ export async function listJournalEntriesForDiaryBookIncludePicker(params: {
       id,
       "createdAt",
       mood,
-      LEFT(TRIM(REGEXP_REPLACE(content, E'[[:space:]]+', ' ', 'g')), ${EXCERPT_MAX}::integer) AS "contentSnippet",
+      content,
       "includeInBook",
       "contentFontMode",
-      CAST(CHAR_LENGTH(content) AS INTEGER) AS "contentCharLength",
       (
         ("photoBlobUrl" IS NOT NULL AND btrim("photoBlobUrl") <> '')
         OR ("photoDataUrl" IS NOT NULL AND btrim("photoDataUrl") <> '')
@@ -115,22 +119,29 @@ export async function listJournalEntriesForDiaryBookIncludePicker(params: {
     ORDER BY "createdAt" ASC
   `);
 
+  const pageTemplate = params.pageTemplate?.trim() || null;
+
   return rows.map((row) => {
-    const snippet = row.contentSnippet ?? "";
-    const charLength = Number(row.contentCharLength);
+    const content = row.content ?? "";
     return {
       id: row.id,
       createdAt: row.createdAt.toISOString(),
       mood: row.mood,
-      contentExcerpt: journalEntryContentExcerpt(snippet),
+      contentExcerpt: journalEntryContentExcerpt(content),
       hasPhoto: Boolean(row.hasPhoto),
       includeInBook: row.includeInBook !== false,
-      lengthFlag: journalEntryContentLengthFlag(row.contentFontMode, charLength),
+      lengthFlag: pageTemplate
+        ? ashiatoEntryBodyLengthFlag({
+            content,
+            contentFontMode: row.contentFontMode,
+            pageTemplate,
+          })
+        : journalEntryLayoutLengthFlag(row.contentFontMode, content),
     };
   });
 }
 
-/** 期間内の日記を末尾タグ条件で絞り込む（includeInBook の件数も返す） */
+/** 期間内のあしあとを末尾タグ条件で絞り込む（includeInBook の件数も返す） */
 export async function countDiaryBookPeriodEntriesWithTagScope(params: {
   email: string;
   profileId: string;

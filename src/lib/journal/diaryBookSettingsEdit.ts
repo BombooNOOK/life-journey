@@ -4,7 +4,7 @@ import { findBlockingDiaryBookBindingRequest } from "@/lib/journal/deleteDiaryBo
 import { diaryBookTagScopeFromRow } from "@/lib/journal/diaryBookTagFilter";
 
 export const DIARY_BOOK_SETTINGS_EDIT_BLOCKED_MESSAGE =
-  "この日記ブックは製本申込中のため、対象期間やタグ条件を変更できません。内容を変えたい場合は、新しい日記ブックとして作成してください。";
+  "このあしあとブックは製本申込中のため、対象期間やタグ条件を変更できません。内容を変えたい場合は、新しいあしあとブックとして作成してください。";
 
 /** @deprecated {@link DIARY_BOOK_SETTINGS_EDIT_BLOCKED_MESSAGE} と同じ */
 export const DIARY_BOOK_PERIOD_EDIT_BLOCKED_MESSAGE = DIARY_BOOK_SETTINGS_EDIT_BLOCKED_MESSAGE;
@@ -15,6 +15,7 @@ export type DiaryBookSettingsBookRow = {
   profileId: string;
   startDate: string;
   endDate: string;
+  pageTemplate: string;
   tagFilter: string;
   tagFilterMode: string;
 };
@@ -47,12 +48,13 @@ export async function loadDiaryBookSettingsEditEligibility(params: {
       profileId: true,
       startDate: true,
       endDate: true,
+      pageTemplate: true,
       tagFilter: true,
       tagFilterMode: true,
     },
   });
   if (!book) {
-    return { ok: false, code: "NOT_FOUND", message: "日記ブックが見つかりません。" };
+    return { ok: false, code: "NOT_FOUND", message: "あしあとブックが見つかりません。" };
   }
 
   await expireStaleUnpaidPendingForScope({ diaryBookId: book.id });

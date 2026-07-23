@@ -45,4 +45,10 @@ describe("diaryBookCreateDisabledReason", () => {
       "本に入れるあしあとがありません",
     );
   });
+
+  it("blocks create when included entries overflow", () => {
+    expect(
+      diaryBookCreateDisabledReason({ ...base, hasOverflowIncluded: true }),
+    ).toBe("はみ出しのあるあしあとを直してから作成してください");
+  });
 });

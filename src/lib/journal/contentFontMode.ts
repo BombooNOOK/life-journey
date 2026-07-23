@@ -1,5 +1,5 @@
 /**
- * 日記「今日の記録」欄の文字サイズモード（DB・API・プレビュー・将来の印刷PDFで共有）
+ * あしあと「今日の記録」欄の文字サイズモード（DB・API・プレビュー・将来の印刷PDFで共有）
  */
 
 export const CONTENT_FONT_MODES = ["relaxed", "standard", "generous", "compact"] as const;
@@ -7,25 +7,25 @@ export type ContentFontMode = (typeof CONTENT_FONT_MODES)[number];
 
 export const DEFAULT_CONTENT_FONT_MODE: ContentFontMode = "standard";
 
-/** 伴走ウィザード保存時の既定（テンプレ本文込みでも長文警告が出にくい） */
-export const COMPANION_WRITING_DEFAULT_CONTENT_FONT_MODE: ContentFontMode = "generous";
+/** 伴走ウィザード保存時の既定（伴走レイアウトは余白多めのため「ゆったり」。たっぷりだと製本で切れやすい） */
+export const COMPANION_WRITING_DEFAULT_CONTENT_FONT_MODE: ContentFontMode = "relaxed";
 
-/** 製本1ページ目安（design 背景テンプレ本文枠 596×285 に基づく chars/行 × 最大行） */
+/** 製本1ページ目安（テンプレ未確定時のソフトガイド。標準≈28字×6行） */
 export const JOURNAL_CONTENT_SOFT_MAX_BY_MODE: Record<ContentFontMode, number> = {
-  relaxed: 150,
-  standard: 203,
-  generous: 360,
-  compact: 429,
+  relaxed: 100,
+  standard: 168,
+  generous: 250,
+  compact: 360,
 };
 
 /**
  * さらに長い場合の警告しきい値（ソフト上限の約1.34倍）。
  */
 export const JOURNAL_CONTENT_STRONG_MAX_BY_MODE: Record<ContentFontMode, number> = {
-  relaxed: 201,
-  standard: 272,
-  generous: 482,
-  compact: 575,
+  relaxed: 134,
+  standard: 225,
+  generous: 335,
+  compact: 482,
 };
 
 export const CONTENT_FONT_MODE_LABELS_JA: Record<ContentFontMode, string> = {

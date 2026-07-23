@@ -4,6 +4,7 @@ import {
   ashiatoDailyNumberLabels,
   ashiatoDailyNumberValues,
   ashiatoDailyNumberSlotLeftNudgePct,
+  ashiatoEntryBodyLengthFlag,
   ashiatoPercentRectToPx,
   ashiatoPlanShows,
   formatAshiatoSlashYmdWeekdayDate,
@@ -175,5 +176,63 @@ describe("ashiatoEntryRender", () => {
         null,
       ).join(""),
     ).not.toContain("#");
+  });
+
+  describe("ashiatoEntryBodyLengthFlag", () => {
+    it("marks short content ok on suuji_ashiato_standard", () => {
+      expect(
+        ashiatoEntryBodyLengthFlag({
+          content: "短い本文です。",
+          contentFontMode: "standard",
+          pageTemplate: "suuji_ashiato_standard",
+        }),
+      ).toBe("ok");
+    });
+
+    it("marks long content soft then strong on suuji_ashiato_standard", () => {
+      const plan = resolveAshiatoEntryRenderPlan({
+        pageTemplate: "suuji_ashiato_standard",
+      });
+      const body = plan.slotsPercent.body;
+      expect(body).toBeTruthy();
+      const capacity = getAshiatoHorizontalBodyCapacity(
+        "standard",
+        body!,
+        plan.bodyTextLayout,
+      );
+
+      const softContent = Array.from(
+        { length: capacity.maxLines + 1 },
+        () => "あ",
+      ).join("\n");
+      expect(
+        ashiatoEntryBodyLengthFlag({
+          content: softContent,
+          contentFontMode: "standard",
+          pageTemplate: "suuji_ashiato_standard",
+        }),
+      ).toBe("soft");
+
+      const strongContent = Array.from(
+        { length: capacity.maxLines + 3 },
+        () => "あ",
+      ).join("\n");
+      expect(
+        ashiatoEntryBodyLengthFlag({
+          content: strongContent,
+          contentFontMode: "standard",
+          pageTemplate: "suuji_ashiato_standard",
+        }),
+      ).toBe("strong");
+    });
+
+    it("falls back to layout length flag when pageTemplate omitted", () => {
+      expect(
+        ashiatoEntryBodyLengthFlag({
+          content: "短い",
+          contentFontMode: "standard",
+        }),
+      ).toBe("ok");
+    });
   });
 });

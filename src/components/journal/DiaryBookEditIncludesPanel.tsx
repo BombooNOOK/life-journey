@@ -21,6 +21,7 @@ export function DiaryBookEditIncludesPanel({ bookId, bookTitle, rangeLabel }: Pr
   const [loading, setLoading] = useState(true);
   const [entries, setEntries] = useState<DiaryBookIncludePickerEntryDto[] | null>(null);
   const [tagScopeSummary, setTagScopeSummary] = useState<string | null>(null);
+  const [pageTemplate, setPageTemplate] = useState<string | null>(null);
   const [matchingEntryCount, setMatchingEntryCount] = useState<number | null>(null);
   const [includedCount, setIncludedCount] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -40,12 +41,13 @@ export function DiaryBookEditIncludesPanel({ bookId, bookTitle, rangeLabel }: Pr
         entries?: DiaryBookIncludePickerEntryDto[];
         matchingEntryCount?: number;
         includedCount?: number;
-        book?: { tagScopeSummary?: string | null };
+        book?: { tagScopeSummary?: string | null; pageTemplate?: string | null };
         error?: string;
       }>(res, "一覧の取得に失敗しました。");
       if (!res.ok) throw new Error(data.error ?? "一覧の取得に失敗しました。");
       setEntries(data.entries ?? []);
       setTagScopeSummary(data.book?.tagScopeSummary ?? null);
+      setPageTemplate(data.book?.pageTemplate ?? null);
       setMatchingEntryCount(
         Number.isFinite(data.matchingEntryCount) ? Number(data.matchingEntryCount) : null,
       );
@@ -138,6 +140,7 @@ export function DiaryBookEditIncludesPanel({ bookId, bookTitle, rangeLabel }: Pr
       {entries && entries.length > 0 ? (
         <DiaryBookIncludeInBookMonthList
           entries={entries}
+          pageTemplate={pageTemplate}
           onSaved={({ entries: next }) => {
             setEntries(next);
             setIncludeDirty(false);

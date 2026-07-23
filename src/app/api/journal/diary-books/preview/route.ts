@@ -78,6 +78,7 @@ export async function POST(req: Request) {
       profileId: profileResult.profileId,
       startDate: parsed.data.startDate,
       endDate: parsed.data.endDate,
+      pageTemplate: parsed.data.pageTemplate,
     }),
   ]);
 
