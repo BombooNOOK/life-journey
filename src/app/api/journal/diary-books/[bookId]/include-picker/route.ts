@@ -2,7 +2,14 @@ import { NextResponse } from "next/server";
 
 import { getViewerEmailFromCookie } from "@/lib/auth/viewer";
 import { prisma } from "@/lib/db";
-import { listJournalEntriesForDiaryBookIncludePicker } from "@/lib/journal/diaryBookIncludePicker";
+import {
+  filterDiaryBookPickerEntriesByTagScope,
+  listJournalEntriesForDiaryBookIncludePicker,
+} from "@/lib/journal/diaryBookIncludePicker";
+import {
+  diaryBookTagScopeFromRow,
+  formatDiaryBookTagScopeSummary,
+} from "@/lib/journal/diaryBookTagFilter";
 import { resolveActiveProfileId } from "@/lib/profile/activeProfile";
 
 const JSON_NO_STORE = {
@@ -46,13 +53,21 @@ export async function GET(_: Request, { params }: RouteParams) {
     );
   }
 
+  const tagScope = diaryBookTagScopeFromRow(row);
+
   let entries;
   try {
-    entries = await listJournalEntriesForDiaryBookIncludePicker({
+    const allEntries = await listJournalEntriesForDiaryBookIncludePicker({
       email: viewerEmail,
       profileId: row.profileId,
       startDate: row.startDate,
       endDate: row.endDate,
+    });
+    entries = await filterDiaryBookPickerEntriesByTagScope({
+      email: viewerEmail,
+      profileId: row.profileId,
+      entries: allEntries,
+      tagScope,
     });
   } catch (e) {
     console.error("[include-picker] list failed", { bookId: row.id, error: e });
@@ -65,6 +80,9 @@ export async function GET(_: Request, { params }: RouteParams) {
     );
   }
 
+  const matchingEntryCount = entries.length;
+  const includedCount = entries.filter((entry) => entry.includeInBook).length;
+
   return NextResponse.json(
     {
       book: {
@@ -72,8 +90,13 @@ export async function GET(_: Request, { params }: RouteParams) {
         title: row.title,
         startDate: row.startDate,
         endDate: row.endDate,
+        tagFilter: tagScope.tagFilter,
+        tagFilterMode: tagScope.tagFilterMode,
+        tagScopeSummary: formatDiaryBookTagScopeSummary(tagScope),
       },
       entries,
+      matchingEntryCount,
+      includedCount,
       code: "OK",
     },
     JSON_NO_STORE,

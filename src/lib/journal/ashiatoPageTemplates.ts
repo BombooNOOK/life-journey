@@ -17,7 +17,7 @@ import {
   type CompanionTemplateSlug,
 } from "@/lib/journal/coverAssets";
 
-const ASHIATO_PAGE_TEMPLATE_ASSET_VERSION = "8";
+const ASHIATO_PAGE_TEMPLATE_ASSET_VERSION = "9";
 
 export const ASHIATO_COMPANION_TEMPLATE_SLUGS = [
   "drfukuro",

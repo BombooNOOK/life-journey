@@ -6,7 +6,7 @@ type Props = {
   disabled?: boolean;
 };
 
-/** 日記入力・編集：日記ブック／製本への掲載 ON/OFF */
+/** あしあと入力・編集：あしあとブック／製本への掲載 ON/OFF */
 export function JournalIncludeInBookField({ checked, onChange, disabled = false }: Props) {
   return (
     <div className="rounded-lg border border-stone-200/90 bg-[#faf8f5]/80 px-3 py-3">
@@ -19,9 +19,9 @@ export function JournalIncludeInBookField({ checked, onChange, disabled = false 
           className="mt-0.5 h-4 w-4 shrink-0 rounded border-stone-300 text-emerald-700 focus:ring-emerald-600 disabled:opacity-60"
         />
         <span className="min-w-0 space-y-1">
-          <span className="block text-sm font-medium text-stone-800">この日記を本に入れる</span>
+          <span className="block text-sm font-medium text-stone-800">このあしあとを本に入れる</span>
           <span className="block text-xs leading-relaxed text-stone-500">
-            OFFにしても日記は保存されます。日記ブックや製本用の内容には含まれません。
+            OFFにしてもあしあとは保存されます。あしあとブックや製本用の内容には含まれません。
           </span>
         </span>
       </label>

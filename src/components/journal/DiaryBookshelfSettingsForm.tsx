@@ -6,9 +6,10 @@ import { FormEvent, useEffect, useState } from "react";
 import { OwlLoadingInline } from "@/components/ui/OwlLoadingInline";
 
 import {
-  diaryCoverStyleOptions,
+  ashiatoCoverOptions,
+  diaryCoverImagePath,
   normalizeDiaryCoverStyle,
-  type DiaryCoverStyleId,
+  type AshiatoCoverId,
 } from "@/lib/journal/coverAssets";
 
 export type DiaryBookshelfBookClientSettings = {
@@ -125,10 +126,10 @@ export function DiaryBookshelfSettingsForm({
           <span className="text-xs font-medium text-stone-700">表紙の雰囲気</span>
           <select
             value={coverTheme}
-            onChange={(e) => setCoverTheme(e.target.value as DiaryCoverStyleId)}
+            onChange={(e) => setCoverTheme(e.target.value as AshiatoCoverId)}
             className="mt-1 w-full rounded-lg border border-stone-300 px-3 py-2 text-sm text-stone-900 outline-none ring-stone-400 focus:ring-2"
           >
-            {diaryCoverStyleOptions.map((opt) => (
+            {ashiatoCoverOptions.map((opt) => (
               <option key={opt.id} value={opt.id}>
                 {opt.label}
               </option>

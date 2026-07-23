@@ -29,7 +29,7 @@ type Props = {
 };
 
 const DEFAULT_NO_ENTRIES_MESSAGE =
-  "この期間には日記がありません。\n期間を変更するか、日記を書いてから日記ブックを作成してください。";
+  "この期間にはあしあとがありません。\n期間を変更するか、あしあとを残してからあしあとブックを作成してください。";
 
 export function DiaryBookEditPeriodPanel({
   bookId,
@@ -91,12 +91,12 @@ export function DiaryBookEditPeriodPanel({
       );
       const data = await parseFetchJsonResponse<PreviewResponse>(
         res,
-        "対象日記の確認に失敗しました。",
+        "対象あしあとの確認に失敗しました。",
       );
       if (!res.ok) {
         setEntryCount(null);
         setCanUpdate(false);
-        setError(data.error ?? "対象日記の確認に失敗しました。");
+        setError(data.error ?? "対象あしあとの確認に失敗しました。");
         return;
       }
       const count = Number.isFinite(data.entryCount) ? Number(data.entryCount) : 0;
@@ -114,7 +114,7 @@ export function DiaryBookEditPeriodPanel({
     } catch (e) {
       setEntryCount(null);
       setCanUpdate(false);
-      setError(e instanceof Error ? e.message : "対象日記の確認に失敗しました。");
+      setError(e instanceof Error ? e.message : "対象あしあとの確認に失敗しました。");
     } finally {
       setChecking(false);
     }
@@ -142,7 +142,7 @@ export function DiaryBookEditPeriodPanel({
       }
       setPeriodUpdated(true);
       setUpdateNotice(
-        "対象期間を更新しました。下の「日記ブックを更新する」で表紙・本文に反映してください。",
+        "対象期間を更新しました。下の「あしあとブックを更新する」で表紙・本文に反映してください。",
       );
       router.refresh();
     } catch (e) {
@@ -163,15 +163,15 @@ export function DiaryBookEditPeriodPanel({
       );
       const data = await parseFetchJsonResponse<{ error?: string; entryCount?: number }>(
         res,
-        "日記ブックの更新に失敗しました。",
+        "あしあとブックの更新に失敗しました。",
       );
       if (!res.ok) {
-        throw new Error(data.error ?? "日記ブックの更新に失敗しました。");
+        throw new Error(data.error ?? "あしあとブックの更新に失敗しました。");
       }
       router.push(`/orders/bookshelf/diary-book/${bookId}`);
       router.refresh();
     } catch (e) {
-      setError(e instanceof Error ? e.message : "日記ブックの更新に失敗しました。");
+      setError(e instanceof Error ? e.message : "あしあとブックの更新に失敗しました。");
     } finally {
       setRefreshing(false);
     }
@@ -189,7 +189,7 @@ export function DiaryBookEditPeriodPanel({
         <h1 className="mt-2 text-2xl font-bold text-stone-900">対象期間を変更する</h1>
         <p className="mt-1 text-sm text-stone-600">現在：{currentRangeLabel}</p>
         <p className="mt-2 text-sm leading-relaxed text-stone-600">
-          開始日・終了日を変更すると、対象になる日記の範囲が変わります。以前除外した日記（本に入れない設定）は自動では戻りません。
+          開始日・終了日を変更すると、対象になるあしあとの範囲が変わります。以前除外したあしあと（本に入れない設定）は自動では戻りません。
         </p>
       </div>
 
@@ -235,10 +235,10 @@ export function DiaryBookEditPeriodPanel({
 
         <div className="mt-3 rounded-lg border border-stone-200 bg-stone-50 px-3 py-2 text-sm text-stone-700">
           {entryCount == null ? (
-            "変更後の日記は、確認後に表示されます。"
+            "変更後のあしあとは、確認後に表示されます。"
           ) : (
             <>
-              本に入れる日記（候補）：{" "}
+              本に入れるあしあと（候補）：{" "}
               <span className="font-semibold text-stone-900">{entryCount}件</span>
             </>
           )}
@@ -247,7 +247,7 @@ export function DiaryBookEditPeriodPanel({
         {periodChecked && pickerEntries && pickerEntries.length > 0 ? (
           <div className="mt-4">
             <p className="mb-2 text-xs text-stone-500">
-              「本に入れる」がオフの日記は、このままでは本に載りません。必要なら更新後に編集画面でオンにしてください。
+              「本に入れる」がオフのあしあとは、このままでは本に載りません。必要なら更新後に編集画面でオンにしてください。
             </p>
             <DiaryBookIncludeInBookMonthList
               entries={pickerEntries}
@@ -282,7 +282,7 @@ export function DiaryBookEditPeriodPanel({
               {checking ? (
                 <OwlLoadingInline label="確認中…" size="sm" />
               ) : (
-                "変更後の日記を確認"
+                "変更後のあしあとを確認"
               )}
             </button>
             <button
@@ -308,9 +308,9 @@ export function DiaryBookEditPeriodPanel({
 
       {periodUpdated ? (
         <section className="rounded-xl border border-stone-200 bg-stone-50/80 p-4">
-          <h2 className="text-sm font-semibold text-stone-900">日記ブックを更新する</h2>
+          <h2 className="text-sm font-semibold text-stone-900">あしあとブックを更新する</h2>
           <p className="mt-1 text-xs leading-relaxed text-stone-600">
-            対象期間の変更を表紙・月索引・本文に反映します。完了すると日記ブックの表紙画面に戻ります。
+            対象期間の変更を表紙・月索引・本文に反映します。完了するとあしあとブックの表紙画面に戻ります。
           </p>
           <button
             type="button"
@@ -320,9 +320,9 @@ export function DiaryBookEditPeriodPanel({
             className="mt-3 min-h-[44px] rounded-lg bg-emerald-800 px-4 py-2.5 text-sm font-medium text-white hover:bg-emerald-900 disabled:opacity-50"
           >
             {refreshing ? (
-              <OwlLoadingInline label="日記ブックを更新しています…" size="sm" />
+              <OwlLoadingInline label="あしあとブックを更新しています…" size="sm" />
             ) : (
-              "日記ブックを更新する"
+              "あしあとブックを更新する"
             )}
           </button>
           {includeDirty ? (

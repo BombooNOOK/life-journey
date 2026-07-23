@@ -119,9 +119,17 @@ export function parseSafeBookshelfHomeReturnTo(raw: string | null): string | nul
   return null;
 }
 
+const DIARY_BOOK_EDIT_SUBPATHS = new Set([
+  "edit-includes",
+  "edit-period",
+  "edit-tags",
+]);
+
 /**
- * 日記編集画面の `returnTo` 用。DiaryBook 読書画面のみ許可。
- * 形式: `/orders/bookshelf/diary-book/{bookId}` + 任意で `?p=1`（1始まりページ）
+ * 日記編集画面の `returnTo` 用。DiaryBook 読書画面・編集画面を許可。
+ * 形式:
+ * - `/orders/bookshelf/diary-book/{bookId}` + 任意で `?p=1`（1始まりページ）
+ * - `/orders/bookshelf/diary-book/{bookId}/edit-includes|edit-period|edit-tags`
  */
 export function parseSafeDiaryBookReturnTo(raw: string | null): string | null {
   const decoded = decodeSafePath(raw);
@@ -130,19 +138,30 @@ export function parseSafeDiaryBookReturnTo(raw: string | null): string | null {
   const qIndex = decoded.indexOf("?");
   const pathPart = qIndex >= 0 ? decoded.slice(0, qIndex) : decoded;
 
-  const m = /^\/orders\/bookshelf\/diary-book\/([a-z0-9]{10,64})$/i.exec(pathPart);
+  const m =
+    /^\/orders\/bookshelf\/diary-book\/([a-z0-9]{10,64})(?:\/(edit-includes|edit-period|edit-tags))?$/i.exec(
+      pathPart,
+    );
   if (!m) return null;
+  const bookId = m[1];
+  const sub = m[2]?.toLowerCase() ?? null;
+  if (sub && !DIARY_BOOK_EDIT_SUBPATHS.has(sub)) return null;
 
-  if (qIndex < 0) return pathPart;
+  const basePath = sub
+    ? `/orders/bookshelf/diary-book/${bookId}/${sub}`
+    : `/orders/bookshelf/diary-book/${bookId}`;
+
+  if (qIndex < 0) return basePath;
+  if (sub) return basePath;
 
   const sp = new URLSearchParams(decoded.slice(qIndex + 1));
   const p = sp.get("p");
-  if (p == null) return pathPart;
-  if (!/^\d{1,5}$/.test(p)) return pathPart;
+  if (p == null) return basePath;
+  if (!/^\d{1,5}$/.test(p)) return basePath;
   const pageOneBased = parseInt(p, 10);
-  if (!Number.isFinite(pageOneBased) || pageOneBased < 1) return pathPart;
+  if (!Number.isFinite(pageOneBased) || pageOneBased < 1) return basePath;
 
-  return `${pathPart}?p=${pageOneBased}`;
+  return `${basePath}?p=${pageOneBased}`;
 }
 
 /**

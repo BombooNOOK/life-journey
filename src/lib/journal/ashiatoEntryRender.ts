@@ -172,7 +172,7 @@ export function getAshiatoVerticalBodyColumns(
 }
 
 /** 森の絵日記など縦書き：罫線間隔に合わせた列間（CSS line-height） */
-export const ASHIATO_VERTICAL_BODY_COLUMN_LINE_HEIGHT = 2;
+export const ASHIATO_VERTICAL_BODY_COLUMN_LINE_HEIGHT = 2.18;
 
 export type AshiatoHorizontalBodyCapacity = {
   maxLines: number;

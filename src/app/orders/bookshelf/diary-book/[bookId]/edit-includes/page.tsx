@@ -33,7 +33,7 @@ export default async function DiaryBookEditIncludesPage({ params }: Props) {
           ← 本棚へ
         </Link>
         <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
-          指定の日記ブックは見つかりませんでした。
+          指定のあしあとブックは見つかりませんでした。
         </div>
       </div>
     );

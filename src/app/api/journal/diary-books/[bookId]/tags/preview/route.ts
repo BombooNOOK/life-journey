@@ -2,7 +2,6 @@ import { NextResponse } from "next/server";
 
 import { getViewerEmailFromCookie } from "@/lib/auth/viewer";
 import { assertFullAccessForApi } from "@/lib/entitlement/requireFullAccess";
-import { parseDiaryBookPeriodFields } from "@/lib/journal/diaryBookForm";
 import {
   countDiaryBookPeriodEntriesWithTagScope,
   filterDiaryBookPickerEntriesByTagScope,
@@ -12,8 +11,8 @@ import {
   NO_ENTRIES_IN_DIARY_BOOK_PERIOD_MESSAGE,
   NO_INCLUDED_ENTRIES_IN_DIARY_BOOK_PERIOD_MESSAGE,
 } from "@/lib/journal/diaryBookPeriod";
-import { diaryBookTagScopeFromRow } from "@/lib/journal/diaryBookTagFilter";
-import { loadDiaryBookPeriodEditEligibility } from "@/lib/journal/diaryBookPeriodEdit";
+import { parseDiaryBookTagFilterFields } from "@/lib/journal/diaryBookTagFilter";
+import { loadDiaryBookSettingsEditEligibility } from "@/lib/journal/diaryBookSettingsEdit";
 
 const JSON_NO_STORE = {
   headers: {
@@ -36,7 +35,7 @@ export async function POST(req: Request, { params }: RouteParams) {
   if (denied) return denied;
 
   const { bookId } = await params;
-  const eligibility = await loadDiaryBookPeriodEditEligibility({
+  const eligibility = await loadDiaryBookSettingsEditEligibility({
     bookId,
     viewerEmail,
   });
@@ -46,7 +45,7 @@ export async function POST(req: Request, { params }: RouteParams) {
       { status: 404, ...JSON_NO_STORE },
     );
   }
-  if (!eligibility.canEditPeriod) {
+  if (!eligibility.canEditSettings) {
     return NextResponse.json(
       { error: eligibility.message, code: eligibility.code },
       { status: 409, ...JSON_NO_STORE },
@@ -63,7 +62,7 @@ export async function POST(req: Request, { params }: RouteParams) {
     );
   }
 
-  const parsed = parseDiaryBookPeriodFields(json);
+  const parsed = parseDiaryBookTagFilterFields(json);
   if (!parsed.ok) {
     return NextResponse.json(
       { error: parsed.error, code: parsed.code },
@@ -71,27 +70,28 @@ export async function POST(req: Request, { params }: RouteParams) {
     );
   }
 
-  const tagScope = diaryBookTagScopeFromRow(eligibility.book);
+  const book = eligibility.book;
+  const tagScope = parsed.data;
 
   const pickerEntriesAll = await listJournalEntriesForDiaryBookIncludePicker({
     email: viewerEmail,
-    profileId: eligibility.book.profileId,
-    startDate: parsed.data.startDate,
-    endDate: parsed.data.endDate,
+    profileId: book.profileId,
+    startDate: book.startDate,
+    endDate: book.endDate,
   });
 
   const pickerEntries = await filterDiaryBookPickerEntriesByTagScope({
     email: viewerEmail,
-    profileId: eligibility.book.profileId,
+    profileId: book.profileId,
     entries: pickerEntriesAll,
     tagScope,
   });
 
   const counts = await countDiaryBookPeriodEntriesWithTagScope({
     email: viewerEmail,
-    profileId: eligibility.book.profileId,
-    startDate: parsed.data.startDate,
-    endDate: parsed.data.endDate,
+    profileId: book.profileId,
+    startDate: book.startDate,
+    endDate: book.endDate,
     tagScope,
   });
 
@@ -108,9 +108,10 @@ export async function POST(req: Request, { params }: RouteParams) {
     {
       entryCount,
       matchingEntryCount,
-      totalEntryCount: matchingEntryCount,
       canUpdate,
       entries: pickerEntries,
+      tagFilter: tagScope.tagFilter,
+      tagFilterMode: tagScope.tagFilterMode,
       ...(message ? { message } : {}),
       code: "OK",
     },

@@ -1,0 +1,3 @@
+-- AlterTable
+ALTER TABLE "DiaryBook" ADD COLUMN "tagFilter" TEXT NOT NULL DEFAULT '';
+ALTER TABLE "DiaryBook" ADD COLUMN "tagFilterMode" TEXT NOT NULL DEFAULT 'AND';

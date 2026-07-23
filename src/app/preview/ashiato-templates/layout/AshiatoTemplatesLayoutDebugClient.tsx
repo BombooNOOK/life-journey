@@ -23,8 +23,11 @@ import {
   type AshiatoLayoutSlotId,
   type AshiatoPageTemplateLayout,
 } from "@/lib/journal/ashiatoPageTemplateLayout";
+import { ASHIATO_VERTICAL_BODY_COLUMN_LINE_HEIGHT } from "@/lib/journal/ashiatoEntryRender";
+import { DIARY_PREVIEW_BODY_FONT_FAMILY } from "@/lib/journal/diaryPreviewBodyFont";
+import { getDiaryBookEntryV2BodyFontLayout } from "@/lib/journal/diaryBookEntryBodyFontLayout";
 
-const DRAFT_STORAGE_KEY = "ashiato-page-template-layout-draft-v2";
+const DRAFT_STORAGE_KEY = "ashiato-page-template-layout-draft-v6";
 
 const COMPANION_LABELS: Record<(typeof ASHIATO_COMPANION_TEMPLATE_SLUGS)[number], string> = {
   drfukuro: "フクロウ",
@@ -330,11 +333,20 @@ export function AshiatoTemplatesLayoutDebugClient() {
 
               {showSample && layout.slots.body ? (
                 <div
-                  className="pointer-events-none absolute overflow-hidden p-1 text-[11px] leading-relaxed text-emerald-950/80"
+                  className="pointer-events-none absolute overflow-hidden p-1 text-emerald-950/80"
                   style={{
                     ...ashiatoLayoutRectStyle(layout.slots.body),
                     writingMode:
                       layout.bodyWritingMode === "vertical" ? "vertical-rl" : "horizontal-tb",
+                    fontFamily: DIARY_PREVIEW_BODY_FONT_FAMILY,
+                    fontSize:
+                      layout.bodyWritingMode === "vertical"
+                        ? `${getDiaryBookEntryV2BodyFontLayout("standard").fontSizePx}px`
+                        : "11px",
+                    lineHeight:
+                      layout.bodyWritingMode === "vertical"
+                        ? ASHIATO_VERTICAL_BODY_COLUMN_LINE_HEIGHT
+                        : undefined,
                   }}
                 >
                   {layout.bodyWritingMode === "vertical"

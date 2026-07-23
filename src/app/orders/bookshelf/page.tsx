@@ -121,10 +121,10 @@ export default async function BookshelfPage() {
         overviewExtra: (
           <>
             <BookshelfEditIncludesNavButton bookId={book.id}>
-              <span className="block">本に入れる日記を編集する</span>
+              <span className="block">本に入れるあしあとを編集</span>
               {book.needsContentRefresh ? (
                 <span className="mt-1 block text-[10px] font-normal text-amber-800">
-                  日記の変更を本に反映できます
+                  あしあとの変更を本に反映できます
                 </span>
               ) : null}
             </BookshelfEditIncludesNavButton>

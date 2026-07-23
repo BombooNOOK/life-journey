@@ -13,6 +13,11 @@ import {
   diaryBookNeedsContentRefresh,
   entryVisibleInDiaryBookSnapshot,
 } from "@/lib/journal/diaryBookSnapshot";
+import {
+  diaryBookTagScopeFromRow,
+  hasDiaryBookTagScope,
+} from "@/lib/journal/diaryBookTagFilter";
+import { matchDiaryBookTagFilter } from "@/lib/journal/diaryTags";
 import { buildDiaryNumbers } from "@/lib/journal/numbers";
 import {
   profileHasKanteiOrder,
@@ -108,6 +113,8 @@ export async function getDiaryBookMetaForViewer(params: {
   const row = await findDiaryBookRowForViewerOrAdmin(params);
   if (!row) return null;
 
+  const tagScope = diaryBookTagScopeFromRow(row);
+
   const [entryCount, needsContentRefresh] = await Promise.all([
     countDiaryBookSnapshotEntries({
       email: row.email,
@@ -115,6 +122,7 @@ export async function getDiaryBookMetaForViewer(params: {
       startDate: row.startDate,
       endDate: row.endDate,
       bookUpdatedAt: row.updatedAt,
+      tagScope,
     }),
     diaryBookNeedsContentRefresh({
       email: row.email,
@@ -141,11 +149,14 @@ export async function getDiaryBookWithEntriesForViewer(params: {
 
   const ownerEmail = row.email;
 
+  const tagScope = diaryBookTagScopeFromRow(row);
+
   const [entries, entryCount, needsContentRefresh] = await Promise.all([
     listJournalEntriesForDiaryBookRow({
       book: row,
       viewerEmail: ownerEmail,
       respectSnapshot: true,
+      tagScope,
     }),
     countDiaryBookSnapshotEntries({
       email: row.email,
@@ -153,6 +164,7 @@ export async function getDiaryBookWithEntriesForViewer(params: {
       startDate: row.startDate,
       endDate: row.endDate,
       bookUpdatedAt: row.updatedAt,
+      tagScope,
     }),
     diaryBookNeedsContentRefresh({
       email: row.email,
@@ -171,12 +183,17 @@ export async function getDiaryBookWithEntriesForViewer(params: {
 }
 
 export async function listJournalEntriesForDiaryBookRow(params: {
-  book: Pick<DiaryBook, "email" | "profileId" | "startDate" | "endDate" | "updatedAt">;
+  book: Pick<
+    DiaryBook,
+    "email" | "profileId" | "startDate" | "endDate" | "updatedAt" | "tagFilter" | "tagFilterMode"
+  >;
   viewerEmail: string;
   /** false のとき製本判定など最新の includeInBook をそのまま使う */
   respectSnapshot?: boolean;
+  tagScope?: ReturnType<typeof diaryBookTagScopeFromRow>;
 }): Promise<BoundDiaryEntry[]> {
   const respectSnapshot = params.respectSnapshot !== false;
+  const tagScope = params.tagScope ?? diaryBookTagScopeFromRow(params.book);
   const range = parseDiaryBookDateRange(params.book.startDate, params.book.endDate);
   if (!range) return [];
 
@@ -241,11 +258,16 @@ export async function listJournalEntriesForDiaryBookRow(params: {
     params.book.profileId,
   );
 
-  const snapshotRows = respectSnapshot
+  const snapshotRows = (respectSnapshot
     ? rows.filter((row) =>
         entryVisibleInDiaryBookSnapshot(row, params.book.updatedAt),
       )
-    : rows.filter((row) => row.includeInBook !== false);
+    : rows.filter((row) => row.includeInBook !== false)
+  ).filter((row) =>
+    hasDiaryBookTagScope(tagScope)
+      ? matchDiaryBookTagFilter(row.content, tagScope.tagFilter, tagScope.tagFilterMode)
+      : true,
+  );
 
   return snapshotRows.map((row) => {
     const normalizedComment =

@@ -74,11 +74,13 @@ export const ASHIATO_PAGE_TEMPLATE_LAYOUTS: Record<
     dateLayout: "vertical",
     photoRotateDeg: 0,
     slots: {
-      // 枠は正方形でないため、内寸に均等余白で少し小さめに中央寄せ
-      photo: { left: 14.5, top: 5.3, width: 72, height: 53.2 },
-      date: { left: 74, top: 66, width: 15.5, height: 17.5 },
-      mood: { left: 77.5, top: 87, width: 9.2, height: 7.6 },
-      body: { left: 17, top: 63.5, width: 56.8, height: 31 },
+      photo: { left: 8, top: 3, width: 84, height: 46.5 },
+      // 気持ち上へ
+      date: { left: 78, top: 54, width: 13.5, height: 26 },
+      // ほんの少し右下へ戻す
+      mood: { left: 79.3, top: 86.3, width: 10, height: 7.6 },
+      // スタート位置はそのまま（0.5列分左）
+      body: { left: 10.3, top: 53.5, width: 64.5, height: 43 },
     },
   },
   mori_yohaku_note: {
