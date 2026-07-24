@@ -9,9 +9,9 @@ import {
   useMemo,
   useState,
   useTransition,
-  type CSSProperties,
 } from "react";
 
+import { buildLoginHref } from "@/app/login/loginFlow";
 import { LogHouseRoomChrome } from "@/components/orders/loghouse-room/LogHouseRoomChrome";
 import { LogHouseDonguriChoModal } from "@/components/orders/loghouse-room/LogHouseDonguriChoModal";
 import { LogHouseRadioCassetteModal } from "@/components/orders/loghouse-room/LogHouseRadioCassetteModal";
@@ -28,6 +28,7 @@ import { OwlDelayedBusyOverlay } from "@/components/ui/OwlDelayedBusyOverlay";
 import { useLogHouseRadioPlayer } from "@/components/orders/loghouse-room/LogHouseRadioPlayerProvider";
 import { useDonguriWriteEntryGate } from "@/hooks/useDonguriWriteEntryGate";
 import { useLogHouseRoomTimeTheme } from "@/hooks/useLogHouseRoomTimeOfDay";
+import { useLogHouseRoomViewportBox } from "@/hooks/useLogHouseRoomViewportBox";
 import { fetchDonguriStatus } from "@/lib/loghouse/fetchDonguriStatus";
 import {
   clearDonguriBalanceHint,
@@ -40,6 +41,10 @@ import {
   resolveLogHouseRoomCoverFocus,
   shouldPinTourCardToTop,
 } from "@/lib/loghouse/logHouseRoomCoverFocus";
+import {
+  resolveLogHouseRoomStageBoxStyle,
+  shouldContainLogHouseRoomStage,
+} from "@/lib/loghouse/logHouseRoomStageLayout";
 import { TERM_WRITE_FOOTPRINT } from "@/lib/journal/footprintTerminology";
 import {
   LOG_HOUSE_ROOM_MOBILE_BG_BY_TIME,
@@ -155,55 +160,6 @@ type Props = {
   viewerIsAdmin?: boolean;
 };
 
-/** 576×1024 を viewport に cover 相当で広げる（座標は相対維持） */
-function coverStageStyle(
-  size: { widthPx: number; heightPx: number },
-  focus?: { align: "center" | "top" | "bottom"; xPct: number } | null,
-): CSSProperties {
-  const ratio = size.widthPx / size.heightPx;
-  const width = `max(100vw, calc(100dvh * ${ratio}))`;
-  const height = `max(100dvh, calc(100vw / ${ratio}))`;
-  const xPct = focus?.xPct ?? 50;
-  const transition = "top 420ms ease, bottom 420ms ease, left 420ms ease, transform 420ms ease";
-
-  if (focus?.align === "bottom") {
-    return {
-      position: "absolute",
-      left: "50%",
-      bottom: 0,
-      top: "auto",
-      width,
-      height,
-      transform: `translateX(-${xPct}%)`,
-      transition,
-    };
-  }
-
-  if (focus?.align === "top") {
-    return {
-      position: "absolute",
-      left: "50%",
-      top: 0,
-      bottom: "auto",
-      width,
-      height,
-      transform: `translateX(-${xPct}%)`,
-      transition,
-    };
-  }
-
-  return {
-    position: "absolute",
-    left: "50%",
-    top: "50%",
-    bottom: "auto",
-    width,
-    height,
-    transform: `translate(-${xPct}%, -50%)`,
-    transition,
-  };
-}
-
 function RoomStage({
   busy,
   previewMode,
@@ -270,20 +226,29 @@ function RoomStage({
           const locked = Boolean(action.lockMessage);
           const disabled = busy || (!locked && action.href == null);
           const spotlit = spotlightSpotId === spot.id;
+          // ログインなし確認：机を少し広くしてタップしやすくする
+          const hitSpot =
+            previewMode && spot.id === "desk"
+              ? { ...spot, x: 46, y: 34, width: 52, height: 26 }
+              : spot;
 
           return (
             <LogHouseRoomTapSpot
               key={spot.id}
-              spot={spot}
+              spot={hitSpot}
               disabled={disabled}
               showDebugOutline={previewMode}
-              showHintLabel={hintActive}
+              showHintLabel={hintActive || (previewMode && spot.id === "desk")}
               flash={flashSpotId === spot.id}
-              spotlight={spotlit}
+              spotlight={spotlit || (previewMode && spot.id === "desk")}
               spotlightIntensity={tourSpotlightActive && spotlit ? "tour" : "normal"}
               elevateAboveDim={Boolean(tourSpotlightActive && spotlit)}
               hintLabelOverride={
-                spotlit && spot.id === "desk" ? deskSpotlightLabel ?? null : null
+                spotlit && spot.id === "desk"
+                  ? deskSpotlightLabel ?? null
+                  : previewMode && spot.id === "desk"
+                    ? "机"
+                    : null
               }
               onActivate={() => onSpotActivate(spot.id)}
             />
@@ -346,6 +311,7 @@ export function LogHouseRoomMobile({
   viewerIsAdmin = false,
 }: Props) {
   const router = useRouter();
+  const { ref: viewportRef, box: viewportBox } = useLogHouseRoomViewportBox();
   const { timeOfDay: detectedTimeOfDay } = useLogHouseRoomTimeTheme();
   const timeOfDay = timeOfDayOverride ?? detectedTimeOfDay;
   const [isPending, startTransition] = useTransition();
@@ -473,7 +439,8 @@ export function LogHouseRoomMobile({
   useEffect(() => {
     if (tourActive || forceTourPreview) return;
     if (previewMode) {
-      setShowFirstVisitTip(true);
+      // ログインなし確認では初回チップを出さない（机タップの反応と重なる）
+      setShowFirstVisitTip(false);
       return;
     }
     try {
@@ -698,7 +665,14 @@ export function LogHouseRoomMobile({
       }
       if (!action.href) return;
       setFlashSpotId(spotId);
-      if (spotId === "desk" && !previewMode) {
+
+      // ログインなし／DBなしの確認用：説明シートを開き、遷移しない
+      if (previewMode) {
+        setSelectedSpotId(spotId);
+        return;
+      }
+
+      if (spotId === "desk") {
         void (async () => {
           if (action.needsProfile && !isActiveProfile) {
             setProfileBusy(true);
@@ -741,6 +715,10 @@ export function LogHouseRoomMobile({
 
   const confirmSelectedSpot = useCallback(() => {
     if (!selectedSpotId || !selectedAction?.href) return;
+    if (previewMode) {
+      setSelectedSpotId(null);
+      return;
+    }
     if (selectedSpotId === "radio") {
       setSelectedSpotId(null);
       setRadioCassetteOpen(true);
@@ -750,7 +728,19 @@ export function LogHouseRoomMobile({
     const needsProfile = selectedAction.needsProfile === true;
     setSelectedSpotId(null);
     void navigate(href, needsProfile);
-  }, [navigate, selectedAction, selectedSpotId]);
+  }, [navigate, previewMode, selectedAction, selectedSpotId]);
+
+  const previewBrowseLock =
+    previewMode && selectedSpotId
+      ? {
+          message:
+            selectedSpotId === "desk"
+              ? "机からは、あしあとを書けます。ログインなしの確認では執筆画面は開けません。"
+              : "ログインなしの確認では、ここから先には進めません。部屋の見た目だけご覧ください。",
+          ctaHref: buildLoginHref("/orders", "login"),
+          ctaLabel: "ログインする",
+        }
+      : null;
 
   const noticeOverlay = notice ? (
     <div className="pointer-events-none absolute inset-x-0 bottom-8 z-[55] flex justify-center px-4">
@@ -839,9 +829,9 @@ export function LogHouseRoomMobile({
         />
         <LogHouseRoomSpotSheet
           spotId={selectedSpotId}
-          lockMessage={selectedAction.lockMessage}
-          lockCtaHref={selectedAction.lockCta?.href}
-          lockCtaLabel={selectedAction.lockCta?.label}
+          lockMessage={previewBrowseLock?.message ?? selectedAction.lockMessage}
+          lockCtaHref={previewBrowseLock?.ctaHref ?? selectedAction.lockCta?.href}
+          lockCtaLabel={previewBrowseLock?.ctaLabel ?? selectedAction.lockCta?.label}
           busy={busy}
           onClose={() => setSelectedSpotId(null)}
           onConfirm={confirmSelectedSpot}
@@ -902,6 +892,18 @@ export function LogHouseRoomMobile({
   const coverFocus = resolveLogHouseRoomCoverFocus(
     awaitingDeskTap ? "desk" : spotlightSpotId,
   );
+  const stageMode = shouldContainLogHouseRoomStage(
+    LOG_HOUSE_ROOM_MOBILE_INTRINSIC,
+    viewportBox,
+  )
+    ? "contain"
+    : "cover";
+  const stageBoxStyle = resolveLogHouseRoomStageBoxStyle({
+    size: LOG_HOUSE_ROOM_MOBILE_INTRINSIC,
+    box: viewportBox,
+    mode: stageMode,
+    focus: stageMode === "cover" ? coverFocus : null,
+  });
 
   const stage = (
     <RoomStage
@@ -960,6 +962,7 @@ export function LogHouseRoomMobile({
   return (
     <>
       <div
+        ref={viewportRef}
         className={[
           "fixed inset-0 z-[60] overflow-hidden overscroll-none",
           "select-none",
@@ -967,10 +970,13 @@ export function LogHouseRoomMobile({
         ]
           .filter(Boolean)
           .join(" ")}
-        style={{ touchAction: "none", backgroundColor: ambientBg }}
+        style={{
+          touchAction: previewMode ? "manipulation" : "none",
+          backgroundColor: ambientBg,
+        }}
       >
         <div className="absolute inset-0 overflow-hidden">
-          <div className="isolate" style={coverStageStyle(LOG_HOUSE_ROOM_MOBILE_INTRINSIC, coverFocus)}>
+          <div className="isolate" style={stageBoxStyle}>
             {stage}
           </div>
         </div>

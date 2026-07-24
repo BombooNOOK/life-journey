@@ -5,16 +5,36 @@ import { useLayoutEffect, useState } from "react";
 /** ログハウス没入UIと同じブレークポイント（lg 未満＝スマホ） */
 export const LOG_HOUSE_MOBILE_MAX_MQ = "(max-width: 1023px)" as const;
 
+/**
+ * IDE 埋め込みブラウザや低いウィンドウでは幅が広くても縦が足りず PC UI になりがち。
+ * その場合もスマホ没入（部屋）を優先する。
+ */
+export function isLogHouseMobileLikeViewport(
+  width: number,
+  height: number,
+): boolean {
+  if (width <= 1023) return true;
+  // Cursor Simple Browser などの短いパネル
+  if (height > 0 && height <= 820) return true;
+  return false;
+}
+
 /** SSR 直後はスマホ想定（没入UIのチラつきを避ける） */
 export function useIsLogHouseMobileViewport(): boolean {
   const [isMobile, setIsMobile] = useState(true);
 
   useLayoutEffect(() => {
-    const mq = window.matchMedia(LOG_HOUSE_MOBILE_MAX_MQ);
-    const update = () => setIsMobile(mq.matches);
+    const update = () => {
+      setIsMobile(isLogHouseMobileLikeViewport(window.innerWidth, window.innerHeight));
+    };
     update();
+    const mq = window.matchMedia(LOG_HOUSE_MOBILE_MAX_MQ);
     mq.addEventListener("change", update);
-    return () => mq.removeEventListener("change", update);
+    window.addEventListener("resize", update);
+    return () => {
+      mq.removeEventListener("change", update);
+      window.removeEventListener("resize", update);
+    };
   }, []);
 
   return isMobile;
@@ -24,7 +44,7 @@ export function isLogHouseImmersivePath(pathname: string | null): boolean {
   return pathname === "/orders" || pathname === "/orders/garden";
 }
 
-/** 森の本棚トップ（日記ブック詳細などは通常Chrome） */
+/** 森の本棚トップ（あしあとブック詳細などは通常Chrome） */
 export function isForestBookshelfImmersivePath(pathname: string | null): boolean {
   return pathname === "/orders/bookshelf";
 }

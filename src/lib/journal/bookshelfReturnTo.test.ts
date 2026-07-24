@@ -71,4 +71,14 @@ describe("parseSafeJournalReturnTo", () => {
   it("allows bookshelf home return", () => {
     expect(parseSafeJournalReturnTo("/orders/bookshelf")).toBe("/orders/bookshelf");
   });
+
+  it("allows bookshelf create resume return", () => {
+    expect(parseSafeJournalReturnTo("/orders/bookshelf?createBook=1")).toBe(
+      "/orders/bookshelf?createBook=1",
+    );
+  });
+
+  it("rejects bookshelf home with unknown query", () => {
+    expect(parseSafeJournalReturnTo("/orders/bookshelf?evil=1")).toBeNull();
+  });
 });

@@ -37,7 +37,7 @@ import { DonguriFootprintModal } from "@/components/loghouse/DonguriFootprintMod
 import { JournalSaveStoryTransitionOverlay } from "@/components/journal/JournalSaveStoryTransitionOverlay";
 import { ActiveProfileLabel } from "@/components/profile/ActiveProfileLabel";
 import { useEnsureActiveViewerProfile } from "@/hooks/useEnsureActiveViewerProfile";
-import { parseSafeJournalReturnTo } from "@/lib/journal/bookshelfReturnTo";
+import { parseSafeJournalReturnTo, resolveJournalReturnNavLabel } from "@/lib/journal/bookshelfReturnTo";
 import { LOG_HOUSE_NAV_LABEL } from "@/lib/journal/logHouseLabels";
 import {
   pickSaveAfterAnimalMessage,
@@ -249,6 +249,10 @@ function JournalPageContent() {
     [searchParams],
   );
   const returnToIsCalendar = safeReturnTo?.startsWith("/orders/calendar") ?? false;
+  const returnNavLabel = useMemo(
+    () => resolveJournalReturnNavLabel(safeReturnTo),
+    [safeReturnTo],
+  );
   const [content, setContent] = useState("");
   const [tagInput, setTagInput] = useState("");
   const [entryDate, setEntryDate] = useState(() => toDateInputValue(new Date()));
@@ -430,18 +434,24 @@ function JournalPageContent() {
     [navigatingToCalendar, router],
   );
 
-  const cancelEditingAndReturnToCalendar = useCallback(() => {
+  const cancelEditingAndReturn = useCallback(() => {
     if (navigatingToCalendar) return;
-    const monthKey = monthKeyFromEditingContext();
     editLoadGenerationRef.current += 1;
     setNavigatingToCalendar(true);
     resetJournalFormState();
+    if (safeReturnTo) {
+      router.push(safeReturnTo);
+      return;
+    }
+    const monthKey = monthKeyFromEditingContext();
     navigateToEntryMonthCalendar(monthKey);
   }, [
     monthKeyFromEditingContext,
     navigateToEntryMonthCalendar,
     navigatingToCalendar,
     resetJournalFormState,
+    router,
+    safeReturnTo,
   ]);
 
   useEffect(() => {
@@ -963,6 +973,7 @@ function JournalPageContent() {
       };
 
       if (redirectMode === "stay") {
+        setDraftNotice("変更を残しました。");
         return;
       }
 
@@ -1073,7 +1084,7 @@ function JournalPageContent() {
       // 新規は専用ボタン（下書き / あしあと）から実行
       return;
     }
-    if (companionEditSession) {
+    if (companionEditSession || safeReturnTo) {
       await saveEntry("stay");
       return;
     }
@@ -1355,9 +1366,6 @@ function JournalPageContent() {
           </p>
         ) : null}
         <p className="flex flex-wrap items-center gap-x-3 text-sm text-stone-500">
-          <Link href="/orders" className="underline-offset-2 hover:text-stone-600 hover:underline">
-            {LOG_HOUSE_NAV_LABEL}
-          </Link>
           {safeReturnTo ? (
             returnToIsCalendar ? (
               <button
@@ -1373,17 +1381,20 @@ function JournalPageContent() {
                 onClick={() => beginCalendarReturn(safeReturnTo)}
                 className="text-[#4a5440] underline-offset-2 hover:underline disabled:cursor-not-allowed disabled:opacity-60"
               >
-                カレンダーへ戻る
+                {returnNavLabel}
               </button>
             ) : (
               <Link
                 href={safeReturnTo}
                 className="text-[#4a5440] underline-offset-2 hover:underline"
               >
-                本の確認へ
+                {returnNavLabel}
               </Link>
             )
           ) : null}
+          <Link href="/orders" className="underline-offset-2 hover:text-stone-600 hover:underline">
+            {LOG_HOUSE_NAV_LABEL}
+          </Link>
         </p>
       </div>
 
@@ -1767,9 +1778,12 @@ function JournalPageContent() {
           processingPhoto={processingPhoto}
           onSaveDraft={() => void saveServerDraft()}
           onFootprintSave={() => void saveEntry("preview")}
-          onEditSave={() => void saveEntry("preview")}
-          onEditSaveAndReturn={() => void saveEntry("returnTo")}
-          onCancelEdit={cancelEditingAndReturnToCalendar}
+          onEditSave={() => void saveEntry(safeReturnTo ? "stay" : "preview")}
+          onEditSaveAndReturn={
+            safeReturnTo ? () => void saveEntry("returnTo") : undefined
+          }
+          onCancelEdit={cancelEditingAndReturn}
+          cancelEditLabel={safeReturnTo ? "何もしないで戻る" : "編集をやめる"}
           cancelEditDisabled={deletingId === editingId || navigatingToCalendar}
         />
       </form>

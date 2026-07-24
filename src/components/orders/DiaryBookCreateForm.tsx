@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 
 import { AshiatoPageShapePicker } from "@/components/orders/AshiatoPageShapePicker";
@@ -18,6 +18,12 @@ import {
 } from "@/lib/journal/ashiatoPageTemplates";
 import type { DiaryBookIncludePickerEntryDto } from "@/lib/journal/diaryBookIncludePicker";
 import { NO_INCLUDED_ENTRIES_IN_DIARY_BOOK_PERIOD_MESSAGE } from "@/lib/journal/diaryBookPeriod";
+import {
+  clearDiaryBookCreateDraft,
+  DIARY_BOOK_CREATE_RESUME_PATH,
+  readDiaryBookCreateDraft,
+  writeDiaryBookCreateDraft,
+} from "@/lib/journal/diaryBookCreateDraft";
 
 type PreviewResponse = {
   entryCount?: number;
@@ -97,10 +103,13 @@ export function DiaryBookCreateForm({
     null,
   );
   const [periodChecked, setPeriodChecked] = useState(false);
+  const [draftReady, setDraftReady] = useState(false);
 
   const [creating, setCreating] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [createdBook, setCreatedBook] = useState<CreatedBookSummary | null>(null);
+  const restoredRef = useRef(false);
+  const skipPersistRef = useRef(true);
 
   const canPreview = Boolean(startDate && endDate);
   const hasOverflowIncluded = Boolean(
@@ -117,6 +126,57 @@ export function DiaryBookCreateForm({
     creating,
     hasOverflowIncluded,
   });
+
+  useEffect(() => {
+    if (restoredRef.current) return;
+    restoredRef.current = true;
+    const resumeFromQuery =
+      typeof window !== "undefined" &&
+      new URLSearchParams(window.location.search).get("createBook") === "1";
+    const draft = readDiaryBookCreateDraft();
+    if (!draft) {
+      if (resumeFromQuery) setOpen(true);
+      setDraftReady(true);
+      skipPersistRef.current = false;
+      return;
+    }
+    setTitle(draft.title);
+    setStartDate(draft.startDate);
+    setEndDate(draft.endDate || today);
+    setCoverTheme(draft.coverTheme);
+    setPageTemplate(draft.pageTemplate);
+    setTagFilter(draft.tagFilter);
+    if (resumeFromQuery || draft.periodChecked) {
+      setOpen(true);
+    }
+    setDraftReady(true);
+    skipPersistRef.current = false;
+  }, [today]);
+
+  useEffect(() => {
+    if (!draftReady || skipPersistRef.current || createdBook) return;
+    writeDiaryBookCreateDraft({
+      title,
+      startDate,
+      endDate,
+      coverTheme,
+      pageTemplate,
+      tagFilter,
+      periodChecked,
+      open,
+    });
+  }, [
+    draftReady,
+    title,
+    startDate,
+    endDate,
+    coverTheme,
+    pageTemplate,
+    tagFilter,
+    periodChecked,
+    open,
+    createdBook,
+  ]);
 
   async function checkPreview(overridePageTemplate?: AshiatoPageTemplateId) {
     if (!canPreview) return;
@@ -168,6 +228,16 @@ export function DiaryBookCreateForm({
     }
   }
 
+  useEffect(() => {
+    if (!draftReady || !open) return;
+    const draft = readDiaryBookCreateDraft();
+    if (!draft?.periodChecked || !draft.startDate || !draft.endDate) return;
+    if (periodChecked) return;
+    void checkPreview();
+    // 下書き復元後の1回だけ再確認
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- restore once
+  }, [draftReady, open]);
+
   function handlePageTemplateChange(next: AshiatoPageTemplateId) {
     setPageTemplate(next);
     if (periodChecked) {
@@ -176,6 +246,7 @@ export function DiaryBookCreateForm({
   }
 
   function resetCreateForm() {
+    clearDiaryBookCreateDraft();
     setTitle("");
     setStartDate("");
     setEndDate(today);
@@ -233,6 +304,7 @@ export function DiaryBookCreateForm({
       }
       setCreatedBook({ id: createdId, title: createdTitle });
       setOpen(true);
+      clearDiaryBookCreateDraft();
       onCreated?.({ id: createdId, title: createdTitle });
       router.refresh();
     } catch {
@@ -437,6 +509,7 @@ export function DiaryBookCreateForm({
             <DiaryBookIncludeInBookMonthList
               entries={pickerEntries}
               pageTemplate={pageTemplate}
+              editReturnTo={DIARY_BOOK_CREATE_RESUME_PATH}
               onSaved={({ includedCount, entries }) => {
                 setPickerEntries(entries);
                 setEntryCount(includedCount);

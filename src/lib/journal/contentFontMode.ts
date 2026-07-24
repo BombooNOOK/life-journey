@@ -7,8 +7,8 @@ export type ContentFontMode = (typeof CONTENT_FONT_MODES)[number];
 
 export const DEFAULT_CONTENT_FONT_MODE: ContentFontMode = "standard";
 
-/** 伴走ウィザード保存時の既定（伴走レイアウトは余白多めのため「ゆったり」。たっぷりだと製本で切れやすい） */
-export const COMPANION_WRITING_DEFAULT_CONTENT_FONT_MODE: ContentFontMode = "relaxed";
+/** 伴走ウィザード保存時の既定（本文追記なしでも製本枠に収まりやすい「たっぷり」） */
+export const COMPANION_WRITING_DEFAULT_CONTENT_FONT_MODE: ContentFontMode = "generous";
 
 /** 製本1ページ目安（テンプレ未確定時のソフトガイド。標準≈28字×6行） */
 export const JOURNAL_CONTENT_SOFT_MAX_BY_MODE: Record<ContentFontMode, number> = {

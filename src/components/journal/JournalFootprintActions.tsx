@@ -33,6 +33,7 @@ type Props = {
   onEditSave: () => void | Promise<void>;
   onEditSaveAndReturn?: () => void | Promise<void>;
   onCancelEdit?: () => void;
+  cancelEditLabel?: string;
   cancelEditDisabled?: boolean;
 };
 
@@ -49,6 +50,7 @@ export function JournalFootprintActions({
   onEditSave,
   onEditSaveAndReturn,
   onCancelEdit,
+  cancelEditLabel = "編集をやめる",
   cancelEditDisabled,
 }: Props) {
   const router = useRouter();
@@ -85,7 +87,7 @@ export function JournalFootprintActions({
             onClick={onCancelEdit}
             className="min-h-[44px] whitespace-nowrap rounded-xl border border-[#e0d2bc]/95 bg-[#faf3e8] px-4 py-2.5 text-base font-medium text-[#5c4a35] transition hover:border-[#d5c3a8] hover:bg-[#f3ead8] disabled:opacity-60"
           >
-            編集をやめる
+            {cancelEditLabel}
           </button>
         ) : null}
       </div>

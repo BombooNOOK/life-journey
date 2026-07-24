@@ -104,7 +104,7 @@ export function JournalReadablePreview({
   const activityMeta = getActivityMeta(activity);
   const editHref = journalEditPath(
     entryId,
-    meaningsReturnTo ?? returnTo ?? "/journal/preview",
+    returnTo ?? meaningsReturnTo ?? "/journal/preview",
     profileId ?? undefined,
   );
   const photoUrl =
@@ -122,7 +122,7 @@ export function JournalReadablePreview({
       <header className="flex items-start justify-between gap-3 border-b border-[#e8dcc8]/90 pb-4">
         <h2 className="text-[1.375rem] font-bold leading-snug text-[#3f3428] sm:text-2xl">{dateLabel}</h2>
         {canEdit ? (
-          <PencilEditLink href={editHref} label="この日記を編集する" />
+          <PencilEditLink href={editHref} label="このあしあとを編集する" />
         ) : null}
       </header>
 

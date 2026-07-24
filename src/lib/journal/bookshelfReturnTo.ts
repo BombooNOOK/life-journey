@@ -20,7 +20,7 @@ const ENTRY_ID_PATTERN = /^[a-z0-9]{10,64}$/i;
 const PROFILE_ID_PATTERN = /^[a-z0-9]{10,64}$/i;
 
 /**
- * 日記編集画面の `returnTo` 用。オープンリダイレクトを防ぎ、許可した戻り先のみ返す。
+ * あしあと編集画面の `returnTo` 用。オープンリダイレクトを防ぎ、許可した戻り先のみ返す。
  */
 export function parseSafeJournalReturnTo(raw: string | null): string | null {
   const diaryBook = parseSafeDiaryBookReturnTo(raw);
@@ -55,7 +55,7 @@ export function parseSafeJournalReturnTo(raw: string | null): string | null {
   return `${pathPart}?day=${day}`;
 }
 
-/** `/journal/preview?entry=…` など、日記プレビューへの戻り先 */
+/** `/journal/preview?entry=…` など、あしあとプレビューへの戻り先 */
 export function parseSafeJournalPreviewReturnTo(raw: string | null): string | null {
   const decoded = decodeSafePath(raw);
   if (!decoded) return null;
@@ -87,7 +87,7 @@ export function parseSafeJournalPreviewReturnTo(raw: string | null): string | nu
   return `/journal/preview?${rebuilt.toString()}`;
 }
 
-/** `/orders/list?month=YYYY-MM` 日記一覧への戻り先 */
+/** `/orders/list?month=YYYY-MM` あしあと一覧への戻り先 */
 export function parseSafeJournalListReturnTo(raw: string | null): string | null {
   const decoded = decodeSafePath(raw);
   if (!decoded) return null;
@@ -108,7 +108,7 @@ export function parseSafeJournalListReturnTo(raw: string | null): string | null 
   return `/orders/list?month=${month}`;
 }
 
-/** 本棚トップ `/orders/bookshelf` */
+/** 本棚トップ `/orders/bookshelf`（作成再開 `?createBook=1` を許可） */
 export function parseSafeBookshelfHomeReturnTo(raw: string | null): string | null {
   const decoded = decodeSafePath(raw);
   if (!decoded) return null;
@@ -116,7 +116,32 @@ export function parseSafeBookshelfHomeReturnTo(raw: string | null): string | nul
   const pathPart = qIndex >= 0 ? decoded.slice(0, qIndex) : decoded;
   if (pathPart !== "/orders/bookshelf") return null;
   if (qIndex < 0) return pathPart;
+
+  const sp = new URLSearchParams(decoded.slice(qIndex + 1));
+  if (sp.get("createBook") === "1") {
+    return "/orders/bookshelf?createBook=1";
+  }
   return null;
+}
+
+/**
+ * あしあと編集・プレビューの「戻る」文言。
+ * 行き先が分かるときは具体名、それ以外は汎用の「もといた場所に戻る」。
+ */
+export function resolveJournalReturnNavLabel(returnTo: string | null | undefined): string {
+  if (!returnTo) return "もといた場所に戻る";
+  if (returnTo.startsWith("/orders/calendar")) return "カレンダーへ戻る";
+  if (returnTo.startsWith("/orders/list")) return "あしあと帳へ戻る";
+  if (returnTo.includes("/edit-includes")) return "本に入れるあしあと選択へ戻る";
+  if (returnTo.includes("/edit-period")) return "期間の編集へ戻る";
+  if (returnTo.includes("/edit-tags")) return "タグの編集へ戻る";
+  if (returnTo.startsWith("/orders/bookshelf/diary-book/")) return "あしあとブックへ戻る";
+  if (returnTo === "/orders/bookshelf?createBook=1" || returnTo.includes("createBook=1")) {
+    return "本に入れるあしあと選択へ戻る";
+  }
+  if (returnTo.startsWith("/orders/bookshelf")) return "本棚へ戻る";
+  if (returnTo.startsWith("/journal/preview")) return "あしあとプレビューへ戻る";
+  return "もといた場所に戻る";
 }
 
 const DIARY_BOOK_EDIT_SUBPATHS = new Set([
@@ -126,7 +151,7 @@ const DIARY_BOOK_EDIT_SUBPATHS = new Set([
 ]);
 
 /**
- * 日記編集画面の `returnTo` 用。DiaryBook 読書画面・編集画面を許可。
+ * あしあと編集画面の `returnTo` 用。DiaryBook 読書画面・編集画面を許可。
  * 形式:
  * - `/orders/bookshelf/diary-book/{bookId}` + 任意で `?p=1`（1始まりページ）
  * - `/orders/bookshelf/diary-book/{bookId}/edit-includes|edit-period|edit-tags`
@@ -165,7 +190,7 @@ export function parseSafeDiaryBookReturnTo(raw: string | null): string | null {
 }
 
 /**
- * 日記編集画面の `returnTo` 用。オープンリダイレクトを防ぎ、許可した本棚のプレビュー URL のみ返す。
+ * あしあと編集画面の `returnTo` 用。オープンリダイレクトを防ぎ、許可した本棚のプレビュー URL のみ返す。
  * 形式: `/orders/bookshelf/diary/1970..2100` + 任意で `?p=1`（1始まりページ）
  */
 export function parseSafeBookshelfDiaryReturnTo(raw: string | null): string | null {

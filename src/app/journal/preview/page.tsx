@@ -17,13 +17,15 @@ import { useEntitlement } from "@/components/entitlement/useEntitlement";
 import { normalizeContentFontMode } from "@/lib/journal/contentFontMode";
 import { consumeJournalPreviewPrefetch, peekJournalPreviewPrefetch } from "@/lib/journal/journalPreviewPrefetch";
 import { journalEditPath } from "@/lib/journal/journalNav";
+import {
+  parseSafeJournalReturnTo,
+  resolveJournalReturnNavLabel,
+} from "@/lib/journal/bookshelfReturnTo";
 import { normalizeCompanionType, normalizeDiaryDesignTheme, type CompanionType, type DiaryDesignId } from "@/lib/journal/meta";
 import { matchCompanionWritingPreviewGuide } from "@/lib/journal/companionWriting/session";
 import type { JournalPreviewNeighbors } from "@/lib/journal/journalPreviewNeighbors";
-import {
-  TERM_BACK_TO_FOOTPRINT_LEDGER,
-  TERM_FOOTPRINT_PREVIEW,
-} from "@/lib/journal/footprintTerminology";
+import { TERM_FOOTPRINT_PREVIEW } from "@/lib/journal/footprintTerminology";
+import { LOG_HOUSE_NAV_LABEL } from "@/lib/journal/logHouseLabels";
 
 type PreviewEntry = {
   id: string;
@@ -63,8 +65,7 @@ function JournalPreviewPageContent() {
   const entryId = searchParams.get("entry");
   const themeParam = searchParams.get("theme");
   const returnToRaw = searchParams.get("returnTo");
-  const returnTo =
-    returnToRaw && returnToRaw.startsWith("/") && !returnToRaw.startsWith("//") ? returnToRaw : null;
+  const returnTo = useMemo(() => parseSafeJournalReturnTo(returnToRaw), [returnToRaw]);
   const [entry, setEntry] = useState<PreviewEntry | null>(null);
   const [neighbors, setNeighbors] = useState<JournalPreviewNeighbors>({ prev: null, next: null });
   const [kanteiOrderExists, setKanteiOrderExists] = useState<boolean | undefined>(undefined);
@@ -207,11 +208,7 @@ function JournalPreviewPageContent() {
     return `/journal/preview?${qs.toString()}`;
   }, [entryId, designTheme, returnTo, effectiveProfileId]);
 
-  const returnHomeLabel = returnTo?.startsWith("/orders/calendar")
-    ? "カレンダーへ戻る"
-    : returnTo?.startsWith("/orders/list")
-      ? TERM_BACK_TO_FOOTPRINT_LEDGER
-      : "一覧に戻る";
+  const returnHomeLabel = resolveJournalReturnNavLabel(returnTo);
 
   const afterDeleteHref = returnTo ?? "/orders/list";
 
@@ -288,7 +285,7 @@ function JournalPreviewPageContent() {
 
   async function handleDeleteEntry() {
     if (!entry || deleting) return;
-    const ok = window.confirm("この日記を本当に削除しますか？");
+    const ok = window.confirm("このあしあとを本当に削除しますか？");
     if (!ok) return;
 
     setDeleting(true);
@@ -396,16 +393,24 @@ function JournalPreviewPageContent() {
 
       <div className="space-y-3 pb-[max(1rem,env(safe-area-inset-bottom))] sm:space-y-0 sm:pb-0">
         {returnTo ? (
-          <Link
-            href={returnTo}
-            className="relative z-[1] inline-flex min-h-[44px] items-center rounded-xl border border-[#a8b08f]/90 bg-[#eef1e4] px-4 py-2.5 text-base font-medium text-[#4a5440] hover:bg-[#e4e9d8] active:bg-[#dfe6d2]"
-          >
-            {returnHomeLabel}
-          </Link>
+          <div className="flex flex-wrap items-center gap-2">
+            <Link
+              href={returnTo}
+              className="relative z-[1] inline-flex min-h-[44px] items-center rounded-xl border border-[#a8b08f]/90 bg-[#eef1e4] px-4 py-2.5 text-base font-medium text-[#4a5440] hover:bg-[#e4e9d8] active:bg-[#dfe6d2]"
+            >
+              {returnHomeLabel}
+            </Link>
+            <Link
+              href="/orders"
+              className="relative z-[1] inline-flex min-h-[44px] items-center rounded-xl border border-[#e0d2bc]/95 bg-[#faf3e8] px-4 py-2.5 text-base font-medium text-[#5c4a35] hover:bg-[#f3ead8]"
+            >
+              {LOG_HOUSE_NAV_LABEL}
+            </Link>
+          </div>
         ) : null}
         {canEditJournal && entry ? (
           <div className="w-full rounded-xl border border-[#e4d5c0]/95 bg-[#fdf8f0] px-4 py-3 sm:max-w-md">
-            <p className="text-sm font-medium text-stone-700">この日記を</p>
+            <p className="text-sm font-medium text-stone-700">このあしあとを</p>
             <div className="mt-2 flex flex-wrap gap-2">
               <button
                 type="button"
@@ -414,7 +419,7 @@ function JournalPreviewPageContent() {
                   router.push(
                     journalEditPath(
                       entry.id,
-                      meaningsReturnTo ?? returnTo ?? "/journal/preview",
+                      returnTo ?? meaningsReturnTo ?? "/journal/preview",
                       effectiveProfileId || entry.profileId,
                     ),
                   );
