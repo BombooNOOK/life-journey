@@ -43,8 +43,13 @@ export function resolveLogHouseRoomStageBoxStyle(params: {
   box: LogHouseRoomViewportBox;
   mode: "cover" | "contain";
   focus?: LogHouseRoomCoverFocus | null;
+  /**
+   * ツアーのパン用。初回レイアウト確定前は false（計測直後の left/transform 遷移で
+   * 左寄りのポストが左端→定位置に動いて見えるのを防ぐ）
+   */
+  animatePan?: boolean;
 }): CSSProperties {
-  const { size, box, mode, focus = null } = params;
+  const { size, box, mode, focus = null, animatePan = true } = params;
   if (box.width <= 0 || box.height <= 0) {
     // 計測前は描画しない（inset:0 → 実寸への transition が左上に揺れて見える）
     return {
@@ -56,7 +61,9 @@ export function resolveLogHouseRoomStageBoxStyle(params: {
 
   const ratio = logHouseRoomArtRatio(size);
   // ツアーのパンだけ滑らかに。width/height を含めると初回計測・リサイズで揺れる
-  const transition = "top 420ms ease, bottom 420ms ease, left 420ms ease, transform 420ms ease";
+  const transition = animatePan
+    ? "top 420ms ease, bottom 420ms ease, left 420ms ease, transform 420ms ease"
+    : undefined;
 
   if (mode === "contain") {
     const width = Math.min(box.width, box.height * ratio);

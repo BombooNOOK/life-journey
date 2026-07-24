@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import {
   useCallback,
   useEffect,
+  useLayoutEffect,
   useMemo,
   useState,
   useTransition,
@@ -311,10 +312,13 @@ export function LogHouseRoomMobile({
   viewerIsAdmin = false,
 }: Props) {
   const router = useRouter();
-  const { ref: viewportRef, box: viewportBox } = useLogHouseRoomViewportBox();
+  const { ref: viewportRef, box: viewportBox, measured: viewportMeasured } =
+    useLogHouseRoomViewportBox();
   const { timeOfDay: detectedTimeOfDay } = useLogHouseRoomTimeTheme();
   const timeOfDay = timeOfDayOverride ?? detectedTimeOfDay;
   const [isPending, startTransition] = useTransition();
+  /** 初回実測の描画後だけパン transition を許可（入場時のポストずれ防止） */
+  const [animateStagePan, setAnimateStagePan] = useState(false);
   const [profileBusy, setProfileBusy] = useState(false);
   const [notice, setNotice] = useState<SpotNotice | null>(null);
   const [hintActive, setHintActive] = useState(false);
@@ -337,6 +341,12 @@ export function LogHouseRoomMobile({
     useDonguriWriteEntryGate(activeProfileId);
   const busy = isPending || profileBusy || writeEntryChecking;
   const ambientBg = timeOfDay === "night" ? "#2a2218" : "#ebe4d4";
+
+  useLayoutEffect(() => {
+    if (!viewportMeasured || animateStagePan) return;
+    const id = window.requestAnimationFrame(() => setAnimateStagePan(true));
+    return () => window.cancelAnimationFrame(id);
+  }, [viewportMeasured, animateStagePan]);
 
   useEffect(() => {
     if (!donguriChoProp) return;
@@ -903,6 +913,7 @@ export function LogHouseRoomMobile({
     box: viewportBox,
     mode: stageMode,
     focus: stageMode === "cover" ? coverFocus : null,
+    animatePan: animateStagePan,
   });
 
   const stage = (

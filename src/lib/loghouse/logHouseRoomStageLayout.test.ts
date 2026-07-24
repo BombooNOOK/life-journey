@@ -53,6 +53,18 @@ describe("logHouseRoomStageLayout", () => {
     expect(transition).toMatch(/transform/);
   });
 
+  it("can disable pan transition for the first measured paint", () => {
+    const style = resolveLogHouseRoomStageBoxStyle({
+      size,
+      box: { width: 390, height: 844 },
+      mode: "cover",
+      focus: null,
+      animatePan: false,
+    });
+    expect(style.transition).toBeUndefined();
+    expect(style.visibility).toBeUndefined();
+  });
+
   it("hides unmeasured stage instead of animating from inset", () => {
     const style = resolveLogHouseRoomStageBoxStyle({
       size,

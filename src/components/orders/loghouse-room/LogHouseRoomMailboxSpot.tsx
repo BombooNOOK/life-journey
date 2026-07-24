@@ -71,7 +71,8 @@ export function LogHouseRoomMailboxSpot({
       onClick={onActivate}
       className={[
         elevateAboveDim ? "absolute z-[26]" : "absolute z-[24]",
-        "transition duration-200",
+        // left/top は transition しない（親ステージ計測直後の見た目ずれを動かさない）
+        "transition-[filter,opacity,transform] duration-200",
         "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-700",
         disabled
           ? "cursor-not-allowed opacity-40"
