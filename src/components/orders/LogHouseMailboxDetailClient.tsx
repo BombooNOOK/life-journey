@@ -38,30 +38,28 @@ export function LogHouseMailboxDetailClient({
 
   useEffect(() => {
     if (markedRef.current) return;
-    if (!notice.unread) {
-      markedRef.current = true;
-      return;
-    }
-
     markedRef.current = true;
     const noticeId = notice.id;
+    const alreadyRead = !notice.unread;
 
     void (async () => {
       try {
+        // サーバー側で既に既読でも POST は冪等。revalidatePath + refresh で /orders の未読キャッシュを落とす
         const res = await fetch(
           `/api/loghouse/mailbox/${encodeURIComponent(noticeId)}/read`,
           { method: "POST" },
         );
-        if (!res.ok) return;
-        const json = (await res.json()) as { notice?: MailboxNoticeView };
-        if (json.notice) {
-          setNotice(json.notice);
-        } else {
-          setNotice((prev) => ({
-            ...prev,
-            unread: false,
-            readAt: prev.readAt ?? new Date().toISOString(),
-          }));
+        if (res.ok) {
+          const json = (await res.json()) as { notice?: MailboxNoticeView };
+          if (json.notice) {
+            setNotice(json.notice);
+          } else if (!alreadyRead) {
+            setNotice((prev) => ({
+              ...prev,
+              unread: false,
+              readAt: prev.readAt ?? new Date().toISOString(),
+            }));
+          }
         }
         router.refresh();
       } catch {

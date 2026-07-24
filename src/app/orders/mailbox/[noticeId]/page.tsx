@@ -1,3 +1,4 @@
+import { revalidatePath } from "next/cache";
 import { notFound, redirect } from "next/navigation";
 import type { Metadata } from "next";
 import Link from "next/link";
@@ -86,7 +87,7 @@ export default async function LogHouseMailboxDetailPage({ params }: Props) {
       notFound();
     }
 
-    // 開いた時点で既読にする（一覧更新はクライアント refresh / API の revalidatePath）
+    // 開いた時点で既読にし、ログハウスの未読画像が古いまま残らないよう /orders を無効化
     if (notice.unread) {
       notice =
         (await withPrismaConnectionRetry(() =>
@@ -96,6 +97,8 @@ export default async function LogHouseMailboxDetailPage({ params }: Props) {
             noticeId,
           }),
         )) ?? notice;
+      revalidatePath(LOG_HOUSE_MAILBOX_PAGE_PATH);
+      revalidatePath("/orders");
     }
 
     return <LogHouseMailboxDetailClient notice={notice} />;

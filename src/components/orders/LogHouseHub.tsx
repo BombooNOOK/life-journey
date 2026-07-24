@@ -97,13 +97,74 @@ function useReconcileKanteiUnlock(input: {
   return { hasKanteiOrder, activeKanteiOrderId, firstVisitGuideState };
 }
 
+const MAILBOX_UNREAD_SHAKE_SESSION_KEY = "ljd.loghouseRoom.mailboxUnreadShake.v1";
+
+/**
+ * お手紙既読後に /orders へ戻ると、Router Cache の古い unreadCount で
+ * ポスト画像が未読のまま戻る。一覧と同様 API で突き合わせる。
+ */
+function useReconcileMailboxUnread(initialCount: number) {
+  const router = useRouter();
+  const [mailboxUnreadCount, setMailboxUnreadCount] = useState(initialCount);
+
+  useEffect(() => {
+    setMailboxUnreadCount(initialCount);
+  }, [initialCount]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const refreshUnread = async () => {
+      try {
+        const res = await fetch("/api/loghouse/mailbox", {
+          cache: "no-store",
+          credentials: "same-origin",
+        });
+        if (!res.ok) return;
+        const json = (await res.json()) as { unreadCount?: number };
+        if (cancelled || typeof json.unreadCount !== "number") return;
+        setMailboxUnreadCount((prev) => {
+          if (prev === json.unreadCount) return prev;
+          if (json.unreadCount === 0) {
+            try {
+              window.sessionStorage.removeItem(MAILBOX_UNREAD_SHAKE_SESSION_KEY);
+            } catch {
+              // ignore
+            }
+          }
+          return json.unreadCount;
+        });
+        if (json.unreadCount !== initialCount) {
+          router.refresh();
+        }
+      } catch {
+        // SSR のまま続行
+      }
+    };
+
+    void refreshUnread();
+    const onVisible = () => {
+      if (document.visibilityState === "visible") void refreshUnread();
+    };
+    window.addEventListener("focus", onVisible);
+    document.addEventListener("visibilitychange", onVisible);
+    return () => {
+      cancelled = true;
+      window.removeEventListener("focus", onVisible);
+      document.removeEventListener("visibilitychange", onVisible);
+    };
+  }, [initialCount, router]);
+
+  return mailboxUnreadCount;
+}
+
 /** ログハウス：スマホ＝没入室内UI、PC＝既存カードUI */
 export function LogHouseHub({
   profiles,
   activeProfileId,
   hasKanteiOrder: hasKanteiOrderProp,
   activeKanteiOrderId: activeKanteiOrderIdProp,
-  mailboxUnreadCount = 0,
+  mailboxUnreadCount: mailboxUnreadCountProp = 0,
   donguriCho,
   entitlement,
   firstVisitGuideState: firstVisitGuideStateProp,
@@ -121,6 +182,7 @@ export function LogHouseHub({
     activeKanteiOrderId: activeKanteiOrderIdProp,
     firstVisitGuideState: firstVisitGuideStateProp,
   });
+  const mailboxUnreadCount = useReconcileMailboxUnread(mailboxUnreadCountProp);
 
   const activeProfile = profiles.find((p) => p.id === activeProfileId) ?? null;
 
