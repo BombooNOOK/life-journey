@@ -9,7 +9,7 @@ import {
   type JournalSocialPostTextStyle,
 } from "./templates";
 
-/** 日記プレビュー・こころ予報定規と同じ：設計座標上の 1 辺 5px */
+/** あしあとプレビュー・こころ予報定規と同じ：設計座標上の 1 辺 5px */
 export const JOURNAL_SOCIAL_POST_LAYOUT_RULER_SQUARE_PX = 5;
 
 export type LayoutAnchor = {
@@ -24,10 +24,15 @@ export const JOURNAL_SOCIAL_POST_LAYOUT_SLIDES: {
   id: JournalSocialPostTemplateId;
   label: string;
   templateFile: string;
-}[] = [
-  { id: "sns02", label: "ひだまりフォト（横長）", templateFile: "sns02-template-base-drfukuro.png" },
-  { id: "sns03", label: "森のスクラップ（スクエア）", templateFile: "sns03-template-base-drfukuro.png" },
-];
+}[] = (
+  Object.values(JOURNAL_SOCIAL_POST_TEMPLATES) as Array<
+    (typeof JOURNAL_SOCIAL_POST_TEMPLATES)[JournalSocialPostTemplateId]
+  >
+).map((layout) => ({
+  id: layout.id,
+  label: layout.label,
+  templateFile: layout.backgroundFile,
+}));
 
 const SAMPLE = {
   title: "イスの下からこんにちは",
@@ -73,17 +78,35 @@ export function layoutAnchorsForTemplate(templateId: JournalSocialPostTemplateId
   }
 
   anchors.push(anchorFromStyle("title", "タイトル", layout.title));
-  if (templateId === "sns03" && layout.subtitle) {
+  if (layout.subtitle) {
     anchors.push(anchorFromStyle("subtitle", "サブタイトル（緑帯）", layout.subtitle));
   }
-  anchors.push(
-    anchorFromStyle("body", "本文抜粋", layout.body),
-    anchorFromStyle("number-day", "今日のすうじ（日）", layout.numberSlots[0]!),
-    anchorFromStyle("number-month", "今日のすうじ（月）", layout.numberSlots[1]!),
-    anchorFromStyle("number-year", "今日のすうじ（年）", layout.numberSlots[2]!),
-    anchorFromStyle("mood", "きもちの記録", layout.mood),
-    anchorFromStyle("comment", "鑑定士のひとこと", layout.comment),
-  );
+  if (layout.body.fontSize > 1) {
+    anchors.push(anchorFromStyle("body", "本文抜粋", layout.body));
+  }
+  if (layout.numberSlots) {
+    anchors.push(
+      anchorFromStyle("number-day", "今日のすうじ（日）", layout.numberSlots[0]),
+      anchorFromStyle("number-month", "今日のすうじ（月）", layout.numberSlots[1]),
+      anchorFromStyle("number-year", "今日のすうじ（年）", layout.numberSlots[2]),
+    );
+  }
+  if (layout.mood) {
+    anchors.push(anchorFromStyle("mood", "きもちの記録", layout.mood));
+  }
+  if (layout.comment.fontSize > 1) {
+    anchors.push(anchorFromStyle("comment", "ひとこと", layout.comment));
+  }
+
+  for (const [index, extra] of (layout.extraPhotos ?? []).entries()) {
+    anchors.push({
+      id: `photo-extra-${index + 2}`,
+      label: `写真${index + 2}（${extra.width}×${extra.height}）`,
+      x: extra.x,
+      y: extra.y,
+      kind: "topleft",
+    });
+  }
 
   if (layout.companionFace) {
     anchors.push({
@@ -138,19 +161,23 @@ export function layoutSampleTextsForTemplate(templateId: JournalSocialPostTempla
   if (layout.dateScrapbook) push("date", SAMPLE.dateScrapbook, layout.dateScrapbook);
 
   push("title", SAMPLE.title, layout.title);
-  if (templateId === "sns03" && layout.subtitle) {
+  if (layout.subtitle) {
     push("subtitle", SAMPLE.subtitle, layout.subtitle);
   }
-  push(
-    "body",
-    templateId === "sns03" ? SAMPLE.body : SAMPLE.body,
-    layout.body,
-  );
-  push("number-day", SAMPLE.numbers[0], layout.numberSlots[0]!);
-  push("number-month", SAMPLE.numbers[1], layout.numberSlots[1]!);
-  push("number-year", SAMPLE.numbers[2], layout.numberSlots[2]!);
-  push("mood", SAMPLE.mood, layout.mood);
-  push("comment", SAMPLE.comment, layout.comment);
+  if (layout.body.fontSize > 1) {
+    push("body", SAMPLE.body, layout.body);
+  }
+  if (layout.numberSlots) {
+    push("number-day", SAMPLE.numbers[0], layout.numberSlots[0]);
+    push("number-month", SAMPLE.numbers[1], layout.numberSlots[1]);
+    push("number-year", SAMPLE.numbers[2], layout.numberSlots[2]);
+  }
+  if (layout.mood) {
+    push("mood", SAMPLE.mood, layout.mood);
+  }
+  if (layout.comment.fontSize > 1) {
+    push("comment", SAMPLE.comment, layout.comment);
+  }
 
   return items;
 }

@@ -123,18 +123,19 @@ function useReconcileMailboxUnread(initialCount: number) {
         if (!res.ok) return;
         const json = (await res.json()) as { unreadCount?: number };
         if (cancelled || typeof json.unreadCount !== "number") return;
+        const nextCount = json.unreadCount;
         setMailboxUnreadCount((prev) => {
-          if (prev === json.unreadCount) return prev;
-          if (json.unreadCount === 0) {
+          if (prev === nextCount) return prev;
+          if (nextCount === 0) {
             try {
               window.sessionStorage.removeItem(MAILBOX_UNREAD_SHAKE_SESSION_KEY);
             } catch {
               // ignore
             }
           }
-          return json.unreadCount;
+          return nextCount;
         });
-        if (json.unreadCount !== initialCount) {
+        if (nextCount !== initialCount) {
           router.refresh();
         }
       } catch {

@@ -91,21 +91,19 @@ function finalizeSns03BodyExcerpt(normalized: string, excerpt: string, maxChars:
   return excerpt;
 }
 
-/** 日記本文：sns02 は1文、sns03 は句点区切りで枠内上限まで。 */
+/** あしあと本文：sns02 は1文、sns03・あしあと線は句点区切りで枠内上限まで。 */
 export function extractSocialPostBodyText(
   content: string,
   templateId: JournalSocialPostTemplateId = "sns02",
 ): string {
   const normalized = normalizeSocialPostText(stripTagsFromContent(content));
-  if (templateId === "sns03") {
-    const excerpt = extractSentenceExcerpt(
-      normalized,
-      SOCIAL_POST_BODY_MAX_CHARS_SNS03,
-      Number.POSITIVE_INFINITY,
-    );
-    return finalizeSns03BodyExcerpt(normalized, excerpt, SOCIAL_POST_BODY_MAX_CHARS_SNS03);
+  if (templateId === "sns02") {
+    return extractSentenceExcerpt(normalized, SOCIAL_POST_BODY_MAX_CHARS_SNS02, 1);
   }
-  return extractSentenceExcerpt(normalized, SOCIAL_POST_BODY_MAX_CHARS_SNS02, 1);
+  const maxChars =
+    templateId === "sns03" ? SOCIAL_POST_BODY_MAX_CHARS_SNS03 : SOCIAL_POST_BODY_MAX_CHARS_SNS03;
+  const excerpt = extractSentenceExcerpt(normalized, maxChars, Number.POSITIVE_INFINITY);
+  return finalizeSns03BodyExcerpt(normalized, excerpt, maxChars);
 }
 
 /** 鑑定士のひとこと：最初の文区切りまで、または文字数上限。 */
@@ -117,7 +115,7 @@ export function extractSocialPostCommentText(comment: string): string {
   );
 }
 
-/** 投稿画像：下部のサブタイトル（日記本文とは別・未入力時の既定文） */
+/** 投稿画像：下部のサブタイトル（あしあと本文とは別・未入力時の既定文） */
 export const DEFAULT_JOURNAL_SOCIAL_POST_SUBTITLE = "なんでもない今日の、かわいい記録";
 
 /** 角丸横長：1行に収める上限（改行させない） */
@@ -129,15 +127,15 @@ export const SOCIAL_POST_SUBTITLE_MAX_CHARS = 36;
 /** @deprecated テンプレ別の定数を使ってください */
 export const SOCIAL_POST_TITLE_MAX_CHARS = SOCIAL_POST_TITLE_MAX_CHARS_SNS03;
 
-export function socialPostTitleMaxChars(templateId: "sns02" | "sns03"): number {
-  return templateId === "sns03"
-    ? SOCIAL_POST_TITLE_MAX_CHARS_SNS03
-    : SOCIAL_POST_TITLE_MAX_CHARS_SNS02;
+export function socialPostTitleMaxChars(templateId: JournalSocialPostTemplateId): number {
+  if (templateId === "sns03") return SOCIAL_POST_TITLE_MAX_CHARS_SNS03;
+  if (templateId === "sns02") return SOCIAL_POST_TITLE_MAX_CHARS_SNS02;
+  return 16;
 }
 
 export function clampJournalSocialPostTitle(
   raw: string,
-  templateId: "sns02" | "sns03",
+  templateId: JournalSocialPostTemplateId,
 ): string {
   return normalizeSocialPostText(raw).slice(0, socialPostTitleMaxChars(templateId));
 }

@@ -26,7 +26,7 @@ export default async function JournalSocialPostImageLayoutPage({ searchParams }:
     <div className="min-h-screen bg-stone-50 text-stone-900">
       <div className="mx-auto max-w-[900px] px-4 py-10">
         <p className="text-xs font-medium uppercase tracking-wide text-violet-800">Dev layout tool</p>
-        <h1 className="mt-2 text-xl font-semibold">日記・投稿画像レイアウト定規</h1>
+        <h1 className="mt-2 text-xl font-semibold">あしあと・投稿画像レイアウト定規</h1>
         <p className="mt-2 text-sm leading-relaxed text-stone-600">
           テンプレート PNG と同じ 819×1024 座標で測ります。座標は{" "}
           <code className="rounded bg-stone-200 px-1">src/lib/journal/social-post-image/templates.ts</code>{" "}
@@ -53,18 +53,22 @@ export default async function JournalSocialPostImageLayoutPage({ searchParams }:
               ← 投稿画像プレビューへ
             </Link>
           )}
-          <Link
-            href={buildJournalSocialPostLayoutRulerHref({ template: "sns02" })}
-            className="text-stone-600 underline hover:text-stone-900"
-          >
-            {JOURNAL_SOCIAL_POST_TEMPLATES.sns02.label}
-          </Link>
-          <Link
-            href={buildJournalSocialPostLayoutRulerHref({ template: "sns03" })}
-            className="text-stone-600 underline hover:text-stone-900"
-          >
-            {JOURNAL_SOCIAL_POST_TEMPLATES.sns03.label}
-          </Link>
+          {(
+            [
+              "chiisana_ashiato",
+              "kyou_no_ashiato",
+              "sns02",
+              "sns03",
+            ] as const
+          ).map((id) => (
+            <Link
+              key={id}
+              href={buildJournalSocialPostLayoutRulerHref({ template: id })}
+              className="text-stone-600 underline hover:text-stone-900"
+            >
+              {JOURNAL_SOCIAL_POST_TEMPLATES[id].label}
+            </Link>
+          ))}
           <Link href="/preview" className="text-stone-600 underline hover:text-stone-900">
             校正メニューへ
           </Link>

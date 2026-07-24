@@ -1,12 +1,26 @@
 import { companionTypeToTemplateSlug } from "@/lib/journal/coverAssets";
+import {
+  MORI_ASHIATO_TEMPLATE_IDS,
+  MORI_ASHIATO_TEMPLATES,
+  isMoriAshiatoTemplateId,
+} from "./moriAshiatoTemplates";
 
-/** テンプレ PNG の元サイズ（4:5） */
+/** テンプレ PNG の元サイズ（4:5）— レイアウト未指定時の既定 */
 export const JOURNAL_SOCIAL_POST_TEMPLATE_SIZE = {
   widthPx: 819,
   heightPx: 1024,
 } as const;
 
-export type JournalSocialPostTemplateId = "sns02" | "sns03";
+export type JournalSocialPostTemplateId =
+  | "sns02"
+  | "sns03"
+  | "chiisana_ashiato"
+  | "kyou_no_ashiato"
+  | "odekake_ashiato"
+  | "oishii_ashiato"
+  | "totteoki_no_ashiato"
+  | "kyou_no_ashiato_wide"
+  | "kyou_no_3koma_ashiato";
 
 export type JournalSocialPostTextStyle = {
   x: number;
@@ -56,6 +70,8 @@ export type JournalSocialPostCompanionFaceStyle = {
   textAnchor?: "start" | "middle";
 };
 
+export type JournalSocialPostTextMode = "sns02" | "sns03" | "ashiato_lines";
+
 export type JournalSocialPostTemplateLayout = {
   id: JournalSocialPostTemplateId;
   label: string;
@@ -65,27 +81,59 @@ export type JournalSocialPostTemplateLayout = {
   backgroundFilesByCompanion?: Partial<Record<string, string>>;
   /** 写真の上に重ねる透明 PNG（付箋など） */
   photoOverlayFile?: string;
+  /** 設計キャンバス（未指定時は JOURNAL_SOCIAL_POST_TEMPLATE_SIZE） */
+  designSize?: { widthPx: number; heightPx: number };
+  /** 書き出しサイズ（未指定時は 1080×1350） */
+  outputSize?: { widthPx: number; heightPx: number };
+  /** 文字の載せ方。未指定時は id から推定 */
+  textMode?: JournalSocialPostTextMode;
   photo: JournalSocialPostPhotoStyle;
+  /** 2枠目以降（3コマなど）。現状は同一写真を複製 */
+  extraPhotos?: JournalSocialPostPhotoStyle[];
   title: JournalSocialPostTextStyle;
   body: JournalSocialPostTextStyle;
   /** sns03: 上部の緑帯サブタイトル */
   subtitle?: JournalSocialPostTextStyle;
   /** 日・月・年の3つのすうじ（テンプレ上の丸位置） */
-  numberSlots: [JournalSocialPostTextStyle, JournalSocialPostTextStyle, JournalSocialPostTextStyle];
-  mood: JournalSocialPostTextStyle;
+  numberSlots?: [
+    JournalSocialPostTextStyle,
+    JournalSocialPostTextStyle,
+    JournalSocialPostTextStyle,
+  ];
+  mood?: JournalSocialPostTextStyle;
   comment: JournalSocialPostTextStyle;
   /** sns02: リボン上の年 */
   dateRibbonYear?: JournalSocialPostTextStyle;
   /** sns02: リボン上の月.日 */
   dateRibbonMonthDay?: JournalSocialPostTextStyle;
-  /** sns03: 方眼紙上の日付行 */
+  /** sns03 / あしあと線: 日付行 */
   dateScrapbook?: JournalSocialPostTextStyle;
   /** 伴走キャラの顔アイコン（丸） */
   companionFace?: JournalSocialPostCompanionFaceStyle;
 };
 
+export function resolveJournalSocialPostDesignSize(
+  layout: JournalSocialPostTemplateLayout,
+): { widthPx: number; heightPx: number } {
+  return layout.designSize ?? JOURNAL_SOCIAL_POST_TEMPLATE_SIZE;
+}
+
+export function resolveJournalSocialPostOutputSize(
+  layout: JournalSocialPostTemplateLayout,
+): { widthPx: number; heightPx: number } {
+  return layout.outputSize ?? { widthPx: 1080, heightPx: 1350 };
+}
+
+export function resolveJournalSocialPostTextMode(
+  layout: JournalSocialPostTemplateLayout,
+): JournalSocialPostTextMode {
+  if (layout.textMode) return layout.textMode;
+  if (layout.id === "sns03") return "sns03";
+  if (isMoriAshiatoTemplateId(layout.id)) return "ashiato_lines";
+  return "sns02";
+}
+
 const TEXT_PRIMARY = "#4a3728";
-const TEXT_SECONDARY = "#5c4a38";
 
 /** sns02 本文：角丸エリア中央の左揃えブロック */
 const SNS02_BODY_TEXT_BLOCK = {
@@ -96,13 +144,11 @@ const SNS02_BODY_TEXT_BLOCK = {
 const SNS02_BODY_TEXT_LEFT_X =
   SNS02_BODY_TEXT_BLOCK.centerX - SNS02_BODY_TEXT_BLOCK.widthPx / 2;
 
-export const JOURNAL_SOCIAL_POST_TEMPLATES: Record<
-  JournalSocialPostTemplateId,
-  JournalSocialPostTemplateLayout
-> = {
+const LEGACY_TEMPLATES: Record<"sns02" | "sns03", JournalSocialPostTemplateLayout> = {
   sns02: {
     id: "sns02",
     label: "ひだまりフォト（横長）",
+    textMode: "sns02",
     backgroundFile: "sns02-template-base-drfukuro.png",
     backgroundFilesByCompanion: {
       drfukuro: "sns02-template-base-drfukuro.png",
@@ -207,6 +253,7 @@ export const JOURNAL_SOCIAL_POST_TEMPLATES: Record<
   sns03: {
     id: "sns03",
     label: "森のスクラップ（スクエア）",
+    textMode: "sns03",
     backgroundFile: "sns03-template-base-drfukuro.png",
     backgroundFilesByCompanion: {
       drfukuro: "sns03-template-base-drfukuro.png",
@@ -318,10 +365,22 @@ export const JOURNAL_SOCIAL_POST_TEMPLATES: Record<
   },
 };
 
+export const JOURNAL_SOCIAL_POST_TEMPLATES: Record<
+  JournalSocialPostTemplateId,
+  JournalSocialPostTemplateLayout
+> = {
+  ...MORI_ASHIATO_TEMPLATES,
+  ...LEGACY_TEMPLATES,
+};
+
 export function normalizeJournalSocialPostTemplateId(
   raw: string | null | undefined,
 ): JournalSocialPostTemplateId {
-  return raw === "sns03" ? "sns03" : "sns02";
+  if (!raw) return "sns02";
+  if (raw in JOURNAL_SOCIAL_POST_TEMPLATES) {
+    return raw as JournalSocialPostTemplateId;
+  }
+  return "sns02";
 }
 
 export function resolveJournalSocialPostBackgroundFile(
@@ -334,4 +393,11 @@ export function resolveJournalSocialPostBackgroundFile(
   return companionFile ?? layout.backgroundFile;
 }
 
-export const JOURNAL_SOCIAL_POST_TEMPLATE_IDS = ["sns02", "sns03"] as const;
+/** UI 並び：あしあと系を先に、既存 sns は後ろ */
+export const JOURNAL_SOCIAL_POST_TEMPLATE_IDS = [
+  ...MORI_ASHIATO_TEMPLATE_IDS,
+  "sns02",
+  "sns03",
+] as const satisfies readonly JournalSocialPostTemplateId[];
+
+export { isMoriAshiatoTemplateId };

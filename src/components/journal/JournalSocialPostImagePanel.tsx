@@ -24,7 +24,11 @@ import {
   socialPostTitleMaxChars,
 } from "@/lib/journal/social-post-image/textExtract";
 import {
+  JOURNAL_SOCIAL_POST_TEMPLATE_IDS,
   JOURNAL_SOCIAL_POST_TEMPLATES,
+  isMoriAshiatoTemplateId,
+  resolveJournalSocialPostDesignSize,
+  resolveJournalSocialPostTextMode,
   type JournalSocialPostTemplateId,
 } from "@/lib/journal/social-post-image/templates";
 
@@ -122,7 +126,11 @@ export function JournalSocialPostImagePanel({
   const showPhotoAdjust = hasPhoto && photoDisplaySrc.length > 0;
   const templatePhoto = JOURNAL_SOCIAL_POST_TEMPLATES[templateId].photo;
   const hasPendingPhotoApply = !journalSocialPostPhotoAdjustEquals(photoAdjustDraft, appliedPhotoAdjust);
-  const isSns03 = templateId === "sns03";
+  const templateLayout = JOURNAL_SOCIAL_POST_TEMPLATES[templateId];
+  const designSize = resolveJournalSocialPostDesignSize(templateLayout);
+  const textMode = resolveJournalSocialPostTextMode(templateLayout);
+  const isSns03 = textMode === "sns03";
+  const isAshiatoLines = textMode === "ashiato_lines" || isMoriAshiatoTemplateId(templateId);
   const titleMaxChars = socialPostTitleMaxChars(templateId);
 
   const previewUrl = buildPreviewUrl(
@@ -185,8 +193,7 @@ export function JournalSocialPostImagePanel({
         <fieldset className="space-y-2">
           <legend className="text-sm font-medium text-stone-800">デザイン</legend>
           <div className="flex flex-wrap gap-2">
-            {(Object.keys(JOURNAL_SOCIAL_POST_TEMPLATES) as JournalSocialPostTemplateId[]).map(
-              (id) => (
+            {JOURNAL_SOCIAL_POST_TEMPLATE_IDS.map((id) => (
                 <button
                   key={id}
                   type="button"
@@ -200,8 +207,7 @@ export function JournalSocialPostImagePanel({
                 >
                   {JOURNAL_SOCIAL_POST_TEMPLATES[id].label}
                 </button>
-              ),
-            )}
+            ))}
           </div>
         </fieldset>
 
@@ -253,13 +259,15 @@ export function JournalSocialPostImagePanel({
                 type="text"
                 value={title}
                 onChange={(event) => setTitle(event.target.value)}
-                placeholder="SNS用のタイトルを入力"
+                placeholder={isAshiatoLines ? "タイトル・ひとこと" : "SNS用のタイトルを入力"}
                 maxLength={titleMaxChars}
                 className="w-full rounded-md border border-stone-300 px-3 py-2 text-base text-stone-900"
               />
             </label>
             <p className="mt-2 text-xs leading-relaxed text-stone-500">
-              あしあと本体には保存されません。最大 {titleMaxChars} 文字（1行）。
+              {isAshiatoLines
+                ? `テンプレ下部の行に載ります。最大 ${titleMaxChars} 文字（1行）。`
+                : `あしあと本体には保存されません。最大 ${titleMaxChars} 文字（1行）。`}
             </p>
             <div className="mt-4 rounded-lg border border-dashed border-stone-200 bg-stone-50/80 px-3 py-3">
               <p className="text-xs font-medium text-stone-600">本文（画像に載る抜粋・自動）</p>
@@ -303,7 +311,10 @@ export function JournalSocialPostImagePanel({
         </div>
 
         <div className="relative mx-auto w-full max-w-md overflow-hidden rounded-xl border border-stone-200 bg-[#faf8f5] shadow-sm">
-          <div className="relative aspect-[4/5] w-full">
+          <div
+            className="relative w-full"
+            style={{ aspectRatio: `${designSize.widthPx} / ${designSize.heightPx}` }}
+          >
             {loadingPreview ? (
               <div className="absolute inset-0 z-10 flex items-center justify-center bg-stone-100/80 px-4 text-center text-sm text-stone-600">
                 画像を作っています…
