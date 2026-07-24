@@ -44,7 +44,6 @@ export function LogHouseRoomMailboxSpot({
 }: Props) {
   const spot = LOG_HOUSE_ROOM_MAILBOX_HOTSPOT;
   const copy = LOG_HOUSE_ROOM_SPOT_COPY.mailbox;
-  const src = hasUnread ? LOG_HOUSE_ROOM_MAILBOX_MAIL_SRC : LOG_HOUSE_ROOM_MAILBOX_SRC;
   const tourBold = spotlight && spotlightIntensity === "tour";
   const [shakeOnce, setShakeOnce] = useState(false);
 
@@ -110,14 +109,30 @@ export function LogHouseRoomMailboxSpot({
         aria-hidden
       >
         <span className="relative block h-full w-full">
+          {/* 通常／お手紙ありを両方先読みし、未読確定後の差替え待ちをなくす */}
           <Image
-            src={src}
+            src={LOG_HOUSE_ROOM_MAILBOX_SRC}
             alt=""
             fill
-            className="object-contain object-bottom"
+            className={[
+              "object-contain object-bottom transition-opacity duration-150",
+              hasUnread ? "opacity-0" : "opacity-100",
+            ].join(" ")}
             sizes="28vw"
             unoptimized
-            priority={hasUnread || tourBold}
+            priority
+          />
+          <Image
+            src={LOG_HOUSE_ROOM_MAILBOX_MAIL_SRC}
+            alt=""
+            fill
+            className={[
+              "object-contain object-bottom transition-opacity duration-150",
+              hasUnread ? "opacity-100" : "opacity-0",
+            ].join(" ")}
+            sizes="28vw"
+            unoptimized
+            priority
           />
         </span>
       </span>
