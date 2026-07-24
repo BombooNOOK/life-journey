@@ -51,7 +51,7 @@ export function resolveLogHouseRoomStageBoxStyle(params: {
 }): CSSProperties {
   const { size, box, mode, focus = null, animatePan = true } = params;
   if (box.width <= 0 || box.height <= 0) {
-    // 計測前は描画しない（inset:0 → 実寸への transition が左上に揺れて見える）
+    // 計測前は空シェルのみ（子どもはマウントしない前提）
     return {
       position: "absolute",
       inset: 0,

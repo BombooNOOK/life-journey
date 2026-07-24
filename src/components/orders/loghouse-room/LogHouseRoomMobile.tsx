@@ -908,12 +908,13 @@ export function LogHouseRoomMobile({
   )
     ? "contain"
     : "cover";
+  // ツアー焦点のパンだけ動かす。入場時の inset→contain/cover では絶対に transition しない
   const stageBoxStyle = resolveLogHouseRoomStageBoxStyle({
     size: LOG_HOUSE_ROOM_MOBILE_INTRINSIC,
     box: viewportBox,
     mode: stageMode,
     focus: stageMode === "cover" ? coverFocus : null,
-    animatePan: animateStagePan,
+    animatePan: animateStagePan && coverFocus != null,
   });
 
   const stage = (
@@ -988,7 +989,12 @@ export function LogHouseRoomMobile({
       >
         <div className="absolute inset-0 overflow-hidden">
           <div className="isolate" style={stageBoxStyle}>
-            {stage}
+            {/*
+              計測前に SSR/初期 DOM へ家具を載せると inset:0 基準の左寄り位置が残り、
+              contain/cover 確定時にポストだけが左端→定位置へ飛んで見える。
+              実寸が分かってから初めてマウントする。
+            */}
+            {viewportMeasured ? stage : null}
           </div>
         </div>
 
