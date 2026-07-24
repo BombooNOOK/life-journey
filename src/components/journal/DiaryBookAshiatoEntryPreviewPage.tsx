@@ -7,7 +7,6 @@ import {
   type AshiatoLayoutPercentRect,
 } from "@/lib/journal/ashiatoPageTemplateLayout";
 import {
-  ASHIATO_VERTICAL_BODY_COLUMN_LINE_HEIGHT,
   ashiatoDailyNumberLabels,
   ashiatoDailyNumberSlotAlign,
   ashiatoDailyNumberSlotLeftNudgePct,
@@ -18,12 +17,13 @@ import {
   formatAshiatoVerticalDateColumns,
   ashiatoHorizontalBodyLineIndentChars,
   getAshiatoHorizontalBodyLayoutLines,
-  normalizeAshiatoBodyContent,
+  getAshiatoVerticalBodyColumns,
+  ashiatoVerticalDisplayChar,
+  resolveAshiatoEnikkiVerticalMetrics,
   resolveAshiatoEntryRenderPlan,
   splitDailyNumberSlots,
 } from "@/lib/journal/ashiatoEntryRender";
 import { diaryBookPhotoMemoryLoadingImagePath } from "@/lib/journal/diaryBookAssets";
-import { getDiaryBookEntryV2BodyLayoutLines } from "@/lib/journal/diaryBookEntryBodyWrap";
 import { getDiaryBookEntryV2BodyFontLayout } from "@/lib/journal/diaryBookEntryBodyFontLayout";
 import { resolveDiaryBookEntryV2CommentRenderLayout } from "@/lib/journal/diaryBookEntryCommentWrap";
 import { DIARY_PREVIEW_BODY_FONT_FAMILY } from "@/lib/journal/diaryPreviewBodyFont";
@@ -146,20 +146,31 @@ export function DiaryBookAshiatoEntryPreviewPage({
 
   let bodyHorizontalLines: string[] = [];
   if (showBody && content.trim() && plan.bodyWritingMode === "horizontal" && bodyRect) {
-    bodyHorizontalLines = plan.bodyTextLayout
-      ? getAshiatoHorizontalBodyLayoutLines(
-          content,
-          contentFontMode,
-          bodyRect,
-          plan.bodyTextLayout,
-        )
-      : getDiaryBookEntryV2BodyLayoutLines(content, contentFontMode);
+    // 本文枠幅で折り返す（v2固定字数に落とすと1字だけはみ出し→CSS二次改行の原因）
+    bodyHorizontalLines = getAshiatoHorizontalBodyLayoutLines(
+      content,
+      contentFontMode,
+      bodyRect,
+      plan.bodyTextLayout,
+    );
   }
 
-  const bodyDisplayText =
-    showBody && plan.bodyWritingMode === "vertical"
-      ? normalizeAshiatoBodyContent(content)
-      : "";
+  let bodyVerticalColumns: string[] = [];
+  let bodyVerticalColumnWidthPx = 0;
+  let bodyVerticalCharHeightPx = bodyFont.fontSizePx;
+  if (showBody && content.trim() && plan.bodyWritingMode === "vertical" && bodyRect) {
+    const metrics = resolveAshiatoEnikkiVerticalMetrics(contentFontMode, bodyRect);
+    bodyVerticalColumns = getAshiatoVerticalBodyColumns(
+      content,
+      metrics.maxCharsPerColumn,
+      metrics.maxColumns,
+      plan.verticalBodyTextLayout,
+      contentFontMode,
+    );
+    // 設計pxで指定（親が本文枠でもページ%だと列幅が狂って罫線から外れる）
+    bodyVerticalColumnWidthPx = metrics.columnWidthPx;
+    bodyVerticalCharHeightPx = metrics.charCellPx;
+  }
 
   const bodyAlign = plan.bodyTextLayout?.align ?? "left";
   const bodyShrinkChars = plan.bodyTextLayout?.shrinkChars ?? 0;
@@ -418,6 +429,7 @@ export function DiaryBookAshiatoEntryPreviewPage({
               const indentChars = ashiatoHorizontalBodyLineIndentChars(
                 plan.bodyTextLayout,
                 index + 1,
+                contentFontMode,
               );
               return (
                 <div
@@ -425,6 +437,8 @@ export function DiaryBookAshiatoEntryPreviewPage({
                   style={{
                     minHeight: `${bodyFont.fontSizePx * bodyFont.lineHeight}px`,
                     textAlign: bodyAlign,
+                    whiteSpace: "nowrap",
+                    overflow: "hidden",
                     paddingLeft:
                       indentChars > 0 ? `${indentChars * bodyFont.fontSizePx}px` : undefined,
                   }}
@@ -437,19 +451,49 @@ export function DiaryBookAshiatoEntryPreviewPage({
         </div>
       ) : null}
 
-      {showBody && plan.bodyWritingMode === "vertical" && bodyDisplayText ? (
+      {showBody && plan.bodyWritingMode === "vertical" && bodyVerticalColumns.length > 0 ? (
         <div
-          className="absolute overflow-hidden p-1"
+          className="absolute overflow-hidden"
           style={{
             ...pctBox(bodyRect!),
-            writingMode: "vertical-rl",
+            display: "flex",
+            flexDirection: "row-reverse",
+            alignItems: "flex-start",
+            boxSizing: "border-box",
             fontFamily: DIARY_PREVIEW_BODY_FONT_FAMILY,
             fontSize: `${bodyFont.fontSizePx}px`,
-            lineHeight: ASHIATO_VERTICAL_BODY_COLUMN_LINE_HEIGHT,
             color: DIARY_BOOK_ENTRY_V2_COLORS.text,
           }}
         >
-          {bodyDisplayText}
+          {bodyVerticalColumns.map((column, colIndex) => (
+            <div
+              key={`col-${colIndex}`}
+              style={{
+                width: `${bodyVerticalColumnWidthPx}px`,
+                flexShrink: 0,
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+              }}
+            >
+              {[...column].map((ch, charIndex) => (
+                <span
+                  key={`ch-${colIndex}-${charIndex}`}
+                  style={{
+                    display: "flex",
+                    width: "100%",
+                    height: `${bodyVerticalCharHeightPx}px`,
+                    alignItems: "center",
+                    justifyContent: "center",
+                    lineHeight: 1,
+                    textAlign: "center",
+                  }}
+                >
+                  {ch === "　" ? "\u00a0" : ashiatoVerticalDisplayChar(ch)}
+                </span>
+              ))}
+            </div>
+          ))}
         </div>
       ) : null}
 

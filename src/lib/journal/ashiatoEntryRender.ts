@@ -21,16 +21,26 @@ import {
   type AshiatoLayoutPercentRect,
   type AshiatoLayoutSlotId,
   type AshiatoSlashYmdWeekdayDateParts,
+  type AshiatoVerticalBodyTextLayout,
 } from "@/lib/journal/ashiatoPageTemplateLayout";
 import { getDiaryBookEntryV2BodyFontLayout } from "@/lib/journal/diaryBookEntryBodyFontLayout";
 import {
   journalEntryLayoutLengthFlag,
+  normalizeContentFontMode,
   type JournalContentLengthFlag,
 } from "@/lib/journal/contentFontMode";
+import {
+  isJapaneseLineEndPullbackChar,
+  isJapaneseLineStartPullbackChar,
+  splitFixedWidthJapaneseLines,
+} from "@/lib/pdf/splitFixedWidthJapaneseLines";
 import { getDiaryPreviewDateRowSegments } from "@/lib/journal/diaryPreviewFixedLayout";
 import { stripTagsFromContent } from "@/lib/journal/diaryTags";
-import { splitFixedWidthJapaneseLines } from "@/lib/pdf/splitFixedWidthJapaneseLines";
 
+/** 横書き本文枠の左右 padding（preview 4px / PDF ≈0.55% ≈4px）。字数計算から差し引く */
+export const ASHIATO_HORIZONTAL_BODY_INLINE_PAD_PX = 4;
+/** 横書き本文枠の上下 padding（preview と同じ）。行数計算から差し引く */
+export const ASHIATO_HORIZONTAL_BODY_BLOCK_PAD_PX = 4;
 export type AshiatoPxRect = {
   leftPx: number;
   topPx: number;
@@ -65,6 +75,7 @@ export type AshiatoEntryRenderPlan = {
   dateLayout: AshiatoDateLayoutMode;
   dateParts: AshiatoSlashYmdWeekdayDateParts | null;
   bodyTextLayout: AshiatoHorizontalBodyTextLayout | null;
+  verticalBodyTextLayout: AshiatoVerticalBodyTextLayout | null;
   photoRotateDeg: number;
   photoBorderRadiusPx: number;
   backgroundSrc: string;
@@ -115,6 +126,7 @@ export function resolveAshiatoEntryRenderPlan(params: {
     dateLayout,
     dateParts: dateLayout === "slash_ymd_weekday" ? (layout.dateParts ?? null) : null,
     bodyTextLayout: layout.bodyTextLayout ?? null,
+    verticalBodyTextLayout: layout.verticalBodyTextLayout ?? null,
     photoRotateDeg: layout.photoRotateDeg,
     photoBorderRadiusPx: layout.photoBorderRadiusPx ?? 0,
     backgroundSrc,
@@ -142,11 +154,70 @@ export function normalizeAshiatoBodyContent(content: string): string {
     .trim();
 }
 
+/**
+ * 横書き用句読点 → Unicode 縦書き用互換字形。
+ * （。＝左下寄り字形のまま縦マスに置くと左側に見える問題への対策）
+ * Noto Sans CJK / Klee One 双方に vert 字形あり。
+ */
+const ASHIATO_VERTICAL_PUNCTUATION_DISPLAY: ReadonlyMap<string, string> = new Map([
+  ["、", "\uFE11"], // ︑
+  ["。", "\uFE12"], // ︒
+  ["､", "\uFE11"],
+  ["｡", "\uFE12"],
+  ["，", "\uFE10"], // ︐
+  ["．", "\uFE12"],
+  ["：", "\uFE13"], // ︓
+  ["；", "\uFE14"], // ︔
+  ["！", "\uFE15"], // ︕
+  ["!", "\uFE15"],
+  ["？", "\uFE16"], // ︖
+  ["?", "\uFE16"],
+]);
+
+export function isAshiatoVerticalPunctuation(ch: string): boolean {
+  return ASHIATO_VERTICAL_PUNCTUATION_DISPLAY.has(ch);
+}
+
+/** 縦書きマス描画用：句読点だけ縦書き専用字形へ（他はそのまま） */
+export function ashiatoVerticalDisplayChar(ch: string): string {
+  return ASHIATO_VERTICAL_PUNCTUATION_DISPLAY.get(ch) ?? ch;
+}
+
+/** 縦書き：列の開始文字位置（1始まり） */
+function ashiatoVerticalColumnStartChar(
+  verticalLayout: AshiatoVerticalBodyTextLayout | null | undefined,
+  colNo: number,
+  contentFontMode?: string | null,
+): number {
+  const mode = normalizeContentFontMode(contentFontMode);
+  const byMode = verticalLayout?.columnStartCharByMode?.[mode]?.[colNo];
+  if (typeof byMode === "number" && byMode >= 1) return byMode;
+  const mapped = verticalLayout?.columnStartChar?.[colNo];
+  if (typeof mapped === "number" && mapped >= 1) return mapped;
+  return 1;
+}
+
+/** 縦書き：列末を何文字短くするか（下から N 文字目が末字 → N-1） */
+function ashiatoVerticalColumnShortenChars(
+  verticalLayout: AshiatoVerticalBodyTextLayout | null | undefined,
+  colNo: number,
+  contentFontMode?: string | null,
+): number {
+  const mode = normalizeContentFontMode(contentFontMode);
+  const byMode = verticalLayout?.columnShortenCharsByMode?.[mode]?.[colNo];
+  if (typeof byMode === "number" && byMode >= 0) return byMode;
+  const mapped = verticalLayout?.columnShortenChars?.[colNo];
+  if (typeof mapped === "number" && mapped >= 0) return mapped;
+  return 0;
+}
+
 /** 縦書き本文：右から左へ列、各列は上から下へ（呼び出し側でタグ除去済みを渡す） */
 export function splitVerticalJapaneseColumns(
   text: string,
   maxCharsPerColumn: number,
   maxColumns: number,
+  verticalLayout?: AshiatoVerticalBodyTextLayout | null,
+  contentFontMode?: string | null,
 ): string[] {
   const normalized = text.replace(/\r\n/g, "\n").replace(/\r/g, "\n");
   const rawChars: string[] = [];
@@ -158,8 +229,31 @@ export function splitVerticalJapaneseColumns(
   const columns: string[] = [];
   let i = 0;
   while (i < rawChars.length && columns.length < maxColumns) {
-    columns.push(rawChars.slice(i, i + maxCharsPerColumn).join(""));
-    i += maxCharsPerColumn;
+    const colNo = columns.length + 1;
+    const startChar = ashiatoVerticalColumnStartChar(verticalLayout, colNo, contentFontMode);
+    const shorten = ashiatoVerticalColumnShortenChars(verticalLayout, colNo, contentFontMode);
+    const indent = Math.max(0, startChar - 1);
+    let take = Math.max(1, maxCharsPerColumn - shorten - indent);
+    take = Math.min(take, rawChars.length - i);
+
+    // 次列先頭が句読点などにならないよう、分割位置を手前へ（横書きと同じ禁則）
+    while (take > 1 && i + take < rawChars.length) {
+      const nextCh = rawChars[i + take]!;
+      if (isJapaneseLineStartPullbackChar(nextCh)) {
+        take -= 1;
+        continue;
+      }
+      const lastCh = rawChars[i + take - 1]!;
+      if (isJapaneseLineEndPullbackChar(lastCh)) {
+        take -= 1;
+        continue;
+      }
+      break;
+    }
+
+    const chunk = rawChars.slice(i, i + take).join("");
+    columns.push(`${"　".repeat(indent)}${chunk}`);
+    i += take;
   }
   return columns;
 }
@@ -169,14 +263,78 @@ export function getAshiatoVerticalBodyColumns(
   content: string,
   maxCharsPerColumn: number,
   maxColumns: number,
+  verticalLayout?: AshiatoVerticalBodyTextLayout | null,
+  contentFontMode?: string | null,
 ): string[] {
   const body = normalizeAshiatoBodyContent(content);
   if (!body) return [];
-  return splitVerticalJapaneseColumns(body, maxCharsPerColumn, maxColumns);
+  return splitVerticalJapaneseColumns(
+    body,
+    maxCharsPerColumn,
+    maxColumns,
+    verticalLayout,
+    contentFontMode,
+  );
 }
 
-/** 森の絵日記など縦書き：罫線間隔に合わせた列間（CSS line-height） */
+/**
+ * 森の絵日記など縦書き：罫線の列間（標準20px × 2.18）。
+ * 本文幅÷10 にすると列が広すぎて、途中から罫線を跨ぐ。
+ */
 export const ASHIATO_VERTICAL_BODY_COLUMN_LINE_HEIGHT = 2.18;
+
+/** 森の絵日記：罫線どおり書ける最大列数（11列目は使わない） */
+export const ASHIATO_ENIKKI_MAX_BODY_COLUMNS = 10;
+
+/** 罫線に合わせた列ピッチ（全モード共通・px） */
+export const ASHIATO_ENIKKI_COLUMN_PITCH_PX =
+  20 * ASHIATO_VERTICAL_BODY_COLUMN_LINE_HEIGHT;
+
+/**
+ * @deprecated 列ピッチは resolveAshiatoEnikkiVerticalMetrics の columnWidthPx を使う。
+ */
+export function getAshiatoVerticalBodyColumnLineHeight(
+  contentFontMode?: string | null,
+  options?: { bodyWidthPx?: number },
+): number {
+  const mode = normalizeContentFontMode(contentFontMode);
+  const fontSizePx = getDiaryBookEntryV2BodyFontLayout(mode).fontSizePx;
+  if (options?.bodyWidthPx && options.bodyWidthPx > 0) {
+    return ASHIATO_ENIKKI_COLUMN_PITCH_PX / fontSizePx;
+  }
+  return ASHIATO_VERTICAL_BODY_COLUMN_LINE_HEIGHT;
+}
+
+/** 森の絵日記向け：罫線グリッド（列ピッチ共通・字送りはモードのフォントサイズ） */
+export function resolveAshiatoEnikkiVerticalMetrics(
+  contentFontMode: string | null | undefined,
+  bodyRect: AshiatoLayoutPercentRect,
+): {
+  columnLineHeight: number;
+  maxCharsPerColumn: number;
+  maxColumns: number;
+  columnWidthPx: number;
+  charCellPx: number;
+} {
+  const font = getDiaryBookEntryV2BodyFontLayout(contentFontMode);
+  const px = ashiatoPercentRectToPx(bodyRect);
+  // 列ピッチは全モード共通（テンプレ罫線）。幅÷10は広すぎて左側で跨ぐ
+  const columnWidthPx = ASHIATO_ENIKKI_COLUMN_PITCH_PX;
+  const maxColumns = Math.min(
+    ASHIATO_ENIKKI_MAX_BODY_COLUMNS,
+    Math.max(1, Math.floor(px.widthPx / columnWidthPx)),
+  );
+  // 字送りはフォントサイズに合わせる（固定20pxだとゆったり24pxが詰まる）
+  const charCellPx = font.fontSizePx;
+  const maxCharsPerColumn = Math.max(1, Math.floor(px.heightPx / charCellPx));
+  return {
+    columnLineHeight: columnWidthPx / font.fontSizePx,
+    maxCharsPerColumn,
+    maxColumns,
+    columnWidthPx,
+    charCellPx,
+  };
+}
 
 export type AshiatoHorizontalBodyCapacity = {
   maxLines: number;
@@ -191,7 +349,11 @@ export type AshiatoHorizontalBodyCapacity = {
 function ashiatoLineStartChar(
   bodyTextLayout: AshiatoHorizontalBodyTextLayout | null | undefined,
   lineNo: number,
+  contentFontMode?: string | null,
 ): number {
+  const mode = normalizeContentFontMode(contentFontMode);
+  const byMode = bodyTextLayout?.lineStartCharByMode?.[mode]?.[lineNo];
+  if (typeof byMode === "number" && byMode >= 1) return byMode;
   const mapped = bodyTextLayout?.lineStartChar?.[lineNo];
   if (typeof mapped === "number" && mapped >= 1) return mapped;
   return 1;
@@ -200,8 +362,22 @@ function ashiatoLineStartChar(
 function ashiatoLineIndentChars(
   bodyTextLayout: AshiatoHorizontalBodyTextLayout | null | undefined,
   lineNo: number,
+  contentFontMode?: string | null,
 ): number {
-  return Math.max(0, ashiatoLineStartChar(bodyTextLayout, lineNo) - 1);
+  return Math.max(0, ashiatoLineStartChar(bodyTextLayout, lineNo, contentFontMode) - 1);
+}
+
+function ashiatoLineShortenChars(
+  bodyTextLayout: AshiatoHorizontalBodyTextLayout | null | undefined,
+  lineNo: number,
+  contentFontMode?: string | null,
+): number {
+  const mode = normalizeContentFontMode(contentFontMode);
+  const byMode = bodyTextLayout?.lineShortenCharsByMode?.[mode]?.[lineNo];
+  if (typeof byMode === "number" && byMode >= 1) return byMode;
+  const mapped = bodyTextLayout?.lineShortenChars?.[lineNo];
+  if (typeof mapped === "number" && mapped >= 1) return mapped;
+  return 0;
 }
 
 /** 横書きあしあと本文の行数・字数上限（装飾インデント込み） */
@@ -210,18 +386,32 @@ export function getAshiatoHorizontalBodyCapacity(
   bodyRect: AshiatoLayoutPercentRect,
   bodyTextLayout?: AshiatoHorizontalBodyTextLayout | null,
 ): AshiatoHorizontalBodyCapacity {
-  const font = getDiaryBookEntryV2BodyFontLayout(contentFontMode);
+  const mode = normalizeContentFontMode(contentFontMode);
+  const font = getDiaryBookEntryV2BodyFontLayout(mode);
   const widthPx = (bodyRect.width / 100) * ASHIATO_PAGE_TEMPLATE_LAYOUT_SIZE_PX.widthPx;
   const heightPx = (bodyRect.height / 100) * ASHIATO_PAGE_TEMPLATE_LAYOUT_SIZE_PX.heightPx;
   const shrinkChars = bodyTextLayout?.shrinkChars ?? 0;
-  const baseMaxCharsPerLine = Math.max(1, Math.floor(widthPx / font.fontSizePx) - shrinkChars);
-  const maxLines = Math.max(
+  // 枠の左右 padding を差し引かないと1字だけはみ出し、CSSが二次改行してしまう
+  const usableWidthPx = Math.max(1, widthPx - ASHIATO_HORIZONTAL_BODY_INLINE_PAD_PX * 2);
+  const baseMaxCharsPerLine = Math.max(
     1,
-    Math.floor(heightPx / (font.fontSizePx * font.lineHeight)),
+    Math.floor(usableWidthPx / font.fontSizePx) - shrinkChars,
   );
+  // 上下 padding を差し引いた高さで行数を出す（一律 -1 の安全マージンだと必要行が消える）
+  const usableHeightPx = Math.max(1, heightPx - ASHIATO_HORIZONTAL_BODY_BLOCK_PAD_PX * 2);
+  const computedMaxLines = Math.max(
+    1,
+    Math.floor(usableHeightPx / (font.fontSizePx * font.lineHeight)),
+  );
+  const overrideMaxLines = bodyTextLayout?.maxLinesByMode?.[mode];
+  const maxLines =
+    typeof overrideMaxLines === "number" && overrideMaxLines >= 1
+      ? overrideMaxLines
+      : computedMaxLines;
   const maxCharsByLine = Array.from({ length: maxLines }, (_, index) => {
-    const indent = ashiatoLineIndentChars(bodyTextLayout, index + 1);
-    return Math.max(1, baseMaxCharsPerLine - indent);
+    const indent = ashiatoLineIndentChars(bodyTextLayout, index + 1, mode);
+    const shorten = ashiatoLineShortenChars(bodyTextLayout, index + 1, mode);
+    return Math.max(1, baseMaxCharsPerLine - indent - shorten);
   });
   return {
     maxLines,
@@ -234,8 +424,9 @@ export function getAshiatoHorizontalBodyCapacity(
 export function ashiatoHorizontalBodyLineIndentChars(
   bodyTextLayout: AshiatoHorizontalBodyTextLayout | null | undefined,
   lineNo: number,
+  contentFontMode?: string | null,
 ): number {
-  return ashiatoLineIndentChars(bodyTextLayout, lineNo);
+  return ashiatoLineIndentChars(bodyTextLayout, lineNo, contentFontMode);
 }
 
 /** 横書きあしあと本文：枠幅・shrink/行ごと開始位置を反映した行分割 */
@@ -313,10 +504,22 @@ export function ashiatoEntryBodyLengthFlag(params: {
   }
 
   if (plan.bodyWritingMode === "vertical") {
-    const font = getDiaryBookEntryV2BodyFontLayout(contentFontMode);
-    const px = ashiatoPercentRectToPx(body);
-    const { maxCharsPerColumn, maxColumns } = estimateVerticalBodyCapacity(px, font.fontSizePx);
-    const capacityChars = maxCharsPerColumn * maxColumns;
+    const metrics = resolveAshiatoEnikkiVerticalMetrics(contentFontMode, body);
+    let capacityChars = 0;
+    for (let col = 1; col <= metrics.maxColumns; col += 1) {
+      const startChar = ashiatoVerticalColumnStartChar(
+        plan.verticalBodyTextLayout,
+        col,
+        contentFontMode,
+      );
+      const shorten = ashiatoVerticalColumnShortenChars(
+        plan.verticalBodyTextLayout,
+        col,
+        contentFontMode,
+      );
+      const indent = Math.max(0, startChar - 1);
+      capacityChars += Math.max(1, metrics.maxCharsPerColumn - shorten - indent);
+    }
     const usedChars = normalizeAshiatoBodyContent(content).replace(/\n/g, "").length;
     if (usedChars <= 0) return "ok";
     if (usedChars <= capacityChars) return "ok";
@@ -337,7 +540,9 @@ export function ashiatoEntryBodyLengthFlag(params: {
   );
   if (linesAll.length <= capacity.maxLines) return "ok";
   const excessLines = linesAll.length - capacity.maxLines;
-  if (excessLines <= 2) return "soft";
+  // 1行超過は描画差でギリ収まることもある → soft（プレビュー確認）
+  // 2行以上は明らかに入りきらない → strong
+  if (excessLines <= 1) return "soft";
   return "strong";
 }
 
@@ -345,12 +550,11 @@ export function estimateVerticalBodyCapacity(
   rect: AshiatoPxRect,
   fontSizePx: number,
   columnLineHeight: number = ASHIATO_VERTICAL_BODY_COLUMN_LINE_HEIGHT,
+  charAdvance: number = 1.2,
 ): {
   maxCharsPerColumn: number;
   maxColumns: number;
 } {
-  /** 縦方向の文字送り（列内） */
-  const charAdvance = 1.2;
   const maxCharsPerColumn = Math.max(1, Math.floor(rect.heightPx / (fontSizePx * charAdvance)));
   const maxColumns = Math.max(1, Math.floor(rect.widthPx / (fontSizePx * columnLineHeight)));
   return { maxCharsPerColumn, maxColumns };

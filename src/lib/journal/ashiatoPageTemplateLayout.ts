@@ -17,6 +17,7 @@ import {
   type AshiatoLayoutSlotId,
   type AshiatoPageTemplateLayout,
   type AshiatoSlashYmdWeekdayDateParts,
+  type AshiatoVerticalBodyTextLayout,
 } from "@/lib/journal/ashiatoPageTemplateLayoutData";
 
 export {
@@ -28,6 +29,7 @@ export {
   type AshiatoLayoutSlotId,
   type AshiatoPageTemplateLayout,
   type AshiatoSlashYmdWeekdayDateParts,
+  type AshiatoVerticalBodyTextLayout,
 };
 
 /** テンプレ PNG の設計サイズ（public/images/ashiato） */
@@ -154,6 +156,82 @@ export function isAshiatoPageTemplateLayout(value: unknown): value is AshiatoPag
         bodyText.lineStartChar as Record<string, unknown>,
       )) {
         if (!/^\d+$/.test(key) || typeof value !== "number" || value < 1) return false;
+      }
+    }
+    if (bodyText.lineStartCharByMode != null) {
+      if (!bodyText.lineStartCharByMode || typeof bodyText.lineStartCharByMode !== "object") {
+        return false;
+      }
+      for (const [mode, map] of Object.entries(
+        bodyText.lineStartCharByMode as Record<string, unknown>,
+      )) {
+        if (!["relaxed", "standard", "generous", "compact"].includes(mode)) return false;
+        if (!map || typeof map !== "object") return false;
+        for (const [key, value] of Object.entries(map as Record<string, unknown>)) {
+          if (!/^\d+$/.test(key) || typeof value !== "number" || value < 1) return false;
+        }
+      }
+    }
+    if (bodyText.lineShortenChars != null) {
+      if (!bodyText.lineShortenChars || typeof bodyText.lineShortenChars !== "object") {
+        return false;
+      }
+      for (const [key, value] of Object.entries(
+        bodyText.lineShortenChars as Record<string, unknown>,
+      )) {
+        if (!/^\d+$/.test(key) || typeof value !== "number" || value < 1) return false;
+      }
+    }
+    if (bodyText.lineShortenCharsByMode != null) {
+      if (
+        !bodyText.lineShortenCharsByMode ||
+        typeof bodyText.lineShortenCharsByMode !== "object"
+      ) {
+        return false;
+      }
+      for (const [mode, map] of Object.entries(
+        bodyText.lineShortenCharsByMode as Record<string, unknown>,
+      )) {
+        if (!["relaxed", "standard", "generous", "compact"].includes(mode)) return false;
+        if (!map || typeof map !== "object") return false;
+        for (const [key, value] of Object.entries(map as Record<string, unknown>)) {
+          if (!/^\d+$/.test(key) || typeof value !== "number" || value < 1) return false;
+        }
+      }
+    }
+    if (bodyText.maxLinesByMode != null) {
+      if (!bodyText.maxLinesByMode || typeof bodyText.maxLinesByMode !== "object") return false;
+      for (const [mode, value] of Object.entries(
+        bodyText.maxLinesByMode as Record<string, unknown>,
+      )) {
+        if (!["relaxed", "standard", "generous", "compact"].includes(mode)) return false;
+        if (typeof value !== "number" || value < 1) return false;
+      }
+    }
+  }
+  if (row.verticalBodyTextLayout != null) {
+    if (!row.verticalBodyTextLayout || typeof row.verticalBodyTextLayout !== "object") {
+      return false;
+    }
+    const vertical = row.verticalBodyTextLayout as Record<string, unknown>;
+    for (const key of ["columnStartChar", "columnShortenChars"] as const) {
+      const map = vertical[key];
+      if (map == null) continue;
+      if (!map || typeof map !== "object") return false;
+      for (const [col, value] of Object.entries(map as Record<string, unknown>)) {
+        if (!/^\d+$/.test(col) || typeof value !== "number" || value < 1) return false;
+      }
+    }
+    for (const key of ["columnStartCharByMode", "columnShortenCharsByMode"] as const) {
+      const byMode = vertical[key];
+      if (byMode == null) continue;
+      if (!byMode || typeof byMode !== "object") return false;
+      for (const [mode, map] of Object.entries(byMode as Record<string, unknown>)) {
+        if (!["relaxed", "standard", "generous", "compact"].includes(mode)) return false;
+        if (!map || typeof map !== "object") return false;
+        for (const [col, value] of Object.entries(map as Record<string, unknown>)) {
+          if (!/^\d+$/.test(col) || typeof value !== "number" || value < 1) return false;
+        }
       }
     }
   }

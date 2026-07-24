@@ -4,7 +4,6 @@ import { Image, StyleSheet, Text, View } from "@react-pdf/renderer";
 import { DiaryBookPdfPageCanvas } from "@/components/pdf/diaryBook/DiaryBookPdfPageCanvas";
 import type { BoundDiaryEntry } from "@/components/journal/DiaryYearBoundPages";
 import {
-  ASHIATO_VERTICAL_BODY_COLUMN_LINE_HEIGHT,
   ashiatoDailyNumberLabels,
   ashiatoDailyNumberSlotAlign,
   ashiatoDailyNumberSlotLeftNudgePct,
@@ -12,19 +11,19 @@ import {
   ashiatoPercentRectToPx,
   ashiatoPlanShows,
   ashiatoVerticalDateFontSizePx,
-  estimateVerticalBodyCapacity,
   formatAshiatoSlashYmdWeekdayDate,
   formatAshiatoVerticalDateColumns,
   ashiatoHorizontalBodyLineIndentChars,
   getAshiatoHorizontalBodyLayoutLines,
   getAshiatoVerticalBodyColumns,
+  ashiatoVerticalDisplayChar,
+  resolveAshiatoEnikkiVerticalMetrics,
   resolveAshiatoEntryRenderPlan,
   splitDailyNumberSlots,
 } from "@/lib/journal/ashiatoEntryRender";
 import { DIARY_BOOK_ENTRY_V2_COLORS } from "@/lib/journal/diaryBookEntryPrintLayout";
 import { resolveDiaryBookPublicImagePath } from "@/lib/journal/diaryBookPrintPdfAssets";
 import { diaryBookPdfFullBleedImageStyle, diaryBookPdfPct } from "@/lib/journal/diaryBookPrintPdfLayout";
-import { getDiaryBookEntryV2BodyLayoutLines } from "@/lib/journal/diaryBookEntryBodyWrap";
 import { getDiaryBookEntryV2BodyFontLayout } from "@/lib/journal/diaryBookEntryBodyFontLayout";
 import { resolveDiaryBookEntryV2CommentRenderLayout } from "@/lib/journal/diaryBookEntryCommentWrap";
 import { DIARY_BOOK_ENTRY_V2_LABEL_FONT_FAMILY_PDF } from "@/lib/journal/diaryBookEntryLabelFont";
@@ -138,14 +137,12 @@ export function DiaryBookAshiatoEntryPdfPage({
 
   const bodyLines =
     showBody && entry.content.trim() && plan.bodyWritingMode === "horizontal" && bodyRect
-      ? plan.bodyTextLayout
-        ? getAshiatoHorizontalBodyLayoutLines(
-            entry.content,
-            contentFontMode,
-            bodyRect,
-            plan.bodyTextLayout,
-          )
-        : getDiaryBookEntryV2BodyLayoutLines(entry.content, contentFontMode)
+      ? getAshiatoHorizontalBodyLayoutLines(
+          entry.content,
+          contentFontMode,
+          bodyRect,
+          plan.bodyTextLayout,
+        )
       : [];
   const bodyAlign = plan.bodyTextLayout?.align ?? "left";
   const bodyShrinkChars = plan.bodyTextLayout?.shrinkChars ?? 0;
@@ -157,19 +154,16 @@ export function DiaryBookAshiatoEntryPdfPage({
   let verticalColumns: string[] = [];
   let verticalColumnWidthPct = 0;
   if (showBody && entry.content.trim() && plan.bodyWritingMode === "vertical" && bodyRect) {
-    const px = ashiatoPercentRectToPx(bodyRect);
-    const { maxCharsPerColumn, maxColumns } = estimateVerticalBodyCapacity(
-      px,
-      bodyFont.fontSizePx,
-      ASHIATO_VERTICAL_BODY_COLUMN_LINE_HEIGHT,
-    );
+    const metrics = resolveAshiatoEnikkiVerticalMetrics(contentFontMode, bodyRect);
     verticalColumns = getAshiatoVerticalBodyColumns(
       entry.content,
-      maxCharsPerColumn,
-      maxColumns,
+      metrics.maxCharsPerColumn,
+      metrics.maxColumns,
+      plan.verticalBodyTextLayout,
+      contentFontMode,
     );
-    verticalColumnWidthPct =
-      ((bodyFont.fontSizePx * ASHIATO_VERTICAL_BODY_COLUMN_LINE_HEIGHT) / plan.design.widthPx) * 100;
+    // 本文枠幅に対する%（PDF の pctStyle 親が本文枠）
+    verticalColumnWidthPct = (metrics.columnWidthPx / ashiatoPercentRectToPx(bodyRect).widthPx) * 100;
   }
 
   return (
@@ -412,6 +406,7 @@ export function DiaryBookAshiatoEntryPdfPage({
             const indentChars = ashiatoHorizontalBodyLineIndentChars(
               plan.bodyTextLayout,
               index + 1,
+              contentFontMode,
             );
             const indentPct =
               indentChars > 0
@@ -422,9 +417,12 @@ export function DiaryBookAshiatoEntryPdfPage({
                 key={`body-${index}`}
                 style={{
                   fontFamily: "NotoSansJP",
-                  fontSize: diaryBookPdfPct("1.9%", "y"),
+                  fontSize: diaryBookPdfPct(
+                    `${(bodyFont.fontSizePx / plan.design.heightPx) * 100}%`,
+                    "y",
+                  ),
                   color: DIARY_BOOK_ENTRY_V2_COLORS.text,
-                  lineHeight: 1.55,
+                  lineHeight: bodyFont.lineHeight,
                   textAlign: bodyAlign,
                   paddingLeft:
                     indentPct > 0 ? diaryBookPdfPct(`${indentPct}%`, "x") : undefined,
@@ -455,17 +453,32 @@ export function DiaryBookAshiatoEntryPdfPage({
               }}
             >
               {[...column].map((ch, charIndex) => (
-                <Text
+                <View
                   key={`ch-${colIndex}-${charIndex}`}
                   style={{
-                    fontFamily: "NotoSansJP",
-                    fontSize: diaryBookPdfPct("1.9%", "y"),
-                    color: DIARY_BOOK_ENTRY_V2_COLORS.text,
-                    textAlign: "center",
+                    width: "100%",
+                    minHeight: diaryBookPdfPct(
+                      `${(bodyFont.fontSizePx / plan.design.heightPx) * 100}%`,
+                      "y",
+                    ),
+                    justifyContent: "center",
+                    alignItems: "center",
                   }}
                 >
-                  {ch}
-                </Text>
+                  <Text
+                    style={{
+                      fontFamily: "NotoSansJP",
+                      fontSize: diaryBookPdfPct(
+                        `${(bodyFont.fontSizePx / plan.design.heightPx) * 100}%`,
+                        "y",
+                      ),
+                      color: DIARY_BOOK_ENTRY_V2_COLORS.text,
+                      textAlign: "center",
+                    }}
+                  >
+                    {ashiatoVerticalDisplayChar(ch)}
+                  </Text>
+                </View>
               ))}
             </View>
           ))}

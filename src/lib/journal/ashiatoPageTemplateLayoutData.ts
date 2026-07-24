@@ -45,6 +45,60 @@ export type AshiatoHorizontalBodyTextLayout = {
    * 未指定行は 1（左端）
    */
   lineStartChar?: Partial<Record<number, number>>;
+  /**
+   * 文字サイズ別の開始位置上書き（指定行のみ。base の lineStartChar にマージ）。
+   * 装飾位置は固定でも、字が大きいほど「何文字目から」が変わるため。
+   */
+  lineStartCharByMode?: Partial<
+    Record<
+      "relaxed" | "standard" | "generous" | "compact",
+      Partial<Record<number, number>>
+    >
+  >;
+  /**
+   * 行番号 → 行末を何文字短くするか（装飾回避）。
+   * 例: 7行目を3字早く終える → { 7: 3 }
+   */
+  lineShortenChars?: Partial<Record<number, number>>;
+  /** 文字サイズ別の行末短縮上書き */
+  lineShortenCharsByMode?: Partial<
+    Record<
+      "relaxed" | "standard" | "generous" | "compact",
+      Partial<Record<number, number>>
+    >
+  >;
+  /**
+   * 文字サイズ別の最大行数上書き（計算値が枠ギリギリで最終文字が欠けるときの指定）。
+   * 例: ぎゅっとを12行に固定 → { compact: 12 }
+   */
+  maxLinesByMode?: Partial<
+    Record<"relaxed" | "standard" | "generous" | "compact", number>
+  >;
+};
+
+/** 縦書き本文の列ごと調整（森の絵日記など。列は右から1始まり） */
+export type AshiatoVerticalBodyTextLayout = {
+  /** 列番号 → 開始文字位置（1始まり・上から）。例: 10列目を3文字目から → { 10: 3 } */
+  columnStartChar?: Partial<Record<number, number>>;
+  /** 文字サイズ別の開始位置上書き（指定列のみ。base にマージ） */
+  columnStartCharByMode?: Partial<
+    Record<
+      "relaxed" | "standard" | "generous" | "compact",
+      Partial<Record<number, number>>
+    >
+  >;
+  /**
+   * 列番号 → 他列より短くする文字数（末尾を早く切る）。
+   * 下から N 文字目が末字 → shorten = N - 1
+   */
+  columnShortenChars?: Partial<Record<number, number>>;
+  /** 文字サイズ別の列末短縮上書き */
+  columnShortenCharsByMode?: Partial<
+    Record<
+      "relaxed" | "standard" | "generous" | "compact",
+      Partial<Record<number, number>>
+    >
+  >;
 };
 
 export type AshiatoPageTemplateLayout = {
@@ -57,6 +111,7 @@ export type AshiatoPageTemplateLayout = {
   /** dateLayout=slash_ymd_weekday のとき（テンプレの / に合わせた枠） */
   dateParts?: AshiatoSlashYmdWeekdayDateParts;
   bodyTextLayout?: AshiatoHorizontalBodyTextLayout;
+  verticalBodyTextLayout?: AshiatoVerticalBodyTextLayout;
   slots: Partial<Record<AshiatoLayoutSlotId, AshiatoLayoutPercentRect>>;
 };
 
@@ -73,6 +128,20 @@ export const ASHIATO_PAGE_TEMPLATE_LAYOUTS: Record<
     bodyWritingMode: "vertical",
     dateLayout: "vertical",
     photoRotateDeg: 0,
+    /**
+     * 罫線は最大10列。11列目は使わない。
+     * 標準: 9列=下から2文字目で改行 / 10列=2文字目開始・下から7文字目が末字
+     * たっぷり: 9列=下から3 / 10列=下から8
+     * ぎゅっと: 9列=下から3 / 10列=下から9
+     */
+    verticalBodyTextLayout: {
+      columnShortenChars: { 9: 1, 10: 6 },
+      columnStartChar: { 10: 2 },
+      columnShortenCharsByMode: {
+        generous: { 9: 2, 10: 7 },
+        compact: { 9: 2, 10: 8 },
+      },
+    },
     slots: {
       photo: { left: 8, top: 3, width: 84, height: 46.5 },
       // 気持ち上へ
@@ -98,7 +167,7 @@ export const ASHIATO_PAGE_TEMPLATE_LAYOUTS: Record<
       // 本文枠内で左右に余白を取り、テキスト塊を中央寄せ（文字自体は左寄せ）
       shrinkChars: 2,
       align: "left",
-      // 装飾を避ける行ごとの開始位置（1始まり）
+      // 装飾を避ける行ごとの開始位置（1始まり・標準系の基準）
       lineStartChar: {
         4: 3,
         5: 3,
@@ -106,12 +175,51 @@ export const ASHIATO_PAGE_TEMPLATE_LAYOUTS: Record<
         7: 5,
         8: 7,
         9: 8,
+        10: 9,
+        11: 10,
+      },
+      lineStartCharByMode: {
+        // ゆったり：字が大きいので開始位置を手前に／7行目は7文字目から
+        relaxed: {
+          3: 2,
+          5: 4,
+          7: 7,
+        },
+        // ぎゅっと最終行：11文字目から
+        compact: {
+          12: 11,
+        },
+      },
+      /**
+       * 行末短縮（後ろから N 文字目が末字 → shorten = N - 1）
+       * 標準最終行(9)=後ろから3／たっぷり: 10行目=後ろから3・最終行(11)=後ろから5
+       * ぎゅっと: 11行目=後ろから3、最終行(12)=後ろから5
+       */
+      lineShortenCharsByMode: {
+        relaxed: {
+          7: 3,
+        },
+        standard: {
+          9: 2,
+        },
+        generous: {
+          10: 2,
+          11: 4,
+        },
+        compact: {
+          11: 2,
+          12: 4,
+        },
+      },
+      // ぎゅっと：13行だと最終行が欠けるので12行に固定
+      maxLinesByMode: {
+        compact: 12,
       },
     },
     slots: {
       photo: { left: 12, top: 7.5, width: 49, height: 35.5 },
       date: { left: 73, top: 15, width: 21.5, height: 12 },
-      mood: { left: 77, top: 23.5, width: 11, height: 9 },
+      mood: { left: 77.7, top: 24.8, width: 9, height: 7.2 },
       // 上部のマスキングテープ装飾を避けるため、およそ3文字目相当から開始
       body: { left: 8, top: 59.5, width: 85.5, height: 32 },
     },
@@ -125,13 +233,22 @@ export const ASHIATO_PAGE_TEMPLATE_LAYOUTS: Record<
       mood: { left: 56, top: 27, width: 8.5, height: 7.5 },
       activity: { left: 67.5, top: 27.6, width: 28, height: 6 },
       dailyNumber: { left: 53.5, top: 41.8, width: 40.2, height: 6.2 },
-      body: { left: 8.3, top: 55.4, width: 83.4, height: 21.1 },
+      body: { left: 8.3, top: 55.4, width: 83.4, height: 23.1 },
       reading: { left: 8.3, top: 82.4, width: 68, height: 12.1 },
     },
   },
   suuji_ashiato_irodori: {
     bodyWritingMode: "horizontal",
     photoRotateDeg: -5,
+    bodyTextLayout: {
+      shrinkChars: 0,
+      align: "left",
+      // 最終行が枠に被るため行数を抑える
+      maxLinesByMode: {
+        generous: 9,
+        compact: 10,
+      },
+    },
     slots: {
       photo: { left: 18.37, top: 12.01, width: 36.33, height: 25.68 },
       // 約1.5行上・3文字左
