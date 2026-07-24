@@ -28,11 +28,23 @@ import {
   type JournalSocialPostTemplateId,
 } from "@/lib/journal/social-post-image/templates";
 
+type SurfaceLabels = {
+  previewHeading?: string;
+  titleLabel?: string;
+  downloadLabel?: string;
+  previewAlt?: string;
+};
+
 type Props = {
   entryId: string;
   content: string;
   hasPhoto?: boolean;
   photoSrc?: string | null;
+  surfaceLabels?: SurfaceLabels;
+  onCardExported?: (params: {
+    templateId: JournalSocialPostTemplateId;
+    title: string;
+  }) => void | Promise<void>;
 };
 
 function appendTextParams(
@@ -79,7 +91,13 @@ export function JournalSocialPostImagePanel({
   content,
   hasPhoto = false,
   photoSrc,
+  surfaceLabels,
+  onCardExported,
 }: Props) {
+  const previewHeading = surfaceLabels?.previewHeading ?? "投稿画像プレビュー";
+  const titleLabel = surfaceLabels?.titleLabel ?? "投稿画像用タイトル";
+  const downloadLabel = surfaceLabels?.downloadLabel ?? "画像を保存";
+  const previewAlt = surfaceLabels?.previewAlt ?? "SNS投稿画像プレビュー";
   const [title, setTitle] = useState("");
   const [subtitle, setSubtitle] = useState(DEFAULT_JOURNAL_SOCIAL_POST_SUBTITLE);
   const [templateId, setTemplateId] = useState<JournalSocialPostTemplateId>("sns02");
@@ -190,7 +208,9 @@ export function JournalSocialPostImagePanel({
         {isSns03 ? (
           <>
             <label className="mt-4 block space-y-2">
-              <span className="text-sm font-medium text-stone-800">タイトル</span>
+              <span className="text-sm font-medium text-stone-800">
+                {surfaceLabels?.titleLabel ?? "タイトル"}
+              </span>
               <input
                 type="text"
                 value={title}
@@ -228,7 +248,7 @@ export function JournalSocialPostImagePanel({
         ) : (
           <>
             <label className="mt-4 block space-y-2">
-              <span className="text-sm font-medium text-stone-800">投稿画像用タイトル</span>
+              <span className="text-sm font-medium text-stone-800">{titleLabel}</span>
               <input
                 type="text"
                 value={title}
@@ -239,7 +259,7 @@ export function JournalSocialPostImagePanel({
               />
             </label>
             <p className="mt-2 text-xs leading-relaxed text-stone-500">
-              日記本体には保存されません。最大 {titleMaxChars} 文字（1行）。
+              あしあと本体には保存されません。最大 {titleMaxChars} 文字（1行）。
             </p>
             <div className="mt-4 rounded-lg border border-dashed border-stone-200 bg-stone-50/80 px-3 py-3">
               <p className="text-xs font-medium text-stone-600">本文（画像に載る抜粋・自動）</p>
@@ -269,8 +289,17 @@ export function JournalSocialPostImagePanel({
 
       <div className="space-y-3">
         <div className="flex flex-wrap items-start justify-between gap-3">
-          <h2 className="text-base font-semibold text-stone-900">投稿画像プレビュー</h2>
-          <JournalSocialPostImageDownloadButton href={downloadUrl} />
+          <h2 className="text-base font-semibold text-stone-900">{previewHeading}</h2>
+          <JournalSocialPostImageDownloadButton
+            href={downloadUrl}
+            label={downloadLabel}
+            onDownloaded={() =>
+              onCardExported?.({
+                templateId: debouncedTemplateId,
+                title: debouncedTitle,
+              })
+            }
+          />
         </div>
 
         <div className="relative mx-auto w-full max-w-md overflow-hidden rounded-xl border border-stone-200 bg-[#faf8f5] shadow-sm">
@@ -291,7 +320,7 @@ export function JournalSocialPostImagePanel({
             <img
               key={previewUrl}
               src={previewUrl}
-              alt="SNS投稿画像プレビュー"
+              alt={previewAlt}
               className="h-full w-full object-contain"
               onLoad={() => {
                 setLoadingPreview(false);

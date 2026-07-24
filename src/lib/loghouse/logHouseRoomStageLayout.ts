@@ -46,15 +46,17 @@ export function resolveLogHouseRoomStageBoxStyle(params: {
 }): CSSProperties {
   const { size, box, mode, focus = null } = params;
   if (box.width <= 0 || box.height <= 0) {
+    // 計測前は描画しない（inset:0 → 実寸への transition が左上に揺れて見える）
     return {
       position: "absolute",
       inset: 0,
+      visibility: "hidden",
     };
   }
 
   const ratio = logHouseRoomArtRatio(size);
-  const transition =
-    "top 420ms ease, bottom 420ms ease, left 420ms ease, width 420ms ease, height 420ms ease, transform 420ms ease";
+  // ツアーのパンだけ滑らかに。width/height を含めると初回計測・リサイズで揺れる
+  const transition = "top 420ms ease, bottom 420ms ease, left 420ms ease, transform 420ms ease";
 
   if (mode === "contain") {
     const width = Math.min(box.width, box.height * ratio);

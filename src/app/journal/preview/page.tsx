@@ -7,7 +7,8 @@ import { JournalPreviewCompanionSwitcher } from "@/components/journal/JournalPre
 import { JournalPreviewDayNav } from "@/components/journal/JournalPreviewDayNav";
 import { JournalReadablePreview } from "@/components/journal/JournalReadablePreview";
 import { CompanionWritingPreviewFarewellGuide } from "@/components/journal/companion-writing/CompanionWritingPreviewFarewellGuide";
-import { JournalSocialPostImagePanel } from "@/components/journal/JournalSocialPostImagePanel";
+import { MoriLogMakerPanel } from "@/components/journal/MoriLogMakerPanel";
+import { MoriLogReadableCta } from "@/components/journal/MoriLogReadableCta";
 import { ActiveProfileLabel } from "@/components/profile/ActiveProfileLabel";
 import { OwlLoadingPanel } from "@/components/ui/OwlLoadingPanel";
 import { OwlSuspenseFallback } from "@/components/ui/OwlSuspenseFallback";
@@ -26,6 +27,7 @@ import { matchCompanionWritingPreviewGuide } from "@/lib/journal/companionWritin
 import type { JournalPreviewNeighbors } from "@/lib/journal/journalPreviewNeighbors";
 import { TERM_FOOTPRINT_PREVIEW } from "@/lib/journal/footprintTerminology";
 import { LOG_HOUSE_NAV_LABEL } from "@/lib/journal/logHouseLabels";
+import { MORI_LOG_TAB_LABEL } from "@/lib/journal/moriLog/moriLogCopy";
 
 type PreviewEntry = {
   id: string;
@@ -50,7 +52,7 @@ type PreviewEntry = {
   kanteiOrderExists?: boolean;
 };
 
-type ViewMode = "readable" | "social";
+type ViewMode = "readable" | "moriLog";
 
 function toDateInputValueUtc(date: Date): string {
   const y = date.getUTCFullYear();
@@ -331,15 +333,15 @@ function JournalPreviewPageContent() {
           </button>
           <button
             type="button"
-            onClick={() => setViewMode("social")}
+            onClick={() => setViewMode("moriLog")}
             className={[
               "min-h-[44px] rounded-md border px-3 py-2 text-base",
-              viewMode === "social"
+              viewMode === "moriLog"
                 ? "border-stone-700 bg-stone-800 text-white"
                 : "border-[#e0d2bc]/95 bg-[#faf3e8] text-[#5c4a35] hover:bg-[#f3ead8]",
             ].join(" ")}
           >
-            投稿画像
+            {MORI_LOG_TAB_LABEL}
           </button>
         </div>
       </div>
@@ -370,12 +372,19 @@ function JournalPreviewPageContent() {
             canEdit={canEditJournal}
             meaningsReturnTo={meaningsReturnTo}
             afterCommentSlot={companionSwitcherBlock}
+            afterReadingSlot={
+              <MoriLogReadableCta onOpenMoriLog={() => setViewMode("moriLog")} />
+            }
             previewEndRef={previewEndRef}
           />
-        ) : viewMode === "social" ? (
-          <JournalSocialPostImagePanel
+        ) : viewMode === "moriLog" ? (
+          <MoriLogMakerPanel
             entryId={entry.id}
             content={entry.content}
+            createdAt={entry.createdAt}
+            mood={entry.mood}
+            companionType={entry.companionType}
+            profileId={effectiveProfileId || entry.profileId}
             hasPhoto={entry.hasPhoto}
             photoSrc={entry.photoSrc}
           />

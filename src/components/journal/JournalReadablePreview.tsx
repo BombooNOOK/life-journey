@@ -41,6 +41,8 @@ type Props = {
   meaningsReturnTo?: string | null;
   /** 「〇〇より」カード直下（伴走キャラ変更など） */
   afterCommentSlot?: ReactNode;
+  /** 読み解きのあとに出す森ログ案内など */
+  afterReadingSlot?: ReactNode;
   /** 伴走プレビュー案内：最下部到達の検知用 */
   previewEndRef?: Ref<HTMLDivElement>;
 };
@@ -95,6 +97,7 @@ export function JournalReadablePreview({
   canEdit = true,
   meaningsReturnTo,
   afterCommentSlot,
+  afterReadingSlot,
   previewEndRef,
 }: Props) {
   const displayContent = useMemo(() => stripTagsFromContent(content), [content]);
@@ -157,6 +160,8 @@ export function JournalReadablePreview({
       ) : null}
 
       {afterCommentSlot ? <div>{afterCommentSlot}</div> : null}
+
+      {afterReadingSlot ? <div>{afterReadingSlot}</div> : null}
 
       {diaryNumbers ? (
         <DiaryNumbersHintSection

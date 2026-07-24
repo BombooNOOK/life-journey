@@ -11,6 +11,8 @@ type Props = {
   suggestedFileName?: string;
   label?: string;
   className?: string;
+  /** 端末への保存が成功したあと（履歴記録など） */
+  onDownloaded?: () => void | Promise<void>;
 };
 
 function parseFilenameFromContentDisposition(header: string | null): string | null {
@@ -48,6 +50,7 @@ export function JournalSocialPostImageDownloadButton({
   suggestedFileName,
   label = "画像を保存",
   className = "inline-flex min-h-[44px] items-center rounded-lg bg-emerald-800 px-4 py-2.5 text-sm font-medium text-white hover:bg-emerald-700 disabled:cursor-wait disabled:opacity-90",
+  onDownloaded,
 }: Props) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -95,7 +98,7 @@ export function JournalSocialPostImageDownloadButton({
       const downloadName =
         parseFilenameFromContentDisposition(res.headers.get("Content-Disposition")) ??
         suggestedFileName ??
-        "diary-sns.png";
+        "mori-log-card.png";
 
       const objectUrl = URL.createObjectURL(blob);
       const anchor = document.createElement("a");
@@ -106,6 +109,7 @@ export function JournalSocialPostImageDownloadButton({
       anchor.click();
       anchor.remove();
       URL.revokeObjectURL(objectUrl);
+      await onDownloaded?.();
     } catch (e) {
       if (e instanceof Error && e.name === "AbortError") {
         setError("画像の作成がタイムアウトしました。しばらく待ってから再試行してください。");
@@ -117,7 +121,7 @@ export function JournalSocialPostImageDownloadButton({
       busyRef.current = false;
       setBusy(false);
     }
-  }, [href, suggestedFileName]);
+  }, [href, onDownloaded, suggestedFileName]);
 
   return (
     <div className="space-y-2">

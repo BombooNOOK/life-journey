@@ -39,4 +39,27 @@ describe("logHouseRoomStageLayout", () => {
     expect(style.width).toBe(Math.max(box.width, box.height * (size.widthPx / size.heightPx)));
     expect(style.height).toBe(Math.max(box.height, box.width / (size.widthPx / size.heightPx)));
   });
+
+  it("does not transition width/height (avoids entry shake)", () => {
+    const style = resolveLogHouseRoomStageBoxStyle({
+      size,
+      box: { width: 390, height: 844 },
+      mode: "cover",
+      focus: null,
+    });
+    const transition = String(style.transition ?? "");
+    expect(transition).not.toMatch(/\bwidth\b/);
+    expect(transition).not.toMatch(/\bheight\b/);
+    expect(transition).toMatch(/transform/);
+  });
+
+  it("hides unmeasured stage instead of animating from inset", () => {
+    const style = resolveLogHouseRoomStageBoxStyle({
+      size,
+      box: { width: 0, height: 0 },
+      mode: "cover",
+    });
+    expect(style.visibility).toBe("hidden");
+    expect(style.transition).toBeUndefined();
+  });
 });
