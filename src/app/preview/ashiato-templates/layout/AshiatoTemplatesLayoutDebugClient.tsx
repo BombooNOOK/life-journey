@@ -6,9 +6,10 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 
 import {
   ASHIATO_COMPANION_TEMPLATE_SLUGS,
+  ashiatoPageTemplateBackgroundPath,
   ashiatoPageTemplateBodyPathForCompanion,
   ashiatoPageTemplateOptions,
-  ashiatoPageTemplatePreviewPath,
+  ashiatoPageTemplatePhotoOverlayPath,
   type AshiatoPageTemplateId,
 } from "@/lib/journal/ashiatoPageTemplates";
 import {
@@ -19,6 +20,7 @@ import {
   ashiatoLayoutGrowFromBottom,
   ashiatoLayoutRectStyle,
   ashiatoLayoutSlotIdsForTemplate,
+  isAshiatoPageTemplateLayout,
   type AshiatoLayoutPercentRect,
   type AshiatoLayoutSlotId,
   type AshiatoPageTemplateLayout,
@@ -27,7 +29,7 @@ import { ASHIATO_VERTICAL_BODY_COLUMN_LINE_HEIGHT } from "@/lib/journal/ashiatoE
 import { DIARY_PREVIEW_BODY_FONT_FAMILY } from "@/lib/journal/diaryPreviewBodyFont";
 import { getDiaryBookEntryV2BodyFontLayout } from "@/lib/journal/diaryBookEntryBodyFontLayout";
 
-const DRAFT_STORAGE_KEY = "ashiato-page-template-layout-draft-v6";
+const DRAFT_STORAGE_KEY = "ashiato-page-template-layout-draft-v7";
 
 const COMPANION_LABELS: Record<(typeof ASHIATO_COMPANION_TEMPLATE_SLUGS)[number], string> = {
   drfukuro: "フクロウ",
@@ -60,15 +62,33 @@ function cloneLayouts(
   return structuredClone(source);
 }
 
+function mergeAshiatoLayoutDraft(
+  base: Record<AshiatoPageTemplateId, AshiatoPageTemplateLayout>,
+  draft: Partial<Record<AshiatoPageTemplateId, AshiatoPageTemplateLayout>>,
+): Record<AshiatoPageTemplateId, AshiatoPageTemplateLayout> {
+  const out = cloneLayouts(base);
+  for (const opt of ashiatoPageTemplateOptions) {
+    const partial = draft[opt.id];
+    if (!partial || !isAshiatoPageTemplateLayout(partial)) continue;
+    out[opt.id] = {
+      ...out[opt.id],
+      ...partial,
+      slots: { ...out[opt.id].slots, ...partial.slots },
+    };
+  }
+  return out;
+}
+
 function readStoredDraft(): Record<AshiatoPageTemplateId, AshiatoPageTemplateLayout> | null {
   if (typeof window === "undefined") return null;
   try {
+    window.localStorage.removeItem("ashiato-page-template-layout-draft-v6");
     const raw = window.localStorage.getItem(DRAFT_STORAGE_KEY);
     if (!raw) return null;
     const data = JSON.parse(raw) as Partial<
       Record<AshiatoPageTemplateId, AshiatoPageTemplateLayout>
     >;
-    return { ...cloneLayouts(ASHIATO_PAGE_TEMPLATE_LAYOUTS), ...data };
+    return mergeAshiatoLayoutDraft(ASHIATO_PAGE_TEMPLATE_LAYOUTS, data);
   } catch {
     return null;
   }
@@ -104,6 +124,8 @@ export function AshiatoTemplatesLayoutDebugClient() {
   const [templateId, setTemplateId] = useState<AshiatoPageTemplateId>("mori_enikki");
   const [selected, setSelected] = useState<AshiatoLayoutSlotId>("photo");
   const [showOverlay, setShowOverlay] = useState(true);
+  /** レイヤー型の写真枠 PNG。位置合わせは背景優先なので既定オフ */
+  const [showPhotoOverlay, setShowPhotoOverlay] = useState(false);
   const [showSample, setShowSample] = useState(true);
   const [soloEditing, setSoloEditing] = useState(false);
   const [pinBottom, setPinBottom] = useState(true);
@@ -143,10 +165,21 @@ export function AshiatoTemplatesLayoutDebugClient() {
   const selectedRect = layout.slots[selected];
 
   const isLayeredTemplate = templateMeta.files.kind === "layered";
+  const photoOverlaySrc = useMemo(
+    () => (isLayeredTemplate ? ashiatoPageTemplatePhotoOverlayPath(templateId) : null),
+    [isLayeredTemplate, templateId],
+  );
 
   const bgSrc = useMemo(() => {
     if (isLayeredTemplate) {
-      return ashiatoPageTemplatePreviewPath(templateId);
+      // 位置合わせは罫線・日付枠が見える background を使う（preview は合成で枠が潰れる）
+      return (
+        ashiatoPageTemplateBackgroundPath(templateId) ??
+        ashiatoPageTemplateBodyPathForCompanion(
+          templateId,
+          COMPANION_TYPE_BY_SLUG[companionSlug],
+        )
+      );
     }
     return ashiatoPageTemplateBodyPathForCompanion(
       templateId,
@@ -259,7 +292,17 @@ export function AshiatoTemplatesLayoutDebugClient() {
           配置枠
         </label>
         {isLayeredTemplate ? (
-          <span className="text-stone-500">背景は preview（枠つき・下半分あり）です</span>
+          <span className="text-stone-500">位置合わせは background です</span>
+        ) : null}
+        {photoOverlaySrc ? (
+          <label className="flex items-center gap-1.5">
+            <input
+              type="checkbox"
+              checked={showPhotoOverlay}
+              onChange={(e) => setShowPhotoOverlay(e.target.checked)}
+            />
+            写真枠オーバーレイ
+          </label>
         ) : null}
         <label className="flex items-center gap-1.5">
           <input type="checkbox" checked={showSample} onChange={(e) => setShowSample(e.target.checked)} />
@@ -314,6 +357,16 @@ export function AshiatoTemplatesLayoutDebugClient() {
               onMouseLeave={() => setCursor(null)}
             >
               <Image src={bgSrc} alt="" fill className="object-contain" unoptimized priority />
+
+              {showPhotoOverlay && photoOverlaySrc ? (
+                <Image
+                  src={photoOverlaySrc}
+                  alt=""
+                  fill
+                  className="pointer-events-none object-contain"
+                  unoptimized
+                />
+              ) : null}
 
               {showSample && layout.slots.photo ? (
                 <div

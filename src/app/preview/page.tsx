@@ -19,10 +19,15 @@ const links: { href: string; label: string; note?: string; highlight?: boolean }
     highlight: true,
   },
   {
-    href: "/preview/journal-social-post-image/layout?template=sns02",
-    label: "あしあと・投稿画像レイアウト定規",
-    note: "819×1024 を 1:1 表示。グリッド・座標クリック・配置確認。npm run dev 中のみ",
+    href: "/preview/journal-social-post-image/layout?template=chiisana_ashiato",
+    label: "森ログカード位置合わせ（レイアウト定規）",
+    note: "ローカルまたは管理者。枠選択・数値調整（ファイル保存はローカルのみ）",
     highlight: true,
+  },
+  {
+    href: "/preview/journal-social-post-image/layout?template=sns02",
+    label: "投稿画像レイアウト定規（sns02/03）",
+    note: "ローカルまたは管理者。sns02/03 の座標クリック定規",
   },
   {
     href: "/preview/journal-local-draft",
