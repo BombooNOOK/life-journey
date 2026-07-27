@@ -64,6 +64,8 @@ function isLayoutCoords(v: unknown): v is MoriAshiatoLayoutCoords {
     return false;
   }
   if (o.dateScrapbook != null && !isTextCoords(o.dateScrapbook)) return false;
+  if (o.promptLabel != null && !isTextCoords(o.promptLabel)) return false;
+  if (o.summary != null && !isTextCoords(o.summary)) return false;
   if (o.extraPhotos != null) {
     if (!Array.isArray(o.extraPhotos) || !o.extraPhotos.every(isPhotoCoords)) return false;
   }
@@ -97,7 +99,13 @@ function layoutBlock(id: MoriAshiatoTemplateId, layout: MoriAshiatoLayoutCoords)
   }
   lines.push(`    title: ${textLiteral(layout.title)},`);
   lines.push(`    body: ${textLiteral(layout.body)},`);
+  if (layout.promptLabel) {
+    lines.push(`    promptLabel: ${textLiteral(layout.promptLabel)},`);
+  }
   lines.push(`    comment: ${textLiteral(layout.comment)},`);
+  if (layout.summary) {
+    lines.push(`    summary: ${textLiteral(layout.summary)},`);
+  }
   return `  ${id}: {\n${lines.join("\n")}\n  },`;
 }
 
@@ -144,7 +152,11 @@ export type MoriAshiatoLayoutCoords = {
   dateScrapbook?: MoriAshiatoTextCoords;
   title: MoriAshiatoTextCoords;
   body: MoriAshiatoTextCoords;
+  /** 今日のあしあとなど：3択ラベル（どんな言葉を残しますか？） */
+  promptLabel?: MoriAshiatoTextCoords;
   comment: MoriAshiatoTextCoords;
+  /** 3コマなど：全体のおまとめ（今日のひとこと） */
+  summary?: MoriAshiatoTextCoords;
 };
 
 export type MoriAshiatoLayoutSlotId =
@@ -154,7 +166,9 @@ export type MoriAshiatoLayoutSlotId =
   | "date"
   | "title"
   | "body"
-  | "comment";
+  | "promptLabel"
+  | "comment"
+  | "summary";
 
 export const MORI_ASHIATO_LAYOUT_SLOT_LABELS: Record<MoriAshiatoLayoutSlotId, string> = {
   photo: "写真1",
@@ -163,7 +177,9 @@ export const MORI_ASHIATO_LAYOUT_SLOT_LABELS: Record<MoriAshiatoLayoutSlotId, st
   date: "日付",
   title: "タイトル",
   body: "本文",
+  promptLabel: "どんな言葉を残しますか？",
   comment: "ひとこと",
+  summary: "今日のひとこと",
 };
 
 export const MORI_ASHIATO_LAYOUT_SLOT_COLORS: Record<MoriAshiatoLayoutSlotId, string> = {
@@ -173,7 +189,9 @@ export const MORI_ASHIATO_LAYOUT_SLOT_COLORS: Record<MoriAshiatoLayoutSlotId, st
   date: "rgba(251, 191, 36, 0.35)",
   title: "rgba(244, 114, 182, 0.32)",
   body: "rgba(52, 211, 153, 0.32)",
+  promptLabel: "rgba(251, 146, 60, 0.35)",
   comment: "rgba(167, 139, 250, 0.32)",
+  summary: "rgba(244, 63, 94, 0.28)",
 };
 
 export const MORI_ASHIATO_LAYOUTS: Record<MoriAshiatoTemplateId, MoriAshiatoLayoutCoords> = {
@@ -185,7 +203,10 @@ export function moriAshiatoLayoutSlotIds(layout: MoriAshiatoLayoutCoords): MoriA
   if (layout.extraPhotos?.[0]) ids.push("photo2");
   if (layout.extraPhotos?.[1]) ids.push("photo3");
   if (layout.dateScrapbook) ids.push("date");
-  ids.push("title", "body", "comment");
+  ids.push("title", "body");
+  if (layout.promptLabel) ids.push("promptLabel");
+  ids.push("comment");
+  if (layout.summary) ids.push("summary");
   return ids;
 }
 

@@ -102,6 +102,10 @@ export type JournalSocialPostTemplateLayout = {
   ];
   mood?: JournalSocialPostTextStyle;
   comment: JournalSocialPostTextStyle;
+  /** 今日のあしあとなど：3択で選んだラベル */
+  promptLabel?: JournalSocialPostTextStyle;
+  /** 3コマなど：全体のおまとめ（今日のひとこと） */
+  summary?: JournalSocialPostTextStyle;
   /** sns02: リボン上の年 */
   dateRibbonYear?: JournalSocialPostTextStyle;
   /** sns02: リボン上の月.日 */

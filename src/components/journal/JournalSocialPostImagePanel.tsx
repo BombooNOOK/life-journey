@@ -8,6 +8,17 @@ import {
   JournalSocialPostImagePhotoAdjustEditor,
 } from "@/components/journal/JournalSocialPostImagePhotoAdjustEditor";
 import {
+  assembleMoriLogCardTextSlots,
+  emptyMoriLogCardFieldValues,
+  moriLogCardFieldsForTemplate,
+  resolveMoriLogCardHitokotoPrompt,
+  type MoriLogCardFieldDef,
+  type MoriLogCardFieldKind,
+  type MoriLogCardFieldValues,
+  type MoriLogCardHitokotoPromptId,
+} from "@/lib/journal/moriLog/moriLogCardFields";
+import { formatSocialPostDateScrapbook } from "@/lib/journal/social-post-image/dateFormat";
+import {
   appendJournalSocialPostPhotoAdjustToSearchParams,
   journalSocialPostPhotoAdjustEquals,
   type JournalSocialPostPhotoAdjust,
@@ -31,6 +42,7 @@ import {
   resolveJournalSocialPostTextMode,
   type JournalSocialPostTemplateId,
 } from "@/lib/journal/social-post-image/templates";
+import type { MoriAshiatoTemplateId } from "@/lib/journal/social-post-image/moriAshiatoTemplates";
 
 type SurfaceLabels = {
   previewHeading?: string;
@@ -42,6 +54,8 @@ type SurfaceLabels = {
 type Props = {
   entryId: string;
   content: string;
+  /** 日付表示・カード日付用（あしあと入力日） */
+  createdAt?: string;
   hasPhoto?: boolean;
   photoSrc?: string | null;
   surfaceLabels?: SurfaceLabels;
@@ -56,10 +70,17 @@ function appendTextParams(
   title: string,
   subtitle: string,
   templateId: JournalSocialPostTemplateId,
+  moriSlots?: { body: string; comment: string; promptLabel: string; summary: string } | null,
 ): void {
   params.set("title", title);
   if (templateId === "sns03") {
     params.set("subtitle", subtitle);
+  }
+  if (moriSlots && isMoriAshiatoTemplateId(templateId)) {
+    params.set("body", moriSlots.body);
+    params.set("comment", moriSlots.comment);
+    params.set("promptLabel", moriSlots.promptLabel);
+    params.set("summary", moriSlots.summary);
   }
 }
 
@@ -70,9 +91,10 @@ function buildPreviewUrl(
   templateId: JournalSocialPostTemplateId,
   photoAdjust: JournalSocialPostPhotoAdjust,
   cacheKey: number,
+  moriSlots?: { body: string; comment: string; promptLabel: string; summary: string } | null,
 ): string {
   const params = new URLSearchParams({ template: templateId, t: String(cacheKey) });
-  appendTextParams(params, title, subtitle, templateId);
+  appendTextParams(params, title, subtitle, templateId, moriSlots);
   appendJournalSocialPostPhotoAdjustToSearchParams(params, photoAdjust);
   return `/api/journal/entries/${encodeURIComponent(entryId)}/social-post-image?${params.toString()}`;
 }
@@ -83,9 +105,10 @@ function buildDownloadUrl(
   subtitle: string,
   templateId: JournalSocialPostTemplateId,
   photoAdjust: JournalSocialPostPhotoAdjust,
+  moriSlots?: { body: string; comment: string; promptLabel: string; summary: string } | null,
 ): string {
   const params = new URLSearchParams({ template: templateId, download: "1" });
-  appendTextParams(params, title, subtitle, templateId);
+  appendTextParams(params, title, subtitle, templateId, moriSlots);
   appendJournalSocialPostPhotoAdjustToSearchParams(params, photoAdjust);
   return `/api/journal/entries/${encodeURIComponent(entryId)}/social-post-image?${params.toString()}`;
 }
@@ -93,6 +116,7 @@ function buildDownloadUrl(
 export function JournalSocialPostImagePanel({
   entryId,
   content,
+  createdAt,
   hasPhoto = false,
   photoSrc,
   surfaceLabels,
@@ -104,7 +128,8 @@ export function JournalSocialPostImagePanel({
   const previewAlt = surfaceLabels?.previewAlt ?? "SNS投稿画像プレビュー";
   const [title, setTitle] = useState("");
   const [subtitle, setSubtitle] = useState(DEFAULT_JOURNAL_SOCIAL_POST_SUBTITLE);
-  const [templateId, setTemplateId] = useState<JournalSocialPostTemplateId>("sns02");
+  const [moriFields, setMoriFields] = useState<MoriLogCardFieldValues>(emptyMoriLogCardFieldValues);
+  const [templateId, setTemplateId] = useState<JournalSocialPostTemplateId>("chiisana_ashiato");
   const [photoAdjustDraft, setPhotoAdjustDraft] = useState<JournalSocialPostPhotoAdjust>(
     DEFAULT_JOURNAL_SOCIAL_POST_PHOTO_ADJUST,
   );
@@ -113,7 +138,14 @@ export function JournalSocialPostImagePanel({
   );
   const [debouncedTitle, setDebouncedTitle] = useState("");
   const [debouncedSubtitle, setDebouncedSubtitle] = useState(DEFAULT_JOURNAL_SOCIAL_POST_SUBTITLE);
-  const [debouncedTemplateId, setDebouncedTemplateId] = useState<JournalSocialPostTemplateId>("sns02");
+  const [debouncedMoriSlots, setDebouncedMoriSlots] = useState<{
+    title: string;
+    body: string;
+    comment: string;
+    summary: string;
+    promptLabel: string;
+  } | null>(null);
+  const [debouncedTemplateId, setDebouncedTemplateId] = useState<JournalSocialPostTemplateId>("chiisana_ashiato");
   const [cacheKey, setCacheKey] = useState(() => Date.now());
   const [loadingPreview, setLoadingPreview] = useState(true);
   const [previewError, setPreviewError] = useState<string | null>(null);
@@ -130,23 +162,49 @@ export function JournalSocialPostImagePanel({
   const designSize = resolveJournalSocialPostDesignSize(templateLayout);
   const textMode = resolveJournalSocialPostTextMode(templateLayout);
   const isSns03 = textMode === "sns03";
-  const isAshiatoLines = textMode === "ashiato_lines" || isMoriAshiatoTemplateId(templateId);
+  const isMoriCard = isMoriAshiatoTemplateId(templateId);
+  const moriFieldDefs = moriLogCardFieldsForTemplate(templateId);
   const titleMaxChars = socialPostTitleMaxChars(templateId);
+
+  const entryDateLabel = useMemo(() => {
+    if (!createdAt) return null;
+    const date = new Date(createdAt);
+    if (Number.isNaN(date.getTime())) return null;
+    return formatSocialPostDateScrapbook(date);
+  }, [createdAt]);
+
+  const assembledMoriSlots = useMemo(() => {
+    if (!isMoriCard) return null;
+    return assembleMoriLogCardTextSlots(templateId as MoriAshiatoTemplateId, moriFields);
+  }, [isMoriCard, moriFields, templateId]);
+
+  const previewTitle = isMoriCard ? (debouncedMoriSlots?.title ?? "") : debouncedTitle;
+  const previewMoriSlots =
+    isMoriCard && debouncedMoriSlots
+      ? {
+          body: debouncedMoriSlots.body,
+          comment: debouncedMoriSlots.comment,
+          promptLabel: debouncedMoriSlots.promptLabel,
+          summary: debouncedMoriSlots.summary,
+        }
+      : null;
 
   const previewUrl = buildPreviewUrl(
     entryId,
-    debouncedTitle,
+    previewTitle,
     debouncedSubtitle,
     debouncedTemplateId,
     appliedPhotoAdjust,
     cacheKey,
+    previewMoriSlots,
   );
   const downloadUrl = buildDownloadUrl(
     entryId,
-    debouncedTitle,
+    previewTitle,
     debouncedSubtitle,
     debouncedTemplateId,
     appliedPhotoAdjust,
+    previewMoriSlots,
   );
 
   useEffect(() => {
@@ -165,11 +223,12 @@ export function JournalSocialPostImagePanel({
     const timer = window.setTimeout(() => {
       setDebouncedTitle(title);
       setDebouncedSubtitle(subtitle);
+      setDebouncedMoriSlots(assembledMoriSlots);
       setDebouncedTemplateId(templateId);
       setCacheKey((value) => value + 1);
     }, 400);
     return () => window.clearTimeout(timer);
-  }, [title, subtitle, templateId]);
+  }, [assembledMoriSlots, subtitle, templateId, title]);
 
   useEffect(() => {
     setLoadingPreview(true);
@@ -187,6 +246,79 @@ export function JournalSocialPostImagePanel({
     setCacheKey((value) => value + 1);
   }, [entryId, photoAdjustDraft, templateId]);
 
+  const setMoriField = (kind: MoriLogCardFieldKind, value: string) => {
+    setMoriFields((prev) => ({ ...prev, [kind]: value }));
+  };
+
+  const setHitokotoPrompt = (promptId: MoriLogCardHitokotoPromptId) => {
+    setMoriFields((prev) => ({ ...prev, hitokotoPromptId: promptId }));
+  };
+
+  const renderMoriField = (field: MoriLogCardFieldDef) => {
+    const prompts = field.hitokotoPrompts;
+    if (prompts?.length) {
+      const selected = resolveMoriLogCardHitokotoPrompt(field, moriFields.hitokotoPromptId);
+      const selectedId = selected?.id ?? prompts[0]!.id;
+      return (
+        <div key={field.kind} className="space-y-3">
+          <fieldset className="space-y-2">
+            <legend className="text-sm font-medium text-stone-800">どんな言葉を残しますか？</legend>
+            <div className="flex flex-wrap gap-2">
+              {prompts.map((prompt) => (
+                <button
+                  key={prompt.id}
+                  type="button"
+                  onClick={() => setHitokotoPrompt(prompt.id)}
+                  className={[
+                    "min-h-[44px] rounded-md border px-3 py-2 text-sm",
+                    selectedId === prompt.id
+                      ? "border-emerald-700 bg-emerald-800 text-white"
+                      : "border-stone-300 bg-white text-stone-700 hover:bg-stone-50",
+                  ].join(" ")}
+                >
+                  {prompt.label}
+                </button>
+              ))}
+            </div>
+          </fieldset>
+          <label className="block space-y-2">
+            <span className="text-sm font-medium text-stone-800">{selected?.label ?? field.label}</span>
+            <input
+              type="text"
+              value={moriFields[field.kind] ?? ""}
+              onChange={(event) => setMoriField(field.kind, event.target.value)}
+              placeholder={selected?.placeholder ?? field.placeholder}
+              maxLength={field.maxChars}
+              className="w-full rounded-md border border-stone-300 px-3 py-2 text-base text-stone-900"
+            />
+            <p className="text-xs leading-relaxed text-stone-500">
+              {field.hint ? `${field.hint} · ` : null}
+              最大 {field.maxChars} 文字。あしあと本体には保存されません。
+            </p>
+          </label>
+        </div>
+      );
+    }
+
+    return (
+      <label key={field.kind} className="block space-y-2">
+        <span className="text-sm font-medium text-stone-800">{field.label}</span>
+        <input
+          type="text"
+          value={moriFields[field.kind] ?? ""}
+          onChange={(event) => setMoriField(field.kind, event.target.value)}
+          placeholder={field.placeholder}
+          maxLength={field.maxChars}
+          className="w-full rounded-md border border-stone-300 px-3 py-2 text-base text-stone-900"
+        />
+        <p className="text-xs leading-relaxed text-stone-500">
+          {field.hint ? `${field.hint} · ` : null}
+          最大 {field.maxChars} 文字。あしあと本体には保存されません。
+        </p>
+      </label>
+    );
+  };
+
   return (
     <div className="space-y-5">
       <div className="rounded-xl border border-stone-200 bg-white p-4 sm:p-5">
@@ -194,24 +326,38 @@ export function JournalSocialPostImagePanel({
           <legend className="text-sm font-medium text-stone-800">デザイン</legend>
           <div className="flex flex-wrap gap-2">
             {JOURNAL_SOCIAL_POST_TEMPLATE_IDS.map((id) => (
-                <button
-                  key={id}
-                  type="button"
-                  onClick={() => setTemplateId(id)}
-                  className={[
-                    "min-h-[44px] rounded-md border px-3 py-2 text-sm",
-                    templateId === id
-                      ? "border-stone-700 bg-stone-800 text-white"
-                      : "border-stone-300 bg-white text-stone-700 hover:bg-stone-50",
-                  ].join(" ")}
-                >
-                  {JOURNAL_SOCIAL_POST_TEMPLATES[id].label}
-                </button>
+              <button
+                key={id}
+                type="button"
+                onClick={() => setTemplateId(id)}
+                className={[
+                  "min-h-[44px] rounded-md border px-3 py-2 text-sm",
+                  templateId === id
+                    ? "border-stone-700 bg-stone-800 text-white"
+                    : "border-stone-300 bg-white text-stone-700 hover:bg-stone-50",
+                ].join(" ")}
+              >
+                {JOURNAL_SOCIAL_POST_TEMPLATES[id].label}
+              </button>
             ))}
           </div>
         </fieldset>
 
-        {isSns03 ? (
+        {isMoriCard && moriFieldDefs ? (
+          <div className="mt-4 space-y-4">
+            <div className="rounded-lg border border-dashed border-stone-200 bg-stone-50/80 px-3 py-3">
+              <p className="text-xs font-medium text-stone-600">日付（あしあとの入力日）</p>
+              <p className="mt-1 text-sm leading-relaxed text-stone-800">
+                {entryDateLabel ?? "（日付を読み込み中）"}
+              </p>
+              <p className="mt-1 text-xs leading-relaxed text-stone-500">
+                カードにはこの日付がそのまま載ります。あしあと本文とは別に、下の欄だけを入力してください。
+              </p>
+            </div>
+
+            {moriFieldDefs.map((field) => renderMoriField(field))}
+          </div>
+        ) : isSns03 ? (
           <>
             <label className="mt-4 block space-y-2">
               <span className="text-sm font-medium text-stone-800">
@@ -259,15 +405,13 @@ export function JournalSocialPostImagePanel({
                 type="text"
                 value={title}
                 onChange={(event) => setTitle(event.target.value)}
-                placeholder={isAshiatoLines ? "タイトル・ひとこと" : "SNS用のタイトルを入力"}
+                placeholder="SNS用のタイトルを入力"
                 maxLength={titleMaxChars}
                 className="w-full rounded-md border border-stone-300 px-3 py-2 text-base text-stone-900"
               />
             </label>
             <p className="mt-2 text-xs leading-relaxed text-stone-500">
-              {isAshiatoLines
-                ? `テンプレ下部の行に載ります。最大 ${titleMaxChars} 文字（1行）。`
-                : `あしあと本体には保存されません。最大 ${titleMaxChars} 文字（1行）。`}
+              あしあと本体には保存されません。最大 {titleMaxChars} 文字（1行）。
             </p>
             <div className="mt-4 rounded-lg border border-dashed border-stone-200 bg-stone-50/80 px-3 py-3">
               <p className="text-xs font-medium text-stone-600">本文（画像に載る抜粋・自動）</p>
@@ -304,7 +448,7 @@ export function JournalSocialPostImagePanel({
             onDownloaded={() =>
               onCardExported?.({
                 templateId: debouncedTemplateId,
-                title: debouncedTitle,
+                title: previewTitle,
               })
             }
           />

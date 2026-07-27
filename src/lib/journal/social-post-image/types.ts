@@ -10,7 +10,7 @@ export type JournalSocialPostImageInput = {
   templateId: JournalSocialPostTemplateId;
   /** 上部の大見出し（sns03）／投稿用タイトル（sns02） */
   title: string;
-  /** sns02: 日記本文の自動抜粋 */
+  /** sns02: あしあと本文の自動抜粋 */
   bodyExcerpt: string;
   /** sns03: 緑帯のサブタイトル（未指定時は既定文） */
   subtitle: string;
@@ -19,8 +19,12 @@ export type JournalSocialPostImageInput = {
   yearNumber: number | null;
   moodLabel: string;
   commentExcerpt: string;
+  /** 今日のあしあとなど：3択ラベル（ひとことメモ 等） */
+  promptLabel?: string;
+  /** 3コマなど：全体のおまとめ（今日のひとこと） */
+  summary?: string;
   photoBuffer: Buffer | null;
-  /** 保存済み正方形写真の SNS 枠内トリミング（日記には保存しない） */
+  /** 保存済み正方形写真の SNS 枠内トリミング（あしあとには保存しない） */
   photoAdjust?: JournalSocialPostPhotoAdjust;
   companionType: string;
   /** sns02 リボン用 */

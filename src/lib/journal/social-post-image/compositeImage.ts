@@ -165,7 +165,9 @@ function buildTextOverlay(
     pushIfVisible(input.dateScrapbook, layout.dateScrapbook);
     pushIfVisible(input.title.trim(), layout.title, true);
     pushIfVisible(input.bodyExcerpt.trim(), layout.body, true);
+    pushIfVisible((input.promptLabel ?? "").trim(), layout.promptLabel);
     pushIfVisible(commentText, layout.comment, true);
+    pushIfVisible((input.summary ?? "").trim(), layout.summary, true);
   } else {
     if (layout.dateScrapbook) {
       items.push(textItem(input.dateScrapbook, layout.dateScrapbook));
@@ -215,6 +217,8 @@ export function buildJournalSocialPostImageInput(params: {
   yearNumber: number | null;
   moodLabel: string;
   commentExcerpt: string;
+  promptLabel?: string;
+  summary?: string;
   photoBuffer: Buffer | null;
   photoAdjust?: JournalSocialPostPhotoAdjust;
   companionType: string;
@@ -231,6 +235,8 @@ export function buildJournalSocialPostImageInput(params: {
     yearNumber: params.yearNumber,
     moodLabel: params.moodLabel,
     commentExcerpt: params.commentExcerpt,
+    promptLabel: params.promptLabel?.trim() || undefined,
+    summary: params.summary?.trim() || undefined,
     photoBuffer: params.photoBuffer,
     photoAdjust: params.photoAdjust,
     companionType: params.companionType,

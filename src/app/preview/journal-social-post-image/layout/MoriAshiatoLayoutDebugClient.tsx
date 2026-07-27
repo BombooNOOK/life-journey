@@ -5,6 +5,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 
 import {
   moriLogCardFieldForTextSlot,
+  moriLogCardHasPromptLabelSlot,
   moriLogCardTextSlotsForTemplate,
 } from "@/lib/journal/moriLog/moriLogCardFields";
 import {
@@ -24,11 +25,23 @@ import {
 } from "@/lib/journal/social-post-image/moriAshiatoTemplates";
 import { resolveJournalSocialPostDesignSize } from "@/lib/journal/social-post-image/templates";
 
-const DRAFT_STORAGE_KEY = "mori-ashiato-layout-draft-v2";
+const DRAFT_STORAGE_KEY = "mori-ashiato-layout-draft-v5";
 const TEMPLATE_BASE = "/images/journal-social-post";
 const DEMO_PHOTO_SRC = "/images/home-mock/demo-journal-photo.png";
 
 const SAMPLE_DATE = "2026.7.26 (日)";
+const SAMPLE_PROMPT_LABEL = "その時の気持ち";
+
+const DEFAULT_SUMMARY_COORDS: MoriAshiatoTextCoords = {
+  x: 288,
+  y: 960,
+  fontSize: 18,
+  lineHeight: 26,
+  fill: "#4a3728",
+  textAnchor: "middle",
+  maxCharsPerLine: 16,
+  maxLines: 2,
+};
 
 function isPhotoCoords(value: unknown): value is MoriAshiatoPhotoCoords {
   if (!value || typeof value !== "object") return false;
@@ -52,7 +65,14 @@ function layoutSlotLabel(
   templateId: MoriAshiatoTemplateId,
   slotId: MoriAshiatoLayoutSlotId,
 ): string {
-  if (slotId === "photo" || slotId === "photo2" || slotId === "photo3" || slotId === "date") {
+  if (
+    slotId === "photo" ||
+    slotId === "photo2" ||
+    slotId === "photo3" ||
+    slotId === "date" ||
+    slotId === "promptLabel" ||
+    slotId === "summary"
+  ) {
     return MORI_ASHIATO_LAYOUT_SLOT_LABELS[slotId];
   }
   const field = moriLogCardFieldForTextSlot(templateId, slotId);
@@ -61,9 +81,10 @@ function layoutSlotLabel(
 
 function layoutSampleText(
   templateId: MoriAshiatoTemplateId,
-  slotId: "date" | "title" | "body" | "comment",
+  slotId: "date" | "title" | "body" | "promptLabel" | "comment" | "summary",
 ): string | null {
   if (slotId === "date") return SAMPLE_DATE;
+  if (slotId === "promptLabel") return SAMPLE_PROMPT_LABEL;
   return moriLogCardFieldForTextSlot(templateId, slotId)?.placeholder ?? null;
 }
 
@@ -75,14 +96,35 @@ function layoutSlotIdsForTemplate(
   if (layout.extraPhotos?.[0]) ids.push("photo2");
   if (layout.extraPhotos?.[1]) ids.push("photo3");
   if (layout.dateScrapbook) ids.push("date");
-  ids.push(...moriLogCardTextSlotsForTemplate(templateId));
+  const textSlots = moriLogCardTextSlotsForTemplate(templateId);
+  for (const slot of textSlots) {
+    if (slot === "comment" && moriLogCardHasPromptLabelSlot(templateId) && layout.promptLabel) {
+      ids.push("promptLabel");
+    }
+    // summary は座標があるときだけ（欠けていると調整欄が出ない）
+    if (slot === "summary" && !layout.summary) continue;
+    ids.push(slot);
+  }
   return ids;
+}
+
+function withRequiredTextSlots(
+  templateId: MoriAshiatoTemplateId,
+  layout: MoriAshiatoLayoutCoords,
+): MoriAshiatoLayoutCoords {
+  const needsSummary = moriLogCardTextSlotsForTemplate(templateId).includes("summary");
+  if (!needsSummary || layout.summary) return layout;
+  return { ...layout, summary: { ...DEFAULT_SUMMARY_COORDS } };
 }
 
 function cloneLayouts(
   source: typeof MORI_ASHIATO_LAYOUTS,
 ): Record<MoriAshiatoTemplateId, MoriAshiatoLayoutCoords> {
-  return structuredClone(source);
+  const cloned = structuredClone(source);
+  for (const id of MORI_ASHIATO_TEMPLATE_IDS) {
+    cloned[id] = withRequiredTextSlots(id, cloned[id]);
+  }
+  return cloned;
 }
 
 /** 下書きはテンプレ単位で浅い置換すると photo 等が消えて落ちるので、フィールド単位でマージする */
@@ -95,7 +137,7 @@ function mergeLayoutDraft(
     const partial = draft[id];
     if (!partial || typeof partial !== "object") continue;
     const current = out[id];
-    out[id] = {
+    out[id] = withRequiredTextSlots(id, {
       ...current,
       photo: isPhotoCoords(partial.photo) ? clampPhoto(partial.photo) : current.photo,
       extraPhotos: Array.isArray(partial.extraPhotos)
@@ -108,8 +150,18 @@ function mergeLayoutDraft(
           : current.dateScrapbook,
       title: isTextCoords(partial.title) ? partial.title : current.title,
       body: isTextCoords(partial.body) ? partial.body : current.body,
+      promptLabel: isTextCoords(partial.promptLabel)
+        ? partial.promptLabel
+        : partial.promptLabel === null
+          ? undefined
+          : current.promptLabel,
       comment: isTextCoords(partial.comment) ? partial.comment : current.comment,
-    };
+      summary: isTextCoords(partial.summary)
+        ? partial.summary
+        : partial.summary === null
+          ? undefined
+          : current.summary,
+    });
   }
   return out;
 }
@@ -119,6 +171,9 @@ function readStoredDraft(): Record<MoriAshiatoTemplateId, MoriAshiatoLayoutCoord
   try {
     // 旧キーは不完全マージで落ちることがあるため破棄
     window.localStorage.removeItem("mori-ashiato-layout-draft-v1");
+    window.localStorage.removeItem("mori-ashiato-layout-draft-v2");
+    window.localStorage.removeItem("mori-ashiato-layout-draft-v3");
+    window.localStorage.removeItem("mori-ashiato-layout-draft-v4");
     const raw = window.localStorage.getItem(DRAFT_STORAGE_KEY);
     if (!raw) return null;
     const data = JSON.parse(raw) as Partial<
@@ -182,7 +237,9 @@ function getTextSlot(
   if (slot === "date") return layout.dateScrapbook ?? null;
   if (slot === "title") return layout.title;
   if (slot === "body") return layout.body;
+  if (slot === "promptLabel") return layout.promptLabel ?? null;
   if (slot === "comment") return layout.comment;
+  if (slot === "summary") return layout.summary ?? null;
   return null;
 }
 
@@ -276,6 +333,12 @@ export function MoriAshiatoLayoutDebugClient({
         }
         if (slot === "body") {
           return { ...prev, [templateId]: { ...current, body: next } };
+        }
+        if (slot === "promptLabel") {
+          return { ...prev, [templateId]: { ...current, promptLabel: next } };
+        }
+        if (slot === "summary") {
+          return { ...prev, [templateId]: { ...current, summary: next } };
         }
         return { ...prev, [templateId]: { ...current, comment: next } };
       });
@@ -485,7 +548,7 @@ export function MoriAshiatoLayoutDebugClient({
               ) : null}
 
               {showSampleText
-                ? (["date", "title", "body", "comment"] as const).map((slot) => {
+                ? (["date", "title", "body", "promptLabel", "comment", "summary"] as const).map((slot) => {
                     const style = getTextSlot(layout, slot);
                     if (!style || style.fontSize <= 1) return null;
                     const text = layoutSampleText(templateId, slot);

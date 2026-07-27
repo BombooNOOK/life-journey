@@ -12,10 +12,29 @@ export type MoriLogCardFieldKind =
   | "subjectName"
   | "ageOrStage"
   | "place"
+  | "menu"
   | "cardTitle"
-  | "hitokoto";
+  | "hitokoto"
+  | "hitokoto2"
+  | "hitokoto3"
+  | "dayHitokoto";
 
-export type MoriLogCardTextSlot = "title" | "body" | "comment";
+export type MoriLogCardTextSlot = "title" | "body" | "comment" | "summary";
+
+/** 今日のあしあと：4項目目の「なにを残すか」 */
+export type MoriLogCardHitokotoPromptId = "memo" | "feeling" | "companions";
+
+export type MoriLogCardHitokotoPrompt = {
+  id: MoriLogCardHitokotoPromptId;
+  label: string;
+  placeholder: string;
+};
+
+export const KYOU_NO_ASHIATO_HITOKOTO_PROMPTS: readonly MoriLogCardHitokotoPrompt[] = [
+  { id: "memo", label: "ひとことメモ", placeholder: "短いメモをどうぞ" },
+  { id: "feeling", label: "その時の気持ち", placeholder: "そのときの気持ち" },
+  { id: "companions", label: "一緒にいた人", placeholder: "だれと・だれが" },
+];
 
 export type MoriLogCardFieldDef = {
   kind: MoriLogCardFieldKind;
@@ -24,9 +43,13 @@ export type MoriLogCardFieldDef = {
   hint?: string;
   slot: MoriLogCardTextSlot;
   maxChars: number;
+  /** ある場合、入力前に種類を選ぶ（今日のあしあとの4項目目など） */
+  hitokotoPrompts?: readonly MoriLogCardHitokotoPrompt[];
 };
 
-export type MoriLogCardFieldValues = Partial<Record<MoriLogCardFieldKind, string>>;
+export type MoriLogCardFieldValues = Partial<Record<MoriLogCardFieldKind, string>> & {
+  hitokotoPromptId?: MoriLogCardHitokotoPromptId;
+};
 
 export const MORI_LOG_CARD_FIELDS_BY_TEMPLATE: Record<
   MoriAshiatoTemplateId,
@@ -66,11 +89,21 @@ export const MORI_LOG_CARD_FIELDS_BY_TEMPLATE: Record<
       maxChars: 16,
     },
     {
+      kind: "place",
+      label: "場所",
+      placeholder: "おうち / ○○公園",
+      hint: "そのときの場所（任意）",
+      slot: "body",
+      maxChars: 18,
+    },
+    {
       kind: "hitokoto",
-      label: "ひとこと",
-      placeholder: "短いメモや気持ち",
+      label: "メッセージ",
+      placeholder: "短いメモをどうぞ",
+      hint: "上から選んでから書いてください",
       slot: "comment",
       maxChars: 36,
+      hitokotoPrompts: KYOU_NO_ASHIATO_HITOKOTO_PROMPTS,
     },
   ],
   odekake_ashiato: [
@@ -100,6 +133,14 @@ export const MORI_LOG_CARD_FIELDS_BY_TEMPLATE: Record<
       maxChars: 16,
     },
     {
+      kind: "menu",
+      label: "メニュー",
+      placeholder: "いちごパフェ / カレー",
+      hint: "食べたもの・飲んだもの（任意）",
+      slot: "body",
+      maxChars: 18,
+    },
+    {
       kind: "hitokoto",
       label: "ひとこと",
       placeholder: "おいしかったポイント",
@@ -115,6 +156,14 @@ export const MORI_LOG_CARD_FIELDS_BY_TEMPLATE: Record<
       slot: "title",
       maxChars: 14,
     },
+    {
+      kind: "hitokoto",
+      label: "ひとことメッセージ",
+      placeholder: "この一枚へのひとこと",
+      hint: "任意。カードに載せたい言葉だけどうぞ",
+      slot: "comment",
+      maxChars: 36,
+    },
   ],
   kyou_no_ashiato_wide: [
     {
@@ -128,9 +177,34 @@ export const MORI_LOG_CARD_FIELDS_BY_TEMPLATE: Record<
   kyou_no_3koma_ashiato: [
     {
       kind: "hitokoto",
-      label: "ひとこと",
-      placeholder: "3コマのメモ",
+      label: "1コマ目のひとこと",
+      placeholder: "朝のひとこま",
+      hint: "上の写真への短い言葉",
+      slot: "title",
+      maxChars: 16,
+    },
+    {
+      kind: "hitokoto2",
+      label: "2コマ目のひとこと",
+      placeholder: "昼のひとこま",
+      hint: "真ん中の写真への短い言葉",
+      slot: "body",
+      maxChars: 16,
+    },
+    {
+      kind: "hitokoto3",
+      label: "3コマ目のひとこと",
+      placeholder: "夜のひとこま",
+      hint: "下の写真への短い言葉",
       slot: "comment",
+      maxChars: 16,
+    },
+    {
+      kind: "dayHitokoto",
+      label: "今日のひとこと",
+      placeholder: "きょうを一言でまとめると",
+      hint: "3コマ全体のおまとめ（任意）",
+      slot: "summary",
       maxChars: 32,
     },
   ],
@@ -153,26 +227,48 @@ export function clampMoriLogCardFieldValue(raw: string, maxChars: number): strin
   return normalizeSocialPostText(raw).slice(0, maxChars);
 }
 
-/** 入力値を合成用の title / body / comment に組み立てる */
+export function resolveMoriLogCardHitokotoPrompt(
+  field: MoriLogCardFieldDef,
+  promptId: MoriLogCardHitokotoPromptId | undefined,
+): MoriLogCardHitokotoPrompt | null {
+  const prompts = field.hitokotoPrompts;
+  if (!prompts?.length) return null;
+  return prompts.find((p) => p.id === promptId) ?? prompts[0] ?? null;
+}
+
+/** 入力値を合成用の title / body / comment / summary / promptLabel に組み立てる */
 export function assembleMoriLogCardTextSlots(
   templateId: MoriAshiatoTemplateId,
   values: MoriLogCardFieldValues,
-): { title: string; body: string; comment: string } {
+): {
+  title: string;
+  body: string;
+  comment: string;
+  summary: string;
+  promptLabel: string;
+} {
   const fields = MORI_LOG_CARD_FIELDS_BY_TEMPLATE[templateId];
   let title = "";
   let body = "";
   let comment = "";
+  let summary = "";
+  let promptLabel = "";
 
   for (const field of fields) {
+    if (field.hitokotoPrompts?.length) {
+      const prompt = resolveMoriLogCardHitokotoPrompt(field, values.hitokotoPromptId);
+      if (prompt) promptLabel = prompt.label;
+    }
     const raw = values[field.kind] ?? "";
     const text = clampMoriLogCardFieldValue(raw, field.maxChars);
     if (!text) continue;
     if (field.slot === "title") title = text;
     else if (field.slot === "body") body = text;
+    else if (field.slot === "summary") summary = text;
     else comment = text;
   }
 
-  return { title, body, comment };
+  return { title, body, comment, summary, promptLabel };
 }
 
 /** レイアウト定規：文字スロットに対応する入力欄（なければ null＝そのテンプレでは未使用） */
@@ -183,7 +279,7 @@ export function moriLogCardFieldForTextSlot(
   return MORI_LOG_CARD_FIELDS_BY_TEMPLATE[templateId].find((f) => f.slot === slot) ?? null;
 }
 
-/** レイアウト定規で触る文字スロット（日付は別扱い） */
+/** レイアウト定規で触る文字スロット（日付・選択ラベルは別扱い） */
 export function moriLogCardTextSlotsForTemplate(
   templateId: MoriAshiatoTemplateId,
 ): MoriLogCardTextSlot[] {
@@ -195,4 +291,11 @@ export function moriLogCardTextSlotsForTemplate(
     slots.push(field.slot);
   }
   return slots;
+}
+
+/** 今日のあしあとなど、3択ラベル枠を定規に出すか */
+export function moriLogCardHasPromptLabelSlot(templateId: MoriAshiatoTemplateId): boolean {
+  return MORI_LOG_CARD_FIELDS_BY_TEMPLATE[templateId].some(
+    (field) => (field.hitokotoPrompts?.length ?? 0) > 0,
+  );
 }

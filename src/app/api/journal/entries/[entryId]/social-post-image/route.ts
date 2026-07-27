@@ -30,6 +30,14 @@ export async function GET(req: Request, { params }: RouteParams) {
     const subtitle = url.searchParams.get("subtitle");
     const template = url.searchParams.get("template");
     const download = url.searchParams.get("download") === "1";
+    const hasBodyParam = url.searchParams.has("body");
+    const hasCommentParam = url.searchParams.has("comment");
+    const hasPromptLabelParam = url.searchParams.has("promptLabel");
+    const hasSummaryParam = url.searchParams.has("summary");
+    const bodyExcerpt = hasBodyParam ? (url.searchParams.get("body") ?? "") : null;
+    const commentExcerpt = hasCommentParam ? (url.searchParams.get("comment") ?? "") : null;
+    const promptLabel = hasPromptLabelParam ? (url.searchParams.get("promptLabel") ?? "") : null;
+    const summary = hasSummaryParam ? (url.searchParams.get("summary") ?? "") : null;
 
     const photoAdjust = parseJournalSocialPostPhotoAdjustFromSearchParams(url.searchParams);
 
@@ -38,6 +46,10 @@ export async function GET(req: Request, { params }: RouteParams) {
       viewerEmail,
       title,
       subtitle,
+      bodyExcerpt,
+      commentExcerpt,
+      promptLabel,
+      summary,
       templateId: template,
       photoAdjust,
     });
