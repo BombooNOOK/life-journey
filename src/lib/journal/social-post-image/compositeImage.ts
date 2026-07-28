@@ -102,6 +102,8 @@ function textItem(
   text: string,
   style: JournalSocialPostTextStyle,
   multiline = false,
+  /** 位置合わせ定規（CSS top）と同じく、y を文字枠の上端として扱う */
+  yIsTop = false,
 ): Parameters<typeof buildSvgTextOverlay>[0]["items"][number] {
   return {
     text,
@@ -117,6 +119,7 @@ function textItem(
       rotateDeg: style.rotateDeg,
       maxCharsPerLine: style.maxCharsPerLine,
       maxLines: style.maxLines,
+      ...(yIsTop ? { yOrigin: "top" as const } : {}),
     },
   };
 }
@@ -138,6 +141,8 @@ function buildTextOverlay(
   ] as const;
 
   const items: Parameters<typeof buildSvgTextOverlay>[0]["items"] = [];
+  /** あしあとカードはレイアウト定規の CSS top 基準に合わせる */
+  const ashiatoYIsTop = textMode === "ashiato_lines";
   const pushIfVisible = (
     text: string,
     style: JournalSocialPostTextStyle | undefined,
@@ -145,7 +150,7 @@ function buildTextOverlay(
   ) => {
     if (!style || style.fontSize <= 1) return;
     if (!text) return;
-    items.push(textItem(text, style, multiline));
+    items.push(textItem(text, style, multiline, ashiatoYIsTop));
   };
 
   if (textMode === "sns02") {

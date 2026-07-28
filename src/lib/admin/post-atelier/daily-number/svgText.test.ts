@@ -189,4 +189,24 @@ describe("buildSvgTextOverlay", () => {
     expect(svg).toContain('transform="rotate(2, 625, 395)"');
     expect(svg).toContain('text-anchor="middle"');
   });
+
+  it("yOrigin=top のときベースライン y へ変換する", () => {
+    const svg = buildSvgTextOverlay({
+      width: 100,
+      height: 100,
+      items: [
+        {
+          text: "日付",
+          style: {
+            x: 160,
+            y: 744,
+            fontSize: 20,
+            yOrigin: "top",
+          },
+        },
+      ],
+    }).toString("utf8");
+
+    expect(svg).toContain('y="760"'); // 744 + round(20 * 0.8)
+  });
 });
