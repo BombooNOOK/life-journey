@@ -30,7 +30,15 @@ import type { JournalSocialPostImageInput } from "./types";
 const MORI_MANUAL_TEXT_MAX_CHARS = 80;
 
 function clampManualCardText(raw: string): string {
-  return raw.replace(/\s+/g, " ").trim().slice(0, MORI_MANUAL_TEXT_MAX_CHARS);
+  // 明示改行は残し、行内空白だけ整える（2行枠のひとこと用）
+  return raw
+    .replace(/\r\n/g, "\n")
+    .replace(/\r/g, "\n")
+    .split("\n")
+    .map((line) => line.replace(/[ \t\u3000]+/g, " ").trim())
+    .join("\n")
+    .replace(/^\n+|\n+$/g, "")
+    .slice(0, MORI_MANUAL_TEXT_MAX_CHARS);
 }
 
 const entrySelect = {
@@ -90,6 +98,8 @@ export async function loadJournalSocialPostImageContext(params: {
   summary?: string | null;
   templateId?: string | null;
   photoAdjust?: JournalSocialPostPhotoAdjust;
+  extraPhotoBuffers?: [Buffer | null, Buffer | null];
+  panelPhotoSources?: JournalSocialPostImageInput["panelPhotoSources"];
 }): Promise<JournalSocialPostImageContext | null> {
   const entry = await findEntryForViewer(params.entryId, params.viewerEmail);
   if (!entry) return null;
@@ -167,6 +177,8 @@ export async function loadJournalSocialPostImageContext(params: {
       promptLabel,
       summary,
       photoBuffer,
+      extraPhotoBuffers: params.extraPhotoBuffers,
+      panelPhotoSources: params.panelPhotoSources,
       photoAdjust: params.photoAdjust,
       companionType: normalizeCompanionType(entry.companionType),
       createdAt: entry.createdAt,

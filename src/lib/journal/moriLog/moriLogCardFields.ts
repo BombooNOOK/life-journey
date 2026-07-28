@@ -43,6 +43,8 @@ export type MoriLogCardFieldDef = {
   hint?: string;
   slot: MoriLogCardTextSlot;
   maxChars: number;
+  /** 入力・描画で許可する行数（2以上なら改行可・textarea） */
+  maxLines?: number;
   /** ある場合、入力前に種類を選ぶ（今日のあしあとの4項目目など） */
   hitokotoPrompts?: readonly MoriLogCardHitokotoPrompt[];
 };
@@ -78,6 +80,7 @@ export const MORI_LOG_CARD_FIELDS_BY_TEMPLATE: Record<
       placeholder: "きょうのちいさなできごと",
       slot: "comment",
       maxChars: 36,
+      maxLines: 2,
     },
   ],
   kyou_no_ashiato: [
@@ -103,6 +106,7 @@ export const MORI_LOG_CARD_FIELDS_BY_TEMPLATE: Record<
       hint: "上から選んでから書いてください",
       slot: "comment",
       maxChars: 36,
+      maxLines: 2,
       hitokotoPrompts: KYOU_NO_ASHIATO_HITOKOTO_PROMPTS,
     },
   ],
@@ -163,6 +167,7 @@ export const MORI_LOG_CARD_FIELDS_BY_TEMPLATE: Record<
       hint: "任意。カードに載せたい言葉だけどうぞ",
       slot: "comment",
       maxChars: 36,
+      maxLines: 2,
     },
   ],
   kyou_no_ashiato_wide: [
@@ -172,6 +177,7 @@ export const MORI_LOG_CARD_FIELDS_BY_TEMPLATE: Record<
       placeholder: "きょうのひとこと",
       slot: "comment",
       maxChars: 48,
+      maxLines: 2,
     },
   ],
   kyou_no_3koma_ashiato: [
@@ -223,8 +229,33 @@ export function emptyMoriLogCardFieldValues(): MoriLogCardFieldValues {
   return {};
 }
 
-export function clampMoriLogCardFieldValue(raw: string, maxChars: number): string {
-  return normalizeSocialPostText(raw).slice(0, maxChars);
+/** 行内の空白は整えつつ、明示的な改行は残す */
+export function normalizeMoriLogCardMultilineText(raw: string): string {
+  return raw
+    .replace(/\r\n/g, "\n")
+    .replace(/\r/g, "\n")
+    .split("\n")
+    .map((line) => line.replace(/[ \t\u3000]+/g, " ").trim())
+    .join("\n")
+    .replace(/^\n+|\n+$/g, "");
+}
+
+export function clampMoriLogCardFieldValue(
+  raw: string,
+  maxChars: number,
+  maxLines = 1,
+): string {
+  if (maxLines <= 1) {
+    return normalizeSocialPostText(raw).slice(0, maxChars);
+  }
+  const lines = normalizeMoriLogCardMultilineText(raw)
+    .split("\n")
+    .slice(0, maxLines);
+  let text = lines.join("\n");
+  if (text.length > maxChars) {
+    text = text.slice(0, maxChars).replace(/\n+$/g, "");
+  }
+  return text;
 }
 
 export function resolveMoriLogCardHitokotoPrompt(
@@ -260,7 +291,7 @@ export function assembleMoriLogCardTextSlots(
       if (prompt) promptLabel = prompt.label;
     }
     const raw = values[field.kind] ?? "";
-    const text = clampMoriLogCardFieldValue(raw, field.maxChars);
+    const text = clampMoriLogCardFieldValue(raw, field.maxChars, field.maxLines ?? 1);
     if (!text) continue;
     if (field.slot === "title") title = text;
     else if (field.slot === "body") body = text;

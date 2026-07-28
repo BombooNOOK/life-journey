@@ -24,6 +24,17 @@ export type JournalSocialPostImageInput = {
   /** 3コマなど：全体のおまとめ（今日のひとこと） */
   summary?: string;
   photoBuffer: Buffer | null;
+  /**
+   * 3コマなど：追加写真（最大2枚）。あしあと本体には保存しない。
+   * panelPhotoSources と組み合わせて各コマへ配置する。
+   */
+  extraPhotoBuffers?: [Buffer | null, Buffer | null];
+  /**
+   * 各コマ（上・中・下）が使うソース。
+   * main = photoBuffer / extra0|extra1 = extraPhotoBuffers。
+   * 未指定時は全コマ main（従来どおり）。
+   */
+  panelPhotoSources?: Array<"main" | "extra0" | "extra1">;
   /** 保存済み正方形写真の SNS 枠内トリミング（あしあとには保存しない） */
   photoAdjust?: JournalSocialPostPhotoAdjust;
   companionType: string;

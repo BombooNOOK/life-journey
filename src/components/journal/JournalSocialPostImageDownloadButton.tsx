@@ -7,7 +7,10 @@ import { OwlLoadingInline } from "@/components/ui/OwlLoadingInline";
 const IMAGE_FETCH_TIMEOUT_MS = 65_000;
 
 type Props = {
+  /** GET のとき使う URL。POST のときはエンドポイント URL */
   href: string;
+  /** 指定時は POST（multipart）。3コマ追加写真など */
+  buildFormData?: () => FormData;
   suggestedFileName?: string;
   label?: string;
   className?: string;
@@ -47,6 +50,7 @@ function parseImageErrorMessage(status: number, contentType: string, text: strin
 
 export function JournalSocialPostImageDownloadButton({
   href,
+  buildFormData,
   suggestedFileName,
   label = "画像を保存",
   className = "inline-flex min-h-[44px] items-center rounded-lg bg-emerald-800 px-4 py-2.5 text-sm font-medium text-white hover:bg-emerald-700 disabled:cursor-wait disabled:opacity-90",
@@ -67,13 +71,16 @@ export function JournalSocialPostImageDownloadButton({
 
     try {
       const url = new URL(href, window.location.origin);
-      url.searchParams.set("_cb", String(Date.now()));
+      if (!buildFormData) {
+        url.searchParams.set("_cb", String(Date.now()));
+      }
 
       const res = await fetch(url.toString(), {
-        method: "GET",
+        method: buildFormData ? "POST" : "GET",
         credentials: "same-origin",
         cache: "no-store",
         signal: controller.signal,
+        body: buildFormData ? buildFormData() : undefined,
       });
       const contentType = res.headers.get("Content-Type") ?? "";
 
@@ -121,7 +128,7 @@ export function JournalSocialPostImageDownloadButton({
       busyRef.current = false;
       setBusy(false);
     }
-  }, [href, onDownloaded, suggestedFileName]);
+  }, [buildFormData, href, onDownloaded, suggestedFileName]);
 
   return (
     <div className="space-y-2">

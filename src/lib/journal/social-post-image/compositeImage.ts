@@ -225,6 +225,8 @@ export function buildJournalSocialPostImageInput(params: {
   promptLabel?: string;
   summary?: string;
   photoBuffer: Buffer | null;
+  extraPhotoBuffers?: [Buffer | null, Buffer | null];
+  panelPhotoSources?: JournalSocialPostImageInput["panelPhotoSources"];
   photoAdjust?: JournalSocialPostPhotoAdjust;
   companionType: string;
   createdAt: Date;
@@ -243,6 +245,8 @@ export function buildJournalSocialPostImageInput(params: {
     promptLabel: params.promptLabel?.trim() || undefined,
     summary: params.summary?.trim() || undefined,
     photoBuffer: params.photoBuffer,
+    extraPhotoBuffers: params.extraPhotoBuffers,
+    panelPhotoSources: params.panelPhotoSources,
     photoAdjust: params.photoAdjust,
     companionType: params.companionType,
     dateRibbonYear: ribbon.year,
@@ -281,16 +285,24 @@ export async function compositeJournalSocialPostImage(
   const textPng = await prepareCompositeOverlay(textSvg);
 
   const composites: sharp.OverlayOptions[] = [];
-  for (const slot of photoSlots) {
+  for (let slotIndex = 0; slotIndex < photoSlots.length; slotIndex += 1) {
+    const slot = photoSlots[slotIndex]!;
     const photoStyle = {
       ...slot,
       rotateDeg: options?.photoRotateDeg ?? slot.rotateDeg ?? 0,
     };
-    const photoLayer = await buildPhotoLayer(
-      input.photoBuffer,
-      photoStyle,
-      input.photoAdjust ?? DEFAULT_JOURNAL_SOCIAL_POST_PHOTO_ADJUST,
-    );
+    const sourceId = input.panelPhotoSources?.[slotIndex] ?? "main";
+    const slotBuffer =
+      sourceId === "extra0"
+        ? (input.extraPhotoBuffers?.[0] ?? null)
+        : sourceId === "extra1"
+          ? (input.extraPhotoBuffers?.[1] ?? null)
+          : input.photoBuffer;
+    const slotAdjust =
+      sourceId === "main"
+        ? (input.photoAdjust ?? DEFAULT_JOURNAL_SOCIAL_POST_PHOTO_ADJUST)
+        : DEFAULT_JOURNAL_SOCIAL_POST_PHOTO_ADJUST;
+    const photoLayer = await buildPhotoLayer(slotBuffer, photoStyle, slotAdjust);
     if (!photoLayer) continue;
     const rotateDeg = photoStyle.rotateDeg ?? 0;
     const renderSize = resolveJournalSocialPostPhotoRenderSize(photoStyle);

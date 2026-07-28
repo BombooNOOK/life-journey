@@ -36,25 +36,33 @@ export function wrapTextLines(
   maxCharsPerLine: number,
   maxLines: number,
 ): string[] {
-  const normalized = text.replace(/\s+/g, " ").trim();
-  if (!normalized) return [];
+  if (maxLines <= 0 || maxCharsPerLine <= 0) return [];
 
+  const paragraphs = text
+    .replace(/\r\n/g, "\n")
+    .replace(/\r/g, "\n")
+    .split("\n");
   const lines: string[] = [];
-  let current = "";
 
-  for (const ch of normalized) {
-    const next = current + ch;
-    if (next.length > maxCharsPerLine && current) {
-      lines.push(current);
-      current = ch;
-      if (lines.length >= maxLines) break;
-    } else {
-      current = next;
+  for (const paragraph of paragraphs) {
+    const normalized = paragraph.replace(/\s+/g, " ").trim();
+    if (!normalized) continue;
+
+    let current = "";
+    for (const ch of normalized) {
+      const next = current + ch;
+      if (next.length > maxCharsPerLine && current) {
+        lines.push(current);
+        current = ch;
+        if (lines.length >= maxLines) return lines.slice(0, maxLines);
+      } else {
+        current = next;
+      }
     }
-  }
-
-  if (lines.length < maxLines && current) {
-    lines.push(current);
+    if (current) {
+      lines.push(current);
+      if (lines.length >= maxLines) return lines.slice(0, maxLines);
+    }
   }
 
   return lines.slice(0, maxLines);

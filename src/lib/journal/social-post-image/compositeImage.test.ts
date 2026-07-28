@@ -202,4 +202,64 @@ describe("mori ashiato templates", () => {
     expect(meta.width).toBe(1080);
     expect(meta.height).toBe(1920);
   });
+
+  it("kyou_no_3koma_ashiato places different photos per panel assignment", async () => {
+    const main = await sharp({
+      create: { width: 400, height: 400, channels: 3, background: "#ff0000" },
+    })
+      .png()
+      .toBuffer();
+    const extra0 = await sharp({
+      create: { width: 400, height: 400, channels: 3, background: "#00ff00" },
+    })
+      .png()
+      .toBuffer();
+    const extra1 = await sharp({
+      create: { width: 400, height: 400, channels: 3, background: "#0000ff" },
+    })
+      .png()
+      .toBuffer();
+
+    const withAssignment = await compositeJournalSocialPostImage(
+      buildJournalSocialPostImageInput({
+        templateId: "kyou_no_3koma_ashiato",
+        title: "",
+        bodyExcerpt: "1",
+        subtitle: "",
+        todayNumber: null,
+        monthNumber: null,
+        yearNumber: null,
+        moodLabel: "",
+        commentExcerpt: "2",
+        summary: "3",
+        photoBuffer: main,
+        extraPhotoBuffers: [extra0, extra1],
+        panelPhotoSources: ["extra1", "main", "extra0"],
+        companionType: "drfukuro",
+        createdAt: new Date("2026-07-25T03:00:00.000Z"),
+      }),
+    );
+    const allMain = await compositeJournalSocialPostImage(
+      buildJournalSocialPostImageInput({
+        templateId: "kyou_no_3koma_ashiato",
+        title: "",
+        bodyExcerpt: "1",
+        subtitle: "",
+        todayNumber: null,
+        monthNumber: null,
+        yearNumber: null,
+        moodLabel: "",
+        commentExcerpt: "2",
+        summary: "3",
+        photoBuffer: main,
+        companionType: "drfukuro",
+        createdAt: new Date("2026-07-25T03:00:00.000Z"),
+      }),
+    );
+
+    expect(withAssignment.buffer.equals(allMain.buffer)).toBe(false);
+    const meta = await sharp(withAssignment.buffer).metadata();
+    expect(meta.width).toBe(1080);
+    expect(meta.height).toBe(1920);
+  });
 });

@@ -8,6 +8,10 @@ import {
   JournalSocialPostImagePhotoAdjustEditor,
 } from "@/components/journal/JournalSocialPostImagePhotoAdjustEditor";
 import {
+  MoriLog3komaPhotoFields,
+  type Mori3komaExtraPhoto,
+} from "@/components/journal/MoriLog3komaPhotoFields";
+import {
   assembleMoriLogCardTextSlots,
   emptyMoriLogCardFieldValues,
   moriLogCardFieldsForTemplate,
@@ -17,6 +21,11 @@ import {
   type MoriLogCardFieldValues,
   type MoriLogCardHitokotoPromptId,
 } from "@/lib/journal/moriLog/moriLogCardFields";
+import {
+  DEFAULT_MORI_3KOMA_PANEL_ASSIGNMENT,
+  serializeMori3komaPanelAssignment,
+  type Mori3komaPanelAssignment,
+} from "@/lib/journal/moriLog/moriLog3komaPhotos";
 import { formatSocialPostDateScrapbook } from "@/lib/journal/social-post-image/dateFormat";
 import {
   appendJournalSocialPostPhotoAdjustToSearchParams,
@@ -113,6 +122,47 @@ function buildDownloadUrl(
   return `/api/journal/entries/${encodeURIComponent(entryId)}/social-post-image?${params.toString()}`;
 }
 
+function appendPhotoAdjustToFormData(
+  form: FormData,
+  photoAdjust: JournalSocialPostPhotoAdjust,
+): void {
+  form.set("focusX", String(photoAdjust.focusX));
+  form.set("focusY", String(photoAdjust.focusY));
+  form.set("scale", String(photoAdjust.scale));
+}
+
+function buildSocialPostFormData(input: {
+  title: string;
+  subtitle: string;
+  templateId: JournalSocialPostTemplateId;
+  photoAdjust: JournalSocialPostPhotoAdjust;
+  moriSlots?: { body: string; comment: string; promptLabel: string; summary: string } | null;
+  panelAssignment?: Mori3komaPanelAssignment | null;
+  extras?: [Mori3komaExtraPhoto | null, Mori3komaExtraPhoto | null];
+  download?: boolean;
+}): FormData {
+  const form = new FormData();
+  form.set("template", input.templateId);
+  form.set("title", input.title);
+  if (input.templateId === "sns03") {
+    form.set("subtitle", input.subtitle);
+  }
+  if (input.moriSlots && isMoriAshiatoTemplateId(input.templateId)) {
+    form.set("body", input.moriSlots.body);
+    form.set("comment", input.moriSlots.comment);
+    form.set("promptLabel", input.moriSlots.promptLabel);
+    form.set("summary", input.moriSlots.summary);
+  }
+  if (input.download) form.set("download", "1");
+  appendPhotoAdjustToFormData(form, input.photoAdjust);
+  if (input.panelAssignment) {
+    form.set("panelSources", serializeMori3komaPanelAssignment(input.panelAssignment));
+  }
+  if (input.extras?.[0]?.file) form.set("extra0", input.extras[0].file);
+  if (input.extras?.[1]?.file) form.set("extra1", input.extras[1].file);
+  return form;
+}
+
 export function JournalSocialPostImagePanel({
   entryId,
   content,
@@ -149,6 +199,15 @@ export function JournalSocialPostImagePanel({
   const [cacheKey, setCacheKey] = useState(() => Date.now());
   const [loadingPreview, setLoadingPreview] = useState(true);
   const [previewError, setPreviewError] = useState<string | null>(null);
+  const [threeKomaExtras, setThreeKomaExtras] = useState<
+    [Mori3komaExtraPhoto | null, Mori3komaExtraPhoto | null]
+  >([null, null]);
+  const [threeKomaAssignment, setThreeKomaAssignment] = useState<Mori3komaPanelAssignment>(
+    DEFAULT_MORI_3KOMA_PANEL_ASSIGNMENT,
+  );
+  const [debouncedThreeKomaAssignment, setDebouncedThreeKomaAssignment] =
+    useState<Mori3komaPanelAssignment>(DEFAULT_MORI_3KOMA_PANEL_ASSIGNMENT);
+  const [previewBlobUrl, setPreviewBlobUrl] = useState<string | null>(null);
 
   const bodyPreview = useMemo(
     () => extractSocialPostBodyText(content, templateId),
@@ -163,6 +222,7 @@ export function JournalSocialPostImagePanel({
   const textMode = resolveJournalSocialPostTextMode(templateLayout);
   const isSns03 = textMode === "sns03";
   const isMoriCard = isMoriAshiatoTemplateId(templateId);
+  const isThreeKoma = templateId === "kyou_no_3koma_ashiato";
   const moriFieldDefs = moriLogCardFieldsForTemplate(templateId);
   const titleMaxChars = socialPostTitleMaxChars(templateId);
 
@@ -189,7 +249,9 @@ export function JournalSocialPostImagePanel({
         }
       : null;
 
-  const previewUrl = buildPreviewUrl(
+  const usesThreeKomaPost = debouncedTemplateId === "kyou_no_3koma_ashiato";
+
+  const getPreviewUrl = buildPreviewUrl(
     entryId,
     previewTitle,
     debouncedSubtitle,
@@ -206,6 +268,32 @@ export function JournalSocialPostImagePanel({
     appliedPhotoAdjust,
     previewMoriSlots,
   );
+  const postEndpoint = `/api/journal/entries/${encodeURIComponent(entryId)}/social-post-image`;
+
+  const buildThreeKomaFormData = useCallback(
+    (download = false) =>
+      buildSocialPostFormData({
+        title: previewTitle,
+        subtitle: debouncedSubtitle,
+        templateId: debouncedTemplateId,
+        photoAdjust: appliedPhotoAdjust,
+        moriSlots: previewMoriSlots,
+        panelAssignment: debouncedThreeKomaAssignment,
+        extras: threeKomaExtras,
+        download,
+      }),
+    [
+      appliedPhotoAdjust,
+      debouncedSubtitle,
+      debouncedTemplateId,
+      debouncedThreeKomaAssignment,
+      previewMoriSlots,
+      previewTitle,
+      threeKomaExtras,
+    ],
+  );
+
+  const previewUrl = usesThreeKomaPost ? (previewBlobUrl ?? "") : getPreviewUrl;
 
   useEffect(() => {
     if (!showPhotoAdjust) {
@@ -225,15 +313,71 @@ export function JournalSocialPostImagePanel({
       setDebouncedSubtitle(subtitle);
       setDebouncedMoriSlots(assembledMoriSlots);
       setDebouncedTemplateId(templateId);
+      setDebouncedThreeKomaAssignment(threeKomaAssignment);
       setCacheKey((value) => value + 1);
     }, 400);
     return () => window.clearTimeout(timer);
-  }, [assembledMoriSlots, subtitle, templateId, title]);
+  }, [assembledMoriSlots, subtitle, templateId, threeKomaAssignment, title, threeKomaExtras]);
 
   useEffect(() => {
+    if (debouncedTemplateId !== "kyou_no_3koma_ashiato") {
+      setPreviewBlobUrl((prev) => {
+        if (prev) URL.revokeObjectURL(prev);
+        return null;
+      });
+      return;
+    }
+
+    let cancelled = false;
+    const controller = new AbortController();
     setLoadingPreview(true);
     setPreviewError(null);
-  }, [previewUrl]);
+
+    void (async () => {
+      try {
+        const res = await fetch(postEndpoint, {
+          method: "POST",
+          credentials: "same-origin",
+          cache: "no-store",
+          body: buildThreeKomaFormData(false),
+          signal: controller.signal,
+        });
+        if (!res.ok) {
+          const text = await res.text();
+          throw new Error(text || "プレビューの生成に失敗しました。");
+        }
+        const blob = await res.blob();
+        if (cancelled) return;
+        const objectUrl = URL.createObjectURL(blob);
+        setPreviewBlobUrl((prev) => {
+          if (prev) URL.revokeObjectURL(prev);
+          return objectUrl;
+        });
+        setLoadingPreview(false);
+        setPreviewError(null);
+      } catch (error) {
+        if (cancelled || (error instanceof Error && error.name === "AbortError")) return;
+        setLoadingPreview(false);
+        setPreviewError("プレビューの生成に失敗しました。しばらくしてからお試しください。");
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+      controller.abort();
+    };
+  }, [
+    buildThreeKomaFormData,
+    cacheKey,
+    debouncedTemplateId,
+    postEndpoint,
+  ]);
+
+  useEffect(() => {
+    if (debouncedTemplateId === "kyou_no_3koma_ashiato") return;
+    setLoadingPreview(true);
+    setPreviewError(null);
+  }, [getPreviewUrl, debouncedTemplateId]);
 
   const handlePhotoAdjustReset = () => {
     setPhotoAdjustDraft(DEFAULT_JOURNAL_SOCIAL_POST_PHOTO_ADJUST);
@@ -255,7 +399,50 @@ export function JournalSocialPostImagePanel({
   };
 
   const renderMoriField = (field: MoriLogCardFieldDef) => {
+    const maxLines = field.maxLines ?? 1;
+    const multiline = maxLines > 1;
+    const value = moriFields[field.kind] ?? "";
     const prompts = field.hitokotoPrompts;
+
+    const control = multiline ? (
+      <textarea
+        value={value}
+        onChange={(event) => setMoriField(field.kind, event.target.value)}
+        placeholder={
+          prompts?.length
+            ? (resolveMoriLogCardHitokotoPrompt(field, moriFields.hitokotoPromptId)?.placeholder ??
+              field.placeholder)
+            : field.placeholder
+        }
+        maxLength={field.maxChars}
+        rows={Math.min(maxLines + 1, 4)}
+        className="w-full resize-y rounded-md border border-stone-300 px-3 py-2 text-base leading-relaxed text-stone-900"
+      />
+    ) : (
+      <input
+        type="text"
+        value={value}
+        onChange={(event) => setMoriField(field.kind, event.target.value)}
+        placeholder={
+          prompts?.length
+            ? (resolveMoriLogCardHitokotoPrompt(field, moriFields.hitokotoPromptId)?.placeholder ??
+              field.placeholder)
+            : field.placeholder
+        }
+        maxLength={field.maxChars}
+        className="w-full rounded-md border border-stone-300 px-3 py-2 text-base text-stone-900"
+      />
+    );
+
+    const hint = (
+      <p className="text-xs leading-relaxed text-stone-500">
+        {field.hint ? `${field.hint} · ` : null}
+        最大 {field.maxChars} 文字
+        {multiline ? `・${maxLines}行まで（改行できます）` : null}
+        。あしあと本体には保存されません。
+      </p>
+    );
+
     if (prompts?.length) {
       const selected = resolveMoriLogCardHitokotoPrompt(field, moriFields.hitokotoPromptId);
       const selectedId = selected?.id ?? prompts[0]!.id;
@@ -283,18 +470,8 @@ export function JournalSocialPostImagePanel({
           </fieldset>
           <label className="block space-y-2">
             <span className="text-sm font-medium text-stone-800">{selected?.label ?? field.label}</span>
-            <input
-              type="text"
-              value={moriFields[field.kind] ?? ""}
-              onChange={(event) => setMoriField(field.kind, event.target.value)}
-              placeholder={selected?.placeholder ?? field.placeholder}
-              maxLength={field.maxChars}
-              className="w-full rounded-md border border-stone-300 px-3 py-2 text-base text-stone-900"
-            />
-            <p className="text-xs leading-relaxed text-stone-500">
-              {field.hint ? `${field.hint} · ` : null}
-              最大 {field.maxChars} 文字。あしあと本体には保存されません。
-            </p>
+            {control}
+            {hint}
           </label>
         </div>
       );
@@ -303,18 +480,8 @@ export function JournalSocialPostImagePanel({
     return (
       <label key={field.kind} className="block space-y-2">
         <span className="text-sm font-medium text-stone-800">{field.label}</span>
-        <input
-          type="text"
-          value={moriFields[field.kind] ?? ""}
-          onChange={(event) => setMoriField(field.kind, event.target.value)}
-          placeholder={field.placeholder}
-          maxLength={field.maxChars}
-          className="w-full rounded-md border border-stone-300 px-3 py-2 text-base text-stone-900"
-        />
-        <p className="text-xs leading-relaxed text-stone-500">
-          {field.hint ? `${field.hint} · ` : null}
-          最大 {field.maxChars} 文字。あしあと本体には保存されません。
-        </p>
+        {control}
+        {hint}
       </label>
     );
   };
@@ -356,6 +523,20 @@ export function JournalSocialPostImagePanel({
             </div>
 
             {moriFieldDefs.map((field) => renderMoriField(field))}
+
+            {isThreeKoma ? (
+              <MoriLog3komaPhotoFields
+                hasMainPhoto={hasPhoto}
+                mainPhotoSrc={photoDisplaySrc || null}
+                extras={threeKomaExtras}
+                assignment={threeKomaAssignment}
+                onExtrasChange={(next) => {
+                  setThreeKomaExtras(next);
+                  setCacheKey((value) => value + 1);
+                }}
+                onAssignmentChange={setThreeKomaAssignment}
+              />
+            ) : null}
           </div>
         ) : isSns03 ? (
           <>
@@ -435,6 +616,11 @@ export function JournalSocialPostImagePanel({
               hasPendingApply={hasPendingPhotoApply}
               applyingPreview={loadingPreview && !hasPendingPhotoApply}
             />
+            {isThreeKoma ? (
+              <p className="mt-2 text-xs leading-relaxed text-stone-500">
+                あしあとの写真を使っているコマに、このトリミングが反映されます。追加写真は中央寄せで入ります。
+              </p>
+            ) : null}
           </div>
         ) : null}
       </div>
@@ -443,7 +629,12 @@ export function JournalSocialPostImagePanel({
         <div className="flex flex-wrap items-start justify-between gap-3">
           <h2 className="text-base font-semibold text-stone-900">{previewHeading}</h2>
           <JournalSocialPostImageDownloadButton
-            href={downloadUrl}
+            href={debouncedTemplateId === "kyou_no_3koma_ashiato" ? postEndpoint : downloadUrl}
+            buildFormData={
+              debouncedTemplateId === "kyou_no_3koma_ashiato"
+                ? () => buildThreeKomaFormData(true)
+                : undefined
+            }
             label={downloadLabel}
             onDownloaded={() =>
               onCardExported?.({
@@ -471,21 +662,27 @@ export function JournalSocialPostImagePanel({
                 {previewError}
               </div>
             ) : null}
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              key={previewUrl}
-              src={previewUrl}
-              alt={previewAlt}
-              className="h-full w-full object-contain"
-              onLoad={() => {
-                setLoadingPreview(false);
-                setPreviewError(null);
-              }}
-              onError={() => {
-                setLoadingPreview(false);
-                setPreviewError("プレビューの生成に失敗しました。しばらくしてからお試しください。");
-              }}
-            />
+            {previewUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                key={previewUrl}
+                src={previewUrl}
+                alt={previewAlt}
+                className="h-full w-full object-contain"
+                onLoad={() => {
+                  if (debouncedTemplateId !== "kyou_no_3koma_ashiato") {
+                    setLoadingPreview(false);
+                    setPreviewError(null);
+                  }
+                }}
+                onError={() => {
+                  if (debouncedTemplateId !== "kyou_no_3koma_ashiato") {
+                    setLoadingPreview(false);
+                    setPreviewError("プレビューの生成に失敗しました。しばらくしてからお試しください。");
+                  }
+                }}
+              />
+            ) : null}
           </div>
         </div>
       </div>

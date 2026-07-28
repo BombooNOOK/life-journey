@@ -148,6 +148,16 @@ describe("moriLogCardFields", () => {
     expect(KYOU_NO_ASHIATO_HITOKOTO_PROMPTS).toHaveLength(3);
   });
 
+  it("preserves newlines in two-line hitokoto fields", () => {
+    const slots = assembleMoriLogCardTextSlots("chiisana_ashiato", {
+      subjectName: "モグ",
+      ageOrStage: "3歳",
+      hitokoto: "おはよう\nおやすみ",
+    });
+    expect(slots.comment).toBe("おはよう\nおやすみ");
+    expect(moriLogCardFieldForTextSlot("chiisana_ashiato", "comment")?.maxLines).toBe(2);
+  });
+
   it("maps layout slots to card field labels for the ruler", () => {
     expect(moriLogCardTextSlotsForTemplate("chiisana_ashiato")).toEqual([
       "title",

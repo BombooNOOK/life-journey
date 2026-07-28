@@ -1,5 +1,25 @@
 import { describe, expect, it } from "vitest";
-import { buildActionLinesSvg, buildSvgTextOverlay, wrapBulletActionLines, wrapTextWithLineRules } from "./svgText";
+import {
+  buildActionLinesSvg,
+  buildSvgTextOverlay,
+  wrapBulletActionLines,
+  wrapTextLines,
+  wrapTextWithLineRules,
+} from "./svgText";
+
+describe("wrapTextLines", () => {
+  it("明示的な改行を行として残す", () => {
+    expect(wrapTextLines("おはよう\nおやすみ", 20, 2)).toEqual(["おはよう", "おやすみ"]);
+  });
+
+  it("改行後も字数で折り返す", () => {
+    expect(wrapTextLines("あいうえお\nかきくけこさしすせそ", 5, 4)).toEqual([
+      "あいうえお",
+      "かきくけこ",
+      "さしすせそ",
+    ]);
+  });
+});
 
 describe("wrapBulletActionLines", () => {
   it("1行目は・分を除いた文字数で折り返す", () => {

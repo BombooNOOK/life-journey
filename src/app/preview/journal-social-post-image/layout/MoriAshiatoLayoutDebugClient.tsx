@@ -85,7 +85,15 @@ function layoutSampleText(
 ): string | null {
   if (slotId === "date") return SAMPLE_DATE;
   if (slotId === "promptLabel") return SAMPLE_PROMPT_LABEL;
-  return moriLogCardFieldForTextSlot(templateId, slotId)?.placeholder ?? null;
+  const field = moriLogCardFieldForTextSlot(templateId, slotId);
+  if (!field) return null;
+  const placeholder = field.placeholder;
+  if ((field.maxLines ?? 1) > 1) {
+    // 行間調整が分かるよう、2行サンプルを出す
+    const mid = Math.max(1, Math.ceil(placeholder.length / 2));
+    return `${placeholder.slice(0, mid)}\n${placeholder.slice(mid) || "２行め"}`;
+  }
+  return placeholder;
 }
 
 function layoutSlotIdsForTemplate(
@@ -358,9 +366,13 @@ export function MoriAshiatoLayoutDebugClient({
   );
 
   const nudgeText = useCallback(
-    (key: "x" | "y" | "fontSize", delta: number) => {
+    (key: "x" | "y" | "fontSize" | "lineHeight", delta: number) => {
       if (!selectedText) return;
-      patchText(selected, { [key]: selectedText[key] + delta });
+      const current =
+        key === "lineHeight"
+          ? (selectedText.lineHeight ?? Math.round(selectedText.fontSize * 1.4))
+          : selectedText[key];
+      patchText(selected, { [key]: current + delta });
     },
     [patchText, selected, selectedText],
   );
@@ -556,7 +568,7 @@ export function MoriAshiatoLayoutDebugClient({
                     return (
                       <div
                         key={`sample-${slot}`}
-                        className="pointer-events-none absolute max-w-[360px]"
+                        className="pointer-events-none absolute max-w-[360px] whitespace-pre-line"
                         style={{
                           left: style.x,
                           top: style.y,
@@ -718,6 +730,11 @@ export function MoriAshiatoLayoutDebugClient({
                 onChange={(n) => patchText(selected, { fontSize: n })}
               />
               <Field
+                label="行間"
+                value={selectedText.lineHeight ?? Math.round(selectedText.fontSize * 1.4)}
+                onChange={(n) => patchText(selected, { lineHeight: n })}
+              />
+              <Field
                 label="字/行"
                 value={selectedText.maxCharsPerLine ?? 18}
                 onChange={(n) => patchText(selected, { maxCharsPerLine: n })}
@@ -739,6 +756,20 @@ export function MoriAshiatoLayoutDebugClient({
                 </button>
                 <button type="button" className="rounded border px-2 py-1.5 text-xs" onClick={() => nudgeText("y", 2)}>
                   ↓ 2
+                </button>
+                <button
+                  type="button"
+                  className="rounded border px-2 py-1.5 text-xs"
+                  onClick={() => nudgeText("lineHeight", -1)}
+                >
+                  行間 −1
+                </button>
+                <button
+                  type="button"
+                  className="rounded border px-2 py-1.5 text-xs"
+                  onClick={() => nudgeText("lineHeight", 1)}
+                >
+                  行間 ＋1
                 </button>
               </div>
             </div>

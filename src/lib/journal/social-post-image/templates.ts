@@ -88,7 +88,7 @@ export type JournalSocialPostTemplateLayout = {
   /** 文字の載せ方。未指定時は id から推定 */
   textMode?: JournalSocialPostTextMode;
   photo: JournalSocialPostPhotoStyle;
-  /** 2枠目以降（3コマなど）。現状は同一写真を複製 */
+  /** 2枠目以降（3コマなど）。各枠の幾何。画像ソースは composite の panelPhotoSources で指定 */
   extraPhotos?: JournalSocialPostPhotoStyle[];
   title: JournalSocialPostTextStyle;
   body: JournalSocialPostTextStyle;
