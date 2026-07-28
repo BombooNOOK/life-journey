@@ -99,7 +99,6 @@ export function LogHouseRoomMailboxSpot({
         className={[
           "pointer-events-none absolute left-1/2 top-1/2 block -translate-x-1/2 -translate-y-1/2",
           hasUnread || spotlight ? (tourBold ? "loghouse-mailbox-glow-bold" : "loghouse-mailbox-glow") : "",
-          shakeOnce ? "loghouse-mailbox-shake" : "",
         ]
           .filter(Boolean)
           .join(" ")}
@@ -109,7 +108,18 @@ export function LogHouseRoomMailboxSpot({
         }}
         aria-hidden
       >
-        <span className="relative block h-full w-full">
+        {/*
+          揺れは内側だけで rotate。外側の -translate-* を keyframes の transform で上書きすると、
+          一瞬ホットスポット左上に飛んで「左からピョン」と見える（特に初回未読演出）。
+        */}
+        <span
+          className={[
+            "relative block h-full w-full",
+            shakeOnce ? "loghouse-mailbox-shake-rotate" : "",
+          ]
+            .filter(Boolean)
+            .join(" ")}
+        >
           {/* 通常／お手紙ありを両方先読みし、未読確定後の差替え待ちをなくす */}
           <Image
             src={LOG_HOUSE_ROOM_MAILBOX_SRC}
@@ -169,15 +179,16 @@ export function LogHouseRoomMailboxSpot({
           0%, 100% { filter: brightness(1.1); }
           50% { filter: brightness(1.28); }
         }
-        .loghouse-mailbox-shake {
-          animation: loghouse-mailbox-shake 0.85s ease-in-out 1;
+        .loghouse-mailbox-shake-rotate {
+          animation: loghouse-mailbox-shake-rotate 0.85s ease-in-out 1;
+          transform-origin: 50% 80%;
         }
-        @keyframes loghouse-mailbox-shake {
-          0%, 100% { transform: translate(-50%, -50%) rotate(0deg); }
-          18% { transform: translate(-50%, -50%) rotate(-3.5deg); }
-          36% { transform: translate(-50%, -50%) rotate(3deg); }
-          54% { transform: translate(-50%, -50%) rotate(-2deg); }
-          72% { transform: translate(-50%, -50%) rotate(1.2deg); }
+        @keyframes loghouse-mailbox-shake-rotate {
+          0%, 100% { transform: rotate(0deg); }
+          18% { transform: rotate(-3.5deg); }
+          36% { transform: rotate(3deg); }
+          54% { transform: rotate(-2deg); }
+          72% { transform: rotate(1.2deg); }
         }
       `}</style>
     </button>

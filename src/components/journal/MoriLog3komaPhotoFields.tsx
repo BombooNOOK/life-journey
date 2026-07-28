@@ -14,6 +14,8 @@ import {
 export type Mori3komaExtraPhoto = {
   file: File;
   previewUrl: string;
+  /** POST 用（一部端末で File パートが欠けるときの保険） */
+  dataUrl: string;
 };
 
 type Props = {
@@ -25,33 +27,54 @@ type Props = {
   onAssignmentChange: (assignment: Mori3komaPanelAssignment) => void;
 };
 
-const MAX_EDGE_PX = 1280;
-const JPEG_QUALITY = 0.85;
+const MAX_EDGE_PX = 900;
+const JPEG_QUALITY = 0.72;
+/** サーバー送信サイズ上限の目安（Vercel 等のボディ制限対策） */
+const MAX_EXTRA_UPLOAD_BYTES = 900_000;
 
-async function compressImageFile(file: File): Promise<File> {
-  if (!file.type.startsWith("image/")) {
-    throw new Error("画像ファイルを選んでください。");
+async function compressImageFile(file: File): Promise<{ file: File; dataUrl: string }> {
+  if (!file.type.startsWith("image/") && file.type !== "") {
+    // iOS で type が空のことがあるので、空は許容してデコードを試みる
+    if (file.type) throw new Error("画像ファイルを選んでください。");
   }
 
   const bitmap = await createImageBitmap(file);
   try {
-    const scale = Math.min(1, MAX_EDGE_PX / Math.max(bitmap.width, bitmap.height));
-    const width = Math.max(1, Math.round(bitmap.width * scale));
-    const height = Math.max(1, Math.round(bitmap.height * scale));
-    const canvas = document.createElement("canvas");
-    canvas.width = width;
-    canvas.height = height;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) throw new Error("画像を処理できませんでした。");
-    ctx.drawImage(bitmap, 0, 0, width, height);
+    let scale = Math.min(1, MAX_EDGE_PX / Math.max(bitmap.width, bitmap.height));
+    let quality = JPEG_QUALITY;
+    let blob: Blob | null = null;
 
-    const blob = await new Promise<Blob | null>((resolve) => {
-      canvas.toBlob(resolve, "image/jpeg", JPEG_QUALITY);
-    });
+    for (let attempt = 0; attempt < 4; attempt += 1) {
+      const width = Math.max(1, Math.round(bitmap.width * scale));
+      const height = Math.max(1, Math.round(bitmap.height * scale));
+      const canvas = document.createElement("canvas");
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) throw new Error("画像を処理できませんでした。");
+      ctx.drawImage(bitmap, 0, 0, width, height);
+      blob = await new Promise<Blob | null>((resolve) => {
+        canvas.toBlob(resolve, "image/jpeg", quality);
+      });
+      if (!blob) throw new Error("画像の圧縮に失敗しました。");
+      if (blob.size <= MAX_EXTRA_UPLOAD_BYTES) break;
+      scale *= 0.82;
+      quality = Math.max(0.55, quality - 0.08);
+    }
+
     if (!blob) throw new Error("画像の圧縮に失敗しました。");
-
     const base = file.name.replace(/\.[^.]+$/, "") || "extra";
-    return new File([blob], `${base}.jpg`, { type: "image/jpeg" });
+    const compressed = new File([blob], `${base}.jpg`, { type: "image/jpeg" });
+    const dataUrl = await new Promise<string>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        if (typeof reader.result === "string") resolve(reader.result);
+        else reject(new Error("画像の読み込みに失敗しました。"));
+      };
+      reader.onerror = () => reject(new Error("画像の読み込みに失敗しました。"));
+      reader.readAsDataURL(compressed);
+    });
+    return { file: compressed, dataUrl };
   } finally {
     bitmap.close();
   }
@@ -136,11 +159,11 @@ export function MoriLog3komaPhotoFields({
   const setExtra = async (index: 0 | 1, file: File) => {
     try {
       const compressed = await compressImageFile(file);
-      const previewUrl = URL.createObjectURL(compressed);
+      const previewUrl = URL.createObjectURL(compressed.file);
       const prev = extras[index];
       if (prev?.previewUrl) URL.revokeObjectURL(prev.previewUrl);
       const next: [Mori3komaExtraPhoto | null, Mori3komaExtraPhoto | null] = [...extras];
-      next[index] = { file: compressed, previewUrl };
+      next[index] = { file: compressed.file, previewUrl, dataUrl: compressed.dataUrl };
       onExtrasChange(next);
     } catch (error) {
       window.alert(error instanceof Error ? error.message : "写真を読み込めませんでした。");

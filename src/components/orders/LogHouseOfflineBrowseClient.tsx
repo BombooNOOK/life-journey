@@ -64,7 +64,7 @@ export function LogHouseOfflineBrowseClient({ mode, errorDetail = null }: Props)
             <>
               <p className="font-semibold text-amber-950">{LOG_HOUSE_LOAD_ERROR_TITLE}</p>
               <p className="mt-1 text-[11px] text-amber-900/90">
-                データベースに接続できないため、仮の室内を表示しています。ローカルでは Docker の Postgres（5433）が起動しているか確認してください。
+                いま室内の情報を読み込めませんでした。仮の室内を表示しています。通信や混雑のことがあるので、少し待ってから「もう一度読み込む」を試してください。
               </p>
               {errorDetail ? (
                 <p className="mt-1.5 max-h-16 overflow-y-auto rounded-md border border-amber-200/80 bg-white/80 px-2 py-1 font-mono text-[10px] text-amber-950">

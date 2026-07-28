@@ -34,6 +34,9 @@ function parseFilenameFromContentDisposition(header: string | null): string | nu
 }
 
 function parseImageErrorMessage(status: number, contentType: string, text: string): string {
+  if (status === 413) {
+    return "写真のデータが大きすぎます。追加写真を小さくしてから再度お試しください。";
+  }
   if (status === 504 || status === 524) {
     return "画像の作成がタイムアウトしました。しばらく待ってから再試行してください。";
   }
@@ -43,6 +46,14 @@ function parseImageErrorMessage(status: number, contentType: string, text: strin
       return j.error ?? "画像を取得できませんでした。";
     } catch {
       return "画像を取得できませんでした。";
+    }
+  }
+  if (text.trim().startsWith("{")) {
+    try {
+      const j = JSON.parse(text) as { error?: string };
+      if (j.error) return j.error;
+    } catch {
+      /* ignore */
     }
   }
   return "画像を取得できませんでした。";

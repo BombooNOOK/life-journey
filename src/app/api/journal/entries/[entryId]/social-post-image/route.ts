@@ -20,7 +20,7 @@ const CACHE_HEADERS = {
 } as const;
 
 /** 追加写真1枚あたりの上限（クライアントで圧縮後想定） */
-const MAX_EXTRA_PHOTO_BYTES = 4 * 1024 * 1024;
+const MAX_EXTRA_PHOTO_BYTES = 2 * 1024 * 1024;
 
 type RouteParams = { params: Promise<{ entryId: string }> };
 
@@ -41,16 +41,33 @@ function readOptionalText(form: FormData, key: string): string | null {
   return form.has(key) ? String(form.get(key) ?? "") : null;
 }
 
+function bufferFromDataUrl(dataUrl: string): Buffer | null {
+  const trimmed = dataUrl.trim();
+  const match = /^data:image\/[a-zA-Z0-9.+-]+;base64,([A-Za-z0-9+/=\s]+)$/.exec(trimmed);
+  if (!match?.[1]) return null;
+  const buffer = Buffer.from(match[1].replace(/\s+/g, ""), "base64");
+  if (buffer.byteLength <= 0) return null;
+  if (buffer.byteLength > MAX_EXTRA_PHOTO_BYTES) {
+    throw new Error("追加写真が大きすぎます。別の写真を選ぶか、もう一度圧縮してからお試しください。");
+  }
+  return buffer;
+}
+
 async function readExtraPhotoBuffer(
   form: FormData,
   key: string,
 ): Promise<Buffer | null> {
+  const dataUrlField = form.get(`${key}DataUrl`);
+  if (typeof dataUrlField === "string" && dataUrlField.startsWith("data:image/")) {
+    return bufferFromDataUrl(dataUrlField);
+  }
+
   const value = form.get(key);
   if (!value || typeof value === "string") return null;
   const file = value as File;
   if (file.size <= 0) return null;
   if (file.size > MAX_EXTRA_PHOTO_BYTES) {
-    throw new Error(`追加写真は ${MAX_EXTRA_PHOTO_BYTES / (1024 * 1024)}MB 以下にしてください。`);
+    throw new Error("追加写真が大きすぎます。別の写真を選ぶか、もう一度圧縮してからお試しください。");
   }
   const mime = file.type || "";
   if (mime && !mime.startsWith("image/")) {
