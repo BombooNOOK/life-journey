@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { JournalSocialPostImageDownloadButton } from "@/components/journal/JournalSocialPostImageDownloadButton";
 import {
@@ -224,7 +224,9 @@ export function JournalSocialPostImagePanel({
     promptLabel: string;
   } | null>(null);
   const [debouncedTemplateId, setDebouncedTemplateId] = useState<JournalSocialPostTemplateId>("chiisana_ashiato");
-  const [cacheKey, setCacheKey] = useState(() => Date.now());
+  const [debouncedThreeKomaAssignment, setDebouncedThreeKomaAssignment] =
+    useState<Mori3komaPanelAssignment>(DEFAULT_MORI_3KOMA_PANEL_ASSIGNMENT);
+  const [photoAdjustEpoch, setPhotoAdjustEpoch] = useState(0);
   const [loadingPreview, setLoadingPreview] = useState(true);
   const [previewError, setPreviewError] = useState<string | null>(null);
   const [threeKomaExtras, setThreeKomaExtras] = useState<
@@ -233,9 +235,9 @@ export function JournalSocialPostImagePanel({
   const [threeKomaAssignment, setThreeKomaAssignment] = useState<Mori3komaPanelAssignment>(
     DEFAULT_MORI_3KOMA_PANEL_ASSIGNMENT,
   );
-  const [debouncedThreeKomaAssignment, setDebouncedThreeKomaAssignment] =
-    useState<Mori3komaPanelAssignment>(DEFAULT_MORI_3KOMA_PANEL_ASSIGNMENT);
-  const [previewBlobUrl, setPreviewBlobUrl] = useState<string | null>(null);
+  const [previewDisplayUrl, setPreviewDisplayUrl] = useState("");
+  const previewBlobUrlRef = useRef<string | null>(null);
+  const previewRequestIdRef = useRef(0);
 
   const bodyPreview = useMemo(
     () => extractSocialPostBodyText(content, templateId),
@@ -267,39 +269,22 @@ export function JournalSocialPostImagePanel({
   }, [isMoriCard, moriFields, templateId]);
 
   const previewTitle = isMoriCard ? (debouncedMoriSlots?.title ?? "") : debouncedTitle;
-  const previewMoriSlots =
-    isMoriCard && debouncedMoriSlots
-      ? {
-          body: debouncedMoriSlots.body,
-          comment: debouncedMoriSlots.comment,
-          promptLabel: debouncedMoriSlots.promptLabel,
-          summary: debouncedMoriSlots.summary,
-        }
-      : null;
+  const previewMoriSlots = useMemo(() => {
+    if (!isMoriCard || !debouncedMoriSlots) return null;
+    return {
+      body: debouncedMoriSlots.body,
+      comment: debouncedMoriSlots.comment,
+      promptLabel: debouncedMoriSlots.promptLabel,
+      summary: debouncedMoriSlots.summary,
+    };
+  }, [isMoriCard, debouncedMoriSlots]);
 
-  const usesThreeKomaPost = debouncedTemplateId === "kyou_no_3koma_ashiato";
+  const usesThreeKomaTemplate = debouncedTemplateId === "kyou_no_3koma_ashiato";
   const threeKomaNeedsUpload = threeKomaAssignmentNeedsExtras(
     debouncedThreeKomaAssignment,
     threeKomaExtras,
   );
 
-  const getPreviewUrl = buildPreviewUrl(
-    entryId,
-    previewTitle,
-    debouncedSubtitle,
-    debouncedTemplateId,
-    appliedPhotoAdjust,
-    cacheKey,
-    previewMoriSlots,
-  );
-  const downloadUrl = buildDownloadUrl(
-    entryId,
-    previewTitle,
-    debouncedSubtitle,
-    debouncedTemplateId,
-    appliedPhotoAdjust,
-    previewMoriSlots,
-  );
   const postEndpoint = `/api/journal/entries/${encodeURIComponent(entryId)}/social-post-image`;
 
   const buildThreeKomaRequestBody = useCallback(
@@ -325,37 +310,57 @@ export function JournalSocialPostImagePanel({
     ],
   );
 
-  const threeKomaGetPreviewUrl = usesThreeKomaPost
-    ? buildThreeKomaGetUrl({
-        entryId,
-        title: previewTitle,
-        subtitle: debouncedSubtitle,
-        templateId: debouncedTemplateId,
-        photoAdjust: appliedPhotoAdjust,
-        moriSlots: previewMoriSlots,
-        panelAssignment: debouncedThreeKomaAssignment,
-        cacheKey,
-      })
-    : "";
-
-  const threeKomaGetDownloadUrl = usesThreeKomaPost
-    ? buildThreeKomaGetUrl({
-        entryId,
-        title: previewTitle,
-        subtitle: debouncedSubtitle,
-        templateId: debouncedTemplateId,
-        photoAdjust: appliedPhotoAdjust,
-        moriSlots: previewMoriSlots,
-        panelAssignment: debouncedThreeKomaAssignment,
-        download: true,
-      })
-    : "";
-
-  const previewUrl = usesThreeKomaPost
+  const downloadUrl = usesThreeKomaTemplate
     ? threeKomaNeedsUpload
-      ? (previewBlobUrl ?? "")
-      : threeKomaGetPreviewUrl
-    : getPreviewUrl;
+      ? postEndpoint
+      : buildThreeKomaGetUrl({
+          entryId,
+          title: previewTitle,
+          subtitle: debouncedSubtitle,
+          templateId: debouncedTemplateId,
+          photoAdjust: appliedPhotoAdjust,
+          moriSlots: previewMoriSlots,
+          panelAssignment: debouncedThreeKomaAssignment,
+          download: true,
+        })
+    : buildDownloadUrl(
+        entryId,
+        previewTitle,
+        debouncedSubtitle,
+        debouncedTemplateId,
+        appliedPhotoAdjust,
+        previewMoriSlots,
+      );
+
+  /** 中身が変わったときだけ再生成する指紋（参照の揺れでは回さない） */
+  const previewFingerprint = useMemo(() => {
+    const extrasFingerprint = threeKomaExtras
+      .map((extra) => (extra ? `${extra.jpegBase64.length}:${extra.jpegBase64.slice(0, 24)}` : "-"))
+      .join("|");
+    return JSON.stringify({
+      entryId,
+      templateId: debouncedTemplateId,
+      title: previewTitle,
+      subtitle: debouncedSubtitle,
+      mori: previewMoriSlots,
+      photoAdjust: appliedPhotoAdjust,
+      photoAdjustEpoch,
+      panelAssignment: debouncedThreeKomaAssignment,
+      extrasFingerprint,
+      threeKomaNeedsUpload,
+    });
+  }, [
+    appliedPhotoAdjust,
+    debouncedSubtitle,
+    debouncedTemplateId,
+    debouncedThreeKomaAssignment,
+    entryId,
+    photoAdjustEpoch,
+    previewMoriSlots,
+    previewTitle,
+    threeKomaExtras,
+    threeKomaNeedsUpload,
+  ]);
 
   useEffect(() => {
     if (!showPhotoAdjust) {
@@ -366,7 +371,7 @@ export function JournalSocialPostImagePanel({
     const stored = getDefaultOrStoredPhotoAdjust(entryId, templateId);
     setPhotoAdjustDraft(stored);
     setAppliedPhotoAdjust(stored);
-    setCacheKey((value) => value + 1);
+    setPhotoAdjustEpoch((value) => value + 1);
   }, [entryId, templateId, showPhotoAdjust]);
 
   useEffect(() => {
@@ -376,67 +381,96 @@ export function JournalSocialPostImagePanel({
       setDebouncedMoriSlots(assembledMoriSlots);
       setDebouncedTemplateId(templateId);
       setDebouncedThreeKomaAssignment(threeKomaAssignment);
-      setCacheKey((value) => value + 1);
     }, 400);
     return () => window.clearTimeout(timer);
-  }, [assembledMoriSlots, subtitle, templateId, threeKomaAssignment, title, threeKomaExtras]);
+  }, [assembledMoriSlots, subtitle, templateId, threeKomaAssignment, title]);
 
   useEffect(() => {
-    if (debouncedTemplateId !== "kyou_no_3koma_ashiato" || !threeKomaNeedsUpload) {
-      setPreviewBlobUrl((prev) => {
-        if (prev) URL.revokeObjectURL(prev);
-        return null;
-      });
-      return;
-    }
-
     let cancelled = false;
-    const controller = new AbortController();
+    const requestId = previewRequestIdRef.current + 1;
+    previewRequestIdRef.current = requestId;
     setLoadingPreview(true);
     setPreviewError(null);
 
+    const revokeBlob = () => {
+      if (previewBlobUrlRef.current) {
+        URL.revokeObjectURL(previewBlobUrlRef.current);
+        previewBlobUrlRef.current = null;
+      }
+    };
+
+    const settleIfCurrent = (url: string) => {
+      if (cancelled || previewRequestIdRef.current !== requestId) {
+        if (url.startsWith("blob:")) URL.revokeObjectURL(url);
+        return;
+      }
+      revokeBlob();
+      if (url.startsWith("blob:")) {
+        previewBlobUrlRef.current = url;
+      }
+      setPreviewDisplayUrl(url);
+      // loading は img.onLoad で落とす（表示完了までオーバーレイを維持）
+    };
+
     void (async () => {
       try {
-        const res = await fetch(postEndpoint, {
-          method: "POST",
-          credentials: "same-origin",
-          cache: "no-store",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(buildThreeKomaRequestBody(false)),
-          signal: controller.signal,
-        });
-        if (!res.ok) {
-          const text = await res.text();
-          const contentType = res.headers.get("Content-Type") ?? "";
-          if (res.status === 413) {
-            throw new Error("写真のデータが大きすぎます。別の写真で再度お試しください。");
-          }
-          if (contentType.includes("application/json") || text.trim().startsWith("{")) {
-            try {
-              const json = JSON.parse(text) as { error?: string };
-              throw new Error(json.error || "プレビューの生成に失敗しました。");
-            } catch (parseError) {
-              if (
-                parseError instanceof Error &&
-                parseError.message !== "プレビューの生成に失敗しました。"
-              ) {
-                throw parseError;
+        if (usesThreeKomaTemplate && threeKomaNeedsUpload) {
+          const res = await fetch(postEndpoint, {
+            method: "POST",
+            credentials: "same-origin",
+            cache: "no-store",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(buildThreeKomaRequestBody(false)),
+          });
+          if (!res.ok) {
+            const text = await res.text();
+            const contentType = res.headers.get("Content-Type") ?? "";
+            if (res.status === 413) {
+              throw new Error("写真のデータが大きすぎます。別の写真で再度お試しください。");
+            }
+            if (contentType.includes("application/json") || text.trim().startsWith("{")) {
+              try {
+                const json = JSON.parse(text) as { error?: string };
+                throw new Error(json.error || "プレビューの生成に失敗しました。");
+              } catch (parseError) {
+                if (
+                  parseError instanceof Error &&
+                  parseError.message !== "プレビューの生成に失敗しました。"
+                ) {
+                  throw parseError;
+                }
               }
             }
+            throw new Error("プレビューの生成に失敗しました。しばらくしてからお試しください。");
           }
-          throw new Error("プレビューの生成に失敗しました。しばらくしてからお試しください。");
+          const blob = await res.blob();
+          settleIfCurrent(URL.createObjectURL(blob));
+          return;
         }
-        const blob = await res.blob();
-        if (cancelled) return;
-        const objectUrl = URL.createObjectURL(blob);
-        setPreviewBlobUrl((prev) => {
-          if (prev) URL.revokeObjectURL(prev);
-          return objectUrl;
-        });
-        setLoadingPreview(false);
-        setPreviewError(null);
+
+        const nextUrl = usesThreeKomaTemplate
+          ? buildThreeKomaGetUrl({
+              entryId,
+              title: previewTitle,
+              subtitle: debouncedSubtitle,
+              templateId: debouncedTemplateId,
+              photoAdjust: appliedPhotoAdjust,
+              moriSlots: previewMoriSlots,
+              panelAssignment: debouncedThreeKomaAssignment,
+              cacheKey: requestId,
+            })
+          : buildPreviewUrl(
+              entryId,
+              previewTitle,
+              debouncedSubtitle,
+              debouncedTemplateId,
+              appliedPhotoAdjust,
+              requestId,
+              previewMoriSlots,
+            );
+        settleIfCurrent(nextUrl);
       } catch (error) {
-        if (cancelled || (error instanceof Error && error.name === "AbortError")) return;
+        if (cancelled || previewRequestIdRef.current !== requestId) return;
         setLoadingPreview(false);
         setPreviewError(
           error instanceof Error && error.message
@@ -448,21 +482,19 @@ export function JournalSocialPostImagePanel({
 
     return () => {
       cancelled = true;
-      controller.abort();
     };
-  }, [
-    buildThreeKomaRequestBody,
-    cacheKey,
-    debouncedTemplateId,
-    postEndpoint,
-    threeKomaNeedsUpload,
-  ]);
+    // previewFingerprint が変わったときだけ再生成。関数／オブジェクト参照では回さない。
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- fingerprint に入力を集約
+  }, [previewFingerprint]);
 
   useEffect(() => {
-    if (debouncedTemplateId === "kyou_no_3koma_ashiato" && threeKomaNeedsUpload) return;
-    setLoadingPreview(true);
-    setPreviewError(null);
-  }, [getPreviewUrl, threeKomaGetPreviewUrl, debouncedTemplateId, threeKomaNeedsUpload]);
+    return () => {
+      if (previewBlobUrlRef.current) {
+        URL.revokeObjectURL(previewBlobUrlRef.current);
+        previewBlobUrlRef.current = null;
+      }
+    };
+  }, []);
 
   const handlePhotoAdjustReset = () => {
     setPhotoAdjustDraft(DEFAULT_JOURNAL_SOCIAL_POST_PHOTO_ADJUST);
@@ -472,7 +504,7 @@ export function JournalSocialPostImagePanel({
   const handleApplyPhotoAdjust = useCallback(() => {
     setAppliedPhotoAdjust(photoAdjustDraft);
     writeJournalSocialPostPhotoAdjustToStorage(entryId, templateId, photoAdjustDraft);
-    setCacheKey((value) => value + 1);
+    setPhotoAdjustEpoch((value) => value + 1);
   }, [entryId, photoAdjustDraft, templateId]);
 
   const setMoriField = (kind: MoriLogCardFieldKind, value: string) => {
@@ -615,10 +647,7 @@ export function JournalSocialPostImagePanel({
                 mainPhotoSrc={photoDisplaySrc || null}
                 extras={threeKomaExtras}
                 assignment={threeKomaAssignment}
-                onExtrasChange={(next) => {
-                  setThreeKomaExtras(next);
-                  setCacheKey((value) => value + 1);
-                }}
+                onExtrasChange={setThreeKomaExtras}
                 onAssignmentChange={setThreeKomaAssignment}
               />
             ) : null}
@@ -714,15 +743,9 @@ export function JournalSocialPostImagePanel({
         <div className="flex flex-wrap items-start justify-between gap-3">
           <h2 className="text-base font-semibold text-stone-900">{previewHeading}</h2>
           <JournalSocialPostImageDownloadButton
-            href={
-              debouncedTemplateId === "kyou_no_3koma_ashiato"
-                ? threeKomaNeedsUpload
-                  ? postEndpoint
-                  : threeKomaGetDownloadUrl
-                : downloadUrl
-            }
+            href={downloadUrl}
             buildJsonBody={
-              debouncedTemplateId === "kyou_no_3koma_ashiato" && threeKomaNeedsUpload
+              usesThreeKomaTemplate && threeKomaNeedsUpload
                 ? () => buildThreeKomaRequestBody(true)
                 : undefined
             }
@@ -742,7 +765,7 @@ export function JournalSocialPostImagePanel({
             style={{ aspectRatio: `${designSize.widthPx} / ${designSize.heightPx}` }}
           >
             {loadingPreview ? (
-              <div className="absolute inset-0 z-10 flex items-center justify-center bg-stone-100/80 px-4 text-center text-sm text-stone-600">
+              <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center bg-stone-100/70 px-4 text-center text-sm text-stone-600">
                 画像を作っています…
                 <br />
                 初回は10秒ほどかかることがあります
@@ -753,24 +776,19 @@ export function JournalSocialPostImagePanel({
                 {previewError}
               </div>
             ) : null}
-            {previewUrl ? (
+            {previewDisplayUrl ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img
-                key={previewUrl}
-                src={previewUrl}
+                src={previewDisplayUrl}
                 alt={previewAlt}
                 className="h-full w-full object-contain"
                 onLoad={() => {
-                  if (!(debouncedTemplateId === "kyou_no_3koma_ashiato" && threeKomaNeedsUpload)) {
-                    setLoadingPreview(false);
-                    setPreviewError(null);
-                  }
+                  setLoadingPreview(false);
+                  setPreviewError(null);
                 }}
                 onError={() => {
-                  if (!(debouncedTemplateId === "kyou_no_3koma_ashiato" && threeKomaNeedsUpload)) {
-                    setLoadingPreview(false);
-                    setPreviewError("プレビューの生成に失敗しました。しばらくしてからお試しください。");
-                  }
+                  setLoadingPreview(false);
+                  setPreviewError("プレビューの生成に失敗しました。しばらくしてからお試しください。");
                 }}
               />
             ) : null}
