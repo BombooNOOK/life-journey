@@ -35,7 +35,7 @@ export const MORI_LOG_MOVIE_SECTION_HINT =
   "できあがったカードにBGMをのせて、短いムービーにできます。まずは曲を選んで試聴してください。";
 
 export const MORI_LOG_MOVIE_EXPORT_COMING_SOON =
-  "動画ファイル（MP4）の書き出しは、次のステップで追加します。いまはムービー設定をこの端末に残せます。";
+  "動画ファイルの書き出し準備ができました。下のボタンから短いムービーを作れます。";
 
 export const MORI_LOG_MOVIE_SAVE_SETTINGS_LABEL = "ムービー設定をこの端末に保存";
 
@@ -51,3 +51,20 @@ export const MORI_LOG_MOVIE_SAVE_OK =
   "この端末に、森ログムービーの設定を残しました（動画ファイルの作成は次のステップです）。";
 
 export const MORI_LOG_MOVIE_SAVE_FAIL = "ムービー設定の保存に失敗しました。もう一度お試しください。";
+
+export const MORI_LOG_MOVIE_CREATE_LABEL = "森ログムービーを作成して保存";
+
+export const MORI_LOG_MOVIE_CREATE_BUSY = "ムービーを作っています…";
+
+export const MORI_LOG_MOVIE_CREATE_OK = "ムービーを端末に保存しました。";
+
+export const MORI_LOG_MOVIE_FAIL_TITLE = "森ログムービーを作成できませんでした。";
+
+export const MORI_LOG_MOVIE_FAIL_BODY =
+  "端末やブラウザの環境によって、動画の作成に時間がかかったり、失敗することがあります。\n\n画像として保存するか、もう一度お試しください。";
+
+export const MORI_LOG_MOVIE_FAIL_SAVE_CARD = "森ログカードを画像で保存";
+
+export const MORI_LOG_MOVIE_FAIL_RETRY = "もう一度試す";
+
+export const MORI_LOG_MOVIE_FAIL_CLOSE = "閉じる";

@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState } from "react";
 
 import { JournalSocialPostImageDownloadButton } from "@/components/journal/JournalSocialPostImageDownloadButton";
 import {
@@ -191,15 +191,40 @@ function threeKomaAssignmentNeedsExtras(
   });
 }
 
-export function JournalSocialPostImagePanel({
-  entryId,
-  content,
-  createdAt,
-  hasPhoto = false,
-  photoSrc,
-  surfaceLabels,
-  onCardExported,
-}: Props) {
+export type JournalSocialPostImagePanelHandle = {
+  /** いまの設定でカード PNG を取得（ムービー用） */
+  getCardPngBlob: () => Promise<Blob>;
+  getCardMeta: () => { templateId: JournalSocialPostTemplateId; title: string };
+};
+
+function parseCardImageErrorMessage(status: number, contentType: string, text: string): string {
+  if (status === 413) {
+    return "写真のデータが大きすぎます。別の写真で再度お試しください。";
+  }
+  if (contentType.includes("application/json") || text.trim().startsWith("{")) {
+    try {
+      const json = JSON.parse(text) as { error?: string };
+      return json.error || "カード画像を取得できませんでした。";
+    } catch {
+      return "カード画像を取得できませんでした。";
+    }
+  }
+  return "カード画像を取得できませんでした。";
+}
+
+export const JournalSocialPostImagePanel = forwardRef<JournalSocialPostImagePanelHandle, Props>(
+  function JournalSocialPostImagePanel(
+    {
+      entryId,
+      content,
+      createdAt,
+      hasPhoto = false,
+      photoSrc,
+      surfaceLabels,
+      onCardExported,
+    },
+    ref,
+  ) {
   const previewHeading = surfaceLabels?.previewHeading ?? "投稿画像プレビュー";
   const titleLabel = surfaceLabels?.titleLabel ?? "投稿画像用タイトル";
   const downloadLabel = surfaceLabels?.downloadLabel ?? "画像を保存";
@@ -507,6 +532,66 @@ export function JournalSocialPostImagePanel({
     setPhotoAdjustEpoch((value) => value + 1);
   }, [entryId, photoAdjustDraft, templateId]);
 
+  useImperativeHandle(
+    ref,
+    () => ({
+      getCardMeta: () => ({
+        templateId: debouncedTemplateId,
+        title: previewTitle,
+      }),
+      getCardPngBlob: async () => {
+        const controller = new AbortController();
+        const timeoutId = window.setTimeout(() => controller.abort(), 65_000);
+        try {
+          let res: Response;
+          if (usesThreeKomaTemplate && threeKomaNeedsUpload) {
+            res = await fetch(postEndpoint, {
+              method: "POST",
+              credentials: "same-origin",
+              cache: "no-store",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(buildThreeKomaRequestBody(true)),
+              signal: controller.signal,
+            });
+          } else {
+            const url = new URL(downloadUrl, window.location.origin);
+            url.searchParams.set("_cb", String(Date.now()));
+            res = await fetch(url.toString(), {
+              credentials: "same-origin",
+              cache: "no-store",
+              signal: controller.signal,
+            });
+          }
+          if (!res.ok) {
+            const text = await res.text();
+            throw new Error(
+              parseCardImageErrorMessage(res.status, res.headers.get("Content-Type") ?? "", text),
+            );
+          }
+          const blob = await res.blob();
+          if (!blob.size) throw new Error("カード画像を取得できませんでした。");
+          return blob;
+        } catch (error) {
+          if (error instanceof Error && error.name === "AbortError") {
+            throw new Error("カード画像の取得がタイムアウトしました。");
+          }
+          throw error;
+        } finally {
+          window.clearTimeout(timeoutId);
+        }
+      },
+    }),
+    [
+      buildThreeKomaRequestBody,
+      debouncedTemplateId,
+      downloadUrl,
+      postEndpoint,
+      previewTitle,
+      threeKomaNeedsUpload,
+      usesThreeKomaTemplate,
+    ],
+  );
+
   const setMoriField = (kind: MoriLogCardFieldKind, value: string) => {
     setMoriFields((prev) => ({ ...prev, [kind]: value }));
   };
@@ -778,4 +863,5 @@ export function JournalSocialPostImagePanel({
       </div>
     </div>
   );
-}
+  },
+);

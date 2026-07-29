@@ -1,13 +1,23 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 
-import { JournalSocialPostImagePanel } from "@/components/journal/JournalSocialPostImagePanel";
+import {
+  JournalSocialPostImagePanel,
+  type JournalSocialPostImagePanelHandle,
+} from "@/components/journal/JournalSocialPostImagePanel";
 import { MoriLogBgmPicker } from "@/components/journal/MoriLogBgmPicker";
 import {
   MORI_LOG_CARD_SECTION_HINT,
   MORI_LOG_CARD_SECTION_TITLE,
-  MORI_LOG_MOVIE_EXPORT_COMING_SOON,
+  MORI_LOG_MOVIE_CREATE_BUSY,
+  MORI_LOG_MOVIE_CREATE_LABEL,
+  MORI_LOG_MOVIE_CREATE_OK,
+  MORI_LOG_MOVIE_FAIL_BODY,
+  MORI_LOG_MOVIE_FAIL_CLOSE,
+  MORI_LOG_MOVIE_FAIL_RETRY,
+  MORI_LOG_MOVIE_FAIL_SAVE_CARD,
+  MORI_LOG_MOVIE_FAIL_TITLE,
   MORI_LOG_MOVIE_SAVE_FAIL,
   MORI_LOG_MOVIE_SAVE_NEED_BGM,
   MORI_LOG_MOVIE_SAVE_NEED_CARD,
@@ -20,6 +30,10 @@ import {
   MORI_LOG_WHAT_IS_TITLE,
 } from "@/lib/journal/moriLog/moriLogCopy";
 import { MORI_LOG_BGM_TRACKS, getMoriLogBgmTrack } from "@/lib/journal/moriLog/moriLogBgmCatalog";
+import {
+  composeMoriLogStillMovie,
+  downloadBlobFile,
+} from "@/lib/journal/moriLog/composeMoriLogStillMovie";
 import {
   buildMoriLogMovieCreateInput,
   MORI_LOG_MOVIE_DEFAULT_DURATION_SEC,
@@ -54,15 +68,21 @@ export function MoriLogMakerPanel({
   hasPhoto = false,
   photoSrc,
 }: Props) {
+  const cardPanelRef = useRef<JournalSocialPostImagePanelHandle>(null);
+  const creatingMovieRef = useRef(false);
   const [helpOpen, setHelpOpen] = useState(false);
   const [historyNote, setHistoryNote] = useState<string | null>(null);
   const [movieNote, setMovieNote] = useState<string | null>(null);
   const [savingMovie, setSavingMovie] = useState(false);
+  const [creatingMovie, setCreatingMovie] = useState(false);
+  const [createProgress, setCreateProgress] = useState<number | null>(null);
+  const [failOpen, setFailOpen] = useState(false);
+  const [failDetail, setFailDetail] = useState<string | null>(null);
   const [lastSavedCard, setLastSavedCard] = useState<MoriLogMedia | null>(null);
   const [selectedBgmId, setSelectedBgmId] = useState<string | null>(
     () => MORI_LOG_BGM_TRACKS[0]?.id ?? null,
   );
-  const selectedBgmTitle = getMoriLogBgmTrack(selectedBgmId)?.title ?? null;
+  const selectedBgm = getMoriLogBgmTrack(selectedBgmId);
   const tags = useMemo(() => extractTagsFromContent(content).tags, [content]);
   const entryDateKey = useMemo(
     () => calendarDayKeyInJapanFromDate(new Date(createdAt)),
@@ -139,7 +159,7 @@ export function MoriLogMakerPanel({
         return;
       }
 
-      const saved = await getMoriLogMediaStore().upsert(
+      await getMoriLogMediaStore().upsert(
         buildMoriLogMovieCreateInput({
           userId: (userId ?? "").trim(),
           profileId: pid,
@@ -155,9 +175,7 @@ export function MoriLogMakerPanel({
           durationSec: MORI_LOG_MOVIE_DEFAULT_DURATION_SEC,
         }),
       );
-      setMovieNote(
-        `${MORI_LOG_MOVIE_SAVE_OK}（${MORI_LOG_MOVIE_DEFAULT_DURATION_SEC}秒・曲「${selectedBgmTitle ?? saved.bgmId}」）`,
-      );
+      setMovieNote(MORI_LOG_MOVIE_SAVE_OK);
     } catch {
       setMovieNote(MORI_LOG_MOVIE_SAVE_FAIL);
     } finally {
@@ -171,10 +189,95 @@ export function MoriLogMakerPanel({
     profileId,
     resolveSourceCard,
     selectedBgmId,
-    selectedBgmTitle,
     tags,
     userId,
   ]);
+
+  const createAndDownloadMovie = useCallback(async () => {
+    if (!selectedBgm || creatingMovieRef.current) return;
+    creatingMovieRef.current = true;
+    setCreatingMovie(true);
+    setCreateProgress(0);
+    setFailOpen(false);
+    setFailDetail(null);
+    setMovieNote(null);
+
+    try {
+      const panel = cardPanelRef.current;
+      if (!panel) {
+        throw new Error("カードプレビューを準備できていません。");
+      }
+      const imageBlob = await panel.getCardPngBlob();
+      const meta = panel.getCardMeta();
+      const movie = await composeMoriLogStillMovie({
+        imageBlob,
+        audioUrl: selectedBgm.src,
+        durationSec: MORI_LOG_MOVIE_DEFAULT_DURATION_SEC,
+        fadeSec: 0.45,
+        onProgress: setCreateProgress,
+      });
+
+      const stamp = new Date()
+        .toISOString()
+        .slice(0, 19)
+        .replace(/[-:T]/g, "");
+      const fileName = `mori-log-movie_${stamp}.${movie.extension}`;
+      downloadBlobFile(movie.blob, fileName);
+
+      const pid = (profileId ?? "").trim();
+      if (pid) {
+        const sourceCard = await resolveSourceCard();
+        await getMoriLogMediaStore().upsert(
+          buildMoriLogMovieCreateInput({
+            userId: (userId ?? "").trim(),
+            profileId: pid,
+            entryId,
+            templateId: sourceCard?.templateId ?? meta.templateId,
+            sourceCardId: sourceCard?.id ?? "preview-unsaved",
+            bgmId: selectedBgm.id,
+            entryDateKey,
+            tags,
+            mood: mood ?? null,
+            companionType: companionType ?? null,
+            title: sourceCard?.title ?? meta.title ?? null,
+            durationSec: MORI_LOG_MOVIE_DEFAULT_DURATION_SEC,
+          }),
+        );
+      }
+
+      setMovieNote(MORI_LOG_MOVIE_CREATE_OK);
+    } catch (error) {
+      setFailDetail(error instanceof Error ? error.message : null);
+      setFailOpen(true);
+    } finally {
+      creatingMovieRef.current = false;
+      setCreatingMovie(false);
+      setCreateProgress(null);
+    }
+  }, [
+    companionType,
+    entryDateKey,
+    entryId,
+    mood,
+    profileId,
+    resolveSourceCard,
+    selectedBgm,
+    tags,
+    userId,
+  ]);
+
+  const downloadCardImageFallback = useCallback(async () => {
+    setFailOpen(false);
+    try {
+      const panel = cardPanelRef.current;
+      if (!panel) throw new Error("カード画像を取得できませんでした。");
+      const blob = await panel.getCardPngBlob();
+      downloadBlobFile(blob, `mori-log-card_${Date.now()}.png`);
+    } catch (error) {
+      setFailDetail(error instanceof Error ? error.message : null);
+      setFailOpen(true);
+    }
+  }, []);
 
   return (
     <div className="space-y-5">
@@ -209,6 +312,7 @@ export function MoriLogMakerPanel({
         <h3 className="text-base font-semibold text-[#3f3428]">{MORI_LOG_CARD_SECTION_TITLE}</h3>
         <p className="text-sm leading-relaxed text-[#5c4a35]">{MORI_LOG_CARD_SECTION_HINT}</p>
         <JournalSocialPostImagePanel
+          ref={cardPanelRef}
           entryId={entryId}
           content={content}
           createdAt={createdAt}
@@ -235,23 +339,82 @@ export function MoriLogMakerPanel({
           <p className="mt-1 text-sm leading-relaxed text-[#5c4a35]">{MORI_LOG_MOVIE_SECTION_HINT}</p>
         </div>
         <MoriLogBgmPicker value={selectedBgmId} onChange={setSelectedBgmId} />
-        <div className="space-y-2">
+        <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
           <button
             type="button"
             onClick={() => void saveMovieSettings()}
-            disabled={savingMovie || !selectedBgmId}
-            className="min-h-[44px] w-full rounded-lg border border-emerald-700 bg-emerald-800 px-4 py-2.5 text-sm font-medium text-white hover:bg-emerald-900 disabled:cursor-not-allowed disabled:border-stone-300 disabled:bg-stone-200 disabled:text-stone-500 sm:w-auto"
+            disabled={savingMovie || creatingMovie || !selectedBgmId}
+            className="min-h-[44px] rounded-lg border border-[#c4b49a] bg-[#faf3e8] px-4 py-2.5 text-sm font-medium text-[#5c4a35] hover:bg-[#f3ead8] disabled:cursor-not-allowed disabled:opacity-50"
           >
             {savingMovie ? "保存しています…" : MORI_LOG_MOVIE_SAVE_SETTINGS_LABEL}
           </button>
-          <p className="text-xs leading-relaxed text-[#6b5a48]" role="status">
-            {movieNote ?? MORI_LOG_MOVIE_EXPORT_COMING_SOON}
-            {!movieNote && selectedBgmTitle
-              ? ` いま選んでいる曲は「${selectedBgmTitle}」です。`
-              : null}
-          </p>
+          <button
+            type="button"
+            onClick={() => void createAndDownloadMovie()}
+            disabled={creatingMovie || !selectedBgmId}
+            className="min-h-[44px] rounded-lg border border-emerald-700 bg-emerald-800 px-4 py-2.5 text-sm font-medium text-white hover:bg-emerald-900 disabled:cursor-not-allowed disabled:border-stone-300 disabled:bg-stone-200 disabled:text-stone-500"
+          >
+            {creatingMovie ? MORI_LOG_MOVIE_CREATE_BUSY : MORI_LOG_MOVIE_CREATE_LABEL}
+          </button>
         </div>
+        {creatingMovie && createProgress != null ? (
+          <p className="text-xs text-[#6b5a48]" role="status">
+            進捗 {Math.round(createProgress * 100)}%
+          </p>
+        ) : null}
+        {movieNote ? (
+          <p className="text-xs leading-relaxed text-[#5c6b4a]" role="status">
+            {movieNote}
+          </p>
+        ) : null}
       </section>
+
+      {failOpen ? (
+        <div
+          className="fixed inset-0 z-50 flex items-end justify-center bg-stone-900/45 p-4 sm:items-center"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="mori-log-movie-fail-title"
+        >
+          <div className={`${LJD_PAPER_CARD_CLASS} w-full max-w-md px-4 py-4 sm:px-5`}>
+            <h3 id="mori-log-movie-fail-title" className="text-base font-semibold text-[#3f3428]">
+              {MORI_LOG_MOVIE_FAIL_TITLE}
+            </h3>
+            <p className="mt-2 whitespace-pre-wrap text-sm leading-relaxed text-[#5c4a35]">
+              {MORI_LOG_MOVIE_FAIL_BODY}
+            </p>
+            {failDetail ? (
+              <p className="mt-2 text-xs leading-relaxed text-[#8a735c]">{failDetail}</p>
+            ) : null}
+            <div className="mt-4 flex flex-col gap-2">
+              <button
+                type="button"
+                onClick={() => void downloadCardImageFallback()}
+                className="min-h-[44px] rounded-lg border border-emerald-700 bg-emerald-800 px-4 py-2.5 text-sm font-medium text-white hover:bg-emerald-900"
+              >
+                {MORI_LOG_MOVIE_FAIL_SAVE_CARD}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setFailOpen(false);
+                  void createAndDownloadMovie();
+                }}
+                className="min-h-[44px] rounded-lg border border-[#c4b49a] bg-[#faf3e8] px-4 py-2.5 text-sm font-medium text-[#5c4a35] hover:bg-[#f3ead8]"
+              >
+                {MORI_LOG_MOVIE_FAIL_RETRY}
+              </button>
+              <button
+                type="button"
+                onClick={() => setFailOpen(false)}
+                className="min-h-[44px] rounded-lg border border-stone-300 bg-white px-4 py-2.5 text-sm font-medium text-stone-700 hover:bg-stone-50"
+              >
+                {MORI_LOG_MOVIE_FAIL_CLOSE}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }
