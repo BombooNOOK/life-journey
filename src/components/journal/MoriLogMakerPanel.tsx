@@ -213,7 +213,8 @@ export function MoriLogMakerPanel({
         imageBlob,
         audioUrl: selectedBgm.src,
         durationSec: MORI_LOG_MOVIE_DEFAULT_DURATION_SEC,
-        fadeSec: 0.45,
+        audioFadeInSec: 0.35,
+        audioFadeOutSec: 0.7,
         onProgress: setCreateProgress,
       });
 

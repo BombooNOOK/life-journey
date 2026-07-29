@@ -1,6 +1,8 @@
 /**
  * 森ログムービー MVP：静止画カード + BGM → MediaRecorder で短い動画
  * （ブラウザにより mp4 / webm。拡張子は実 MIME に合わせる）
+ *
+ * 先頭フレームはカード画像（サムネ・再生開始が真っ黒にならないよう、録画前に描画する）
  */
 
 export const MORI_LOG_MOVIE_MIME_CANDIDATES = [
@@ -31,7 +33,10 @@ export type ComposeMoriLogStillMovieInput = {
   /** /audio/... など */
   audioUrl: string;
   durationSec: number;
-  fadeSec?: number;
+  /** BGM のフェードイン秒（映像は最初からカードを表示） */
+  audioFadeInSec?: number;
+  /** BGM のフェードアウト秒 */
+  audioFadeOutSec?: number;
   /** 0..1 */
   onProgress?: (ratio: number) => void;
 };
@@ -60,6 +65,17 @@ function wait(ms: number): Promise<void> {
   });
 }
 
+function drawCardFrame(
+  ctx: CanvasRenderingContext2D,
+  bitmap: ImageBitmap,
+  width: number,
+  height: number,
+): void {
+  ctx.fillStyle = "#f7f1e6";
+  ctx.fillRect(0, 0, width, height);
+  ctx.drawImage(bitmap, 0, 0, width, height);
+}
+
 /**
  * ユーザー操作（ボタン押下）の直後に呼ぶこと（AudioContext / MediaRecorder 用）。
  */
@@ -71,8 +87,9 @@ export async function composeMoriLogStillMovie(
     throw new Error("この端末では動画の作成に対応していません。");
   }
 
-  const durationSec = Math.min(12, Math.max(3, input.durationSec));
-  const fadeSec = Math.min(1.2, Math.max(0, input.fadeSec ?? 0.45));
+  const durationSec = Math.min(15, Math.max(3, input.durationSec));
+  const audioFadeInSec = Math.min(1.2, Math.max(0, input.audioFadeInSec ?? 0.35));
+  const audioFadeOutSec = Math.min(1.5, Math.max(0, input.audioFadeOutSec ?? 0.6));
   const fps = 30;
 
   const bitmap = await loadImageBitmap(input.imageBlob);
@@ -89,6 +106,9 @@ export async function composeMoriLogStillMovie(
     bitmap.close();
     throw new Error("動画用キャンバスを作れませんでした。");
   }
+
+  // 録画開始前にカードを描いておき、先頭キーフレーム／サムネをカードにする
+  drawCardFrame(ctx, bitmap, width, height);
 
   const AudioCtx =
     window.AudioContext ||
@@ -113,14 +133,19 @@ export async function composeMoriLogStillMovie(
     gain.connect(dest);
 
     const now = audioCtx.currentTime;
-    gain.gain.setValueAtTime(0, now);
-    if (fadeSec > 0) {
-      gain.gain.linearRampToValueAtTime(1, now + fadeSec);
-      const fadeOutStart = Math.max(now + fadeSec, now + durationSec - fadeSec);
-      gain.gain.setValueAtTime(1, fadeOutStart);
-      gain.gain.linearRampToValueAtTime(0.0001, now + durationSec);
+    if (audioFadeInSec > 0) {
+      gain.gain.setValueAtTime(0.0001, now);
+      gain.gain.linearRampToValueAtTime(1, now + audioFadeInSec);
     } else {
       gain.gain.setValueAtTime(1, now);
+    }
+    if (audioFadeOutSec > 0) {
+      const fadeOutStart = Math.max(
+        now + audioFadeInSec,
+        now + durationSec - audioFadeOutSec,
+      );
+      gain.gain.setValueAtTime(1, fadeOutStart);
+      gain.gain.linearRampToValueAtTime(0.0001, now + durationSec);
     }
 
     const canvasStream = canvas.captureStream(fps);
@@ -146,8 +171,12 @@ export async function composeMoriLogStillMovie(
       };
     });
 
+    // 先頭にカードが載るまで少し待ってから録画開始
+    drawCardFrame(ctx, bitmap, width, height);
+    await wait(180);
+
     recorder.start(250);
-    source.start(now, 0, durationSec);
+    source.start(audioCtx.currentTime, 0, durationSec);
 
     const startedAt = performance.now();
     const durationMs = durationSec * 1000;
@@ -158,21 +187,8 @@ export async function composeMoriLogStillMovie(
         const t = Math.min(1, elapsed / durationMs);
         input.onProgress?.(t);
 
-        let alpha = 1;
-        if (fadeSec > 0) {
-          const elapsedSec = elapsed / 1000;
-          if (elapsedSec < fadeSec) alpha = elapsedSec / fadeSec;
-          else if (elapsedSec > durationSec - fadeSec) {
-            alpha = Math.max(0, (durationSec - elapsedSec) / fadeSec);
-          }
-        }
-
-        ctx.fillStyle = "#111111";
-        ctx.fillRect(0, 0, width, height);
-        ctx.save();
-        ctx.globalAlpha = alpha;
-        ctx.drawImage(bitmap, 0, 0, width, height);
-        ctx.restore();
+        // 映像は常にカード全面（フェードインで黒にしない）
+        drawCardFrame(ctx, bitmap, width, height);
 
         if (elapsed >= durationMs) {
           resolve();

@@ -11,7 +11,7 @@ export type MoriLogOutputFormat = "png" | "jpg" | "mp4";
 export type MoriLogStorageKind = "local" | "none" | "remote_temp";
 
 /** ムービーMVPの標準尺（秒）。Step 3 の書き出しでも共用 */
-export const MORI_LOG_MOVIE_DEFAULT_DURATION_SEC = 6;
+export const MORI_LOG_MOVIE_DEFAULT_DURATION_SEC = 10;
 
 export type MoriLogMedia = {
   id: string;
