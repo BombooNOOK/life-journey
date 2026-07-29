@@ -28,3 +28,11 @@ export const MORI_LOG_CARD_SECTION_TITLE = "森ログカード";
 
 export const MORI_LOG_CARD_SECTION_HINT =
   "あしあとの写真と言葉を、小さなカードにして残せます。保存すると端末にダウンロードされます。";
+
+export const MORI_LOG_MOVIE_SECTION_TITLE = "森ログムービー";
+
+export const MORI_LOG_MOVIE_SECTION_HINT =
+  "できあがったカードにBGMをのせて、短いムービーにできます。まずは曲を選んで試聴してください。";
+
+export const MORI_LOG_MOVIE_EXPORT_COMING_SOON =
+  "動画ファイル（MP4）の書き出しは、次のステップで追加します。";

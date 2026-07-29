@@ -3,12 +3,17 @@
 import { useCallback, useMemo, useState } from "react";
 
 import { JournalSocialPostImagePanel } from "@/components/journal/JournalSocialPostImagePanel";
+import { MoriLogBgmPicker } from "@/components/journal/MoriLogBgmPicker";
 import {
   MORI_LOG_CARD_SECTION_HINT,
   MORI_LOG_CARD_SECTION_TITLE,
+  MORI_LOG_MOVIE_EXPORT_COMING_SOON,
+  MORI_LOG_MOVIE_SECTION_HINT,
+  MORI_LOG_MOVIE_SECTION_TITLE,
   MORI_LOG_WHAT_IS_BODY,
   MORI_LOG_WHAT_IS_TITLE,
 } from "@/lib/journal/moriLog/moriLogCopy";
+import { MORI_LOG_BGM_TRACKS, getMoriLogBgmTrack } from "@/lib/journal/moriLog/moriLogBgmCatalog";
 import { getMoriLogMediaStore } from "@/lib/journal/moriLog/moriLogMediaStore";
 import { calendarDayKeyInJapanFromDate } from "@/lib/date/japanCalendarDate";
 import { extractTagsFromContent } from "@/lib/journal/diaryTags";
@@ -40,6 +45,10 @@ export function MoriLogMakerPanel({
 }: Props) {
   const [helpOpen, setHelpOpen] = useState(false);
   const [historyNote, setHistoryNote] = useState<string | null>(null);
+  const [selectedBgmId, setSelectedBgmId] = useState<string | null>(
+    () => MORI_LOG_BGM_TRACKS[0]?.id ?? null,
+  );
+  const selectedBgmTitle = getMoriLogBgmTrack(selectedBgmId)?.title ?? null;
   const tags = useMemo(() => extractTagsFromContent(content).tags, [content]);
   const entryDateKey = useMemo(
     () => calendarDayKeyInJapanFromDate(new Date(createdAt)),
@@ -116,6 +125,7 @@ export function MoriLogMakerPanel({
         <JournalSocialPostImagePanel
           entryId={entryId}
           content={content}
+          createdAt={createdAt}
           hasPhoto={hasPhoto}
           photoSrc={photoSrc}
           onCardExported={recordCardExport}
@@ -133,10 +143,15 @@ export function MoriLogMakerPanel({
         ) : null}
       </section>
 
-      <section className={`${LJD_PAPER_CARD_CLASS} px-4 py-4 opacity-90`}>
-        <h3 className="text-sm font-semibold text-[#5c4a35]">これから</h3>
-        <p className="mt-2 text-sm leading-relaxed text-[#6b5a48]">
-          音つきの森ログムービーと、投稿文のコピーも、この場所から使えるようにしていきます。
+      <section className={`${LJD_PAPER_CARD_CLASS} space-y-4 px-4 py-4 sm:px-5`}>
+        <div>
+          <h3 className="text-base font-semibold text-[#3f3428]">{MORI_LOG_MOVIE_SECTION_TITLE}</h3>
+          <p className="mt-1 text-sm leading-relaxed text-[#5c4a35]">{MORI_LOG_MOVIE_SECTION_HINT}</p>
+        </div>
+        <MoriLogBgmPicker value={selectedBgmId} onChange={setSelectedBgmId} />
+        <p className="text-xs leading-relaxed text-[#6b5a48]" role="status">
+          {MORI_LOG_MOVIE_EXPORT_COMING_SOON}
+          {selectedBgmTitle ? ` いま選んでいる曲は「${selectedBgmTitle}」です。` : null}
         </p>
       </section>
     </div>
