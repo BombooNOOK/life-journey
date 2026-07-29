@@ -12,10 +12,9 @@ import {
 } from "@/lib/journal/moriLog/moriLog3komaPhotos";
 
 export type Mori3komaExtraPhoto = {
-  file: File;
   previewUrl: string;
-  /** POST 用（一部端末で File パートが欠けるときの保険） */
-  dataUrl: string;
+  /** JPEG base64（data: 接頭辞なし）。3コマ枠は小さいので軽量で足りる */
+  jpegBase64: string;
 };
 
 type Props = {
@@ -27,24 +26,64 @@ type Props = {
   onAssignmentChange: (assignment: Mori3komaPanelAssignment) => void;
 };
 
-const MAX_EDGE_PX = 900;
-const JPEG_QUALITY = 0.72;
-/** サーバー送信サイズ上限の目安（Vercel 等のボディ制限対策） */
-const MAX_EXTRA_UPLOAD_BYTES = 900_000;
+/** 設計枠 340×220 → 出力約2倍でも 640 あれば十分 */
+const MAX_EDGE_PX = 640;
+const JPEG_QUALITY = 0.62;
+const MAX_EXTRA_UPLOAD_BYTES = 160_000;
 
-async function compressImageFile(file: File): Promise<{ file: File; dataUrl: string }> {
-  if (!file.type.startsWith("image/") && file.type !== "") {
-    // iOS で type が空のことがあるので、空は許容してデコードを試みる
-    if (file.type) throw new Error("画像ファイルを選んでください。");
+async function decodeImageToBitmap(file: File): Promise<ImageBitmap> {
+  try {
+    return await createImageBitmap(file);
+  } catch {
+    // HEIC 等で createImageBitmap が落ちる端末向け
+    const objectUrl = URL.createObjectURL(file);
+    try {
+      const image = await new Promise<HTMLImageElement>((resolve, reject) => {
+        const img = new Image();
+        img.onload = () => resolve(img);
+        img.onerror = () => reject(new Error("画像を読み込めませんでした。JPEG/PNGでお試しください。"));
+        img.src = objectUrl;
+      });
+      const canvas = document.createElement("canvas");
+      canvas.width = image.naturalWidth || image.width;
+      canvas.height = image.naturalHeight || image.height;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) throw new Error("画像を処理できませんでした。");
+      ctx.drawImage(image, 0, 0);
+      const blob = await new Promise<Blob | null>((resolve) => {
+        canvas.toBlob(resolve, "image/jpeg", 0.92);
+      });
+      if (!blob) throw new Error("画像の変換に失敗しました。");
+      return await createImageBitmap(blob);
+    } finally {
+      URL.revokeObjectURL(objectUrl);
+    }
+  }
+}
+
+async function blobToBase64(blob: Blob): Promise<string> {
+  const buffer = await blob.arrayBuffer();
+  const bytes = new Uint8Array(buffer);
+  let binary = "";
+  const chunk = 0x8000;
+  for (let i = 0; i < bytes.length; i += chunk) {
+    binary += String.fromCharCode(...bytes.subarray(i, i + chunk));
+  }
+  return btoa(binary);
+}
+
+async function compressImageFile(file: File): Promise<Mori3komaExtraPhoto> {
+  if (file.type && !file.type.startsWith("image/") && file.type !== "application/octet-stream") {
+    throw new Error("画像ファイルを選んでください。");
   }
 
-  const bitmap = await createImageBitmap(file);
+  const bitmap = await decodeImageToBitmap(file);
   try {
     let scale = Math.min(1, MAX_EDGE_PX / Math.max(bitmap.width, bitmap.height));
     let quality = JPEG_QUALITY;
     let blob: Blob | null = null;
 
-    for (let attempt = 0; attempt < 4; attempt += 1) {
+    for (let attempt = 0; attempt < 5; attempt += 1) {
       const width = Math.max(1, Math.round(bitmap.width * scale));
       const height = Math.max(1, Math.round(bitmap.height * scale));
       const canvas = document.createElement("canvas");
@@ -58,23 +97,14 @@ async function compressImageFile(file: File): Promise<{ file: File; dataUrl: str
       });
       if (!blob) throw new Error("画像の圧縮に失敗しました。");
       if (blob.size <= MAX_EXTRA_UPLOAD_BYTES) break;
-      scale *= 0.82;
-      quality = Math.max(0.55, quality - 0.08);
+      scale *= 0.8;
+      quality = Math.max(0.45, quality - 0.08);
     }
 
     if (!blob) throw new Error("画像の圧縮に失敗しました。");
-    const base = file.name.replace(/\.[^.]+$/, "") || "extra";
-    const compressed = new File([blob], `${base}.jpg`, { type: "image/jpeg" });
-    const dataUrl = await new Promise<string>((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => {
-        if (typeof reader.result === "string") resolve(reader.result);
-        else reject(new Error("画像の読み込みに失敗しました。"));
-      };
-      reader.onerror = () => reject(new Error("画像の読み込みに失敗しました。"));
-      reader.readAsDataURL(compressed);
-    });
-    return { file: compressed, dataUrl };
+    const jpegBase64 = await blobToBase64(blob);
+    const previewUrl = URL.createObjectURL(blob);
+    return { previewUrl, jpegBase64 };
   } finally {
     bitmap.close();
   }
@@ -130,9 +160,9 @@ function ExtraSlot({
         accept="image/*"
         className="sr-only"
         onChange={(event) => {
-          const file = event.target.files?.[0];
+          const nextFile = event.target.files?.[0];
           event.target.value = "";
-          if (file) onPick(file);
+          if (nextFile) onPick(nextFile);
         }}
       />
       {photo ? (
@@ -159,11 +189,10 @@ export function MoriLog3komaPhotoFields({
   const setExtra = async (index: 0 | 1, file: File) => {
     try {
       const compressed = await compressImageFile(file);
-      const previewUrl = URL.createObjectURL(compressed.file);
       const prev = extras[index];
       if (prev?.previewUrl) URL.revokeObjectURL(prev.previewUrl);
       const next: [Mori3komaExtraPhoto | null, Mori3komaExtraPhoto | null] = [...extras];
-      next[index] = { file: compressed.file, previewUrl, dataUrl: compressed.dataUrl };
+      next[index] = compressed;
       onExtrasChange(next);
     } catch (error) {
       window.alert(error instanceof Error ? error.message : "写真を読み込めませんでした。");
@@ -176,7 +205,6 @@ export function MoriLog3komaPhotoFields({
     const next: [Mori3komaExtraPhoto | null, Mori3komaExtraPhoto | null] = [...extras];
     next[index] = null;
     onExtrasChange(next);
-    // 消したソースを使っているコマは本編へ戻す
     let assignmentNext = assignment;
     const sourceId: Mori3komaPhotoSourceId = index === 0 ? "extra0" : "extra1";
     for (let i = 0; i < 3; i += 1) {
@@ -269,7 +297,7 @@ export function MoriLog3komaPhotoFields({
           ))}
         </div>
         <p className="text-xs leading-relaxed text-stone-500">
-          例：本編を3コマ目だけにする、追加写真だけで漫画風にする、など自由にどうぞ。あしあとの写真は少なくとも1コマに残ります。
+          追加写真をコマに割り当てると、プレビューに反映されます。あしあとの写真は少なくとも1コマに残ります。
         </p>
       </fieldset>
     </div>

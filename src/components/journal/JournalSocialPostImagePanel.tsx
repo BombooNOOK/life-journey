@@ -122,54 +122,41 @@ function buildDownloadUrl(
   return `/api/journal/entries/${encodeURIComponent(entryId)}/social-post-image?${params.toString()}`;
 }
 
-function appendPhotoAdjustToFormData(
-  form: FormData,
+function appendPhotoAdjustToJsonBody(
+  body: Record<string, unknown>,
   photoAdjust: JournalSocialPostPhotoAdjust,
 ): void {
-  form.set("focusX", String(photoAdjust.focusX));
-  form.set("focusY", String(photoAdjust.focusY));
-  form.set("scale", String(photoAdjust.scale));
+  body.focusX = photoAdjust.focusX;
+  body.focusY = photoAdjust.focusY;
+  body.scale = photoAdjust.scale;
 }
 
-function buildSocialPostFormData(input: {
+function buildThreeKomaJsonBody(input: {
   title: string;
   subtitle: string;
   templateId: JournalSocialPostTemplateId;
   photoAdjust: JournalSocialPostPhotoAdjust;
   moriSlots?: { body: string; comment: string; promptLabel: string; summary: string } | null;
-  panelAssignment?: Mori3komaPanelAssignment | null;
-  extras?: [Mori3komaExtraPhoto | null, Mori3komaExtraPhoto | null];
+  panelAssignment: Mori3komaPanelAssignment;
+  extras: [Mori3komaExtraPhoto | null, Mori3komaExtraPhoto | null];
   download?: boolean;
-}): FormData {
-  const form = new FormData();
-  form.set("template", input.templateId);
-  form.set("title", input.title);
-  if (input.templateId === "sns03") {
-    form.set("subtitle", input.subtitle);
-  }
+}): Record<string, unknown> {
+  const body: Record<string, unknown> = {
+    template: input.templateId,
+    title: input.title,
+    panelSources: serializeMori3komaPanelAssignment(input.panelAssignment),
+  };
+  if (input.download) body.download = "1";
   if (input.moriSlots && isMoriAshiatoTemplateId(input.templateId)) {
-    form.set("body", input.moriSlots.body);
-    form.set("comment", input.moriSlots.comment);
-    form.set("promptLabel", input.moriSlots.promptLabel);
-    form.set("summary", input.moriSlots.summary);
+    body.body = input.moriSlots.body;
+    body.comment = input.moriSlots.comment;
+    body.promptLabel = input.moriSlots.promptLabel;
+    body.summary = input.moriSlots.summary;
   }
-  if (input.download) form.set("download", "1");
-  appendPhotoAdjustToFormData(form, input.photoAdjust);
-  if (input.panelAssignment) {
-    form.set("panelSources", serializeMori3komaPanelAssignment(input.panelAssignment));
-  }
-  // data URL を優先（iOS 等で File パートが欠けることがある）。両方載せるとボディが肥大化するので片方だけ。
-  if (input.extras?.[0]?.dataUrl) {
-    form.set("extra0DataUrl", input.extras[0].dataUrl);
-  } else if (input.extras?.[0]?.file) {
-    form.set("extra0", input.extras[0].file);
-  }
-  if (input.extras?.[1]?.dataUrl) {
-    form.set("extra1DataUrl", input.extras[1].dataUrl);
-  } else if (input.extras?.[1]?.file) {
-    form.set("extra1", input.extras[1].file);
-  }
-  return form;
+  appendPhotoAdjustToJsonBody(body, input.photoAdjust);
+  if (input.extras[0]?.jpegBase64) body.extra0Base64 = input.extras[0].jpegBase64;
+  if (input.extras[1]?.jpegBase64) body.extra1Base64 = input.extras[1].jpegBase64;
+  return body;
 }
 
 function buildThreeKomaGetUrl(input: {
@@ -190,6 +177,18 @@ function buildThreeKomaGetUrl(input: {
   appendJournalSocialPostPhotoAdjustToSearchParams(params, input.photoAdjust);
   params.set("panelSources", serializeMori3komaPanelAssignment(input.panelAssignment));
   return `/api/journal/entries/${encodeURIComponent(input.entryId)}/social-post-image?${params.toString()}`;
+}
+
+function threeKomaAssignmentNeedsExtras(
+  assignment: Mori3komaPanelAssignment,
+  extras: [Mori3komaExtraPhoto | null, Mori3komaExtraPhoto | null],
+): boolean {
+  return assignment.some((source, index) => {
+    if (source === "extra0") return extras[0] != null;
+    if (source === "extra1") return extras[1] != null;
+    void index;
+    return false;
+  });
 }
 
 export function JournalSocialPostImagePanel({
@@ -279,8 +278,10 @@ export function JournalSocialPostImagePanel({
       : null;
 
   const usesThreeKomaPost = debouncedTemplateId === "kyou_no_3koma_ashiato";
-  const threeKomaHasExtras =
-    threeKomaExtras[0] != null || threeKomaExtras[1] != null;
+  const threeKomaNeedsUpload = threeKomaAssignmentNeedsExtras(
+    debouncedThreeKomaAssignment,
+    threeKomaExtras,
+  );
 
   const getPreviewUrl = buildPreviewUrl(
     entryId,
@@ -301,9 +302,9 @@ export function JournalSocialPostImagePanel({
   );
   const postEndpoint = `/api/journal/entries/${encodeURIComponent(entryId)}/social-post-image`;
 
-  const buildThreeKomaFormData = useCallback(
+  const buildThreeKomaRequestBody = useCallback(
     (download = false) =>
-      buildSocialPostFormData({
+      buildThreeKomaJsonBody({
         title: previewTitle,
         subtitle: debouncedSubtitle,
         templateId: debouncedTemplateId,
@@ -351,7 +352,7 @@ export function JournalSocialPostImagePanel({
     : "";
 
   const previewUrl = usesThreeKomaPost
-    ? threeKomaHasExtras
+    ? threeKomaNeedsUpload
       ? (previewBlobUrl ?? "")
       : threeKomaGetPreviewUrl
     : getPreviewUrl;
@@ -381,7 +382,7 @@ export function JournalSocialPostImagePanel({
   }, [assembledMoriSlots, subtitle, templateId, threeKomaAssignment, title, threeKomaExtras]);
 
   useEffect(() => {
-    if (debouncedTemplateId !== "kyou_no_3koma_ashiato" || !threeKomaHasExtras) {
+    if (debouncedTemplateId !== "kyou_no_3koma_ashiato" || !threeKomaNeedsUpload) {
       setPreviewBlobUrl((prev) => {
         if (prev) URL.revokeObjectURL(prev);
         return null;
@@ -400,26 +401,30 @@ export function JournalSocialPostImagePanel({
           method: "POST",
           credentials: "same-origin",
           cache: "no-store",
-          body: buildThreeKomaFormData(false),
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(buildThreeKomaRequestBody(false)),
           signal: controller.signal,
         });
         if (!res.ok) {
           const text = await res.text();
           const contentType = res.headers.get("Content-Type") ?? "";
           if (res.status === 413) {
-            throw new Error("写真のデータが大きすぎます。追加写真を小さくしてから再度お試しください。");
+            throw new Error("写真のデータが大きすぎます。別の写真で再度お試しください。");
           }
-          if (contentType.includes("application/json")) {
+          if (contentType.includes("application/json") || text.trim().startsWith("{")) {
             try {
               const json = JSON.parse(text) as { error?: string };
               throw new Error(json.error || "プレビューの生成に失敗しました。");
             } catch (parseError) {
-              if (parseError instanceof Error && parseError.message !== "プレビューの生成に失敗しました。") {
+              if (
+                parseError instanceof Error &&
+                parseError.message !== "プレビューの生成に失敗しました。"
+              ) {
                 throw parseError;
               }
             }
           }
-          throw new Error(text || "プレビューの生成に失敗しました。");
+          throw new Error("プレビューの生成に失敗しました。しばらくしてからお試しください。");
         }
         const blob = await res.blob();
         if (cancelled) return;
@@ -446,18 +451,18 @@ export function JournalSocialPostImagePanel({
       controller.abort();
     };
   }, [
-    buildThreeKomaFormData,
+    buildThreeKomaRequestBody,
     cacheKey,
     debouncedTemplateId,
     postEndpoint,
-    threeKomaHasExtras,
+    threeKomaNeedsUpload,
   ]);
 
   useEffect(() => {
-    if (debouncedTemplateId === "kyou_no_3koma_ashiato" && threeKomaHasExtras) return;
+    if (debouncedTemplateId === "kyou_no_3koma_ashiato" && threeKomaNeedsUpload) return;
     setLoadingPreview(true);
     setPreviewError(null);
-  }, [getPreviewUrl, threeKomaGetPreviewUrl, debouncedTemplateId, threeKomaHasExtras]);
+  }, [getPreviewUrl, threeKomaGetPreviewUrl, debouncedTemplateId, threeKomaNeedsUpload]);
 
   const handlePhotoAdjustReset = () => {
     setPhotoAdjustDraft(DEFAULT_JOURNAL_SOCIAL_POST_PHOTO_ADJUST);
@@ -711,14 +716,14 @@ export function JournalSocialPostImagePanel({
           <JournalSocialPostImageDownloadButton
             href={
               debouncedTemplateId === "kyou_no_3koma_ashiato"
-                ? threeKomaHasExtras
+                ? threeKomaNeedsUpload
                   ? postEndpoint
                   : threeKomaGetDownloadUrl
                 : downloadUrl
             }
-            buildFormData={
-              debouncedTemplateId === "kyou_no_3koma_ashiato" && threeKomaHasExtras
-                ? () => buildThreeKomaFormData(true)
+            buildJsonBody={
+              debouncedTemplateId === "kyou_no_3koma_ashiato" && threeKomaNeedsUpload
+                ? () => buildThreeKomaRequestBody(true)
                 : undefined
             }
             label={downloadLabel}
@@ -756,13 +761,13 @@ export function JournalSocialPostImagePanel({
                 alt={previewAlt}
                 className="h-full w-full object-contain"
                 onLoad={() => {
-                  if (!(debouncedTemplateId === "kyou_no_3koma_ashiato" && threeKomaHasExtras)) {
+                  if (!(debouncedTemplateId === "kyou_no_3koma_ashiato" && threeKomaNeedsUpload)) {
                     setLoadingPreview(false);
                     setPreviewError(null);
                   }
                 }}
                 onError={() => {
-                  if (!(debouncedTemplateId === "kyou_no_3koma_ashiato" && threeKomaHasExtras)) {
+                  if (!(debouncedTemplateId === "kyou_no_3koma_ashiato" && threeKomaNeedsUpload)) {
                     setLoadingPreview(false);
                     setPreviewError("プレビューの生成に失敗しました。しばらくしてからお試しください。");
                   }

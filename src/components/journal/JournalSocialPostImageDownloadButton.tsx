@@ -9,8 +9,8 @@ const IMAGE_FETCH_TIMEOUT_MS = 65_000;
 type Props = {
   /** GET のとき使う URL。POST のときはエンドポイント URL */
   href: string;
-  /** 指定時は POST（multipart）。3コマ追加写真など */
-  buildFormData?: () => FormData;
+  /** 指定時は JSON POST（3コマ追加写真など） */
+  buildJsonBody?: () => Record<string, unknown>;
   suggestedFileName?: string;
   label?: string;
   className?: string;
@@ -40,7 +40,7 @@ function parseImageErrorMessage(status: number, contentType: string, text: strin
   if (status === 504 || status === 524) {
     return "画像の作成がタイムアウトしました。しばらく待ってから再試行してください。";
   }
-  if (contentType.includes("application/json")) {
+  if (contentType.includes("application/json") || text.trim().startsWith("{")) {
     try {
       const j = JSON.parse(text) as { error?: string };
       return j.error ?? "画像を取得できませんでした。";
@@ -48,20 +48,12 @@ function parseImageErrorMessage(status: number, contentType: string, text: strin
       return "画像を取得できませんでした。";
     }
   }
-  if (text.trim().startsWith("{")) {
-    try {
-      const j = JSON.parse(text) as { error?: string };
-      if (j.error) return j.error;
-    } catch {
-      /* ignore */
-    }
-  }
   return "画像を取得できませんでした。";
 }
 
 export function JournalSocialPostImageDownloadButton({
   href,
-  buildFormData,
+  buildJsonBody,
   suggestedFileName,
   label = "画像を保存",
   className = "inline-flex min-h-[44px] items-center rounded-lg bg-emerald-800 px-4 py-2.5 text-sm font-medium text-white hover:bg-emerald-700 disabled:cursor-wait disabled:opacity-90",
@@ -82,16 +74,18 @@ export function JournalSocialPostImageDownloadButton({
 
     try {
       const url = new URL(href, window.location.origin);
-      if (!buildFormData) {
+      const usePost = Boolean(buildJsonBody);
+      if (!usePost) {
         url.searchParams.set("_cb", String(Date.now()));
       }
 
       const res = await fetch(url.toString(), {
-        method: buildFormData ? "POST" : "GET",
+        method: usePost ? "POST" : "GET",
         credentials: "same-origin",
         cache: "no-store",
         signal: controller.signal,
-        body: buildFormData ? buildFormData() : undefined,
+        headers: usePost ? { "Content-Type": "application/json" } : undefined,
+        body: usePost ? JSON.stringify(buildJsonBody?.() ?? {}) : undefined,
       });
       const contentType = res.headers.get("Content-Type") ?? "";
 
@@ -139,7 +133,7 @@ export function JournalSocialPostImageDownloadButton({
       busyRef.current = false;
       setBusy(false);
     }
-  }, [buildFormData, href, onDownloaded, suggestedFileName]);
+  }, [buildJsonBody, href, onDownloaded, suggestedFileName]);
 
   return (
     <div className="space-y-2">

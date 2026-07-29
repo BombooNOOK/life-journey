@@ -19,10 +19,28 @@ const CACHE_HEADERS = {
   "Cache-Control": "private, no-store, max-age=0, must-revalidate",
 } as const;
 
-/** 追加写真1枚あたりの上限（クライアントで圧縮後想定） */
-const MAX_EXTRA_PHOTO_BYTES = 2 * 1024 * 1024;
+/** 追加写真1枚あたり（圧縮後JPEG想定） */
+const MAX_EXTRA_PHOTO_BYTES = 400_000;
 
 type RouteParams = { params: Promise<{ entryId: string }> };
+
+type ThreeKomaPostBody = {
+  title?: string;
+  subtitle?: string | null;
+  template?: string | null;
+  download?: boolean | string | number;
+  body?: string | null;
+  comment?: string | null;
+  promptLabel?: string | null;
+  summary?: string | null;
+  panelSources?: string | null;
+  focusX?: string | number | null;
+  focusY?: string | number | null;
+  scale?: string | number | null;
+  /** JPEG base64（data: 接頭辞なし） */
+  extra0Base64?: string | null;
+  extra1Base64?: string | null;
+};
 
 function pngResponse(buffer: Buffer, basename: string, download: boolean) {
   return new NextResponse(new Uint8Array(buffer), {
@@ -37,47 +55,39 @@ function pngResponse(buffer: Buffer, basename: string, download: boolean) {
   });
 }
 
-function readOptionalText(form: FormData, key: string): string | null {
-  return form.has(key) ? String(form.get(key) ?? "") : null;
-}
-
-function bufferFromDataUrl(dataUrl: string): Buffer | null {
-  const trimmed = dataUrl.trim();
-  const match = /^data:image\/[a-zA-Z0-9.+-]+;base64,([A-Za-z0-9+/=\s]+)$/.exec(trimmed);
-  if (!match?.[1]) return null;
-  const buffer = Buffer.from(match[1].replace(/\s+/g, ""), "base64");
+function bufferFromBase64Jpeg(raw: string | null | undefined): Buffer | null {
+  if (!raw || typeof raw !== "string") return null;
+  let base64 = raw.trim();
+  if (!base64) return null;
+  if (base64.startsWith("data:image/")) {
+    const comma = base64.indexOf(",");
+    if (comma < 0) return null;
+    base64 = base64.slice(comma + 1);
+  }
+  base64 = base64.replace(/\s+/g, "");
+  const buffer = Buffer.from(base64, "base64");
   if (buffer.byteLength <= 0) return null;
   if (buffer.byteLength > MAX_EXTRA_PHOTO_BYTES) {
-    throw new Error("追加写真が大きすぎます。別の写真を選ぶか、もう一度圧縮してからお試しください。");
+    throw new Error("追加写真が大きすぎます。別の写真で再度お試しください。");
   }
   return buffer;
 }
 
-async function readExtraPhotoBuffer(
-  form: FormData,
-  key: string,
-): Promise<Buffer | null> {
-  const dataUrlField = form.get(`${key}DataUrl`);
-  if (typeof dataUrlField === "string" && dataUrlField.startsWith("data:image/")) {
-    return bufferFromDataUrl(dataUrlField);
+function photoAdjustFromValues(values: {
+  focusX?: string | number | null;
+  focusY?: string | number | null;
+  scale?: string | number | null;
+}): JournalSocialPostPhotoAdjust {
+  const params = new URLSearchParams();
+  if (values.focusX != null && String(values.focusX) !== "") {
+    params.set("focusX", String(values.focusX));
   }
-
-  const value = form.get(key);
-  if (!value || typeof value === "string") return null;
-  const file = value as File;
-  if (file.size <= 0) return null;
-  if (file.size > MAX_EXTRA_PHOTO_BYTES) {
-    throw new Error("追加写真が大きすぎます。別の写真を選ぶか、もう一度圧縮してからお試しください。");
+  if (values.focusY != null && String(values.focusY) !== "") {
+    params.set("focusY", String(values.focusY));
   }
-  const mime = file.type || "";
-  if (mime && !mime.startsWith("image/")) {
-    throw new Error("追加写真は画像ファイルを選んでください。");
+  if (values.scale != null && String(values.scale) !== "") {
+    params.set("scale", String(values.scale));
   }
-  return Buffer.from(await file.arrayBuffer());
-}
-
-function photoAdjustFromRecord(values: Record<string, string>): JournalSocialPostPhotoAdjust | undefined {
-  const params = new URLSearchParams(values);
   return parseJournalSocialPostPhotoAdjustFromSearchParams(params);
 }
 
@@ -173,7 +183,7 @@ export async function GET(req: Request, { params }: RouteParams) {
   }
 }
 
-/** 3コマの追加写真付き生成（multipart） */
+/** 3コマ追加写真付き生成（JSON: 軽量 base64） */
 export async function POST(req: Request, { params }: RouteParams) {
   try {
     const viewerEmail = await getViewerEmailFromCookie();
@@ -185,28 +195,36 @@ export async function POST(req: Request, { params }: RouteParams) {
     }
 
     const { entryId } = await params;
-    const form = await req.formData();
-    const title = String(form.get("title") ?? "");
-    const subtitle = readOptionalText(form, "subtitle");
-    const template = readOptionalText(form, "template");
-    const download = String(form.get("download") ?? "") === "1";
-    const bodyExcerpt = readOptionalText(form, "body");
-    const commentExcerpt = readOptionalText(form, "comment");
-    const promptLabel = readOptionalText(form, "promptLabel");
-    const summary = readOptionalText(form, "summary");
+    const contentType = req.headers.get("content-type") ?? "";
+    if (!contentType.includes("application/json")) {
+      return NextResponse.json(
+        { error: "リクエスト形式が不正です。", code: "BAD_REQUEST" },
+        { status: 400, headers: CACHE_HEADERS },
+      );
+    }
+
+    const body = (await req.json()) as ThreeKomaPostBody;
+    const title = String(body.title ?? "");
+    const subtitle = body.subtitle != null ? String(body.subtitle) : null;
+    const template = body.template != null ? String(body.template) : null;
+    const download = body.download === true || body.download === 1 || body.download === "1";
+    const bodyExcerpt = body.body != null ? String(body.body) : null;
+    const commentExcerpt = body.comment != null ? String(body.comment) : null;
+    const promptLabel = body.promptLabel != null ? String(body.promptLabel) : null;
+    const summary = body.summary != null ? String(body.summary) : null;
     const panelPhotoSources = parseMori3komaPanelAssignment(
-      readOptionalText(form, "panelSources"),
+      body.panelSources != null ? String(body.panelSources) : null,
     );
 
-    const photoAdjust = photoAdjustFromRecord({
-      focusX: String(form.get("focusX") ?? ""),
-      focusY: String(form.get("focusY") ?? ""),
-      scale: String(form.get("scale") ?? ""),
+    const photoAdjust = photoAdjustFromValues({
+      focusX: body.focusX,
+      focusY: body.focusY,
+      scale: body.scale,
     });
 
     const extraPhotoBuffers: [Buffer | null, Buffer | null] = [
-      await readExtraPhotoBuffer(form, "extra0"),
-      await readExtraPhotoBuffer(form, "extra1"),
+      bufferFromBase64Jpeg(body.extra0Base64),
+      bufferFromBase64Jpeg(body.extra1Base64),
     ];
 
     const context = await composeFromParams({
