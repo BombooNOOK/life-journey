@@ -8,12 +8,23 @@ import {
   MORI_LOG_CARD_SECTION_HINT,
   MORI_LOG_CARD_SECTION_TITLE,
   MORI_LOG_MOVIE_EXPORT_COMING_SOON,
+  MORI_LOG_MOVIE_SAVE_FAIL,
+  MORI_LOG_MOVIE_SAVE_NEED_BGM,
+  MORI_LOG_MOVIE_SAVE_NEED_CARD,
+  MORI_LOG_MOVIE_SAVE_NEED_PROFILE,
+  MORI_LOG_MOVIE_SAVE_OK,
+  MORI_LOG_MOVIE_SAVE_SETTINGS_LABEL,
   MORI_LOG_MOVIE_SECTION_HINT,
   MORI_LOG_MOVIE_SECTION_TITLE,
   MORI_LOG_WHAT_IS_BODY,
   MORI_LOG_WHAT_IS_TITLE,
 } from "@/lib/journal/moriLog/moriLogCopy";
 import { MORI_LOG_BGM_TRACKS, getMoriLogBgmTrack } from "@/lib/journal/moriLog/moriLogBgmCatalog";
+import {
+  buildMoriLogMovieCreateInput,
+  MORI_LOG_MOVIE_DEFAULT_DURATION_SEC,
+  type MoriLogMedia,
+} from "@/lib/journal/moriLog/moriLogMedia";
 import { getMoriLogMediaStore } from "@/lib/journal/moriLog/moriLogMediaStore";
 import { calendarDayKeyInJapanFromDate } from "@/lib/date/japanCalendarDate";
 import { extractTagsFromContent } from "@/lib/journal/diaryTags";
@@ -45,6 +56,9 @@ export function MoriLogMakerPanel({
 }: Props) {
   const [helpOpen, setHelpOpen] = useState(false);
   const [historyNote, setHistoryNote] = useState<string | null>(null);
+  const [movieNote, setMovieNote] = useState<string | null>(null);
+  const [savingMovie, setSavingMovie] = useState(false);
+  const [lastSavedCard, setLastSavedCard] = useState<MoriLogMedia | null>(null);
   const [selectedBgmId, setSelectedBgmId] = useState<string | null>(
     () => MORI_LOG_BGM_TRACKS[0]?.id ?? null,
   );
@@ -63,7 +77,7 @@ export function MoriLogMakerPanel({
         return;
       }
       try {
-        await getMoriLogMediaStore().upsert({
+        const saved = await getMoriLogMediaStore().upsert({
           userId: (userId ?? "").trim(),
           profileId: pid,
           entryId,
@@ -82,6 +96,7 @@ export function MoriLogMakerPanel({
           localUri: null,
           remoteUrl: null,
         });
+        setLastSavedCard(saved);
         setHistoryNote("この端末に、森ログカードの記録を残しました（画像本体はダウンロード分です）。");
       } catch {
         setHistoryNote("画像は保存できましたが、履歴の書き込みに失敗しました。");
@@ -89,6 +104,77 @@ export function MoriLogMakerPanel({
     },
     [companionType, entryDateKey, entryId, mood, profileId, tags, userId],
   );
+
+  const resolveSourceCard = useCallback(async (): Promise<MoriLogMedia | null> => {
+    if (lastSavedCard && lastSavedCard.entryId === entryId && lastSavedCard.type === "card") {
+      return lastSavedCard;
+    }
+    const pid = (profileId ?? "").trim();
+    if (!pid) return null;
+    const cards = await getMoriLogMediaStore().list({
+      profileId: pid,
+      entryId,
+      type: "card",
+    });
+    return cards[0] ?? null;
+  }, [entryId, lastSavedCard, profileId]);
+
+  const saveMovieSettings = useCallback(async () => {
+    const pid = (profileId ?? "").trim();
+    if (!pid) {
+      setMovieNote(MORI_LOG_MOVIE_SAVE_NEED_PROFILE);
+      return;
+    }
+    if (!selectedBgmId) {
+      setMovieNote(MORI_LOG_MOVIE_SAVE_NEED_BGM);
+      return;
+    }
+
+    setSavingMovie(true);
+    setMovieNote(null);
+    try {
+      const sourceCard = await resolveSourceCard();
+      if (!sourceCard) {
+        setMovieNote(MORI_LOG_MOVIE_SAVE_NEED_CARD);
+        return;
+      }
+
+      const saved = await getMoriLogMediaStore().upsert(
+        buildMoriLogMovieCreateInput({
+          userId: (userId ?? "").trim(),
+          profileId: pid,
+          entryId,
+          templateId: sourceCard.templateId,
+          sourceCardId: sourceCard.id,
+          bgmId: selectedBgmId,
+          entryDateKey,
+          tags,
+          mood: mood ?? null,
+          companionType: companionType ?? null,
+          title: sourceCard.title ?? null,
+          durationSec: MORI_LOG_MOVIE_DEFAULT_DURATION_SEC,
+        }),
+      );
+      setMovieNote(
+        `${MORI_LOG_MOVIE_SAVE_OK}（${MORI_LOG_MOVIE_DEFAULT_DURATION_SEC}秒・曲「${selectedBgmTitle ?? saved.bgmId}」）`,
+      );
+    } catch {
+      setMovieNote(MORI_LOG_MOVIE_SAVE_FAIL);
+    } finally {
+      setSavingMovie(false);
+    }
+  }, [
+    companionType,
+    entryDateKey,
+    entryId,
+    mood,
+    profileId,
+    resolveSourceCard,
+    selectedBgmId,
+    selectedBgmTitle,
+    tags,
+    userId,
+  ]);
 
   return (
     <div className="space-y-5">
@@ -149,10 +235,22 @@ export function MoriLogMakerPanel({
           <p className="mt-1 text-sm leading-relaxed text-[#5c4a35]">{MORI_LOG_MOVIE_SECTION_HINT}</p>
         </div>
         <MoriLogBgmPicker value={selectedBgmId} onChange={setSelectedBgmId} />
-        <p className="text-xs leading-relaxed text-[#6b5a48]" role="status">
-          {MORI_LOG_MOVIE_EXPORT_COMING_SOON}
-          {selectedBgmTitle ? ` いま選んでいる曲は「${selectedBgmTitle}」です。` : null}
-        </p>
+        <div className="space-y-2">
+          <button
+            type="button"
+            onClick={() => void saveMovieSettings()}
+            disabled={savingMovie || !selectedBgmId}
+            className="min-h-[44px] w-full rounded-lg border border-emerald-700 bg-emerald-800 px-4 py-2.5 text-sm font-medium text-white hover:bg-emerald-900 disabled:cursor-not-allowed disabled:border-stone-300 disabled:bg-stone-200 disabled:text-stone-500 sm:w-auto"
+          >
+            {savingMovie ? "保存しています…" : MORI_LOG_MOVIE_SAVE_SETTINGS_LABEL}
+          </button>
+          <p className="text-xs leading-relaxed text-[#6b5a48]" role="status">
+            {movieNote ?? MORI_LOG_MOVIE_EXPORT_COMING_SOON}
+            {!movieNote && selectedBgmTitle
+              ? ` いま選んでいる曲は「${selectedBgmTitle}」です。`
+              : null}
+          </p>
+        </div>
       </section>
     </div>
   );

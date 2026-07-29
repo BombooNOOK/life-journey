@@ -123,6 +123,7 @@ export function createLocalMoriLogMediaStore(): MoriLogMediaStore {
         createdAt: now,
         tags: [...input.tags],
         hashtags: [...input.hashtags],
+        sourceCardId: input.sourceCardId ?? null,
         bgmId: input.bgmId ?? null,
         durationSec: input.durationSec ?? null,
         mood: input.mood ?? null,

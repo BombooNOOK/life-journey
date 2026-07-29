@@ -35,4 +35,19 @@ export const MORI_LOG_MOVIE_SECTION_HINT =
   "できあがったカードにBGMをのせて、短いムービーにできます。まずは曲を選んで試聴してください。";
 
 export const MORI_LOG_MOVIE_EXPORT_COMING_SOON =
-  "動画ファイル（MP4）の書き出しは、次のステップで追加します。";
+  "動画ファイル（MP4）の書き出しは、次のステップで追加します。いまはムービー設定をこの端末に残せます。";
+
+export const MORI_LOG_MOVIE_SAVE_SETTINGS_LABEL = "ムービー設定をこの端末に保存";
+
+export const MORI_LOG_MOVIE_SAVE_NEED_CARD =
+  "先に上の「カードを保存」で森ログカードを残してから、ムービー設定を保存してください。";
+
+export const MORI_LOG_MOVIE_SAVE_NEED_BGM = "BGMを選んでから保存してください。";
+
+export const MORI_LOG_MOVIE_SAVE_NEED_PROFILE =
+  "プロフィールを読み込めなかったため、ムービー設定を保存できませんでした。";
+
+export const MORI_LOG_MOVIE_SAVE_OK =
+  "この端末に、森ログムービーの設定を残しました（動画ファイルの作成は次のステップです）。";
+
+export const MORI_LOG_MOVIE_SAVE_FAIL = "ムービー設定の保存に失敗しました。もう一度お試しください。";

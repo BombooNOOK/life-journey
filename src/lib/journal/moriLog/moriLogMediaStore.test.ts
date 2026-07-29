@@ -65,4 +65,26 @@ describe("createLocalMoriLogMediaStore", () => {
     await store.remove(a.id, "prof1");
     expect(await store.list({ profileId: "prof1" })).toHaveLength(0);
   });
+
+  it("stores movie settings linked to a source card", async () => {
+    const store = createLocalMoriLogMediaStore();
+    const card = await store.upsert(sample({ type: "card", templateId: "kyou_no_ashiato" }));
+    const movie = await store.upsert(
+      sample({
+        type: "movie",
+        templateId: card.templateId,
+        sourceCardId: card.id,
+        bgmId: "bgm-intro-video",
+        durationSec: 6,
+        outputFormat: "mp4",
+      }),
+    );
+
+    expect(movie.type).toBe("movie");
+    expect(movie.sourceCardId).toBe(card.id);
+    expect(movie.bgmId).toBe("bgm-intro-video");
+    expect(movie.durationSec).toBe(6);
+    expect(await store.list({ profileId: "prof1", type: "movie" })).toHaveLength(1);
+    expect(await store.list({ profileId: "prof1", type: "card" })).toHaveLength(1);
+  });
 });
