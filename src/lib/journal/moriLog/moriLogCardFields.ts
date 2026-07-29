@@ -187,7 +187,7 @@ export const MORI_LOG_CARD_FIELDS_BY_TEMPLATE: Record<
       placeholder: "朝のひとこま",
       hint: "上の写真への短い言葉",
       slot: "title",
-      maxChars: 16,
+      maxChars: 13,
     },
     {
       kind: "hitokoto2",
@@ -195,7 +195,7 @@ export const MORI_LOG_CARD_FIELDS_BY_TEMPLATE: Record<
       placeholder: "昼のひとこま",
       hint: "真ん中の写真への短い言葉",
       slot: "body",
-      maxChars: 16,
+      maxChars: 13,
     },
     {
       kind: "hitokoto3",
@@ -203,7 +203,7 @@ export const MORI_LOG_CARD_FIELDS_BY_TEMPLATE: Record<
       placeholder: "夜のひとこま",
       hint: "下の写真への短い言葉",
       slot: "comment",
-      maxChars: 16,
+      maxChars: 13,
     },
     {
       kind: "dayHitokoto",
@@ -211,7 +211,7 @@ export const MORI_LOG_CARD_FIELDS_BY_TEMPLATE: Record<
       placeholder: "きょうを一言でまとめると",
       hint: "3コマ全体のおまとめ（任意）",
       slot: "summary",
-      maxChars: 32,
+      maxChars: 15,
     },
   ],
 };

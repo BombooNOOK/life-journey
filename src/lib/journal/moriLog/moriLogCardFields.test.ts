@@ -57,6 +57,10 @@ describe("moriLogCardFields", () => {
     expect(moriLogCardFieldForTextSlot("kyou_no_3koma_ashiato", "summary")?.label).toBe(
       "今日のひとこと",
     );
+    expect(moriLogCardFieldForTextSlot("kyou_no_3koma_ashiato", "title")?.maxChars).toBe(13);
+    expect(moriLogCardFieldForTextSlot("kyou_no_3koma_ashiato", "body")?.maxChars).toBe(13);
+    expect(moriLogCardFieldForTextSlot("kyou_no_3koma_ashiato", "comment")?.maxChars).toBe(13);
+    expect(moriLogCardFieldForTextSlot("kyou_no_3koma_ashiato", "summary")?.maxChars).toBe(15);
     expect(
       assembleMoriLogCardTextSlots("kyou_no_3koma_ashiato", {
         hitokoto: "おはよう",
