@@ -48,6 +48,7 @@
     "pdf:preview-assets:soft": "PREVIEW_MAX_EDGE=800 PREVIEW_JPEG_QUALITY=65 node scripts/build-pdf-preview-assets.mjs",
     "capture:home-mock": "npx tsx scripts/capture-home-mock-screenshot.ts",
     "capture:home-mock:auto": "npx tsx scripts/capture-home-mock-screenshot.ts --auto",
+    "compose:mori-log-picker-previews": "npx tsx scripts/compose-mori-log-picker-previews.ts",
     "preview:diary-entry": "npx tsx scripts/preview-diary-book-entry-page.tsx",
     "preview:diary-entry-frame": "npx tsx scripts/preview-diary-book-entry-body-frame.tsx"
   },

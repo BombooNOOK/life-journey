@@ -27,6 +27,16 @@
 | `mori_log_16x9_kyou_no_ashiato_wide_bg.png` / `_overlay.png` | 今日のあしあと（ワイド） |
 | `mori_log_16x9_kyou_no_3koma_ashiato_bg.png` / `_overlay.png` | 今日の3コマあしあと |
 
+## 選び用サムネ（デザイン一覧）
+
+本番と同じ合成（背景→写真→オーバーレイ→文字）で作った見本です。
+
+| パターン | 例 |
+|---------|-----|
+| `*_picker_preview.jpg` | `mori_log_5x4_kyou_no_ashiato_picker_preview.jpg` |
+
+再生成: `npx tsx scripts/compose-mori-log-picker-previews.ts`
+
 ## 合成順
 
 ### 1枚完結

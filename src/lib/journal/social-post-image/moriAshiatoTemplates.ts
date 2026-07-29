@@ -23,6 +23,28 @@ export function isMoriAshiatoTemplateId(
   return (MORI_ASHIATO_TEMPLATE_IDS as readonly string[]).includes(id);
 }
 
+/** デザイン一覧サムネのキャッシュバスト */
+const MORI_LOG_PICKER_PREVIEW_ASSET_VERSION = "1";
+
+/**
+ * 選び用サムネファイル名（scripts/compose-mori-log-picker-previews.ts と揃える）
+ * 例: mori_log_5x4_kyou_no_ashiato_bg.png → mori_log_5x4_kyou_no_ashiato_picker_preview.png
+ */
+export function moriLogPickerPreviewFileName(templateId: MoriAshiatoTemplateId): string {
+  const bg = MORI_ASHIATO_TEMPLATES[templateId].backgroundFile;
+  if (bg.endsWith("_full.png")) {
+    return bg.replace(/_full\.png$/, "_picker_preview.jpg");
+  }
+  if (bg.endsWith("_bg.png")) {
+    return bg.replace(/_bg\.png$/, "_picker_preview.jpg");
+  }
+  return `mori_log_picker_${templateId}.jpg`;
+}
+
+export function moriLogPickerPreviewPath(templateId: MoriAshiatoTemplateId): string {
+  return `/images/journal-social-post/${moriLogPickerPreviewFileName(templateId)}?v=${MORI_LOG_PICKER_PREVIEW_ASSET_VERSION}`;
+}
+
 const DESIGN_5X4 = { widthPx: 819, heightPx: 1024 } as const;
 const OUTPUT_5X4 = { widthPx: 1080, heightPx: 1350 } as const;
 /** ファイル名は 16x9 だが実寸は 9:16（スマホ縦） */

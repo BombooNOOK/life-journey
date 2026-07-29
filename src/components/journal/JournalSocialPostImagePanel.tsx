@@ -11,6 +11,7 @@ import {
   MoriLog3komaPhotoFields,
   type Mori3komaExtraPhoto,
 } from "@/components/journal/MoriLog3komaPhotoFields";
+import { MoriLogTemplatePicker } from "@/components/journal/MoriLogTemplatePicker";
 import {
   assembleMoriLogCardTextSlots,
   emptyMoriLogCardFieldValues,
@@ -44,7 +45,6 @@ import {
   socialPostTitleMaxChars,
 } from "@/lib/journal/social-post-image/textExtract";
 import {
-  JOURNAL_SOCIAL_POST_TEMPLATE_IDS,
   JOURNAL_SOCIAL_POST_TEMPLATES,
   isMoriAshiatoTemplateId,
   resolveJournalSocialPostDesignSize,
@@ -606,26 +606,7 @@ export function JournalSocialPostImagePanel({
   return (
     <div className="space-y-5">
       <div className="rounded-xl border border-stone-200 bg-white p-4 sm:p-5">
-        <fieldset className="space-y-2">
-          <legend className="text-sm font-medium text-stone-800">デザイン</legend>
-          <div className="flex flex-wrap gap-2">
-            {JOURNAL_SOCIAL_POST_TEMPLATE_IDS.map((id) => (
-              <button
-                key={id}
-                type="button"
-                onClick={() => setTemplateId(id)}
-                className={[
-                  "min-h-[44px] rounded-md border px-3 py-2 text-sm",
-                  templateId === id
-                    ? "border-stone-700 bg-stone-800 text-white"
-                    : "border-stone-300 bg-white text-stone-700 hover:bg-stone-50",
-                ].join(" ")}
-              >
-                {JOURNAL_SOCIAL_POST_TEMPLATES[id].label}
-              </button>
-            ))}
-          </div>
-        </fieldset>
+        <MoriLogTemplatePicker value={templateId} onChange={setTemplateId} />
 
         {isMoriCard && moriFieldDefs ? (
           <div className="mt-4 space-y-4">
