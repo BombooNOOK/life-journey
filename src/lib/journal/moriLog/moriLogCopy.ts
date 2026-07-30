@@ -56,7 +56,7 @@ export const MORI_LOG_MOVIE_CREATE_LABEL = "森ログムービーを作成して
 
 export const MORI_LOG_MOVIE_CREATE_BUSY = "ムービーを作っています…";
 
-export const MORI_LOG_MOVIE_CREATE_PHASE_IMAGE = "カード画像を用意しています…（ contrビューが出ていればそのまま使います）";
+export const MORI_LOG_MOVIE_CREATE_PHASE_IMAGE = "カード画像を用意しています…（プレビューが出ていればそのまま使います）";
 
 export const MORI_LOG_MOVIE_CREATE_PHASE_ENCODE = "動画を書き出しています…";
 
