@@ -540,6 +540,19 @@ export const JournalSocialPostImagePanel = forwardRef<JournalSocialPostImagePane
         title: previewTitle,
       }),
       getCardPngBlob: async () => {
+        // プレビューがもう出ているなら、それを流用（再生成待ちで 0% 固まりを避ける）
+        if (previewDisplayUrl && !loadingPreview) {
+          try {
+            const cached = await fetch(previewDisplayUrl, { credentials: "same-origin" });
+            if (cached.ok) {
+              const blob = await cached.blob();
+              if (blob.size > 0) return blob;
+            }
+          } catch {
+            // 下の本取得へ
+          }
+        }
+
         const controller = new AbortController();
         const timeoutId = window.setTimeout(() => controller.abort(), 65_000);
         try {
@@ -585,7 +598,9 @@ export const JournalSocialPostImagePanel = forwardRef<JournalSocialPostImagePane
       buildThreeKomaRequestBody,
       debouncedTemplateId,
       downloadUrl,
+      loadingPreview,
       postEndpoint,
+      previewDisplayUrl,
       previewTitle,
       threeKomaNeedsUpload,
       usesThreeKomaTemplate,

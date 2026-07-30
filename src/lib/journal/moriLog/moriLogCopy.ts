@@ -56,7 +56,14 @@ export const MORI_LOG_MOVIE_CREATE_LABEL = "森ログムービーを作成して
 
 export const MORI_LOG_MOVIE_CREATE_BUSY = "ムービーを作っています…";
 
+export const MORI_LOG_MOVIE_CREATE_PHASE_IMAGE = "カード画像を用意しています…（ contrビューが出ていればそのまま使います）";
+
+export const MORI_LOG_MOVIE_CREATE_PHASE_ENCODE = "動画を書き出しています…";
+
 export const MORI_LOG_MOVIE_CREATE_OK = "ムービーを端末に保存しました。";
+
+export const MORI_LOG_MOVIE_CREATE_NEED_PREVIEW =
+  "上のプレビューにカードが表示されてから、ムービーを作成してください。";
 
 export const MORI_LOG_MOVIE_FAIL_TITLE = "森ログムービーを作成できませんでした。";
 

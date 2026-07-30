@@ -13,6 +13,8 @@ import {
   MORI_LOG_MOVIE_CREATE_BUSY,
   MORI_LOG_MOVIE_CREATE_LABEL,
   MORI_LOG_MOVIE_CREATE_OK,
+  MORI_LOG_MOVIE_CREATE_PHASE_ENCODE,
+  MORI_LOG_MOVIE_CREATE_PHASE_IMAGE,
   MORI_LOG_MOVIE_FAIL_BODY,
   MORI_LOG_MOVIE_FAIL_CLOSE,
   MORI_LOG_MOVIE_FAIL_RETRY,
@@ -76,6 +78,7 @@ export function MoriLogMakerPanel({
   const [savingMovie, setSavingMovie] = useState(false);
   const [creatingMovie, setCreatingMovie] = useState(false);
   const [createProgress, setCreateProgress] = useState<number | null>(null);
+  const [createPhase, setCreatePhase] = useState<"image" | "encode" | null>(null);
   const [failOpen, setFailOpen] = useState(false);
   const [failDetail, setFailDetail] = useState<string | null>(null);
   const [lastSavedCard, setLastSavedCard] = useState<MoriLogMedia | null>(null);
@@ -197,7 +200,8 @@ export function MoriLogMakerPanel({
     if (!selectedBgm || creatingMovieRef.current) return;
     creatingMovieRef.current = true;
     setCreatingMovie(true);
-    setCreateProgress(0);
+    setCreatePhase("image");
+    setCreateProgress(null);
     setFailOpen(false);
     setFailDetail(null);
     setMovieNote(null);
@@ -209,6 +213,9 @@ export function MoriLogMakerPanel({
       }
       const imageBlob = await panel.getCardPngBlob();
       const meta = panel.getCardMeta();
+
+      setCreatePhase("encode");
+      setCreateProgress(0);
       const movie = await composeMoriLogStillMovie({
         imageBlob,
         audioUrl: selectedBgm.src,
@@ -254,6 +261,7 @@ export function MoriLogMakerPanel({
       creatingMovieRef.current = false;
       setCreatingMovie(false);
       setCreateProgress(null);
+      setCreatePhase(null);
     }
   }, [
     companionType,
@@ -358,9 +366,15 @@ export function MoriLogMakerPanel({
             {creatingMovie ? MORI_LOG_MOVIE_CREATE_BUSY : MORI_LOG_MOVIE_CREATE_LABEL}
           </button>
         </div>
-        {creatingMovie && createProgress != null ? (
+        {creatingMovie ? (
           <p className="text-xs text-[#6b5a48]" role="status">
-            進捗 {Math.round(createProgress * 100)}%
+            {createPhase === "image"
+              ? MORI_LOG_MOVIE_CREATE_PHASE_IMAGE
+              : createPhase === "encode"
+                ? `${MORI_LOG_MOVIE_CREATE_PHASE_ENCODE}${
+                    createProgress != null ? ` ${Math.round(createProgress * 100)}%` : ""
+                  }`
+                : MORI_LOG_MOVIE_CREATE_BUSY}
           </p>
         ) : null}
         {movieNote ? (
