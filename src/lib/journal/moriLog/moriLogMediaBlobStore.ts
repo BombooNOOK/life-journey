@@ -13,7 +13,10 @@ export const MORI_LOG_MEDIA_BLOB_URI = "idb:moriLogMediaBlob.v1" as const;
 type BlobRecord = {
   id: string;
   mimeType: string;
-  buffer: ArrayBuffer;
+  /** 現行：Blob をそのまま格納（iOS の大容量 ArrayBuffer 失敗を避ける） */
+  blob?: Blob;
+  /** 旧形式互換 */
+  buffer?: ArrayBuffer;
   updatedAt: string;
 };
 
@@ -42,21 +45,32 @@ function idbRequest<T>(request: IDBRequest<T>): Promise<T> {
   });
 }
 
+function waitForTransaction(tx: IDBTransaction): Promise<void> {
+  return new Promise((resolve, reject) => {
+    tx.oncomplete = () => resolve();
+    tx.onerror = () => reject(tx.error ?? new Error("IndexedDB transaction failed"));
+    tx.onabort = () => reject(tx.error ?? new Error("IndexedDB transaction aborted"));
+  });
+}
+
 export async function putMoriLogMediaBlob(mediaId: string, blob: Blob): Promise<void> {
   const id = mediaId.trim();
   if (!id) throw new Error("mediaId is required");
-  const buffer = await blob.arrayBuffer();
+  if (blob.size <= 0) throw new Error("blob is empty");
+
   const db = await openDb();
   try {
     const tx = db.transaction(STORE_NAME, "readwrite");
+    const done = waitForTransaction(tx);
     const store = tx.objectStore(STORE_NAME);
     const record: BlobRecord = {
       id,
       mimeType: blob.type || "application/octet-stream",
-      buffer,
+      blob,
       updatedAt: new Date().toISOString(),
     };
-    await idbRequest(store.put(record));
+    store.put(record);
+    await done;
   } finally {
     db.close();
   }
@@ -71,10 +85,16 @@ export async function getMoriLogMediaBlob(mediaId: string): Promise<Blob | null>
       const tx = db.transaction(STORE_NAME, "readonly");
       const store = tx.objectStore(STORE_NAME);
       const record = await idbRequest(store.get(id) as IDBRequest<BlobRecord | undefined>);
-      if (!record?.buffer) return null;
-      return new Blob([new Uint8Array(record.buffer)], {
-        type: record.mimeType || "application/octet-stream",
-      });
+      if (!record) return null;
+      if (record.blob instanceof Blob && record.blob.size > 0) {
+        return record.blob;
+      }
+      if (record.buffer) {
+        return new Blob([new Uint8Array(record.buffer)], {
+          type: record.mimeType || "application/octet-stream",
+        });
+      }
+      return null;
     } finally {
       db.close();
     }
@@ -90,7 +110,9 @@ export async function removeMoriLogMediaBlob(mediaId: string): Promise<void> {
     const db = await openDb();
     try {
       const tx = db.transaction(STORE_NAME, "readwrite");
-      await idbRequest(tx.objectStore(STORE_NAME).delete(id));
+      const done = waitForTransaction(tx);
+      tx.objectStore(STORE_NAME).delete(id);
+      await done;
     } finally {
       db.close();
     }

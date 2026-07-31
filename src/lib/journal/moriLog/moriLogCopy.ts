@@ -60,7 +60,10 @@ export const MORI_LOG_MOVIE_CREATE_PHASE_IMAGE = "カード画像を用意して
 
 export const MORI_LOG_MOVIE_CREATE_PHASE_ENCODE = "動画を書き出しています…";
 
-export const MORI_LOG_MOVIE_CREATE_OK = "ムービーを端末に保存しました。";
+export const MORI_LOG_MOVIE_CREATE_OK = "ムービーを端末に保存しました。椅子からも見返せます。";
+
+export const MORI_LOG_MOVIE_CREATE_OK_CHAIR_PARTIAL =
+  "ムービーは端末に保存できました。椅子用の記録だけ失敗したので、もう一度作成すると椅子にも残せる場合があります。";
 
 export const MORI_LOG_MOVIE_CREATE_NEED_PREVIEW =
   "上のプレビューにカードが表示されてから、ムービーを作成してください。";

@@ -13,6 +13,7 @@ import {
   MORI_LOG_MOVIE_CREATE_BUSY,
   MORI_LOG_MOVIE_CREATE_LABEL,
   MORI_LOG_MOVIE_CREATE_OK,
+  MORI_LOG_MOVIE_CREATE_OK_CHAIR_PARTIAL,
   MORI_LOG_MOVIE_CREATE_PHASE_ENCODE,
   MORI_LOG_MOVIE_CREATE_PHASE_IMAGE,
   MORI_LOG_MOVIE_FAIL_BODY,
@@ -263,32 +264,41 @@ export function MoriLogMakerPanel({
       const fileName = `mori-log-movie_${stamp}.${movie.extension}`;
       downloadBlobFile(movie.blob, fileName);
 
+      // 端末への保存は成功済み。椅子用の記録は別扱い（失敗しても失敗ダイアログにしない）
+      let chairSaved = false;
       const pid = (profileId ?? "").trim();
       if (pid) {
-        const sourceCard = await resolveSourceCard();
-        const movieId = createMoriLogMediaId();
-        await putMoriLogMediaBlob(movieId, movie.blob);
-        await getMoriLogMediaStore().upsert({
-          ...buildMoriLogMovieCreateInput({
-            userId: (userId ?? "").trim(),
-            profileId: pid,
-            entryId,
-            templateId: sourceCard?.templateId ?? meta.templateId,
-            sourceCardId: sourceCard?.id ?? "preview-unsaved",
-            bgmId: selectedBgm.id,
-            entryDateKey,
-            tags,
-            mood: mood ?? null,
-            companionType: companionType ?? null,
-            title: sourceCard?.title ?? meta.title ?? null,
-            durationSec,
-          }),
-          id: movieId,
-          localUri: MORI_LOG_MEDIA_BLOB_URI,
-        });
+        try {
+          const sourceCard = await resolveSourceCard();
+          const movieId = createMoriLogMediaId();
+          await putMoriLogMediaBlob(movieId, movie.blob);
+          await getMoriLogMediaStore().upsert({
+            ...buildMoriLogMovieCreateInput({
+              userId: (userId ?? "").trim(),
+              profileId: pid,
+              entryId,
+              templateId: sourceCard?.templateId ?? meta.templateId,
+              sourceCardId: sourceCard?.id ?? "preview-unsaved",
+              bgmId: selectedBgm.id,
+              entryDateKey,
+              tags,
+              mood: mood ?? null,
+              companionType: companionType ?? null,
+              title: sourceCard?.title ?? meta.title ?? null,
+              durationSec,
+            }),
+            id: movieId,
+            localUri: MORI_LOG_MEDIA_BLOB_URI,
+          });
+          chairSaved = true;
+        } catch {
+          chairSaved = false;
+        }
       }
 
-      setMovieNote(MORI_LOG_MOVIE_CREATE_OK);
+      setMovieNote(
+        chairSaved || !pid ? MORI_LOG_MOVIE_CREATE_OK : MORI_LOG_MOVIE_CREATE_OK_CHAIR_PARTIAL,
+      );
     } catch (error) {
       setFailDetail(error instanceof Error ? error.message : null);
       setFailOpen(true);
