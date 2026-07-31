@@ -158,7 +158,7 @@ export const MORI_LOG_CARD_FIELDS_BY_TEMPLATE: Record<
       label: "タイトル",
       placeholder: "とっておきの一枚",
       slot: "title",
-      maxChars: 14,
+      maxChars: 10,
     },
     {
       kind: "hitokoto",

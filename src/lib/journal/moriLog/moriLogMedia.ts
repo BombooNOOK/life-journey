@@ -13,6 +13,15 @@ export type MoriLogStorageKind = "local" | "none" | "remote_temp";
 /** ムービーMVPの標準尺（秒）。Step 3 の書き出しでも共用 */
 export const MORI_LOG_MOVIE_DEFAULT_DURATION_SEC = 10;
 
+/** 今日の3コマあしあと向けの尺（秒）。コマが多いのでやや長め */
+export const MORI_LOG_MOVIE_3KOMA_DURATION_SEC = 12;
+
+export function moriLogMovieDurationSecForTemplate(templateId: string): number {
+  return templateId === "kyou_no_3koma_ashiato"
+    ? MORI_LOG_MOVIE_3KOMA_DURATION_SEC
+    : MORI_LOG_MOVIE_DEFAULT_DURATION_SEC;
+}
+
 export type MoriLogMedia = {
   id: string;
   /** 既存 Journal と同様のユーザー識別（email 等）。未取得時は空文字可 */

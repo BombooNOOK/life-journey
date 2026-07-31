@@ -38,7 +38,7 @@ import {
 } from "@/lib/journal/moriLog/composeMoriLogStillMovie";
 import {
   buildMoriLogMovieCreateInput,
-  MORI_LOG_MOVIE_DEFAULT_DURATION_SEC,
+  moriLogMovieDurationSecForTemplate,
   type MoriLogMedia,
 } from "@/lib/journal/moriLog/moriLogMedia";
 import { getMoriLogMediaStore } from "@/lib/journal/moriLog/moriLogMediaStore";
@@ -175,7 +175,7 @@ export function MoriLogMakerPanel({
           mood: mood ?? null,
           companionType: companionType ?? null,
           title: sourceCard.title ?? null,
-          durationSec: MORI_LOG_MOVIE_DEFAULT_DURATION_SEC,
+          durationSec: moriLogMovieDurationSecForTemplate(sourceCard.templateId),
         }),
       );
       setMovieNote(MORI_LOG_MOVIE_SAVE_OK);
@@ -214,12 +214,13 @@ export function MoriLogMakerPanel({
       const imageBlob = await panel.getCardPngBlob();
       const meta = panel.getCardMeta();
 
+      const durationSec = moriLogMovieDurationSecForTemplate(meta.templateId);
       setCreatePhase("encode");
       setCreateProgress(0);
       const movie = await composeMoriLogStillMovie({
         imageBlob,
         audioUrl: selectedBgm.src,
-        durationSec: MORI_LOG_MOVIE_DEFAULT_DURATION_SEC,
+        durationSec,
         audioFadeInSec: 0.35,
         audioFadeOutSec: 0.7,
         onProgress: setCreateProgress,
@@ -248,7 +249,7 @@ export function MoriLogMakerPanel({
             mood: mood ?? null,
             companionType: companionType ?? null,
             title: sourceCard?.title ?? meta.title ?? null,
-            durationSec: MORI_LOG_MOVIE_DEFAULT_DURATION_SEC,
+            durationSec,
           }),
         );
       }

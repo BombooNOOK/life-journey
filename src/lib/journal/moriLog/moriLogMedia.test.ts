@@ -2,7 +2,9 @@ import { describe, expect, it } from "vitest";
 
 import {
   buildMoriLogMovieCreateInput,
+  MORI_LOG_MOVIE_3KOMA_DURATION_SEC,
   MORI_LOG_MOVIE_DEFAULT_DURATION_SEC,
+  moriLogMovieDurationSecForTemplate,
 } from "@/lib/journal/moriLog/moriLogMedia";
 
 describe("buildMoriLogMovieCreateInput", () => {
@@ -29,5 +31,16 @@ describe("buildMoriLogMovieCreateInput", () => {
       templateId: "chiisana_ashiato",
       entryId: "e1",
     });
+  });
+});
+
+describe("moriLogMovieDurationSecForTemplate", () => {
+  it("uses a longer duration for 3koma", () => {
+    expect(moriLogMovieDurationSecForTemplate("kyou_no_3koma_ashiato")).toBe(
+      MORI_LOG_MOVIE_3KOMA_DURATION_SEC,
+    );
+    expect(moriLogMovieDurationSecForTemplate("chiisana_ashiato")).toBe(
+      MORI_LOG_MOVIE_DEFAULT_DURATION_SEC,
+    );
   });
 });

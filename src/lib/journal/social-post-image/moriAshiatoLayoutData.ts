@@ -110,16 +110,16 @@ export const MORI_ASHIATO_LAYOUTS: Record<MoriAshiatoTemplateId, MoriAshiatoLayo
   totteoki_no_ashiato: {
     photo: { x: 70, y: 165, width: 680, height: 650, fit: "cover", borderRadiusPx: 4 },
     dateScrapbook: { x: 571, y: 952, fontSize: 18, lineHeight: 30, fill: "#4a3728", textAnchor: "middle", maxCharsPerLine: 16, maxLines: 1 },
-    title: { x: 421, y: 129, fontSize: 36, lineHeight: 30, fontWeight: 600, fill: "#4a3728", textAnchor: "middle", maxCharsPerLine: 14, maxLines: 1 },
+    title: { x: 421, y: 129, fontSize: 36, lineHeight: 30, fontWeight: 600, fill: "#4a3728", textAnchor: "middle", maxCharsPerLine: 10, maxLines: 1 },
     body: { x: 40, y: 40, fontSize: 1, lineHeight: 30, fill: "#00000000", textAnchor: "start", maxCharsPerLine: 1, maxLines: 1 },
-    comment: { x: 279, y: 850, fontSize: 22, lineHeight: 42, fill: "#4a3728", textAnchor: "middle", maxCharsPerLine: 18, maxLines: 2 },
+    comment: { x: 170, y: 850, fontSize: 22, lineHeight: 42, fill: "#4a3728", textAnchor: "start", maxCharsPerLine: 18, maxLines: 2 },
   },
   kyou_no_ashiato_wide: {
     photo: { x: 47, y: 199, width: 480, height: 613, fit: "cover", borderRadiusPx: 12 },
     dateScrapbook: { x: 292, y: 782, fontSize: 17, lineHeight: 30, fill: "#4a3728", textAnchor: "middle", maxCharsPerLine: 14, maxLines: 1 },
     title: { x: 80, y: 40, fontSize: 1, lineHeight: 30, fill: "#00000000", textAnchor: "start", maxCharsPerLine: 1, maxLines: 1 },
     body: { x: 80, y: 40, fontSize: 1, lineHeight: 30, fill: "#00000000", textAnchor: "start", maxCharsPerLine: 1, maxLines: 1 },
-    comment: { x: 174, y: 817, fontSize: 20, lineHeight: 28, fill: "#4a3728", textAnchor: "start", maxCharsPerLine: 21, maxLines: 2 },
+    comment: { x: 181, y: 814, fontSize: 20, lineHeight: 28, fill: "#4a3728", textAnchor: "start", maxCharsPerLine: 20, maxLines: 2 },
   },
   kyou_no_3koma_ashiato: {
     photo: { x: 120, y: 152, width: 340, height: 220, fit: "cover", borderRadiusPx: 14 },
@@ -128,10 +128,10 @@ export const MORI_ASHIATO_LAYOUTS: Record<MoriAshiatoTemplateId, MoriAshiatoLayo
       { x: 120, y: 680, width: 340, height: 224, fit: "cover", borderRadiusPx: 14 },
     ],
     dateScrapbook: { x: 288, y: 63, fontSize: 13, lineHeight: 30, fill: "#4a3728", textAnchor: "middle", maxCharsPerLine: 14, maxLines: 1 },
-    title: { x: 200, y: 362, fontSize: 17, lineHeight: 30, fill: "#4a3728", textAnchor: "start", maxCharsPerLine: 13, maxLines: 1 },
-    body: { x: 200, y: 628, fontSize: 17, lineHeight: 30, fill: "#4a3728", textAnchor: "start", maxCharsPerLine: 13, maxLines: 1 },
-    comment: { x: 200, y: 892, fontSize: 17, lineHeight: 26, fill: "#4a3728", textAnchor: "start", maxCharsPerLine: 13, maxLines: 1 },
-    summary: { x: 274, y: 958, fontSize: 18, lineHeight: 26, fill: "#4a3728", textAnchor: "middle", maxCharsPerLine: 15, maxLines: 1 },
+    title: { x: 200, y: 365, fontSize: 17, lineHeight: 30, fill: "#4a3728", textAnchor: "start", maxCharsPerLine: 23, maxLines: 1 },
+    body: { x: 200, y: 631, fontSize: 17, lineHeight: 30, fill: "#4a3728", textAnchor: "start", maxCharsPerLine: 23, maxLines: 1 },
+    comment: { x: 200, y: 895, fontSize: 17, lineHeight: 26, fill: "#4a3728", textAnchor: "start", maxCharsPerLine: 23, maxLines: 1 },
+    summary: { x: 274, y: 962, fontSize: 18, lineHeight: 26, fill: "#4a3728", textAnchor: "middle", maxCharsPerLine: 24, maxLines: 1 },
   },
 };
 

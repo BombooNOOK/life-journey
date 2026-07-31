@@ -33,6 +33,7 @@ describe("moriLogCardFields", () => {
       "cardTitle",
       "hitokoto",
     ]);
+    expect(moriLogCardFieldForTextSlot("totteoki_no_ashiato", "title")?.maxChars).toBe(10);
     expect(moriLogCardFieldForTextSlot("totteoki_no_ashiato", "comment")?.label).toBe(
       "ひとことメッセージ",
     );
