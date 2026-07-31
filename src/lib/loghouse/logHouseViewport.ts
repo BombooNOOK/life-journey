@@ -63,6 +63,7 @@ const ORDERS_RESERVED_TOP_SEGMENTS = new Set([
   "support",
   "resident-card",
   "go-out",
+  "hitoyasumi",
   "profile",
   "plans",
 ]);
@@ -76,12 +77,18 @@ export function isDailyFortuneImmersivePath(pathname: string | null): boolean {
   return segment.length > 0 && !ORDERS_RESERVED_TOP_SEGMENTS.has(segment);
 }
 
+/** ひとやすみの椅子（背景イラスト付きの見返し） */
+export function isHitoyasumiImmersivePath(pathname: string | null): boolean {
+  return pathname === "/orders/hitoyasumi" || Boolean(pathname?.startsWith("/orders/hitoyasumi/"));
+}
+
 /** スマホでヘッダー／底ナビを外す注文まわり没入ルート */
 export function isOrdersImmersiveMobilePath(pathname: string | null): boolean {
   return (
     isLogHouseImmersivePath(pathname) ||
     isForestBookshelfImmersivePath(pathname) ||
-    isDailyFortuneImmersivePath(pathname)
+    isDailyFortuneImmersivePath(pathname) ||
+    isHitoyasumiImmersivePath(pathname)
   );
 }
 

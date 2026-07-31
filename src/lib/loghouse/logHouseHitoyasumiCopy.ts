@@ -3,7 +3,11 @@ export const LOG_HOUSE_HITOYASUMI_PAGE_PATH = "/orders/hitoyasumi" as const;
 export const LOG_HOUSE_HITOYASUMI_PAGE_TITLE = "ひとやすみの椅子" as const;
 
 export const LOG_HOUSE_HITOYASUMI_PAGE_DESCRIPTION =
-  "この端末でつくった森ログカードとムービーを、ゆっくり眺められます。" as const;
+  "この端末でつくった森ログカードやムービーを、ここでゆっくり見返せます。" as const;
+
+/** 夕暮れの森を望む部屋（制作室アセット） */
+export const LOG_HOUSE_HITOYASUMI_BG_SRC =
+  "/images/ljd/hitoyasumi/rest-chair-bg-evening-forest.png" as const;
 
 export const LOG_HOUSE_HITOYASUMI_EMPTY_TITLE = "まだ森ログがありません" as const;
 
