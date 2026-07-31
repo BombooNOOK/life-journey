@@ -13,7 +13,11 @@ import {
   type HitoyasumiMediaFilter,
 } from "@/lib/journal/moriLog/hitoyasumiMedia";
 import { getMoriLogMediaBlob } from "@/lib/journal/moriLog/moriLogMediaBlobStore";
-import { isMoriLogCardMovieType, type MoriLogMedia } from "@/lib/journal/moriLog/moriLogMedia";
+import {
+  isMoriLogCardMovieType,
+  type MoriLogMedia,
+  type MoriLogMediaType,
+} from "@/lib/journal/moriLog/moriLogMedia";
 import { LOG_HOUSE_RETURN_TO_LABEL } from "@/lib/journal/logHouseLabels";
 import {
   LOG_HOUSE_HITOYASUMI_ALBUM_SOON_BODY,
@@ -31,6 +35,8 @@ import {
   LOG_HOUSE_HITOYASUMI_FILTER_MOVIE_SRC,
   LOG_HOUSE_HITOYASUMI_HELP_BUTTON_LABEL,
   LOG_HOUSE_HITOYASUMI_HELP_DISMISS,
+  LOG_HOUSE_HITOYASUMI_ITEM_FRAME_CARD_SRC,
+  LOG_HOUSE_HITOYASUMI_ITEM_FRAME_MOVIE_SRC,
   LOG_HOUSE_HITOYASUMI_NO_PREVIEW,
   LOG_HOUSE_HITOYASUMI_PAGE_DESCRIPTION,
   LOG_HOUSE_HITOYASUMI_PAGE_TITLE,
@@ -57,6 +63,12 @@ function HelpHintIcon() {
       <circle cx="12" cy="17" r="0.95" fill="currentColor" stroke="none" />
     </svg>
   );
+}
+
+function hitoyasumiItemFrameSrc(type: MoriLogMediaType): string {
+  return isMoriLogCardMovieType(type)
+    ? LOG_HOUSE_HITOYASUMI_ITEM_FRAME_MOVIE_SRC
+    : LOG_HOUSE_HITOYASUMI_ITEM_FRAME_CARD_SRC;
 }
 
 export function HitoyasumiChairPageClient({ profileId }: Props) {
@@ -275,47 +287,59 @@ export function HitoyasumiChairPageClient({ profileId }: Props) {
             </Link>
           </div>
         ) : (
-          <ul className="mt-5 grid grid-cols-2 gap-3">
+          <ul className="mt-5 grid grid-cols-2 gap-2.5 sm:gap-3">
             {visible.map((item) => {
               const thumb = thumbUrls[item.id];
               const isMovie = isMoriLogCardMovieType(item.type);
+              const title = item.title?.trim() || hitoyasumiTemplateLabel(item.templateId);
               return (
                 <li key={item.id}>
                   <button
                     type="button"
                     onClick={() => void openDetail(item)}
-                    className="group flex w-full flex-col overflow-hidden rounded-[1.15rem] border border-[#e4d5c0]/90 bg-[#fffaf2]/88 text-left shadow-[0_8px_22px_rgba(40,28,16,0.14)] backdrop-blur-[1px] transition hover:-translate-y-0.5 hover:border-[#c5b089]/90 hover:shadow-[0_12px_28px_rgba(40,28,16,0.18)]"
+                    className="group relative block w-full text-left transition hover:-translate-y-0.5"
+                    aria-label={`${hitoyasumiMediaTypeLabel(item.type)} ${title}`}
                   >
-                    <div className="relative aspect-[4/5] bg-[#efe4d4]">
-                      {thumb ? (
-                        isMovie ? (
-                          <video
-                            src={thumb}
-                            className="h-full w-full object-cover"
-                            muted
-                            playsInline
-                            preload="metadata"
-                          />
+                    <div className="relative aspect-[819/1024] w-full">
+                      <Image
+                        src={hitoyasumiItemFrameSrc(item.type)}
+                        alt=""
+                        fill
+                        sizes="(max-width: 768px) 46vw, 220px"
+                        className="pointer-events-none object-contain drop-shadow-[0_8px_18px_rgba(20,12,8,0.22)]"
+                      />
+
+                      {/* 破線より上：プレビュー */}
+                      <div className="absolute inset-x-[11%] top-[13.5%] bottom-[32%] overflow-hidden rounded-[0.65rem] bg-[#efe6d6]/55">
+                        {thumb ? (
+                          isMovie ? (
+                            <video
+                              src={thumb}
+                              className="h-full w-full object-cover"
+                              muted
+                              playsInline
+                              preload="metadata"
+                            />
+                          ) : (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img src={thumb} alt="" className="h-full w-full object-cover" />
+                          )
                         ) : (
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img src={thumb} alt="" className="h-full w-full object-cover" />
-                        )
-                      ) : (
-                        <div className="flex h-full items-center justify-center px-3 text-center text-xs leading-relaxed text-[#8a7660]">
-                          {LOG_HOUSE_HITOYASUMI_NO_PREVIEW}
-                        </div>
-                      )}
-                      <span className="absolute left-2 top-2 rounded-md border border-[#e0d2bc]/90 bg-[#fffaf2]/92 px-2 py-0.5 text-[11px] font-medium text-[#5c4a35] shadow-sm">
-                        {hitoyasumiMediaTypeLabel(item.type)}
-                      </span>
-                    </div>
-                    <div className="space-y-1 border-t border-[#eadfce]/90 bg-[#fffaf2]/94 px-2.5 py-2.5">
-                      <p className="truncate text-sm font-semibold text-[#3f3428]">
-                        {item.title?.trim() || hitoyasumiTemplateLabel(item.templateId)}
-                      </p>
-                      <p className="truncate text-[11px] text-[#8a7660]">
-                        {formatHitoyasumiCreatedAt(item.createdAt)}
-                      </p>
+                          <div className="flex h-full items-center justify-center px-2 text-center text-[10px] leading-relaxed text-[#8a7660]">
+                            {LOG_HOUSE_HITOYASUMI_NO_PREVIEW}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* 破線より下：タイトル（葉イラストを避ける） */}
+                      <div className="absolute inset-x-[11%] bottom-[7%] top-[72%] pr-[26%]">
+                        <p className="truncate text-[11px] font-semibold leading-snug text-[#3f3428] sm:text-xs">
+                          {title}
+                        </p>
+                        <p className="mt-0.5 truncate text-[9px] leading-snug text-[#8a7660] sm:text-[10px]">
+                          {formatHitoyasumiCreatedAt(item.createdAt)}
+                        </p>
+                      </div>
                     </div>
                   </button>
                 </li>

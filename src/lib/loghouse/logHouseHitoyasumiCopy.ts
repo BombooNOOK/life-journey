@@ -22,6 +22,16 @@ export const LOG_HOUSE_HITOYASUMI_FILTER_MOVIE_SRC =
 export const LOG_HOUSE_HITOYASUMI_FILTER_ALBUM_SRC =
   "/images/ljd/hitoyasumi/hitoyasumi-filter-album.png" as const;
 
+/** 一覧アイテムの紙カード枠（ラベル付き） */
+export const LOG_HOUSE_HITOYASUMI_ITEM_FRAME_CARD_SRC =
+  "/images/ljd/hitoyasumi/hitoyasumi-item-frame-card.png" as const;
+
+export const LOG_HOUSE_HITOYASUMI_ITEM_FRAME_MOVIE_SRC =
+  "/images/ljd/hitoyasumi/hitoyasumi-item-frame-movie.png" as const;
+
+export const LOG_HOUSE_HITOYASUMI_ITEM_FRAME_ALBUM_SRC =
+  "/images/ljd/hitoyasumi/hitoyasumi-item-frame-album.png" as const;
+
 export const LOG_HOUSE_HITOYASUMI_EMPTY_TITLE = "まだ森ログがありません" as const;
 
 export const LOG_HOUSE_HITOYASUMI_EMPTY_BODY =
