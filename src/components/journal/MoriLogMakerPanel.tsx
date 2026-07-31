@@ -37,7 +37,9 @@ import {
   downloadBlobFile,
 } from "@/lib/journal/moriLog/composeMoriLogStillMovie";
 import {
+  buildMoriLogCardImageCreateInput,
   buildMoriLogMovieCreateInput,
+  isMoriLogCardImageType,
   moriLogMovieDurationSecForTemplate,
   type MoriLogMedia,
 } from "@/lib/journal/moriLog/moriLogMedia";
@@ -100,25 +102,19 @@ export function MoriLogMakerPanel({
         return;
       }
       try {
-        const saved = await getMoriLogMediaStore().upsert({
-          userId: (userId ?? "").trim(),
-          profileId: pid,
-          entryId,
-          type: "card",
-          templateId: params.templateId,
-          bgmId: null,
-          entryDateKey,
-          tags,
-          mood: mood ?? null,
-          companionType: companionType ?? null,
-          title: params.title.trim() || null,
-          captionText: null,
-          hashtags: [],
-          outputFormat: "png",
-          storage: "local",
-          localUri: null,
-          remoteUrl: null,
-        });
+        const saved = await getMoriLogMediaStore().upsert(
+          buildMoriLogCardImageCreateInput({
+            userId: (userId ?? "").trim(),
+            profileId: pid,
+            entryId,
+            templateId: params.templateId,
+            entryDateKey,
+            tags,
+            mood: mood ?? null,
+            companionType: companionType ?? null,
+            title: params.title.trim() || null,
+          }),
+        );
         setLastSavedCard(saved);
         setHistoryNote("この端末に、森ログカードの記録を残しました（画像本体はダウンロード分です）。");
       } catch {
@@ -129,7 +125,7 @@ export function MoriLogMakerPanel({
   );
 
   const resolveSourceCard = useCallback(async (): Promise<MoriLogMedia | null> => {
-    if (lastSavedCard && lastSavedCard.entryId === entryId && lastSavedCard.type === "card") {
+    if (lastSavedCard && lastSavedCard.entryId === entryId && isMoriLogCardImageType(lastSavedCard.type)) {
       return lastSavedCard;
     }
     const pid = (profileId ?? "").trim();
@@ -137,7 +133,7 @@ export function MoriLogMakerPanel({
     const cards = await getMoriLogMediaStore().list({
       profileId: pid,
       entryId,
-      type: "card",
+      type: "card_image",
     });
     return cards[0] ?? null;
   }, [entryId, lastSavedCard, profileId]);

@@ -1,5 +1,6 @@
 import {
   createMoriLogMediaId,
+  normalizeMoriLogMediaType,
   type MoriLogMedia,
   type MoriLogMediaCreateInput,
   type MoriLogMediaType,
@@ -48,6 +49,36 @@ function storageKey(profileId: string): string {
   return `${STORAGE_PREFIX}${profileId || "_"}`;
 }
 
+function isMoriLogMediaRawShape(value: unknown): value is Record<string, unknown> {
+  if (!value || typeof value !== "object") return false;
+  const v = value as Record<string, unknown>;
+  return (
+    typeof v.id === "string" &&
+    typeof v.profileId === "string" &&
+    typeof v.entryId === "string" &&
+    normalizeMoriLogMediaType(v.type) != null &&
+    typeof v.templateId === "string" &&
+    typeof v.entryDateKey === "string" &&
+    Array.isArray(v.tags) &&
+    Array.isArray(v.hashtags) &&
+    typeof v.createdAt === "string"
+  );
+}
+
+/**
+ * 生 JSON → 現行 MoriLogMedia。
+ * 旧 type（card / movie）はここで正規化する。
+ */
+export function normalizeMoriLogMediaRecord(value: unknown): MoriLogMedia | null {
+  if (!isMoriLogMediaRawShape(value)) return null;
+  const type = normalizeMoriLogMediaType(value.type);
+  if (!type) return null;
+  return {
+    ...(value as unknown as MoriLogMedia),
+    type,
+  };
+}
+
 function readAll(profileId: string): MoriLogMedia[] {
   const storage = getLocalStorage();
   if (!storage) {
@@ -58,7 +89,25 @@ function readAll(profileId: string): MoriLogMedia[] {
     if (!raw) return [];
     const parsed = JSON.parse(raw) as unknown;
     if (!Array.isArray(parsed)) return [];
-    return parsed.filter(isMoriLogMediaShape);
+
+    let migrated = false;
+    const items: MoriLogMedia[] = [];
+    for (const entry of parsed) {
+      const beforeType =
+        entry && typeof entry === "object"
+          ? (entry as { type?: unknown }).type
+          : undefined;
+      const next = normalizeMoriLogMediaRecord(entry);
+      if (!next) continue;
+      if (beforeType !== next.type) migrated = true;
+      items.push(next);
+    }
+
+    // 旧 type を現行に書き戻し、次回以降の読み取りを安定させる
+    if (migrated) {
+      writeAll(profileId, items);
+    }
+    return items;
   } catch {
     return [];
   }
@@ -71,22 +120,6 @@ function writeAll(profileId: string, items: MoriLogMedia[]): void {
     return;
   }
   storage.setItem(storageKey(profileId), JSON.stringify(items));
-}
-
-function isMoriLogMediaShape(value: unknown): value is MoriLogMedia {
-  if (!value || typeof value !== "object") return false;
-  const v = value as Record<string, unknown>;
-  return (
-    typeof v.id === "string" &&
-    typeof v.profileId === "string" &&
-    typeof v.entryId === "string" &&
-    (v.type === "card" || v.type === "movie") &&
-    typeof v.templateId === "string" &&
-    typeof v.entryDateKey === "string" &&
-    Array.isArray(v.tags) &&
-    Array.isArray(v.hashtags) &&
-    typeof v.createdAt === "string"
-  );
 }
 
 function matchesFilter(item: MoriLogMedia, filter: MoriLogMediaListFilter): boolean {
@@ -117,9 +150,11 @@ export function createLocalMoriLogMediaStore(): MoriLogMediaStore {
       const profileId = input.profileId;
       const now = input.createdAt ?? new Date().toISOString();
       const id = input.id ?? createMoriLogMediaId();
+      const type = normalizeMoriLogMediaType(input.type) ?? input.type;
       const next: MoriLogMedia = {
         ...input,
         id,
+        type,
         createdAt: now,
         tags: [...input.tags],
         hashtags: [...input.hashtags],

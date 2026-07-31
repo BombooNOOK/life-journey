@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import {
   createLocalMoriLogMediaStore,
+  normalizeMoriLogMediaRecord,
   resetMoriLogMediaStoreForTests,
 } from "@/lib/journal/moriLog/moriLogMediaStore";
 import type { MoriLogMediaCreateInput } from "@/lib/journal/moriLog/moriLogMedia";
@@ -11,7 +12,7 @@ function sample(partial?: Partial<MoriLogMediaCreateInput>): MoriLogMediaCreateI
     userId: "user@example.com",
     profileId: "prof1",
     entryId: "entry1",
-    type: "card",
+    type: "card_image",
     templateId: "sns02",
     entryDateKey: "2026-07-24",
     tags: ["森", "散歩"],
@@ -56,7 +57,10 @@ describe("createLocalMoriLogMediaStore", () => {
     expect(await store.list({ profileId: "prof1", monthKey: "2026-07" })).toHaveLength(1);
     expect(await store.list({ profileId: "prof1", tag: "森" })).toHaveLength(1);
     expect(await store.list({ profileId: "prof1", entryDateKey: "2026-07-24" })).toHaveLength(1);
-    expect(await store.get(a.id, "prof1")).toMatchObject({ templateId: "sns02", type: "card" });
+    expect(await store.get(a.id, "prof1")).toMatchObject({
+      templateId: "sns02",
+      type: "card_image",
+    });
   });
 
   it("removes by id", async () => {
@@ -66,12 +70,14 @@ describe("createLocalMoriLogMediaStore", () => {
     expect(await store.list({ profileId: "prof1" })).toHaveLength(0);
   });
 
-  it("stores movie settings linked to a source card", async () => {
+  it("stores card_movie settings linked to a source card_image", async () => {
     const store = createLocalMoriLogMediaStore();
-    const card = await store.upsert(sample({ type: "card", templateId: "kyou_no_ashiato" }));
+    const card = await store.upsert(
+      sample({ type: "card_image", templateId: "kyou_no_ashiato" }),
+    );
     const movie = await store.upsert(
       sample({
-        type: "movie",
+        type: "card_movie",
         templateId: card.templateId,
         sourceCardId: card.id,
         bgmId: "bgm-intro-video",
@@ -80,11 +86,75 @@ describe("createLocalMoriLogMediaStore", () => {
       }),
     );
 
-    expect(movie.type).toBe("movie");
+    expect(movie.type).toBe("card_movie");
     expect(movie.sourceCardId).toBe(card.id);
     expect(movie.bgmId).toBe("bgm-intro-video");
     expect(movie.durationSec).toBe(6);
-    expect(await store.list({ profileId: "prof1", type: "movie" })).toHaveLength(1);
-    expect(await store.list({ profileId: "prof1", type: "card" })).toHaveLength(1);
+    expect(await store.list({ profileId: "prof1", type: "card_movie" })).toHaveLength(1);
+    expect(await store.list({ profileId: "prof1", type: "card_image" })).toHaveLength(1);
+  });
+
+  it("migrates legacy card/movie types from localStorage on read", async () => {
+    const key = "ljd.moriLogMedia.v1:prof1";
+    localStorage.setItem(
+      key,
+      JSON.stringify([
+        {
+          id: "legacy-card",
+          userId: "u",
+          profileId: "prof1",
+          entryId: "e1",
+          type: "card",
+          templateId: "chiisana_ashiato",
+          entryDateKey: "2026-07-01",
+          tags: [],
+          hashtags: [],
+          outputFormat: "png",
+          createdAt: "2026-07-01T00:00:00.000Z",
+          storage: "local",
+        },
+        {
+          id: "legacy-movie",
+          userId: "u",
+          profileId: "prof1",
+          entryId: "e1",
+          type: "movie",
+          templateId: "chiisana_ashiato",
+          sourceCardId: "legacy-card",
+          bgmId: "bgm-1",
+          entryDateKey: "2026-07-01",
+          tags: [],
+          hashtags: [],
+          outputFormat: "mp4",
+          createdAt: "2026-07-01T01:00:00.000Z",
+          storage: "local",
+        },
+      ]),
+    );
+
+    const store = createLocalMoriLogMediaStore();
+    const listed = await store.list({ profileId: "prof1" });
+    expect(listed.map((item) => item.type).sort()).toEqual(["card_image", "card_movie"]);
+
+    const rewritten = JSON.parse(localStorage.getItem(key) ?? "[]") as Array<{ type: string }>;
+    expect(rewritten.map((item) => item.type).sort()).toEqual(["card_image", "card_movie"]);
+  });
+});
+
+describe("normalizeMoriLogMediaRecord", () => {
+  it("maps legacy type fields", () => {
+    expect(
+      normalizeMoriLogMediaRecord({
+        id: "1",
+        profileId: "p",
+        entryId: "e",
+        type: "card",
+        templateId: "t",
+        entryDateKey: "2026-01-01",
+        tags: [],
+        hashtags: [],
+        createdAt: "2026-01-01T00:00:00.000Z",
+      })?.type,
+    ).toBe("card_image");
   });
 });

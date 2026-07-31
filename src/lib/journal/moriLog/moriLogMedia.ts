@@ -4,7 +4,24 @@
  * 将来「ひとやすみの椅子」で一覧・月・タグ・去年の今日に使う。
  */
 
-export type MoriLogMediaType = "card" | "movie";
+/**
+ * 森ログメディアの種類。
+ * - card_image: 森ログカード静止画（PNG / 画像DL）
+ * - card_movie: カードに BGM をのせた短い MP4（現在の森ログムービー）
+ * - video_memory: 将来の元動画はめ込み系（未実装・予約）
+ */
+export type MoriLogMediaType = "card_image" | "card_movie" | "video_memory";
+
+/** localStorage に残っている旧 type（読み取り時に正規化する） */
+export type MoriLogMediaTypeLegacy = "card" | "movie";
+
+export type MoriLogMediaTypeStored = MoriLogMediaType | MoriLogMediaTypeLegacy;
+
+export const MORI_LOG_MEDIA_TYPES: readonly MoriLogMediaType[] = [
+  "card_image",
+  "card_movie",
+  "video_memory",
+] as const;
 
 export type MoriLogOutputFormat = "png" | "jpg" | "mp4";
 
@@ -22,6 +39,27 @@ export function moriLogMovieDurationSecForTemplate(templateId: string): number {
     : MORI_LOG_MOVIE_DEFAULT_DURATION_SEC;
 }
 
+/**
+ * 旧 type → 現行 type。未知の値は null。
+ * card → card_image / movie → card_movie
+ */
+export function normalizeMoriLogMediaType(value: unknown): MoriLogMediaType | null {
+  if (value === "card_image" || value === "card_movie" || value === "video_memory") {
+    return value;
+  }
+  if (value === "card") return "card_image";
+  if (value === "movie") return "card_movie";
+  return null;
+}
+
+export function isMoriLogCardImageType(type: MoriLogMediaType): boolean {
+  return type === "card_image";
+}
+
+export function isMoriLogCardMovieType(type: MoriLogMediaType): boolean {
+  return type === "card_movie";
+}
+
 export type MoriLogMedia = {
   id: string;
   /** 既存 Journal と同様のユーザー識別（email 等）。未取得時は空文字可 */
@@ -31,9 +69,9 @@ export type MoriLogMedia = {
   entryId: string;
   type: MoriLogMediaType;
   templateId: string;
-  /** movie 用。元になった森ログカード履歴の id */
+  /** card_movie 用。元になった森ログカード履歴の id */
   sourceCardId?: string | null;
-  /** movie 用。card では省略可 */
+  /** card_movie 用。card_image では省略可 */
   bgmId?: string | null;
   durationSec?: number | null;
   /** 日本暦 YYYY-MM-DD（去年の今日の鍵） */
@@ -67,7 +105,40 @@ export function createMoriLogMediaId(): string {
   return `mori-log-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
 }
 
-/** ムービー履歴（本体MP4はまだ無くてもメタだけ残せる） */
+/** カード静止画履歴 */
+export function buildMoriLogCardImageCreateInput(input: {
+  userId: string;
+  profileId: string;
+  entryId: string;
+  templateId: string;
+  entryDateKey: string;
+  tags: string[];
+  mood?: string | null;
+  companionType?: string | null;
+  title?: string | null;
+}): MoriLogMediaCreateInput {
+  return {
+    userId: input.userId,
+    profileId: input.profileId,
+    entryId: input.entryId,
+    type: "card_image",
+    templateId: input.templateId,
+    bgmId: null,
+    entryDateKey: input.entryDateKey,
+    tags: [...input.tags],
+    mood: input.mood ?? null,
+    companionType: input.companionType ?? null,
+    title: input.title ?? null,
+    captionText: null,
+    hashtags: [],
+    outputFormat: "png",
+    storage: "local",
+    localUri: null,
+    remoteUrl: null,
+  };
+}
+
+/** カード＋BGM ムービー履歴（本体MP4はまだ無くてもメタだけ残せる） */
 export function buildMoriLogMovieCreateInput(input: {
   userId: string;
   profileId: string;
@@ -86,7 +157,7 @@ export function buildMoriLogMovieCreateInput(input: {
     userId: input.userId,
     profileId: input.profileId,
     entryId: input.entryId,
-    type: "movie",
+    type: "card_movie",
     templateId: input.templateId,
     sourceCardId: input.sourceCardId,
     bgmId: input.bgmId,
