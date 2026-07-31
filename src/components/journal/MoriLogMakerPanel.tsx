@@ -39,10 +39,15 @@ import {
 import {
   buildMoriLogCardImageCreateInput,
   buildMoriLogMovieCreateInput,
+  createMoriLogMediaId,
   isMoriLogCardImageType,
   moriLogMovieDurationSecForTemplate,
   type MoriLogMedia,
 } from "@/lib/journal/moriLog/moriLogMedia";
+import {
+  MORI_LOG_MEDIA_BLOB_URI,
+  putMoriLogMediaBlob,
+} from "@/lib/journal/moriLog/moriLogMediaBlobStore";
 import { getMoriLogMediaStore } from "@/lib/journal/moriLog/moriLogMediaStore";
 import { calendarDayKeyInJapanFromDate } from "@/lib/date/japanCalendarDate";
 import { extractTagsFromContent } from "@/lib/journal/diaryTags";
@@ -102,8 +107,16 @@ export function MoriLogMakerPanel({
         return;
       }
       try {
-        const saved = await getMoriLogMediaStore().upsert(
-          buildMoriLogCardImageCreateInput({
+        const id = createMoriLogMediaId();
+        let previewBlob: Blob | null = null;
+        try {
+          previewBlob = (await cardPanelRef.current?.getCardPngBlob()) ?? null;
+        } catch {
+          previewBlob = null;
+        }
+
+        const saved = await getMoriLogMediaStore().upsert({
+          ...buildMoriLogCardImageCreateInput({
             userId: (userId ?? "").trim(),
             profileId: pid,
             entryId,
@@ -114,10 +127,20 @@ export function MoriLogMakerPanel({
             companionType: companionType ?? null,
             title: params.title.trim() || null,
           }),
-        );
+          id,
+          localUri: previewBlob ? MORI_LOG_MEDIA_BLOB_URI : null,
+        });
+        if (previewBlob) {
+          try {
+            await putMoriLogMediaBlob(saved.id, previewBlob);
+          } catch {
+            /* 履歴メタは残す。椅子プレビューは次回保存で揃う */
+          }
+        }
         setLastSavedCard(saved);
-        setHistoryNote("この端末に、森ログカードの記録を残しました（画像本体はダウンロード分です）。");
-      } catch {
+        setHistoryNote(
+          "この端末に森ログカードを残しました。ログハウスの椅子からも見返せます。",
+        );      } catch {
         setHistoryNote("画像は保存できましたが、履歴の書き込みに失敗しました。");
       }
     },
@@ -232,21 +255,31 @@ export function MoriLogMakerPanel({
       const pid = (profileId ?? "").trim();
       if (pid) {
         const sourceCard = await resolveSourceCard();
+        const movieId = createMoriLogMediaId();
+        try {
+          await putMoriLogMediaBlob(movieId, movie.blob);
+        } catch {
+          /* メタだけでも履歴は残す */
+        }
         await getMoriLogMediaStore().upsert(
-          buildMoriLogMovieCreateInput({
-            userId: (userId ?? "").trim(),
-            profileId: pid,
-            entryId,
-            templateId: sourceCard?.templateId ?? meta.templateId,
-            sourceCardId: sourceCard?.id ?? "preview-unsaved",
-            bgmId: selectedBgm.id,
-            entryDateKey,
-            tags,
-            mood: mood ?? null,
-            companionType: companionType ?? null,
-            title: sourceCard?.title ?? meta.title ?? null,
-            durationSec,
-          }),
+          {
+            ...buildMoriLogMovieCreateInput({
+              userId: (userId ?? "").trim(),
+              profileId: pid,
+              entryId,
+              templateId: sourceCard?.templateId ?? meta.templateId,
+              sourceCardId: sourceCard?.id ?? "preview-unsaved",
+              bgmId: selectedBgm.id,
+              entryDateKey,
+              tags,
+              mood: mood ?? null,
+              companionType: companionType ?? null,
+              title: sourceCard?.title ?? meta.title ?? null,
+              durationSec,
+            }),
+            id: movieId,
+            localUri: MORI_LOG_MEDIA_BLOB_URI,
+          },
         );
       }
 

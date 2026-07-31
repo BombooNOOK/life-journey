@@ -6,6 +6,7 @@ export type LogHouseRoomSpotId =
   | "residentCard"
   | "todayResult"
   | "radio"
+  | "chair"
   | "goOut"
   | "mailbox";
 
@@ -32,7 +33,7 @@ export type LogHouseRoomHotspot = {
 export const LOG_HOUSE_ROOM_HOTSPOTS: LogHouseRoomHotspot[] = [
   { id: "bookshelf", x: 4.6, y: 27, width: 41.4, height: 31.1, hintLabelAlign: "start" },
   /**
-   * 机：タップは机〜日記付近。ヒントは開いた日記あたり（窓まで上げすぎない）
+   * 机：タップは机〜あしあと付近。ヒントは開いたあしあとあたり（窓まで上げすぎない）
    */
   {
     id: "desk",
@@ -46,6 +47,16 @@ export const LOG_HOUSE_ROOM_HOTSPOTS: LogHouseRoomHotspot[] = [
   { id: "residentCard", x: 22.1, y: 14.9, width: 19, height: 10.1 },
   { id: "todayResult", x: 70.7, y: 60.5, width: 25.6, height: 14.5, hintLabelAlign: "end" },
   { id: "radio", x: 59.2, y: 80.8, width: 21.8, height: 10.7, hintLabelAlign: "end" },
+  /** 椅子の座面〜背もたれ付近（パーツ chair に合わせたタップ） */
+  {
+    id: "chair",
+    x: 6,
+    y: 64,
+    width: 38,
+    height: 22,
+    hintLabelAlign: "start",
+    hintLabelEdge: "inside-top",
+  },
 ];
 
 /** 玄関の靴（おでかけ導線）— 576×1024 設計・% */

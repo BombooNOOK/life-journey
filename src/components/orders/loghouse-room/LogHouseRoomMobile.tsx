@@ -62,6 +62,7 @@ import {
   LOG_HOUSE_ROOM_TODAY_RESULT_PREPARING_MESSAGE,
 } from "@/lib/loghouse/logHouseRoomCopy";
 import { LOG_HOUSE_MAILBOX_PAGE_PATH } from "@/lib/loghouse/logHouseMailboxCopy";
+import { LOG_HOUSE_HITOYASUMI_PAGE_PATH } from "@/lib/loghouse/logHouseHitoyasumiCopy";
 import { LOG_HOUSE_ROOM_HOTSPOTS, type LogHouseRoomSpotId } from "@/lib/loghouse/logHouseRoomHotspots";
 import { LOG_HOUSE_GO_OUT_PAGE_PATH } from "@/lib/loghouse/logHouseGoOutCopy";
 import type { LogHouseRoomTimeOfDay } from "@/lib/loghouse/logHouseRoomTimeTheme";
@@ -601,6 +602,7 @@ export function LogHouseRoomMobile({
           : { ...KANTEI_LOCK },
       /** ラジカセは遷移ではなく操作カードを開く（href はヒント確認用のダミー） */
       radio: { href: "#radio-cassette" },
+      chair: { href: LOG_HOUSE_HITOYASUMI_PAGE_PATH, needsProfile: true },
       goOut: { href: LOG_HOUSE_GO_OUT_PAGE_PATH },
       mailbox: { href: LOG_HOUSE_MAILBOX_PAGE_PATH },
     }),

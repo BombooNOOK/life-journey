@@ -27,7 +27,7 @@
 | `loghouse_rabbit_blink.png` | 分身うさぎ・瞬き |
 | `loghouse_rabbit_walk_left.png` | 分身うさぎ・左向き歩き |
 | `loghouse_rabbit_walk_right.png` | 分身うさぎ・右向き歩き |
-| `loghouse_chair.png` | 椅子とテーブル（見た目のみ・タップなし） |
+| `loghouse_chair.png` | 椅子とテーブル（タップでひとやすみの椅子へ） |
 
 ## 座標調整
 

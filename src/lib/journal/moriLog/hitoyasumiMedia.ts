@@ -1,0 +1,61 @@
+/**
+ * ひとやすみの椅子 — 端末内森ログの見返し（軽量版）
+ */
+
+import {
+  isMoriLogCardImageType,
+  isMoriLogCardMovieType,
+  type MoriLogMedia,
+  type MoriLogMediaType,
+} from "@/lib/journal/moriLog/moriLogMedia";
+import { getMoriLogMediaStore } from "@/lib/journal/moriLog/moriLogMediaStore";
+import { isMoriAshiatoTemplateId, MORI_ASHIATO_TEMPLATES } from "@/lib/journal/social-post-image/moriAshiatoTemplates";
+
+export type HitoyasumiMediaFilter = "all" | "card_image" | "card_movie";
+
+/** 椅子で扱う種類（video_memory は将来） */
+export function isHitoyasumiBrowsableType(type: MoriLogMediaType): boolean {
+  return isMoriLogCardImageType(type) || isMoriLogCardMovieType(type);
+}
+
+export function filterHitoyasumiMedia(
+  items: readonly MoriLogMedia[],
+  filter: HitoyasumiMediaFilter,
+): MoriLogMedia[] {
+  return items.filter((item) => {
+    if (!isHitoyasumiBrowsableType(item.type)) return false;
+    if (filter === "all") return true;
+    return item.type === filter;
+  });
+}
+
+export async function listHitoyasumiMedia(profileId: string): Promise<MoriLogMedia[]> {
+  const pid = profileId.trim();
+  if (!pid) return [];
+  const items = await getMoriLogMediaStore().list({ profileId: pid });
+  return items.filter((item) => isHitoyasumiBrowsableType(item.type));
+}
+
+export function hitoyasumiMediaTypeLabel(type: MoriLogMediaType): string {
+  if (type === "card_movie") return "ムービー";
+  if (type === "card_image") return "カード";
+  return "その他";
+}
+
+export function hitoyasumiTemplateLabel(templateId: string): string {
+  if (isMoriAshiatoTemplateId(templateId)) {
+    return MORI_ASHIATO_TEMPLATES[templateId].label;
+  }
+  return templateId;
+}
+
+export function formatHitoyasumiCreatedAt(iso: string): string {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return iso.slice(0, 10);
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  const hh = String(d.getHours()).padStart(2, "0");
+  const mm = String(d.getMinutes()).padStart(2, "0");
+  return `${y}/${m}/${day} ${hh}:${mm}`;
+}

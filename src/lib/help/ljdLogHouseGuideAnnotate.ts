@@ -16,6 +16,7 @@ export type LjdLogHouseGuideMarkerId =
   | "desk"
   | "todayResult"
   | "radio"
+  | "chair"
   | "rabbit"
   | "mailbox"
   | "goOut";
@@ -33,7 +34,6 @@ export type LjdLogHouseGuideMarker = {
 
 /**
  * 番号位置は没入ログハウスのホットスポット付近。
- * 椅子は未役割のため含めない。
  */
 export const LJD_LOG_HOUSE_GUIDE_MARKERS: LjdLogHouseGuideMarker[] = [
   {
@@ -58,7 +58,7 @@ export const LJD_LOG_HOUSE_GUIDE_MARKERS: LjdLogHouseGuideMarker[] = [
     x: 72,
     y: 50,
     title: "今日のあしあとを残す",
-    body: "タップすると、ひとりで書くか・鑑定士といっしょに書くかを選べます。はじめての日記は鑑定士といっしょに書く流れになります。",
+    body: "タップすると、ひとりで書くか・鑑定士といっしょに書くかを選べます。はじめてのあしあとは鑑定士といっしょに書く流れになります。",
   },
   {
     id: "todayResult",
@@ -77,8 +77,16 @@ export const LJD_LOG_HOUSE_GUIDE_MARKERS: LjdLogHouseGuideMarker[] = [
     body: "タップすると森のラジカセが開きます。いまは操作の見た目だけお試しでき、音はこれから音楽堂で準備が進みます。",
   },
   {
-    id: "rabbit",
+    id: "chair",
     number: 6,
+    x: 22,
+    y: 72,
+    title: "ひとやすみの椅子",
+    body: "タップすると、この端末でつくった森ログカードやムービーをゆっくり眺められます。",
+  },
+  {
+    id: "rabbit",
+    number: 7,
     x: 49,
     y: 50,
     title: "うさぎ（あなた自身）",
@@ -86,7 +94,7 @@ export const LJD_LOG_HOUSE_GUIDE_MARKERS: LjdLogHouseGuideMarker[] = [
   },
   {
     id: "mailbox",
-    number: 7,
+    number: 8,
     x: 20,
     y: 89,
     title: "ポスト",
@@ -94,7 +102,7 @@ export const LJD_LOG_HOUSE_GUIDE_MARKERS: LjdLogHouseGuideMarker[] = [
   },
   {
     id: "goOut",
-    number: 8,
+    number: 9,
     x: 50,
     y: 93.5,
     title: "靴（おでかけ）",
