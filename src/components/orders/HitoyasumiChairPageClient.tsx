@@ -26,7 +26,6 @@ import {
   LOG_HOUSE_HITOYASUMI_CLOSE_DETAIL,
   LOG_HOUSE_HITOYASUMI_EMPTY_BODY,
   LOG_HOUSE_HITOYASUMI_EMPTY_TITLE,
-  LOG_HOUSE_HITOYASUMI_FILTER_ALL,
   LOG_HOUSE_HITOYASUMI_FILTER_ALBUM,
   LOG_HOUSE_HITOYASUMI_FILTER_ALBUM_SRC,
   LOG_HOUSE_HITOYASUMI_FILTER_CARD,
@@ -70,6 +69,10 @@ function hitoyasumiItemFrameSrc(type: MoriLogMediaType): string {
     ? LOG_HOUSE_HITOYASUMI_ITEM_FRAME_MOVIE_SRC
     : LOG_HOUSE_HITOYASUMI_ITEM_FRAME_CARD_SRC;
 }
+
+/** フィルターアイコン／紙カード枠の明るさを揃える */
+const HITOYASUMI_ASSET_TONE =
+  "brightness-[0.9] contrast-[0.97] saturate-[0.94]";
 
 export function HitoyasumiChairPageClient({ profileId }: Props) {
   const helpTitleId = useId();
@@ -157,9 +160,13 @@ export function HitoyasumiChairPageClient({ profileId }: Props) {
     [
       "relative flex w-[30%] max-w-[7.5rem] flex-col items-center justify-end rounded-2xl p-1 transition",
       active
-        ? "bg-[#fffaf2]/35 ring-2 ring-[#c5b089]/75 shadow-[0_8px_20px_rgba(40,28,16,0.18)]"
-        : "bg-transparent opacity-90 hover:bg-[#fffaf2]/18 hover:opacity-100",
+        ? "bg-[#fffaf2]/28 ring-2 ring-[#c5b089]/65 shadow-[0_8px_20px_rgba(40,28,16,0.16)]"
+        : "bg-transparent hover:bg-[#fffaf2]/14",
     ].join(" ");
+
+  const selectFilter = useCallback((next: "card_image" | "card_movie") => {
+    setFilter((prev) => (prev === next ? "all" : next));
+  }, []);
 
   return (
     <div className="relative min-h-[100dvh] overflow-x-hidden text-[#3f3428]">
@@ -206,14 +213,14 @@ export function HitoyasumiChairPageClient({ profileId }: Props) {
               aria-selected={filter === "card_image"}
               aria-label={LOG_HOUSE_HITOYASUMI_FILTER_CARD}
               className={filterImageButtonClass(filter === "card_image")}
-              onClick={() => setFilter("card_image")}
+              onClick={() => selectFilter("card_image")}
             >
               <Image
                 src={LOG_HOUSE_HITOYASUMI_FILTER_CARD_SRC}
                 alt=""
                 width={480}
                 height={480}
-                className="h-auto w-full object-contain drop-shadow-[0_6px_12px_rgba(20,12,8,0.28)]"
+                className={`h-auto w-full object-contain drop-shadow-[0_5px_10px_rgba(20,12,8,0.22)] ${HITOYASUMI_ASSET_TONE}`}
               />
             </button>
 
@@ -222,7 +229,7 @@ export function HitoyasumiChairPageClient({ profileId }: Props) {
               role="tab"
               aria-selected={false}
               aria-label={`${LOG_HOUSE_HITOYASUMI_FILTER_ALBUM}（準備中）`}
-              className={`${filterImageButtonClass(false)} opacity-80`}
+              className={filterImageButtonClass(false)}
               onClick={() => setAlbumSoonOpen(true)}
             >
               <Image
@@ -230,7 +237,7 @@ export function HitoyasumiChairPageClient({ profileId }: Props) {
                 alt=""
                 width={480}
                 height={480}
-                className="h-auto w-full object-contain drop-shadow-[0_6px_12px_rgba(20,12,8,0.28)]"
+                className={`h-auto w-full object-contain drop-shadow-[0_5px_10px_rgba(20,12,8,0.22)] ${HITOYASUMI_ASSET_TONE}`}
               />
             </button>
 
@@ -240,31 +247,15 @@ export function HitoyasumiChairPageClient({ profileId }: Props) {
               aria-selected={filter === "card_movie"}
               aria-label={LOG_HOUSE_HITOYASUMI_FILTER_MOVIE}
               className={filterImageButtonClass(filter === "card_movie")}
-              onClick={() => setFilter("card_movie")}
+              onClick={() => selectFilter("card_movie")}
             >
               <Image
                 src={LOG_HOUSE_HITOYASUMI_FILTER_MOVIE_SRC}
                 alt=""
                 width={480}
                 height={480}
-                className="h-auto w-full object-contain drop-shadow-[0_6px_12px_rgba(20,12,8,0.28)]"
+                className={`h-auto w-full object-contain drop-shadow-[0_5px_10px_rgba(20,12,8,0.22)] ${HITOYASUMI_ASSET_TONE}`}
               />
-            </button>
-          </div>
-
-          <div className="mt-2 flex justify-center">
-            <button
-              type="button"
-              role="tab"
-              aria-selected={filter === "all"}
-              onClick={() => setFilter("all")}
-              className={`min-h-[36px] rounded-full border px-3.5 text-xs transition ${
-                filter === "all"
-                  ? "border-[#c5b089]/70 bg-[#fffaf2]/55 font-semibold text-[#3f3428] shadow-sm backdrop-blur-[2px]"
-                  : "border-[#e4d5c0]/35 bg-[#fffaf2]/28 text-[#5c4a35]/90 backdrop-blur-[2px] hover:bg-[#fffaf2]/45"
-              }`}
-            >
-              {LOG_HOUSE_HITOYASUMI_FILTER_ALL}
             </button>
           </div>
         </div>
@@ -306,7 +297,7 @@ export function HitoyasumiChairPageClient({ profileId }: Props) {
                         alt=""
                         fill
                         sizes="(max-width: 768px) 46vw, 220px"
-                        className="pointer-events-none object-contain drop-shadow-[0_8px_18px_rgba(20,12,8,0.22)]"
+                        className={`pointer-events-none object-contain drop-shadow-[0_6px_14px_rgba(20,12,8,0.2)] ${HITOYASUMI_ASSET_TONE}`}
                       />
 
                       {/* 破線より上：プレビュー */}
