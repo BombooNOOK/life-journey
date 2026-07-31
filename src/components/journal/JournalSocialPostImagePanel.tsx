@@ -71,6 +71,8 @@ type Props = {
   onCardExported?: (params: {
     templateId: JournalSocialPostTemplateId;
     title: string;
+    /** 「カードを保存」でDLした本体。椅子プレビュー用に優先して使う */
+    imageBlob?: Blob;
   }) => void | Promise<void>;
 };
 
@@ -831,10 +833,11 @@ export const JournalSocialPostImagePanel = forwardRef<JournalSocialPostImagePane
                 : undefined
             }
             label={downloadLabel}
-            onDownloaded={() =>
+            onDownloaded={(imageBlob) =>
               onCardExported?.({
                 templateId: debouncedTemplateId,
                 title: previewTitle,
+                imageBlob,
               })
             }
           />

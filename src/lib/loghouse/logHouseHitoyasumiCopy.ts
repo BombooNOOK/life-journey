@@ -35,7 +35,7 @@ export const LOG_HOUSE_HITOYASUMI_ITEM_FRAME_ALBUM_SRC =
 export const LOG_HOUSE_HITOYASUMI_EMPTY_TITLE = "まだ森ログがありません" as const;
 
 export const LOG_HOUSE_HITOYASUMI_EMPTY_BODY =
-  "あしあとから森ログカードやムービーをつくると、ここに並びます。\n（この端末に残した記録だけが見えます）" as const;
+  "あしあとから「カードを保存」やムービー作成をすると、ここに並びます。\n（プレビュー付きで残ったものだけが表示されます）" as const;
 
 export const LOG_HOUSE_HITOYASUMI_NO_PREVIEW =
   "プレビュー用の画像がこの端末にありません。あしあとからもう一度保存すると、ここで見返せます。" as const;

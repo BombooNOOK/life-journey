@@ -14,8 +14,8 @@ type Props = {
   suggestedFileName?: string;
   label?: string;
   className?: string;
-  /** 端末への保存が成功したあと（履歴記録など） */
-  onDownloaded?: () => void | Promise<void>;
+  /** 端末への保存が成功したあと（履歴記録など）。download した Blob を渡す */
+  onDownloaded?: (blob: Blob) => void | Promise<void>;
 };
 
 function parseFilenameFromContentDisposition(header: string | null): string | null {
@@ -121,7 +121,7 @@ export function JournalSocialPostImageDownloadButton({
       anchor.click();
       anchor.remove();
       URL.revokeObjectURL(objectUrl);
-      await onDownloaded?.();
+      await onDownloaded?.(blob);
     } catch (e) {
       if (e instanceof Error && e.name === "AbortError") {
         setError("画像の作成がタイムアウトしました。しばらく待ってから再試行してください。");

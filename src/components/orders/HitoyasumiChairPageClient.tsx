@@ -87,9 +87,31 @@ export function HitoyasumiChairPageClient({ profileId }: Props) {
 
   const refresh = useCallback(async () => {
     setLoading(true);
+    const createdUrls: string[] = [];
     try {
       const list = await listHitoyasumiMedia(profileId);
-      setItems(list);
+      const nextItems: MoriLogMedia[] = [];
+      const nextThumbs: Record<string, string> = {};
+      for (const item of list) {
+        const blob = await getMoriLogMediaBlob(item.id);
+        if (!blob || blob.size === 0) continue;
+        const url = URL.createObjectURL(blob);
+        createdUrls.push(url);
+        nextItems.push(item);
+        nextThumbs[item.id] = url;
+      }
+      setThumbUrls((prev) => {
+        for (const url of Object.values(prev)) URL.revokeObjectURL(url);
+        return nextThumbs;
+      });
+      setItems(nextItems);
+    } catch {
+      for (const url of createdUrls) URL.revokeObjectURL(url);
+      setItems([]);
+      setThumbUrls((prev) => {
+        for (const url of Object.values(prev)) URL.revokeObjectURL(url);
+        return {};
+      });
     } finally {
       setLoading(false);
     }
@@ -100,26 +122,12 @@ export function HitoyasumiChairPageClient({ profileId }: Props) {
   }, [refresh]);
 
   useEffect(() => {
-    let cancelled = false;
-    const created: string[] = [];
-
-    void (async () => {
-      const next: Record<string, string> = {};
-      for (const item of items) {
-        const blob = await getMoriLogMediaBlob(item.id);
-        if (!blob || cancelled) continue;
-        const url = URL.createObjectURL(blob);
-        created.push(url);
-        next[item.id] = url;
-      }
-      if (!cancelled) setThumbUrls(next);
-    })();
-
     return () => {
-      cancelled = true;
-      for (const url of created) URL.revokeObjectURL(url);
+      for (const url of Object.values(thumbUrls)) URL.revokeObjectURL(url);
     };
-  }, [items]);
+    // アンマウント時のみ。thumbUrls 更新ごとの revoke は refresh 側で実施
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     return () => {

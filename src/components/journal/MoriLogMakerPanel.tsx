@@ -100,21 +100,36 @@ export function MoriLogMakerPanel({
   );
 
   const recordCardExport = useCallback(
-    async (params: { templateId: JournalSocialPostTemplateId; title: string }) => {
+    async (params: {
+      templateId: JournalSocialPostTemplateId;
+      title: string;
+      imageBlob?: Blob;
+    }) => {
       const pid = (profileId ?? "").trim();
       if (!pid) {
-        setHistoryNote("プロフィールを読み込めなかったため、履歴には残していません。画像の保存は完了しています。");
+        setHistoryNote(
+          "プロフィールを読み込めなかったため、椅子用の記録は残していません。画像のダウンロードは完了しています。",
+        );
         return;
       }
       try {
-        const id = createMoriLogMediaId();
-        let previewBlob: Blob | null = null;
-        try {
-          previewBlob = (await cardPanelRef.current?.getCardPngBlob()) ?? null;
-        } catch {
-          previewBlob = null;
+        let previewBlob = params.imageBlob && params.imageBlob.size > 0 ? params.imageBlob : null;
+        if (!previewBlob) {
+          try {
+            previewBlob = (await cardPanelRef.current?.getCardPngBlob()) ?? null;
+          } catch {
+            previewBlob = null;
+          }
+        }
+        if (!previewBlob || previewBlob.size === 0) {
+          setHistoryNote(
+            "画像のダウンロードはできましたが、椅子で見返す用の保存に失敗しました。もう一度「カードを保存」を試してください。",
+          );
+          return;
         }
 
+        const id = createMoriLogMediaId();
+        await putMoriLogMediaBlob(id, previewBlob);
         const saved = await getMoriLogMediaStore().upsert({
           ...buildMoriLogCardImageCreateInput({
             userId: (userId ?? "").trim(),
@@ -128,20 +143,16 @@ export function MoriLogMakerPanel({
             title: params.title.trim() || null,
           }),
           id,
-          localUri: previewBlob ? MORI_LOG_MEDIA_BLOB_URI : null,
+          localUri: MORI_LOG_MEDIA_BLOB_URI,
         });
-        if (previewBlob) {
-          try {
-            await putMoriLogMediaBlob(saved.id, previewBlob);
-          } catch {
-            /* 履歴メタは残す。椅子プレビューは次回保存で揃う */
-          }
-        }
         setLastSavedCard(saved);
         setHistoryNote(
           "この端末に森ログカードを残しました。ログハウスの椅子からも見返せます。",
-        );      } catch {
-        setHistoryNote("画像は保存できましたが、履歴の書き込みに失敗しました。");
+        );
+      } catch {
+        setHistoryNote(
+          "画像のダウンロードはできましたが、椅子用の記録に失敗しました。もう一度お試しください。",
+        );
       }
     },
     [companionType, entryDateKey, entryId, mood, profileId, tags, userId],
@@ -256,31 +267,25 @@ export function MoriLogMakerPanel({
       if (pid) {
         const sourceCard = await resolveSourceCard();
         const movieId = createMoriLogMediaId();
-        try {
-          await putMoriLogMediaBlob(movieId, movie.blob);
-        } catch {
-          /* メタだけでも履歴は残す */
-        }
-        await getMoriLogMediaStore().upsert(
-          {
-            ...buildMoriLogMovieCreateInput({
-              userId: (userId ?? "").trim(),
-              profileId: pid,
-              entryId,
-              templateId: sourceCard?.templateId ?? meta.templateId,
-              sourceCardId: sourceCard?.id ?? "preview-unsaved",
-              bgmId: selectedBgm.id,
-              entryDateKey,
-              tags,
-              mood: mood ?? null,
-              companionType: companionType ?? null,
-              title: sourceCard?.title ?? meta.title ?? null,
-              durationSec,
-            }),
-            id: movieId,
-            localUri: MORI_LOG_MEDIA_BLOB_URI,
-          },
-        );
+        await putMoriLogMediaBlob(movieId, movie.blob);
+        await getMoriLogMediaStore().upsert({
+          ...buildMoriLogMovieCreateInput({
+            userId: (userId ?? "").trim(),
+            profileId: pid,
+            entryId,
+            templateId: sourceCard?.templateId ?? meta.templateId,
+            sourceCardId: sourceCard?.id ?? "preview-unsaved",
+            bgmId: selectedBgm.id,
+            entryDateKey,
+            tags,
+            mood: mood ?? null,
+            companionType: companionType ?? null,
+            title: sourceCard?.title ?? meta.title ?? null,
+            durationSec,
+          }),
+          id: movieId,
+          localUri: MORI_LOG_MEDIA_BLOB_URI,
+        });
       }
 
       setMovieNote(MORI_LOG_MOVIE_CREATE_OK);
