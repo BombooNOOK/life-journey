@@ -12,10 +12,10 @@ import {
   MORI_LOG_CARD_SECTION_TITLE,
   MORI_LOG_MOVIE_CREATE_BUSY,
   MORI_LOG_MOVIE_CREATE_LABEL,
-  MORI_LOG_MOVIE_CREATE_CANCELLED,
   MORI_LOG_MOVIE_CREATE_OK,
   MORI_LOG_MOVIE_CREATE_OK_CHAIR_PARTIAL,
   MORI_LOG_MOVIE_CREATE_OK_NO_AUDIO,
+  MORI_LOG_MOVIE_CREATE_NEED_PROFILE,
   MORI_LOG_MOVIE_CREATE_PHASE_ENCODE,
   MORI_LOG_MOVIE_CREATE_PHASE_IMAGE,
   MORI_LOG_MOVIE_FAIL_BODY,
@@ -38,7 +38,6 @@ import { MORI_LOG_BGM_TRACKS, getMoriLogBgmTrack } from "@/lib/journal/moriLog/m
 import {
   composeMoriLogStillMovie,
   downloadBlobFile,
-  downloadOrShareBlobFile,
 } from "@/lib/journal/moriLog/composeMoriLogStillMovie";
 import {
   buildMoriLogCardImageCreateInput,
@@ -152,7 +151,7 @@ export function MoriLogMakerPanel({
         });
         setLastSavedCard(saved);
         setHistoryNote(
-          "この端末に森ログカードを残しました。ログハウスの椅子からも見返せます。",
+          "森ログカードができました。ログハウスの「ひとやすみの椅子」から見返せます。端末への保存や共有も、椅子からどうぞ。",
         );
       } catch {
         setHistoryNote(
@@ -284,75 +283,57 @@ export function MoriLogMakerPanel({
       return;
     }
 
-    // ここまで来たら動画本体は完成。以降の失敗は「作成失敗」ダイアログにしない
-    const stamp = new Date()
-      .toISOString()
-      .slice(0, 19)
-      .replace(/[-:T]/g, "");
-    const fileName = `mori-log-movie_${stamp}.${movie.extension}`;
-
+    // 端末の保存画面は出さず、椅子用に残すだけ（保存・共有は椅子の拡大表示から）
     try {
-      const shareResult = await downloadOrShareBlobFile(movie.blob, fileName);
-      if (shareResult === "cancelled") {
-        setMovieNote(MORI_LOG_MOVIE_CREATE_CANCELLED);
+      const pid = (profileId ?? "").trim();
+      if (!pid) {
+        setMovieNote(MORI_LOG_MOVIE_CREATE_NEED_PROFILE);
         return;
       }
 
       let chairSaved = false;
-      const pid = (profileId ?? "").trim();
-      if (pid) {
+      try {
+        const sourceCard = await resolveSourceCard();
+        const movieId = createMoriLogMediaId();
         try {
-          const sourceCard = await resolveSourceCard();
-          const movieId = createMoriLogMediaId();
-          // 一覧サムネ用にカード静止画を必ず残す（カード保存の有無は不要）
-          try {
-            await putMoriLogMediaPosterBlob(movieId, imageBlob);
-          } catch {
-            // ポスター失敗でも再生用動画があれば椅子には残す
-          }
-          // 動画本体が IDB に入らない端末向けに、カード画像をフォールバック保存
-          try {
-            await putMoriLogMediaBlob(movieId, movie.blob);
-          } catch {
-            await putMoriLogMediaBlob(movieId, imageBlob);
-          }
-          await getMoriLogMediaStore().upsert({
-            ...buildMoriLogMovieCreateInput({
-              userId: (userId ?? "").trim(),
-              profileId: pid,
-              entryId,
-              templateId: sourceCard?.templateId ?? meta.templateId,
-              sourceCardId: sourceCard?.id ?? "preview-unsaved",
-              bgmId: selectedBgm.id,
-              entryDateKey,
-              tags,
-              mood: mood ?? null,
-              companionType: companionType ?? null,
-              title: sourceCard?.title ?? meta.title ?? null,
-              durationSec,
-            }),
-            id: movieId,
-            localUri: MORI_LOG_MEDIA_BLOB_URI,
-          });
-          chairSaved = true;
+          await putMoriLogMediaPosterBlob(movieId, imageBlob);
         } catch {
-          chairSaved = false;
+          // ポスター失敗でも再生用動画があれば椅子には残す
         }
+        try {
+          await putMoriLogMediaBlob(movieId, movie.blob);
+        } catch {
+          await putMoriLogMediaBlob(movieId, imageBlob);
+        }
+        await getMoriLogMediaStore().upsert({
+          ...buildMoriLogMovieCreateInput({
+            userId: (userId ?? "").trim(),
+            profileId: pid,
+            entryId,
+            templateId: sourceCard?.templateId ?? meta.templateId,
+            sourceCardId: sourceCard?.id ?? "preview-unsaved",
+            bgmId: selectedBgm.id,
+            entryDateKey,
+            tags,
+            mood: mood ?? null,
+            companionType: companionType ?? null,
+            title: sourceCard?.title ?? meta.title ?? null,
+            durationSec,
+          }),
+          id: movieId,
+          localUri: MORI_LOG_MEDIA_BLOB_URI,
+        });
+        chairSaved = true;
+      } catch {
+        chairSaved = false;
       }
 
       setMovieNote(
-        movie.audioOmitted
-          ? MORI_LOG_MOVIE_CREATE_OK_NO_AUDIO
-          : chairSaved || !pid
-            ? MORI_LOG_MOVIE_CREATE_OK
-            : MORI_LOG_MOVIE_CREATE_OK_CHAIR_PARTIAL,
-      );
-    } catch (error) {
-      // 共有・ダウンロード後の想定外。作成自体は終わっているのでソフトに伝える
-      setMovieNote(
-        error instanceof Error
-          ? `ムービーは作成できました（${error.message}）。写真アプリやファイルをご確認ください。`
-          : MORI_LOG_MOVIE_CREATE_OK_CHAIR_PARTIAL,
+        !chairSaved
+          ? MORI_LOG_MOVIE_CREATE_OK_CHAIR_PARTIAL
+          : movie.audioOmitted
+            ? MORI_LOG_MOVIE_CREATE_OK_NO_AUDIO
+            : MORI_LOG_MOVIE_CREATE_OK,
       );
     } finally {
       creatingMovieRef.current = false;
@@ -424,11 +405,12 @@ export function MoriLogMakerPanel({
           createdAt={createdAt}
           hasPhoto={hasPhoto}
           photoSrc={photoSrc}
+          chairOnlyExport
           onCardExported={recordCardExport}
           surfaceLabels={{
             previewHeading: "森ログカード プレビュー",
             titleLabel: "カード用タイトル",
-            downloadLabel: "カードを保存",
+            downloadLabel: "カードを作成",
             previewAlt: "森ログカードのプレビュー",
           }}
         />

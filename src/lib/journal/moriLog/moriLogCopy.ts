@@ -27,12 +27,12 @@ export const MORI_LOG_CTA_SECONDARY = "あとで作る";
 export const MORI_LOG_CARD_SECTION_TITLE = "森ログカード";
 
 export const MORI_LOG_CARD_SECTION_HINT =
-  "あしあとの写真と言葉を、小さなカードにして残せます。保存すると端末にダウンロードされます。";
+  "あしあとの写真と言葉を、小さなカードにして残せます。作成するとログハウスの椅子から見返せます。写真アプリやSNSへは、椅子からいつでも保存・共有できます。";
 
 export const MORI_LOG_MOVIE_SECTION_TITLE = "森ログムービー";
 
 export const MORI_LOG_MOVIE_SECTION_HINT =
-  "できあがったカードにBGMをのせて、短いムービーにできます。まずは曲を選んで試聴してください。";
+  "できあがったカードにBGMをのせて、短いムービーにできます。作成すると椅子から見返せます。端末への保存や共有も椅子から行えます。";
 
 export const MORI_LOG_MOVIE_EXPORT_COMING_SOON =
   "動画ファイルの書き出し準備ができました。下のボタンから短いムービーを作れます。";
@@ -40,7 +40,7 @@ export const MORI_LOG_MOVIE_EXPORT_COMING_SOON =
 export const MORI_LOG_MOVIE_SAVE_SETTINGS_LABEL = "ムービー設定をこの端末に保存";
 
 export const MORI_LOG_MOVIE_SAVE_NEED_CARD =
-  "先に上の「カードを保存」で森ログカードを残してから、ムービー設定を保存してください。";
+  "先に上の「カードを作成」で森ログカードを残してから、ムービー設定を保存してください。";
 
 export const MORI_LOG_MOVIE_SAVE_NEED_BGM = "BGMを選んでから保存してください。";
 
@@ -52,7 +52,7 @@ export const MORI_LOG_MOVIE_SAVE_OK =
 
 export const MORI_LOG_MOVIE_SAVE_FAIL = "ムービー設定の保存に失敗しました。もう一度お試しください。";
 
-export const MORI_LOG_MOVIE_CREATE_LABEL = "森ログムービーを作成して保存";
+export const MORI_LOG_MOVIE_CREATE_LABEL = "森ログムービーを作成";
 
 export const MORI_LOG_MOVIE_CREATE_BUSY = "ムービーを作っています…";
 
@@ -60,16 +60,20 @@ export const MORI_LOG_MOVIE_CREATE_PHASE_IMAGE = "カード画像を用意して
 
 export const MORI_LOG_MOVIE_CREATE_PHASE_ENCODE = "動画を書き出しています…";
 
-export const MORI_LOG_MOVIE_CREATE_OK = "ムービーを端末に保存しました。椅子からも見返せます。";
+export const MORI_LOG_MOVIE_CREATE_OK =
+  "ムービーができました。ログハウスの「ひとやすみの椅子」から見返せます。端末への保存や共有も、椅子からどうぞ。";
 
 export const MORI_LOG_MOVIE_CREATE_OK_CHAIR_PARTIAL =
-  "ムービーは端末に保存できました。椅子用の記録だけ失敗したので、もう一度作成すると椅子にも残せる場合があります。";
+  "ムービーは作れましたが、椅子用の記録に失敗しました。もう一度作成を試すか、通信状況をご確認ください。";
 
 export const MORI_LOG_MOVIE_CREATE_CANCELLED =
-  "共有をキャンセルしました。写真アプリなどに保存したいときは、もう一度「ムービーを作成」からどうぞ。";
+  "共有をキャンセルしました。椅子から見返して、必要なときに保存・共有できます。";
 
 export const MORI_LOG_MOVIE_CREATE_OK_NO_AUDIO =
-  "ムービーを端末に保存しました（この端末ではBGMを載せられませんでした）。椅子からも見返せます。";
+  "ムービーができました（この端末ではBGMを載せられませんでした）。椅子から見返せます。";
+
+export const MORI_LOG_MOVIE_CREATE_NEED_PROFILE =
+  "プロフィールを読み込めなかったため、椅子用の記録を残せませんでした。";
 
 export const MORI_LOG_MOVIE_CREATE_NEED_PREVIEW =
   "上のプレビューにカードが表示されてから、ムービーを作成してください。";

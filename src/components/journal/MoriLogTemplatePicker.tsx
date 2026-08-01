@@ -5,8 +5,8 @@ import { useState } from "react";
 
 import {
   MORI_ASHIATO_TEMPLATE_IDS,
+  isMoriAshiatoTemplateId,
   moriLogPickerPreviewPath,
-  type MoriAshiatoTemplateId,
 } from "@/lib/journal/social-post-image/moriAshiatoTemplates";
 import {
   JOURNAL_SOCIAL_POST_TEMPLATES,
@@ -14,10 +14,12 @@ import {
   type JournalSocialPostTemplateId,
 } from "@/lib/journal/social-post-image/templates";
 
+const LEGACY_SNS_TEMPLATE_IDS = ["sns02", "sns03"] as const satisfies readonly JournalSocialPostTemplateId[];
+
 type Props = {
   value: JournalSocialPostTemplateId;
   onChange: (id: JournalSocialPostTemplateId) => void;
-  /** 森ログ以外（sns02/03）も出すか。森ログメーカーでは false 推奨 */
+  /** ひだまりフォト / 森のスクラップも一覧に出すか */
   includeLegacySns?: boolean;
 };
 
@@ -26,15 +28,22 @@ function aspectFor(id: JournalSocialPostTemplateId): string {
   return `${size.widthPx} / ${size.heightPx}`;
 }
 
+function pickerPreviewSrc(id: JournalSocialPostTemplateId): string {
+  if (isMoriAshiatoTemplateId(id)) return moriLogPickerPreviewPath(id);
+  if (id === "sns02") return "/images/journal-social-post/sns02-template-sample.png";
+  if (id === "sns03") return "/images/journal-social-post/sns03-template-sample.png";
+  return "/images/journal-social-post/sns02-template-sample.png";
+}
+
 export function MoriLogTemplatePicker({
   value,
   onChange,
   includeLegacySns = false,
 }: Props) {
-  const [enlargeId, setEnlargeId] = useState<MoriAshiatoTemplateId | null>(null);
-  const legacyIds = includeLegacySns
-    ? (["sns02", "sns03"] as const satisfies readonly JournalSocialPostTemplateId[])
-    : [];
+  const [enlargeId, setEnlargeId] = useState<JournalSocialPostTemplateId | null>(null);
+  const templateIds: JournalSocialPostTemplateId[] = includeLegacySns
+    ? [...MORI_ASHIATO_TEMPLATE_IDS, ...LEGACY_SNS_TEMPLATE_IDS]
+    : [...MORI_ASHIATO_TEMPLATE_IDS];
 
   return (
     <fieldset className="space-y-3">
@@ -44,7 +53,7 @@ export function MoriLogTemplatePicker({
       </p>
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-        {MORI_ASHIATO_TEMPLATE_IDS.map((id) => {
+        {templateIds.map((id) => {
           const selected = value === id;
           const label = JOURNAL_SOCIAL_POST_TEMPLATES[id].label;
           return (
@@ -68,7 +77,7 @@ export function MoriLogTemplatePicker({
                   style={{ aspectRatio: aspectFor(id) }}
                 >
                   <Image
-                    src={moriLogPickerPreviewPath(id)}
+                    src={pickerPreviewSrc(id)}
                     alt={`${label}の見本`}
                     fill
                     className="object-contain"
@@ -107,27 +116,6 @@ export function MoriLogTemplatePicker({
         })}
       </div>
 
-      {legacyIds.length > 0 ? (
-        <div className="flex flex-wrap gap-2 border-t border-stone-100 pt-3">
-          <p className="w-full text-xs font-medium text-stone-500">その他</p>
-          {legacyIds.map((id) => (
-            <button
-              key={id}
-              type="button"
-              onClick={() => onChange(id)}
-              className={[
-                "min-h-[40px] rounded-md border px-3 py-2 text-sm",
-                value === id
-                  ? "border-stone-700 bg-stone-800 text-white"
-                  : "border-stone-300 bg-white text-stone-700 hover:bg-stone-50",
-              ].join(" ")}
-            >
-              {JOURNAL_SOCIAL_POST_TEMPLATES[id].label}
-            </button>
-          ))}
-        </div>
-      ) : null}
-
       {enlargeId ? (
         <MoriLogTemplateEnlargeModal
           templateId={enlargeId}
@@ -149,7 +137,7 @@ function MoriLogTemplateEnlargeModal({
   onSelect,
   selected,
 }: {
-  templateId: MoriAshiatoTemplateId;
+  templateId: JournalSocialPostTemplateId;
   onClose: () => void;
   onSelect: () => void;
   selected: boolean;
@@ -173,7 +161,7 @@ function MoriLogTemplateEnlargeModal({
           style={{ aspectRatio: aspectFor(templateId) }}
         >
           <Image
-            src={moriLogPickerPreviewPath(templateId)}
+            src={pickerPreviewSrc(templateId)}
             alt={`${label}の見本（拡大）`}
             fill
             className="object-contain"

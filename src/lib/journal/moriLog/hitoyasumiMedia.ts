@@ -46,6 +46,8 @@ export function hitoyasumiTemplateLabel(templateId: string): string {
   if (isMoriAshiatoTemplateId(templateId)) {
     return MORI_ASHIATO_TEMPLATES[templateId].label;
   }
+  if (templateId === "sns02") return "ひだまりフォト（横長）";
+  if (templateId === "sns03") return "森のスクラップ（スクエア）";
   return templateId;
 }
 

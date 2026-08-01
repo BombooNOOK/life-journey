@@ -68,10 +68,15 @@ type Props = {
   hasPhoto?: boolean;
   photoSrc?: string | null;
   surfaceLabels?: SurfaceLabels;
+  /**
+   * true: 端末ダウンロードせず椅子用に残すだけ（森ログメーカー）
+   * テンプレ一覧に sns02 / sns03 も出す
+   */
+  chairOnlyExport?: boolean;
   onCardExported?: (params: {
     templateId: JournalSocialPostTemplateId;
     title: string;
-    /** 「カードを保存」でDLした本体。椅子プレビュー用に優先して使う */
+    /** 「カードを保存」で得た本体。椅子プレビュー用に優先して使う */
     imageBlob?: Blob;
   }) => void | Promise<void>;
 };
@@ -223,6 +228,7 @@ export const JournalSocialPostImagePanel = forwardRef<JournalSocialPostImagePane
       hasPhoto = false,
       photoSrc,
       surfaceLabels,
+      chairOnlyExport = false,
       onCardExported,
     },
     ref,
@@ -708,7 +714,11 @@ export const JournalSocialPostImagePanel = forwardRef<JournalSocialPostImagePane
   return (
     <div className="space-y-5">
       <div className="rounded-xl border border-stone-200 bg-white p-4 sm:p-5">
-        <MoriLogTemplatePicker value={templateId} onChange={setTemplateId} />
+        <MoriLogTemplatePicker
+          value={templateId}
+          onChange={setTemplateId}
+          includeLegacySns={chairOnlyExport}
+        />
 
         {isMoriCard && moriFieldDefs ? (
           <div className="mt-4 space-y-4">
@@ -833,6 +843,7 @@ export const JournalSocialPostImagePanel = forwardRef<JournalSocialPostImagePane
                 : undefined
             }
             label={downloadLabel}
+            saveToDevice={!chairOnlyExport}
             onDownloaded={(imageBlob) =>
               onCardExported?.({
                 templateId: debouncedTemplateId,

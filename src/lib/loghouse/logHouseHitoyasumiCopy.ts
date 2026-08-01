@@ -35,10 +35,23 @@ export const LOG_HOUSE_HITOYASUMI_ITEM_FRAME_ALBUM_SRC =
 export const LOG_HOUSE_HITOYASUMI_EMPTY_TITLE = "まだ森ログがありません" as const;
 
 export const LOG_HOUSE_HITOYASUMI_EMPTY_BODY =
-  "あしあとから「カードを保存」やムービー作成をすると、ここに並びます。\n（プレビュー付きで残ったものだけが表示されます）" as const;
+  "あしあとから「カードを作成」や「ムービーを作成」をすると、ここに並びます。\n端末への保存やSNSへの共有も、ここから行えます。" as const;
 
 export const LOG_HOUSE_HITOYASUMI_NO_PREVIEW =
-  "プレビュー用の画像がこの端末にありません。あしあとからもう一度保存すると、ここで見返せます。" as const;
+  "プレビュー用の画像がこの端末にありません。あしあとからもう一度作成すると、ここで見返せます。" as const;
+
+export const LOG_HOUSE_HITOYASUMI_SAVE_DEVICE = "端末に保存" as const;
+
+export const LOG_HOUSE_HITOYASUMI_SHARE = "共有する" as const;
+
+export const LOG_HOUSE_HITOYASUMI_ACTION_HINT =
+  "写真アプリやSNSへは、下のボタンから保存・共有できます。" as const;
+
+export const LOG_HOUSE_HITOYASUMI_ACTION_OK = "共有メニューを開きました。必要なアプリを選んでください。" as const;
+
+export const LOG_HOUSE_HITOYASUMI_ACTION_CANCELLED = "共有をキャンセルしました。" as const;
+
+export const LOG_HOUSE_HITOYASUMI_ACTION_FAIL = "保存・共有を開始できませんでした。もう一度お試しください。" as const;
 
 export const LOG_HOUSE_HITOYASUMI_FILTER_ALL = "すべて" as const;
 export const LOG_HOUSE_HITOYASUMI_FILTER_CARD = "カード" as const;

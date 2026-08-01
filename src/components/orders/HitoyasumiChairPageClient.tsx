@@ -17,12 +17,20 @@ import {
   getMoriLogMediaPosterBlob,
 } from "@/lib/journal/moriLog/moriLogMediaBlobStore";
 import {
+  downloadBlobFile,
+  downloadOrShareBlobFile,
+} from "@/lib/journal/moriLog/composeMoriLogStillMovie";
+import {
   isMoriLogCardMovieType,
   type MoriLogMedia,
   type MoriLogMediaType,
 } from "@/lib/journal/moriLog/moriLogMedia";
 import { LOG_HOUSE_RETURN_TO_LABEL } from "@/lib/journal/logHouseLabels";
 import {
+  LOG_HOUSE_HITOYASUMI_ACTION_CANCELLED,
+  LOG_HOUSE_HITOYASUMI_ACTION_FAIL,
+  LOG_HOUSE_HITOYASUMI_ACTION_HINT,
+  LOG_HOUSE_HITOYASUMI_ACTION_OK,
   LOG_HOUSE_HITOYASUMI_ALBUM_SOON_BODY,
   LOG_HOUSE_HITOYASUMI_ALBUM_SOON_TITLE,
   LOG_HOUSE_HITOYASUMI_BG_SRC,
@@ -42,6 +50,8 @@ import {
   LOG_HOUSE_HITOYASUMI_NO_PREVIEW,
   LOG_HOUSE_HITOYASUMI_PAGE_DESCRIPTION,
   LOG_HOUSE_HITOYASUMI_PAGE_TITLE,
+  LOG_HOUSE_HITOYASUMI_SAVE_DEVICE,
+  LOG_HOUSE_HITOYASUMI_SHARE,
 } from "@/lib/loghouse/logHouseHitoyasumiCopy";
 
 type Props = {
@@ -51,6 +61,7 @@ type Props = {
 type DetailState = {
   item: MoriLogMedia;
   objectUrl: string | null;
+  blob: Blob | null;
   /** IDB に動画が入らず画像ポスターだけ残った場合あり */
   blobMimeType: string | null;
 };
@@ -89,6 +100,8 @@ export function HitoyasumiChairPageClient({ profileId }: Props) {
   /** thumb が video/* なら true。ムービーでもポスター画像だけの場合あり */
   const [thumbIsVideo, setThumbIsVideo] = useState<Record<string, boolean>>({});
   const [detail, setDetail] = useState<DetailState | null>(null);
+  const [detailActionNote, setDetailActionNote] = useState<string | null>(null);
+  const [detailActionBusy, setDetailActionBusy] = useState(false);
   const [helpOpen, setHelpOpen] = useState(false);
   const [albumSoonOpen, setAlbumSoonOpen] = useState(false);
 
@@ -185,18 +198,78 @@ export function HitoyasumiChairPageClient({ profileId }: Props) {
   const openDetail = useCallback(async (item: MoriLogMedia) => {
     const blob = await getMoriLogMediaBlob(item.id);
     const objectUrl = blob ? URL.createObjectURL(blob) : null;
+    setDetailActionNote(null);
     setDetail((prev) => {
       if (prev?.objectUrl) URL.revokeObjectURL(prev.objectUrl);
-      return { item, objectUrl, blobMimeType: blob?.type ?? null };
+      return { item, objectUrl, blob: blob ?? null, blobMimeType: blob?.type ?? null };
     });
   }, []);
 
   const closeDetail = useCallback(() => {
+    setDetailActionNote(null);
+    setDetailActionBusy(false);
     setDetail((prev) => {
       if (prev?.objectUrl) URL.revokeObjectURL(prev.objectUrl);
       return null;
     });
   }, []);
+
+  const detailFileName = useCallback((item: MoriLogMedia, blob: Blob) => {
+    const stamp = (item.createdAt || "").slice(0, 10).replace(/-/g, "") || "mori-log";
+    const isMovie =
+      isMoriLogCardMovieType(item.type) && (blob.type || "").startsWith("video/");
+    const ext = isMovie ? (blob.type.includes("webm") ? "webm" : "mp4") : "png";
+    const kind = isMovie ? "movie" : "card";
+    return `mori-log-${kind}_${stamp}.${ext}`;
+  }, []);
+
+  const saveDetailToDevice = useCallback(async () => {
+    if (!detail?.blob || detailActionBusy) return;
+    setDetailActionBusy(true);
+    setDetailActionNote(null);
+    try {
+      // iPhone では共有メニュー経由が写真アプリ保存の定石
+      const result = await downloadOrShareBlobFile(
+        detail.blob,
+        detailFileName(detail.item, detail.blob),
+      );
+      if (result === "cancelled") {
+        setDetailActionNote(LOG_HOUSE_HITOYASUMI_ACTION_CANCELLED);
+      } else {
+        setDetailActionNote(LOG_HOUSE_HITOYASUMI_ACTION_OK);
+      }
+    } catch {
+      try {
+        downloadBlobFile(detail.blob, detailFileName(detail.item, detail.blob));
+        setDetailActionNote(LOG_HOUSE_HITOYASUMI_ACTION_OK);
+      } catch {
+        setDetailActionNote(LOG_HOUSE_HITOYASUMI_ACTION_FAIL);
+      }
+    } finally {
+      setDetailActionBusy(false);
+    }
+  }, [detail, detailActionBusy, detailFileName]);
+
+  const shareDetail = useCallback(async () => {
+    if (!detail?.blob || detailActionBusy) return;
+    setDetailActionBusy(true);
+    setDetailActionNote(null);
+    try {
+      const result = await downloadOrShareBlobFile(
+        detail.blob,
+        detailFileName(detail.item, detail.blob),
+      );
+      if (result === "cancelled") {
+        setDetailActionNote(LOG_HOUSE_HITOYASUMI_ACTION_CANCELLED);
+      } else {
+        setDetailActionNote(LOG_HOUSE_HITOYASUMI_ACTION_OK);
+      }
+    } catch {
+      setDetailActionNote(LOG_HOUSE_HITOYASUMI_ACTION_FAIL);
+    } finally {
+      setDetailActionBusy(false);
+    }
+  }, [detail, detailActionBusy, detailFileName]);
 
   const filterImageButtonClass = (active: boolean) =>
     [
@@ -448,22 +521,22 @@ export function HitoyasumiChairPageClient({ profileId }: Props) {
 
       {detail ? (
         <div
-          className="fixed inset-0 z-50 flex items-end justify-center bg-[#1a120c]/55 p-3 backdrop-blur-[2px] sm:items-center sm:p-6"
+          className="fixed inset-0 z-50 flex items-end justify-center bg-[#120c08]/72 p-0 backdrop-blur-[2px] sm:items-center sm:p-4"
           role="dialog"
           aria-modal="true"
           aria-label={detail.item.title?.trim() || LOG_HOUSE_HITOYASUMI_PAGE_TITLE}
           onClick={closeDetail}
         >
           <div
-            className="max-h-[92dvh] w-full max-w-lg overflow-auto rounded-[1.35rem] border border-[#e4d5c0]/95 bg-[#fffaf2] p-3 shadow-[0_20px_50px_rgba(20,12,8,0.35)] sm:p-4"
+            className="flex max-h-[100dvh] w-full max-w-lg flex-col overflow-hidden rounded-t-[1.35rem] border border-[#e4d5c0]/95 bg-[#fffaf2] shadow-[0_20px_50px_rgba(20,12,8,0.45)] sm:max-h-[94dvh] sm:rounded-[1.35rem]"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="mb-3 flex items-start justify-between gap-3">
-              <div>
+            <div className="flex items-start justify-between gap-3 px-3 pt-3 sm:px-4 sm:pt-4">
+              <div className="min-w-0">
                 <p className="inline-flex rounded-md border border-[#e0d2bc]/90 bg-[#f7efe3] px-2 py-0.5 text-xs font-medium text-[#5c4a35]">
                   {hitoyasumiMediaTypeLabel(detail.item.type)}
                 </p>
-                <h2 className="mt-2 text-lg font-semibold text-[#3d3226]">
+                <h2 className="mt-2 truncate text-lg font-semibold text-[#3d3226]">
                   {detail.item.title?.trim() || hitoyasumiTemplateLabel(detail.item.templateId)}
                 </h2>
                 <p className="mt-1 text-xs text-[#8a7660]">
@@ -480,29 +553,70 @@ export function HitoyasumiChairPageClient({ profileId }: Props) {
               </button>
             </div>
 
-            {detail.objectUrl ? (
-              isMoriLogCardMovieType(detail.item.type) &&
-              (detail.blobMimeType ?? "").startsWith("video/") ? (
-                <video
-                  src={detail.objectUrl}
-                  className="mx-auto max-h-[70dvh] w-full rounded-xl bg-[#2a221a]"
-                  controls
-                  autoPlay
-                  playsInline
-                />
+            <div className="min-h-0 flex-1 overflow-auto px-2 py-3 sm:px-4">
+              {detail.objectUrl ? (
+                isMoriLogCardMovieType(detail.item.type) &&
+                (detail.blobMimeType ?? "").startsWith("video/") ? (
+                  <video
+                    src={detail.objectUrl}
+                    className="mx-auto max-h-[68dvh] w-full rounded-xl bg-[#2a221a]"
+                    controls
+                    autoPlay
+                    playsInline
+                  />
+                ) : (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={detail.objectUrl}
+                    alt=""
+                    className="mx-auto max-h-[72dvh] w-full rounded-xl object-contain"
+                  />
+                )
               ) : (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={detail.objectUrl}
-                  alt=""
-                  className="mx-auto max-h-[70dvh] w-full rounded-xl object-contain"
-                />
-              )
-            ) : (
-              <p className="rounded-xl border border-[#e0d2bc] bg-[#f7efe3] px-4 py-8 text-center text-sm leading-relaxed text-[#6e5c48]">
-                {LOG_HOUSE_HITOYASUMI_NO_PREVIEW}
-              </p>
-            )}
+                <p className="rounded-xl border border-[#e0d2bc] bg-[#f7efe3] px-4 py-8 text-center text-sm leading-relaxed text-[#6e5c48]">
+                  {LOG_HOUSE_HITOYASUMI_NO_PREVIEW}
+                </p>
+              )}
+            </div>
+
+            {detail.blob ? (
+              <div className="space-y-2 border-t border-[#e8dcc8] bg-[#fff7ec]/95 px-3 py-3 sm:px-4">
+                <p className="text-xs leading-relaxed text-[#6e5c48]">
+                  {LOG_HOUSE_HITOYASUMI_ACTION_HINT}
+                </p>
+                <div className="flex flex-col gap-2 sm:flex-row">
+                  <button
+                    type="button"
+                    disabled={detailActionBusy}
+                    onClick={() => void saveDetailToDevice()}
+                    className="inline-flex min-h-[44px] flex-1 items-center justify-center gap-2 rounded-xl border border-emerald-800 bg-emerald-800 px-4 text-sm font-medium text-white hover:bg-emerald-900 disabled:opacity-60"
+                  >
+                    <svg aria-hidden className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v10m0 0 4-4m-4 4-4-4" />
+                      <path strokeLinecap="round" d="M5 18h14" />
+                    </svg>
+                    {LOG_HOUSE_HITOYASUMI_SAVE_DEVICE}
+                  </button>
+                  <button
+                    type="button"
+                    disabled={detailActionBusy}
+                    onClick={() => void shareDetail()}
+                    className="inline-flex min-h-[44px] flex-1 items-center justify-center gap-2 rounded-xl border border-[#c4b49a] bg-[#faf3e8] px-4 text-sm font-medium text-[#5c4a35] hover:bg-[#f3ead8] disabled:opacity-60"
+                  >
+                    <svg aria-hidden className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 14V4m0 0 4 4m-4-4-4 4" />
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 14v5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-5" />
+                    </svg>
+                    {LOG_HOUSE_HITOYASUMI_SHARE}
+                  </button>
+                </div>
+                {detailActionNote ? (
+                  <p className="text-xs leading-relaxed text-[#5c6b4a]" role="status">
+                    {detailActionNote}
+                  </p>
+                ) : null}
+              </div>
+            ) : null}
           </div>
         </div>
       ) : null}

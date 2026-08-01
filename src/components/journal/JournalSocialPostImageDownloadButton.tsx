@@ -14,6 +14,12 @@ type Props = {
   suggestedFileName?: string;
   label?: string;
   className?: string;
+  /**
+   * true（既定）: 端末へのダウンロード／共有シートを開く
+   * false: 画像生成のみ行い、椅子保存用コールバックへ渡す（迷子になりやすい iOS 保存画面を出さない）
+   */
+  saveToDevice?: boolean;
+  idleHint?: string;
   /** 端末への保存が成功したあと（履歴記録など）。download した Blob を渡す */
   onDownloaded?: (blob: Blob) => void | Promise<void>;
 };
@@ -57,6 +63,8 @@ export function JournalSocialPostImageDownloadButton({
   suggestedFileName,
   label = "画像を保存",
   className = "inline-flex min-h-[44px] items-center rounded-lg bg-emerald-800 px-4 py-2.5 text-sm font-medium text-white hover:bg-emerald-700 disabled:cursor-wait disabled:opacity-90",
+  saveToDevice = true,
+  idleHint,
   onDownloaded,
 }: Props) {
   const [busy, setBusy] = useState(false);
@@ -107,20 +115,22 @@ export function JournalSocialPostImageDownloadButton({
         return;
       }
 
-      const downloadName =
-        parseFilenameFromContentDisposition(res.headers.get("Content-Disposition")) ??
-        suggestedFileName ??
-        "mori-log-card.png";
+      if (saveToDevice) {
+        const downloadName =
+          parseFilenameFromContentDisposition(res.headers.get("Content-Disposition")) ??
+          suggestedFileName ??
+          "mori-log-card.png";
 
-      const objectUrl = URL.createObjectURL(blob);
-      const anchor = document.createElement("a");
-      anchor.href = objectUrl;
-      anchor.download = downloadName;
-      anchor.rel = "noopener";
-      document.body.appendChild(anchor);
-      anchor.click();
-      anchor.remove();
-      URL.revokeObjectURL(objectUrl);
+        const objectUrl = URL.createObjectURL(blob);
+        const anchor = document.createElement("a");
+        anchor.href = objectUrl;
+        anchor.download = downloadName;
+        anchor.rel = "noopener";
+        document.body.appendChild(anchor);
+        anchor.click();
+        anchor.remove();
+        URL.revokeObjectURL(objectUrl);
+      }
       await onDownloaded?.(blob);
     } catch (e) {
       if (e instanceof Error && e.name === "AbortError") {
@@ -133,7 +143,11 @@ export function JournalSocialPostImageDownloadButton({
       busyRef.current = false;
       setBusy(false);
     }
-  }, [buildJsonBody, href, onDownloaded, suggestedFileName]);
+  }, [buildJsonBody, href, onDownloaded, saveToDevice, suggestedFileName]);
+
+  const defaultIdleHint = saveToDevice
+    ? "タップすると保存が始まります。この画面のまま操作できます（別ページへ移りません）。"
+    : "タップするとカードを作成し、ログハウスの椅子から見返せるようにします。";
 
   return (
     <div className="space-y-2">
@@ -149,7 +163,7 @@ export function JournalSocialPostImageDownloadButton({
       <p className="max-w-sm text-xs leading-relaxed text-stone-600">
         {busy
           ? "画像を合成しています。完了までこの画面を閉じずにお待ちください。"
-          : "タップすると保存が始まります。この画面のまま操作できます（別ページへ移りません）。"}
+          : (idleHint ?? defaultIdleHint)}
       </p>
       {error ? (
         <p className="text-xs font-medium text-red-700" role="alert">
