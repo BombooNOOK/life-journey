@@ -65,6 +65,9 @@ export const MORI_LOG_MOVIE_CREATE_OK = "ムービーを端末に保存しまし
 export const MORI_LOG_MOVIE_CREATE_OK_CHAIR_PARTIAL =
   "ムービーは端末に保存できました。椅子用の記録だけ失敗したので、もう一度作成すると椅子にも残せる場合があります。";
 
+export const MORI_LOG_MOVIE_CREATE_CANCELLED =
+  "共有をキャンセルしました。写真アプリなどに保存したいときは、もう一度「ムービーを作成」からどうぞ。";
+
 export const MORI_LOG_MOVIE_CREATE_NEED_PREVIEW =
   "上のプレビューにカードが表示されてから、ムービーを作成してください。";
 

@@ -48,6 +48,8 @@ type Props = {
 type DetailState = {
   item: MoriLogMedia;
   objectUrl: string | null;
+  /** IDB に動画が入らず画像ポスターだけ残った場合あり */
+  blobMimeType: string | null;
 };
 
 function HelpHintIcon() {
@@ -81,6 +83,8 @@ export function HitoyasumiChairPageClient({ profileId }: Props) {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<HitoyasumiMediaFilter>("all");
   const [thumbUrls, setThumbUrls] = useState<Record<string, string>>({});
+  /** thumb が video/* なら true。ムービーでもポスター画像だけの場合あり */
+  const [thumbIsVideo, setThumbIsVideo] = useState<Record<string, boolean>>({});
   const [detail, setDetail] = useState<DetailState | null>(null);
   const [helpOpen, setHelpOpen] = useState(false);
   const [albumSoonOpen, setAlbumSoonOpen] = useState(false);
@@ -92,6 +96,7 @@ export function HitoyasumiChairPageClient({ profileId }: Props) {
       const list = await listHitoyasumiMedia(profileId);
       const nextItems: MoriLogMedia[] = [];
       const nextThumbs: Record<string, string> = {};
+      const nextThumbIsVideo: Record<string, boolean> = {};
       for (const item of list) {
         const blob = await getMoriLogMediaBlob(item.id);
         if (!blob || blob.size === 0) continue;
@@ -99,11 +104,13 @@ export function HitoyasumiChairPageClient({ profileId }: Props) {
         createdUrls.push(url);
         nextItems.push(item);
         nextThumbs[item.id] = url;
+        nextThumbIsVideo[item.id] = (blob.type || "").startsWith("video/");
       }
       setThumbUrls((prev) => {
         for (const url of Object.values(prev)) URL.revokeObjectURL(url);
         return nextThumbs;
       });
+      setThumbIsVideo(nextThumbIsVideo);
       setItems(nextItems);
     } catch {
       for (const url of createdUrls) URL.revokeObjectURL(url);
@@ -112,6 +119,7 @@ export function HitoyasumiChairPageClient({ profileId }: Props) {
         for (const url of Object.values(prev)) URL.revokeObjectURL(url);
         return {};
       });
+      setThumbIsVideo({});
     } finally {
       setLoading(false);
     }
@@ -153,7 +161,7 @@ export function HitoyasumiChairPageClient({ profileId }: Props) {
     const objectUrl = blob ? URL.createObjectURL(blob) : null;
     setDetail((prev) => {
       if (prev?.objectUrl) URL.revokeObjectURL(prev.objectUrl);
-      return { item, objectUrl };
+      return { item, objectUrl, blobMimeType: blob?.type ?? null };
     });
   }, []);
 
@@ -311,7 +319,7 @@ export function HitoyasumiChairPageClient({ profileId }: Props) {
                       {/* 破線より上：プレビュー */}
                       <div className="absolute inset-x-[11%] top-[13.5%] bottom-[32%] overflow-hidden rounded-[0.65rem] bg-[#efe6d6]/55">
                         {thumb ? (
-                          isMovie ? (
+                          isMovie && thumbIsVideo[item.id] ? (
                             <video
                               src={thumb}
                               className="h-full w-full object-cover"
@@ -447,7 +455,8 @@ export function HitoyasumiChairPageClient({ profileId }: Props) {
             </div>
 
             {detail.objectUrl ? (
-              isMoriLogCardMovieType(detail.item.type) ? (
+              isMoriLogCardMovieType(detail.item.type) &&
+              (detail.blobMimeType ?? "").startsWith("video/") ? (
                 <video
                   src={detail.objectUrl}
                   className="mx-auto max-h-[70dvh] w-full rounded-xl bg-[#2a221a]"

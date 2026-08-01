@@ -12,6 +12,7 @@ import {
   MORI_LOG_CARD_SECTION_TITLE,
   MORI_LOG_MOVIE_CREATE_BUSY,
   MORI_LOG_MOVIE_CREATE_LABEL,
+  MORI_LOG_MOVIE_CREATE_CANCELLED,
   MORI_LOG_MOVIE_CREATE_OK,
   MORI_LOG_MOVIE_CREATE_OK_CHAIR_PARTIAL,
   MORI_LOG_MOVIE_CREATE_PHASE_ENCODE,
@@ -36,6 +37,7 @@ import { MORI_LOG_BGM_TRACKS, getMoriLogBgmTrack } from "@/lib/journal/moriLog/m
 import {
   composeMoriLogStillMovie,
   downloadBlobFile,
+  downloadOrShareBlobFile,
 } from "@/lib/journal/moriLog/composeMoriLogStillMovie";
 import {
   buildMoriLogCardImageCreateInput,
@@ -237,18 +239,32 @@ export function MoriLogMakerPanel({
     setFailDetail(null);
     setMovieNote(null);
 
+    let imageBlob: Blob;
+    let meta: { templateId: JournalSocialPostTemplateId; title: string };
     try {
       const panel = cardPanelRef.current;
       if (!panel) {
         throw new Error("カードプレビューを準備できていません。");
       }
-      const imageBlob = await panel.getCardPngBlob();
-      const meta = panel.getCardMeta();
+      imageBlob = await panel.getCardPngBlob();
+      meta = panel.getCardMeta();
+    } catch (error) {
+      creatingMovieRef.current = false;
+      setCreatingMovie(false);
+      setCreateProgress(null);
+      setCreatePhase(null);
+      setFailDetail(error instanceof Error ? error.message : null);
+      setFailOpen(true);
+      return;
+    }
 
-      const durationSec = moriLogMovieDurationSecForTemplate(meta.templateId);
-      setCreatePhase("encode");
-      setCreateProgress(0);
-      const movie = await composeMoriLogStillMovie({
+    const durationSec = moriLogMovieDurationSecForTemplate(meta.templateId);
+    setCreatePhase("encode");
+    setCreateProgress(0);
+
+    let movie: Awaited<ReturnType<typeof composeMoriLogStillMovie>>;
+    try {
+      movie = await composeMoriLogStillMovie({
         imageBlob,
         audioUrl: selectedBgm.src,
         durationSec,
@@ -256,22 +272,42 @@ export function MoriLogMakerPanel({
         audioFadeOutSec: 0.7,
         onProgress: setCreateProgress,
       });
+    } catch (error) {
+      creatingMovieRef.current = false;
+      setCreatingMovie(false);
+      setCreateProgress(null);
+      setCreatePhase(null);
+      setFailDetail(error instanceof Error ? error.message : null);
+      setFailOpen(true);
+      return;
+    }
 
-      const stamp = new Date()
-        .toISOString()
-        .slice(0, 19)
-        .replace(/[-:T]/g, "");
-      const fileName = `mori-log-movie_${stamp}.${movie.extension}`;
-      downloadBlobFile(movie.blob, fileName);
+    // ここまで来たら動画本体は完成。以降の失敗は「作成失敗」ダイアログにしない
+    const stamp = new Date()
+      .toISOString()
+      .slice(0, 19)
+      .replace(/[-:T]/g, "");
+    const fileName = `mori-log-movie_${stamp}.${movie.extension}`;
 
-      // 端末への保存は成功済み。椅子用の記録は別扱い（失敗しても失敗ダイアログにしない）
+    try {
+      const shareResult = await downloadOrShareBlobFile(movie.blob, fileName);
+      if (shareResult === "cancelled") {
+        setMovieNote(MORI_LOG_MOVIE_CREATE_CANCELLED);
+        return;
+      }
+
       let chairSaved = false;
       const pid = (profileId ?? "").trim();
       if (pid) {
         try {
           const sourceCard = await resolveSourceCard();
           const movieId = createMoriLogMediaId();
-          await putMoriLogMediaBlob(movieId, movie.blob);
+          // 動画本体が IDB に入らない端末向けに、カード画像をフォールバック保存
+          try {
+            await putMoriLogMediaBlob(movieId, movie.blob);
+          } catch {
+            await putMoriLogMediaBlob(movieId, imageBlob);
+          }
           await getMoriLogMediaStore().upsert({
             ...buildMoriLogMovieCreateInput({
               userId: (userId ?? "").trim(),
@@ -300,8 +336,12 @@ export function MoriLogMakerPanel({
         chairSaved || !pid ? MORI_LOG_MOVIE_CREATE_OK : MORI_LOG_MOVIE_CREATE_OK_CHAIR_PARTIAL,
       );
     } catch (error) {
-      setFailDetail(error instanceof Error ? error.message : null);
-      setFailOpen(true);
+      // 共有・ダウンロード後の想定外。作成自体は終わっているのでソフトに伝える
+      setMovieNote(
+        error instanceof Error
+          ? `ムービーは作成できました（${error.message}）。写真アプリやファイルをご確認ください。`
+          : MORI_LOG_MOVIE_CREATE_OK_CHAIR_PARTIAL,
+      );
     } finally {
       creatingMovieRef.current = false;
       setCreatingMovie(false);

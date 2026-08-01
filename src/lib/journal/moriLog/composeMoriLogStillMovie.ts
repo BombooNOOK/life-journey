@@ -28,6 +28,34 @@ export function moriLogMovieExtensionForMime(mimeType: string): "mp4" | "webm" {
   return mimeType.includes("webm") ? "webm" : "mp4";
 }
 
+function isLikelyAppleMobile(): boolean {
+  if (typeof navigator === "undefined") return false;
+  const ua = navigator.userAgent || "";
+  if (/iPad|iPhone|iPod/i.test(ua)) return true;
+  // iPadOS 13+ は Macintosh UA + touch
+  return /Macintosh/i.test(ua) && typeof navigator.maxTouchPoints === "number" && navigator.maxTouchPoints > 1;
+}
+
+function createMediaRecorder(stream: MediaStream, mimeType: string): MediaRecorder {
+  const attempts: MediaRecorderOptions[] = [
+    { mimeType, videoBitsPerSecond: 2_500_000, audioBitsPerSecond: 128_000 },
+    { mimeType, videoBitsPerSecond: 1_500_000 },
+    { mimeType },
+    {},
+  ];
+  let lastError: unknown;
+  for (const options of attempts) {
+    try {
+      return new MediaRecorder(stream, options);
+    } catch (error) {
+      lastError = error;
+    }
+  }
+  throw lastError instanceof Error
+    ? lastError
+    : new Error("この端末では動画の録画を開始できません。");
+}
+
 export type ComposeMoriLogStillMovieInput = {
   imageBlob: Blob;
   /** /audio/... など */
@@ -90,10 +118,12 @@ export async function composeMoriLogStillMovie(
   const durationSec = Math.min(15, Math.max(3, input.durationSec));
   const audioFadeInSec = Math.min(1.2, Math.max(0, input.audioFadeInSec ?? 0.35));
   const audioFadeOutSec = Math.min(1.5, Math.max(0, input.audioFadeOutSec ?? 0.6));
-  const fps = 30;
+  const appleMobile = isLikelyAppleMobile();
+  // iPhone はメモリ・エンコード負荷を抑える
+  const fps = appleMobile ? 15 : 30;
+  const maxEdge = appleMobile ? 720 : 1080;
 
   const bitmap = await loadImageBitmap(input.imageBlob);
-  const maxEdge = 1080;
   const scale = Math.min(1, maxEdge / Math.max(bitmap.width, bitmap.height));
   const width = Math.max(2, Math.round(bitmap.width * scale) & ~1);
   const height = Math.max(2, Math.round(bitmap.height * scale) & ~1);
@@ -101,7 +131,7 @@ export async function composeMoriLogStillMovie(
   const canvas = document.createElement("canvas");
   canvas.width = width;
   canvas.height = height;
-  const ctx = canvas.getContext("2d");
+  const ctx = canvas.getContext("2d", { alpha: false });
   if (!ctx) {
     bitmap.close();
     throw new Error("動画用キャンバスを作れませんでした。");
@@ -155,11 +185,8 @@ export async function composeMoriLogStillMovie(
     ]);
 
     const chunks: BlobPart[] = [];
-    const recorder = new MediaRecorder(combined, {
-      mimeType,
-      videoBitsPerSecond: 2_500_000,
-      audioBitsPerSecond: 128_000,
-    });
+    const recorder = createMediaRecorder(combined, mimeType);
+    const resultMime = recorder.mimeType || mimeType;
 
     const recorded = new Promise<Blob>((resolve, reject) => {
       recorder.ondataavailable = (event) => {
@@ -167,25 +194,35 @@ export async function composeMoriLogStillMovie(
       };
       recorder.onerror = () => reject(new Error("動画の録画に失敗しました。"));
       recorder.onstop = () => {
-        resolve(new Blob(chunks, { type: mimeType }));
+        resolve(new Blob(chunks, { type: resultMime }));
       };
     });
 
     // 先頭にカードが載るまで少し待ってから録画開始
     drawCardFrame(ctx, bitmap, width, height);
-    await wait(180);
+    await wait(appleMobile ? 280 : 180);
 
-    recorder.start(250);
+    // iOS は timeslice 指定で失敗・空データになりやすい
+    if (appleMobile) {
+      recorder.start();
+    } else {
+      recorder.start(250);
+    }
     source.start(audioCtx.currentTime, 0, durationSec);
 
     const startedAt = performance.now();
     const durationMs = durationSec * 1000;
+    let lastProgressAt = 0;
 
     await new Promise<void>((resolve) => {
       const tick = () => {
         const elapsed = performance.now() - startedAt;
         const t = Math.min(1, elapsed / durationMs);
-        input.onProgress?.(t);
+        // 毎フレーム setState しない（iPhone の再描画負荷を抑える）
+        if (elapsed - lastProgressAt >= 200 || t >= 1) {
+          lastProgressAt = elapsed;
+          input.onProgress?.(t);
+        }
 
         // 映像は常にカード全面（フェードインで黒にしない）
         drawCardFrame(ctx, bitmap, width, height);
@@ -199,9 +236,19 @@ export async function composeMoriLogStillMovie(
       requestAnimationFrame(tick);
     });
 
-    // 末尾のエンコード余白
-    await wait(120);
-    if (recorder.state !== "inactive") recorder.stop();
+    // 末尾のエンコード余白（iOS は長め）
+    await wait(appleMobile ? 320 : 120);
+    if (recorder.state !== "inactive") {
+      try {
+        // timeslice なしの場合、stop 前に残データ要求
+        if (typeof recorder.requestData === "function" && recorder.state === "recording") {
+          recorder.requestData();
+        }
+      } catch {
+        // ignore
+      }
+      recorder.stop();
+    }
     try {
       source.stop();
     } catch {
@@ -210,14 +257,14 @@ export async function composeMoriLogStillMovie(
 
     const blob = await recorded;
     if (!blob.size) {
-      throw new Error("動画データが空でした。");
+      throw new Error("動画データが空でした。別のブラウザか端末でお試しください。");
     }
 
     input.onProgress?.(1);
     return {
       blob,
-      mimeType,
-      extension: moriLogMovieExtensionForMime(mimeType),
+      mimeType: resultMime,
+      extension: moriLogMovieExtensionForMime(resultMime),
     };
   } finally {
     bitmap.close();
@@ -234,5 +281,46 @@ export function downloadBlobFile(blob: Blob, fileName: string): void {
   document.body.appendChild(anchor);
   anchor.click();
   anchor.remove();
-  window.setTimeout(() => URL.revokeObjectURL(objectUrl), 2_000);
+  // iOS の共有シートが開いている間に revoke しないよう長めに
+  window.setTimeout(() => URL.revokeObjectURL(objectUrl), 60_000);
+}
+
+export type DownloadOrShareBlobResult = "shared" | "downloaded" | "cancelled";
+
+/**
+ * iPhone では Web Share（ファイル）を優先。キャンセルは失敗扱いしない。
+ */
+export async function downloadOrShareBlobFile(
+  blob: Blob,
+  fileName: string,
+): Promise<DownloadOrShareBlobResult> {
+  const type = blob.type || "application/octet-stream";
+  const file = new File([blob], fileName, { type });
+
+  const canShareFiles =
+    typeof navigator !== "undefined" &&
+    typeof navigator.canShare === "function" &&
+    typeof navigator.share === "function" &&
+    (() => {
+      try {
+        return navigator.canShare({ files: [file] });
+      } catch {
+        return false;
+      }
+    })();
+
+  if (canShareFiles) {
+    try {
+      await navigator.share({ files: [file], title: fileName });
+      return "shared";
+    } catch (error) {
+      if (error instanceof DOMException && error.name === "AbortError") {
+        return "cancelled";
+      }
+      // share 非対応・失敗時はダウンロードへ
+    }
+  }
+
+  downloadBlobFile(blob, fileName);
+  return "downloaded";
 }
