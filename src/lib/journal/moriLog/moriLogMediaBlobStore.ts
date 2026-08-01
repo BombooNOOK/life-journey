@@ -10,6 +10,11 @@ const DB_VERSION = 1;
 /** MoriLogMedia.localUri に書くマーカー（本体は IDB） */
 export const MORI_LOG_MEDIA_BLOB_URI = "idb:moriLogMediaBlob.v1" as const;
 
+/** ムービー一覧用の静止画ポスター（本体 id とは別キー） */
+export function moriLogMediaPosterBlobId(mediaId: string): string {
+  return `${mediaId.trim()}:poster`;
+}
+
 type BlobRecord = {
   id: string;
   mimeType: string;
@@ -103,6 +108,14 @@ export async function getMoriLogMediaBlob(mediaId: string): Promise<Blob | null>
   }
 }
 
+export async function putMoriLogMediaPosterBlob(mediaId: string, blob: Blob): Promise<void> {
+  await putMoriLogMediaBlob(moriLogMediaPosterBlobId(mediaId), blob);
+}
+
+export async function getMoriLogMediaPosterBlob(mediaId: string): Promise<Blob | null> {
+  return getMoriLogMediaBlob(moriLogMediaPosterBlobId(mediaId));
+}
+
 export async function removeMoriLogMediaBlob(mediaId: string): Promise<void> {
   const id = mediaId.trim();
   if (!id) return;
@@ -111,7 +124,9 @@ export async function removeMoriLogMediaBlob(mediaId: string): Promise<void> {
     try {
       const tx = db.transaction(STORE_NAME, "readwrite");
       const done = waitForTransaction(tx);
-      tx.objectStore(STORE_NAME).delete(id);
+      const store = tx.objectStore(STORE_NAME);
+      store.delete(id);
+      store.delete(moriLogMediaPosterBlobId(id));
       await done;
     } finally {
       db.close();

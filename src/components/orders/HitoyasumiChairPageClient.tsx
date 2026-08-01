@@ -12,7 +12,10 @@ import {
   listHitoyasumiMedia,
   type HitoyasumiMediaFilter,
 } from "@/lib/journal/moriLog/hitoyasumiMedia";
-import { getMoriLogMediaBlob } from "@/lib/journal/moriLog/moriLogMediaBlobStore";
+import {
+  getMoriLogMediaBlob,
+  getMoriLogMediaPosterBlob,
+} from "@/lib/journal/moriLog/moriLogMediaBlobStore";
 import {
   isMoriLogCardMovieType,
   type MoriLogMedia,
@@ -98,13 +101,36 @@ export function HitoyasumiChairPageClient({ profileId }: Props) {
       const nextThumbs: Record<string, string> = {};
       const nextThumbIsVideo: Record<string, boolean> = {};
       for (const item of list) {
-        const blob = await getMoriLogMediaBlob(item.id);
-        if (!blob || blob.size === 0) continue;
-        const url = URL.createObjectURL(blob);
+        const mediaBlob = await getMoriLogMediaBlob(item.id);
+        if (!mediaBlob || mediaBlob.size === 0) continue;
+
+        // ムービーは iPhone で <video> サムネが真っ黒になりやすいので、ポスター画像を優先
+        let thumbBlob = mediaBlob;
+        if (isMoriLogCardMovieType(item.type)) {
+          const poster = await getMoriLogMediaPosterBlob(item.id);
+          if (poster && poster.size > 0) {
+            thumbBlob = poster;
+          } else {
+            // 旧データ: カードも保存済みならその画像をサムネに使う
+            const sourceId = (item.sourceCardId ?? "").trim();
+            if (sourceId && sourceId !== "preview-unsaved") {
+              const cardBlob = await getMoriLogMediaBlob(sourceId);
+              if (
+                cardBlob &&
+                cardBlob.size > 0 &&
+                !(cardBlob.type || "").startsWith("video/")
+              ) {
+                thumbBlob = cardBlob;
+              }
+            }
+          }
+        }
+
+        const url = URL.createObjectURL(thumbBlob);
         createdUrls.push(url);
         nextItems.push(item);
         nextThumbs[item.id] = url;
-        nextThumbIsVideo[item.id] = (blob.type || "").startsWith("video/");
+        nextThumbIsVideo[item.id] = (thumbBlob.type || "").startsWith("video/");
       }
       setThumbUrls((prev) => {
         for (const url of Object.values(prev)) URL.revokeObjectURL(url);

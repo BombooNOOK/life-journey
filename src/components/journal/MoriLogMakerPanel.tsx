@@ -51,6 +51,7 @@ import {
 import {
   MORI_LOG_MEDIA_BLOB_URI,
   putMoriLogMediaBlob,
+  putMoriLogMediaPosterBlob,
 } from "@/lib/journal/moriLog/moriLogMediaBlobStore";
 import { getMoriLogMediaStore } from "@/lib/journal/moriLog/moriLogMediaStore";
 import { calendarDayKeyInJapanFromDate } from "@/lib/date/japanCalendarDate";
@@ -303,6 +304,12 @@ export function MoriLogMakerPanel({
         try {
           const sourceCard = await resolveSourceCard();
           const movieId = createMoriLogMediaId();
+          // 一覧サムネ用にカード静止画を必ず残す（カード保存の有無は不要）
+          try {
+            await putMoriLogMediaPosterBlob(movieId, imageBlob);
+          } catch {
+            // ポスター失敗でも再生用動画があれば椅子には残す
+          }
           // 動画本体が IDB に入らない端末向けに、カード画像をフォールバック保存
           try {
             await putMoriLogMediaBlob(movieId, movie.blob);
