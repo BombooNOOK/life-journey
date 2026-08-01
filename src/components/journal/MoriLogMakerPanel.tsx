@@ -15,6 +15,7 @@ import {
   MORI_LOG_MOVIE_CREATE_CANCELLED,
   MORI_LOG_MOVIE_CREATE_OK,
   MORI_LOG_MOVIE_CREATE_OK_CHAIR_PARTIAL,
+  MORI_LOG_MOVIE_CREATE_OK_NO_AUDIO,
   MORI_LOG_MOVIE_CREATE_PHASE_ENCODE,
   MORI_LOG_MOVIE_CREATE_PHASE_IMAGE,
   MORI_LOG_MOVIE_FAIL_BODY,
@@ -333,7 +334,11 @@ export function MoriLogMakerPanel({
       }
 
       setMovieNote(
-        chairSaved || !pid ? MORI_LOG_MOVIE_CREATE_OK : MORI_LOG_MOVIE_CREATE_OK_CHAIR_PARTIAL,
+        movie.audioOmitted
+          ? MORI_LOG_MOVIE_CREATE_OK_NO_AUDIO
+          : chairSaved || !pid
+            ? MORI_LOG_MOVIE_CREATE_OK
+            : MORI_LOG_MOVIE_CREATE_OK_CHAIR_PARTIAL,
       );
     } catch (error) {
       // 共有・ダウンロード後の想定外。作成自体は終わっているのでソフトに伝える

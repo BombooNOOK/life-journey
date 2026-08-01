@@ -68,6 +68,9 @@ export const MORI_LOG_MOVIE_CREATE_OK_CHAIR_PARTIAL =
 export const MORI_LOG_MOVIE_CREATE_CANCELLED =
   "共有をキャンセルしました。写真アプリなどに保存したいときは、もう一度「ムービーを作成」からどうぞ。";
 
+export const MORI_LOG_MOVIE_CREATE_OK_NO_AUDIO =
+  "ムービーを端末に保存しました（この端末ではBGMを載せられませんでした）。椅子からも見返せます。";
+
 export const MORI_LOG_MOVIE_CREATE_NEED_PREVIEW =
   "上のプレビューにカードが表示されてから、ムービーを作成してください。";
 

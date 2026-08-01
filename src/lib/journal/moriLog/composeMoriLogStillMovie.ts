@@ -3,6 +3,10 @@
  * （ブラウザにより mp4 / webm。拡張子は実 MIME に合わせる）
  *
  * 先頭フレームはカード画像（サムネ・再生開始が真っ黒にならないよう、録画前に描画する）
+ *
+ * iOS Safari 注意:
+ * - onstop のあとに最終 dataavailable が届くことがある（空 Blob 誤判定の主因）
+ * - WebAudio の音声トラックを足すと録画全体が空になる端末がある → 空なら映像のみで再試行
  */
 
 export const MORI_LOG_MOVIE_MIME_CANDIDATES = [
@@ -21,7 +25,8 @@ export function pickMoriLogMovieMimeType(): string | null {
   for (const mime of MORI_LOG_MOVIE_MIME_CANDIDATES) {
     if (MediaRecorder.isTypeSupported(mime)) return mime;
   }
-  return null;
+  // Safari は isTypeSupported が全部 false でもデフォルトで録れることがある
+  return "";
 }
 
 export function moriLogMovieExtensionForMime(mimeType: string): "mp4" | "webm" {
@@ -32,17 +37,27 @@ function isLikelyAppleMobile(): boolean {
   if (typeof navigator === "undefined") return false;
   const ua = navigator.userAgent || "";
   if (/iPad|iPhone|iPod/i.test(ua)) return true;
-  // iPadOS 13+ は Macintosh UA + touch
   return /Macintosh/i.test(ua) && typeof navigator.maxTouchPoints === "number" && navigator.maxTouchPoints > 1;
 }
 
+function isLikelySafari(): boolean {
+  if (typeof navigator === "undefined") return false;
+  const ua = navigator.userAgent || "";
+  const isSafari = /Safari/i.test(ua) && !/Chrome|CriOS|FxiOS|EdgiOS|OPiOS|Android/i.test(ua);
+  return isSafari || isLikelyAppleMobile();
+}
+
 function createMediaRecorder(stream: MediaStream, mimeType: string): MediaRecorder {
-  const attempts: MediaRecorderOptions[] = [
-    { mimeType, videoBitsPerSecond: 2_500_000, audioBitsPerSecond: 128_000 },
-    { mimeType, videoBitsPerSecond: 1_500_000 },
-    { mimeType },
-    {},
-  ];
+  // Safari は mimeType / bitrate 指定で空データや失敗になりやすい → 素の生成を先に試す
+  const attempts: MediaRecorderOptions[] = isLikelySafari()
+    ? [{}, mimeType ? { mimeType } : {}, mimeType ? { mimeType, videoBitsPerSecond: 1_500_000 } : {}]
+    : [
+        mimeType ? { mimeType, videoBitsPerSecond: 2_500_000, audioBitsPerSecond: 128_000 } : {},
+        mimeType ? { mimeType, videoBitsPerSecond: 1_500_000 } : {},
+        mimeType ? { mimeType } : {},
+        {},
+      ];
+
   let lastError: unknown;
   for (const options of attempts) {
     try {
@@ -73,6 +88,8 @@ export type ComposeMoriLogStillMovieResult = {
   blob: Blob;
   mimeType: string;
   extension: "mp4" | "webm";
+  /** Safari フォールバックで BGM を載せられなかった場合 true */
+  audioOmitted?: boolean;
 };
 
 function loadImageBitmap(blob: Blob): Promise<ImageBitmap> {
@@ -105,13 +122,277 @@ function drawCardFrame(
 }
 
 /**
- * ユーザー操作（ボタン押下）の直後に呼ぶこと（AudioContext / MediaRecorder 用）。
+ * iOS Safari: onstop のあとに最終チャンクが来る。すぐ resolve すると空 Blob になる。
+ */
+function waitForRecorderBlob(
+  recorder: MediaRecorder,
+  chunks: BlobPart[],
+  resultMime: string,
+  settleMs: number,
+): Promise<Blob> {
+  return new Promise((resolve, reject) => {
+    let stopped = false;
+    let settled = false;
+    let settleTimer: number | null = null;
+
+    const finish = () => {
+      if (settled) return;
+      settled = true;
+      if (settleTimer != null) window.clearTimeout(settleTimer);
+      resolve(new Blob(chunks, { type: resultMime || recorder.mimeType || "video/mp4" }));
+    };
+
+    const scheduleFinish = () => {
+      if (settleTimer != null) window.clearTimeout(settleTimer);
+      settleTimer = window.setTimeout(finish, settleMs);
+    };
+
+    recorder.ondataavailable = (event) => {
+      if (event.data && event.data.size > 0) {
+        chunks.push(event.data);
+      }
+      if (stopped) scheduleFinish();
+    };
+
+    recorder.onerror = () => {
+      if (settled) return;
+      settled = true;
+      if (settleTimer != null) window.clearTimeout(settleTimer);
+      reject(new Error("動画の録画に失敗しました。"));
+    };
+
+    recorder.onstop = () => {
+      stopped = true;
+      scheduleFinish();
+    };
+  });
+}
+
+type RecordPassResult = {
+  blob: Blob;
+  mimeType: string;
+  withAudio: boolean;
+};
+
+async function recordStillPass(options: {
+  canvas: HTMLCanvasElement;
+  ctx: CanvasRenderingContext2D;
+  bitmap: ImageBitmap;
+  width: number;
+  height: number;
+  fps: number;
+  durationSec: number;
+  mimeType: string;
+  appleMobile: boolean;
+  includeAudio: boolean;
+  audioUrl: string;
+  audioFadeInSec: number;
+  audioFadeOutSec: number;
+  onProgress?: (ratio: number) => void;
+}): Promise<RecordPassResult> {
+  const {
+    canvas,
+    ctx,
+    bitmap,
+    width,
+    height,
+    fps,
+    durationSec,
+    mimeType,
+    appleMobile,
+    includeAudio,
+    audioUrl,
+    audioFadeInSec,
+    audioFadeOutSec,
+    onProgress,
+  } = options;
+
+  drawCardFrame(ctx, bitmap, width, height);
+
+  let audioCtx: AudioContext | null = null;
+  let source: AudioBufferSourceNode | null = null;
+  let keepAliveOsc: OscillatorNode | null = null;
+
+  try {
+    const canvasStream = canvas.captureStream(fps);
+    const videoTrack = canvasStream.getVideoTracks()[0];
+    if (videoTrack) {
+      videoTrack.enabled = true;
+      // Safari: 静止画キャンバスでもフレームを明示的に出す
+      const trackWithFrame = videoTrack as MediaStreamTrack & { requestFrame?: () => void };
+      try {
+        trackWithFrame.requestFrame?.();
+      } catch {
+        // ignore
+      }
+    }
+
+    const tracks: MediaStreamTrack[] = [...canvasStream.getVideoTracks()];
+
+    if (includeAudio) {
+      const AudioCtx =
+        window.AudioContext ||
+        (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+      if (!AudioCtx) {
+        throw new Error("この端末では音声付き動画を作れません。");
+      }
+      audioCtx = new AudioCtx();
+      if (audioCtx.state === "suspended") {
+        await audioCtx.resume();
+      }
+
+      const dest = audioCtx.createMediaStreamDestination();
+
+      // Safari: 無音トラック扱いを避けるための極小キープアライブ
+      const silentGain = audioCtx.createGain();
+      silentGain.gain.value = 0.0001;
+      keepAliveOsc = audioCtx.createOscillator();
+      keepAliveOsc.frequency.value = 440;
+      keepAliveOsc.connect(silentGain);
+      silentGain.connect(dest);
+      keepAliveOsc.start();
+
+      const audioBuffer = await audioCtx.decodeAudioData(await fetchArrayBuffer(audioUrl));
+      const gain = audioCtx.createGain();
+      source = audioCtx.createBufferSource();
+      source.buffer = audioBuffer;
+      source.connect(gain);
+      gain.connect(dest);
+
+      const now = audioCtx.currentTime;
+      if (audioFadeInSec > 0) {
+        gain.gain.setValueAtTime(0.0001, now);
+        gain.gain.linearRampToValueAtTime(1, now + audioFadeInSec);
+      } else {
+        gain.gain.setValueAtTime(1, now);
+      }
+      if (audioFadeOutSec > 0) {
+        const fadeOutStart = Math.max(
+          now + audioFadeInSec,
+          now + durationSec - audioFadeOutSec,
+        );
+        gain.gain.setValueAtTime(1, fadeOutStart);
+        gain.gain.linearRampToValueAtTime(0.0001, now + durationSec);
+      }
+
+      for (const track of dest.stream.getAudioTracks()) {
+        track.enabled = true;
+        tracks.push(track);
+      }
+    }
+
+    const combined = new MediaStream(tracks);
+    const chunks: BlobPart[] = [];
+    const recorder = createMediaRecorder(combined, mimeType);
+    const resultMime = recorder.mimeType || mimeType || "video/mp4";
+    const recorded = waitForRecorderBlob(
+      recorder,
+      chunks,
+      resultMime,
+      appleMobile ? 500 : 120,
+    );
+
+    drawCardFrame(ctx, bitmap, width, height);
+    await wait(appleMobile ? 320 : 180);
+    try {
+      const trackWithFrame = videoTrack as MediaStreamTrack & { requestFrame?: () => void };
+      trackWithFrame?.requestFrame?.();
+    } catch {
+      // ignore
+    }
+
+    // timeslice ありの方が iOS でチャンクが溜まりやすい（空対策）
+    recorder.start(appleMobile ? 1000 : 250);
+
+    if (source && audioCtx) {
+      source.start(audioCtx.currentTime, 0, durationSec);
+    }
+
+    const startedAt = performance.now();
+    const durationMs = durationSec * 1000;
+    let lastProgressAt = 0;
+
+    await new Promise<void>((resolve) => {
+      const tick = () => {
+        const elapsed = performance.now() - startedAt;
+        const t = Math.min(1, elapsed / durationMs);
+        if (elapsed - lastProgressAt >= 200 || t >= 1) {
+          lastProgressAt = elapsed;
+          onProgress?.(t);
+        }
+
+        drawCardFrame(ctx, bitmap, width, height);
+        try {
+          const trackWithFrame = videoTrack as MediaStreamTrack & { requestFrame?: () => void };
+          trackWithFrame?.requestFrame?.();
+        } catch {
+          // ignore
+        }
+
+        if (elapsed >= durationMs) {
+          resolve();
+          return;
+        }
+        requestAnimationFrame(tick);
+      };
+      requestAnimationFrame(tick);
+    });
+
+    await wait(appleMobile ? 400 : 120);
+    if (recorder.state === "recording") {
+      try {
+        recorder.requestData();
+      } catch {
+        // ignore
+      }
+    }
+    if (recorder.state !== "inactive") {
+      recorder.stop();
+    }
+    try {
+      source?.stop();
+    } catch {
+      // already stopped
+    }
+    try {
+      keepAliveOsc?.stop();
+    } catch {
+      // ignore
+    }
+
+    const blob = await recorded;
+    return { blob, mimeType: resultMime, withAudio: includeAudio };
+  } finally {
+    try {
+      keepAliveOsc?.stop();
+    } catch {
+      // ignore
+    }
+    if (audioCtx) {
+      await audioCtx.close().catch(() => undefined);
+    }
+  }
+}
+
+/**
+ * ユーザー操作（ボタン押下）の直後に呼ぶこと（AudioContext / MediaRecorder / WebCodecs 用）。
  */
 export async function composeMoriLogStillMovie(
   input: ComposeMoriLogStillMovieInput,
 ): Promise<ComposeMoriLogStillMovieResult> {
-  const mimeType = pickMoriLogMovieMimeType();
-  if (!mimeType) {
+  // iPhone Safari では MediaRecorder + 音声トラックが空になりやすいので WebCodecs を先に試す
+  try {
+    const { canComposeMoriLogStillMovieWithWebCodecs, composeMoriLogStillMovieWithWebCodecs } =
+      await import("@/lib/journal/moriLog/composeMoriLogStillMovieWebCodecs");
+    if (canComposeMoriLogStillMovieWithWebCodecs()) {
+      return await composeMoriLogStillMovieWithWebCodecs(input);
+    }
+  } catch {
+    // MediaRecorder へフォールバック
+  }
+
+  const pickedMime = pickMoriLogMovieMimeType();
+  if (pickedMime == null) {
     throw new Error("この端末では動画の作成に対応していません。");
   }
 
@@ -119,7 +400,7 @@ export async function composeMoriLogStillMovie(
   const audioFadeInSec = Math.min(1.2, Math.max(0, input.audioFadeInSec ?? 0.35));
   const audioFadeOutSec = Math.min(1.5, Math.max(0, input.audioFadeOutSec ?? 0.6));
   const appleMobile = isLikelyAppleMobile();
-  // iPhone はメモリ・エンコード負荷を抑える
+  const safariLike = isLikelySafari();
   const fps = appleMobile ? 15 : 30;
   const maxEdge = appleMobile ? 720 : 1080;
 
@@ -137,138 +418,45 @@ export async function composeMoriLogStillMovie(
     throw new Error("動画用キャンバスを作れませんでした。");
   }
 
-  // 録画開始前にカードを描いておき、先頭キーフレーム／サムネをカードにする
-  drawCardFrame(ctx, bitmap, width, height);
-
-  const AudioCtx =
-    window.AudioContext ||
-    (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
-  if (!AudioCtx) {
-    bitmap.close();
-    throw new Error("この端末では音声付き動画を作れません。");
-  }
-
-  const audioCtx = new AudioCtx();
   try {
-    if (audioCtx.state === "suspended") {
-      await audioCtx.resume();
+    const common = {
+      canvas,
+      ctx,
+      bitmap,
+      width,
+      height,
+      fps,
+      durationSec,
+      mimeType: pickedMime,
+      appleMobile,
+      audioUrl: input.audioUrl,
+      audioFadeInSec,
+      audioFadeOutSec,
+      onProgress: input.onProgress,
+    };
+
+    let pass = await recordStillPass({ ...common, includeAudio: true });
+    let audioOmitted = false;
+
+    if (!pass.blob.size && safariLike) {
+      input.onProgress?.(0);
+      pass = await recordStillPass({ ...common, includeAudio: false });
+      audioOmitted = true;
     }
 
-    const audioBuffer = await audioCtx.decodeAudioData(await fetchArrayBuffer(input.audioUrl));
-    const gain = audioCtx.createGain();
-    const dest = audioCtx.createMediaStreamDestination();
-    const source = audioCtx.createBufferSource();
-    source.buffer = audioBuffer;
-    source.connect(gain);
-    gain.connect(dest);
-
-    const now = audioCtx.currentTime;
-    if (audioFadeInSec > 0) {
-      gain.gain.setValueAtTime(0.0001, now);
-      gain.gain.linearRampToValueAtTime(1, now + audioFadeInSec);
-    } else {
-      gain.gain.setValueAtTime(1, now);
-    }
-    if (audioFadeOutSec > 0) {
-      const fadeOutStart = Math.max(
-        now + audioFadeInSec,
-        now + durationSec - audioFadeOutSec,
-      );
-      gain.gain.setValueAtTime(1, fadeOutStart);
-      gain.gain.linearRampToValueAtTime(0.0001, now + durationSec);
-    }
-
-    const canvasStream = canvas.captureStream(fps);
-    const combined = new MediaStream([
-      ...canvasStream.getVideoTracks(),
-      ...dest.stream.getAudioTracks(),
-    ]);
-
-    const chunks: BlobPart[] = [];
-    const recorder = createMediaRecorder(combined, mimeType);
-    const resultMime = recorder.mimeType || mimeType;
-
-    const recorded = new Promise<Blob>((resolve, reject) => {
-      recorder.ondataavailable = (event) => {
-        if (event.data && event.data.size > 0) chunks.push(event.data);
-      };
-      recorder.onerror = () => reject(new Error("動画の録画に失敗しました。"));
-      recorder.onstop = () => {
-        resolve(new Blob(chunks, { type: resultMime }));
-      };
-    });
-
-    // 先頭にカードが載るまで少し待ってから録画開始
-    drawCardFrame(ctx, bitmap, width, height);
-    await wait(appleMobile ? 280 : 180);
-
-    // iOS は timeslice 指定で失敗・空データになりやすい
-    if (appleMobile) {
-      recorder.start();
-    } else {
-      recorder.start(250);
-    }
-    source.start(audioCtx.currentTime, 0, durationSec);
-
-    const startedAt = performance.now();
-    const durationMs = durationSec * 1000;
-    let lastProgressAt = 0;
-
-    await new Promise<void>((resolve) => {
-      const tick = () => {
-        const elapsed = performance.now() - startedAt;
-        const t = Math.min(1, elapsed / durationMs);
-        // 毎フレーム setState しない（iPhone の再描画負荷を抑える）
-        if (elapsed - lastProgressAt >= 200 || t >= 1) {
-          lastProgressAt = elapsed;
-          input.onProgress?.(t);
-        }
-
-        // 映像は常にカード全面（フェードインで黒にしない）
-        drawCardFrame(ctx, bitmap, width, height);
-
-        if (elapsed >= durationMs) {
-          resolve();
-          return;
-        }
-        requestAnimationFrame(tick);
-      };
-      requestAnimationFrame(tick);
-    });
-
-    // 末尾のエンコード余白（iOS は長め）
-    await wait(appleMobile ? 320 : 120);
-    if (recorder.state !== "inactive") {
-      try {
-        // timeslice なしの場合、stop 前に残データ要求
-        if (typeof recorder.requestData === "function" && recorder.state === "recording") {
-          recorder.requestData();
-        }
-      } catch {
-        // ignore
-      }
-      recorder.stop();
-    }
-    try {
-      source.stop();
-    } catch {
-      // already stopped
-    }
-
-    const blob = await recorded;
-    if (!blob.size) {
+    if (!pass.blob.size) {
       throw new Error("動画データが空でした。別のブラウザか端末でお試しください。");
     }
 
     input.onProgress?.(1);
     return {
-      blob,
-      mimeType: resultMime,
-      extension: moriLogMovieExtensionForMime(resultMime),
+      blob: pass.blob,
+      mimeType: pass.mimeType,
+      extension: moriLogMovieExtensionForMime(pass.mimeType),
+      audioOmitted: audioOmitted || undefined,
     };
   } finally {
     bitmap.close();
-    await audioCtx.close().catch(() => undefined);
   }
 }
 
@@ -281,7 +469,6 @@ export function downloadBlobFile(blob: Blob, fileName: string): void {
   document.body.appendChild(anchor);
   anchor.click();
   anchor.remove();
-  // iOS の共有シートが開いている間に revoke しないよう長めに
   window.setTimeout(() => URL.revokeObjectURL(objectUrl), 60_000);
 }
 
@@ -317,7 +504,6 @@ export async function downloadOrShareBlobFile(
       if (error instanceof DOMException && error.name === "AbortError") {
         return "cancelled";
       }
-      // share 非対応・失敗時はダウンロードへ
     }
   }
 
