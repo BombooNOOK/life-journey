@@ -8,13 +8,16 @@ import {
 } from "@/components/journal/JournalSocialPostImagePanel";
 import { MoriLogBgmPicker } from "@/components/journal/MoriLogBgmPicker";
 import {
+  MoriLogCreateSuccessDialog,
+  type MoriLogCreateSuccessKind,
+} from "@/components/journal/MoriLogCreateSuccessDialog";
+import {
   MORI_LOG_CARD_SECTION_HINT,
   MORI_LOG_CARD_SECTION_TITLE,
+  MORI_LOG_CREATE_SOFT_LOCKED_HINT,
   MORI_LOG_MOVIE_CREATE_BUSY,
   MORI_LOG_MOVIE_CREATE_LABEL,
-  MORI_LOG_MOVIE_CREATE_OK,
   MORI_LOG_MOVIE_CREATE_OK_CHAIR_PARTIAL,
-  MORI_LOG_MOVIE_CREATE_OK_NO_AUDIO,
   MORI_LOG_MOVIE_CREATE_NEED_PROFILE,
   MORI_LOG_MOVIE_CREATE_PHASE_ENCODE,
   MORI_LOG_MOVIE_CREATE_PHASE_IMAGE,
@@ -93,6 +96,10 @@ export function MoriLogMakerPanel({
   const [failOpen, setFailOpen] = useState(false);
   const [failDetail, setFailDetail] = useState<string | null>(null);
   const [lastSavedCard, setLastSavedCard] = useState<MoriLogMedia | null>(null);
+  const [successKind, setSuccessKind] = useState<MoriLogCreateSuccessKind | null>(null);
+  const [successAudioOmitted, setSuccessAudioOmitted] = useState(false);
+  const [cardSoftLocked, setCardSoftLocked] = useState(false);
+  const [movieSoftLocked, setMovieSoftLocked] = useState(false);
   const [selectedBgmId, setSelectedBgmId] = useState<string | null>(
     () => MORI_LOG_BGM_TRACKS[0]?.id ?? null,
   );
@@ -150,17 +157,39 @@ export function MoriLogMakerPanel({
           localUri: MORI_LOG_MEDIA_BLOB_URI,
         });
         setLastSavedCard(saved);
-        setHistoryNote(
-          "森ログカードができました。ログハウスの「ひとやすみの椅子」から見返せます。端末への保存や共有も、椅子からどうぞ。",
-        );
+        setHistoryNote(null);
+        setCardSoftLocked(true);
+        setSuccessAudioOmitted(false);
+        setSuccessKind("card");
       } catch {
         setHistoryNote(
-          "画像のダウンロードはできましたが、椅子用の記録に失敗しました。もう一度お試しください。",
+          "カードは作れましたが、椅子用の記録に失敗しました。もう一度お試しください。",
         );
       }
     },
     [companionType, entryDateKey, entryId, mood, profileId, tags, userId],
   );
+
+  const unlockCardCreate = useCallback(() => {
+    setCardSoftLocked(false);
+  }, []);
+
+  const unlockMovieCreate = useCallback(() => {
+    setMovieSoftLocked(false);
+  }, []);
+
+  const handleBgmChange = useCallback(
+    (next: string) => {
+      setSelectedBgmId(next);
+      unlockMovieCreate();
+    },
+    [unlockMovieCreate],
+  );
+
+  const dismissSuccess = useCallback(() => {
+    setSuccessKind(null);
+    setSuccessAudioOmitted(false);
+  }, []);
 
   const resolveSourceCard = useCallback(async (): Promise<MoriLogMedia | null> => {
     if (lastSavedCard && lastSavedCard.entryId === entryId && isMoriLogCardImageType(lastSavedCard.type)) {
@@ -328,13 +357,14 @@ export function MoriLogMakerPanel({
         chairSaved = false;
       }
 
-      setMovieNote(
-        !chairSaved
-          ? MORI_LOG_MOVIE_CREATE_OK_CHAIR_PARTIAL
-          : movie.audioOmitted
-            ? MORI_LOG_MOVIE_CREATE_OK_NO_AUDIO
-            : MORI_LOG_MOVIE_CREATE_OK,
-      );
+      if (!chairSaved) {
+        setMovieNote(MORI_LOG_MOVIE_CREATE_OK_CHAIR_PARTIAL);
+      } else {
+        setMovieNote(null);
+        setMovieSoftLocked(true);
+        setSuccessAudioOmitted(Boolean(movie.audioOmitted));
+        setSuccessKind("movie");
+      }
     } finally {
       creatingMovieRef.current = false;
       setCreatingMovie(false);
@@ -406,6 +436,12 @@ export function MoriLogMakerPanel({
           hasPhoto={hasPhoto}
           photoSrc={photoSrc}
           chairOnlyExport
+          exportSoftLocked={cardSoftLocked}
+          exportSoftLockedHint={MORI_LOG_CREATE_SOFT_LOCKED_HINT}
+          onDraftChange={() => {
+            unlockCardCreate();
+            unlockMovieCreate();
+          }}
           onCardExported={recordCardExport}
           surfaceLabels={{
             previewHeading: "森ログカード プレビュー",
@@ -426,7 +462,7 @@ export function MoriLogMakerPanel({
           <h3 className="text-base font-semibold text-[#3f3428]">{MORI_LOG_MOVIE_SECTION_TITLE}</h3>
           <p className="mt-1 text-sm leading-relaxed text-[#5c4a35]">{MORI_LOG_MOVIE_SECTION_HINT}</p>
         </div>
-        <MoriLogBgmPicker value={selectedBgmId} onChange={setSelectedBgmId} />
+        <MoriLogBgmPicker value={selectedBgmId} onChange={handleBgmChange} />
         <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
           <button
             type="button"
@@ -439,8 +475,13 @@ export function MoriLogMakerPanel({
           <button
             type="button"
             onClick={() => void createAndDownloadMovie()}
-            disabled={creatingMovie || !selectedBgmId}
-            className="min-h-[44px] rounded-lg border border-emerald-700 bg-emerald-800 px-4 py-2.5 text-sm font-medium text-white hover:bg-emerald-900 disabled:cursor-not-allowed disabled:border-stone-300 disabled:bg-stone-200 disabled:text-stone-500"
+            disabled={creatingMovie || movieSoftLocked || !selectedBgmId}
+            className={[
+              "min-h-[44px] rounded-lg border px-4 py-2.5 text-sm font-medium",
+              movieSoftLocked
+                ? "cursor-not-allowed border-stone-300 bg-stone-200 text-stone-500 opacity-60"
+                : "border-emerald-700 bg-emerald-800 text-white hover:bg-emerald-900 disabled:cursor-not-allowed disabled:border-stone-300 disabled:bg-stone-200 disabled:text-stone-500",
+            ].join(" ")}
           >
             {creatingMovie ? MORI_LOG_MOVIE_CREATE_BUSY : MORI_LOG_MOVIE_CREATE_LABEL}
           </button>
@@ -456,12 +497,25 @@ export function MoriLogMakerPanel({
                 : MORI_LOG_MOVIE_CREATE_BUSY}
           </p>
         ) : null}
+        {movieSoftLocked && !creatingMovie ? (
+          <p className="text-xs leading-relaxed text-[#6b5a48]" role="status">
+            {MORI_LOG_CREATE_SOFT_LOCKED_HINT}
+          </p>
+        ) : null}
         {movieNote ? (
           <p className="text-xs leading-relaxed text-[#5c6b4a]" role="status">
             {movieNote}
           </p>
         ) : null}
       </section>
+
+      {successKind ? (
+        <MoriLogCreateSuccessDialog
+          kind={successKind}
+          audioOmitted={successAudioOmitted}
+          onContinue={dismissSuccess}
+        />
+      ) : null}
 
       {failOpen ? (
         <div

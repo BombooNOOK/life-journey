@@ -73,6 +73,11 @@ type Props = {
    * テンプレ一覧に sns02 / sns03 も出す
    */
   chairOnlyExport?: boolean;
+  /** 作成成功直後など。カード作成ボタンを薄くして押せなくする */
+  exportSoftLocked?: boolean;
+  exportSoftLockedHint?: string;
+  /** デザインや文言を変えたとき（再作成ボタンのロック解除用） */
+  onDraftChange?: () => void;
   onCardExported?: (params: {
     templateId: JournalSocialPostTemplateId;
     title: string;
@@ -229,6 +234,9 @@ export const JournalSocialPostImagePanel = forwardRef<JournalSocialPostImagePane
       photoSrc,
       surfaceLabels,
       chairOnlyExport = false,
+      exportSoftLocked = false,
+      exportSoftLockedHint,
+      onDraftChange,
       onCardExported,
     },
     ref,
@@ -615,12 +623,18 @@ export const JournalSocialPostImagePanel = forwardRef<JournalSocialPostImagePane
     ],
   );
 
+  const notifyDraftChange = () => {
+    onDraftChange?.();
+  };
+
   const setMoriField = (kind: MoriLogCardFieldKind, value: string) => {
     setMoriFields((prev) => ({ ...prev, [kind]: value }));
+    notifyDraftChange();
   };
 
   const setHitokotoPrompt = (promptId: MoriLogCardHitokotoPromptId) => {
     setMoriFields((prev) => ({ ...prev, hitokotoPromptId: promptId }));
+    notifyDraftChange();
   };
 
   const renderMoriField = (field: MoriLogCardFieldDef) => {
@@ -716,7 +730,10 @@ export const JournalSocialPostImagePanel = forwardRef<JournalSocialPostImagePane
       <div className="rounded-xl border border-stone-200 bg-white p-4 sm:p-5">
         <MoriLogTemplatePicker
           value={templateId}
-          onChange={setTemplateId}
+          onChange={(id) => {
+            setTemplateId(id);
+            notifyDraftChange();
+          }}
           includeLegacySns={chairOnlyExport}
         />
 
@@ -754,7 +771,10 @@ export const JournalSocialPostImagePanel = forwardRef<JournalSocialPostImagePane
               <input
                 type="text"
                 value={title}
-                onChange={(event) => setTitle(event.target.value)}
+                onChange={(event) => {
+                  setTitle(event.target.value);
+                  notifyDraftChange();
+                }}
                 placeholder="画像上部の大見出し"
                 maxLength={titleMaxChars}
                 className="w-full rounded-md border border-stone-300 px-3 py-2 text-base text-stone-900"
@@ -769,7 +789,10 @@ export const JournalSocialPostImagePanel = forwardRef<JournalSocialPostImagePane
               <input
                 type="text"
                 value={subtitle}
-                onChange={(event) => setSubtitle(event.target.value)}
+                onChange={(event) => {
+                  setSubtitle(event.target.value);
+                  notifyDraftChange();
+                }}
                 placeholder={DEFAULT_JOURNAL_SOCIAL_POST_SUBTITLE}
                 maxLength={SOCIAL_POST_SUBTITLE_MAX_CHARS}
                 className="w-full rounded-md border border-stone-300 px-3 py-2 text-base text-stone-900"
@@ -792,7 +815,10 @@ export const JournalSocialPostImagePanel = forwardRef<JournalSocialPostImagePane
               <input
                 type="text"
                 value={title}
-                onChange={(event) => setTitle(event.target.value)}
+                onChange={(event) => {
+                  setTitle(event.target.value);
+                  notifyDraftChange();
+                }}
                 placeholder="SNS用のタイトルを入力"
                 maxLength={titleMaxChars}
                 className="w-full rounded-md border border-stone-300 px-3 py-2 text-base text-stone-900"
@@ -817,7 +843,10 @@ export const JournalSocialPostImagePanel = forwardRef<JournalSocialPostImagePane
               targetWidth={templatePhoto.width}
               targetHeight={templatePhoto.height}
               adjust={photoAdjustDraft}
-              onChange={setPhotoAdjustDraft}
+              onChange={(next) => {
+                setPhotoAdjustDraft(next);
+                notifyDraftChange();
+              }}
               onReset={handlePhotoAdjustReset}
               onApply={handleApplyPhotoAdjust}
               hasPendingApply={hasPendingPhotoApply}
@@ -844,6 +873,8 @@ export const JournalSocialPostImagePanel = forwardRef<JournalSocialPostImagePane
             }
             label={downloadLabel}
             saveToDevice={!chairOnlyExport}
+            softLocked={exportSoftLocked}
+            softLockedHint={exportSoftLockedHint}
             onDownloaded={(imageBlob) =>
               onCardExported?.({
                 templateId: debouncedTemplateId,

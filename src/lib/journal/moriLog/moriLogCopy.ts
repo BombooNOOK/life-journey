@@ -75,6 +75,25 @@ export const MORI_LOG_MOVIE_CREATE_OK_NO_AUDIO =
 export const MORI_LOG_MOVIE_CREATE_NEED_PROFILE =
   "プロフィールを読み込めなかったため、椅子用の記録を残せませんでした。";
 
+export const MORI_LOG_CREATE_SUCCESS_CARD_TITLE = "森ログカードができました";
+
+export const MORI_LOG_CREATE_SUCCESS_MOVIE_TITLE = "森ログムービーができました";
+
+export const MORI_LOG_CREATE_SUCCESS_BODY =
+  "ひとやすみの椅子から、ゆっくり見返せます。端末への保存やSNSへの共有も、椅子からどうぞ。";
+
+export const MORI_LOG_CREATE_SUCCESS_BODY_NO_AUDIO =
+  "ひとやすみの椅子から見返せます。この端末ではBGMを載せられなかったので、映像のみのムービーです。";
+
+export const MORI_LOG_CREATE_SUCCESS_GO_CHAIR = "椅子を見にいく";
+
+export const MORI_LOG_CREATE_SUCCESS_CONTINUE = "このまま続ける";
+
+export const MORI_LOG_CREATE_SOFT_LOCKED_HINT =
+  "内容を変えると、もう一度作成できるようになります。";
+
+export const MORI_LOG_CARD_CREATE_OK_TITLE = MORI_LOG_CREATE_SUCCESS_CARD_TITLE;
+
 export const MORI_LOG_MOVIE_CREATE_NEED_PREVIEW =
   "上のプレビューにカードが表示されてから、ムービーを作成してください。";
 

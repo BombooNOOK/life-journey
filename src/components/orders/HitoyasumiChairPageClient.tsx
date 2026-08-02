@@ -302,14 +302,14 @@ export function HitoyasumiChairPageClient({ profileId }: Props) {
         <div className="flex items-start justify-between gap-3">
           <Link
             href="/orders"
-            className="inline-flex w-fit min-h-[40px] items-center rounded-full border border-[#e4d5c0]/45 bg-[#fffaf2]/38 px-3.5 text-sm text-[#4a3a28]/90 shadow-[0_3px_10px_rgba(40,28,16,0.1)] backdrop-blur-[3px] transition hover:bg-[#fffaf2]/55"
+            className="inline-flex w-fit min-h-[44px] items-center rounded-full border border-stone-200/40 bg-[#fffdf9]/85 px-3.5 text-sm font-medium text-stone-800 shadow-md backdrop-blur-[3px] transition hover:bg-[#fffdf9]/95 active:scale-[0.98]"
           >
             ← {LOG_HOUSE_RETURN_TO_LABEL}
           </Link>
 
           <button
             type="button"
-            className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-[#e4d5c0]/45 bg-[#fffaf2]/42 text-[#5c4a3a] shadow-[0_3px_10px_rgba(40,28,16,0.1)] backdrop-blur-[3px] transition hover:bg-[#fffaf2]/60"
+            className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-stone-200/40 bg-[#fffdf9]/85 text-stone-800 shadow-md backdrop-blur-[3px] transition hover:bg-[#fffdf9]/95 active:scale-[0.98]"
             aria-label={LOG_HOUSE_HITOYASUMI_HELP_BUTTON_LABEL}
             title={LOG_HOUSE_HITOYASUMI_HELP_BUTTON_LABEL}
             aria-haspopup="dialog"
