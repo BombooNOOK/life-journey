@@ -15,6 +15,7 @@ import {
 import {
   getMoriLogMediaBlob,
   getMoriLogMediaPosterBlob,
+  removeMoriLogMediaBlob,
 } from "@/lib/journal/moriLog/moriLogMediaBlobStore";
 import {
   downloadBlobFile,
@@ -25,6 +26,7 @@ import {
   type MoriLogMedia,
   type MoriLogMediaType,
 } from "@/lib/journal/moriLog/moriLogMedia";
+import { getMoriLogMediaStore } from "@/lib/journal/moriLog/moriLogMediaStore";
 import { LOG_HOUSE_RETURN_TO_LABEL } from "@/lib/journal/logHouseLabels";
 import {
   LOG_HOUSE_HITOYASUMI_ACTION_CANCELLED,
@@ -35,6 +37,12 @@ import {
   LOG_HOUSE_HITOYASUMI_ALBUM_SOON_TITLE,
   LOG_HOUSE_HITOYASUMI_BG_SRC,
   LOG_HOUSE_HITOYASUMI_CLOSE_DETAIL,
+  LOG_HOUSE_HITOYASUMI_DELETE,
+  LOG_HOUSE_HITOYASUMI_DELETE_CANCEL,
+  LOG_HOUSE_HITOYASUMI_DELETE_CONFIRM,
+  LOG_HOUSE_HITOYASUMI_DELETE_CONFIRM_BODY,
+  LOG_HOUSE_HITOYASUMI_DELETE_CONFIRM_TITLE,
+  LOG_HOUSE_HITOYASUMI_DELETE_FAIL,
   LOG_HOUSE_HITOYASUMI_EMPTY_BODY,
   LOG_HOUSE_HITOYASUMI_EMPTY_TITLE,
   LOG_HOUSE_HITOYASUMI_FILTER_ALBUM,
@@ -102,6 +110,7 @@ export function HitoyasumiChairPageClient({ profileId }: Props) {
   const [detail, setDetail] = useState<DetailState | null>(null);
   const [detailActionNote, setDetailActionNote] = useState<string | null>(null);
   const [detailActionBusy, setDetailActionBusy] = useState(false);
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [helpOpen, setHelpOpen] = useState(false);
   const [albumSoonOpen, setAlbumSoonOpen] = useState(false);
 
@@ -183,15 +192,16 @@ export function HitoyasumiChairPageClient({ profileId }: Props) {
   }, [detail]);
 
   useEffect(() => {
-    if (!helpOpen && !albumSoonOpen) return;
+    if (!helpOpen && !albumSoonOpen && !deleteConfirmOpen) return;
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key !== "Escape") return;
       setHelpOpen(false);
       setAlbumSoonOpen(false);
+      setDeleteConfirmOpen(false);
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [albumSoonOpen, helpOpen]);
+  }, [albumSoonOpen, deleteConfirmOpen, helpOpen]);
 
   const visible = useMemo(() => filterHitoyasumiMedia(items, filter), [filter, items]);
 
@@ -199,6 +209,7 @@ export function HitoyasumiChairPageClient({ profileId }: Props) {
     const blob = await getMoriLogMediaBlob(item.id);
     const objectUrl = blob ? URL.createObjectURL(blob) : null;
     setDetailActionNote(null);
+    setDeleteConfirmOpen(false);
     setDetail((prev) => {
       if (prev?.objectUrl) URL.revokeObjectURL(prev.objectUrl);
       return { item, objectUrl, blob: blob ?? null, blobMimeType: blob?.type ?? null };
@@ -208,11 +219,28 @@ export function HitoyasumiChairPageClient({ profileId }: Props) {
   const closeDetail = useCallback(() => {
     setDetailActionNote(null);
     setDetailActionBusy(false);
+    setDeleteConfirmOpen(false);
     setDetail((prev) => {
       if (prev?.objectUrl) URL.revokeObjectURL(prev.objectUrl);
       return null;
     });
   }, []);
+
+  const deleteDetail = useCallback(async () => {
+    if (!detail || detailActionBusy) return;
+    setDetailActionBusy(true);
+    setDetailActionNote(null);
+    try {
+      await getMoriLogMediaStore().remove(detail.item.id, profileId);
+      await removeMoriLogMediaBlob(detail.item.id);
+      setDeleteConfirmOpen(false);
+      closeDetail();
+      await refresh();
+    } catch {
+      setDetailActionNote(LOG_HOUSE_HITOYASUMI_DELETE_FAIL);
+      setDetailActionBusy(false);
+    }
+  }, [closeDetail, detail, detailActionBusy, profileId, refresh]);
 
   const detailFileName = useCallback((item: MoriLogMedia, blob: Blob) => {
     const stamp = (item.createdAt || "").slice(0, 10).replace(/-/g, "") || "mori-log";
@@ -579,44 +607,100 @@ export function HitoyasumiChairPageClient({ profileId }: Props) {
               )}
             </div>
 
-            {detail.blob ? (
-              <div className="space-y-2 border-t border-[#e8dcc8] bg-[#fff7ec]/95 px-3 py-3 sm:px-4">
-                <p className="text-xs leading-relaxed text-[#6e5c48]">
-                  {LOG_HOUSE_HITOYASUMI_ACTION_HINT}
-                </p>
-                <div className="flex flex-col gap-2 sm:flex-row">
-                  <button
-                    type="button"
-                    disabled={detailActionBusy}
-                    onClick={() => void saveDetailToDevice()}
-                    className="inline-flex min-h-[44px] flex-1 items-center justify-center gap-2 rounded-xl border border-emerald-800 bg-emerald-800 px-4 text-sm font-medium text-white hover:bg-emerald-900 disabled:opacity-60"
-                  >
-                    <svg aria-hidden className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v10m0 0 4-4m-4 4-4-4" />
-                      <path strokeLinecap="round" d="M5 18h14" />
-                    </svg>
-                    {LOG_HOUSE_HITOYASUMI_SAVE_DEVICE}
-                  </button>
-                  <button
-                    type="button"
-                    disabled={detailActionBusy}
-                    onClick={() => void shareDetail()}
-                    className="inline-flex min-h-[44px] flex-1 items-center justify-center gap-2 rounded-xl border border-[#c4b49a] bg-[#faf3e8] px-4 text-sm font-medium text-[#5c4a35] hover:bg-[#f3ead8] disabled:opacity-60"
-                  >
-                    <svg aria-hidden className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 14V4m0 0 4 4m-4-4-4 4" />
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 14v5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-5" />
-                    </svg>
-                    {LOG_HOUSE_HITOYASUMI_SHARE}
-                  </button>
-                </div>
-                {detailActionNote ? (
-                  <p className="text-xs leading-relaxed text-[#5c6b4a]" role="status">
-                    {detailActionNote}
+            <div className="space-y-2 border-t border-[#e8dcc8] bg-[#fff7ec]/95 px-3 py-3 sm:px-4">
+              {detail.blob ? (
+                <>
+                  <p className="text-xs leading-relaxed text-[#6e5c48]">
+                    {LOG_HOUSE_HITOYASUMI_ACTION_HINT}
                   </p>
-                ) : null}
-              </div>
-            ) : null}
+                  <div className="flex flex-col gap-2 sm:flex-row">
+                    <button
+                      type="button"
+                      disabled={detailActionBusy}
+                      onClick={() => void saveDetailToDevice()}
+                      className="inline-flex min-h-[44px] flex-1 items-center justify-center gap-2 rounded-xl border border-emerald-800 bg-emerald-800 px-4 text-sm font-medium text-white hover:bg-emerald-900 disabled:opacity-60"
+                    >
+                      <svg aria-hidden className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v10m0 0 4-4m-4 4-4-4" />
+                        <path strokeLinecap="round" d="M5 18h14" />
+                      </svg>
+                      {LOG_HOUSE_HITOYASUMI_SAVE_DEVICE}
+                    </button>
+                    <button
+                      type="button"
+                      disabled={detailActionBusy}
+                      onClick={() => void shareDetail()}
+                      className="inline-flex min-h-[44px] flex-1 items-center justify-center gap-2 rounded-xl border border-[#c4b49a] bg-[#faf3e8] px-4 text-sm font-medium text-[#5c4a35] hover:bg-[#f3ead8] disabled:opacity-60"
+                    >
+                      <svg aria-hidden className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 14V4m0 0 4 4m-4-4-4 4" />
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 14v5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-5" />
+                      </svg>
+                      {LOG_HOUSE_HITOYASUMI_SHARE}
+                    </button>
+                  </div>
+                </>
+              ) : null}
+              <button
+                type="button"
+                disabled={detailActionBusy}
+                onClick={() => {
+                  setDetailActionNote(null);
+                  setDeleteConfirmOpen(true);
+                }}
+                className="inline-flex min-h-[44px] w-full items-center justify-center rounded-xl border border-[#d4b4a8] bg-[#fff8f5] px-4 text-sm font-medium text-[#8a4f3d] hover:bg-[#fff1eb] disabled:opacity-60"
+              >
+                {LOG_HOUSE_HITOYASUMI_DELETE}
+              </button>
+              {detailActionNote ? (
+                <p className="text-xs leading-relaxed text-[#5c6b4a]" role="status">
+                  {detailActionNote}
+                </p>
+              ) : null}
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {deleteConfirmOpen && detail ? (
+        <div
+          className="fixed inset-0 z-[60] flex items-center justify-center bg-[#1a120c]/50 p-4 backdrop-blur-[2px]"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="hitoyasumi-delete-title"
+          onClick={() => !detailActionBusy && setDeleteConfirmOpen(false)}
+        >
+          <div
+            className="w-full max-w-sm rounded-2xl border border-[#e4d5c0]/95 bg-[#fffaf2] px-5 py-5 shadow-[0_16px_40px_rgba(40,28,16,0.28)]"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h2
+              id="hitoyasumi-delete-title"
+              className="text-base font-semibold tracking-wide text-[#3f3428]"
+            >
+              {LOG_HOUSE_HITOYASUMI_DELETE_CONFIRM_TITLE}
+            </h2>
+            <p className="mt-3 text-sm leading-relaxed text-[#5c4a35]">
+              {LOG_HOUSE_HITOYASUMI_DELETE_CONFIRM_BODY}
+            </p>
+            <div className="mt-5 flex flex-col gap-2">
+              <button
+                type="button"
+                disabled={detailActionBusy}
+                onClick={() => void deleteDetail()}
+                className="inline-flex min-h-[44px] items-center justify-center rounded-xl border border-[#a45c48] bg-[#a45c48] px-4 text-sm font-medium text-white hover:bg-[#8f4f3e] disabled:opacity-60"
+              >
+                {detailActionBusy ? "削除しています…" : LOG_HOUSE_HITOYASUMI_DELETE_CONFIRM}
+              </button>
+              <button
+                type="button"
+                disabled={detailActionBusy}
+                onClick={() => setDeleteConfirmOpen(false)}
+                className="inline-flex min-h-[44px] items-center justify-center rounded-xl border border-[#c4b49a] bg-[#faf3e8] px-4 text-sm font-medium text-[#5c4a35] hover:bg-[#f3ead8] disabled:opacity-60"
+              >
+                {LOG_HOUSE_HITOYASUMI_DELETE_CANCEL}
+              </button>
+            </div>
           </div>
         </div>
       ) : null}

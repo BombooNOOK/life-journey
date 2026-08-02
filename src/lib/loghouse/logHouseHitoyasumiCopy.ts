@@ -53,6 +53,19 @@ export const LOG_HOUSE_HITOYASUMI_ACTION_CANCELLED = "共有をキャンセル�
 
 export const LOG_HOUSE_HITOYASUMI_ACTION_FAIL = "保存・共有を開始できませんでした。もう一度お試しください。" as const;
 
+export const LOG_HOUSE_HITOYASUMI_DELETE = "削除する" as const;
+
+export const LOG_HOUSE_HITOYASUMI_DELETE_CONFIRM_TITLE = "この森ログを削除しますか？" as const;
+
+export const LOG_HOUSE_HITOYASUMI_DELETE_CONFIRM_BODY =
+  "椅子の一覧から消えます。写真アプリなどにすでに保存したものは残ります。" as const;
+
+export const LOG_HOUSE_HITOYASUMI_DELETE_CONFIRM = "削除する" as const;
+
+export const LOG_HOUSE_HITOYASUMI_DELETE_CANCEL = "やめる" as const;
+
+export const LOG_HOUSE_HITOYASUMI_DELETE_FAIL = "削除できませんでした。もう一度お試しください。" as const;
+
 export const LOG_HOUSE_HITOYASUMI_FILTER_ALL = "すべて" as const;
 export const LOG_HOUSE_HITOYASUMI_FILTER_CARD = "カード" as const;
 export const LOG_HOUSE_HITOYASUMI_FILTER_MOVIE = "ムービー" as const;
