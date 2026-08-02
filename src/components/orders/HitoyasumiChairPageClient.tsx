@@ -322,8 +322,9 @@ export function HitoyasumiChairPageClient({ profileId }: Props) {
           sizes="100vw"
           className="object-cover object-center"
         />
-        <div className="absolute inset-0 bg-[#1a120c]/18" />
-        <div className="absolute inset-0 bg-gradient-to-b from-[#1a120c]/28 via-transparent to-[#1a120c]/42" />
+        {/* 明るい背景向け：ごく薄い暖色ベールだけ（カードが浮かないよう暗幕は使わない） */}
+        <div className="absolute inset-0 bg-[#f4ebe0]/12" />
+        <div className="absolute inset-0 bg-gradient-to-b from-[#fffaf2]/20 via-transparent to-[#e8dcc8]/28" />
       </div>
 
       <div className="relative z-10 mx-auto flex min-h-[100dvh] w-full max-w-md flex-col px-4 pb-16 pt-5 sm:px-5">

@@ -9,9 +9,9 @@ export const LOG_HOUSE_HITOYASUMI_HELP_BUTTON_LABEL = "ひとやすみの椅子�
 
 export const LOG_HOUSE_HITOYASUMI_HELP_DISMISS = "とじる" as const;
 
-/** 夕暮れの森を望む部屋（制作室アセット） */
+/** ひとやすみの椅子の背景（明るい居間） */
 export const LOG_HOUSE_HITOYASUMI_BG_SRC =
-  "/images/ljd/hitoyasumi/rest-chair-bg-evening-forest.png" as const;
+  "/images/ljd/hitoyasumi/rest-chair-bg-evening-forest.png?v=2" as const;
 
 export const LOG_HOUSE_HITOYASUMI_FILTER_CARD_SRC =
   "/images/ljd/hitoyasumi/hitoyasumi-filter-card.png" as const;
