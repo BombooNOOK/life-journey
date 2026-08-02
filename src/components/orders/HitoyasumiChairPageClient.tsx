@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useCallback, useEffect, useId, useMemo, useState } from "react";
 
+import { useLogHouseRoomTimeTheme } from "@/hooks/useLogHouseRoomTimeOfDay";
 import {
   filterHitoyasumiMedia,
   formatHitoyasumiCreatedAt,
@@ -35,7 +36,7 @@ import {
   LOG_HOUSE_HITOYASUMI_ACTION_OK,
   LOG_HOUSE_HITOYASUMI_ALBUM_SOON_BODY,
   LOG_HOUSE_HITOYASUMI_ALBUM_SOON_TITLE,
-  LOG_HOUSE_HITOYASUMI_BG_SRC,
+  LOG_HOUSE_HITOYASUMI_BG_BY_TIME,
   LOG_HOUSE_HITOYASUMI_CLOSE_DETAIL,
   LOG_HOUSE_HITOYASUMI_DELETE,
   LOG_HOUSE_HITOYASUMI_DELETE_CANCEL,
@@ -101,6 +102,12 @@ const HITOYASUMI_ASSET_TONE =
 export function HitoyasumiChairPageClient({ profileId }: Props) {
   const helpTitleId = useId();
   const albumTitleId = useId();
+  const { timeOfDay } = useLogHouseRoomTimeTheme();
+  const ambientBg = timeOfDay === "night" ? "#1a120c" : "#ebe4d4";
+  const chromeButtonClass =
+    timeOfDay === "night"
+      ? "border-stone-200/40 bg-[#fffdf9]/85 text-stone-800 shadow-md hover:bg-[#fffdf9]/95"
+      : "border-[#d9cbb8]/90 bg-[#fffdf8]/90 text-[#5c4a3a] shadow-sm hover:bg-[#fffdf8]";
   const [items, setItems] = useState<MoriLogMedia[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<HitoyasumiMediaFilter>("all");
@@ -312,30 +319,40 @@ export function HitoyasumiChairPageClient({ profileId }: Props) {
   }, []);
 
   return (
-    <div className="relative min-h-[100dvh] overflow-x-hidden text-[#3f3428]">
+    <div
+      className="relative min-h-[100dvh] overflow-x-hidden text-[#3f3428]"
+      style={{ backgroundColor: ambientBg }}
+    >
       <div className="pointer-events-none fixed inset-0 z-0" aria-hidden>
-        <Image
-          src={LOG_HOUSE_HITOYASUMI_BG_SRC}
-          alt=""
-          fill
-          priority
-          sizes="100vw"
-          className="object-cover object-center"
-        />
+        {(["day", "night"] as const).map((id) => (
+          <Image
+            key={id}
+            src={LOG_HOUSE_HITOYASUMI_BG_BY_TIME[id]}
+            alt=""
+            fill
+            priority={id === timeOfDay}
+            sizes="100vw"
+            className={[
+              "object-cover object-center transition-opacity duration-700 ease-in-out",
+              timeOfDay === id ? "opacity-100" : "opacity-0",
+            ].join(" ")}
+            unoptimized
+          />
+        ))}
       </div>
 
       <div className="relative z-10 mx-auto flex min-h-[100dvh] w-full max-w-md flex-col px-4 pb-16 pt-5 sm:px-5">
         <div className="flex items-start justify-between gap-3">
           <Link
             href="/orders"
-            className="inline-flex w-fit min-h-[44px] items-center rounded-full border border-stone-200/40 bg-[#fffdf9]/85 px-3.5 text-sm font-medium text-stone-800 shadow-md backdrop-blur-[3px] transition hover:bg-[#fffdf9]/95 active:scale-[0.98]"
+            className={`inline-flex w-fit min-h-[44px] items-center rounded-full border px-3.5 text-sm font-medium backdrop-blur-[3px] transition active:scale-[0.98] ${chromeButtonClass}`}
           >
             ← {LOG_HOUSE_RETURN_TO_LABEL}
           </Link>
 
           <button
             type="button"
-            className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-stone-200/40 bg-[#fffdf9]/85 text-stone-800 shadow-md backdrop-blur-[3px] transition hover:bg-[#fffdf9]/95 active:scale-[0.98]"
+            className={`inline-flex h-11 w-11 items-center justify-center rounded-full border backdrop-blur-[3px] transition active:scale-[0.98] ${chromeButtonClass}`}
             aria-label={LOG_HOUSE_HITOYASUMI_HELP_BUTTON_LABEL}
             title={LOG_HOUSE_HITOYASUMI_HELP_BUTTON_LABEL}
             aria-haspopup="dialog"

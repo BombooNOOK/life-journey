@@ -9,9 +9,14 @@ export const LOG_HOUSE_HITOYASUMI_HELP_BUTTON_LABEL = "ひとやすみの椅子�
 
 export const LOG_HOUSE_HITOYASUMI_HELP_DISMISS = "とじる" as const;
 
-/** ひとやすみの椅子の背景（明るい居間） */
-export const LOG_HOUSE_HITOYASUMI_BG_SRC =
-  "/images/ljd/hitoyasumi/rest-chair-bg-evening-forest.png?v=2" as const;
+/** ひとやすみの椅子の背景（昼＝明るい居間 / 夜＝最初の夕暮れの森） */
+export const LOG_HOUSE_HITOYASUMI_BG_BY_TIME = {
+  day: "/images/ljd/hitoyasumi/rest-chair-bg-day.png?v=1",
+  night: "/images/ljd/hitoyasumi/rest-chair-bg-night.png?v=1",
+} as const;
+
+/** @deprecated 昼背景。LOG_HOUSE_HITOYASUMI_BG_BY_TIME.day を使ってください */
+export const LOG_HOUSE_HITOYASUMI_BG_SRC = LOG_HOUSE_HITOYASUMI_BG_BY_TIME.day;
 
 export const LOG_HOUSE_HITOYASUMI_FILTER_CARD_SRC =
   "/images/ljd/hitoyasumi/hitoyasumi-filter-card.png" as const;
