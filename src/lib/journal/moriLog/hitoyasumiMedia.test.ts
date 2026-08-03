@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  collectHitoyasumiTags,
   filterHitoyasumiMedia,
+  filterHitoyasumiMediaByTags,
   hitoyasumiMediaTypeLabel,
   isHitoyasumiBrowsableType,
 } from "@/lib/journal/moriLog/hitoyasumiMedia";
@@ -44,5 +46,17 @@ describe("hitoyasumiMedia", () => {
   it("labels types for UI", () => {
     expect(hitoyasumiMediaTypeLabel("card_image")).toBe("カード");
     expect(hitoyasumiMediaTypeLabel("card_movie")).toBe("ムービー");
+  });
+
+  it("collects unique tags and filters by OR", () => {
+    const items = [
+      sample({ id: "1", type: "card_image", tags: ["#森", "散歩"] }),
+      sample({ id: "2", type: "card_movie", tags: ["海"] }),
+      sample({ id: "3", type: "card_image", tags: ["森"] }),
+    ];
+    expect(collectHitoyasumiTags(items)).toEqual(["海", "散歩", "森"]);
+    expect(filterHitoyasumiMediaByTags(items, []).map((i) => i.id)).toEqual(["1", "2", "3"]);
+    expect(filterHitoyasumiMediaByTags(items, ["森"]).map((i) => i.id)).toEqual(["1", "3"]);
+    expect(filterHitoyasumiMediaByTags(items, ["海", "散歩"]).map((i) => i.id)).toEqual(["1", "2"]);
   });
 });

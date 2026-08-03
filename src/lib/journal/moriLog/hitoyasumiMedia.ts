@@ -29,6 +29,36 @@ export function filterHitoyasumiMedia(
   });
 }
 
+/** 一覧・アルバム作成で使えるタグ候補（# なしで正規化） */
+export function collectHitoyasumiTags(items: readonly MoriLogMedia[]): string[] {
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const item of items) {
+    for (const raw of item.tags ?? []) {
+      const tag = raw.replace(/^#/, "").trim();
+      if (!tag || seen.has(tag)) continue;
+      seen.add(tag);
+      out.push(tag);
+    }
+  }
+  return out.sort((a, b) => a.localeCompare(b, "ja"));
+}
+
+/** 選んだタグのいずれかを持つもの（OR）。未選択なら全件 */
+export function filterHitoyasumiMediaByTags(
+  items: readonly MoriLogMedia[],
+  selectedTags: readonly string[],
+): MoriLogMedia[] {
+  const needles = selectedTags
+    .map((t) => t.replace(/^#/, "").trim())
+    .filter(Boolean);
+  if (needles.length === 0) return [...items];
+  const set = new Set(needles);
+  return items.filter((item) =>
+    (item.tags ?? []).some((raw) => set.has(raw.replace(/^#/, "").trim())),
+  );
+}
+
 export async function listHitoyasumiMedia(profileId: string): Promise<MoriLogMedia[]> {
   const pid = profileId.trim();
   if (!pid) return [];

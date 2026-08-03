@@ -17,25 +17,25 @@ export const LOG_HOUSE_HITOYASUMI_BACK_TO_ENTRANCE = "椅子の入口へ戻る" 
 
 /** 入口：巨大アイコン（背景とは分離） */
 export const LOG_HOUSE_HITOYASUMI_ENTRY_CARD_SRC =
-  "/images/ljd/hitoyasumi/chair-entry-card.png" as const;
+  "/images/ljd/hitoyasumi/chair-entry-card.png?v=2" as const;
 
 export const LOG_HOUSE_HITOYASUMI_ENTRY_MOVIE_SRC =
-  "/images/ljd/hitoyasumi/chair-entry-movie.png" as const;
+  "/images/ljd/hitoyasumi/chair-entry-movie.png?v=2" as const;
 
 export const LOG_HOUSE_HITOYASUMI_ENTRY_ALBUM_SRC =
-  "/images/ljd/hitoyasumi/chair-entry-album.png" as const;
+  "/images/ljd/hitoyasumi/chair-entry-album.png?v=2" as const;
 
 export const LOG_HOUSE_HITOYASUMI_ENTRY_SOUND_SRC =
-  "/images/ljd/hitoyasumi/chair-entry-sound.png" as const;
+  "/images/ljd/hitoyasumi/chair-entry-sound.png?v=2" as const;
 
-/** 木札ラベル（2行。サンプルの改行位置に合わせる） */
-export const LOG_HOUSE_HITOYASUMI_ENTRY_CARD_LABEL = "これまでの\n森ログを見る" as const;
+/** 木札ラベル（aria / ヘルプ用。画像側に焼き込み済み） */
+export const LOG_HOUSE_HITOYASUMI_ENTRY_CARD_LABEL = "これまでの森ログを見る" as const;
 
-export const LOG_HOUSE_HITOYASUMI_ENTRY_MOVIE_LABEL = "動画から森ログ\nムービーを作る" as const;
+export const LOG_HOUSE_HITOYASUMI_ENTRY_MOVIE_LABEL = "動画から森ログムービーを作る" as const;
 
-export const LOG_HOUSE_HITOYASUMI_ENTRY_ALBUM_LABEL = "思い出をアルバム\nにまとめる" as const;
+export const LOG_HOUSE_HITOYASUMI_ENTRY_ALBUM_LABEL = "思い出をアルバムにまとめる" as const;
 
-export const LOG_HOUSE_HITOYASUMI_ENTRY_SOUND_LABEL = "音のかけら\nを聴く" as const;
+export const LOG_HOUSE_HITOYASUMI_ENTRY_SOUND_LABEL = "音のカケラを聴く" as const;
 
 export const LOG_HOUSE_HITOYASUMI_SOUND_SOON_TITLE = "音のかけらは準備中です" as const;
 
@@ -105,9 +105,32 @@ export const LOG_HOUSE_HITOYASUMI_DELETE_CANCEL = "やめる" as const;
 export const LOG_HOUSE_HITOYASUMI_DELETE_FAIL = "削除できませんでした。もう一度お試しください。" as const;
 
 export const LOG_HOUSE_HITOYASUMI_FILTER_ALL = "すべて" as const;
+/** 入口の「ムービーを作る」と区別するため、仕分けは静止画／動画と書く */
+export const LOG_HOUSE_HITOYASUMI_FILTER_STILL = "静止画" as const;
+export const LOG_HOUSE_HITOYASUMI_FILTER_VIDEO = "動画" as const;
 export const LOG_HOUSE_HITOYASUMI_FILTER_CARD = "カード" as const;
 export const LOG_HOUSE_HITOYASUMI_FILTER_MOVIE = "ムービー" as const;
 export const LOG_HOUSE_HITOYASUMI_FILTER_ALBUM = "アルバム" as const;
+
+export const LOG_HOUSE_HITOYASUMI_FILTER_BAR_LABEL = "種類で絞り込み" as const;
+
+export const LOG_HOUSE_HITOYASUMI_ALBUM_SCREEN_TITLE = "アルバムにまとめる" as const;
+
+export const LOG_HOUSE_HITOYASUMI_ALBUM_TITLE_LABEL = "アルバムのタイトル" as const;
+
+export const LOG_HOUSE_HITOYASUMI_ALBUM_TITLE_PLACEHOLDER = "例）春の森ログ" as const;
+
+export const LOG_HOUSE_HITOYASUMI_ALBUM_TAG_LABEL = "タグで絞り込み" as const;
+
+export const LOG_HOUSE_HITOYASUMI_ALBUM_TAG_EMPTY = "まだタグ付きの森ログがありません" as const;
+
+export const LOG_HOUSE_HITOYASUMI_ALBUM_MATCH_COUNT = (n: number) =>
+  `${n}件が候補です` as const;
+
+export const LOG_HOUSE_HITOYASUMI_ALBUM_SAVE = "この内容でまとめる" as const;
+
+export const LOG_HOUSE_HITOYASUMI_ALBUM_SAVE_SOON =
+  "候補の絞り込みまでは使えます。1冊としての保存は、これから少しずつ育てていきます。" as const;
 
 export const LOG_HOUSE_HITOYASUMI_ALBUM_SOON_TITLE = "アルバムは準備中です" as const;
 
