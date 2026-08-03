@@ -9,6 +9,7 @@ import { ProfileSwitcher } from "@/components/profile/ProfileSwitcher";
 import { ActiveProfileLabel } from "@/components/profile/ActiveProfileLabel";
 import { DiaryPastTagButtons } from "@/components/journal/DiaryPastTagButtons";
 import { DiaryTagInputField } from "@/components/journal/DiaryTagInput";
+import { JournalListSwipeRow } from "@/components/journal/JournalListSwipeRow";
 import { InlineHelpButton } from "@/components/ui/InlineHelpButton";
 import { OwlLoadingInline } from "@/components/ui/OwlLoadingInline";
 import { JOURNAL_LIST_HELP_TEXT } from "@/lib/journal/journalDiaryNumbersHelpCopy";
@@ -39,6 +40,8 @@ import {
   LJD_PAPER_CHIP_IDLE_CLASS,
 } from "@/lib/ljd/ljdPaperSurface";
 import { TERM_FOOTPRINT_LEDGER } from "@/lib/journal/footprintTerminology";
+
+const JOURNAL_LIST_DELETE_CONFIRM = "このあしあとを本当に削除しますか？" as const;
 
 type ProfileOption = { id: string; nickname: string };
 
@@ -90,7 +93,7 @@ async function fetchJournalList(params: {
     credentials: "same-origin",
   });
   const data = (await res.json()) as { entries?: JournalListEntry[]; error?: string };
-  if (!res.ok) throw new Error(data.error ?? "日記一覧の取得に失敗しました。");
+  if (!res.ok) throw new Error(data.error ?? "あしあと一覧の取得に失敗しました。");
   return data.entries ?? [];
 }
 
@@ -118,6 +121,9 @@ export function DiaryJournalListHome({
   const [appliedTag, setAppliedTag] = useState("");
   const [appliedSearchScope, setAppliedSearchScope] = useState<JournalSearchScope>("month");
   const [isSearchActive, setIsSearchActive] = useState(false);
+  const [openSwipeId, setOpenSwipeId] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
   const fetchGenerationRef = useRef(0);
 
   const monthKey = useMemo(() => monthKeyFromDateAnchor(viewMonth), [viewMonth]);
@@ -167,10 +173,12 @@ export function DiaryJournalListHome({
         });
         if (generation !== fetchGenerationRef.current) return;
         setEntries(rows);
+        setOpenSwipeId(null);
+        setDeleteError(null);
         setHasLoadedOnce(true);
       } catch (e) {
         if (generation !== fetchGenerationRef.current) return;
-        setError(e instanceof Error ? e.message : "日記一覧の取得に失敗しました。");
+        setError(e instanceof Error ? e.message : "あしあと一覧の取得に失敗しました。");
         setEntries([]);
       } finally {
         if (generation === fetchGenerationRef.current) {
@@ -180,6 +188,34 @@ export function DiaryJournalListHome({
     },
     [],
   );
+
+  const deleteEntry = useCallback(async (entryId: string) => {
+    if (deletingId) return;
+    const ok = window.confirm(JOURNAL_LIST_DELETE_CONFIRM);
+    if (!ok) {
+      setOpenSwipeId(null);
+      return;
+    }
+    setDeletingId(entryId);
+    setDeleteError(null);
+    try {
+      const res = await fetch(`/api/journal/${encodeURIComponent(entryId)}`, {
+        method: "DELETE",
+        credentials: "same-origin",
+      });
+      const data = (await res.json()) as { error?: string };
+      if (!res.ok) {
+        throw new Error(data.error ?? "削除に失敗しました。");
+      }
+      setEntries((prev) => prev.filter((entry) => entry.id !== entryId));
+      setOpenSwipeId(null);
+    } catch (e) {
+      setDeleteError(e instanceof Error ? e.message : "削除に失敗しました。");
+      setOpenSwipeId(null);
+    } finally {
+      setDeletingId(null);
+    }
+  }, [deletingId]);
 
   const applySearch = useCallback(() => {
     const nextKeyword = keywordQuery.trim();
@@ -468,67 +504,82 @@ export function DiaryJournalListHome({
             ) : null}
           </div>
         ) : (
-          <ul className={`divide-y divide-[#ebe2d4] ${LJD_PAPER_CARD_CLASS} overflow-hidden`}>
-            {sortedEntries.map((entry) => {
-              const previewHref = journalPreviewPath(
-                entry.id,
-                entry.designTheme,
-                returnTo,
-                effectiveProfileId,
-              );
-              const previewLine = journalEntryListPreviewLine(entry.content);
-              const dayLabel = formatJournalListDayLabel(entry.createdAt);
-              const photoUrl = entry.hasPhoto
-                ? `/api/journal/entries/${encodeURIComponent(entry.id)}/photo`
-                : null;
+          <>
+            <p className="mb-2 text-xs text-stone-500">
+              行を左にスワイプすると、あしあとを削除できます。
+            </p>
+            {deleteError ? (
+              <p className="mb-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800">
+                {deleteError}
+              </p>
+            ) : null}
+            <ul className={`divide-y divide-[#ebe2d4] ${LJD_PAPER_CARD_CLASS} overflow-hidden`}>
+              {sortedEntries.map((entry) => {
+                const previewHref = journalPreviewPath(
+                  entry.id,
+                  entry.designTheme,
+                  returnTo,
+                  effectiveProfileId,
+                );
+                const previewLine = journalEntryListPreviewLine(entry.content);
+                const dayLabel = formatJournalListDayLabel(entry.createdAt);
+                const photoUrl = entry.hasPhoto
+                  ? `/api/journal/entries/${encodeURIComponent(entry.id)}/photo`
+                  : null;
 
-              return (
-                <li key={entry.id}>
-                  <Link
-                    href={previewHref}
-                    className="flex min-h-[56px] items-center gap-3 px-3 py-3.5 transition active:bg-[#f3ead8]/60"
-                  >
-                    <span className="lj-read-desc w-[5.5rem] shrink-0 font-medium text-[#5c4a35]">
-                      {dayLabel}
-                    </span>
-                    {photoUrl ? (
-                      <span className="relative h-11 w-11 shrink-0 overflow-hidden rounded-lg border border-[#e0d2bc]/90 bg-[#f3ead8]/80">
-                        <Image
-                          src={photoUrl}
-                          alt=""
-                          fill
-                          className="object-cover"
-                          sizes="44px"
-                          unoptimized
-                        />
+                return (
+                  <li key={entry.id}>
+                    <JournalListSwipeRow
+                      href={previewHref}
+                      open={openSwipeId === entry.id}
+                      onOpenChange={(nextOpen) => {
+                        setOpenSwipeId(nextOpen ? entry.id : null);
+                      }}
+                      deleting={deletingId === entry.id}
+                      onDelete={() => void deleteEntry(entry.id)}
+                    >
+                      <span className="lj-read-desc w-[5.5rem] shrink-0 font-medium text-[#5c4a35]">
+                        {dayLabel}
                       </span>
-                    ) : (
-                      <span
-                        className="flex h-11 w-11 shrink-0 items-center justify-center rounded-md border border-dashed border-[#e0d2bc]/90 bg-[#f7efe3]/80 text-[#c5b089]"
-                        aria-hidden
-                      >
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="1.5"
-                          className="h-4 w-4"
+                      {photoUrl ? (
+                        <span className="relative h-11 w-11 shrink-0 overflow-hidden rounded-lg border border-[#e0d2bc]/90 bg-[#f3ead8]/80">
+                          <Image
+                            src={photoUrl}
+                            alt=""
+                            fill
+                            className="object-cover"
+                            sizes="44px"
+                            unoptimized
+                          />
+                        </span>
+                      ) : (
+                        <span
+                          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-md border border-dashed border-[#e0d2bc]/90 bg-[#f7efe3]/80 text-[#c5b089]"
+                          aria-hidden
                         >
-                          <rect x="3" y="5" width="18" height="14" rx="2" />
-                          <circle cx="8.5" cy="10.5" r="1.5" />
-                          <path d="m21 16-5.5-5.5L5 21" />
-                        </svg>
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="1.5"
+                            className="h-4 w-4"
+                          >
+                            <rect x="3" y="5" width="18" height="14" rx="2" />
+                            <circle cx="8.5" cy="10.5" r="1.5" />
+                            <path d="m21 16-5.5-5.5L5 21" />
+                          </svg>
+                        </span>
+                      )}
+                      <span className="lj-read-diary min-w-0 flex-1 leading-snug text-[#3f3428] line-clamp-1">
+                        {previewLine}
                       </span>
-                    )}
-                    <span className="lj-read-diary min-w-0 flex-1 leading-snug text-[#3f3428] line-clamp-1">
-                      {previewLine}
-                    </span>
-                  </Link>
-                </li>
-              );
-            })}
-          </ul>
+                    </JournalListSwipeRow>
+                  </li>
+                );
+              })}
+            </ul>
+          </>
         )}
       </div>
     </div>
