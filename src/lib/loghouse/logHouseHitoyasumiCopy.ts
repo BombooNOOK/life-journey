@@ -164,6 +164,12 @@ export const LOG_HOUSE_HITOYASUMI_ALBUM_VIEWER_PAUSE = "一時停止" as const;
 
 export const LOG_HOUSE_HITOYASUMI_ALBUM_VIEWER_PLAY = "再生" as const;
 
+export const LOG_HOUSE_HITOYASUMI_ALBUM_VIEWER_LOOP_ON = "ループ中" as const;
+
+export const LOG_HOUSE_HITOYASUMI_ALBUM_VIEWER_LOOP_OFF = "ループなし" as const;
+
+export const LOG_HOUSE_HITOYASUMI_ALBUM_VIEWER_START = "全画面で見る" as const;
+
 export const LOG_HOUSE_HITOYASUMI_ALBUM_VIEWER_EMPTY =
   "このアルバムの森ログが、この端末に見つかりませんでした。" as const;
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import {
   formatHitoyasumiCreatedAt,
@@ -8,19 +8,20 @@ import {
   hitoyasumiTemplateLabel,
 } from "@/lib/journal/moriLog/hitoyasumiMedia";
 import type { MoriLogAlbum } from "@/lib/journal/moriLog/moriLogAlbum";
-import {
-  getMoriLogMediaBlob,
-} from "@/lib/journal/moriLog/moriLogMediaBlobStore";
+import { getMoriLogMediaBlob } from "@/lib/journal/moriLog/moriLogMediaBlobStore";
 import {
   isMoriLogCardMovieType,
   type MoriLogMedia,
 } from "@/lib/journal/moriLog/moriLogMedia";
 import {
   LOG_HOUSE_HITOYASUMI_ALBUM_VIEWER_EMPTY,
+  LOG_HOUSE_HITOYASUMI_ALBUM_VIEWER_LOOP_OFF,
+  LOG_HOUSE_HITOYASUMI_ALBUM_VIEWER_LOOP_ON,
   LOG_HOUSE_HITOYASUMI_ALBUM_VIEWER_NEXT,
   LOG_HOUSE_HITOYASUMI_ALBUM_VIEWER_PAUSE,
   LOG_HOUSE_HITOYASUMI_ALBUM_VIEWER_PLAY,
   LOG_HOUSE_HITOYASUMI_ALBUM_VIEWER_PREV,
+  LOG_HOUSE_HITOYASUMI_ALBUM_VIEWER_START,
   LOG_HOUSE_HITOYASUMI_CLOSE_DETAIL,
   LOG_HOUSE_HITOYASUMI_NO_PREVIEW,
 } from "@/lib/loghouse/logHouseHitoyasumiCopy";
@@ -40,42 +41,104 @@ type Props = {
   onClose: () => void;
 };
 
+type VideoEl = HTMLVideoElement & {
+  webkitEnterFullscreen?: () => void;
+};
+
+async function enterVideoFullscreen(video: VideoEl): Promise<void> {
+  try {
+    if (typeof video.webkitEnterFullscreen === "function") {
+      video.webkitEnterFullscreen();
+      return;
+    }
+    if (typeof video.requestFullscreen === "function") {
+      await video.requestFullscreen();
+    }
+  } catch {
+    // 拒否されてもアプリ内全画面で継続
+  }
+}
+
+async function exitDomFullscreen(): Promise<void> {
+  try {
+    if (document.fullscreenElement && document.exitFullscreen) {
+      await document.exitFullscreen();
+    }
+  } catch {
+    // ignore
+  }
+}
+
 export function HitoyasumiAlbumViewer({ album, pages, onClose }: Props) {
+  const videoRef = useRef<VideoEl | null>(null);
+  /** スライド切替中の pause で playing を落とさない */
+  const ignorePauseRef = useRef(false);
+
   const [index, setIndex] = useState(0);
   const [slide, setSlide] = useState<SlideBlob>({
     objectUrl: null,
     blob: null,
     mimeType: null,
   });
-  const [playing, setPlaying] = useState(true);
+  const [playing, setPlaying] = useState(false);
+  const [loop, setLoop] = useState(true);
+  const [chromeVisible, setChromeVisible] = useState(true);
+  const [needsGesture, setNeedsGesture] = useState(true);
 
   const page = pages[index] ?? null;
   const total = pages.length;
 
+  const isVideoSlide =
+    !!page &&
+    isMoriLogCardMovieType(page.type) &&
+    (slide.mimeType ?? "").startsWith("video/");
+
   const goNext = useCallback(() => {
     setIndex((prev) => {
       if (total <= 0) return 0;
-      if (prev >= total - 1) return prev;
+      if (prev >= total - 1) return loop ? 0 : prev;
       return prev + 1;
     });
-  }, [total]);
+  }, [loop, total]);
 
   const goPrev = useCallback(() => {
-    setIndex((prev) => Math.max(0, prev - 1));
-  }, []);
+    setIndex((prev) => {
+      if (total <= 0) return 0;
+      if (prev <= 0) return loop ? Math.max(0, total - 1) : 0;
+      return prev - 1;
+    });
+  }, [loop, total]);
+
+  const closeViewer = useCallback(() => {
+    const video = videoRef.current;
+    if (video) {
+      try {
+        ignorePauseRef.current = true;
+        video.pause();
+      } catch {
+        // ignore
+      }
+    }
+    void exitDomFullscreen();
+    onClose();
+  }, [onClose]);
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
-        onClose();
+        closeViewer();
         return;
       }
       if (event.key === "ArrowRight") goNext();
       if (event.key === "ArrowLeft") goPrev();
+      if (event.key === " ") {
+        event.preventDefault();
+        setPlaying((v) => !v);
+      }
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [goNext, goPrev, onClose]);
+  }, [closeViewer, goNext, goPrev]);
 
   useEffect(() => {
     let cancelled = false;
@@ -104,37 +167,138 @@ export function HitoyasumiAlbumViewer({ album, pages, onClose }: Props) {
     };
   }, [page]);
 
-  const isVideoSlide =
-    !!page &&
-    isMoriLogCardMovieType(page.type) &&
-    (slide.mimeType ?? "").startsWith("video/");
+  /** タップ直下で再生＋全画面（iOS のジェスチャ要件） */
+  const playVideoFromGesture = useCallback(async () => {
+    const video = videoRef.current;
+    if (!video) return false;
+    try {
+      ignorePauseRef.current = false;
+      video.playsInline = true;
+      await video.play();
+      await enterVideoFullscreen(video);
+      return true;
+    } catch {
+      return false;
+    }
+  }, []);
 
-  // 静止画は一定秒数で次へ（最終ページでは止まらない・ループしない）
+  const startPlayback = useCallback(async () => {
+    setChromeVisible(true);
+    if (isVideoSlide) {
+      const ok = await playVideoFromGesture();
+      if (!ok) {
+        setNeedsGesture(true);
+        setPlaying(false);
+        return;
+      }
+    }
+    setNeedsGesture(false);
+    setPlaying(true);
+  }, [isVideoSlide, playVideoFromGesture]);
+
+  const togglePlayPause = useCallback(async () => {
+    setChromeVisible(true);
+    if (needsGesture) {
+      await startPlayback();
+      return;
+    }
+
+    const video = videoRef.current;
+    if (playing) {
+      ignorePauseRef.current = true;
+      if (video && isVideoSlide) video.pause();
+      setPlaying(false);
+      window.setTimeout(() => {
+        ignorePauseRef.current = false;
+      }, 0);
+      return;
+    }
+
+    if (isVideoSlide) {
+      const ok = await playVideoFromGesture();
+      if (!ok) {
+        setNeedsGesture(true);
+        setPlaying(false);
+        return;
+      }
+    }
+    setPlaying(true);
+  }, [isVideoSlide, needsGesture, playVideoFromGesture, playing, startPlayback]);
+
+  // スライドが進んだあと、再生中なら次の動画も続けて再生を試みる
+  useEffect(() => {
+    if (!playing || !isVideoSlide || !slide.objectUrl) return;
+    const video = videoRef.current;
+    if (!video) return;
+
+    let cancelled = false;
+    ignorePauseRef.current = true;
+    void (async () => {
+      try {
+        await video.play();
+        if (cancelled) return;
+        setNeedsGesture(false);
+        await enterVideoFullscreen(video);
+      } catch {
+        if (!cancelled) {
+          setPlaying(false);
+          setNeedsGesture(true);
+        }
+      } finally {
+        ignorePauseRef.current = false;
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [index, isVideoSlide, playing, slide.objectUrl]);
+
+  // 静止画タイマー
   useEffect(() => {
     if (!playing || !page || isVideoSlide || total <= 0) return;
-    if (index >= total - 1) return;
+    if (!loop && index >= total - 1) {
+      setPlaying(false);
+      return;
+    }
     const timer = window.setTimeout(() => {
       goNext();
     }, HITOYASUMI_ALBUM_STILL_DWELL_MS);
     return () => window.clearTimeout(timer);
-  }, [goNext, index, isVideoSlide, page, playing, total]);
+  }, [goNext, index, isVideoSlide, loop, page, playing, total]);
+
+  useEffect(() => {
+    if (!playing || !chromeVisible || needsGesture) return;
+    const timer = window.setTimeout(() => setChromeVisible(false), 2800);
+    return () => window.clearTimeout(timer);
+  }, [chromeVisible, index, needsGesture, playing]);
+
+  const onVideoEnded = useCallback(() => {
+    if (!playing) return;
+    if (!loop && index >= total - 1) {
+      setPlaying(false);
+      setChromeVisible(true);
+      return;
+    }
+    goNext();
+  }, [goNext, index, loop, playing, total]);
 
   if (total === 0) {
     return (
       <div
-        className="fixed inset-0 z-[70] flex items-center justify-center bg-[#120c08]/78 p-4 backdrop-blur-[2px]"
+        className="fixed inset-0 z-[70] flex items-center justify-center bg-[#120c08]/90 p-4"
         role="dialog"
         aria-modal="true"
         aria-label={album.title}
       >
-        <div className="w-full max-w-sm rounded-2xl border border-[#e4d5c0] bg-[#fffaf2] px-5 py-5 shadow-[0_16px_40px_rgba(40,28,16,0.28)]">
+        <div className="w-full max-w-sm rounded-2xl border border-[#e4d5c0] bg-[#fffaf2] px-5 py-5">
           <h2 className="text-base font-semibold text-[#3f3428]">{album.title}</h2>
           <p className="mt-3 text-sm leading-relaxed text-[#5c4a35]">
             {LOG_HOUSE_HITOYASUMI_ALBUM_VIEWER_EMPTY}
           </p>
           <button
             type="button"
-            onClick={onClose}
+            onClick={closeViewer}
             className="mt-5 inline-flex min-h-11 w-full items-center justify-center rounded-xl border border-[#d9cbb8] bg-[#f7f0e4] px-4 text-sm font-medium text-[#5c4a3a]"
           >
             {LOG_HOUSE_HITOYASUMI_CLOSE_DETAIL}
@@ -146,82 +310,153 @@ export function HitoyasumiAlbumViewer({ album, pages, onClose }: Props) {
 
   return (
     <div
-      className="fixed inset-0 z-[70] flex items-end justify-center bg-[#120c08]/78 p-0 backdrop-blur-[2px] sm:items-center sm:p-4"
+      className="fixed inset-0 z-[70] flex flex-col bg-black"
       role="dialog"
       aria-modal="true"
       aria-label={album.title}
+      onClick={() => setChromeVisible(true)}
     >
-      <div className="flex max-h-[100dvh] w-full max-w-lg flex-col overflow-hidden rounded-t-[1.35rem] border border-[#e4d5c0]/95 bg-[#fffaf2] shadow-[0_20px_50px_rgba(20,12,8,0.45)] sm:max-h-[94dvh] sm:rounded-[1.35rem]">
-        <div className="flex items-start justify-between gap-3 px-3 pt-3 sm:px-4 sm:pt-4">
-          <div className="min-w-0">
-            <p className="truncate text-xs font-medium text-[#8a7660]">{album.title}</p>
-            {page ? (
-              <>
-                <p className="mt-1 inline-flex rounded-md border border-[#e0d2bc]/90 bg-[#f7efe3] px-2 py-0.5 text-xs font-medium text-[#5c4a35]">
-                  {hitoyasumiMediaTypeLabel(page.type)}
-                </p>
-                <h2 className="mt-2 truncate text-lg font-semibold text-[#3d3226]">
-                  {page.title?.trim() || hitoyasumiTemplateLabel(page.templateId)}
-                </h2>
-                <p className="mt-1 text-xs text-[#8a7660]">
-                  {index + 1} / {total}
-                  {" · "}
-                  {formatHitoyasumiCreatedAt(page.createdAt)}
-                </p>
-              </>
-            ) : null}
-          </div>
-          <button
-            type="button"
-            onClick={onClose}
-            className="min-h-[40px] shrink-0 rounded-lg border border-[#e0d2bc]/95 bg-[#f7efe3] px-3 text-sm text-[#5c4a35]"
-          >
-            {LOG_HOUSE_HITOYASUMI_CLOSE_DETAIL}
-          </button>
-        </div>
-
-        <div className="min-h-0 flex-1 overflow-auto px-2 py-3 sm:px-4">
-          {slide.objectUrl ? (
-            isVideoSlide ? (
-              <video
-                key={page?.id ?? index}
-                src={slide.objectUrl}
-                className="mx-auto max-h-[62dvh] w-full rounded-xl bg-[#2a221a]"
-                controls
-                autoPlay={playing}
-                playsInline
-                onEnded={() => {
-                  if (playing) goNext();
-                }}
-              />
-            ) : (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={slide.objectUrl}
-                alt=""
-                className="mx-auto max-h-[68dvh] w-full rounded-xl object-contain"
-              />
-            )
+      <div className="relative min-h-0 flex-1">
+        {slide.objectUrl ? (
+          isVideoSlide ? (
+            <video
+              key={page?.id ?? index}
+              ref={videoRef}
+              src={slide.objectUrl}
+              className="absolute inset-0 h-full w-full bg-black object-contain"
+              playsInline
+              controls={false}
+              onEnded={onVideoEnded}
+              onPause={() => {
+                if (ignorePauseRef.current) return;
+                setPlaying(false);
+              }}
+            />
           ) : (
-            <p className="rounded-xl border border-[#e0d2bc] bg-[#f7efe3] px-4 py-8 text-center text-sm leading-relaxed text-[#6e5c48]">
-              {LOG_HOUSE_HITOYASUMI_NO_PREVIEW}
-            </p>
-          )}
-        </div>
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={slide.objectUrl}
+              alt=""
+              className="absolute inset-0 h-full w-full object-contain"
+            />
+          )
+        ) : (
+          <p className="absolute inset-0 flex items-center justify-center px-6 text-center text-sm text-[#d9cbb8]">
+            {LOG_HOUSE_HITOYASUMI_NO_PREVIEW}
+          </p>
+        )}
 
-        <div className="flex items-center gap-2 border-t border-[#e8dcc8] bg-[#fff7ec]/95 px-3 py-3 sm:px-4">
+        {needsGesture || (!playing && isVideoSlide) ? (
           <button
             type="button"
-            onClick={goPrev}
-            disabled={index <= 0}
-            className="inline-flex min-h-[44px] flex-1 items-center justify-center rounded-xl border border-[#c4b49a] bg-[#faf3e8] px-3 text-sm font-medium text-[#5c4a35] hover:bg-[#f3ead8] disabled:opacity-40"
+            onClick={(e) => {
+              e.stopPropagation();
+              void startPlayback();
+            }}
+            onMouseDown={(e) => e.preventDefault()}
+            className="absolute inset-0 z-[2] flex flex-col items-center justify-center gap-3 bg-black/25 px-6"
+          >
+            <span className="flex h-16 w-16 items-center justify-center rounded-full border border-white/80 bg-white/95 text-[#1a120c] shadow-lg">
+              <svg aria-hidden className="ml-1 h-7 w-7" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M8 5.5v13l11-6.5L8 5.5z" />
+              </svg>
+            </span>
+            <span className="rounded-full bg-black/55 px-4 py-2 text-sm font-medium text-white">
+              {LOG_HOUSE_HITOYASUMI_ALBUM_VIEWER_START}
+            </span>
+          </button>
+        ) : null}
+
+        <div
+          className={[
+            "pointer-events-none absolute inset-x-0 top-0 z-[3] bg-gradient-to-b from-black/70 to-transparent px-3 pb-10 pt-[max(0.75rem,env(safe-area-inset-top))] transition-opacity duration-300",
+            chromeVisible || needsGesture || !playing ? "opacity-100" : "opacity-0",
+          ].join(" ")}
+        >
+          <div className="pointer-events-auto flex items-start justify-between gap-3">
+            <div className="min-w-0 text-white">
+              <p className="truncate text-xs text-white/75">{album.title}</p>
+              {page ? (
+                <>
+                  <p className="mt-1 inline-flex rounded-md border border-white/25 bg-white/15 px-2 py-0.5 text-[11px] font-medium">
+                    {hitoyasumiMediaTypeLabel(page.type)}
+                  </p>
+                  <h2 className="mt-1.5 truncate text-base font-semibold">
+                    {page.title?.trim() || hitoyasumiTemplateLabel(page.templateId)}
+                  </h2>
+                  <p className="mt-0.5 text-[11px] text-white/70">
+                    {index + 1} / {total}
+                    {" · "}
+                    {formatHitoyasumiCreatedAt(page.createdAt)}
+                  </p>
+                </>
+              ) : null}
+            </div>
+            <div className="flex shrink-0 flex-col items-end gap-2">
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  closeViewer();
+                }}
+                className="min-h-[40px] rounded-lg border border-white/30 bg-black/45 px-3 text-sm text-white"
+              >
+                {LOG_HOUSE_HITOYASUMI_CLOSE_DETAIL}
+              </button>
+              <button
+                type="button"
+                aria-pressed={loop}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setChromeVisible(true);
+                  setLoop((v) => !v);
+                }}
+                className={[
+                  "min-h-[36px] rounded-full border px-3 text-[11px] font-medium",
+                  loop
+                    ? "border-emerald-300/70 bg-emerald-800/90 text-white"
+                    : "border-white/30 bg-black/45 text-white/90",
+                ].join(" ")}
+              >
+                {loop
+                  ? LOG_HOUSE_HITOYASUMI_ALBUM_VIEWER_LOOP_ON
+                  : LOG_HOUSE_HITOYASUMI_ALBUM_VIEWER_LOOP_OFF}
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div
+        className={[
+          "z-[3] border-t border-white/10 bg-black/80 px-3 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] transition-opacity duration-300",
+          chromeVisible || needsGesture || !playing ? "opacity-100" : "opacity-0",
+          chromeVisible || needsGesture || !playing
+            ? "pointer-events-auto"
+            : "pointer-events-none",
+        ].join(" ")}
+      >
+        <div className="mx-auto flex w-full max-w-lg items-center gap-2">
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              setChromeVisible(true);
+              goPrev();
+            }}
+            disabled={!loop && index <= 0}
+            className="inline-flex min-h-[48px] flex-1 items-center justify-center rounded-xl border border-white/25 bg-white/10 px-3 text-sm font-medium text-white disabled:opacity-35"
           >
             {LOG_HOUSE_HITOYASUMI_ALBUM_VIEWER_PREV}
           </button>
           <button
             type="button"
-            onClick={() => setPlaying((v) => !v)}
-            className="inline-flex min-h-[44px] flex-1 items-center justify-center rounded-xl border border-emerald-800/80 bg-emerald-800 px-3 text-sm font-medium text-white hover:bg-emerald-900"
+            onMouseDown={(e) => e.preventDefault()}
+            onClick={(e) => {
+              e.stopPropagation();
+              void togglePlayPause();
+            }}
+            className="inline-flex min-h-[48px] flex-[1.2] items-center justify-center rounded-xl border border-emerald-300/50 bg-emerald-800 px-3 text-sm font-semibold text-white"
           >
             {playing
               ? LOG_HOUSE_HITOYASUMI_ALBUM_VIEWER_PAUSE
@@ -229,9 +464,13 @@ export function HitoyasumiAlbumViewer({ album, pages, onClose }: Props) {
           </button>
           <button
             type="button"
-            onClick={goNext}
-            disabled={index >= total - 1}
-            className="inline-flex min-h-[44px] flex-1 items-center justify-center rounded-xl border border-[#c4b49a] bg-[#faf3e8] px-3 text-sm font-medium text-[#5c4a35] hover:bg-[#f3ead8] disabled:opacity-40"
+            onClick={(e) => {
+              e.stopPropagation();
+              setChromeVisible(true);
+              goNext();
+            }}
+            disabled={!loop && index >= total - 1}
+            className="inline-flex min-h-[48px] flex-1 items-center justify-center rounded-xl border border-white/25 bg-white/10 px-3 text-sm font-medium text-white disabled:opacity-35"
           >
             {LOG_HOUSE_HITOYASUMI_ALBUM_VIEWER_NEXT}
           </button>
