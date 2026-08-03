@@ -127,10 +127,20 @@ export const LOG_HOUSE_HITOYASUMI_ALBUM_TAG_EMPTY = "まだタグ付きの森ロ
 export const LOG_HOUSE_HITOYASUMI_ALBUM_MATCH_COUNT = (n: number) =>
   `${n}件が候補です` as const;
 
+export const LOG_HOUSE_HITOYASUMI_ALBUM_SELECTED_COUNT = (n: number) =>
+  `${n}件を選択中` as const;
+
+export const LOG_HOUSE_HITOYASUMI_ALBUM_SELECT_ALL = "表示中をすべて選択" as const;
+
+export const LOG_HOUSE_HITOYASUMI_ALBUM_DESELECT_VISIBLE = "表示中の選択を解除" as const;
+
 export const LOG_HOUSE_HITOYASUMI_ALBUM_SAVE = "この内容でまとめる" as const;
 
+export const LOG_HOUSE_HITOYASUMI_ALBUM_SAVE_NEED_SELECTION =
+  "アルバムに入れる森ログを、チェックで選んでください。" as const;
+
 export const LOG_HOUSE_HITOYASUMI_ALBUM_SAVE_SOON =
-  "候補の絞り込みまでは使えます。1冊としての保存は、これから少しずつ育てていきます。" as const;
+  "候補の絞り込みと選択までは使えます。1冊としての保存は、これから少しずつ育てていきます。" as const;
 
 export const LOG_HOUSE_HITOYASUMI_ALBUM_SOON_TITLE = "アルバムは準備中です" as const;
 
