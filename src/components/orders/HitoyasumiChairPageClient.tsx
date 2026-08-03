@@ -93,6 +93,8 @@ import {
   LOG_HOUSE_HITOYASUMI_HELP_BODY,
   LOG_HOUSE_HITOYASUMI_HELP_BUTTON_LABEL,
   LOG_HOUSE_HITOYASUMI_HELP_DISMISS,
+  LOG_HOUSE_HITOYASUMI_ICON_BACK_CHAIR_SRC,
+  LOG_HOUSE_HITOYASUMI_ICON_BACK_LOGHOUSE_SRC,
   LOG_HOUSE_HITOYASUMI_ITEM_FRAME_ALBUM_SRC,
   LOG_HOUSE_HITOYASUMI_ITEM_FRAME_CARD_SRC,
   LOG_HOUSE_HITOYASUMI_ITEM_FRAME_MOVIE_SRC,
@@ -197,6 +199,23 @@ const ENTRY_ICON_LOCKED_TONE =
 /** ログハウス室内系（庭など）と同じ戻るボタンサイズ */
 const CHROME_BACK_CLASS =
   "inline-flex w-fit min-h-[40px] items-center rounded-full border px-3 text-xs font-medium backdrop-blur-[3px] transition active:scale-[0.98]";
+
+/** アイコンだけの戻り（ヘルプと同サイズの丸） */
+const CHROME_ICON_BACK_CLASS =
+  "inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border backdrop-blur-[3px] transition active:scale-[0.98]";
+
+function ChromeBackIcon({
+  src,
+  alt = "",
+}: {
+  src: string;
+  alt?: string;
+}) {
+  return (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img src={src} alt={alt} className="h-6 w-6 object-contain" draggable={false} />
+  );
+}
 
 function EntranceIconButton({
   src,
@@ -831,25 +850,31 @@ export function HitoyasumiChairPageClient({
           {showLoghouseOnlyChrome ? (
             <Link
               href={backHref}
-              className={`${CHROME_BACK_CLASS} ${chromeButtonClass}`}
+              aria-label={LOG_HOUSE_RETURN_TO_LABEL}
+              title={LOG_HOUSE_RETURN_TO_LABEL}
+              className={`${CHROME_ICON_BACK_CLASS} ${chromeButtonClass}`}
             >
-              ← {LOG_HOUSE_RETURN_TO_LABEL}
+              <ChromeBackIcon src={LOG_HOUSE_HITOYASUMI_ICON_BACK_LOGHOUSE_SRC} />
             </Link>
           ) : (
-            <div className="flex min-w-0 flex-col items-start gap-1.5">
+            <div className="flex min-w-0 items-start gap-1.5">
               <button
                 type="button"
                 onClick={backToEntrance}
-                className={`${CHROME_BACK_CLASS} ${chromeButtonClass}`}
+                aria-label={LOG_HOUSE_HITOYASUMI_BACK_TO_ENTRANCE}
+                title={LOG_HOUSE_HITOYASUMI_BACK_TO_ENTRANCE}
+                className={`${CHROME_ICON_BACK_CLASS} ${chromeButtonClass}`}
               >
-                ← {LOG_HOUSE_HITOYASUMI_BACK_TO_ENTRANCE}
+                <ChromeBackIcon src={LOG_HOUSE_HITOYASUMI_ICON_BACK_CHAIR_SRC} />
               </button>
               {showSubScreenDualNav ? (
                 <Link
                   href={backHref}
-                  className={`${CHROME_BACK_CLASS} ${chromeButtonClass}`}
+                  aria-label={LOG_HOUSE_RETURN_TO_LABEL}
+                  title={LOG_HOUSE_RETURN_TO_LABEL}
+                  className={`${CHROME_ICON_BACK_CLASS} ${chromeButtonClass}`}
                 >
-                  ← {LOG_HOUSE_RETURN_TO_LABEL}
+                  <ChromeBackIcon src={LOG_HOUSE_HITOYASUMI_ICON_BACK_LOGHOUSE_SRC} />
                 </Link>
               ) : null}
             </div>

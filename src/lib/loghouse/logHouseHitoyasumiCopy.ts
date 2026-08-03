@@ -15,6 +15,13 @@ export const LOG_HOUSE_HITOYASUMI_HELP_DISMISS = "とじる" as const;
 
 export const LOG_HOUSE_HITOYASUMI_BACK_TO_ENTRANCE = "椅子の入口へ戻る" as const;
 
+/** 左上クローム：読み上げ用ラベル付きアイコン */
+export const LOG_HOUSE_HITOYASUMI_ICON_BACK_LOGHOUSE_SRC =
+  "/images/ljd/hitoyasumi/icon-back-loghouse.png" as const;
+
+export const LOG_HOUSE_HITOYASUMI_ICON_BACK_CHAIR_SRC =
+  "/images/ljd/hitoyasumi/icon-back-chair.png" as const;
+
 /** 入口：巨大アイコン（背景とは分離） */
 export const LOG_HOUSE_HITOYASUMI_ENTRY_CARD_SRC =
   "/images/ljd/hitoyasumi/chair-entry-card.png?v=2" as const;
