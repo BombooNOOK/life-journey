@@ -41,14 +41,22 @@ function isVideoPage(page: MoriLogMedia | null | undefined, mimeType: string | n
   return mimeType.startsWith("video/");
 }
 
+function videoHasSrc(video: HTMLVideoElement, url: string): boolean {
+  const attr = video.getAttribute("src");
+  if (attr === url) return true;
+  // currentSrc は絶対化されることがある
+  return video.currentSrc === url || video.src === url;
+}
+
 /**
- * 連続再生向けビューワー。
- * - 端末の webkit 全画面は使わない（1本で止まってしまうため）
- * - 同じ video 要素の src を差し替え、onEnded の中で次を play する
+ * 連続再生／ループ向けビューワー。
+ * iOS では ended の直後に pause が先に来て playing が落ち、次へ進まないことがある。
+ * playlistActive で意図を守り、同じ video の src 差し替えで次を再生する。
  */
 export function HitoyasumiAlbumViewer({ album, pages, onClose }: Props) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
-  const playingRef = useRef(false);
+  /** ユーザーが開始したプレイリスト再生中か（一時停止／閉じるで false） */
+  const playlistActiveRef = useRef(false);
   const loopRef = useRef(true);
   const indexRef = useRef(0);
   const pagesRef = useRef(pages);
@@ -56,10 +64,7 @@ export function HitoyasumiAlbumViewer({ album, pages, onClose }: Props) {
   const mimeByIdRef = useRef<Map<string, string>>(new Map());
   const ignorePauseRef = useRef(false);
   const stillTimerRef = useRef<number | null>(null);
-  const advanceToRef = useRef<(
-    rawIndex: number,
-    opts?: { fromEnded?: boolean; userGesture?: boolean },
-  ) => Promise<void>>(async () => {});
+  const advanceLockRef = useRef(false);
 
   const [index, setIndex] = useState(0);
   const [ready, setReady] = useState(false);
@@ -84,20 +89,29 @@ export function HitoyasumiAlbumViewer({ album, pages, onClose }: Props) {
     }
   }, []);
 
-  const setPlayingBoth = useCallback((next: boolean) => {
-    playingRef.current = next;
-    setPlaying(next);
+  const markPlaylistStopped = useCallback(() => {
+    playlistActiveRef.current = false;
+    setPlaying(false);
+    setChromeVisible(true);
   }, []);
 
-  // アルバム内メディアを先読み（差し替え再生をスムーズに）
+  const markPlaylistPlaying = useCallback(() => {
+    playlistActiveRef.current = true;
+    setPlaying(true);
+    setNeedsGesture(false);
+  }, []);
+
+  // 先読み（pages の中身の id 列が変わったときだけ）
+  const pagesKey = pages.map((p) => p.id).join("|");
   useEffect(() => {
     let cancelled = false;
     const created: string[] = [];
+    const list = pagesRef.current;
 
     async function preload() {
       const urlMap = new Map<string, string>();
       const mimeMap = new Map<string, string>();
-      for (const item of pages) {
+      for (const item of list) {
         const blob = await getMoriLogMediaBlob(item.id);
         if (cancelled) return;
         if (!blob || blob.size === 0) continue;
@@ -109,11 +123,12 @@ export function HitoyasumiAlbumViewer({ album, pages, onClose }: Props) {
       if (cancelled) return;
       urlByIdRef.current = urlMap;
       mimeByIdRef.current = mimeMap;
-      const first = pages[0];
+      const first = list[0];
       setCurrentMime(first ? mimeMap.get(first.id) ?? null : null);
       setReady(true);
     }
 
+    setReady(false);
     void preload();
     return () => {
       cancelled = true;
@@ -122,20 +137,23 @@ export function HitoyasumiAlbumViewer({ album, pages, onClose }: Props) {
       urlByIdRef.current = new Map();
       mimeByIdRef.current = new Map();
     };
-  }, [clearStillTimer, pages]);
+    // pagesKey で内容変化のみ検知（親の配列参照ゆれで revoke しない）
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [clearStillTimer, pagesKey]);
 
   const scheduleStillAdvance = useCallback(() => {
     clearStillTimer();
-    if (!playingRef.current) return;
+    if (!playlistActiveRef.current) return;
     stillTimerRef.current = window.setTimeout(() => {
       void advanceToRef.current(indexRef.current + 1, { fromEnded: true });
     }, HITOYASUMI_ALBUM_STILL_DWELL_MS);
   }, [clearStillTimer]);
 
-  /**
-   * 指定インデックスを表示して、再生中なら動画をすぐ play。
-   * fromEnded: onEnded 同期コンテキスト（iOS で次の play が通りやすい）
-   */
+  const advanceToRef = useRef<(
+    rawIndex: number,
+    opts?: { fromEnded?: boolean; userGesture?: boolean },
+  ) => Promise<void>>(async () => {});
+
   const advanceTo = useCallback(
     async (
       rawIndex: number,
@@ -143,84 +161,99 @@ export function HitoyasumiAlbumViewer({ album, pages, onClose }: Props) {
     ) => {
       const list = pagesRef.current;
       if (list.length === 0) return;
+      if (advanceLockRef.current) return;
+      advanceLockRef.current = true;
 
-      let next = rawIndex;
-      if (next >= list.length) {
-        if (!loopRef.current) {
-          setPlayingBoth(false);
-          setChromeVisible(true);
-          setNeedsGesture(true);
-          return;
-        }
-        next = 0;
-      }
-      if (next < 0) {
-        next = loopRef.current ? list.length - 1 : 0;
-      }
-
-      const nextPage = list[next];
-      if (!nextPage) return;
-
-      const url = urlByIdRef.current.get(nextPage.id) ?? null;
-      const mime = mimeByIdRef.current.get(nextPage.id) ?? null;
-      const nextIsVideo = isVideoPage(nextPage, mime);
-
-      clearStillTimer();
-      ignorePauseRef.current = true;
-
-      indexRef.current = next;
-      setIndex(next);
-      setCurrentMime(mime);
-
-      const video = videoRef.current;
-
-      if (nextIsVideo && url && video) {
-        try {
-          // onEnded コンテキストを逃さないよう、state 更新より先に play を蹴る
-          if (video.currentSrc !== url && video.getAttribute("src") !== url) {
-            video.src = url;
+      try {
+        let next = rawIndex;
+        if (next >= list.length) {
+          if (!loopRef.current) {
+            markPlaylistStopped();
+            setNeedsGesture(true);
+            return;
           }
-          video.playsInline = true;
-          if (playingRef.current || opts?.fromEnded || opts?.userGesture) {
-            playingRef.current = true;
-            const playPromise = video.play();
-            setPlaying(true);
-            setNeedsGesture(false);
-            await playPromise;
-          }
-        } catch {
-          setPlayingBoth(false);
-          setNeedsGesture(true);
-          setChromeVisible(true);
+          next = 0;
         }
-      } else {
-        if (video) {
+        if (next < 0) {
+          next = loopRef.current ? list.length - 1 : 0;
+        }
+
+        // 1件だけのループ：同じインデックスへ戻す
+        const nextPage = list[next];
+        if (!nextPage) return;
+
+        const url = urlByIdRef.current.get(nextPage.id) ?? null;
+        const mime = mimeByIdRef.current.get(nextPage.id) ?? null;
+        const nextIsVideo = isVideoPage(nextPage, mime);
+        const shouldPlay =
+          playlistActiveRef.current || Boolean(opts?.fromEnded) || Boolean(opts?.userGesture);
+
+        clearStillTimer();
+        ignorePauseRef.current = true;
+
+        indexRef.current = next;
+        setIndex(next);
+        setCurrentMime(mime);
+
+        const video = videoRef.current;
+
+        if (nextIsVideo && url && video) {
           try {
-            video.pause();
-            video.removeAttribute("src");
-            video.load();
+            const sameSrc = videoHasSrc(video, url);
+            if (sameSrc) {
+              // 同一動画のループ／再再生
+              try {
+                video.currentTime = 0;
+              } catch {
+                // ignore
+              }
+            } else {
+              video.src = url;
+            }
+            video.playsInline = true;
+            if (shouldPlay) {
+              markPlaylistPlaying();
+              // ended ハンドラから同期的に play() を開始するのが iOS 連続再生の要点
+              const playPromise = video.play();
+              await playPromise;
+            }
           } catch {
-            // ignore
+            // 自動再生が弾かれてもインデックスは進んでいる。続きタップを促す
+            markPlaylistStopped();
+            setNeedsGesture(true);
+          }
+        } else {
+          if (video) {
+            try {
+              video.pause();
+              video.removeAttribute("src");
+              video.load();
+            } catch {
+              // ignore
+            }
+          }
+          if (shouldPlay) {
+            markPlaylistPlaying();
+            scheduleStillAdvance();
           }
         }
-        if (playingRef.current) {
-          scheduleStillAdvance();
-        }
+      } finally {
+        // src 差し替え起因の pause を十分無視する
+        window.setTimeout(() => {
+          ignorePauseRef.current = false;
+          advanceLockRef.current = false;
+        }, 250);
       }
-
-      window.setTimeout(() => {
-        ignorePauseRef.current = false;
-      }, 50);
     },
-    [clearStillTimer, scheduleStillAdvance, setPlayingBoth],
+    [clearStillTimer, markPlaylistPlaying, markPlaylistStopped, scheduleStillAdvance],
   );
 
   advanceToRef.current = advanceTo;
 
-  // 初回ロード後、現在ページの src だけセット（自動再生はしない）
+  // 初回：先頭の src だけセット
   useEffect(() => {
     if (!ready) return;
-    const first = pagesRef.current[indexRef.current];
+    const first = pagesRef.current[0];
     if (!first) return;
     const url = urlByIdRef.current.get(first.id);
     const mime = mimeByIdRef.current.get(first.id) ?? null;
@@ -228,20 +261,46 @@ export function HitoyasumiAlbumViewer({ album, pages, onClose }: Props) {
     const video = videoRef.current;
     if (video && url && isVideoPage(first, mime)) {
       video.src = url;
-      video.load();
     }
   }, [ready]);
 
+  // native ended（React 合成より確実）。pause→ended の競合もここで吸収
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video || !ready) return;
+
+    const onEnded = () => {
+      if (!playlistActiveRef.current) return;
+      void advanceToRef.current(indexRef.current + 1, { fromEnded: true });
+    };
+
+    const onPause = () => {
+      if (ignorePauseRef.current) return;
+      // 終了直前の pause は ended に任せる（ここで playlist を止めるとループ不能）
+      if (video.ended) return;
+      clearStillTimer();
+      markPlaylistStopped();
+    };
+
+    video.addEventListener("ended", onEnded);
+    video.addEventListener("pause", onPause);
+    return () => {
+      video.removeEventListener("ended", onEnded);
+      video.removeEventListener("pause", onPause);
+    };
+  }, [clearStillTimer, markPlaylistStopped, ready]);
+
   const startPlayback = useCallback(async () => {
     setChromeVisible(true);
-    setPlayingBoth(true);
+    playlistActiveRef.current = true;
     setNeedsGesture(false);
+    setPlaying(true);
     await advanceTo(indexRef.current, { userGesture: true });
-  }, [advanceTo, setPlayingBoth]);
+  }, [advanceTo]);
 
   const togglePlayPause = useCallback(async () => {
     setChromeVisible(true);
-    if (needsGesture || !playingRef.current) {
+    if (!playlistActiveRef.current) {
       await startPlayback();
       return;
     }
@@ -255,17 +314,11 @@ export function HitoyasumiAlbumViewer({ album, pages, onClose }: Props) {
         // ignore
       }
     }
-    setPlayingBoth(false);
+    markPlaylistStopped();
     window.setTimeout(() => {
       ignorePauseRef.current = false;
-    }, 50);
-  }, [clearStillTimer, needsGesture, setPlayingBoth, startPlayback]);
-
-  const onVideoEnded = useCallback(() => {
-    if (!playingRef.current) return;
-    // onEnded 内で次を play するのが iOS 連続再生の要点
-    void advanceTo(indexRef.current + 1, { fromEnded: true });
-  }, [advanceTo]);
+    }, 100);
+  }, [clearStillTimer, markPlaylistStopped, startPlayback]);
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
@@ -296,7 +349,7 @@ export function HitoyasumiAlbumViewer({ album, pages, onClose }: Props) {
 
   const closeViewer = useCallback(() => {
     clearStillTimer();
-    setPlayingBoth(false);
+    markPlaylistStopped();
     const video = videoRef.current;
     if (video) {
       try {
@@ -307,7 +360,7 @@ export function HitoyasumiAlbumViewer({ album, pages, onClose }: Props) {
       }
     }
     onClose();
-  }, [clearStillTimer, onClose, setPlayingBoth]);
+  }, [clearStillTimer, markPlaylistStopped, onClose]);
 
   if (total === 0) {
     return (
@@ -345,7 +398,6 @@ export function HitoyasumiAlbumViewer({ album, pages, onClose }: Props) {
       onClick={() => setChromeVisible(true)}
     >
       <div className="relative min-h-0 flex-1">
-        {/* video は常にマウント。静止画のときは下に img を重ねる */}
         <video
           ref={videoRef}
           className={[
@@ -354,15 +406,7 @@ export function HitoyasumiAlbumViewer({ album, pages, onClose }: Props) {
           ].join(" ")}
           playsInline
           controls={false}
-          onEnded={onVideoEnded}
-          onPause={() => {
-            if (ignorePauseRef.current) return;
-            if (!playingRef.current) return;
-            // ユーザー操作や割り込みでの停止
-            clearStillTimer();
-            setPlayingBoth(false);
-            setChromeVisible(true);
-          }}
+          // ended/pause は addEventListener 側（競合対策）
         />
 
         {!isVideoSlide && currentUrl ? (
@@ -484,7 +528,7 @@ export function HitoyasumiAlbumViewer({ album, pages, onClose }: Props) {
               setChromeVisible(true);
               void advanceTo(indexRef.current - 1, {
                 userGesture: true,
-                fromEnded: playingRef.current,
+                fromEnded: playlistActiveRef.current,
               });
             }}
             disabled={!loop && index <= 0}
@@ -512,7 +556,7 @@ export function HitoyasumiAlbumViewer({ album, pages, onClose }: Props) {
               setChromeVisible(true);
               void advanceTo(indexRef.current + 1, {
                 userGesture: true,
-                fromEnded: playingRef.current,
+                fromEnded: playlistActiveRef.current,
               });
             }}
             disabled={!loop && index >= total - 1}
