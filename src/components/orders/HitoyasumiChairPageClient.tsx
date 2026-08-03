@@ -981,7 +981,7 @@ export function HitoyasumiChairPageClient({
                   return (
                     <li key={item.id}>
                       <div className="relative">
-                        <label className="absolute left-[6%] top-[5.5%] z-20 inline-flex h-7 w-7 cursor-pointer items-center justify-center rounded-md bg-[#1d3a2c]/55 shadow-[0_1px_4px_rgba(0,0,0,0.28)] backdrop-blur-[2px]">
+                        <label className="absolute right-[6%] top-[5.5%] z-20 inline-flex h-7 w-7 cursor-pointer items-center justify-center rounded-md bg-[#1d3a2c]/55 shadow-[0_1px_4px_rgba(0,0,0,0.28)] backdrop-blur-[2px]">
                           <input
                             type="checkbox"
                             checked={browseCheckedIds.includes(item.id)}
@@ -1166,20 +1166,6 @@ export function HitoyasumiChairPageClient({
                                   {LOG_HOUSE_HITOYASUMI_NO_PREVIEW}
                                 </div>
                               )}
-                            </div>
-                            {/* 上端の「アルバム」札をサムネの手前に再描画（カード一覧と同じ） */}
-                            <div
-                              className="pointer-events-none absolute inset-0 z-[2]"
-                              style={{ clipPath: HITOYASUMI_THUMB_BADGE_CLIP }}
-                              aria-hidden
-                            >
-                              <Image
-                                src={LOG_HOUSE_HITOYASUMI_ITEM_FRAME_ALBUM_SRC}
-                                alt=""
-                                fill
-                                sizes="(max-width: 768px) 46vw, 220px"
-                                className={`object-contain ${HITOYASUMI_ASSET_TONE}`}
-                              />
                             </div>
                             <span
                               className={[
