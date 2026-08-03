@@ -507,17 +507,26 @@ export function HitoyasumiChairPageClient({
   }, [refreshAlbums]);
 
   const tryAlbumSave = useCallback(async () => {
-    const selected = albumCheckedIds.filter((id) => itemsById.has(id));
+    // iOS: タイトル入力のキーボードが開いていると、最初のタップが blur だけになることがある
+    if (typeof document !== "undefined") {
+      const active = document.activeElement;
+      if (active instanceof HTMLElement) active.blur();
+    }
+
+    // 選択順をそのまま使う（表示中フィルタで落とさない）
+    const selected = albumCheckedIds.filter(Boolean);
     if (selected.length === 0) {
       setAlbumSaveNote(LOG_HOUSE_HITOYASUMI_ALBUM_SAVE_NEED_SELECTION);
       return;
     }
     if (albumSaveBusy) return;
+
     setAlbumSaveBusy(true);
-    setAlbumSaveNote(null);
+    setAlbumSaveNote("まとめています…");
     try {
       const coverId = selected[0]!;
-      const coverItem = itemsById.get(coverId);
+      const coverItem =
+        itemsById.get(coverId) ?? albumCandidates.find((item) => item.id === coverId);
       const coverType =
         coverItem && isMoriLogCardMovieType(coverItem.type) ? "card_movie" : "card_image";
       const title = albumTitle.trim() || defaultMoriLogAlbumTitle();
@@ -529,16 +538,27 @@ export function HitoyasumiChairPageClient({
         coverType,
       });
       await refreshAlbums();
+      // 一覧に戻してからビューワーを開く（閉じたら棚が見える）
       setAlbumMode("shelf");
       setAlbumCheckedIds([]);
       setAlbumTitle("");
+      setAlbumSaveNote(null);
       setViewingAlbum(saved);
-    } catch {
+    } catch (err) {
+      console.error("[hitoyasumi] album save failed", err);
       setAlbumSaveNote(LOG_HOUSE_HITOYASUMI_ALBUM_SAVE_FAIL);
     } finally {
       setAlbumSaveBusy(false);
     }
-  }, [albumCheckedIds, albumSaveBusy, albumTitle, itemsById, profileId, refreshAlbums]);
+  }, [
+    albumCandidates,
+    albumCheckedIds,
+    albumSaveBusy,
+    albumTitle,
+    itemsById,
+    profileId,
+    refreshAlbums,
+  ]);
 
   const backToEntrance = useCallback(() => {
     closeDetail();
@@ -1187,23 +1207,47 @@ export function HitoyasumiChairPageClient({
               </ul>
             )}
 
-            <div className="mt-5 space-y-2 pb-4">
-              <button
-                type="button"
-                disabled={albumSaveBusy}
-                onClick={() => void tryAlbumSave()}
-                className="inline-flex min-h-[48px] w-full items-center justify-center rounded-xl border border-emerald-800 bg-emerald-800 px-4 text-sm font-medium text-white hover:bg-emerald-900 disabled:opacity-60"
-              >
-                {albumSaveBusy ? "まとめています…" : LOG_HOUSE_HITOYASUMI_ALBUM_SAVE}
-              </button>
-              {albumSaveNote ? (
-                <p
-                  className="rounded-xl border border-[#e4d5c0] bg-[#fffaf2]/9 px-3 py-2 text-xs leading-relaxed text-[#5c4a35]"
-                  role="status"
-                >
-                  {albumSaveNote}
+            <div className="mt-5 space-y-2 pb-[calc(5.5rem+env(safe-area-inset-bottom,0px))]">
+              {albumCheckedIds.length === 0 ? (
+                <p className="rounded-xl border border-[#e4d5c0] bg-[#fffaf2]/95 px-3 py-2 text-center text-xs leading-relaxed text-[#6e5c48]">
+                  {LOG_HOUSE_HITOYASUMI_ALBUM_SAVE_NEED_SELECTION}
                 </p>
-              ) : null}
+              ) : (
+                <p className="text-center text-xs font-medium text-[#fffaf2] drop-shadow-[0_1px_2px_rgba(0,0,0,0.45)]">
+                  {LOG_HOUSE_HITOYASUMI_ALBUM_SELECTED_COUNT(albumCheckedIds.length)}
+                </p>
+              )}
+            </div>
+
+            {/* 固定フッター：スクロール位置やキーボードに負けない */}
+            <div className="pointer-events-none fixed inset-x-0 bottom-0 z-40">
+              <div className="pointer-events-auto mx-auto w-full max-w-md px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-2">
+                {albumSaveNote ? (
+                  <p
+                    className="mb-2 rounded-xl border border-[#e4d5c0] bg-[#fffaf2] px-3 py-2 text-center text-xs leading-relaxed text-[#5c4a35] shadow-md"
+                    role="status"
+                    aria-live="polite"
+                  >
+                    {albumSaveNote}
+                  </p>
+                ) : null}
+                <button
+                  type="button"
+                  disabled={albumSaveBusy}
+                  onMouseDown={(e) => {
+                    // iOS: 入力フォーカス中でも最初のタップで click が届くようにする
+                    e.preventDefault();
+                  }}
+                  onClick={() => void tryAlbumSave()}
+                  className="inline-flex min-h-[52px] w-full items-center justify-center rounded-xl border border-emerald-800 bg-emerald-800 px-4 text-sm font-semibold text-white shadow-[0_8px_24px_rgba(20,12,8,0.35)] hover:bg-emerald-900 active:scale-[0.99] disabled:opacity-60"
+                >
+                  {albumSaveBusy
+                    ? "まとめています…"
+                    : albumCheckedIds.length > 0
+                      ? `${LOG_HOUSE_HITOYASUMI_ALBUM_SAVE}（${albumCheckedIds.length}）`
+                      : LOG_HOUSE_HITOYASUMI_ALBUM_SAVE}
+                </button>
+              </div>
             </div>
           </>
         )}
