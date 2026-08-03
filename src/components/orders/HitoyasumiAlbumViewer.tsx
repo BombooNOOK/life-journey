@@ -29,87 +29,274 @@ import {
 /** 静止画の連続再生での表示秒数 */
 export const HITOYASUMI_ALBUM_STILL_DWELL_MS = 4000;
 
-type SlideBlob = {
-  objectUrl: string | null;
-  blob: Blob | null;
-  mimeType: string | null;
-};
-
 type Props = {
   album: MoriLogAlbum;
   pages: MoriLogMedia[];
   onClose: () => void;
 };
 
-type VideoEl = HTMLVideoElement & {
-  webkitEnterFullscreen?: () => void;
-};
-
-async function enterVideoFullscreen(video: VideoEl): Promise<void> {
-  try {
-    if (typeof video.webkitEnterFullscreen === "function") {
-      video.webkitEnterFullscreen();
-      return;
-    }
-    if (typeof video.requestFullscreen === "function") {
-      await video.requestFullscreen();
-    }
-  } catch {
-    // 拒否されてもアプリ内全画面で継続
-  }
+function isVideoPage(page: MoriLogMedia | null | undefined, mimeType: string | null): boolean {
+  if (!page || !isMoriLogCardMovieType(page.type)) return false;
+  if (!mimeType) return true;
+  return mimeType.startsWith("video/");
 }
 
-async function exitDomFullscreen(): Promise<void> {
-  try {
-    if (document.fullscreenElement && document.exitFullscreen) {
-      await document.exitFullscreen();
-    }
-  } catch {
-    // ignore
-  }
-}
-
+/**
+ * 連続再生向けビューワー。
+ * - 端末の webkit 全画面は使わない（1本で止まってしまうため）
+ * - 同じ video 要素の src を差し替え、onEnded の中で次を play する
+ */
 export function HitoyasumiAlbumViewer({ album, pages, onClose }: Props) {
-  const videoRef = useRef<VideoEl | null>(null);
-  /** スライド切替中の pause で playing を落とさない */
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const playingRef = useRef(false);
+  const loopRef = useRef(true);
+  const indexRef = useRef(0);
+  const pagesRef = useRef(pages);
+  const urlByIdRef = useRef<Map<string, string>>(new Map());
+  const mimeByIdRef = useRef<Map<string, string>>(new Map());
   const ignorePauseRef = useRef(false);
+  const stillTimerRef = useRef<number | null>(null);
+  const advanceToRef = useRef<(
+    rawIndex: number,
+    opts?: { fromEnded?: boolean; userGesture?: boolean },
+  ) => Promise<void>>(async () => {});
 
   const [index, setIndex] = useState(0);
-  const [slide, setSlide] = useState<SlideBlob>({
-    objectUrl: null,
-    blob: null,
-    mimeType: null,
-  });
+  const [ready, setReady] = useState(false);
   const [playing, setPlaying] = useState(false);
   const [loop, setLoop] = useState(true);
   const [chromeVisible, setChromeVisible] = useState(true);
   const [needsGesture, setNeedsGesture] = useState(true);
+  const [currentMime, setCurrentMime] = useState<string | null>(null);
 
-  const page = pages[index] ?? null;
   const total = pages.length;
+  const page = pages[index] ?? null;
+  const isVideoSlide = isVideoPage(page, currentMime);
 
-  const isVideoSlide =
-    !!page &&
-    isMoriLogCardMovieType(page.type) &&
-    (slide.mimeType ?? "").startsWith("video/");
+  pagesRef.current = pages;
+  loopRef.current = loop;
+  indexRef.current = index;
 
-  const goNext = useCallback(() => {
-    setIndex((prev) => {
-      if (total <= 0) return 0;
-      if (prev >= total - 1) return loop ? 0 : prev;
-      return prev + 1;
-    });
-  }, [loop, total]);
+  const clearStillTimer = useCallback(() => {
+    if (stillTimerRef.current != null) {
+      window.clearTimeout(stillTimerRef.current);
+      stillTimerRef.current = null;
+    }
+  }, []);
 
-  const goPrev = useCallback(() => {
-    setIndex((prev) => {
-      if (total <= 0) return 0;
-      if (prev <= 0) return loop ? Math.max(0, total - 1) : 0;
-      return prev - 1;
-    });
-  }, [loop, total]);
+  const setPlayingBoth = useCallback((next: boolean) => {
+    playingRef.current = next;
+    setPlaying(next);
+  }, []);
+
+  // アルバム内メディアを先読み（差し替え再生をスムーズに）
+  useEffect(() => {
+    let cancelled = false;
+    const created: string[] = [];
+
+    async function preload() {
+      const urlMap = new Map<string, string>();
+      const mimeMap = new Map<string, string>();
+      for (const item of pages) {
+        const blob = await getMoriLogMediaBlob(item.id);
+        if (cancelled) return;
+        if (!blob || blob.size === 0) continue;
+        const url = URL.createObjectURL(blob);
+        created.push(url);
+        urlMap.set(item.id, url);
+        mimeMap.set(item.id, blob.type || "");
+      }
+      if (cancelled) return;
+      urlByIdRef.current = urlMap;
+      mimeByIdRef.current = mimeMap;
+      const first = pages[0];
+      setCurrentMime(first ? mimeMap.get(first.id) ?? null : null);
+      setReady(true);
+    }
+
+    void preload();
+    return () => {
+      cancelled = true;
+      clearStillTimer();
+      for (const url of created) URL.revokeObjectURL(url);
+      urlByIdRef.current = new Map();
+      mimeByIdRef.current = new Map();
+    };
+  }, [clearStillTimer, pages]);
+
+  const scheduleStillAdvance = useCallback(() => {
+    clearStillTimer();
+    if (!playingRef.current) return;
+    stillTimerRef.current = window.setTimeout(() => {
+      void advanceToRef.current(indexRef.current + 1, { fromEnded: true });
+    }, HITOYASUMI_ALBUM_STILL_DWELL_MS);
+  }, [clearStillTimer]);
+
+  /**
+   * 指定インデックスを表示して、再生中なら動画をすぐ play。
+   * fromEnded: onEnded 同期コンテキスト（iOS で次の play が通りやすい）
+   */
+  const advanceTo = useCallback(
+    async (
+      rawIndex: number,
+      opts?: { fromEnded?: boolean; userGesture?: boolean },
+    ) => {
+      const list = pagesRef.current;
+      if (list.length === 0) return;
+
+      let next = rawIndex;
+      if (next >= list.length) {
+        if (!loopRef.current) {
+          setPlayingBoth(false);
+          setChromeVisible(true);
+          setNeedsGesture(true);
+          return;
+        }
+        next = 0;
+      }
+      if (next < 0) {
+        next = loopRef.current ? list.length - 1 : 0;
+      }
+
+      const nextPage = list[next];
+      if (!nextPage) return;
+
+      const url = urlByIdRef.current.get(nextPage.id) ?? null;
+      const mime = mimeByIdRef.current.get(nextPage.id) ?? null;
+      const nextIsVideo = isVideoPage(nextPage, mime);
+
+      clearStillTimer();
+      ignorePauseRef.current = true;
+
+      indexRef.current = next;
+      setIndex(next);
+      setCurrentMime(mime);
+
+      const video = videoRef.current;
+
+      if (nextIsVideo && url && video) {
+        try {
+          // onEnded コンテキストを逃さないよう、state 更新より先に play を蹴る
+          if (video.currentSrc !== url && video.getAttribute("src") !== url) {
+            video.src = url;
+          }
+          video.playsInline = true;
+          if (playingRef.current || opts?.fromEnded || opts?.userGesture) {
+            playingRef.current = true;
+            const playPromise = video.play();
+            setPlaying(true);
+            setNeedsGesture(false);
+            await playPromise;
+          }
+        } catch {
+          setPlayingBoth(false);
+          setNeedsGesture(true);
+          setChromeVisible(true);
+        }
+      } else {
+        if (video) {
+          try {
+            video.pause();
+            video.removeAttribute("src");
+            video.load();
+          } catch {
+            // ignore
+          }
+        }
+        if (playingRef.current) {
+          scheduleStillAdvance();
+        }
+      }
+
+      window.setTimeout(() => {
+        ignorePauseRef.current = false;
+      }, 50);
+    },
+    [clearStillTimer, scheduleStillAdvance, setPlayingBoth],
+  );
+
+  advanceToRef.current = advanceTo;
+
+  // 初回ロード後、現在ページの src だけセット（自動再生はしない）
+  useEffect(() => {
+    if (!ready) return;
+    const first = pagesRef.current[indexRef.current];
+    if (!first) return;
+    const url = urlByIdRef.current.get(first.id);
+    const mime = mimeByIdRef.current.get(first.id) ?? null;
+    setCurrentMime(mime);
+    const video = videoRef.current;
+    if (video && url && isVideoPage(first, mime)) {
+      video.src = url;
+      video.load();
+    }
+  }, [ready]);
+
+  const startPlayback = useCallback(async () => {
+    setChromeVisible(true);
+    setPlayingBoth(true);
+    setNeedsGesture(false);
+    await advanceTo(indexRef.current, { userGesture: true });
+  }, [advanceTo, setPlayingBoth]);
+
+  const togglePlayPause = useCallback(async () => {
+    setChromeVisible(true);
+    if (needsGesture || !playingRef.current) {
+      await startPlayback();
+      return;
+    }
+    const video = videoRef.current;
+    ignorePauseRef.current = true;
+    clearStillTimer();
+    if (video) {
+      try {
+        video.pause();
+      } catch {
+        // ignore
+      }
+    }
+    setPlayingBoth(false);
+    window.setTimeout(() => {
+      ignorePauseRef.current = false;
+    }, 50);
+  }, [clearStillTimer, needsGesture, setPlayingBoth, startPlayback]);
+
+  const onVideoEnded = useCallback(() => {
+    if (!playingRef.current) return;
+    // onEnded 内で次を play するのが iOS 連続再生の要点
+    void advanceTo(indexRef.current + 1, { fromEnded: true });
+  }, [advanceTo]);
+
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        onClose();
+        return;
+      }
+      if (event.key === "ArrowRight") {
+        void advanceTo(indexRef.current + 1, { userGesture: true });
+      }
+      if (event.key === "ArrowLeft") {
+        void advanceTo(indexRef.current - 1, { userGesture: true });
+      }
+      if (event.key === " ") {
+        event.preventDefault();
+        void togglePlayPause();
+      }
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [advanceTo, onClose, togglePlayPause]);
+
+  useEffect(() => {
+    if (!playing || !chromeVisible || needsGesture) return;
+    const timer = window.setTimeout(() => setChromeVisible(false), 2800);
+    return () => window.clearTimeout(timer);
+  }, [chromeVisible, index, needsGesture, playing]);
 
   const closeViewer = useCallback(() => {
+    clearStillTimer();
+    setPlayingBoth(false);
     const video = videoRef.current;
     if (video) {
       try {
@@ -119,169 +306,8 @@ export function HitoyasumiAlbumViewer({ album, pages, onClose }: Props) {
         // ignore
       }
     }
-    void exitDomFullscreen();
     onClose();
-  }, [onClose]);
-
-  useEffect(() => {
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        closeViewer();
-        return;
-      }
-      if (event.key === "ArrowRight") goNext();
-      if (event.key === "ArrowLeft") goPrev();
-      if (event.key === " ") {
-        event.preventDefault();
-        setPlaying((v) => !v);
-      }
-    };
-    window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
-  }, [closeViewer, goNext, goPrev]);
-
-  useEffect(() => {
-    let cancelled = false;
-    let createdUrl: string | null = null;
-
-    async function load() {
-      if (!page) {
-        setSlide({ objectUrl: null, blob: null, mimeType: null });
-        return;
-      }
-      const blob = await getMoriLogMediaBlob(page.id);
-      if (cancelled) return;
-      const objectUrl = blob ? URL.createObjectURL(blob) : null;
-      createdUrl = objectUrl;
-      setSlide({
-        objectUrl,
-        blob: blob ?? null,
-        mimeType: blob?.type ?? null,
-      });
-    }
-
-    void load();
-    return () => {
-      cancelled = true;
-      if (createdUrl) URL.revokeObjectURL(createdUrl);
-    };
-  }, [page]);
-
-  /** タップ直下で再生＋全画面（iOS のジェスチャ要件） */
-  const playVideoFromGesture = useCallback(async () => {
-    const video = videoRef.current;
-    if (!video) return false;
-    try {
-      ignorePauseRef.current = false;
-      video.playsInline = true;
-      await video.play();
-      await enterVideoFullscreen(video);
-      return true;
-    } catch {
-      return false;
-    }
-  }, []);
-
-  const startPlayback = useCallback(async () => {
-    setChromeVisible(true);
-    if (isVideoSlide) {
-      const ok = await playVideoFromGesture();
-      if (!ok) {
-        setNeedsGesture(true);
-        setPlaying(false);
-        return;
-      }
-    }
-    setNeedsGesture(false);
-    setPlaying(true);
-  }, [isVideoSlide, playVideoFromGesture]);
-
-  const togglePlayPause = useCallback(async () => {
-    setChromeVisible(true);
-    if (needsGesture) {
-      await startPlayback();
-      return;
-    }
-
-    const video = videoRef.current;
-    if (playing) {
-      ignorePauseRef.current = true;
-      if (video && isVideoSlide) video.pause();
-      setPlaying(false);
-      window.setTimeout(() => {
-        ignorePauseRef.current = false;
-      }, 0);
-      return;
-    }
-
-    if (isVideoSlide) {
-      const ok = await playVideoFromGesture();
-      if (!ok) {
-        setNeedsGesture(true);
-        setPlaying(false);
-        return;
-      }
-    }
-    setPlaying(true);
-  }, [isVideoSlide, needsGesture, playVideoFromGesture, playing, startPlayback]);
-
-  // スライドが進んだあと、再生中なら次の動画も続けて再生を試みる
-  useEffect(() => {
-    if (!playing || !isVideoSlide || !slide.objectUrl) return;
-    const video = videoRef.current;
-    if (!video) return;
-
-    let cancelled = false;
-    ignorePauseRef.current = true;
-    void (async () => {
-      try {
-        await video.play();
-        if (cancelled) return;
-        setNeedsGesture(false);
-        await enterVideoFullscreen(video);
-      } catch {
-        if (!cancelled) {
-          setPlaying(false);
-          setNeedsGesture(true);
-        }
-      } finally {
-        ignorePauseRef.current = false;
-      }
-    })();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [index, isVideoSlide, playing, slide.objectUrl]);
-
-  // 静止画タイマー
-  useEffect(() => {
-    if (!playing || !page || isVideoSlide || total <= 0) return;
-    if (!loop && index >= total - 1) {
-      setPlaying(false);
-      return;
-    }
-    const timer = window.setTimeout(() => {
-      goNext();
-    }, HITOYASUMI_ALBUM_STILL_DWELL_MS);
-    return () => window.clearTimeout(timer);
-  }, [goNext, index, isVideoSlide, loop, page, playing, total]);
-
-  useEffect(() => {
-    if (!playing || !chromeVisible || needsGesture) return;
-    const timer = window.setTimeout(() => setChromeVisible(false), 2800);
-    return () => window.clearTimeout(timer);
-  }, [chromeVisible, index, needsGesture, playing]);
-
-  const onVideoEnded = useCallback(() => {
-    if (!playing) return;
-    if (!loop && index >= total - 1) {
-      setPlaying(false);
-      setChromeVisible(true);
-      return;
-    }
-    goNext();
-  }, [goNext, index, loop, playing, total]);
+  }, [clearStillTimer, onClose, setPlayingBoth]);
 
   if (total === 0) {
     return (
@@ -308,6 +334,8 @@ export function HitoyasumiAlbumViewer({ album, pages, onClose }: Props) {
     );
   }
 
+  const currentUrl = page ? urlByIdRef.current.get(page.id) ?? null : null;
+
   return (
     <div
       className="fixed inset-0 z-[70] flex flex-col bg-black"
@@ -317,36 +345,48 @@ export function HitoyasumiAlbumViewer({ album, pages, onClose }: Props) {
       onClick={() => setChromeVisible(true)}
     >
       <div className="relative min-h-0 flex-1">
-        {slide.objectUrl ? (
-          isVideoSlide ? (
-            <video
-              key={page?.id ?? index}
-              ref={videoRef}
-              src={slide.objectUrl}
-              className="absolute inset-0 h-full w-full bg-black object-contain"
-              playsInline
-              controls={false}
-              onEnded={onVideoEnded}
-              onPause={() => {
-                if (ignorePauseRef.current) return;
-                setPlaying(false);
-              }}
-            />
-          ) : (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={slide.objectUrl}
-              alt=""
-              className="absolute inset-0 h-full w-full object-contain"
-            />
-          )
-        ) : (
+        {/* video は常にマウント。静止画のときは下に img を重ねる */}
+        <video
+          ref={videoRef}
+          className={[
+            "absolute inset-0 h-full w-full bg-black object-contain",
+            isVideoSlide ? "opacity-100" : "pointer-events-none opacity-0",
+          ].join(" ")}
+          playsInline
+          controls={false}
+          onEnded={onVideoEnded}
+          onPause={() => {
+            if (ignorePauseRef.current) return;
+            if (!playingRef.current) return;
+            // ユーザー操作や割り込みでの停止
+            clearStillTimer();
+            setPlayingBoth(false);
+            setChromeVisible(true);
+          }}
+        />
+
+        {!isVideoSlide && currentUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={currentUrl}
+            alt=""
+            className="absolute inset-0 h-full w-full object-contain"
+          />
+        ) : null}
+
+        {ready && !currentUrl ? (
           <p className="absolute inset-0 flex items-center justify-center px-6 text-center text-sm text-[#d9cbb8]">
             {LOG_HOUSE_HITOYASUMI_NO_PREVIEW}
           </p>
-        )}
+        ) : null}
 
-        {needsGesture || (!playing && isVideoSlide) ? (
+        {!ready ? (
+          <p className="absolute inset-0 flex items-center justify-center text-sm text-[#d9cbb8]">
+            読み込んでいます…
+          </p>
+        ) : null}
+
+        {ready && (needsGesture || !playing) ? (
           <button
             type="button"
             onClick={(e) => {
@@ -442,7 +482,10 @@ export function HitoyasumiAlbumViewer({ album, pages, onClose }: Props) {
             onClick={(e) => {
               e.stopPropagation();
               setChromeVisible(true);
-              goPrev();
+              void advanceTo(indexRef.current - 1, {
+                userGesture: true,
+                fromEnded: playingRef.current,
+              });
             }}
             disabled={!loop && index <= 0}
             className="inline-flex min-h-[48px] flex-1 items-center justify-center rounded-xl border border-white/25 bg-white/10 px-3 text-sm font-medium text-white disabled:opacity-35"
@@ -467,7 +510,10 @@ export function HitoyasumiAlbumViewer({ album, pages, onClose }: Props) {
             onClick={(e) => {
               e.stopPropagation();
               setChromeVisible(true);
-              goNext();
+              void advanceTo(indexRef.current + 1, {
+                userGesture: true,
+                fromEnded: playingRef.current,
+              });
             }}
             disabled={!loop && index >= total - 1}
             className="inline-flex min-h-[48px] flex-1 items-center justify-center rounded-xl border border-white/25 bg-white/10 px-3 text-sm font-medium text-white disabled:opacity-35"
