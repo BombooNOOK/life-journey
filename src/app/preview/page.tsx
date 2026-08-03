@@ -118,6 +118,17 @@ const links: { href: string; label: string; note?: string; highlight?: boolean }
     highlight: true,
   },
   {
+    href: "/preview/hitoyasumi",
+    label: "ひとやすみの椅子・入口UI（巨大アイコン2×2）",
+    note: "ログイン不要。カード／ムービー／アルバム＋音のかけら（グレーアウト）。npm run dev 中のみ",
+    highlight: true,
+  },
+  {
+    href: "/preview/hitoyasumi?theme=night",
+    label: "ひとやすみの椅子・入口UI（夜背景）",
+    note: "ログイン不要。夜背景での見え方確認。npm run dev 中のみ",
+  },
+  {
     href: "/preview/desk-write",
     label: "今日はどうしますか？（スマホ枠）",
     note: "ログイン不要。PCでスマホ縦枠＋下部ナビを確認。npm run dev 中のみ",

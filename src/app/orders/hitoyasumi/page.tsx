@@ -22,11 +22,18 @@ export const metadata: Metadata = {
   description: LOG_HOUSE_HITOYASUMI_PAGE_DESCRIPTION,
 };
 
-export default async function HitoyasumiChairPage() {
+type Props = {
+  searchParams: Promise<{ view?: string }>;
+};
+
+export default async function HitoyasumiChairPage({ searchParams }: Props) {
   const viewerEmail = await getViewerEmailFromCookie();
   if (!viewerEmail) {
     redirect(`/login?returnTo=${encodeURIComponent(LOG_HOUSE_HITOYASUMI_PAGE_PATH)}`);
   }
+
+  const params = await searchParams;
+  const initialScreen = params.view === "browse" ? "browse" : "entrance";
 
   try {
     const { activeProfileId, profiles } = await withPrismaConnectionRetry(() =>
@@ -45,7 +52,9 @@ export default async function HitoyasumiChairPage() {
       );
     }
 
-    return <HitoyasumiChairPageClient profileId={activeProfileId} />;
+    return (
+      <HitoyasumiChairPageClient profileId={activeProfileId} initialScreen={initialScreen} />
+    );
   } catch (e) {
     return (
       <LogHouseLoadErrorPanel

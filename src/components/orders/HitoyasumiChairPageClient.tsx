@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useId, useMemo, useState } from "react";
 
 import { useLogHouseRoomTimeTheme } from "@/hooks/useLogHouseRoomTimeOfDay";
+import type { LogHouseRoomTimeOfDay } from "@/lib/loghouse/logHouseRoomTimeTheme";
 import {
   filterHitoyasumiMedia,
   formatHitoyasumiCreatedAt,
@@ -36,6 +37,7 @@ import {
   LOG_HOUSE_HITOYASUMI_ACTION_OK,
   LOG_HOUSE_HITOYASUMI_ALBUM_SOON_BODY,
   LOG_HOUSE_HITOYASUMI_ALBUM_SOON_TITLE,
+  LOG_HOUSE_HITOYASUMI_BACK_TO_ENTRANCE,
   LOG_HOUSE_HITOYASUMI_BG_BY_TIME,
   LOG_HOUSE_HITOYASUMI_CLOSE_DETAIL,
   LOG_HOUSE_HITOYASUMI_DELETE,
@@ -46,25 +48,44 @@ import {
   LOG_HOUSE_HITOYASUMI_DELETE_FAIL,
   LOG_HOUSE_HITOYASUMI_EMPTY_BODY,
   LOG_HOUSE_HITOYASUMI_EMPTY_TITLE,
+  LOG_HOUSE_HITOYASUMI_ENTRY_ALBUM_LABEL,
+  LOG_HOUSE_HITOYASUMI_ENTRY_ALBUM_SRC,
+  LOG_HOUSE_HITOYASUMI_ENTRY_CARD_LABEL,
+  LOG_HOUSE_HITOYASUMI_ENTRY_CARD_SRC,
+  LOG_HOUSE_HITOYASUMI_ENTRY_MOVIE_LABEL,
+  LOG_HOUSE_HITOYASUMI_ENTRY_MOVIE_SRC,
+  LOG_HOUSE_HITOYASUMI_ENTRY_SOUND_LABEL,
+  LOG_HOUSE_HITOYASUMI_ENTRY_SOUND_SRC,
   LOG_HOUSE_HITOYASUMI_FILTER_ALBUM,
   LOG_HOUSE_HITOYASUMI_FILTER_ALBUM_SRC,
   LOG_HOUSE_HITOYASUMI_FILTER_CARD,
   LOG_HOUSE_HITOYASUMI_FILTER_CARD_SRC,
   LOG_HOUSE_HITOYASUMI_FILTER_MOVIE,
   LOG_HOUSE_HITOYASUMI_FILTER_MOVIE_SRC,
+  LOG_HOUSE_HITOYASUMI_HELP_BODY,
   LOG_HOUSE_HITOYASUMI_HELP_BUTTON_LABEL,
   LOG_HOUSE_HITOYASUMI_HELP_DISMISS,
   LOG_HOUSE_HITOYASUMI_ITEM_FRAME_CARD_SRC,
   LOG_HOUSE_HITOYASUMI_ITEM_FRAME_MOVIE_SRC,
+  LOG_HOUSE_HITOYASUMI_MOVIE_SOON_BODY,
+  LOG_HOUSE_HITOYASUMI_MOVIE_SOON_TITLE,
   LOG_HOUSE_HITOYASUMI_NO_PREVIEW,
-  LOG_HOUSE_HITOYASUMI_PAGE_DESCRIPTION,
   LOG_HOUSE_HITOYASUMI_PAGE_TITLE,
   LOG_HOUSE_HITOYASUMI_SAVE_DEVICE,
   LOG_HOUSE_HITOYASUMI_SHARE,
 } from "@/lib/loghouse/logHouseHitoyasumiCopy";
 
+type Screen = "entrance" | "browse";
+
 type Props = {
   profileId: string;
+  initialScreen?: Screen;
+  /** プレビュー用：昼/夜を固定（未指定ならログハウスと同じ自動判定） */
+  timeOfDayOverride?: LogHouseRoomTimeOfDay;
+  /** プレビュー用：左上戻る先（未指定なら /orders） */
+  backHref?: string;
+  /** プレビュー用：親の高さにフィット（スマホ縦枠など） */
+  fillParent?: boolean;
 };
 
 type DetailState = {
@@ -99,17 +120,121 @@ function hitoyasumiItemFrameSrc(type: MoriLogMediaType): string {
 const HITOYASUMI_ASSET_TONE =
   "brightness-[0.9] contrast-[0.97] saturate-[0.94]";
 
-export function HitoyasumiChairPageClient({ profileId }: Props) {
+const ENTRY_ICON_TONE =
+  "drop-shadow-[0_8px_18px_rgba(20,12,8,0.24)] brightness-[0.98] contrast-[0.98] saturate-[0.96]";
+
+/** 未解放の「音のかけら」：グレーではなく、部屋に溶ける薄いアイボリー調 */
+const ENTRY_ICON_LOCKED_TONE =
+  "drop-shadow-[0_6px_14px_rgba(40,28,16,0.12)] opacity-[0.42] brightness-[1.12] saturate-[0.62] contrast-[0.92]";
+
+/** ログハウス室内系（庭など）と同じ戻るボタンサイズ */
+const CHROME_BACK_CLASS =
+  "inline-flex w-fit min-h-[40px] items-center rounded-full border px-3 text-xs font-medium backdrop-blur-[3px] transition active:scale-[0.98]";
+
+function EntranceIconButton({
+  src,
+  label,
+  onClick,
+  disabled = false,
+  /**
+   * 木札内の文字位置。0=中央、大きいほど上へ（プレート高さに対する%）。
+   * カード基準 0。ムービー／アルバムはやや上、音のかけらはさらに上。
+   */
+  labelLiftPercent = 0,
+}: {
+  src: string;
+  label: string;
+  onClick?: () => void;
+  disabled?: boolean;
+  labelLiftPercent?: number;
+}) {
+  const ariaLabel = label.replace(/\n/g, "");
+  const sharedClass = [
+    "relative w-full touch-manipulation transition duration-300 ease-out",
+    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#c5b089]/80 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent",
+    disabled
+      ? "cursor-default"
+      : "hover:-translate-y-0.5 hover:scale-[1.02] active:scale-[0.98]",
+  ].join(" ");
+
+  const body = (
+    <span className="relative mx-auto block w-full max-w-[13.5rem] [container-type:inline-size]">
+      <Image
+        src={src}
+        alt=""
+        width={480}
+        height={480}
+        className={`h-auto w-full object-contain ${disabled ? ENTRY_ICON_LOCKED_TONE : ENTRY_ICON_TONE}`}
+        sizes="(max-width: 768px) 48vw, 220px"
+        unoptimized
+      />
+      {/* 木札プレート全体を描画範囲に。top% でアイコンごとに縦位置調整 */}
+      <span
+        className={[
+          "pointer-events-none absolute inset-x-[15%] bottom-[5.5%] h-[20%] overflow-hidden px-0.5",
+          disabled ? "opacity-80" : "",
+        ].join(" ")}
+      >
+        <span
+          className="absolute inset-x-0 whitespace-pre-line text-center font-serif font-medium leading-[1.12] tracking-tight text-[#3a3126]"
+          style={{
+            top: `${50 - labelLiftPercent}%`,
+            transform: "translateY(-50%)",
+            fontSize: "clamp(7.5px, 4.6cqi, 9px)",
+          }}
+        >
+          {label}
+        </span>
+      </span>
+    </span>
+  );
+
+  if (disabled) {
+    return (
+      <div
+        role="img"
+        aria-label={`${ariaLabel}（準備中）`}
+        title="準備中"
+        className={sharedClass}
+      >
+        {body}
+      </div>
+    );
+  }
+
+  return (
+    <button type="button" onClick={onClick} aria-label={ariaLabel} className={sharedClass}>
+      {body}
+    </button>
+  );
+}
+
+export function HitoyasumiChairPageClient({
+  profileId,
+  initialScreen = "entrance",
+  timeOfDayOverride,
+  backHref = "/orders",
+  fillParent = false,
+}: Props) {
   const helpTitleId = useId();
   const albumTitleId = useId();
-  const { timeOfDay } = useLogHouseRoomTimeTheme();
+  const movieTitleId = useId();
+  const { timeOfDay: themeTimeOfDay } = useLogHouseRoomTimeTheme();
+  const timeOfDay = timeOfDayOverride ?? themeTimeOfDay;
   const ambientBg = timeOfDay === "night" ? "#1a120c" : "#ebe4d4";
   const chromeButtonClass =
     timeOfDay === "night"
       ? "border-stone-200/40 bg-[#fffdf9]/85 text-stone-800 shadow-md hover:bg-[#fffdf9]/95"
       : "border-[#d9cbb8]/90 bg-[#fffdf8]/90 text-[#5c4a3a] shadow-sm hover:bg-[#fffdf8]";
+
+  const [screen, setScreen] = useState<Screen>(initialScreen);
   const [items, setItems] = useState<MoriLogMedia[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
+
+  // プレビューの URL 切替など、initialScreen が変わったときに同期する
+  useEffect(() => {
+    setScreen(initialScreen);
+  }, [initialScreen]);
   const [filter, setFilter] = useState<HitoyasumiMediaFilter>("all");
   const [thumbUrls, setThumbUrls] = useState<Record<string, string>>({});
   /** thumb が video/* なら true。ムービーでもポスター画像だけの場合あり */
@@ -120,6 +245,7 @@ export function HitoyasumiChairPageClient({ profileId }: Props) {
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [helpOpen, setHelpOpen] = useState(false);
   const [albumSoonOpen, setAlbumSoonOpen] = useState(false);
+  const [movieSoonOpen, setMovieSoonOpen] = useState(false);
 
   const refresh = useCallback(async () => {
     setLoading(true);
@@ -181,8 +307,9 @@ export function HitoyasumiChairPageClient({ profileId }: Props) {
   }, [profileId]);
 
   useEffect(() => {
+    if (screen !== "browse") return;
     void refresh();
-  }, [refresh]);
+  }, [refresh, screen]);
 
   useEffect(() => {
     return () => {
@@ -199,18 +326,23 @@ export function HitoyasumiChairPageClient({ profileId }: Props) {
   }, [detail]);
 
   useEffect(() => {
-    if (!helpOpen && !albumSoonOpen && !deleteConfirmOpen) return;
+    if (!helpOpen && !albumSoonOpen && !movieSoonOpen && !deleteConfirmOpen) return;
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key !== "Escape") return;
       setHelpOpen(false);
       setAlbumSoonOpen(false);
+      setMovieSoonOpen(false);
       setDeleteConfirmOpen(false);
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [albumSoonOpen, deleteConfirmOpen, helpOpen]);
+  }, [albumSoonOpen, deleteConfirmOpen, helpOpen, movieSoonOpen]);
 
   const visible = useMemo(() => filterHitoyasumiMedia(items, filter), [filter, items]);
+
+  const openBrowse = useCallback(() => {
+    setScreen("browse");
+  }, []);
 
   const openDetail = useCallback(async (item: MoriLogMedia) => {
     const blob = await getMoriLogMediaBlob(item.id);
@@ -232,6 +364,18 @@ export function HitoyasumiChairPageClient({ profileId }: Props) {
       return null;
     });
   }, []);
+
+  const backToEntrance = useCallback(() => {
+    closeDetail();
+    setScreen("entrance");
+    if (typeof window !== "undefined") {
+      const url = new URL(window.location.href);
+      if (url.searchParams.has("view")) {
+        url.searchParams.delete("view");
+        window.history.replaceState(null, "", `${url.pathname}${url.search}${url.hash}`);
+      }
+    }
+  }, [closeDetail]);
 
   const deleteDetail = useCallback(async () => {
     if (!detail || detailActionBusy) return;
@@ -318,12 +462,17 @@ export function HitoyasumiChairPageClient({ profileId }: Props) {
     setFilter((prev) => (prev === next ? "all" : next));
   }, []);
 
+  const browseIsEmpty = !loading && items.length === 0;
+  const showBrowseDualNav = screen === "browse" && !browseIsEmpty;
+
+  const shellMinClass = fillParent ? "h-full min-h-full" : "min-h-[100dvh]";
+
   return (
     <div
-      className="relative min-h-[100dvh] overflow-x-hidden text-[#3f3428]"
+      className={`relative overflow-x-hidden text-[#3f3428] ${shellMinClass}`}
       style={{ backgroundColor: ambientBg }}
     >
-      <div className="pointer-events-none fixed inset-0 z-0" aria-hidden>
+      <div className="pointer-events-none absolute inset-0 z-0" aria-hidden>
         {(["day", "night"] as const).map((id) => (
           <Image
             key={id}
@@ -341,18 +490,40 @@ export function HitoyasumiChairPageClient({ profileId }: Props) {
         ))}
       </div>
 
-      <div className="relative z-10 mx-auto flex min-h-[100dvh] w-full max-w-md flex-col px-4 pb-16 pt-5 sm:px-5">
+      <div
+        className={`relative z-10 mx-auto flex w-full max-w-md flex-col px-3 pb-8 pt-4 sm:px-4 ${shellMinClass}`}
+      >
         <div className="flex items-start justify-between gap-3">
-          <Link
-            href="/orders"
-            className={`inline-flex w-fit min-h-[44px] items-center rounded-full border px-3.5 text-sm font-medium backdrop-blur-[3px] transition active:scale-[0.98] ${chromeButtonClass}`}
-          >
-            ← {LOG_HOUSE_RETURN_TO_LABEL}
-          </Link>
+          {screen === "entrance" || browseIsEmpty ? (
+            <Link
+              href={backHref}
+              className={`${CHROME_BACK_CLASS} ${chromeButtonClass}`}
+            >
+              ← {LOG_HOUSE_RETURN_TO_LABEL}
+            </Link>
+          ) : (
+            <div className="flex min-w-0 flex-col items-start gap-1.5">
+              <button
+                type="button"
+                onClick={backToEntrance}
+                className={`${CHROME_BACK_CLASS} ${chromeButtonClass}`}
+              >
+                ← {LOG_HOUSE_HITOYASUMI_BACK_TO_ENTRANCE}
+              </button>
+              {showBrowseDualNav ? (
+                <Link
+                  href={backHref}
+                  className={`${CHROME_BACK_CLASS} ${chromeButtonClass}`}
+                >
+                  ← {LOG_HOUSE_RETURN_TO_LABEL}
+                </Link>
+              ) : null}
+            </div>
+          )}
 
           <button
             type="button"
-            className={`inline-flex h-11 w-11 items-center justify-center rounded-full border backdrop-blur-[3px] transition active:scale-[0.98] ${chromeButtonClass}`}
+            className={`inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border backdrop-blur-[3px] transition active:scale-[0.98] ${chromeButtonClass}`}
             aria-label={LOG_HOUSE_HITOYASUMI_HELP_BUTTON_LABEL}
             title={LOG_HOUSE_HITOYASUMI_HELP_BUTTON_LABEL}
             aria-haspopup="dialog"
@@ -363,141 +534,178 @@ export function HitoyasumiChairPageClient({ profileId }: Props) {
           </button>
         </div>
 
-        <div className="mt-5" role="tablist" aria-label="表示の切り替え">
-          <div className="flex items-end justify-between gap-1 px-0.5">
-            <button
-              type="button"
-              role="tab"
-              aria-selected={filter === "card_image"}
-              aria-label={LOG_HOUSE_HITOYASUMI_FILTER_CARD}
-              className={filterImageButtonClass(filter === "card_image")}
-              onClick={() => selectFilter("card_image")}
-            >
-              <Image
-                src={LOG_HOUSE_HITOYASUMI_FILTER_CARD_SRC}
-                alt=""
-                width={480}
-                height={480}
-                className={`h-auto w-full object-contain drop-shadow-[0_5px_10px_rgba(20,12,8,0.22)] ${HITOYASUMI_ASSET_TONE}`}
+        {screen === "entrance" ? (
+          <div
+            className="mx-auto flex w-full flex-1 flex-col justify-center px-0 py-1"
+            aria-label="ひとやすみの椅子の入口"
+          >
+            {/* サンプル準拠の 2×2。アイコンを大きく・中央に */}
+            <div className="mx-auto grid w-full max-w-[26rem] grid-cols-2 gap-x-0 gap-y-1 sm:gap-y-2">
+              <EntranceIconButton
+                src={LOG_HOUSE_HITOYASUMI_ENTRY_CARD_SRC}
+                label={LOG_HOUSE_HITOYASUMI_ENTRY_CARD_LABEL}
+                labelLiftPercent={0}
+                onClick={openBrowse}
               />
-            </button>
-
-            <button
-              type="button"
-              role="tab"
-              aria-selected={false}
-              aria-label={`${LOG_HOUSE_HITOYASUMI_FILTER_ALBUM}（準備中）`}
-              className={filterImageButtonClass(false)}
-              onClick={() => setAlbumSoonOpen(true)}
-            >
-              <Image
-                src={LOG_HOUSE_HITOYASUMI_FILTER_ALBUM_SRC}
-                alt=""
-                width={480}
-                height={480}
-                className={`h-auto w-full object-contain drop-shadow-[0_5px_10px_rgba(20,12,8,0.22)] ${HITOYASUMI_ASSET_TONE}`}
+              <EntranceIconButton
+                src={LOG_HOUSE_HITOYASUMI_ENTRY_MOVIE_SRC}
+                label={LOG_HOUSE_HITOYASUMI_ENTRY_MOVIE_LABEL}
+                labelLiftPercent={14}
+                onClick={() => setMovieSoonOpen(true)}
               />
-            </button>
-
-            <button
-              type="button"
-              role="tab"
-              aria-selected={filter === "card_movie"}
-              aria-label={LOG_HOUSE_HITOYASUMI_FILTER_MOVIE}
-              className={filterImageButtonClass(filter === "card_movie")}
-              onClick={() => selectFilter("card_movie")}
-            >
-              <Image
-                src={LOG_HOUSE_HITOYASUMI_FILTER_MOVIE_SRC}
-                alt=""
-                width={480}
-                height={480}
-                className={`h-auto w-full object-contain drop-shadow-[0_5px_10px_rgba(20,12,8,0.22)] ${HITOYASUMI_ASSET_TONE}`}
+              <EntranceIconButton
+                src={LOG_HOUSE_HITOYASUMI_ENTRY_ALBUM_SRC}
+                label={LOG_HOUSE_HITOYASUMI_ENTRY_ALBUM_LABEL}
+                labelLiftPercent={14}
+                onClick={() => setAlbumSoonOpen(true)}
               />
-            </button>
-          </div>
-        </div>
-
-        {loading ? (
-          <p className="mt-10 text-center text-sm text-[#fffaf2] drop-shadow-[0_1px_2px_rgba(0,0,0,0.45)]">
-            読み込んでいます…
-          </p>
-        ) : visible.length === 0 ? (
-          <div className="mt-8 rounded-[1.35rem] border border-[#e4d5c0]/75 bg-[#fffaf2]/82 px-5 py-8 text-center shadow-[0_12px_32px_rgba(40,28,16,0.16)] backdrop-blur-[2px]">
-            <p className="text-base font-semibold text-[#3f3428]">{LOG_HOUSE_HITOYASUMI_EMPTY_TITLE}</p>
-            <p className="mt-3 whitespace-pre-wrap text-sm leading-relaxed text-[#6e5c48]">
-              {LOG_HOUSE_HITOYASUMI_EMPTY_BODY}
-            </p>
-            <Link
-              href="/orders"
-              className="mt-5 inline-flex min-h-[44px] items-center justify-center rounded-xl border border-[#c5b089]/70 bg-[#f3ead9]/90 px-4 text-sm font-semibold text-[#3f3428]"
-            >
-              ログハウスへ戻る
-            </Link>
+              <EntranceIconButton
+                src={LOG_HOUSE_HITOYASUMI_ENTRY_SOUND_SRC}
+                label={LOG_HOUSE_HITOYASUMI_ENTRY_SOUND_LABEL}
+                labelLiftPercent={28}
+                disabled
+              />
+            </div>
           </div>
         ) : (
-          <ul className="mt-5 grid grid-cols-2 gap-2.5 sm:gap-3">
-            {visible.map((item) => {
-              const thumb = thumbUrls[item.id];
-              const isMovie = isMoriLogCardMovieType(item.type);
-              const title = item.title?.trim() || hitoyasumiTemplateLabel(item.templateId);
-              return (
-                <li key={item.id}>
-                  <button
-                    type="button"
-                    onClick={() => void openDetail(item)}
-                    className="group relative block w-full text-left transition hover:-translate-y-0.5"
-                    aria-label={`${hitoyasumiMediaTypeLabel(item.type)} ${title}`}
-                  >
-                    <div className="relative aspect-[819/1024] w-full">
-                      <Image
-                        src={hitoyasumiItemFrameSrc(item.type)}
-                        alt=""
-                        fill
-                        sizes="(max-width: 768px) 46vw, 220px"
-                        className={`pointer-events-none object-contain drop-shadow-[0_6px_14px_rgba(20,12,8,0.2)] ${HITOYASUMI_ASSET_TONE}`}
-                      />
+          <>
+            <div className="mt-5" role="tablist" aria-label="表示の切り替え">
+              <div className="flex items-end justify-between gap-1 px-0.5">
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={filter === "card_image"}
+                  aria-label={LOG_HOUSE_HITOYASUMI_FILTER_CARD}
+                  className={filterImageButtonClass(filter === "card_image")}
+                  onClick={() => selectFilter("card_image")}
+                >
+                  <Image
+                    src={LOG_HOUSE_HITOYASUMI_FILTER_CARD_SRC}
+                    alt=""
+                    width={480}
+                    height={480}
+                    className={`h-auto w-full object-contain drop-shadow-[0_5px_10px_rgba(20,12,8,0.22)] ${HITOYASUMI_ASSET_TONE}`}
+                  />
+                </button>
 
-                      {/* 破線より上：プレビュー */}
-                      <div className="absolute inset-x-[11%] top-[13.5%] bottom-[32%] overflow-hidden rounded-[0.65rem] bg-[#efe6d6]/55">
-                        {thumb ? (
-                          isMovie && thumbIsVideo[item.id] ? (
-                            <video
-                              src={thumb}
-                              className="h-full w-full object-cover"
-                              muted
-                              playsInline
-                              preload="metadata"
-                            />
-                          ) : (
-                            // eslint-disable-next-line @next/next/no-img-element
-                            <img src={thumb} alt="" className="h-full w-full object-cover" />
-                          )
-                        ) : (
-                          <div className="flex h-full items-center justify-center px-2 text-center text-[10px] leading-relaxed text-[#8a7660]">
-                            {LOG_HOUSE_HITOYASUMI_NO_PREVIEW}
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={false}
+                  aria-label={`${LOG_HOUSE_HITOYASUMI_FILTER_ALBUM}（準備中）`}
+                  className={filterImageButtonClass(false)}
+                  onClick={() => setAlbumSoonOpen(true)}
+                >
+                  <Image
+                    src={LOG_HOUSE_HITOYASUMI_FILTER_ALBUM_SRC}
+                    alt=""
+                    width={480}
+                    height={480}
+                    className={`h-auto w-full object-contain drop-shadow-[0_5px_10px_rgba(20,12,8,0.22)] ${HITOYASUMI_ASSET_TONE}`}
+                  />
+                </button>
+
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={filter === "card_movie"}
+                  aria-label={LOG_HOUSE_HITOYASUMI_FILTER_MOVIE}
+                  className={filterImageButtonClass(filter === "card_movie")}
+                  onClick={() => selectFilter("card_movie")}
+                >
+                  <Image
+                    src={LOG_HOUSE_HITOYASUMI_FILTER_MOVIE_SRC}
+                    alt=""
+                    width={480}
+                    height={480}
+                    className={`h-auto w-full object-contain drop-shadow-[0_5px_10px_rgba(20,12,8,0.22)] ${HITOYASUMI_ASSET_TONE}`}
+                  />
+                </button>
+              </div>
+            </div>
+
+            {loading ? (
+              <p className="mt-10 text-center text-sm text-[#fffaf2] drop-shadow-[0_1px_2px_rgba(0,0,0,0.45)]">
+                読み込んでいます…
+              </p>
+            ) : visible.length === 0 ? (
+              <div className="mt-8 rounded-[1.35rem] border border-[#e4d5c0]/75 bg-[#fffaf2]/82 px-5 py-8 text-center shadow-[0_12px_32px_rgba(40,28,16,0.16)] backdrop-blur-[2px]">
+                <p className="text-base font-semibold text-[#3f3428]">{LOG_HOUSE_HITOYASUMI_EMPTY_TITLE}</p>
+                <p className="mt-3 whitespace-pre-wrap text-sm leading-relaxed text-[#6e5c48]">
+                  {LOG_HOUSE_HITOYASUMI_EMPTY_BODY}
+                </p>
+                <Link
+                  href={backHref}
+                  className="mt-5 inline-flex min-h-[44px] items-center justify-center rounded-xl border border-[#c5b089]/70 bg-[#f3ead9]/90 px-4 text-sm font-semibold text-[#3f3428]"
+                >
+                  ログハウスへ戻る
+                </Link>
+              </div>
+            ) : (
+              <ul className="mt-5 grid grid-cols-2 gap-2.5 sm:gap-3">
+                {visible.map((item) => {
+                  const thumb = thumbUrls[item.id];
+                  const isMovie = isMoriLogCardMovieType(item.type);
+                  const title = item.title?.trim() || hitoyasumiTemplateLabel(item.templateId);
+                  return (
+                    <li key={item.id}>
+                      <button
+                        type="button"
+                        onClick={() => void openDetail(item)}
+                        className="group relative block w-full text-left transition hover:-translate-y-0.5"
+                        aria-label={`${hitoyasumiMediaTypeLabel(item.type)} ${title}`}
+                      >
+                        <div className="relative aspect-[819/1024] w-full">
+                          <Image
+                            src={hitoyasumiItemFrameSrc(item.type)}
+                            alt=""
+                            fill
+                            sizes="(max-width: 768px) 46vw, 220px"
+                            className={`pointer-events-none object-contain drop-shadow-[0_6px_14px_rgba(20,12,8,0.2)] ${HITOYASUMI_ASSET_TONE}`}
+                          />
+
+                          {/* 破線より上：プレビュー */}
+                          <div className="absolute inset-x-[11%] top-[13.5%] bottom-[32%] overflow-hidden rounded-[0.65rem] bg-[#efe6d6]/55">
+                            {thumb ? (
+                              isMovie && thumbIsVideo[item.id] ? (
+                                <video
+                                  src={thumb}
+                                  className="h-full w-full object-cover"
+                                  muted
+                                  playsInline
+                                  preload="metadata"
+                                />
+                              ) : (
+                                // eslint-disable-next-line @next/next/no-img-element
+                                <img src={thumb} alt="" className="h-full w-full object-cover" />
+                              )
+                            ) : (
+                              <div className="flex h-full items-center justify-center px-2 text-center text-[10px] leading-relaxed text-[#8a7660]">
+                                {LOG_HOUSE_HITOYASUMI_NO_PREVIEW}
+                              </div>
+                            )}
                           </div>
-                        )}
-                      </div>
 
-                      {/* 破線より下：タイトル（葉イラストを避ける） */}
-                      <div className="absolute inset-x-[11%] bottom-[7%] top-[72%] pr-[26%]">
-                        <p className="truncate text-[11px] font-semibold leading-snug text-[#3f3428] sm:text-xs">
-                          {title}
-                        </p>
-                        <p className="mt-0.5 truncate text-[9px] leading-snug text-[#8a7660] sm:text-[10px]">
-                          {formatHitoyasumiCreatedAt(item.createdAt)}
-                        </p>
-                      </div>
-                    </div>
-                  </button>
-                </li>
-              );
-            })}
-          </ul>
+                          {/* 破線より下：タイトル（葉イラストを避ける） */}
+                          <div className="absolute inset-x-[11%] bottom-[7%] top-[72%] pr-[26%]">
+                            <p className="truncate text-[11px] font-semibold leading-snug text-[#3f3428] sm:text-xs">
+                              {title}
+                            </p>
+                            <p className="mt-0.5 truncate text-[9px] leading-snug text-[#8a7660] sm:text-[10px]">
+                              {formatHitoyasumiCreatedAt(item.createdAt)}
+                            </p>
+                          </div>
+                        </div>
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+
+            <div className="mt-auto pt-10" aria-hidden />
+          </>
         )}
-
-        <div className="mt-auto pt-10" aria-hidden />
       </div>
 
       {helpOpen ? (
@@ -517,8 +725,8 @@ export function HitoyasumiChairPageClient({ profileId }: Props) {
             <h2 id={helpTitleId} className="text-base font-semibold tracking-wide text-[#3f3428]">
               {LOG_HOUSE_HITOYASUMI_PAGE_TITLE}
             </h2>
-            <p className="mt-3 text-sm leading-relaxed text-[#4f4033]">
-              {LOG_HOUSE_HITOYASUMI_PAGE_DESCRIPTION}
+            <p className="mt-3 whitespace-pre-wrap text-sm leading-relaxed text-[#4f4033]">
+              {LOG_HOUSE_HITOYASUMI_HELP_BODY}
             </p>
             <button
               type="button"
@@ -551,13 +759,60 @@ export function HitoyasumiChairPageClient({ profileId }: Props) {
             <p className="mt-3 text-sm leading-relaxed text-[#4f4033]">
               {LOG_HOUSE_HITOYASUMI_ALBUM_SOON_BODY}
             </p>
-            <button
-              type="button"
-              onClick={() => setAlbumSoonOpen(false)}
-              className="mt-5 inline-flex min-h-11 w-full items-center justify-center rounded-xl border border-[#d9cbb8] bg-[#f7f0e4] px-4 text-sm font-medium text-[#5c4a3a] shadow-sm transition hover:bg-[#f3ebe0]"
-            >
-              {LOG_HOUSE_HITOYASUMI_HELP_DISMISS}
-            </button>
+            <div className="mt-5 flex flex-col gap-2">
+              <button
+                type="button"
+                onClick={() => setAlbumSoonOpen(false)}
+                className="inline-flex min-h-11 w-full items-center justify-center rounded-xl border border-[#d9cbb8] bg-[#f7f0e4] px-4 text-sm font-medium text-[#5c4a3a] shadow-sm transition hover:bg-[#f3ebe0]"
+              >
+                {LOG_HOUSE_HITOYASUMI_BACK_TO_ENTRANCE}
+              </button>
+              <Link
+                href={backHref}
+                className="inline-flex min-h-11 w-full items-center justify-center rounded-xl border border-[#c5b089]/70 bg-[#fffaf2] px-4 text-sm font-medium text-[#5c4a3a] transition hover:bg-[#f7f0e4]"
+              >
+                ← {LOG_HOUSE_RETURN_TO_LABEL}
+              </Link>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {movieSoonOpen ? (
+        <div className="fixed inset-0 z-[90] flex items-center justify-center px-4 py-8">
+          <button
+            type="button"
+            className="absolute inset-0 bg-stone-950/40"
+            aria-label="閉じる"
+            onClick={() => setMovieSoonOpen(false)}
+          />
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby={movieTitleId}
+            className="relative z-[1] w-full max-w-sm rounded-2xl border border-[#e4d8c6] bg-[#fffdf8]/96 px-5 py-5 shadow-[0_12px_40px_rgba(40,28,16,0.28)]"
+          >
+            <h2 id={movieTitleId} className="text-base font-semibold tracking-wide text-[#3f3428]">
+              {LOG_HOUSE_HITOYASUMI_MOVIE_SOON_TITLE}
+            </h2>
+            <p className="mt-3 text-sm leading-relaxed text-[#4f4033]">
+              {LOG_HOUSE_HITOYASUMI_MOVIE_SOON_BODY}
+            </p>
+            <div className="mt-5 flex flex-col gap-2">
+              <button
+                type="button"
+                onClick={() => setMovieSoonOpen(false)}
+                className="inline-flex min-h-11 w-full items-center justify-center rounded-xl border border-[#d9cbb8] bg-[#f7f0e4] px-4 text-sm font-medium text-[#5c4a3a] shadow-sm transition hover:bg-[#f3ebe0]"
+              >
+                {LOG_HOUSE_HITOYASUMI_BACK_TO_ENTRANCE}
+              </button>
+              <Link
+                href={backHref}
+                className="inline-flex min-h-11 w-full items-center justify-center rounded-xl border border-[#c5b089]/70 bg-[#fffaf2] px-4 text-sm font-medium text-[#5c4a3a] transition hover:bg-[#f7f0e4]"
+              >
+                ← {LOG_HOUSE_RETURN_TO_LABEL}
+              </Link>
+            </div>
           </div>
         </div>
       ) : null}

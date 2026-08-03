@@ -12,7 +12,7 @@ import {
   MORI_LOG_CREATE_SUCCESS_GO_CHAIR,
   MORI_LOG_CREATE_SUCCESS_MOVIE_TITLE,
 } from "@/lib/journal/moriLog/moriLogCopy";
-import { LOG_HOUSE_HITOYASUMI_PAGE_PATH } from "@/lib/loghouse/logHouseHitoyasumiCopy";
+import { LOG_HOUSE_HITOYASUMI_BROWSE_PATH } from "@/lib/loghouse/logHouseHitoyasumiCopy";
 import { LJD_PAPER_CARD_CLASS } from "@/lib/ljd/ljdPaperSurface";
 
 const CHAIR_ILLUST_SRC = "/images/ljd/loghouse-room/loghouse_chair.png";
@@ -73,7 +73,7 @@ export function MoriLogCreateSuccessDialog({ kind, audioOmitted = false, onConti
         <p className="mt-2 text-center text-sm leading-relaxed text-[#5c4a35]">{body}</p>
         <div className="mt-5 flex flex-col gap-2">
           <Link
-            href={LOG_HOUSE_HITOYASUMI_PAGE_PATH}
+            href={LOG_HOUSE_HITOYASUMI_BROWSE_PATH}
             className="inline-flex min-h-[48px] items-center justify-center rounded-xl border border-emerald-800 bg-emerald-800 px-4 text-sm font-medium text-white hover:bg-emerald-900"
           >
             {MORI_LOG_CREATE_SUCCESS_GO_CHAIR}

@@ -5,9 +5,42 @@ export const LOG_HOUSE_HITOYASUMI_PAGE_TITLE = "ひとやすみの椅子" as con
 export const LOG_HOUSE_HITOYASUMI_PAGE_DESCRIPTION =
   "この端末でつくった森ログカードやムービーを、ここでゆっくり見返せます。" as const;
 
+/** 入口ヘルプ（巨大アイコン向け） */
+export const LOG_HOUSE_HITOYASUMI_HELP_BODY =
+  "この端末でつくった森ログカードやムービーを見返せます。\n動画から森ログムービーをつくれます。\nカードやムービーをまとめてアルバムにできます。\n音のかけらを聴く場所も、これから少しずつ増やしていきます。" as const;
+
 export const LOG_HOUSE_HITOYASUMI_HELP_BUTTON_LABEL = "ひとやすみの椅子の説明" as const;
 
 export const LOG_HOUSE_HITOYASUMI_HELP_DISMISS = "とじる" as const;
+
+export const LOG_HOUSE_HITOYASUMI_BACK_TO_ENTRANCE = "椅子の入口へ戻る" as const;
+
+/** 入口：巨大アイコン（背景とは分離） */
+export const LOG_HOUSE_HITOYASUMI_ENTRY_CARD_SRC =
+  "/images/ljd/hitoyasumi/chair-entry-card.png" as const;
+
+export const LOG_HOUSE_HITOYASUMI_ENTRY_MOVIE_SRC =
+  "/images/ljd/hitoyasumi/chair-entry-movie.png" as const;
+
+export const LOG_HOUSE_HITOYASUMI_ENTRY_ALBUM_SRC =
+  "/images/ljd/hitoyasumi/chair-entry-album.png" as const;
+
+export const LOG_HOUSE_HITOYASUMI_ENTRY_SOUND_SRC =
+  "/images/ljd/hitoyasumi/chair-entry-sound.png" as const;
+
+/** 木札ラベル（2行。サンプルの改行位置に合わせる） */
+export const LOG_HOUSE_HITOYASUMI_ENTRY_CARD_LABEL = "これまでの\n森ログを見る" as const;
+
+export const LOG_HOUSE_HITOYASUMI_ENTRY_MOVIE_LABEL = "動画から森ログ\nムービーを作る" as const;
+
+export const LOG_HOUSE_HITOYASUMI_ENTRY_ALBUM_LABEL = "思い出をアルバム\nにまとめる" as const;
+
+export const LOG_HOUSE_HITOYASUMI_ENTRY_SOUND_LABEL = "音のかけら\nを聴く" as const;
+
+export const LOG_HOUSE_HITOYASUMI_SOUND_SOON_TITLE = "音のかけらは準備中です" as const;
+
+export const LOG_HOUSE_HITOYASUMI_SOUND_SOON_BODY =
+  "森の音のかけらを、ここでゆっくり聴けるようにしていきます。いまは入口だけ先に置いてあります。" as const;
 
 /** ひとやすみの椅子の背景（昼＝明るい居間 / 夜＝最初の夕暮れの森） */
 export const LOG_HOUSE_HITOYASUMI_BG_BY_TIME = {
@@ -79,6 +112,17 @@ export const LOG_HOUSE_HITOYASUMI_FILTER_ALBUM = "アルバム" as const;
 export const LOG_HOUSE_HITOYASUMI_ALBUM_SOON_TITLE = "アルバムは準備中です" as const;
 
 export const LOG_HOUSE_HITOYASUMI_ALBUM_SOON_BODY =
-  "いまはカードとムービーをゆっくり眺められます。アルバムは、これから少しずつ育てていきます。" as const;
+  "カードやムービーをタグや日付で選び、タイトルをつけて1冊にまとめる場所です。これから少しずつ育てていきます。" as const;
+
+export const LOG_HOUSE_HITOYASUMI_MOVIE_SOON_TITLE = "動画ムービーは準備中です" as const;
+
+export const LOG_HOUSE_HITOYASUMI_MOVIE_SOON_BODY =
+  "元の動画から森ログムービーをつくる入口です。いまは準備中なので、あしあとからカード＋BGMのムービーをお楽しみください。" as const;
 
 export const LOG_HOUSE_HITOYASUMI_CLOSE_DETAIL = "閉じる" as const;
+
+/** 作成成功などから一覧へ直接入るときのクエリ */
+export const LOG_HOUSE_HITOYASUMI_BROWSE_QUERY = "view=browse" as const;
+
+export const LOG_HOUSE_HITOYASUMI_BROWSE_PATH =
+  `${LOG_HOUSE_HITOYASUMI_PAGE_PATH}?${LOG_HOUSE_HITOYASUMI_BROWSE_QUERY}` as const;
