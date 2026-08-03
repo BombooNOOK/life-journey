@@ -46,9 +46,9 @@ import {
   LOG_HOUSE_HITOYASUMI_ALBUM_BACK_TO_SHELF,
   LOG_HOUSE_HITOYASUMI_ALBUM_COMPOSE_CTA,
   LOG_HOUSE_HITOYASUMI_ALBUM_COMPOSE_TITLE,
-  LOG_HOUSE_HITOYASUMI_ALBUM_DELETE,
   LOG_HOUSE_HITOYASUMI_ALBUM_DELETE_CONFIRM_BODY,
   LOG_HOUSE_HITOYASUMI_ALBUM_DELETE_CONFIRM_TITLE,
+  LOG_HOUSE_HITOYASUMI_ALBUM_DELETE_CONFIRM_TITLE_MULTI,
   LOG_HOUSE_HITOYASUMI_ALBUM_DELETE_FAIL,
   LOG_HOUSE_HITOYASUMI_ALBUM_DESELECT_VISIBLE,
   LOG_HOUSE_HITOYASUMI_ALBUM_ITEM_COUNT,
@@ -66,6 +66,8 @@ import {
   LOG_HOUSE_HITOYASUMI_ALBUM_TITLE_LABEL,
   LOG_HOUSE_HITOYASUMI_ALBUM_TITLE_PLACEHOLDER,
   LOG_HOUSE_HITOYASUMI_BACK_TO_ENTRANCE,
+  LOG_HOUSE_HITOYASUMI_BATCH_DELETE_ARIA,
+  LOG_HOUSE_HITOYASUMI_BATCH_DELETE_NEED_SELECTION,
   LOG_HOUSE_HITOYASUMI_BG_BY_TIME,
   LOG_HOUSE_HITOYASUMI_CLOSE_DETAIL,
   LOG_HOUSE_HITOYASUMI_DELETE,
@@ -94,6 +96,8 @@ import {
   LOG_HOUSE_HITOYASUMI_ITEM_FRAME_ALBUM_SRC,
   LOG_HOUSE_HITOYASUMI_ITEM_FRAME_CARD_SRC,
   LOG_HOUSE_HITOYASUMI_ITEM_FRAME_MOVIE_SRC,
+  LOG_HOUSE_HITOYASUMI_MEDIA_DELETE_CONFIRM_BODY,
+  LOG_HOUSE_HITOYASUMI_MEDIA_DELETE_CONFIRM_TITLE_MULTI,
   LOG_HOUSE_HITOYASUMI_MOVIE_SOON_BODY,
   LOG_HOUSE_HITOYASUMI_MOVIE_SOON_TITLE,
   LOG_HOUSE_HITOYASUMI_NO_PREVIEW,
@@ -104,6 +108,31 @@ import {
 
 type Screen = "entrance" | "browse" | "album";
 type AlbumMode = "shelf" | "compose";
+type BatchDeleteState =
+  | { kind: "media"; ids: string[] }
+  | { kind: "album"; ids: string[] };
+
+function TrashIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      aria-hidden
+      className={className}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+    >
+      <path strokeLinecap="round" strokeLinejoin="round" d="M4 7h16" />
+      <path strokeLinecap="round" strokeLinejoin="round" d="M10 11v6M14 11v6" />
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12"
+      />
+      <path strokeLinecap="round" strokeLinejoin="round" d="M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />
+    </svg>
+  );
+}
 
 type Props = {
   profileId: string;
@@ -268,9 +297,11 @@ export function HitoyasumiChairPageClient({
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [helpOpen, setHelpOpen] = useState(false);
   const [movieSoonOpen, setMovieSoonOpen] = useState(false);
-  const [albumDeleteTarget, setAlbumDeleteTarget] = useState<MoriLogAlbum | null>(null);
-  const [albumDeleteBusy, setAlbumDeleteBusy] = useState(false);
-  const [albumDeleteNote, setAlbumDeleteNote] = useState<string | null>(null);
+  const [browseCheckedIds, setBrowseCheckedIds] = useState<string[]>([]);
+  const [albumShelfCheckedIds, setAlbumShelfCheckedIds] = useState<string[]>([]);
+  const [batchDelete, setBatchDelete] = useState<BatchDeleteState | null>(null);
+  const [batchDeleteBusy, setBatchDeleteBusy] = useState(false);
+  const [batchDeleteNote, setBatchDeleteNote] = useState<string | null>(null);
 
   const refresh = useCallback(async () => {
     setLoading(true);
@@ -368,20 +399,20 @@ export function HitoyasumiChairPageClient({
   }, [detail]);
 
   useEffect(() => {
-    if (!helpOpen && !movieSoonOpen && !deleteConfirmOpen && !albumDeleteTarget) return;
+    if (!helpOpen && !movieSoonOpen && !deleteConfirmOpen && !batchDelete) return;
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key !== "Escape") return;
       setHelpOpen(false);
       setMovieSoonOpen(false);
       setDeleteConfirmOpen(false);
-      if (!albumDeleteBusy) {
-        setAlbumDeleteTarget(null);
-        setAlbumDeleteNote(null);
+      if (!batchDeleteBusy) {
+        setBatchDelete(null);
+        setBatchDeleteNote(null);
       }
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [albumDeleteBusy, albumDeleteTarget, deleteConfirmOpen, helpOpen, movieSoonOpen]);
+  }, [batchDelete, batchDeleteBusy, deleteConfirmOpen, helpOpen, movieSoonOpen]);
 
   const visible = useMemo(() => filterHitoyasumiMedia(items, filter), [filter, items]);
 
@@ -423,6 +454,8 @@ export function HitoyasumiChairPageClient({
 
   const openBrowse = useCallback(() => {
     setFilter("all");
+    setBrowseCheckedIds([]);
+    setBatchDeleteNote(null);
     setScreen("browse");
   }, []);
 
@@ -431,8 +464,10 @@ export function HitoyasumiChairPageClient({
     setAlbumTypeFilter("all");
     setAlbumSelectedTags([]);
     setAlbumCheckedIds([]);
+    setAlbumShelfCheckedIds([]);
     setAlbumTitle("");
     setAlbumSaveNote(null);
+    setBatchDeleteNote(null);
     setViewingAlbum(null);
     setScreen("album");
   }, []);
@@ -518,34 +553,94 @@ export function HitoyasumiChairPageClient({
   }, [refreshAlbums]);
 
   const requestAlbumDelete = useCallback((album: MoriLogAlbum) => {
-    setAlbumDeleteNote(null);
-    setAlbumDeleteTarget(album);
+    setBatchDeleteNote(null);
+    setBatchDelete({ kind: "album", ids: [album.id] });
   }, []);
 
-  const cancelAlbumDelete = useCallback(() => {
-    if (albumDeleteBusy) return;
-    setAlbumDeleteTarget(null);
-    setAlbumDeleteNote(null);
-  }, [albumDeleteBusy]);
+  const cancelBatchDelete = useCallback(() => {
+    if (batchDeleteBusy) return;
+    setBatchDelete(null);
+    setBatchDeleteNote(null);
+  }, [batchDeleteBusy]);
 
-  const confirmAlbumDelete = useCallback(async () => {
-    if (!albumDeleteTarget || albumDeleteBusy) return;
-    setAlbumDeleteBusy(true);
-    setAlbumDeleteNote(null);
-    try {
-      await getMoriLogAlbumStore().remove(albumDeleteTarget.id, profileId);
-      if (viewingAlbum?.id === albumDeleteTarget.id) {
-        setViewingAlbum(null);
-        setAlbumMode("shelf");
-      }
-      setAlbumDeleteTarget(null);
-      await refreshAlbums();
-    } catch {
-      setAlbumDeleteNote(LOG_HOUSE_HITOYASUMI_ALBUM_DELETE_FAIL);
-    } finally {
-      setAlbumDeleteBusy(false);
+  const toggleBrowseChecked = useCallback((id: string) => {
+    setBrowseCheckedIds((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
+    );
+  }, []);
+
+  const toggleAlbumShelfChecked = useCallback((id: string) => {
+    setAlbumShelfCheckedIds((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
+    );
+  }, []);
+
+  const requestBrowseBatchDelete = useCallback(() => {
+    if (browseCheckedIds.length === 0) {
+      setBatchDeleteNote(LOG_HOUSE_HITOYASUMI_BATCH_DELETE_NEED_SELECTION);
+      return;
     }
-  }, [albumDeleteBusy, albumDeleteTarget, profileId, refreshAlbums, viewingAlbum?.id]);
+    setBatchDeleteNote(null);
+    setBatchDelete({ kind: "media", ids: [...browseCheckedIds] });
+  }, [browseCheckedIds]);
+
+  const requestAlbumShelfBatchDelete = useCallback(() => {
+    if (albumShelfCheckedIds.length === 0) {
+      setBatchDeleteNote(LOG_HOUSE_HITOYASUMI_BATCH_DELETE_NEED_SELECTION);
+      return;
+    }
+    setBatchDeleteNote(null);
+    setBatchDelete({ kind: "album", ids: [...albumShelfCheckedIds] });
+  }, [albumShelfCheckedIds]);
+
+  const confirmBatchDelete = useCallback(async () => {
+    if (!batchDelete || batchDeleteBusy) return;
+    setBatchDeleteBusy(true);
+    setBatchDeleteNote(null);
+    try {
+      if (batchDelete.kind === "album") {
+        const store = getMoriLogAlbumStore();
+        for (const id of batchDelete.ids) {
+          await store.remove(id, profileId);
+        }
+        if (viewingAlbum && batchDelete.ids.includes(viewingAlbum.id)) {
+          setViewingAlbum(null);
+          setAlbumMode("shelf");
+        }
+        setAlbumShelfCheckedIds((prev) => prev.filter((id) => !batchDelete.ids.includes(id)));
+        await refreshAlbums();
+      } else {
+        const store = getMoriLogMediaStore();
+        for (const id of batchDelete.ids) {
+          await store.remove(id, profileId);
+          await removeMoriLogMediaBlob(id);
+        }
+        setBrowseCheckedIds((prev) => prev.filter((id) => !batchDelete.ids.includes(id)));
+        if (detail && batchDelete.ids.includes(detail.item.id)) {
+          closeDetail();
+        }
+        await refresh();
+      }
+      setBatchDelete(null);
+    } catch {
+      setBatchDeleteNote(
+        batchDelete.kind === "album"
+          ? LOG_HOUSE_HITOYASUMI_ALBUM_DELETE_FAIL
+          : LOG_HOUSE_HITOYASUMI_DELETE_FAIL,
+      );
+    } finally {
+      setBatchDeleteBusy(false);
+    }
+  }, [
+    batchDelete,
+    batchDeleteBusy,
+    closeDetail,
+    detail,
+    profileId,
+    refresh,
+    refreshAlbums,
+    viewingAlbum,
+  ]);
 
   const tryAlbumSave = useCallback(async () => {
     // iOS: タイトル入力のキーボードが開いていると、最初のタップが blur だけになることがある
@@ -805,9 +900,20 @@ export function HitoyasumiChairPageClient({
         ) : screen === "browse" ? (
           <>
             <div className="mt-4" role="tablist" aria-label={LOG_HOUSE_HITOYASUMI_FILTER_BAR_LABEL}>
-              <p className="mb-2 text-center text-[11px] font-medium text-[#fffaf2]/85 drop-shadow-[0_1px_2px_rgba(0,0,0,0.4)]">
-                {LOG_HOUSE_HITOYASUMI_FILTER_BAR_LABEL}
-              </p>
+              <div className="mb-2 flex items-center justify-between gap-2">
+                <p className="text-[11px] font-medium text-[#fffaf2]/85 drop-shadow-[0_1px_2px_rgba(0,0,0,0.4)]">
+                  {LOG_HOUSE_HITOYASUMI_FILTER_BAR_LABEL}
+                </p>
+                <button
+                  type="button"
+                  onClick={requestBrowseBatchDelete}
+                  aria-label={LOG_HOUSE_HITOYASUMI_BATCH_DELETE_ARIA}
+                  title={LOG_HOUSE_HITOYASUMI_BATCH_DELETE_ARIA}
+                  className={`inline-flex h-10 w-10 items-center justify-center rounded-full border backdrop-blur-[3px] transition active:scale-[0.98] ${chromeButtonClass}`}
+                >
+                  <TrashIcon className="h-5 w-5" />
+                </button>
+              </div>
               <div className="flex items-center gap-1.5">
                 <button
                   type="button"
@@ -837,6 +943,16 @@ export function HitoyasumiChairPageClient({
                   {LOG_HOUSE_HITOYASUMI_FILTER_VIDEO}
                 </button>
               </div>
+              {browseCheckedIds.length > 0 ? (
+                <p className="mt-2 text-center text-[11px] font-medium text-[#fffaf2]/9 drop-shadow-[0_1px_2px_rgba(0,0,0,0.4)]">
+                  {LOG_HOUSE_HITOYASUMI_ALBUM_SELECTED_COUNT(browseCheckedIds.length)}
+                </p>
+              ) : null}
+              {batchDeleteNote && screen === "browse" && !batchDelete ? (
+                <p className="mt-2 rounded-xl border border-[#e4d5c0] bg-[#fffaf2]/9 px-3 py-2 text-center text-xs text-[#8a4f3d]" role="status">
+                  {batchDeleteNote}
+                </p>
+              ) : null}
             </div>
 
             {loading ? (
@@ -864,67 +980,78 @@ export function HitoyasumiChairPageClient({
                   const title = item.title?.trim() || hitoyasumiTemplateLabel(item.templateId);
                   return (
                     <li key={item.id}>
-                      <button
-                        type="button"
-                        onClick={() => void openDetail(item)}
-                        className="group relative block w-full text-left transition hover:-translate-y-0.5"
-                        aria-label={`${hitoyasumiMediaTypeLabel(item.type)} ${title}`}
-                      >
-                        <div className="relative aspect-[819/1024] w-full">
-                          <Image
-                            src={hitoyasumiItemFrameSrc(item.type)}
-                            alt=""
-                            fill
-                            sizes="(max-width: 768px) 46vw, 220px"
-                            className={`pointer-events-none object-contain drop-shadow-[0_6px_14px_rgba(20,12,8,0.2)] ${HITOYASUMI_ASSET_TONE}`}
+                      <div className="relative">
+                        <label className="absolute left-[6%] top-[5.5%] z-20 inline-flex h-7 w-7 cursor-pointer items-center justify-center rounded-md bg-[#1d3a2c]/55 shadow-[0_1px_4px_rgba(0,0,0,0.28)] backdrop-blur-[2px]">
+                          <input
+                            type="checkbox"
+                            checked={browseCheckedIds.includes(item.id)}
+                            onChange={() => toggleBrowseChecked(item.id)}
+                            aria-label={`${title} を選択`}
+                            className="h-4 w-4 accent-[#5f8f72]"
                           />
-
-                          <div className={HITOYASUMI_THUMB_WINDOW}>
-                            {thumb ? (
-                              isMovie && thumbIsVideo[item.id] ? (
-                                <video
-                                  src={thumb}
-                                  className="h-full w-full object-cover"
-                                  muted
-                                  playsInline
-                                  preload="metadata"
-                                />
-                              ) : (
-                                // eslint-disable-next-line @next/next/no-img-element
-                                <img src={thumb} alt="" className="h-full w-full object-cover" />
-                              )
-                            ) : (
-                              <div className="flex h-full items-center justify-center px-2 text-center text-[10px] leading-relaxed text-[#8a7660]">
-                                {LOG_HOUSE_HITOYASUMI_NO_PREVIEW}
-                              </div>
-                            )}
-                          </div>
-
-                          {/* 上端の種類札をサムネの手前に再描画 */}
-                          <div
-                            className="pointer-events-none absolute inset-0 z-[2]"
-                            style={{ clipPath: HITOYASUMI_THUMB_BADGE_CLIP }}
-                            aria-hidden
-                          >
+                        </label>
+                        <button
+                          type="button"
+                          onClick={() => void openDetail(item)}
+                          className="group relative block w-full text-left transition hover:-translate-y-0.5"
+                          aria-label={`${hitoyasumiMediaTypeLabel(item.type)} ${title}`}
+                        >
+                          <div className="relative aspect-[819/1024] w-full">
                             <Image
                               src={hitoyasumiItemFrameSrc(item.type)}
                               alt=""
                               fill
                               sizes="(max-width: 768px) 46vw, 220px"
-                              className={`object-contain ${HITOYASUMI_ASSET_TONE}`}
+                              className={`pointer-events-none object-contain drop-shadow-[0_6px_14px_rgba(20,12,8,0.2)] ${HITOYASUMI_ASSET_TONE}`}
                             />
-                          </div>
 
-                          <div className={HITOYASUMI_THUMB_META}>
-                            <p className="truncate text-[11px] font-semibold leading-snug text-[#3f3428] sm:text-xs">
-                              {title}
-                            </p>
-                            <p className="mt-0.5 truncate text-[9px] leading-snug text-[#8a7660] sm:text-[10px]">
-                              {formatHitoyasumiCreatedAt(item.createdAt)}
-                            </p>
+                            <div className={HITOYASUMI_THUMB_WINDOW}>
+                              {thumb ? (
+                                isMovie && thumbIsVideo[item.id] ? (
+                                  <video
+                                    src={thumb}
+                                    className="h-full w-full object-cover"
+                                    muted
+                                    playsInline
+                                    preload="metadata"
+                                  />
+                                ) : (
+                                  // eslint-disable-next-line @next/next/no-img-element
+                                  <img src={thumb} alt="" className="h-full w-full object-cover" />
+                                )
+                              ) : (
+                                <div className="flex h-full items-center justify-center px-2 text-center text-[10px] leading-relaxed text-[#8a7660]">
+                                  {LOG_HOUSE_HITOYASUMI_NO_PREVIEW}
+                                </div>
+                              )}
+                            </div>
+
+                            {/* 上端の種類札をサムネの手前に再描画 */}
+                            <div
+                              className="pointer-events-none absolute inset-0 z-[2]"
+                              style={{ clipPath: HITOYASUMI_THUMB_BADGE_CLIP }}
+                              aria-hidden
+                            >
+                              <Image
+                                src={hitoyasumiItemFrameSrc(item.type)}
+                                alt=""
+                                fill
+                                sizes="(max-width: 768px) 46vw, 220px"
+                                className={`object-contain ${HITOYASUMI_ASSET_TONE}`}
+                              />
+                            </div>
+
+                            <div className={HITOYASUMI_THUMB_META}>
+                              <p className="truncate text-[11px] font-semibold leading-snug text-[#3f3428] sm:text-xs">
+                                {title}
+                              </p>
+                              <p className="mt-0.5 truncate text-[9px] leading-snug text-[#8a7660] sm:text-[10px]">
+                                {formatHitoyasumiCreatedAt(item.createdAt)}
+                              </p>
+                            </div>
                           </div>
-                        </div>
-                      </button>
+                        </button>
+                      </div>
                     </li>
                   );
                 })}
@@ -936,19 +1063,44 @@ export function HitoyasumiChairPageClient({
         ) : albumMode === "shelf" ? (
           <>
             <div className="mt-4 rounded-[1.25rem] border border-[#e4d5c0]/75 bg-[#fffaf2]/88 px-4 py-4 shadow-[0_10px_28px_rgba(40,28,16,0.14)] backdrop-blur-[2px]">
-              <h2
-                id={albumTitleId}
-                className="text-base font-semibold tracking-wide text-[#3f3428]"
-              >
-                {LOG_HOUSE_HITOYASUMI_ALBUM_SCREEN_TITLE}
-              </h2>
-              <p className="mt-2 text-sm text-[#6e5c48]">
-                {albumsLoading
-                  ? "読み込んでいます…"
-                  : albums.length === 0
-                    ? LOG_HOUSE_HITOYASUMI_ALBUM_SHELF_EMPTY
-                    : LOG_HOUSE_HITOYASUMI_ALBUM_SHELF_COUNT(albums.length)}
-              </p>
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0 flex-1">
+                  <h2
+                    id={albumTitleId}
+                    className="text-base font-semibold tracking-wide text-[#3f3428]"
+                  >
+                    {LOG_HOUSE_HITOYASUMI_ALBUM_SCREEN_TITLE}
+                  </h2>
+                  <p className="mt-2 text-sm text-[#6e5c48]">
+                    {albumsLoading
+                      ? "読み込んでいます…"
+                      : albums.length === 0
+                        ? LOG_HOUSE_HITOYASUMI_ALBUM_SHELF_EMPTY
+                        : LOG_HOUSE_HITOYASUMI_ALBUM_SHELF_COUNT(albums.length)}
+                  </p>
+                </div>
+                {albums.length > 0 ? (
+                  <button
+                    type="button"
+                    onClick={requestAlbumShelfBatchDelete}
+                    aria-label={LOG_HOUSE_HITOYASUMI_BATCH_DELETE_ARIA}
+                    title={LOG_HOUSE_HITOYASUMI_BATCH_DELETE_ARIA}
+                    className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[#c5b089]/80 bg-[#f7efe3] text-[#5c4a35] shadow-sm transition active:scale-[0.98] hover:bg-[#f3ead8]"
+                  >
+                    <TrashIcon className="h-5 w-5" />
+                  </button>
+                ) : null}
+              </div>
+              {albumShelfCheckedIds.length > 0 ? (
+                <p className="mt-2 text-[11px] font-medium text-[#6e5c48]">
+                  {LOG_HOUSE_HITOYASUMI_ALBUM_SELECTED_COUNT(albumShelfCheckedIds.length)}
+                </p>
+              ) : null}
+              {batchDeleteNote && screen === "album" && albumMode === "shelf" && !batchDelete ? (
+                <p className="mt-2 rounded-xl border border-[#e4d5c0] bg-[#fffaf2] px-3 py-2 text-xs text-[#8a4f3d]" role="status">
+                  {batchDeleteNote}
+                </p>
+              ) : null}
               <button
                 type="button"
                 onClick={openAlbumCompose}
@@ -965,100 +1117,98 @@ export function HitoyasumiChairPageClient({
                   const coverIsVideo = !!thumbIsVideo[album.coverMediaId];
                   const isMovieCover = album.coverType === "card_movie";
                   return (
-                    <li key={album.id} className="space-y-1.5">
-                      <button
-                        type="button"
-                        onClick={() => openAlbumViewer(album)}
-                        aria-label={`${album.title}を開く`}
-                        className="relative block w-full text-left transition hover:-translate-y-0.5 active:scale-[0.98]"
-                      >
-                        <div className="relative aspect-[819/1024] w-full">
-                          <Image
-                            src={LOG_HOUSE_HITOYASUMI_ITEM_FRAME_ALBUM_SRC}
-                            alt=""
-                            fill
-                            sizes="(max-width: 768px) 46vw, 220px"
-                            className={`pointer-events-none object-contain drop-shadow-[0_6px_14px_rgba(20,12,8,0.2)] ${HITOYASUMI_ASSET_TONE}`}
+                    <li key={album.id}>
+                      <div className="relative">
+                        <label className="absolute left-[6%] top-[5.5%] z-20 inline-flex h-7 w-7 cursor-pointer items-center justify-center rounded-md bg-[#1d3a2c]/55 shadow-[0_1px_4px_rgba(0,0,0,0.28)] backdrop-blur-[2px]">
+                          <input
+                            type="checkbox"
+                            checked={albumShelfCheckedIds.includes(album.id)}
+                            onChange={() => toggleAlbumShelfChecked(album.id)}
+                            aria-label={`${album.title} を選択`}
+                            className="h-4 w-4 accent-[#5f8f72]"
                           />
-                          {/* 森ログカードと同じ写真枠サイズ */}
-                          <div className={HITOYASUMI_THUMB_WINDOW}>
-                            {coverThumb ? (
-                              isMovieCover && coverIsVideo ? (
-                                <video
-                                  src={coverThumb}
-                                  className="h-full w-full object-cover"
-                                  muted
-                                  playsInline
-                                  preload="metadata"
-                                />
-                              ) : (
-                                // eslint-disable-next-line @next/next/no-img-element
-                                <img
-                                  src={coverThumb}
-                                  alt=""
-                                  className="h-full w-full object-cover"
-                                />
-                              )
-                            ) : (
-                              <div className="flex h-full items-center justify-center px-2 text-center text-[10px] text-[#8a7660]">
-                                {LOG_HOUSE_HITOYASUMI_NO_PREVIEW}
-                              </div>
-                            )}
-                          </div>
-                          {/* 上端の「アルバム」札をサムネの手前に再描画（カード一覧と同じ） */}
-                          <div
-                            className="pointer-events-none absolute inset-0 z-[2]"
-                            style={{ clipPath: HITOYASUMI_THUMB_BADGE_CLIP }}
-                            aria-hidden
-                          >
+                        </label>
+                        <button
+                          type="button"
+                          onClick={() => openAlbumViewer(album)}
+                          aria-label={`${album.title}を開く`}
+                          className="relative block w-full text-left transition hover:-translate-y-0.5 active:scale-[0.98]"
+                        >
+                          <div className="relative aspect-[819/1024] w-full">
                             <Image
                               src={LOG_HOUSE_HITOYASUMI_ITEM_FRAME_ALBUM_SRC}
                               alt=""
                               fill
                               sizes="(max-width: 768px) 46vw, 220px"
-                              className={`object-contain ${HITOYASUMI_ASSET_TONE}`}
+                              className={`pointer-events-none object-contain drop-shadow-[0_6px_14px_rgba(20,12,8,0.2)] ${HITOYASUMI_ASSET_TONE}`}
                             />
+                            {/* 森ログカードと同じ写真枠サイズ */}
+                            <div className={HITOYASUMI_THUMB_WINDOW}>
+                              {coverThumb ? (
+                                isMovieCover && coverIsVideo ? (
+                                  <video
+                                    src={coverThumb}
+                                    className="h-full w-full object-cover"
+                                    muted
+                                    playsInline
+                                    preload="metadata"
+                                  />
+                                ) : (
+                                  // eslint-disable-next-line @next/next/no-img-element
+                                  <img
+                                    src={coverThumb}
+                                    alt=""
+                                    className="h-full w-full object-cover"
+                                  />
+                                )
+                              ) : (
+                                <div className="flex h-full items-center justify-center px-2 text-center text-[10px] text-[#8a7660]">
+                                  {LOG_HOUSE_HITOYASUMI_NO_PREVIEW}
+                                </div>
+                              )}
+                            </div>
+                            {/* 上端の「アルバム」札をサムネの手前に再描画（カード一覧と同じ） */}
+                            <div
+                              className="pointer-events-none absolute inset-0 z-[2]"
+                              style={{ clipPath: HITOYASUMI_THUMB_BADGE_CLIP }}
+                              aria-hidden
+                            >
+                              <Image
+                                src={LOG_HOUSE_HITOYASUMI_ITEM_FRAME_ALBUM_SRC}
+                                alt=""
+                                fill
+                                sizes="(max-width: 768px) 46vw, 220px"
+                                className={`object-contain ${HITOYASUMI_ASSET_TONE}`}
+                              />
+                            </div>
+                            <span
+                              className={[
+                                "absolute right-[9%] top-[8.5%] z-[3] inline-flex rounded-md border px-1.5 py-0.5 text-[10px] font-semibold shadow-sm",
+                                isMovieCover
+                                  ? "border-emerald-900/40 bg-emerald-900/90 text-[#fffaf2]"
+                                  : "border-[#c5b089]/80 bg-[#fffdf8]/95 text-[#5c4a35]",
+                              ].join(" ")}
+                            >
+                              {hitoyasumiMediaTypeLabel(album.coverType)}
+                            </span>
+                            <div className={HITOYASUMI_THUMB_META}>
+                              <p className="truncate text-[11px] font-semibold text-[#3f3428]">
+                                {album.title}
+                              </p>
+                              <p className="mt-0.5 truncate text-[9px] text-[#8a7660]">
+                                {LOG_HOUSE_HITOYASUMI_ALBUM_ITEM_COUNT(album.mediaIds.length)}
+                                {" · "}
+                                {formatHitoyasumiCreatedAt(album.createdAt)}
+                              </p>
+                            </div>
                           </div>
-                          <span
-                            className={[
-                              "absolute right-[9%] top-[8.5%] z-[3] inline-flex rounded-md border px-1.5 py-0.5 text-[10px] font-semibold shadow-sm",
-                              isMovieCover
-                                ? "border-emerald-900/40 bg-emerald-900/90 text-[#fffaf2]"
-                                : "border-[#c5b089]/80 bg-[#fffdf8]/95 text-[#5c4a35]",
-                            ].join(" ")}
-                          >
-                            {hitoyasumiMediaTypeLabel(album.coverType)}
-                          </span>
-                          <div className={HITOYASUMI_THUMB_META}>
-                            <p className="truncate text-[11px] font-semibold text-[#3f3428]">
-                              {album.title}
-                            </p>
-                            <p className="mt-0.5 truncate text-[9px] text-[#8a7660]">
-                              {LOG_HOUSE_HITOYASUMI_ALBUM_ITEM_COUNT(album.mediaIds.length)}
-                              {" · "}
-                              {formatHitoyasumiCreatedAt(album.createdAt)}
-                            </p>
-                          </div>
-                        </div>
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => requestAlbumDelete(album)}
-                        className="inline-flex min-h-[36px] w-full items-center justify-center rounded-lg border border-[#d4b4a8]/90 bg-[#fff8f5]/92 px-2 text-[11px] font-medium text-[#8a4f3d] backdrop-blur-[2px] hover:bg-[#fff1eb]"
-                      >
-                        {LOG_HOUSE_HITOYASUMI_ALBUM_DELETE}
-                      </button>
+                        </button>
+                      </div>
                     </li>
                   );
                 })}
               </ul>
             )}
-
-            {albumDeleteNote && !albumDeleteTarget ? (
-              <p className="mt-3 rounded-xl border border-[#e4d5c0] bg-[#fffaf2]/9 px-3 py-2 text-xs text-[#8a4f3d]" role="status">
-                {albumDeleteNote}
-              </p>
-            ) : null}
 
             <div className="mt-auto pt-10" aria-hidden />
           </>
@@ -1331,49 +1481,63 @@ export function HitoyasumiChairPageClient({
         />
       ) : null}
 
-      {albumDeleteTarget ? (
+      {batchDelete ? (
         <div
           className="fixed inset-0 z-[80] flex items-center justify-center bg-[#1a120c]/50 p-4 backdrop-blur-[2px]"
           role="dialog"
           aria-modal="true"
-          aria-labelledby="hitoyasumi-album-delete-title"
-          onClick={cancelAlbumDelete}
+          aria-labelledby="hitoyasumi-batch-delete-title"
+          onClick={cancelBatchDelete}
         >
           <div
             className="w-full max-w-sm rounded-2xl border border-[#e4d5c0]/95 bg-[#fffaf2] px-5 py-5 shadow-[0_16px_40px_rgba(40,28,16,0.28)]"
             onClick={(e) => e.stopPropagation()}
           >
             <h2
-              id="hitoyasumi-album-delete-title"
+              id="hitoyasumi-batch-delete-title"
               className="text-base font-semibold tracking-wide text-[#3f3428]"
             >
-              {LOG_HOUSE_HITOYASUMI_ALBUM_DELETE_CONFIRM_TITLE}
+              {batchDelete.kind === "album"
+                ? batchDelete.ids.length === 1
+                  ? LOG_HOUSE_HITOYASUMI_ALBUM_DELETE_CONFIRM_TITLE
+                  : LOG_HOUSE_HITOYASUMI_ALBUM_DELETE_CONFIRM_TITLE_MULTI(batchDelete.ids.length)
+                : batchDelete.ids.length === 1
+                  ? LOG_HOUSE_HITOYASUMI_DELETE_CONFIRM_TITLE
+                  : LOG_HOUSE_HITOYASUMI_MEDIA_DELETE_CONFIRM_TITLE_MULTI(batchDelete.ids.length)}
             </h2>
-            <p className="mt-2 text-sm font-medium text-[#5c4a35]">{albumDeleteTarget.title}</p>
+            {batchDelete.kind === "album" && batchDelete.ids.length === 1 ? (
+              <p className="mt-2 text-sm font-medium text-[#5c4a35]">
+                {albums.find((a) => a.id === batchDelete.ids[0])?.title ??
+                  viewingAlbum?.title ??
+                  ""}
+              </p>
+            ) : null}
             <p className="mt-3 text-sm leading-relaxed text-[#5c4a35]">
-              {LOG_HOUSE_HITOYASUMI_ALBUM_DELETE_CONFIRM_BODY}
+              {batchDelete.kind === "album"
+                ? LOG_HOUSE_HITOYASUMI_ALBUM_DELETE_CONFIRM_BODY
+                : LOG_HOUSE_HITOYASUMI_MEDIA_DELETE_CONFIRM_BODY}
             </p>
             <div className="mt-5 flex flex-col gap-2">
               <button
                 type="button"
-                disabled={albumDeleteBusy}
-                onClick={() => void confirmAlbumDelete()}
+                disabled={batchDeleteBusy}
+                onClick={() => void confirmBatchDelete()}
                 className="inline-flex min-h-[44px] items-center justify-center rounded-xl border border-[#a45c48] bg-[#a45c48] px-4 text-sm font-medium text-white hover:bg-[#8f4f3e] disabled:opacity-60"
               >
-                {albumDeleteBusy ? "削除しています…" : LOG_HOUSE_HITOYASUMI_DELETE_CONFIRM}
+                {batchDeleteBusy ? "削除しています…" : LOG_HOUSE_HITOYASUMI_DELETE_CONFIRM}
               </button>
               <button
                 type="button"
-                disabled={albumDeleteBusy}
-                onClick={cancelAlbumDelete}
+                disabled={batchDeleteBusy}
+                onClick={cancelBatchDelete}
                 className="inline-flex min-h-[44px] items-center justify-center rounded-xl border border-[#c4b49a] bg-[#faf3e8] px-4 text-sm font-medium text-[#5c4a35] hover:bg-[#f3ead8] disabled:opacity-60"
               >
                 {LOG_HOUSE_HITOYASUMI_DELETE_CANCEL}
               </button>
             </div>
-            {albumDeleteNote ? (
+            {batchDeleteNote ? (
               <p className="mt-3 text-xs text-[#8a4f3d]" role="status">
-                {albumDeleteNote}
+                {batchDeleteNote}
               </p>
             ) : null}
           </div>

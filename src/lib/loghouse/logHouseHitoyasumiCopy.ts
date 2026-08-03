@@ -164,8 +164,22 @@ export const LOG_HOUSE_HITOYASUMI_ALBUM_DELETE_CONFIRM_TITLE =
 export const LOG_HOUSE_HITOYASUMI_ALBUM_DELETE_CONFIRM_BODY =
   "アルバムのまとめだけが消えます。中の森ログカードやムービーは椅子に残ります。" as const;
 
+export const LOG_HOUSE_HITOYASUMI_ALBUM_DELETE_CONFIRM_TITLE_MULTI = (n: number) =>
+  `${n}冊のアルバムを削除しますか？` as const;
+
 export const LOG_HOUSE_HITOYASUMI_ALBUM_DELETE_FAIL =
   "アルバムを削除できませんでした。もう一度お試しください。" as const;
+
+export const LOG_HOUSE_HITOYASUMI_BATCH_DELETE_ARIA = "選んだものを削除" as const;
+
+export const LOG_HOUSE_HITOYASUMI_BATCH_DELETE_NEED_SELECTION =
+  "削除する項目にチェックを入れてください。" as const;
+
+export const LOG_HOUSE_HITOYASUMI_MEDIA_DELETE_CONFIRM_TITLE_MULTI = (n: number) =>
+  `${n}件の森ログを削除しますか？` as const;
+
+export const LOG_HOUSE_HITOYASUMI_MEDIA_DELETE_CONFIRM_BODY =
+  "椅子の一覧から消えます。写真アプリなどにすでに保存したものは残ります。" as const;
 
 export const LOG_HOUSE_HITOYASUMI_ALBUM_VIEWER_PREV = "前へ" as const;
 
