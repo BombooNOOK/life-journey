@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useCallback, useEffect, useId, useMemo, useState } from "react";
 
+import { HitoyasumiAlbumViewer } from "@/components/orders/HitoyasumiAlbumViewer";
 import { useLogHouseRoomTimeTheme } from "@/hooks/useLogHouseRoomTimeOfDay";
 import type { LogHouseRoomTimeOfDay } from "@/lib/loghouse/logHouseRoomTimeTheme";
 import {
@@ -16,6 +17,11 @@ import {
   listHitoyasumiMedia,
   type HitoyasumiMediaFilter,
 } from "@/lib/journal/moriLog/hitoyasumiMedia";
+import {
+  defaultMoriLogAlbumTitle,
+  type MoriLogAlbum,
+} from "@/lib/journal/moriLog/moriLogAlbum";
+import { getMoriLogAlbumStore } from "@/lib/journal/moriLog/moriLogAlbumStore";
 import {
   getMoriLogMediaBlob,
   getMoriLogMediaPosterBlob,
@@ -37,14 +43,20 @@ import {
   LOG_HOUSE_HITOYASUMI_ACTION_FAIL,
   LOG_HOUSE_HITOYASUMI_ACTION_HINT,
   LOG_HOUSE_HITOYASUMI_ACTION_OK,
+  LOG_HOUSE_HITOYASUMI_ALBUM_BACK_TO_SHELF,
+  LOG_HOUSE_HITOYASUMI_ALBUM_COMPOSE_CTA,
+  LOG_HOUSE_HITOYASUMI_ALBUM_COMPOSE_TITLE,
   LOG_HOUSE_HITOYASUMI_ALBUM_DESELECT_VISIBLE,
+  LOG_HOUSE_HITOYASUMI_ALBUM_ITEM_COUNT,
   LOG_HOUSE_HITOYASUMI_ALBUM_MATCH_COUNT,
   LOG_HOUSE_HITOYASUMI_ALBUM_SAVE,
+  LOG_HOUSE_HITOYASUMI_ALBUM_SAVE_FAIL,
   LOG_HOUSE_HITOYASUMI_ALBUM_SAVE_NEED_SELECTION,
-  LOG_HOUSE_HITOYASUMI_ALBUM_SAVE_SOON,
   LOG_HOUSE_HITOYASUMI_ALBUM_SCREEN_TITLE,
   LOG_HOUSE_HITOYASUMI_ALBUM_SELECT_ALL,
   LOG_HOUSE_HITOYASUMI_ALBUM_SELECTED_COUNT,
+  LOG_HOUSE_HITOYASUMI_ALBUM_SHELF_COUNT,
+  LOG_HOUSE_HITOYASUMI_ALBUM_SHELF_EMPTY,
   LOG_HOUSE_HITOYASUMI_ALBUM_TAG_EMPTY,
   LOG_HOUSE_HITOYASUMI_ALBUM_TAG_LABEL,
   LOG_HOUSE_HITOYASUMI_ALBUM_TITLE_LABEL,
@@ -75,6 +87,7 @@ import {
   LOG_HOUSE_HITOYASUMI_HELP_BODY,
   LOG_HOUSE_HITOYASUMI_HELP_BUTTON_LABEL,
   LOG_HOUSE_HITOYASUMI_HELP_DISMISS,
+  LOG_HOUSE_HITOYASUMI_ITEM_FRAME_ALBUM_SRC,
   LOG_HOUSE_HITOYASUMI_ITEM_FRAME_CARD_SRC,
   LOG_HOUSE_HITOYASUMI_ITEM_FRAME_MOVIE_SRC,
   LOG_HOUSE_HITOYASUMI_MOVIE_SOON_BODY,
@@ -86,6 +99,7 @@ import {
 } from "@/lib/loghouse/logHouseHitoyasumiCopy";
 
 type Screen = "entrance" | "browse" | "album";
+type AlbumMode = "shelf" | "compose";
 
 type Props = {
   profileId: string;
@@ -231,11 +245,16 @@ export function HitoyasumiChairPageClient({
     setScreen(initialScreen);
   }, [initialScreen]);
   const [filter, setFilter] = useState<HitoyasumiMediaFilter>("all");
+  const [albumMode, setAlbumMode] = useState<AlbumMode>("shelf");
+  const [albums, setAlbums] = useState<MoriLogAlbum[]>([]);
+  const [albumsLoading, setAlbumsLoading] = useState(false);
   const [albumTypeFilter, setAlbumTypeFilter] = useState<HitoyasumiMediaFilter>("all");
   const [albumSelectedTags, setAlbumSelectedTags] = useState<string[]>([]);
   const [albumCheckedIds, setAlbumCheckedIds] = useState<string[]>([]);
   const [albumTitle, setAlbumTitle] = useState("");
   const [albumSaveNote, setAlbumSaveNote] = useState<string | null>(null);
+  const [albumSaveBusy, setAlbumSaveBusy] = useState(false);
+  const [viewingAlbum, setViewingAlbum] = useState<MoriLogAlbum | null>(null);
   const [thumbUrls, setThumbUrls] = useState<Record<string, string>>({});
   /** thumb が video/* なら true。ムービーでもポスター画像だけの場合あり */
   const [thumbIsVideo, setThumbIsVideo] = useState<Record<string, boolean>>({});
@@ -305,10 +324,27 @@ export function HitoyasumiChairPageClient({
     }
   }, [profileId]);
 
+  const refreshAlbums = useCallback(async () => {
+    setAlbumsLoading(true);
+    try {
+      const list = await getMoriLogAlbumStore().list(profileId);
+      setAlbums(list);
+    } catch {
+      setAlbums([]);
+    } finally {
+      setAlbumsLoading(false);
+    }
+  }, [profileId]);
+
   useEffect(() => {
     if (screen !== "browse" && screen !== "album") return;
     void refresh();
   }, [refresh, screen]);
+
+  useEffect(() => {
+    if (screen !== "album") return;
+    void refreshAlbums();
+  }, [refreshAlbums, screen]);
 
   useEffect(() => {
     return () => {
@@ -338,6 +374,12 @@ export function HitoyasumiChairPageClient({
 
   const visible = useMemo(() => filterHitoyasumiMedia(items, filter), [filter, items]);
 
+  const itemsById = useMemo(() => {
+    const map = new Map<string, MoriLogMedia>();
+    for (const item of items) map.set(item.id, item);
+    return map;
+  }, [items]);
+
   const albumTagOptions = useMemo(() => collectHitoyasumiTags(items), [items]);
 
   const albumCandidates = useMemo(() => {
@@ -358,19 +400,46 @@ export function HitoyasumiChairPageClient({
   const albumAllVisibleSelected =
     albumCandidates.length > 0 && albumVisibleSelectedCount === albumCandidates.length;
 
+  const viewingAlbumPages = useMemo(() => {
+    if (!viewingAlbum) return [];
+    const pages: MoriLogMedia[] = [];
+    for (const id of viewingAlbum.mediaIds) {
+      const item = itemsById.get(id);
+      if (item) pages.push(item);
+    }
+    return pages;
+  }, [itemsById, viewingAlbum]);
+
   const openBrowse = useCallback(() => {
     setFilter("all");
     setScreen("browse");
   }, []);
 
   const openAlbum = useCallback(() => {
+    setAlbumMode("shelf");
     setAlbumTypeFilter("all");
     setAlbumSelectedTags([]);
     setAlbumCheckedIds([]);
     setAlbumTitle("");
     setAlbumSaveNote(null);
+    setViewingAlbum(null);
     setScreen("album");
   }, []);
+
+  const openAlbumCompose = useCallback(() => {
+    setAlbumTypeFilter("all");
+    setAlbumSelectedTags([]);
+    setAlbumCheckedIds([]);
+    setAlbumTitle("");
+    setAlbumSaveNote(null);
+    setAlbumMode("compose");
+  }, []);
+
+  const backToAlbumShelf = useCallback(() => {
+    setAlbumMode("shelf");
+    setAlbumSaveNote(null);
+    void refreshAlbums();
+  }, [refreshAlbums]);
 
   const toggleAlbumTag = useCallback((tag: string) => {
     setAlbumSelectedTags((prev) =>
@@ -396,22 +465,12 @@ export function HitoyasumiChairPageClient({
     setAlbumCheckedIds((prev) => prev.filter((id) => !albumCandidateIdSet.has(id)));
   }, [albumCandidateIdSet]);
 
-  const tryAlbumSave = useCallback(() => {
-    const selectedInView = albumCheckedIds.filter((id) => albumCandidateIdSet.has(id));
-    if (selectedInView.length === 0) {
-      setAlbumSaveNote(LOG_HOUSE_HITOYASUMI_ALBUM_SAVE_NEED_SELECTION);
-      return;
-    }
-    setAlbumSaveNote(
-      `${LOG_HOUSE_HITOYASUMI_ALBUM_SAVE_SOON}（${LOG_HOUSE_HITOYASUMI_ALBUM_SELECTED_COUNT(selectedInView.length)}）`,
-    );
-  }, [albumCandidateIdSet, albumCheckedIds]);
-
   const openDetail = useCallback(async (item: MoriLogMedia) => {
     const blob = await getMoriLogMediaBlob(item.id);
     const objectUrl = blob ? URL.createObjectURL(blob) : null;
     setDetailActionNote(null);
     setDeleteConfirmOpen(false);
+    setViewingAlbum(null);
     setDetail((prev) => {
       if (prev?.objectUrl) URL.revokeObjectURL(prev.objectUrl);
       return { item, objectUrl, blob: blob ?? null, blobMimeType: blob?.type ?? null };
@@ -428,8 +487,62 @@ export function HitoyasumiChairPageClient({
     });
   }, []);
 
+  const openAlbumViewer = useCallback(
+    (album: MoriLogAlbum) => {
+      setDetailActionNote(null);
+      setDeleteConfirmOpen(false);
+      setDetail((prev) => {
+        if (prev?.objectUrl) URL.revokeObjectURL(prev.objectUrl);
+        return null;
+      });
+      setViewingAlbum(album);
+    },
+    [],
+  );
+
+  const closeAlbumViewer = useCallback(() => {
+    setViewingAlbum(null);
+    setAlbumMode("shelf");
+    void refreshAlbums();
+  }, [refreshAlbums]);
+
+  const tryAlbumSave = useCallback(async () => {
+    const selected = albumCheckedIds.filter((id) => itemsById.has(id));
+    if (selected.length === 0) {
+      setAlbumSaveNote(LOG_HOUSE_HITOYASUMI_ALBUM_SAVE_NEED_SELECTION);
+      return;
+    }
+    if (albumSaveBusy) return;
+    setAlbumSaveBusy(true);
+    setAlbumSaveNote(null);
+    try {
+      const coverId = selected[0]!;
+      const coverItem = itemsById.get(coverId);
+      const coverType =
+        coverItem && isMoriLogCardMovieType(coverItem.type) ? "card_movie" : "card_image";
+      const title = albumTitle.trim() || defaultMoriLogAlbumTitle();
+      const saved = await getMoriLogAlbumStore().upsert({
+        profileId,
+        title,
+        mediaIds: selected,
+        coverMediaId: coverId,
+        coverType,
+      });
+      await refreshAlbums();
+      setAlbumMode("shelf");
+      setAlbumCheckedIds([]);
+      setAlbumTitle("");
+      setViewingAlbum(saved);
+    } catch {
+      setAlbumSaveNote(LOG_HOUSE_HITOYASUMI_ALBUM_SAVE_FAIL);
+    } finally {
+      setAlbumSaveBusy(false);
+    }
+  }, [albumCheckedIds, albumSaveBusy, albumTitle, itemsById, profileId, refreshAlbums]);
+
   const backToEntrance = useCallback(() => {
     closeDetail();
+    setViewingAlbum(null);
     setScreen("entrance");
     if (typeof window !== "undefined") {
       const url = new URL(window.location.href);
@@ -759,7 +872,7 @@ export function HitoyasumiChairPageClient({
 
             <div className="mt-auto pt-10" aria-hidden />
           </>
-        ) : (
+        ) : albumMode === "shelf" ? (
           <>
             <div className="mt-4 rounded-[1.25rem] border border-[#e4d5c0]/75 bg-[#fffaf2]/88 px-4 py-4 shadow-[0_10px_28px_rgba(40,28,16,0.14)] backdrop-blur-[2px]">
               <h2
@@ -768,6 +881,116 @@ export function HitoyasumiChairPageClient({
               >
                 {LOG_HOUSE_HITOYASUMI_ALBUM_SCREEN_TITLE}
               </h2>
+              <p className="mt-2 text-sm text-[#6e5c48]">
+                {albumsLoading
+                  ? "読み込んでいます…"
+                  : albums.length === 0
+                    ? LOG_HOUSE_HITOYASUMI_ALBUM_SHELF_EMPTY
+                    : LOG_HOUSE_HITOYASUMI_ALBUM_SHELF_COUNT(albums.length)}
+              </p>
+              <button
+                type="button"
+                onClick={openAlbumCompose}
+                className="mt-4 inline-flex min-h-[44px] w-full items-center justify-center rounded-xl border border-emerald-800 bg-emerald-800 px-4 text-sm font-medium text-white hover:bg-emerald-900"
+              >
+                {LOG_HOUSE_HITOYASUMI_ALBUM_COMPOSE_CTA}
+              </button>
+            </div>
+
+            {albumsLoading ? null : albums.length === 0 ? null : (
+              <ul className="mt-4 grid grid-cols-2 gap-2.5 sm:gap-3">
+                {albums.map((album) => {
+                  const coverThumb = thumbUrls[album.coverMediaId];
+                  const coverIsVideo = !!thumbIsVideo[album.coverMediaId];
+                  const isMovieCover = album.coverType === "card_movie";
+                  return (
+                    <li key={album.id}>
+                      <button
+                        type="button"
+                        onClick={() => openAlbumViewer(album)}
+                        aria-label={`${album.title}を開く`}
+                        className="relative block w-full text-left transition hover:-translate-y-0.5 active:scale-[0.98]"
+                      >
+                        <div className="relative aspect-[819/1024] w-full">
+                          <Image
+                            src={LOG_HOUSE_HITOYASUMI_ITEM_FRAME_ALBUM_SRC}
+                            alt=""
+                            fill
+                            sizes="(max-width: 768px) 46vw, 220px"
+                            className={`pointer-events-none object-contain drop-shadow-[0_6px_14px_rgba(20,12,8,0.2)] ${HITOYASUMI_ASSET_TONE}`}
+                          />
+                          <div className={HITOYASUMI_THUMB_WINDOW}>
+                            {coverThumb ? (
+                              isMovieCover && coverIsVideo ? (
+                                <video
+                                  src={coverThumb}
+                                  className="h-full w-full object-cover"
+                                  muted
+                                  playsInline
+                                  preload="metadata"
+                                />
+                              ) : (
+                                // eslint-disable-next-line @next/next/no-img-element
+                                <img
+                                  src={coverThumb}
+                                  alt=""
+                                  className="h-full w-full object-cover"
+                                />
+                              )
+                            ) : (
+                              <div className="flex h-full items-center justify-center px-2 text-center text-[10px] text-[#8a7660]">
+                                {LOG_HOUSE_HITOYASUMI_NO_PREVIEW}
+                              </div>
+                            )}
+                          </div>
+                          <span
+                            className={[
+                              "absolute right-[8%] top-[8%] z-[3] inline-flex rounded-md border px-1.5 py-0.5 text-[10px] font-semibold shadow-sm",
+                              isMovieCover
+                                ? "border-emerald-900/40 bg-emerald-900/90 text-[#fffaf2]"
+                                : "border-[#c5b089]/80 bg-[#fffdf8]/95 text-[#5c4a35]",
+                            ].join(" ")}
+                          >
+                            {hitoyasumiMediaTypeLabel(album.coverType)}
+                          </span>
+                          <div className={HITOYASUMI_THUMB_META}>
+                            <p className="truncate text-[11px] font-semibold text-[#3f3428]">
+                              {album.title}
+                            </p>
+                            <p className="mt-0.5 truncate text-[9px] text-[#8a7660]">
+                              {LOG_HOUSE_HITOYASUMI_ALBUM_ITEM_COUNT(album.mediaIds.length)}
+                              {" · "}
+                              {formatHitoyasumiCreatedAt(album.createdAt)}
+                            </p>
+                          </div>
+                        </div>
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+
+            <div className="mt-auto pt-10" aria-hidden />
+          </>
+        ) : (
+          <>
+            <div className="mt-4 rounded-[1.25rem] border border-[#e4d5c0]/75 bg-[#fffaf2]/88 px-4 py-4 shadow-[0_10px_28px_rgba(40,28,16,0.14)] backdrop-blur-[2px]">
+              <div className="flex items-start justify-between gap-3">
+                <h2
+                  id={albumTitleId}
+                  className="text-base font-semibold tracking-wide text-[#3f3428]"
+                >
+                  {LOG_HOUSE_HITOYASUMI_ALBUM_COMPOSE_TITLE}
+                </h2>
+                <button
+                  type="button"
+                  onClick={backToAlbumShelf}
+                  className="shrink-0 rounded-lg border border-[#e0d2bc] bg-[#f7efe3] px-2.5 py-1.5 text-[11px] font-medium text-[#5c4a35]"
+                >
+                  {LOG_HOUSE_HITOYASUMI_ALBUM_BACK_TO_SHELF}
+                </button>
+              </div>
 
               <label className="mt-4 block text-xs font-medium text-[#6e5c48]">
                 {LOG_HOUSE_HITOYASUMI_ALBUM_TITLE_LABEL}
@@ -937,7 +1160,6 @@ export function HitoyasumiChairPageClient({
                               className={`object-contain ${HITOYASUMI_ASSET_TONE}`}
                             />
                           </div>
-                          {/* 右上チェック */}
                           <span
                             className={[
                               "absolute right-[8%] top-[8%] z-[3] flex h-7 w-7 items-center justify-center rounded-md border-2 shadow-sm",
@@ -968,21 +1190,32 @@ export function HitoyasumiChairPageClient({
             <div className="mt-5 space-y-2 pb-4">
               <button
                 type="button"
-                onClick={tryAlbumSave}
-                className="inline-flex min-h-[48px] w-full items-center justify-center rounded-xl border border-emerald-800 bg-emerald-800 px-4 text-sm font-medium text-white hover:bg-emerald-900"
+                disabled={albumSaveBusy}
+                onClick={() => void tryAlbumSave()}
+                className="inline-flex min-h-[48px] w-full items-center justify-center rounded-xl border border-emerald-800 bg-emerald-800 px-4 text-sm font-medium text-white hover:bg-emerald-900 disabled:opacity-60"
               >
-                {LOG_HOUSE_HITOYASUMI_ALBUM_SAVE}
+                {albumSaveBusy ? "まとめています…" : LOG_HOUSE_HITOYASUMI_ALBUM_SAVE}
               </button>
               {albumSaveNote ? (
-                <p className="rounded-xl border border-[#e4d5c0] bg-[#fffaf2]/9 px-3 py-2 text-xs leading-relaxed text-[#5c4a35]" role="status">
+                <p
+                  className="rounded-xl border border-[#e4d5c0] bg-[#fffaf2]/9 px-3 py-2 text-xs leading-relaxed text-[#5c4a35]"
+                  role="status"
+                >
                   {albumSaveNote}
-                  {albumTitle.trim() ? `（仮タイトル：${albumTitle.trim()}）` : null}
                 </p>
               ) : null}
             </div>
           </>
         )}
       </div>
+
+      {viewingAlbum ? (
+        <HitoyasumiAlbumViewer
+          album={viewingAlbum}
+          pages={viewingAlbumPages}
+          onClose={closeAlbumViewer}
+        />
+      ) : null}
 
       {helpOpen ? (
         <div className="fixed inset-0 z-[90] flex items-center justify-center px-4 py-8">

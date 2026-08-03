@@ -114,7 +114,19 @@ export const LOG_HOUSE_HITOYASUMI_FILTER_ALBUM = "アルバム" as const;
 
 export const LOG_HOUSE_HITOYASUMI_FILTER_BAR_LABEL = "種類で絞り込み" as const;
 
-export const LOG_HOUSE_HITOYASUMI_ALBUM_SCREEN_TITLE = "アルバムにまとめる" as const;
+export const LOG_HOUSE_HITOYASUMI_ALBUM_SCREEN_TITLE = "アルバム" as const;
+
+export const LOG_HOUSE_HITOYASUMI_ALBUM_SHELF_EMPTY =
+  "まだアルバムがありません。森ログを選んで、1冊にまとめてみましょう。" as const;
+
+export const LOG_HOUSE_HITOYASUMI_ALBUM_SHELF_COUNT = (n: number) =>
+  `${n}冊のアルバム` as const;
+
+export const LOG_HOUSE_HITOYASUMI_ALBUM_COMPOSE_CTA = "新しくまとめる" as const;
+
+export const LOG_HOUSE_HITOYASUMI_ALBUM_BACK_TO_SHELF = "アルバム一覧へ" as const;
+
+export const LOG_HOUSE_HITOYASUMI_ALBUM_COMPOSE_TITLE = "アルバムにまとめる" as const;
 
 export const LOG_HOUSE_HITOYASUMI_ALBUM_TITLE_LABEL = "アルバムのタイトル" as const;
 
@@ -139,8 +151,21 @@ export const LOG_HOUSE_HITOYASUMI_ALBUM_SAVE = "この内容でまとめる" as 
 export const LOG_HOUSE_HITOYASUMI_ALBUM_SAVE_NEED_SELECTION =
   "アルバムに入れる森ログを、チェックで選んでください。" as const;
 
-export const LOG_HOUSE_HITOYASUMI_ALBUM_SAVE_SOON =
-  "候補の絞り込みと選択までは使えます。1冊としての保存は、これから少しずつ育てていきます。" as const;
+export const LOG_HOUSE_HITOYASUMI_ALBUM_SAVE_FAIL =
+  "アルバムを保存できませんでした。もう一度お試しください。" as const;
+
+export const LOG_HOUSE_HITOYASUMI_ALBUM_ITEM_COUNT = (n: number) => `${n}枚` as const;
+
+export const LOG_HOUSE_HITOYASUMI_ALBUM_VIEWER_PREV = "前へ" as const;
+
+export const LOG_HOUSE_HITOYASUMI_ALBUM_VIEWER_NEXT = "次へ" as const;
+
+export const LOG_HOUSE_HITOYASUMI_ALBUM_VIEWER_PAUSE = "一時停止" as const;
+
+export const LOG_HOUSE_HITOYASUMI_ALBUM_VIEWER_PLAY = "再生" as const;
+
+export const LOG_HOUSE_HITOYASUMI_ALBUM_VIEWER_EMPTY =
+  "このアルバムの森ログが、この端末に見つかりませんでした。" as const;
 
 export const LOG_HOUSE_HITOYASUMI_ALBUM_SOON_TITLE = "アルバムは準備中です" as const;
 
