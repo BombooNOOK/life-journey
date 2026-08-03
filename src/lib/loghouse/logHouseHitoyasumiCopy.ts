@@ -68,7 +68,7 @@ export const LOG_HOUSE_HITOYASUMI_ITEM_FRAME_MOVIE_SRC =
   "/images/ljd/hitoyasumi/hitoyasumi-item-frame-movie.png" as const;
 
 export const LOG_HOUSE_HITOYASUMI_ITEM_FRAME_ALBUM_SRC =
-  "/images/ljd/hitoyasumi/hitoyasumi-item-frame-album-nolabel.png" as const;
+  "/images/ljd/hitoyasumi/hitoyasumi-item-frame-album.png" as const;
 
 export const LOG_HOUSE_HITOYASUMI_EMPTY_TITLE = "まだ森ログがありません" as const;
 

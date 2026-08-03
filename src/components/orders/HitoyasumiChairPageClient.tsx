@@ -1119,7 +1119,7 @@ export function HitoyasumiChairPageClient({
                   return (
                     <li key={album.id}>
                       <div className="relative">
-                        <label className="absolute left-[6%] top-[5.5%] z-20 inline-flex h-7 w-7 cursor-pointer items-center justify-center rounded-md bg-[#1d3a2c]/55 shadow-[0_1px_4px_rgba(0,0,0,0.28)] backdrop-blur-[2px]">
+                        <label className="absolute right-[6%] top-[5.5%] z-20 inline-flex h-7 w-7 cursor-pointer items-center justify-center rounded-md bg-[#1d3a2c]/55 shadow-[0_1px_4px_rgba(0,0,0,0.28)] backdrop-blur-[2px]">
                           <input
                             type="checkbox"
                             checked={albumShelfCheckedIds.includes(album.id)}
@@ -1132,7 +1132,7 @@ export function HitoyasumiChairPageClient({
                           type="button"
                           onClick={() => openAlbumViewer(album)}
                           aria-label={`${album.title}を開く`}
-                          className="relative block w-full text-left transition hover:-translate-y-0.5 active:scale-[0.98]"
+                          className="group relative block w-full text-left transition hover:-translate-y-0.5 active:scale-[0.98]"
                         >
                           <div className="relative aspect-[819/1024] w-full">
                             <Image
@@ -1142,7 +1142,7 @@ export function HitoyasumiChairPageClient({
                               sizes="(max-width: 768px) 46vw, 220px"
                               className={`pointer-events-none object-contain drop-shadow-[0_6px_14px_rgba(20,12,8,0.2)] ${HITOYASUMI_ASSET_TONE}`}
                             />
-                            {/* 森ログカードと同じ写真枠サイズ */}
+
                             <div className={HITOYASUMI_THUMB_WINDOW}>
                               {coverThumb ? (
                                 isMovieCover && coverIsVideo ? (
@@ -1162,26 +1162,32 @@ export function HitoyasumiChairPageClient({
                                   />
                                 )
                               ) : (
-                                <div className="flex h-full items-center justify-center px-2 text-center text-[10px] text-[#8a7660]">
+                                <div className="flex h-full items-center justify-center px-2 text-center text-[10px] leading-relaxed text-[#8a7660]">
                                   {LOG_HOUSE_HITOYASUMI_NO_PREVIEW}
                                 </div>
                               )}
                             </div>
-                            <span
-                              className={[
-                                "absolute right-[9%] top-[8.5%] z-[3] inline-flex rounded-md border px-1.5 py-0.5 text-[10px] font-semibold shadow-sm",
-                                isMovieCover
-                                  ? "border-emerald-900/40 bg-emerald-900/90 text-[#fffaf2]"
-                                  : "border-[#c5b089]/80 bg-[#fffdf8]/95 text-[#5c4a35]",
-                              ].join(" ")}
+
+                            {/* 上端の「アルバム」札をサムネの手前に再描画（森ログ一覧と同じ） */}
+                            <div
+                              className="pointer-events-none absolute inset-0 z-[2]"
+                              style={{ clipPath: HITOYASUMI_THUMB_BADGE_CLIP }}
+                              aria-hidden
                             >
-                              {hitoyasumiMediaTypeLabel(album.coverType)}
-                            </span>
+                              <Image
+                                src={LOG_HOUSE_HITOYASUMI_ITEM_FRAME_ALBUM_SRC}
+                                alt=""
+                                fill
+                                sizes="(max-width: 768px) 46vw, 220px"
+                                className={`object-contain ${HITOYASUMI_ASSET_TONE}`}
+                              />
+                            </div>
+
                             <div className={HITOYASUMI_THUMB_META}>
-                              <p className="truncate text-[11px] font-semibold text-[#3f3428]">
+                              <p className="truncate text-[11px] font-semibold leading-snug text-[#3f3428] sm:text-xs">
                                 {album.title}
                               </p>
-                              <p className="mt-0.5 truncate text-[9px] text-[#8a7660]">
+                              <p className="mt-0.5 truncate text-[9px] leading-snug text-[#8a7660] sm:text-[10px]">
                                 {LOG_HOUSE_HITOYASUMI_ALBUM_ITEM_COUNT(album.mediaIds.length)}
                                 {" · "}
                                 {formatHitoyasumiCreatedAt(album.createdAt)}
