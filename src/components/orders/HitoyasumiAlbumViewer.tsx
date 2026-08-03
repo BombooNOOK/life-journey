@@ -23,6 +23,7 @@ import {
   LOG_HOUSE_HITOYASUMI_ALBUM_VIEWER_PREV,
   LOG_HOUSE_HITOYASUMI_ALBUM_VIEWER_START,
   LOG_HOUSE_HITOYASUMI_CLOSE_DETAIL,
+  LOG_HOUSE_HITOYASUMI_DELETE,
   LOG_HOUSE_HITOYASUMI_NO_PREVIEW,
 } from "@/lib/loghouse/logHouseHitoyasumiCopy";
 
@@ -33,6 +34,7 @@ type Props = {
   album: MoriLogAlbum;
   pages: MoriLogMedia[];
   onClose: () => void;
+  onDelete?: () => void;
 };
 
 function isVideoPage(page: MoriLogMedia | null | undefined, mimeType: string | null): boolean {
@@ -53,7 +55,7 @@ function videoHasSrc(video: HTMLVideoElement, url: string): boolean {
  * iOS では ended の直後に pause が先に来て playing が落ち、次へ進まないことがある。
  * playlistActive で意図を守り、同じ video の src 差し替えで次を再生する。
  */
-export function HitoyasumiAlbumViewer({ album, pages, onClose }: Props) {
+export function HitoyasumiAlbumViewer({ album, pages, onClose, onDelete }: Props) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   /** ユーザーが開始したプレイリスト再生中か（一時停止／閉じるで false） */
   const playlistActiveRef = useRef(false);
@@ -487,6 +489,18 @@ export function HitoyasumiAlbumViewer({ album, pages, onClose }: Props) {
               >
                 {LOG_HOUSE_HITOYASUMI_CLOSE_DETAIL}
               </button>
+              {onDelete ? (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onDelete();
+                  }}
+                  className="min-h-[36px] rounded-lg border border-[#d4b4a8]/80 bg-[#8a4f3d]/90 px-3 text-[11px] font-medium text-white"
+                >
+                  {LOG_HOUSE_HITOYASUMI_DELETE}
+                </button>
+              ) : null}
               <button
                 type="button"
                 aria-pressed={loop}

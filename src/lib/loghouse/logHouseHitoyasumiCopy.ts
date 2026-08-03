@@ -156,6 +156,17 @@ export const LOG_HOUSE_HITOYASUMI_ALBUM_SAVE_FAIL =
 
 export const LOG_HOUSE_HITOYASUMI_ALBUM_ITEM_COUNT = (n: number) => `${n}枚` as const;
 
+export const LOG_HOUSE_HITOYASUMI_ALBUM_DELETE = "このアルバムを削除" as const;
+
+export const LOG_HOUSE_HITOYASUMI_ALBUM_DELETE_CONFIRM_TITLE =
+  "このアルバムを削除しますか？" as const;
+
+export const LOG_HOUSE_HITOYASUMI_ALBUM_DELETE_CONFIRM_BODY =
+  "アルバムのまとめだけが消えます。中の森ログカードやムービーは椅子に残ります。" as const;
+
+export const LOG_HOUSE_HITOYASUMI_ALBUM_DELETE_FAIL =
+  "アルバムを削除できませんでした。もう一度お試しください。" as const;
+
 export const LOG_HOUSE_HITOYASUMI_ALBUM_VIEWER_PREV = "前へ" as const;
 
 export const LOG_HOUSE_HITOYASUMI_ALBUM_VIEWER_NEXT = "次へ" as const;

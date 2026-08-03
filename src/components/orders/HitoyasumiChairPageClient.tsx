@@ -46,6 +46,10 @@ import {
   LOG_HOUSE_HITOYASUMI_ALBUM_BACK_TO_SHELF,
   LOG_HOUSE_HITOYASUMI_ALBUM_COMPOSE_CTA,
   LOG_HOUSE_HITOYASUMI_ALBUM_COMPOSE_TITLE,
+  LOG_HOUSE_HITOYASUMI_ALBUM_DELETE,
+  LOG_HOUSE_HITOYASUMI_ALBUM_DELETE_CONFIRM_BODY,
+  LOG_HOUSE_HITOYASUMI_ALBUM_DELETE_CONFIRM_TITLE,
+  LOG_HOUSE_HITOYASUMI_ALBUM_DELETE_FAIL,
   LOG_HOUSE_HITOYASUMI_ALBUM_DESELECT_VISIBLE,
   LOG_HOUSE_HITOYASUMI_ALBUM_ITEM_COUNT,
   LOG_HOUSE_HITOYASUMI_ALBUM_MATCH_COUNT,
@@ -264,6 +268,9 @@ export function HitoyasumiChairPageClient({
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [helpOpen, setHelpOpen] = useState(false);
   const [movieSoonOpen, setMovieSoonOpen] = useState(false);
+  const [albumDeleteTarget, setAlbumDeleteTarget] = useState<MoriLogAlbum | null>(null);
+  const [albumDeleteBusy, setAlbumDeleteBusy] = useState(false);
+  const [albumDeleteNote, setAlbumDeleteNote] = useState<string | null>(null);
 
   const refresh = useCallback(async () => {
     setLoading(true);
@@ -361,16 +368,20 @@ export function HitoyasumiChairPageClient({
   }, [detail]);
 
   useEffect(() => {
-    if (!helpOpen && !movieSoonOpen && !deleteConfirmOpen) return;
+    if (!helpOpen && !movieSoonOpen && !deleteConfirmOpen && !albumDeleteTarget) return;
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key !== "Escape") return;
       setHelpOpen(false);
       setMovieSoonOpen(false);
       setDeleteConfirmOpen(false);
+      if (!albumDeleteBusy) {
+        setAlbumDeleteTarget(null);
+        setAlbumDeleteNote(null);
+      }
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [deleteConfirmOpen, helpOpen, movieSoonOpen]);
+  }, [albumDeleteBusy, albumDeleteTarget, deleteConfirmOpen, helpOpen, movieSoonOpen]);
 
   const visible = useMemo(() => filterHitoyasumiMedia(items, filter), [filter, items]);
 
@@ -505,6 +516,36 @@ export function HitoyasumiChairPageClient({
     setAlbumMode("shelf");
     void refreshAlbums();
   }, [refreshAlbums]);
+
+  const requestAlbumDelete = useCallback((album: MoriLogAlbum) => {
+    setAlbumDeleteNote(null);
+    setAlbumDeleteTarget(album);
+  }, []);
+
+  const cancelAlbumDelete = useCallback(() => {
+    if (albumDeleteBusy) return;
+    setAlbumDeleteTarget(null);
+    setAlbumDeleteNote(null);
+  }, [albumDeleteBusy]);
+
+  const confirmAlbumDelete = useCallback(async () => {
+    if (!albumDeleteTarget || albumDeleteBusy) return;
+    setAlbumDeleteBusy(true);
+    setAlbumDeleteNote(null);
+    try {
+      await getMoriLogAlbumStore().remove(albumDeleteTarget.id, profileId);
+      if (viewingAlbum?.id === albumDeleteTarget.id) {
+        setViewingAlbum(null);
+        setAlbumMode("shelf");
+      }
+      setAlbumDeleteTarget(null);
+      await refreshAlbums();
+    } catch {
+      setAlbumDeleteNote(LOG_HOUSE_HITOYASUMI_ALBUM_DELETE_FAIL);
+    } finally {
+      setAlbumDeleteBusy(false);
+    }
+  }, [albumDeleteBusy, albumDeleteTarget, profileId, refreshAlbums, viewingAlbum?.id]);
 
   const tryAlbumSave = useCallback(async () => {
     // iOS: タイトル入力のキーボードが開いていると、最初のタップが blur だけになることがある
@@ -924,7 +965,7 @@ export function HitoyasumiChairPageClient({
                   const coverIsVideo = !!thumbIsVideo[album.coverMediaId];
                   const isMovieCover = album.coverType === "card_movie";
                   return (
-                    <li key={album.id}>
+                    <li key={album.id} className="space-y-1.5">
                       <button
                         type="button"
                         onClick={() => openAlbumViewer(album)}
@@ -939,6 +980,7 @@ export function HitoyasumiChairPageClient({
                             sizes="(max-width: 768px) 46vw, 220px"
                             className={`pointer-events-none object-contain drop-shadow-[0_6px_14px_rgba(20,12,8,0.2)] ${HITOYASUMI_ASSET_TONE}`}
                           />
+                          {/* 森ログカードと同じ写真枠サイズ */}
                           <div className={HITOYASUMI_THUMB_WINDOW}>
                             {coverThumb ? (
                               isMovieCover && coverIsVideo ? (
@@ -963,9 +1005,23 @@ export function HitoyasumiChairPageClient({
                               </div>
                             )}
                           </div>
+                          {/* 上端の「アルバム」札をサムネの手前に再描画（カード一覧と同じ） */}
+                          <div
+                            className="pointer-events-none absolute inset-0 z-[2]"
+                            style={{ clipPath: HITOYASUMI_THUMB_BADGE_CLIP }}
+                            aria-hidden
+                          >
+                            <Image
+                              src={LOG_HOUSE_HITOYASUMI_ITEM_FRAME_ALBUM_SRC}
+                              alt=""
+                              fill
+                              sizes="(max-width: 768px) 46vw, 220px"
+                              className={`object-contain ${HITOYASUMI_ASSET_TONE}`}
+                            />
+                          </div>
                           <span
                             className={[
-                              "absolute right-[8%] top-[8%] z-[3] inline-flex rounded-md border px-1.5 py-0.5 text-[10px] font-semibold shadow-sm",
+                              "absolute right-[9%] top-[8.5%] z-[3] inline-flex rounded-md border px-1.5 py-0.5 text-[10px] font-semibold shadow-sm",
                               isMovieCover
                                 ? "border-emerald-900/40 bg-emerald-900/90 text-[#fffaf2]"
                                 : "border-[#c5b089]/80 bg-[#fffdf8]/95 text-[#5c4a35]",
@@ -985,11 +1041,24 @@ export function HitoyasumiChairPageClient({
                           </div>
                         </div>
                       </button>
+                      <button
+                        type="button"
+                        onClick={() => requestAlbumDelete(album)}
+                        className="inline-flex min-h-[36px] w-full items-center justify-center rounded-lg border border-[#d4b4a8]/90 bg-[#fff8f5]/92 px-2 text-[11px] font-medium text-[#8a4f3d] backdrop-blur-[2px] hover:bg-[#fff1eb]"
+                      >
+                        {LOG_HOUSE_HITOYASUMI_ALBUM_DELETE}
+                      </button>
                     </li>
                   );
                 })}
               </ul>
             )}
+
+            {albumDeleteNote && !albumDeleteTarget ? (
+              <p className="mt-3 rounded-xl border border-[#e4d5c0] bg-[#fffaf2]/9 px-3 py-2 text-xs text-[#8a4f3d]" role="status">
+                {albumDeleteNote}
+              </p>
+            ) : null}
 
             <div className="mt-auto pt-10" aria-hidden />
           </>
@@ -1258,7 +1327,57 @@ export function HitoyasumiChairPageClient({
           album={viewingAlbum}
           pages={viewingAlbumPages}
           onClose={closeAlbumViewer}
+          onDelete={() => requestAlbumDelete(viewingAlbum)}
         />
+      ) : null}
+
+      {albumDeleteTarget ? (
+        <div
+          className="fixed inset-0 z-[80] flex items-center justify-center bg-[#1a120c]/50 p-4 backdrop-blur-[2px]"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="hitoyasumi-album-delete-title"
+          onClick={cancelAlbumDelete}
+        >
+          <div
+            className="w-full max-w-sm rounded-2xl border border-[#e4d5c0]/95 bg-[#fffaf2] px-5 py-5 shadow-[0_16px_40px_rgba(40,28,16,0.28)]"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h2
+              id="hitoyasumi-album-delete-title"
+              className="text-base font-semibold tracking-wide text-[#3f3428]"
+            >
+              {LOG_HOUSE_HITOYASUMI_ALBUM_DELETE_CONFIRM_TITLE}
+            </h2>
+            <p className="mt-2 text-sm font-medium text-[#5c4a35]">{albumDeleteTarget.title}</p>
+            <p className="mt-3 text-sm leading-relaxed text-[#5c4a35]">
+              {LOG_HOUSE_HITOYASUMI_ALBUM_DELETE_CONFIRM_BODY}
+            </p>
+            <div className="mt-5 flex flex-col gap-2">
+              <button
+                type="button"
+                disabled={albumDeleteBusy}
+                onClick={() => void confirmAlbumDelete()}
+                className="inline-flex min-h-[44px] items-center justify-center rounded-xl border border-[#a45c48] bg-[#a45c48] px-4 text-sm font-medium text-white hover:bg-[#8f4f3e] disabled:opacity-60"
+              >
+                {albumDeleteBusy ? "削除しています…" : LOG_HOUSE_HITOYASUMI_DELETE_CONFIRM}
+              </button>
+              <button
+                type="button"
+                disabled={albumDeleteBusy}
+                onClick={cancelAlbumDelete}
+                className="inline-flex min-h-[44px] items-center justify-center rounded-xl border border-[#c4b49a] bg-[#faf3e8] px-4 text-sm font-medium text-[#5c4a35] hover:bg-[#f3ead8] disabled:opacity-60"
+              >
+                {LOG_HOUSE_HITOYASUMI_DELETE_CANCEL}
+              </button>
+            </div>
+            {albumDeleteNote ? (
+              <p className="mt-3 text-xs text-[#8a4f3d]" role="status">
+                {albumDeleteNote}
+              </p>
+            ) : null}
+          </div>
+        </div>
       ) : null}
 
       {helpOpen ? (
