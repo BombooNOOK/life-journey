@@ -9,7 +9,6 @@ import { useLogHouseRoomTimeTheme } from "@/hooks/useLogHouseRoomTimeOfDay";
 import type { LogHouseRoomTimeOfDay } from "@/lib/loghouse/logHouseRoomTimeTheme";
 import {
   collectHitoyasumiTags,
-  collectHitoyasumiYears,
   filterHitoyasumiMedia,
   filterHitoyasumiMediaByTags,
   filterHitoyasumiMediaByYearMonth,
@@ -19,6 +18,7 @@ import {
   listHitoyasumiMedia,
   type HitoyasumiMediaFilter,
 } from "@/lib/journal/moriLog/hitoyasumiMedia";
+import { journalListYearOptions } from "@/lib/journal/journalNav";
 import {
   defaultMoriLogAlbumTitle,
   type MoriLogAlbum,
@@ -447,7 +447,7 @@ export function HitoyasumiChairPageClient({
     return filterHitoyasumiMediaByYearMonth(byType, browseYear, browseMonth);
   }, [browseMonth, browseYear, filter, items]);
 
-  const browseYears = useMemo(() => collectHitoyasumiYears(items), [items]);
+  const browseYears = useMemo(() => journalListYearOptions(), []);
 
   const itemsById = useMemo(() => {
     const map = new Map<string, MoriLogMedia>();

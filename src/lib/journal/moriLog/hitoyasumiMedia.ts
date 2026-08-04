@@ -29,20 +29,34 @@ export function filterHitoyasumiMedia(
   });
 }
 
-/** 一覧にある作成年（新しい年→古い年） */
+/** あしあと日付キー（YYYY-MM-DD）から年月を取る */
+export function parseHitoyasumiEntryDateKey(
+  entryDateKey: string,
+): { year: number; month: number } | null {
+  const m = /^(\d{4})-(\d{2})(?:-\d{2})?$/.exec((entryDateKey || "").trim());
+  if (!m) return null;
+  const year = Number(m[1]);
+  const month = Number(m[2]);
+  if (!Number.isFinite(year) || !Number.isFinite(month) || month < 1 || month > 12) {
+    return null;
+  }
+  return { year, month };
+}
+
+/** 一覧にあるあしあと年（新しい年→古い年） */
 export function collectHitoyasumiYears(items: readonly MoriLogMedia[]): number[] {
   const years = new Set<number>();
   for (const item of items) {
     if (!isHitoyasumiBrowsableType(item.type)) continue;
-    const d = new Date(item.createdAt);
-    if (Number.isNaN(d.getTime())) continue;
-    years.add(d.getFullYear());
+    const parsed = parseHitoyasumiEntryDateKey(item.entryDateKey);
+    if (!parsed) continue;
+    years.add(parsed.year);
   }
   return [...years].sort((a, b) => b - a);
 }
 
 /**
- * 年・月で絞り込み。
+ * あしあと日付の年・月で絞り込み。
  * year 未指定なら全件。year のみならその年すべて。year+month ならその月。
  */
 export function filterHitoyasumiMediaByYearMonth(
@@ -51,12 +65,11 @@ export function filterHitoyasumiMediaByYearMonth(
   month: number | null,
 ): MoriLogMedia[] {
   if (year == null) return [...items];
-  const monthIndex = month == null ? null : month - 1;
   return items.filter((item) => {
-    const d = new Date(item.createdAt);
-    if (Number.isNaN(d.getTime())) return false;
-    if (d.getFullYear() !== year) return false;
-    if (monthIndex != null && d.getMonth() !== monthIndex) return false;
+    const parsed = parseHitoyasumiEntryDateKey(item.entryDateKey);
+    if (!parsed) return false;
+    if (parsed.year !== year) return false;
+    if (month != null && parsed.month !== month) return false;
     return true;
   });
 }

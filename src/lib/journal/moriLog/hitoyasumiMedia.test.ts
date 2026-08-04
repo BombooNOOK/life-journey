@@ -62,11 +62,11 @@ describe("hitoyasumiMedia", () => {
     expect(filterHitoyasumiMediaByTags(items, ["海", "散歩"]).map((i) => i.id)).toEqual(["1", "2"]);
   });
 
-  it("filters by year and optional month", () => {
+  it("filters by ashiato entry year and optional month", () => {
     const items = [
-      sample({ id: "1", type: "card_image", createdAt: "2026-07-10T00:00:00.000Z" }),
-      sample({ id: "2", type: "card_movie", createdAt: "2026-03-01T00:00:00.000Z" }),
-      sample({ id: "3", type: "card_image", createdAt: "2025-07-20T00:00:00.000Z" }),
+      sample({ id: "1", type: "card_image", entryDateKey: "2026-07-10" }),
+      sample({ id: "2", type: "card_movie", entryDateKey: "2026-03-01" }),
+      sample({ id: "3", type: "card_image", entryDateKey: "2025-07-20" }),
     ];
     expect(collectHitoyasumiYears(items)).toEqual([2026, 2025]);
     expect(filterHitoyasumiMediaByYearMonth(items, null, null).map((i) => i.id)).toEqual([
