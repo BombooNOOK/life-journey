@@ -18,7 +18,7 @@ export const LOG_HOUSE_HITOYASUMI_BACK_TO_ENTRANCE = "椅子の入口へ戻る" 
 /** 左上クローム：長丸ナビの短い表示名 */
 export const LOG_HOUSE_HITOYASUMI_NAV_LOGHOUSE_LABEL = "ログハウス" as const;
 
-export const LOG_HOUSE_HITOYASUMI_NAV_CHAIR_LABEL = "入口" as const;
+export const LOG_HOUSE_HITOYASUMI_NAV_CHAIR_LABEL = "椅子入口" as const;
 
 /** 左上クローム：読み上げ用ラベル付きアイコン */
 export const LOG_HOUSE_HITOYASUMI_ICON_BACK_LOGHOUSE_SRC =
