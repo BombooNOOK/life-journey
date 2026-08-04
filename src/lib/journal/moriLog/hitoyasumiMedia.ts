@@ -29,6 +29,38 @@ export function filterHitoyasumiMedia(
   });
 }
 
+/** 一覧にある作成年（新しい年→古い年） */
+export function collectHitoyasumiYears(items: readonly MoriLogMedia[]): number[] {
+  const years = new Set<number>();
+  for (const item of items) {
+    if (!isHitoyasumiBrowsableType(item.type)) continue;
+    const d = new Date(item.createdAt);
+    if (Number.isNaN(d.getTime())) continue;
+    years.add(d.getFullYear());
+  }
+  return [...years].sort((a, b) => b - a);
+}
+
+/**
+ * 年・月で絞り込み。
+ * year 未指定なら全件。year のみならその年すべて。year+month ならその月。
+ */
+export function filterHitoyasumiMediaByYearMonth(
+  items: readonly MoriLogMedia[],
+  year: number | null,
+  month: number | null,
+): MoriLogMedia[] {
+  if (year == null) return [...items];
+  const monthIndex = month == null ? null : month - 1;
+  return items.filter((item) => {
+    const d = new Date(item.createdAt);
+    if (Number.isNaN(d.getTime())) return false;
+    if (d.getFullYear() !== year) return false;
+    if (monthIndex != null && d.getMonth() !== monthIndex) return false;
+    return true;
+  });
+}
+
 /** 一覧・アルバム作成で使えるタグ候補（# なしで正規化） */
 export function collectHitoyasumiTags(items: readonly MoriLogMedia[]): string[] {
   const seen = new Set<string>();

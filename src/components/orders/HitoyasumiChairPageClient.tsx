@@ -9,8 +9,10 @@ import { useLogHouseRoomTimeTheme } from "@/hooks/useLogHouseRoomTimeOfDay";
 import type { LogHouseRoomTimeOfDay } from "@/lib/loghouse/logHouseRoomTimeTheme";
 import {
   collectHitoyasumiTags,
+  collectHitoyasumiYears,
   filterHitoyasumiMedia,
   filterHitoyasumiMediaByTags,
+  filterHitoyasumiMediaByYearMonth,
   formatHitoyasumiCreatedAt,
   hitoyasumiMediaTypeLabel,
   hitoyasumiTemplateLabel,
@@ -70,6 +72,10 @@ import {
   LOG_HOUSE_HITOYASUMI_BATCH_DELETE_NEED_SELECTION,
   LOG_HOUSE_HITOYASUMI_BG_BY_TIME,
   LOG_HOUSE_HITOYASUMI_CLOSE_DETAIL,
+  LOG_HOUSE_HITOYASUMI_DATE_FILTER_ALL,
+  LOG_HOUSE_HITOYASUMI_DATE_FILTER_LABEL,
+  LOG_HOUSE_HITOYASUMI_DATE_FILTER_MONTH,
+  LOG_HOUSE_HITOYASUMI_DATE_FILTER_YEAR,
   LOG_HOUSE_HITOYASUMI_DELETE,
   LOG_HOUSE_HITOYASUMI_DELETE_CANCEL,
   LOG_HOUSE_HITOYASUMI_DELETE_CONFIRM,
@@ -88,6 +94,7 @@ import {
   LOG_HOUSE_HITOYASUMI_ENTRY_SOUND_SRC,
   LOG_HOUSE_HITOYASUMI_FILTER_ALL,
   LOG_HOUSE_HITOYASUMI_FILTER_BAR_LABEL,
+  LOG_HOUSE_HITOYASUMI_FILTER_EMPTY,
   LOG_HOUSE_HITOYASUMI_FILTER_STILL,
   LOG_HOUSE_HITOYASUMI_FILTER_VIDEO,
   LOG_HOUSE_HITOYASUMI_HELP_BODY,
@@ -298,6 +305,8 @@ export function HitoyasumiChairPageClient({
     setScreen(initialScreen);
   }, [initialScreen]);
   const [filter, setFilter] = useState<HitoyasumiMediaFilter>("all");
+  const [browseYear, setBrowseYear] = useState<number | null>(null);
+  const [browseMonth, setBrowseMonth] = useState<number | null>(null);
   const [albumMode, setAlbumMode] = useState<AlbumMode>("shelf");
   const [albums, setAlbums] = useState<MoriLogAlbum[]>([]);
   const [albumsLoading, setAlbumsLoading] = useState(false);
@@ -434,7 +443,12 @@ export function HitoyasumiChairPageClient({
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [batchDelete, batchDeleteBusy, deleteConfirmOpen, helpOpen, movieSoonOpen]);
 
-  const visible = useMemo(() => filterHitoyasumiMedia(items, filter), [filter, items]);
+  const visible = useMemo(() => {
+    const byType = filterHitoyasumiMedia(items, filter);
+    return filterHitoyasumiMediaByYearMonth(byType, browseYear, browseMonth);
+  }, [browseMonth, browseYear, filter, items]);
+
+  const browseYears = useMemo(() => collectHitoyasumiYears(items), [items]);
 
   const itemsById = useMemo(() => {
     const map = new Map<string, MoriLogMedia>();
@@ -814,6 +828,27 @@ export function HitoyasumiChairPageClient({
     setFilter(next);
   }, []);
 
+  const selectBrowseYear = useCallback((raw: string) => {
+    if (raw === "") {
+      setBrowseYear(null);
+      setBrowseMonth(null);
+      return;
+    }
+    const year = Number(raw);
+    if (!Number.isFinite(year)) return;
+    setBrowseYear(year);
+  }, []);
+
+  const selectBrowseMonth = useCallback((raw: string) => {
+    if (raw === "") {
+      setBrowseMonth(null);
+      return;
+    }
+    const month = Number(raw);
+    if (!Number.isFinite(month) || month < 1 || month > 12) return;
+    setBrowseMonth(month);
+  }, []);
+
   const browseIsEmpty = !loading && items.length === 0;
   const showLoghouseOnlyChrome = screen === "entrance" || (screen === "browse" && browseIsEmpty);
   const showSubScreenDualNav =
@@ -895,17 +930,30 @@ export function HitoyasumiChairPageClient({
             )}
           </nav>
 
-          <button
-            type="button"
-            className={`inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border backdrop-blur-[3px] transition active:scale-[0.98] ${chromeButtonClass}`}
-            aria-label={LOG_HOUSE_HITOYASUMI_HELP_BUTTON_LABEL}
-            title={LOG_HOUSE_HITOYASUMI_HELP_BUTTON_LABEL}
-            aria-haspopup="dialog"
-            aria-expanded={helpOpen}
-            onClick={() => setHelpOpen(true)}
-          >
-            <HelpHintIcon />
-          </button>
+          <div className="flex shrink-0 items-center gap-1.5">
+            {screen === "browse" ? (
+              <button
+                type="button"
+                onClick={requestBrowseBatchDelete}
+                aria-label={LOG_HOUSE_HITOYASUMI_BATCH_DELETE_ARIA}
+                title={LOG_HOUSE_HITOYASUMI_BATCH_DELETE_ARIA}
+                className={`inline-flex h-10 w-10 items-center justify-center rounded-full border backdrop-blur-[3px] transition active:scale-[0.98] ${chromeButtonClass}`}
+              >
+                <TrashIcon className="h-5 w-5" />
+              </button>
+            ) : null}
+            <button
+              type="button"
+              className={`inline-flex h-10 w-10 items-center justify-center rounded-full border backdrop-blur-[3px] transition active:scale-[0.98] ${chromeButtonClass}`}
+              aria-label={LOG_HOUSE_HITOYASUMI_HELP_BUTTON_LABEL}
+              title={LOG_HOUSE_HITOYASUMI_HELP_BUTTON_LABEL}
+              aria-haspopup="dialog"
+              aria-expanded={helpOpen}
+              onClick={() => setHelpOpen(true)}
+            >
+              <HelpHintIcon />
+            </button>
+          </div>
         </div>
 
         {screen === "entrance" ? (
@@ -940,20 +988,9 @@ export function HitoyasumiChairPageClient({
         ) : screen === "browse" ? (
           <>
             <div className="mt-4" role="tablist" aria-label={LOG_HOUSE_HITOYASUMI_FILTER_BAR_LABEL}>
-              <div className="mb-2 flex items-center justify-between gap-2">
-                <p className="text-[11px] font-medium text-[#fffaf2]/85 drop-shadow-[0_1px_2px_rgba(0,0,0,0.4)]">
-                  {LOG_HOUSE_HITOYASUMI_FILTER_BAR_LABEL}
-                </p>
-                <button
-                  type="button"
-                  onClick={requestBrowseBatchDelete}
-                  aria-label={LOG_HOUSE_HITOYASUMI_BATCH_DELETE_ARIA}
-                  title={LOG_HOUSE_HITOYASUMI_BATCH_DELETE_ARIA}
-                  className={`inline-flex h-10 w-10 items-center justify-center rounded-full border backdrop-blur-[3px] transition active:scale-[0.98] ${chromeButtonClass}`}
-                >
-                  <TrashIcon className="h-5 w-5" />
-                </button>
-              </div>
+              <p className="mb-2 text-[11px] font-medium text-[#fffaf2]/85 drop-shadow-[0_1px_2px_rgba(0,0,0,0.4)]">
+                {LOG_HOUSE_HITOYASUMI_FILTER_BAR_LABEL}
+              </p>
               <div className="flex items-center gap-1.5">
                 <button
                   type="button"
@@ -983,6 +1020,50 @@ export function HitoyasumiChairPageClient({
                   {LOG_HOUSE_HITOYASUMI_FILTER_VIDEO}
                 </button>
               </div>
+
+              <div className="mt-3">
+                <p className="mb-2 text-[11px] font-medium text-[#fffaf2]/85 drop-shadow-[0_1px_2px_rgba(0,0,0,0.4)]">
+                  {LOG_HOUSE_HITOYASUMI_DATE_FILTER_LABEL}
+                </p>
+                <div className="flex items-center gap-2">
+                  <label className="flex min-w-0 flex-1 flex-col gap-1">
+                    <span className="sr-only">{LOG_HOUSE_HITOYASUMI_DATE_FILTER_YEAR}</span>
+                    <select
+                      value={browseYear == null ? "" : String(browseYear)}
+                      onChange={(e) => selectBrowseYear(e.target.value)}
+                      className="min-h-10 w-full rounded-full border border-[#e4d5c0]/80 bg-[#fffaf2]/92 px-3 text-sm font-medium text-[#3f3428] shadow-sm outline-none backdrop-blur-[2px]"
+                      aria-label={LOG_HOUSE_HITOYASUMI_DATE_FILTER_YEAR}
+                    >
+                      <option value="">{LOG_HOUSE_HITOYASUMI_DATE_FILTER_ALL}</option>
+                      {browseYears.map((year) => (
+                        <option key={year} value={year}>
+                          {year}
+                          {LOG_HOUSE_HITOYASUMI_DATE_FILTER_YEAR}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <label className="flex min-w-0 flex-1 flex-col gap-1">
+                    <span className="sr-only">{LOG_HOUSE_HITOYASUMI_DATE_FILTER_MONTH}</span>
+                    <select
+                      value={browseMonth == null ? "" : String(browseMonth)}
+                      onChange={(e) => selectBrowseMonth(e.target.value)}
+                      disabled={browseYear == null}
+                      className="min-h-10 w-full rounded-full border border-[#e4d5c0]/80 bg-[#fffaf2]/92 px-3 text-sm font-medium text-[#3f3428] shadow-sm outline-none backdrop-blur-[2px] disabled:cursor-not-allowed disabled:opacity-55"
+                      aria-label={LOG_HOUSE_HITOYASUMI_DATE_FILTER_MONTH}
+                    >
+                      <option value="">{LOG_HOUSE_HITOYASUMI_DATE_FILTER_ALL}</option>
+                      {Array.from({ length: 12 }, (_, i) => i + 1).map((month) => (
+                        <option key={month} value={month}>
+                          {month}
+                          {LOG_HOUSE_HITOYASUMI_DATE_FILTER_MONTH}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                </div>
+              </div>
+
               {browseCheckedIds.length > 0 ? (
                 <p className="mt-2 text-center text-[11px] font-medium text-[#fffaf2]/9 drop-shadow-[0_1px_2px_rgba(0,0,0,0.4)]">
                   {LOG_HOUSE_HITOYASUMI_ALBUM_SELECTED_COUNT(browseCheckedIds.length)}
@@ -1001,16 +1082,24 @@ export function HitoyasumiChairPageClient({
               </p>
             ) : visible.length === 0 ? (
               <div className="mt-8 rounded-[1.35rem] border border-[#e4d5c0]/75 bg-[#fffaf2]/82 px-5 py-8 text-center shadow-[0_12px_32px_rgba(40,28,16,0.16)] backdrop-blur-[2px]">
-                <p className="text-base font-semibold text-[#3f3428]">{LOG_HOUSE_HITOYASUMI_EMPTY_TITLE}</p>
-                <p className="mt-3 whitespace-pre-wrap text-sm leading-relaxed text-[#6e5c48]">
-                  {LOG_HOUSE_HITOYASUMI_EMPTY_BODY}
-                </p>
-                <Link
-                  href={backHref}
-                  className="mt-5 inline-flex min-h-[44px] items-center justify-center rounded-xl border border-[#c5b089]/70 bg-[#f3ead9]/90 px-4 text-sm font-semibold text-[#3f3428]"
-                >
-                  ログハウスへ戻る
-                </Link>
+                {items.length === 0 ? (
+                  <>
+                    <p className="text-base font-semibold text-[#3f3428]">{LOG_HOUSE_HITOYASUMI_EMPTY_TITLE}</p>
+                    <p className="mt-3 whitespace-pre-wrap text-sm leading-relaxed text-[#6e5c48]">
+                      {LOG_HOUSE_HITOYASUMI_EMPTY_BODY}
+                    </p>
+                    <Link
+                      href={backHref}
+                      className="mt-5 inline-flex min-h-[44px] items-center justify-center rounded-xl border border-[#c5b089]/70 bg-[#f3ead9]/90 px-4 text-sm font-semibold text-[#3f3428]"
+                    >
+                      ログハウスへ戻る
+                    </Link>
+                  </>
+                ) : (
+                  <p className="whitespace-pre-wrap text-sm leading-relaxed text-[#6e5c48]">
+                    {LOG_HOUSE_HITOYASUMI_FILTER_EMPTY}
+                  </p>
+                )}
               </div>
             ) : (
               <ul className="mt-5 grid grid-cols-2 gap-2.5 sm:gap-3">
