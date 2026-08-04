@@ -132,8 +132,6 @@ export const LOG_HOUSE_HITOYASUMI_DATE_FILTER_YEAR = "年" as const;
 
 export const LOG_HOUSE_HITOYASUMI_DATE_FILTER_MONTH = "月" as const;
 
-export const LOG_HOUSE_HITOYASUMI_DATE_FILTER_ALL = "すべて" as const;
-
 export const LOG_HOUSE_HITOYASUMI_FILTER_EMPTY =
   "この条件に合う森ログは見つかりませんでした。\n種類や日付の条件を変えてみてください。" as const;
 

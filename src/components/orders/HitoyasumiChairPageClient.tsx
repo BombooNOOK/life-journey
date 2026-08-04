@@ -72,7 +72,6 @@ import {
   LOG_HOUSE_HITOYASUMI_BATCH_DELETE_NEED_SELECTION,
   LOG_HOUSE_HITOYASUMI_BG_BY_TIME,
   LOG_HOUSE_HITOYASUMI_CLOSE_DETAIL,
-  LOG_HOUSE_HITOYASUMI_DATE_FILTER_ALL,
   LOG_HOUSE_HITOYASUMI_DATE_FILTER_LABEL,
   LOG_HOUSE_HITOYASUMI_DATE_FILTER_MONTH,
   LOG_HOUSE_HITOYASUMI_DATE_FILTER_YEAR,
@@ -1034,7 +1033,7 @@ export function HitoyasumiChairPageClient({
                       className="min-h-10 w-full rounded-full border border-[#e4d5c0]/80 bg-[#fffaf2]/92 px-3 text-sm font-medium text-[#3f3428] shadow-sm outline-none backdrop-blur-[2px]"
                       aria-label={LOG_HOUSE_HITOYASUMI_DATE_FILTER_YEAR}
                     >
-                      <option value="">{LOG_HOUSE_HITOYASUMI_DATE_FILTER_ALL}</option>
+                      <option value="">{LOG_HOUSE_HITOYASUMI_DATE_FILTER_YEAR}</option>
                       {browseYears.map((year) => (
                         <option key={year} value={year}>
                           {year}
@@ -1052,7 +1051,7 @@ export function HitoyasumiChairPageClient({
                       className="min-h-10 w-full rounded-full border border-[#e4d5c0]/80 bg-[#fffaf2]/92 px-3 text-sm font-medium text-[#3f3428] shadow-sm outline-none backdrop-blur-[2px] disabled:cursor-not-allowed disabled:opacity-55"
                       aria-label={LOG_HOUSE_HITOYASUMI_DATE_FILTER_MONTH}
                     >
-                      <option value="">{LOG_HOUSE_HITOYASUMI_DATE_FILTER_ALL}</option>
+                      <option value="">{LOG_HOUSE_HITOYASUMI_DATE_FILTER_MONTH}</option>
                       {Array.from({ length: 12 }, (_, i) => i + 1).map((month) => (
                         <option key={month} value={month}>
                           {month}
