@@ -102,6 +102,8 @@ import {
   LOG_HOUSE_HITOYASUMI_MEDIA_DELETE_CONFIRM_TITLE_MULTI,
   LOG_HOUSE_HITOYASUMI_MOVIE_SOON_BODY,
   LOG_HOUSE_HITOYASUMI_MOVIE_SOON_TITLE,
+  LOG_HOUSE_HITOYASUMI_NAV_CHAIR_LABEL,
+  LOG_HOUSE_HITOYASUMI_NAV_LOGHOUSE_LABEL,
   LOG_HOUSE_HITOYASUMI_NO_PREVIEW,
   LOG_HOUSE_HITOYASUMI_PAGE_TITLE,
   LOG_HOUSE_HITOYASUMI_SAVE_DEVICE,
@@ -196,13 +198,12 @@ const ENTRY_ICON_TONE =
 const ENTRY_ICON_LOCKED_TONE =
   "drop-shadow-[0_6px_14px_rgba(40,28,16,0.12)] opacity-[0.42] brightness-[1.12] saturate-[0.62] contrast-[0.92]";
 
-/** ログハウス室内系（庭など）と同じ戻るボタンサイズ */
-const CHROME_BACK_CLASS =
-  "inline-flex w-fit min-h-[40px] items-center rounded-full border px-3 text-xs font-medium backdrop-blur-[3px] transition active:scale-[0.98]";
+/** Music風：長丸の中にアイコン＋短いラベル */
+const CHROME_NAV_PILL_CLASS =
+  "inline-flex items-stretch gap-0.5 rounded-full border px-1 py-1 backdrop-blur-[3px] shadow-sm";
 
-/** アイコンだけの戻り（ヘルプと同サイズの丸） */
-const CHROME_ICON_BACK_CLASS =
-  "inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border backdrop-blur-[3px] transition active:scale-[0.98]";
+const CHROME_NAV_ITEM_CLASS =
+  "inline-flex min-w-[3.35rem] flex-col items-center justify-center gap-0.5 rounded-full px-2.5 py-1.5 transition active:scale-[0.98] hover:bg-black/[0.04]";
 
 function ChromeBackIcon({
   src,
@@ -213,7 +214,7 @@ function ChromeBackIcon({
 }) {
   return (
     // eslint-disable-next-line @next/next/no-img-element
-    <img src={src} alt={alt} className="h-6 w-6 object-contain" draggable={false} />
+    <img src={src} alt={alt} className="h-5 w-5 object-contain" draggable={false} />
   );
 }
 
@@ -847,38 +848,52 @@ export function HitoyasumiChairPageClient({
         className={`relative z-10 mx-auto flex w-full max-w-md flex-col px-3 pb-8 pt-4 sm:px-4 ${shellMinClass}`}
       >
         <div className="flex items-start justify-between gap-3">
-          {showLoghouseOnlyChrome ? (
-            <Link
-              href={backHref}
-              aria-label={LOG_HOUSE_RETURN_TO_LABEL}
-              title={LOG_HOUSE_RETURN_TO_LABEL}
-              className={`${CHROME_ICON_BACK_CLASS} ${chromeButtonClass}`}
-            >
-              <ChromeBackIcon src={LOG_HOUSE_HITOYASUMI_ICON_BACK_LOGHOUSE_SRC} />
-            </Link>
-          ) : (
-            <div className="flex min-w-0 items-start gap-1.5">
-              <button
-                type="button"
-                onClick={backToEntrance}
-                aria-label={LOG_HOUSE_HITOYASUMI_BACK_TO_ENTRANCE}
-                title={LOG_HOUSE_HITOYASUMI_BACK_TO_ENTRANCE}
-                className={`${CHROME_ICON_BACK_CLASS} ${chromeButtonClass}`}
+          <nav
+            aria-label="場所を移る"
+            className={`${CHROME_NAV_PILL_CLASS} ${chromeButtonClass}`}
+          >
+            {showLoghouseOnlyChrome ? (
+              <Link
+                href={backHref}
+                aria-label={LOG_HOUSE_RETURN_TO_LABEL}
+                title={LOG_HOUSE_RETURN_TO_LABEL}
+                className={CHROME_NAV_ITEM_CLASS}
               >
-                <ChromeBackIcon src={LOG_HOUSE_HITOYASUMI_ICON_BACK_CHAIR_SRC} />
-              </button>
-              {showSubScreenDualNav ? (
-                <Link
-                  href={backHref}
-                  aria-label={LOG_HOUSE_RETURN_TO_LABEL}
-                  title={LOG_HOUSE_RETURN_TO_LABEL}
-                  className={`${CHROME_ICON_BACK_CLASS} ${chromeButtonClass}`}
+                <ChromeBackIcon src={LOG_HOUSE_HITOYASUMI_ICON_BACK_LOGHOUSE_SRC} />
+                <span className="text-[9px] font-semibold leading-none tracking-[0.02em]">
+                  {LOG_HOUSE_HITOYASUMI_NAV_LOGHOUSE_LABEL}
+                </span>
+              </Link>
+            ) : (
+              <>
+                <button
+                  type="button"
+                  onClick={backToEntrance}
+                  aria-label={LOG_HOUSE_HITOYASUMI_BACK_TO_ENTRANCE}
+                  title={LOG_HOUSE_HITOYASUMI_BACK_TO_ENTRANCE}
+                  className={CHROME_NAV_ITEM_CLASS}
                 >
-                  <ChromeBackIcon src={LOG_HOUSE_HITOYASUMI_ICON_BACK_LOGHOUSE_SRC} />
-                </Link>
-              ) : null}
-            </div>
-          )}
+                  <ChromeBackIcon src={LOG_HOUSE_HITOYASUMI_ICON_BACK_CHAIR_SRC} />
+                  <span className="text-[9px] font-semibold leading-none tracking-[0.02em]">
+                    {LOG_HOUSE_HITOYASUMI_NAV_CHAIR_LABEL}
+                  </span>
+                </button>
+                {showSubScreenDualNav ? (
+                  <Link
+                    href={backHref}
+                    aria-label={LOG_HOUSE_RETURN_TO_LABEL}
+                    title={LOG_HOUSE_RETURN_TO_LABEL}
+                    className={CHROME_NAV_ITEM_CLASS}
+                  >
+                    <ChromeBackIcon src={LOG_HOUSE_HITOYASUMI_ICON_BACK_LOGHOUSE_SRC} />
+                    <span className="text-[9px] font-semibold leading-none tracking-[0.02em]">
+                      {LOG_HOUSE_HITOYASUMI_NAV_LOGHOUSE_LABEL}
+                    </span>
+                  </Link>
+                ) : null}
+              </>
+            )}
+          </nav>
 
           <button
             type="button"
