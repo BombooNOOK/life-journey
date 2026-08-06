@@ -1,5 +1,12 @@
 /**
- * device_movie_basic の 1 フレーム合成（背景→動画cover→前面→文字）。
+ * device_movie_basic の 1 フレーム合成。
+ *
+ * 描画順:
+ * 1. 下地（生成り）→ 背景
+ * 2. 応急: 動画窓を生成りで塗る（内枠の土台）
+ * 3. 動画／ポスターを videoClipRect で角丸クリップ（窓より内側）
+ * 4. 前面オーバーレイ（内枠の上）
+ * 5. タイトル・日付
  */
 
 import {
@@ -11,6 +18,7 @@ import {
   resolveDeviceMovieCoverDraw,
   scaleDeviceMovieBasicLayout,
   type DeviceMovieDecorationVariant,
+  type DeviceMovieRoundedRect,
   type DeviceMovieTemplateLayout,
 } from "@/lib/journal/moriLog/deviceMovieBasicTemplate";
 
@@ -55,9 +63,9 @@ export async function loadDeviceMovieBasicAssets(
   return { background, foreground, variant };
 }
 
-function clipRoundedRect(
+function pathRoundedRect(
   ctx: CanvasRenderingContext2D,
-  rect: { x: number; y: number; width: number; height: number; borderRadius: number },
+  rect: DeviceMovieRoundedRect,
 ): void {
   const r = Math.min(rect.borderRadius, rect.width / 2, rect.height / 2);
   const { x, y, width: w, height: h } = rect;
@@ -68,7 +76,24 @@ function clipRoundedRect(
   ctx.arcTo(x, y + h, x, y, r);
   ctx.arcTo(x, y, x + w, y, r);
   ctx.closePath();
+}
+
+function clipRoundedRect(
+  ctx: CanvasRenderingContext2D,
+  rect: DeviceMovieRoundedRect,
+): void {
+  pathRoundedRect(ctx, rect);
   ctx.clip();
+}
+
+function fillRoundedRect(
+  ctx: CanvasRenderingContext2D,
+  rect: DeviceMovieRoundedRect,
+  color: string,
+): void {
+  pathRoundedRect(ctx, rect);
+  ctx.fillStyle = color;
+  ctx.fill();
 }
 
 function ellipsizeToWidth(
@@ -96,7 +121,7 @@ export type PaintDeviceMovieBasicFrameInput = {
   assets: DeviceMovieBasicAssets;
   /**
    * 動画ソースを描画するコールバック。
-   * フレーム座標系（0,0=動画枠左上）で cover 済み座標が渡る。
+   * フレーム座標系（0,0=videoClipRect 左上）で cover 済み座標が渡る。
    */
   drawVideo: (args: {
     ctx: CanvasRenderingContext2D;
@@ -118,16 +143,22 @@ export function paintDeviceMovieBasicFrame(
   input: PaintDeviceMovieBasicFrameInput,
 ): void {
   const { ctx, layout, assets } = input;
-  const { canvasWidth: w, canvasHeight: h, videoRect } = layout;
+  const { canvasWidth: w, canvasHeight: h, videoRect, videoClipRect, videoMatte } =
+    layout;
 
   ctx.save();
-  ctx.fillStyle = "#f2e8cf";
+  ctx.fillStyle = videoMatte.color;
   ctx.fillRect(0, 0, w, h);
   ctx.drawImage(assets.background, 0, 0, w, h);
 
+  // 応急内枠の土台（窓全体を生成り）。widthPx=0 なら省略。
+  if (videoMatte.widthPx > 0) {
+    fillRoundedRect(ctx, videoRect, videoMatte.color);
+  }
+
   const cover = resolveDeviceMovieCoverDraw({
-    frameWidth: videoRect.width,
-    frameHeight: videoRect.height,
+    frameWidth: videoClipRect.width,
+    frameHeight: videoClipRect.height,
     sourceWidth: input.sourceWidth,
     sourceHeight: input.sourceHeight,
     focusX: input.focusX,
@@ -136,8 +167,8 @@ export function paintDeviceMovieBasicFrame(
   });
 
   ctx.save();
-  clipRoundedRect(ctx, videoRect);
-  ctx.translate(videoRect.x, videoRect.y);
+  clipRoundedRect(ctx, videoClipRect);
+  ctx.translate(videoClipRect.x, videoClipRect.y);
   input.drawVideo({
     ctx,
     dx: cover.dx,
@@ -147,6 +178,7 @@ export function paintDeviceMovieBasicFrame(
   });
   ctx.restore();
 
+  // 前面オーバーレイは動画・内枠の上（黒透過の強化はしない）
   ctx.drawImage(assets.foreground, 0, 0, w, h);
 
   const titleRaw = input.title.trim() || defaultTitle();
@@ -170,8 +202,12 @@ export function paintDeviceMovieBasicFrame(
 export function createDeviceMovieBasicLayoutForCanvas(options: {
   width: number;
   height: number;
+  /** テスト／恒久素材差し替え確認用。省略時はテンプレ定数 */
+  edgePadDesignPx?: number;
 }): DeviceMovieTemplateLayout {
-  return scaleDeviceMovieBasicLayout(options.width, options.height);
+  return scaleDeviceMovieBasicLayout(options.width, options.height, {
+    edgePadDesignPx: options.edgePadDesignPx,
+  });
 }
 
 /** 静止画ソース（ポスター・テスト）向けの簡易描画 */

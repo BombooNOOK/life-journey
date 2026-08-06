@@ -1,6 +1,11 @@
 /**
  * device_movie_basic（森の映写便り）レイアウト・cover・装飾バリアント。
  * 素材設計サイズ 819×1024（≒4:5）の正規化座標を、出力キャンバスへスケールする。
+ *
+ * 前面オーバーレイ差し替え時は次だけを見直す:
+ * - {@link deviceMovieBasicForegroundPath}
+ * - {@link DEVICE_MOVIE_BASIC_LAYOUT_NORM}.videoRect（窓座標）
+ * - {@link DEVICE_MOVIE_BASIC_VIDEO_EDGE_PAD_DESIGN_PX}（真の透過PNGなら 0）
  */
 
 export const DEVICE_MOVIE_BASIC_TEMPLATE_ID = "device_movie_basic" as const;
@@ -32,8 +37,21 @@ export const DEVICE_MOVIE_BASIC_CANVAS_APPLE = {
 } as const;
 
 /**
+ * 応急: 動画クリップを窓より内側へ縮める量（制作 819px 基準）。
+ * 黒マット焼き直しオーバーレイのギザ・黒縁が見えるときだけ >0。
+ * 真の透過PNGへ差し替えたら **0** にする。
+ */
+export const DEVICE_MOVIE_BASIC_VIDEO_EDGE_PAD_DESIGN_PX = 5 as const;
+
+/**
+ * 応急内枠（生成り）色。紙／キャンバス下地に近い色。
+ * pad=0 のときは描画しない。
+ */
+export const DEVICE_MOVIE_BASIC_VIDEO_MATTE_COLOR = "#f2e8cf" as const;
+
+/**
  * 制作素材（819×1024）基準の正規化レイアウト。
- * 動画枠は foreground の透過窓（黒マット焼き直し後）に合わせる。
+ * 動画枠は foreground の透過窓に合わせる（差し替え時はここを更新）。
  * タイトル欄は背景3種の共通枠。文字開始は小物最長（右端≈0.203）より右。
  */
 export const DEVICE_MOVIE_BASIC_LAYOUT_NORM = {
@@ -68,10 +86,26 @@ export type DeviceMovieRect = {
   height: number;
 };
 
+export type DeviceMovieRoundedRect = DeviceMovieRect & { borderRadius: number };
+
 export type DeviceMovieTemplateLayout = {
   canvasWidth: number;
   canvasHeight: number;
-  videoRect: DeviceMovieRect & { borderRadius: number };
+  /** 前面オーバーレイの動画窓に対応する基準枠 */
+  videoRect: DeviceMovieRoundedRect;
+  /**
+   * 実際に動画／ポスターをクリップする枠（videoRect より内側）。
+   * edgePad=0 なら videoRect と同一。
+   */
+  videoClipRect: DeviceMovieRoundedRect;
+  /**
+   * 応急内枠。widthPx=0 なら塗りなし（恒久透過PNG向け）。
+   * 前面オーバーレイより下・動画より上に描く（土台塗り→動画の順でリングになる）。
+   */
+  videoMatte: {
+    widthPx: number;
+    color: string;
+  };
   titleRect: DeviceMovieRect;
   text: {
     left: number;
@@ -100,6 +134,7 @@ export function deviceMovieBasicBackgroundPath(
   return `${DEVICE_MOVIE_BASIC_ASSET_DIR}/background-${variant}.png`;
 }
 
+/** 前面フレーム。真の透過PNG差し替え時はパス／ファイル名だけ差し替えればよい。 */
 export function deviceMovieBasicForegroundPath(): string {
   return `${DEVICE_MOVIE_BASIC_ASSET_DIR}/foreground-overlay.png`;
 }
@@ -135,21 +170,59 @@ export function resolveDeviceMovieBasicCanvasSize(options: {
     : { ...DEVICE_MOVIE_BASIC_CANVAS_DESKTOP };
 }
 
+/**
+ * 動画窓からクリップ枠を求める。
+ * padPx=0 なら同一（恒久透過PNG向け）。
+ */
+export function insetDeviceMovieRoundedRect(
+  rect: DeviceMovieRoundedRect,
+  padPx: number,
+): DeviceMovieRoundedRect {
+  const pad = Math.max(0, Math.round(padPx));
+  if (pad <= 0) return { ...rect };
+  const width = Math.max(1, rect.width - pad * 2);
+  const height = Math.max(1, rect.height - pad * 2);
+  const borderRadius = Math.max(0, rect.borderRadius - pad);
+  return {
+    x: rect.x + pad,
+    y: rect.y + pad,
+    width,
+    height,
+    borderRadius,
+  };
+}
+
 export function scaleDeviceMovieBasicLayout(
   canvasWidth: number,
   canvasHeight: number,
+  options?: { edgePadDesignPx?: number },
 ): DeviceMovieTemplateLayout {
   const n = DEVICE_MOVIE_BASIC_LAYOUT_NORM;
   const round = (v: number) => Math.max(1, Math.round(v));
+  const edgePadDesign =
+    options?.edgePadDesignPx ?? DEVICE_MOVIE_BASIC_VIDEO_EDGE_PAD_DESIGN_PX;
+  const edgePadPx = Math.max(
+    0,
+    Math.round((edgePadDesign * canvasWidth) / n.designWidth),
+  );
+
+  const videoRect: DeviceMovieRoundedRect = {
+    x: Math.round(n.videoRect.x * canvasWidth),
+    y: Math.round(n.videoRect.y * canvasHeight),
+    width: round(n.videoRect.width * canvasWidth),
+    height: round(n.videoRect.height * canvasHeight),
+    borderRadius: round(n.videoRect.borderRadius * canvasWidth),
+  };
+  const videoClipRect = insetDeviceMovieRoundedRect(videoRect, edgePadPx);
+
   return {
     canvasWidth,
     canvasHeight,
-    videoRect: {
-      x: Math.round(n.videoRect.x * canvasWidth),
-      y: Math.round(n.videoRect.y * canvasHeight),
-      width: round(n.videoRect.width * canvasWidth),
-      height: round(n.videoRect.height * canvasHeight),
-      borderRadius: round(n.videoRect.borderRadius * canvasWidth),
+    videoRect,
+    videoClipRect,
+    videoMatte: {
+      widthPx: edgePadPx,
+      color: DEVICE_MOVIE_BASIC_VIDEO_MATTE_COLOR,
     },
     titleRect: {
       x: Math.round(n.titleRect.x * canvasWidth),

@@ -3,8 +3,11 @@ import { describe, expect, it } from "vitest";
 import {
   DEVICE_MOVIE_BASIC_CANVAS_APPLE,
   DEVICE_MOVIE_BASIC_CANVAS_DESKTOP,
+  DEVICE_MOVIE_BASIC_LAYOUT_NORM,
+  DEVICE_MOVIE_BASIC_VIDEO_EDGE_PAD_DESIGN_PX,
   DEVICE_MOVIE_DECORATION_FALLBACK,
   formatDeviceMovieDisplayDate,
+  insetDeviceMovieRoundedRect,
   pickDeviceMovieDecorationVariant,
   resolveDeviceMovieBasicCanvasSize,
   resolveDeviceMovieCoverDraw,
@@ -31,6 +34,31 @@ describe("deviceMovieBasicTemplate", () => {
     expect(layout.videoRect.height).toBeGreaterThan(900);
     expect(layout.videoRect.borderRadius).toBeGreaterThan(50);
     expect(layout.text.left).toBeGreaterThan(layout.titleRect.x);
+  });
+
+  it("insets video clip and enables kinari matte by default", () => {
+    const layout = scaleDeviceMovieBasicLayout(1080, 1350);
+    const expectedPad = Math.round(
+      (DEVICE_MOVIE_BASIC_VIDEO_EDGE_PAD_DESIGN_PX * 1080) /
+        DEVICE_MOVIE_BASIC_LAYOUT_NORM.designWidth,
+    );
+    expect(expectedPad).toBeGreaterThanOrEqual(4);
+    expect(expectedPad).toBeLessThanOrEqual(8);
+    expect(layout.videoMatte.widthPx).toBe(expectedPad);
+    expect(layout.videoClipRect.x).toBe(layout.videoRect.x + expectedPad);
+    expect(layout.videoClipRect.y).toBe(layout.videoRect.y + expectedPad);
+    expect(layout.videoClipRect.width).toBe(layout.videoRect.width - expectedPad * 2);
+    expect(layout.videoClipRect.height).toBe(layout.videoRect.height - expectedPad * 2);
+    expect(layout.videoClipRect.borderRadius).toBe(
+      Math.max(0, layout.videoRect.borderRadius - expectedPad),
+    );
+  });
+
+  it("allows edge pad 0 for true transparent overlay swap", () => {
+    const layout = scaleDeviceMovieBasicLayout(1080, 1350, { edgePadDesignPx: 0 });
+    expect(layout.videoMatte.widthPx).toBe(0);
+    expect(layout.videoClipRect).toEqual(layout.videoRect);
+    expect(insetDeviceMovieRoundedRect(layout.videoRect, 0)).toEqual(layout.videoRect);
   });
 
   it("covers landscape video by cutting left/right (center)", () => {

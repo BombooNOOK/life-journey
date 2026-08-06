@@ -7,7 +7,10 @@
 | `background-lantern.png` | 背景＋ランタン小物 |
 | `background-owl.png` | 背景＋フクロウ小物 |
 | `background-quill.png` | 背景＋羽ペン小物 |
-| `foreground-overlay.png` | 前面フレーム・テープ（真のアルファ） |
+| `foreground-overlay.png` | 前面フレーム・テープ |
+
+パス参照: `deviceMovieBasicForegroundPath()` / `deviceMovieBasicBackgroundPath()`  
+窓座標: `DEVICE_MOVIE_BASIC_LAYOUT_NORM.videoRect`
 
 ## 素材確認メモ（2026-08-06）
 
@@ -16,6 +19,17 @@
 - 制作室納品の `foreground-overlay` は **RGB・実質 JPEG（jfif）** で、
   動画窓が黒塗り・アルファ無しだった
 - プロジェクト配置時に黒（R,G,B ≤ 8）を透明化した **RGBA PNG** を生成済み
-  （ランタイムのクロマキーは行わない）
+  （ランタイムのクロマキーは行わない。紙枠まで欠ける強い透明化はしない）
+
+## 応急: 角の黒ギザ対策
+
+黒マット焼き直し透過の角にギザ・黒縁が残る場合:
+
+1. 動画クリップを窓より内側へ縮める（`DEVICE_MOVIE_BASIC_VIDEO_EDGE_PAD_DESIGN_PX`、既定 5）
+2. 窓とクリップの差分を生成り色（`DEVICE_MOVIE_BASIC_VIDEO_MATTE_COLOR`）で塗る
+3. 前面オーバーレイは動画・内枠の上にそのまま重ねる
+
+**真の透過PNGへ差し替えたら** `DEVICE_MOVIE_BASIC_VIDEO_EDGE_PAD_DESIGN_PX = 0` にする。  
+内枠幅も 0 になり、クリップ枠は窓と一致する。
 
 正規化レイアウト定義は `src/lib/journal/moriLog/deviceMovieBasicTemplate.ts` を参照。
