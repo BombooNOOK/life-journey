@@ -46,6 +46,8 @@ import {
   DEVICE_MOVIE_DONE_TO_BROWSE,
   DEVICE_MOVIE_DRAFT_BADGE,
   DEVICE_MOVIE_DRAFT_BGM_LOCKED,
+  DEVICE_MOVIE_DRAFT_DELETE,
+  DEVICE_MOVIE_DRAFT_DELETE_DONE,
   DEVICE_MOVIE_DRAFT_NEW,
   DEVICE_MOVIE_DRAFT_REPLACE_BODY,
   DEVICE_MOVIE_DRAFT_REPLACE_CANCEL,
@@ -53,7 +55,9 @@ import {
   DEVICE_MOVIE_DRAFT_REPLACE_TITLE,
   DEVICE_MOVIE_DRAFT_RESUME,
   DEVICE_MOVIE_DRAFT_SAVE_FAIL,
+  DEVICE_MOVIE_DRAFT_SAVED_LATER_HINT,
   DEVICE_MOVIE_DRAFT_SAVING,
+  DEVICE_MOVIE_BTN_SAVE_DRAFT,
   DEVICE_MOVIE_FIRST_FREE_BODY,
   DEVICE_MOVIE_NEXT,
   DEVICE_MOVIE_PAID_BODY,
@@ -171,6 +175,7 @@ export function HitoyasumiDeviceMovieComposer({
   const [draftGatePosterUrl, setDraftGatePosterUrl] = useState<string | null>(null);
   const [draftBusy, setDraftBusy] = useState(false);
   const [draftError, setDraftError] = useState<string | null>(null);
+  const [draftHint, setDraftHint] = useState<string | null>(null);
   const [hideDraftGate, setHideDraftGate] = useState(false);
   const [replaceConfirmOpen, setReplaceConfirmOpen] = useState(false);
   const saveLockRef = useRef(false);
@@ -178,7 +183,7 @@ export function HitoyasumiDeviceMovieComposer({
   /** モーダル開閉直後でも確実に参照できる下書き ID */
   const savedDraftIdRef = useRef<string | null>(null);
   /** 入れ替え確認後に続ける処理 */
-  const replaceIntentRef = useRef<"shortage" | "donguri" | null>(null);
+  const replaceIntentRef = useRef<"shortage" | "donguri" | "manual" | null>(null);
   /** 作品セッション中に固定する装飾（再描画・再プレビューで変えない） */
   const decorationVariantRef = useRef<DeviceMovieDecorationVariant | null>(null);
   const createdDateKeyRef = useRef<string | null>(null);
@@ -576,11 +581,16 @@ export function HitoyasumiDeviceMovieComposer({
     replaceIntentRef.current = null;
     setReplaceConfirmOpen(false);
     setDraftError(null);
+    setDraftHint(null);
     setDraftBusy(true);
     try {
       const meta = await persistDraftFromPreview({ replaceExisting: true });
       if (intent === "donguri") {
         window.location.assign(deviceMovieDonguriPathForDraft(meta.id));
+        return;
+      }
+      if (intent === "manual") {
+        setDraftHint(DEVICE_MOVIE_DRAFT_SAVED_LATER_HINT);
         return;
       }
       setShortageOpen(true);
@@ -590,6 +600,47 @@ export function HitoyasumiDeviceMovieComposer({
       setDraftBusy(false);
     }
   }, [persistDraftFromPreview]);
+
+  const saveDraftForLater = useCallback(async () => {
+    if (!result || saveBusy || draftBusy) return;
+    setDraftError(null);
+    setDraftHint(null);
+    setDraftBusy(true);
+    try {
+      await persistDraftFromPreview();
+      setDraftHint(DEVICE_MOVIE_DRAFT_SAVED_LATER_HINT);
+    } catch (error) {
+      if (isDeviceMovieDraftReplaceRequiredError(error)) {
+        replaceIntentRef.current = "manual";
+        setReplaceConfirmOpen(true);
+        return;
+      }
+      setDraftError(DEVICE_MOVIE_DRAFT_SAVE_FAIL);
+    } finally {
+      setDraftBusy(false);
+    }
+  }, [draftBusy, persistDraftFromPreview, result, saveBusy]);
+
+  const deleteDraftFromGate = useCallback(async () => {
+    if (draftBusy) return;
+    setDraftBusy(true);
+    setDraftError(null);
+    try {
+      await clearDeviceMovieDraft(profileId);
+      setDraftGateMeta(null);
+      setSavedDraftId(null);
+      savedDraftIdRef.current = null;
+      setDraftGatePosterUrl((prev) => {
+        if (prev) URL.revokeObjectURL(prev);
+        return null;
+      });
+      setDraftHint(DEVICE_MOVIE_DRAFT_DELETE_DONE);
+    } catch {
+      setDraftError(DEVICE_MOVIE_DRAFT_SAVE_FAIL);
+    } finally {
+      setDraftBusy(false);
+    }
+  }, [draftBusy, profileId]);
 
   const cancelReplaceDraft = useCallback(() => {
     replaceIntentRef.current = null;
@@ -775,6 +826,10 @@ export function HitoyasumiDeviceMovieComposer({
   }, [pendingMediaId, runConfirmForMediaId, saveBusy]);
 
   const goToBrowseFromDone = useCallback(() => {
+    if (typeof document !== "undefined") {
+      const active = document.activeElement;
+      if (active instanceof HTMLElement) active.blur();
+    }
     if (confirmedMedia) {
       onSaved?.(confirmedMedia);
     } else {
@@ -782,8 +837,15 @@ export function HitoyasumiDeviceMovieComposer({
     }
   }, [confirmedMedia, onClose, onSaved]);
 
+  useEffect(() => {
+    if (step !== "done") return;
+    if (typeof document === "undefined") return;
+    const active = document.activeElement;
+    if (active instanceof HTMLElement) active.blur();
+  }, [step]);
+
   return (
-    <div className="mx-auto flex w-full max-w-md flex-1 flex-col gap-3 px-1 py-2 text-sm text-[#2f2a24]">
+    <div className="mx-auto flex w-full max-w-md flex-1 flex-col gap-3 px-1 py-2 text-sm text-[#2f2a24] [touch-action:manipulation]">
       <header className="rounded-2xl border border-[#e4d8c6]/90 bg-[#fffdf8]/92 px-4 py-3 shadow-sm">
         <p className="text-[11px] font-medium tracking-wide text-[#8a7660]">
           {DEVICE_MOVIE_TEMPLATE_LABEL}
@@ -845,6 +907,19 @@ export function HitoyasumiDeviceMovieComposer({
               >
                 {DEVICE_MOVIE_DRAFT_NEW}
               </button>
+              <button
+                type="button"
+                disabled={draftBusy}
+                onClick={() => void deleteDraftFromGate()}
+                className="min-h-11 w-full rounded-xl border border-transparent px-3 text-sm text-[#8a4f3d] underline-offset-2 hover:underline disabled:opacity-40"
+              >
+                {DEVICE_MOVIE_DRAFT_DELETE}
+              </button>
+              {draftHint ? (
+                <p className="whitespace-pre-wrap text-xs text-[#5c6b4a]" role="status">
+                  {draftHint}
+                </p>
+              ) : null}
               {draftError ? (
                 <p className="whitespace-pre-wrap text-xs text-[#8a3b32]" role="alert">
                   {draftError}
@@ -1081,11 +1156,14 @@ export function HitoyasumiDeviceMovieComposer({
             value={title}
             maxLength={DEVICE_MOVIE_TITLE_MAX_CHARS}
             placeholder={DEVICE_MOVIE_DEFAULT_TITLE}
+            enterKeyHint="done"
             onChange={(e) => {
               setTitle(e.target.value.slice(0, DEVICE_MOVIE_TITLE_MAX_CHARS));
               invalidatePreview();
             }}
-            className="mt-3 w-full rounded-xl border border-[#d9cbb8] bg-white px-3 py-2.5 text-sm"
+            onFocus={() => setDraftHint(null)}
+            // iOS: 16px未満だとフォーカス時にページ拡大が残ることがある
+            className="mt-3 w-full rounded-xl border border-[#d9cbb8] bg-white px-3 py-2.5 text-[16px] leading-normal text-[#3f3428]"
           />
           <p className="mt-1 text-right text-[11px] text-[#8a7660]">
             {title.length}/{DEVICE_MOVIE_TITLE_MAX_CHARS}
@@ -1203,6 +1281,14 @@ export function HitoyasumiDeviceMovieComposer({
               {draftError}
             </p>
           ) : null}
+          {draftHint ? (
+            <p
+              className="mt-3 whitespace-pre-wrap rounded-xl bg-[#eef5eb] px-3 py-2 text-xs text-[#3f5f4c]"
+              role="status"
+            >
+              {draftHint}
+            </p>
+          ) : null}
 
           <div className="mt-4 flex flex-col gap-2">
             <button
@@ -1218,6 +1304,14 @@ export function HitoyasumiDeviceMovieComposer({
                   : firstFree
                     ? DEVICE_MOVIE_BTN_CREATE_FREE
                     : DEVICE_MOVIE_BTN_CREATE_PAID}
+            </button>
+            <button
+              type="button"
+              disabled={saveBusy || draftBusy || !result}
+              onClick={() => void saveDraftForLater()}
+              className="min-h-11 w-full rounded-xl border border-[#c4b49a] bg-[#fffaf2] px-3 text-sm font-medium text-[#3f3428] disabled:opacity-40"
+            >
+              {draftBusy ? DEVICE_MOVIE_DRAFT_SAVING : DEVICE_MOVIE_BTN_SAVE_DRAFT}
             </button>
             <button
               type="button"

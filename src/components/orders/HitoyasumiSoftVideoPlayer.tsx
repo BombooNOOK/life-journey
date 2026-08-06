@@ -216,7 +216,7 @@ export function HitoyasumiSoftVideoPlayer({
   const hideVideo = showPoster || showLoading;
 
   return (
-    <div className={["relative overflow-hidden bg-[#1a120c]", className].join(" ")}>
+    <div className={["relative overflow-hidden bg-[#1a120c] [touch-action:manipulation]", className].join(" ")}>
       <video
         ref={videoRef}
         src={src}

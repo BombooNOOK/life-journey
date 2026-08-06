@@ -94,11 +94,16 @@ export const DEVICE_MOVIE_BTN_TWEAK_SHORTAGE = "もう少し整える";
 export const DEVICE_MOVIE_DRAFT_BADGE = "下書き";
 export const DEVICE_MOVIE_DRAFT_RESUME = "下書きから続きをつくる";
 export const DEVICE_MOVIE_DRAFT_NEW = "新しい動画からつくる";
+export const DEVICE_MOVIE_DRAFT_DELETE = "この下書きを消す";
+export const DEVICE_MOVIE_DRAFT_DELETE_DONE = "下書きを消しました";
 export const DEVICE_MOVIE_DRAFT_SAVING = "下書きに残しています…";
+export const DEVICE_MOVIE_BTN_SAVE_DRAFT = "下書きに残す";
 export const DEVICE_MOVIE_DRAFT_SAVE_FAIL =
   "下書きを残できませんでした。\n通信や空き容量を確認して、もう一度お試しください。";
 export const DEVICE_MOVIE_DRAFT_SAVED_HINT =
   "下書きに残しました。どんぐりが集まったら、ここから続きを完成できます。";
+export const DEVICE_MOVIE_DRAFT_SAVED_LATER_HINT =
+  "下書きに残しました。続きはいつでもここから完成できます。";
 
 export const DEVICE_MOVIE_DRAFT_REPLACE_TITLE = "すでに映写便りの下書きがあります";
 export const DEVICE_MOVIE_DRAFT_REPLACE_BODY =

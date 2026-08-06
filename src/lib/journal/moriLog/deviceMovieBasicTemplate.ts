@@ -75,7 +75,8 @@ export const DEVICE_MOVIE_BASIC_LAYOUT_NORM = {
     left: 0.24,
     right: 0.94,
     titleCenterY: 0.86,
-    dateCenterY: 0.925,
+    /** ラベル下端ギリギリを避ける（旧 0.925） */
+    dateCenterY: 0.908,
   },
 } as const;
 

@@ -991,7 +991,7 @@ export function HitoyasumiChairPageClient({
 
   return (
     <div
-      className={`relative overflow-x-hidden text-[#3f3428] ${shellMinClass}`}
+      className={`relative overflow-x-hidden text-[#3f3428] [touch-action:manipulation] ${shellMinClass}`}
       style={{ backgroundColor: ambientBg }}
     >
       <div className="pointer-events-none absolute inset-0 z-0" aria-hidden>
@@ -1529,7 +1529,7 @@ export function HitoyasumiChairPageClient({
                   value={albumTitle}
                   onChange={(e) => setAlbumTitle(e.target.value)}
                   placeholder={LOG_HOUSE_HITOYASUMI_ALBUM_TITLE_PLACEHOLDER}
-                  className="mt-1.5 w-full rounded-xl border border-[#e0d2bc] bg-white px-3 py-2.5 text-sm text-[#3f3428] outline-none focus:border-[#c5b089]"
+                  className="mt-1.5 w-full rounded-xl border border-[#e0d2bc] bg-white px-3 py-2.5 text-[16px] leading-normal text-[#3f3428] outline-none focus:border-[#c5b089]"
                 />
               </label>
 

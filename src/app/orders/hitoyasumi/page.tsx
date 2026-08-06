@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import Link from "next/link";
 
 import { HitoyasumiChairPageClient } from "@/components/orders/HitoyasumiChairPageClient";
@@ -20,6 +20,18 @@ export const dynamic = "force-dynamic";
 export const metadata: Metadata = {
   title: LOG_HOUSE_HITOYASUMI_PAGE_TITLE,
   description: LOG_HOUSE_HITOYASUMI_PAGE_DESCRIPTION,
+};
+
+/**
+ * iOS Safari が小さい文字の入力欄フォーカスでページ拡大したまま残るのを防ぐ。
+ * （完成カード「森の映写便りができました」時点でピンチ縮小が必要になる問題）
+ */
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+  viewportFit: "cover",
 };
 
 type Props = {
