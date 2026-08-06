@@ -55,8 +55,10 @@ import {
   DEVICE_MOVIE_DRAFT_REPLACE_TITLE,
   DEVICE_MOVIE_DRAFT_RESUME,
   DEVICE_MOVIE_DRAFT_SAVE_FAIL,
-  DEVICE_MOVIE_DRAFT_SAVED_LATER_HINT,
+  DEVICE_MOVIE_DRAFT_SAVED_CONTINUE,
+  DEVICE_MOVIE_DRAFT_SAVED_TITLE,
   DEVICE_MOVIE_DRAFT_SAVING,
+  DEVICE_MOVIE_DRAFT_ONE_NOTE,
   DEVICE_MOVIE_BTN_SAVE_DRAFT,
   DEVICE_MOVIE_FIRST_FREE_BODY,
   DEVICE_MOVIE_NEXT,
@@ -176,6 +178,7 @@ export function HitoyasumiDeviceMovieComposer({
   const [draftBusy, setDraftBusy] = useState(false);
   const [draftError, setDraftError] = useState<string | null>(null);
   const [draftHint, setDraftHint] = useState<string | null>(null);
+  const [draftSavedOpen, setDraftSavedOpen] = useState(false);
   const [hideDraftGate, setHideDraftGate] = useState(false);
   const [replaceConfirmOpen, setReplaceConfirmOpen] = useState(false);
   const saveLockRef = useRef(false);
@@ -590,7 +593,7 @@ export function HitoyasumiDeviceMovieComposer({
         return;
       }
       if (intent === "manual") {
-        setDraftHint(DEVICE_MOVIE_DRAFT_SAVED_LATER_HINT);
+        setDraftSavedOpen(true);
         return;
       }
       setShortageOpen(true);
@@ -608,7 +611,7 @@ export function HitoyasumiDeviceMovieComposer({
     setDraftBusy(true);
     try {
       await persistDraftFromPreview();
-      setDraftHint(DEVICE_MOVIE_DRAFT_SAVED_LATER_HINT);
+      setDraftSavedOpen(true);
     } catch (error) {
       if (isDeviceMovieDraftReplaceRequiredError(error)) {
         replaceIntentRef.current = "manual";
@@ -907,6 +910,9 @@ export function HitoyasumiDeviceMovieComposer({
               >
                 {DEVICE_MOVIE_DRAFT_NEW}
               </button>
+              <p className="text-center text-[11px] leading-relaxed text-[#8a7660]">
+                {DEVICE_MOVIE_DRAFT_ONE_NOTE}
+              </p>
               <button
                 type="button"
                 disabled={draftBusy}
@@ -1281,14 +1287,6 @@ export function HitoyasumiDeviceMovieComposer({
               {draftError}
             </p>
           ) : null}
-          {draftHint ? (
-            <p
-              className="mt-3 whitespace-pre-wrap rounded-xl bg-[#eef5eb] px-3 py-2 text-xs text-[#3f5f4c]"
-              role="status"
-            >
-              {draftHint}
-            </p>
-          ) : null}
 
           <div className="mt-4 flex flex-col gap-2">
             <button
@@ -1379,6 +1377,27 @@ export function HitoyasumiDeviceMovieComposer({
           </button>
         </section>
       ) : null}
+
+      <DonguriFootprintModal
+        open={draftSavedOpen}
+        title={DEVICE_MOVIE_DRAFT_SAVED_TITLE}
+        onDismiss={() => setDraftSavedOpen(false)}
+        actions={[
+          {
+            label: DEVICE_MOVIE_BTN_BACK_ENTRANCE,
+            variant: "primary",
+            onClick: () => {
+              setDraftSavedOpen(false);
+              onClose();
+            },
+          },
+          {
+            label: DEVICE_MOVIE_DRAFT_SAVED_CONTINUE,
+            variant: "secondary",
+            onClick: () => setDraftSavedOpen(false),
+          },
+        ]}
+      />
 
       <DonguriFootprintModal
         open={shortageOpen}

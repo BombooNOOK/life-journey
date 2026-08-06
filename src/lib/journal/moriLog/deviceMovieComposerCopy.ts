@@ -40,7 +40,7 @@ export const DEVICE_MOVIE_PICK_VIDEO = "動画を選ぶ";
 export const DEVICE_MOVIE_PREVIEW_MAKE = "プレビューをつくる";
 export const DEVICE_MOVIE_PREVIEW_BUSY = "森の映写便りを準備しています…";
 export const DEVICE_MOVIE_PREVIEW_READY = "プレビューができました";
-export const DEVICE_MOVIE_RETRY = "もういちど選ぶ";
+export const DEVICE_MOVIE_RETRY = "はじめから";
 export const DEVICE_MOVIE_CONFIRM_NEXT = "この内容で残す";
 export const DEVICE_MOVIE_SAVING = "森の映写便りを残しています…";
 export const DEVICE_MOVIE_CONFIRMING = "完成を確認しています…";
@@ -84,7 +84,7 @@ export const DEVICE_MOVIE_PENDING_RETRY = "完成を確認する";
 export const DEVICE_MOVIE_SHORTAGE_TITLE = "どんぐりが少し足りません";
 export const DEVICE_MOVIE_SHORTAGE_BODY = [
   "下書きに残しました。",
-  "どんぐりが2こ集まったら、ここから続きを完成できます。",
+  "どんぐりが2こ集まったら、続きを完成できます。",
 ].join("\n");
 
 export const DEVICE_MOVIE_BTN_VIEW_DONGURI = "どんぐり帳を見る";
@@ -100,14 +100,17 @@ export const DEVICE_MOVIE_DRAFT_SAVING = "下書きに残しています…";
 export const DEVICE_MOVIE_BTN_SAVE_DRAFT = "下書きに残す";
 export const DEVICE_MOVIE_DRAFT_SAVE_FAIL =
   "下書きを残できませんでした。\n通信や空き容量を確認して、もう一度お試しください。";
-export const DEVICE_MOVIE_DRAFT_SAVED_HINT =
-  "下書きに残しました。どんぐりが集まったら、ここから続きを完成できます。";
-export const DEVICE_MOVIE_DRAFT_SAVED_LATER_HINT =
-  "下書きに残しました。続きはいつでもここから完成できます。";
+/** @deprecated カード表示へ移行。不足時モーダル本文で使う場合あり */
+export const DEVICE_MOVIE_DRAFT_SAVED_HINT = "下書きに残しました。";
+export const DEVICE_MOVIE_DRAFT_SAVED_TITLE = "下書きに残しました";
+export const DEVICE_MOVIE_DRAFT_SAVED_CONTINUE = "このままつづける";
+export const DEVICE_MOVIE_DRAFT_ONE_NOTE = "下書きはひとつまでです。";
 
 export const DEVICE_MOVIE_DRAFT_REPLACE_TITLE = "すでに映写便りの下書きがあります";
-export const DEVICE_MOVIE_DRAFT_REPLACE_BODY =
-  "今の下書きと入れ替えますか？";
+export const DEVICE_MOVIE_DRAFT_REPLACE_BODY = [
+  "下書きはひとつまでです。",
+  "いまの下書きと入れ替えてよいですか？",
+].join("\n");
 export const DEVICE_MOVIE_DRAFT_REPLACE_CONFIRM = "入れ替える";
 export const DEVICE_MOVIE_DRAFT_REPLACE_CANCEL = "やめる";
 

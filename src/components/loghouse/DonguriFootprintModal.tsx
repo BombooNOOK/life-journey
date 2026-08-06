@@ -12,12 +12,13 @@ export type DonguriFootprintModalAction = {
 type Props = {
   open: boolean;
   title: string;
-  body: string;
+  /** 空なら本文行を出さない（短い確認カード用） */
+  body?: string;
   actions: DonguriFootprintModalAction[];
   onDismiss?: () => void;
 };
 
-export function DonguriFootprintModal({ open, title, body, actions, onDismiss }: Props) {
+export function DonguriFootprintModal({ open, title, body = "", actions, onDismiss }: Props) {
   const titleId = useId();
 
   useEffect(() => {
@@ -30,6 +31,8 @@ export function DonguriFootprintModal({ open, title, body, actions, onDismiss }:
   }, [open, onDismiss]);
 
   if (!open) return null;
+
+  const bodyText = body.trim();
 
   return (
     <div
@@ -47,8 +50,12 @@ export function DonguriFootprintModal({ open, title, body, actions, onDismiss }:
         <h2 id={titleId} className="text-base font-semibold text-stone-900">
           {title}
         </h2>
-        <p className="mt-3 whitespace-pre-wrap text-sm leading-relaxed text-stone-700">{body}</p>
-        <div className="mt-5 flex flex-col gap-2">
+        {bodyText ? (
+          <p className="mt-3 whitespace-pre-wrap text-sm leading-relaxed text-stone-700">
+            {bodyText}
+          </p>
+        ) : null}
+        <div className={`flex flex-col gap-2 ${bodyText ? "mt-5" : "mt-4"}`}>
           {actions.map((action) => {
             const base =
               "min-h-[44px] rounded-lg px-4 py-2.5 text-sm font-medium disabled:opacity-60";
