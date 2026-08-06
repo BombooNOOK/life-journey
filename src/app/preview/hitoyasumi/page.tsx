@@ -5,7 +5,7 @@ import { HitoyasumiChairPageClient } from "@/components/orders/HitoyasumiChairPa
 import type { LogHouseRoomTimeOfDay } from "@/lib/loghouse/logHouseRoomTimeTheme";
 
 type Props = {
-  searchParams: Promise<{ theme?: string; view?: string }>;
+  searchParams: Promise<{ theme?: string; view?: string; draftId?: string; decoration?: string }>;
 };
 
 function parseTheme(raw: string | undefined): LogHouseRoomTimeOfDay | undefined {
@@ -14,13 +14,29 @@ function parseTheme(raw: string | undefined): LogHouseRoomTimeOfDay | undefined 
 }
 
 export default async function HitoyasumiChairPreviewPage({ searchParams }: Props) {
+  // production では notFound。装飾クエリ・draftId も development 専用。
   if (process.env.NODE_ENV !== "development") {
     notFound();
   }
 
   const params = await searchParams;
   const timeOfDayOverride = parseTheme(params.theme);
-  const initialScreen = params.view === "browse" ? "browse" : "entrance";
+  const initialScreen =
+    params.view === "browse"
+      ? "browse"
+      : params.view === "movie_compose"
+        ? "movie_compose"
+        : "entrance";
+  const initialDraftId =
+    typeof params.draftId === "string" && params.draftId.trim()
+      ? params.draftId.trim()
+      : null;
+  const decoration =
+    params.decoration === "lantern" ||
+    params.decoration === "owl" ||
+    params.decoration === "quill"
+      ? params.decoration
+      : null;
   const themeQuery = timeOfDayOverride ? `theme=${timeOfDayOverride}` : "";
 
   return (
@@ -31,7 +47,7 @@ export default async function HitoyasumiChairPreviewPage({ searchParams }: Props
 
       {/* 実機に近い縦長フレーム。横長の Cursor ブラウザでも左右余白を前提にしない */}
       <div
-        className="relative w-full max-w-[420px] overflow-hidden rounded-[1.25rem] border border-[#5a4a38] shadow-[0_16px_48px_rgba(0,0,0,0.45)]"
+        className="relative w-full max-w-[420px] overflow-hidden rounded-[1.25rem] border border-[#5a4a38] shadow-[0_16px_48px_rgba(40,28,16,0.45)]"
         style={{
           height: "min(860px, calc(100dvh - 5.5rem))",
           aspectRatio: "9 / 16",
@@ -39,9 +55,11 @@ export default async function HitoyasumiChairPreviewPage({ searchParams }: Props
         }}
       >
         <HitoyasumiChairPageClient
-          key={`${initialScreen}-${timeOfDayOverride ?? "auto"}`}
+          key={`${initialScreen}-${timeOfDayOverride ?? "auto"}-${decoration ?? "rand"}-${initialDraftId ?? ""}`}
           profileId="preview-hitoyasumi"
           initialScreen={initialScreen}
+          initialDraftId={initialDraftId}
+          forceDecorationVariant={decoration}
           timeOfDayOverride={timeOfDayOverride}
           backHref="/preview"
           fillParent

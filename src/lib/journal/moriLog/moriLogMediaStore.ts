@@ -1,6 +1,8 @@
 import {
   createMoriLogMediaId,
   normalizeMoriLogMediaType,
+  resolveMoriLogMediaBillingStatus,
+  resolveMoriLogMediaSourceOrigin,
   type MoriLogMedia,
   type MoriLogMediaCreateInput,
   type MoriLogMediaType,
@@ -52,10 +54,15 @@ function storageKey(profileId: string): string {
 function isMoriLogMediaRawShape(value: unknown): value is Record<string, unknown> {
   if (!value || typeof value !== "object") return false;
   const v = value as Record<string, unknown>;
+  // entryId 未設定は正規化で null（端末動画）。旧日記由来は常に string。
+  const entryIdOk =
+    v.entryId === undefined ||
+    typeof v.entryId === "string" ||
+    v.entryId === null;
   return (
     typeof v.id === "string" &&
     typeof v.profileId === "string" &&
-    typeof v.entryId === "string" &&
+    entryIdOk &&
     normalizeMoriLogMediaType(v.type) != null &&
     typeof v.templateId === "string" &&
     typeof v.entryDateKey === "string" &&
@@ -68,14 +75,28 @@ function isMoriLogMediaRawShape(value: unknown): value is Record<string, unknown
 /**
  * 生 JSON → 現行 MoriLogMedia。
  * 旧 type（card / movie）はここで正規化する。
+ * sourceOrigin 未設定は diary。entryId 欠損は空ではなく null へ寄せる。
+ * billingStatus 未設定は confirmed。
  */
 export function normalizeMoriLogMediaRecord(value: unknown): MoriLogMedia | null {
   if (!isMoriLogMediaRawShape(value)) return null;
   const type = normalizeMoriLogMediaType(value.type);
   if (!type) return null;
+  const raw = value as unknown as MoriLogMedia;
+  const entryId =
+    typeof raw.entryId === "string" ? raw.entryId : null;
+  const sourceOrigin = resolveMoriLogMediaSourceOrigin(
+    (value as { sourceOrigin?: unknown }).sourceOrigin,
+  );
+  const billingStatus = resolveMoriLogMediaBillingStatus(
+    (value as { billingStatus?: unknown }).billingStatus,
+  );
   return {
-    ...(value as unknown as MoriLogMedia),
+    ...raw,
     type,
+    entryId,
+    sourceOrigin,
+    billingStatus,
   };
 }
 
@@ -93,17 +114,30 @@ function readAll(profileId: string): MoriLogMedia[] {
     let migrated = false;
     const items: MoriLogMedia[] = [];
     for (const entry of parsed) {
-      const beforeType =
+      const before =
         entry && typeof entry === "object"
-          ? (entry as { type?: unknown }).type
-          : undefined;
+          ? (entry as {
+              type?: unknown;
+              sourceOrigin?: unknown;
+              entryId?: unknown;
+              billingStatus?: unknown;
+            })
+          : null;
       const next = normalizeMoriLogMediaRecord(entry);
       if (!next) continue;
-      if (beforeType !== next.type) migrated = true;
+      if (
+        before &&
+        (before.type !== next.type ||
+          before.sourceOrigin !== next.sourceOrigin ||
+          before.entryId !== next.entryId ||
+          before.billingStatus !== next.billingStatus)
+      ) {
+        migrated = true;
+      }
       items.push(next);
     }
 
-    // 旧 type を現行に書き戻し、次回以降の読み取りを安定させる
+    // 旧 type / sourceOrigin / entryId を現行に書き戻し、次回以降の読み取りを安定させる
     if (migrated) {
       writeAll(profileId, items);
     }
@@ -156,10 +190,14 @@ export function createLocalMoriLogMediaStore(): MoriLogMediaStore {
         id,
         type,
         createdAt: now,
+        entryId: input.entryId ?? null,
+        sourceOrigin: resolveMoriLogMediaSourceOrigin(input.sourceOrigin),
+        billingStatus: resolveMoriLogMediaBillingStatus(input.billingStatus),
         tags: [...input.tags],
         hashtags: [...input.hashtags],
         sourceCardId: input.sourceCardId ?? null,
         bgmId: input.bgmId ?? null,
+        audioMode: input.audioMode ?? null,
         durationSec: input.durationSec ?? null,
         mood: input.mood ?? null,
         companionType: input.companionType ?? null,

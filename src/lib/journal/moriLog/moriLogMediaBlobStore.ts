@@ -136,6 +136,26 @@ export async function removeMoriLogMediaBlob(mediaId: string): Promise<void> {
   }
 }
 
+/** 任意キー削除（下書きの movie/poster など。poster 自動削除なし） */
+export async function deleteMoriLogMediaBlobExactIds(ids: readonly string[]): Promise<void> {
+  const cleaned = ids.map((id) => id.trim()).filter(Boolean);
+  if (cleaned.length === 0) return;
+  try {
+    const db = await openDb();
+    try {
+      const tx = db.transaction(STORE_NAME, "readwrite");
+      const done = waitForTransaction(tx);
+      const store = tx.objectStore(STORE_NAME);
+      for (const id of cleaned) store.delete(id);
+      await done;
+    } finally {
+      db.close();
+    }
+  } catch {
+    /* ignore */
+  }
+}
+
 export function hasMoriLogMediaBlobUri(localUri: string | null | undefined): boolean {
   return (localUri ?? "").startsWith("idb:moriLogMediaBlob");
 }

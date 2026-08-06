@@ -45,6 +45,13 @@ import {
   LJD_DONGURI_GUIDE_SECTION_SUMMARY,
   LJD_DONGURI_GUIDE_SECTION_TITLE,
 } from "@/lib/help/ljdDonguriGuideCopy";
+import {
+  LJD_HITOYASUMI_EISHAKIN_GUIDE_DETAIL_PARAGRAPHS,
+  LJD_HITOYASUMI_EISHAKIN_GUIDE_LEAD,
+  LJD_HITOYASUMI_EISHAKIN_GUIDE_LINK_LABEL,
+  LJD_HITOYASUMI_EISHAKIN_GUIDE_SECTION_SUMMARY,
+  LJD_HITOYASUMI_EISHAKIN_GUIDE_SECTION_TITLE,
+} from "@/lib/help/ljdHitoyasumiEishakinGuideCopy";
 import { LJD_LOG_HOUSE_GUIDE_SECTION_SUMMARY } from "@/lib/help/ljdLogHouseGuideAnnotate";
 import {
   LJD_MAILBOX_GUIDE_BODY_PARAGRAPHS,
@@ -58,6 +65,7 @@ import {
   FOREST_GUIDE_STATION_TITLE,
 } from "@/lib/help/forestGuideStation";
 import { LOG_HOUSE_MAILBOX_PAGE_PATH } from "@/lib/loghouse/logHouseMailboxCopy";
+import { LOG_HOUSE_HITOYASUMI_PAGE_PATH } from "@/lib/loghouse/logHouseHitoyasumiCopy";
 import { FIRST_VISIT_ROUTES } from "@/lib/onboarding/firstVisitWizard/routes";
 import { LOG_HOUSE_SHORT_LABEL } from "@/lib/journal/logHouseLabels";
 
@@ -80,6 +88,35 @@ const TOC_ITEMS: TocItem[] = [
     title: LOG_HOUSE_SHORT_LABEL,
     summary: LJD_LOG_HOUSE_GUIDE_SECTION_SUMMARY,
     body: <LjdLogHouseGuideShot />,
+  },
+  {
+    id: "hitoyasumi-eishakin",
+    title: LJD_HITOYASUMI_EISHAKIN_GUIDE_SECTION_TITLE,
+    summary: LJD_HITOYASUMI_EISHAKIN_GUIDE_SECTION_SUMMARY,
+    body: (
+      <>
+        {LJD_HITOYASUMI_EISHAKIN_GUIDE_LEAD.split("\n").map((line, index) => (
+          <p key={line} className={index === 0 ? undefined : "mt-2"}>
+            {line}
+          </p>
+        ))}
+        <details className="mt-3 rounded-xl border border-stone-200 bg-stone-50/70 px-3 py-2">
+          <summary className="cursor-pointer text-sm font-medium text-stone-800">
+            くわしく読む
+          </summary>
+          <div className="mt-2 space-y-2 text-sm leading-relaxed text-stone-600">
+            {LJD_HITOYASUMI_EISHAKIN_GUIDE_DETAIL_PARAGRAPHS.map((paragraph) => (
+              <p key={paragraph}>{paragraph}</p>
+            ))}
+          </div>
+        </details>
+        <GuideAppLink
+          href={LOG_HOUSE_HITOYASUMI_PAGE_PATH}
+          label={LJD_HITOYASUMI_EISHAKIN_GUIDE_LINK_LABEL}
+          feature="guide_loghouse"
+        />
+      </>
+    ),
   },
   {
     id: "mailbox",
@@ -122,11 +159,11 @@ const TOC_ITEMS: TocItem[] = [
   {
     id: "kantei",
     title: "無料鑑定",
-    summary: "日記の読み解きの土台",
+    summary: "あしあとの読み解きの土台",
     body: (
       <>
         <p>
-          無料鑑定でコアナンバーの鑑定書を受け取ります。森にあしあとを残すしたあとに届く「読み解きコメント」は、この鑑定を土台にしています。
+          無料鑑定でコアナンバーの鑑定書を受け取ります。森にあしあとを残したあとに届く「読み解きコメント」は、この鑑定を土台にしています。
         </p>
         <p className="mt-2 text-sm text-stone-600">
           数秘術のくわしい説明は
@@ -144,7 +181,7 @@ const TOC_ITEMS: TocItem[] = [
   },
   {
     id: "writing",
-    title: "日記の書き方",
+    title: "あしあとの書き方",
     summary: LJD_DIARY_WRITING_GUIDE_SECTION_SUMMARY,
     body: <LjdDiaryWritingGuideBody variant="dictionary" />,
   },
@@ -155,7 +192,7 @@ const TOC_ITEMS: TocItem[] = [
     body: (
       <>
         <p>
-          日記の読み解きや、いっしょに書くときに寄り添ってくれる、森のどうぶつ鑑定士たちです。性格や話し方にちがいがあるので、気になる子から眺めてみてください。
+          あしあとの読み解きや、いっしょに書くときに寄り添ってくれる、森のどうぶつ鑑定士たちです。性格や話し方にちがいがあるので、気になる子から眺めてみてください。
         </p>
         <div className="mt-4">
           <HomeAppraiserProfilesSection framed={false} showHeading={false} />
@@ -174,7 +211,7 @@ const TOC_ITEMS: TocItem[] = [
         </p>
         <GuideAppLink
           href="/orders/calendar"
-          label="日記を書いて読み解きを見る"
+          label="あしあとを書いて読み解きを見る"
           feature="guide_calendar"
         />
       </>
@@ -267,7 +304,7 @@ const TOC_ITEMS: TocItem[] = [
     body: (
       <>
         <p>
-          日記を見返すための数字テーマや、鑑定書で使うナンバーについて、くわしく説明しています。迷ったときや、詳しく知りたいときにご覧ください。
+          あしあとを見返すための数字テーマや、鑑定書で使うナンバーについて、くわしく説明しています。迷ったときや、詳しく知りたいときにご覧ください。
         </p>
         <GuideAppLink href="/help/ljd/numerology-reading" label="くわしく読む" />
       </>

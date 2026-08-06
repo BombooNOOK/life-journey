@@ -82,7 +82,7 @@ export const LJD_LOG_HOUSE_GUIDE_MARKERS: LjdLogHouseGuideMarker[] = [
     x: 22,
     y: 72,
     title: "ひとやすみの椅子",
-    body: "タップすると、この端末でつくった森ログカードやムービーをゆっくり眺められます。",
+    body: "タップすると、この端末でつくった森ログを眺められます。動画の中から心に残った一場面を「森の映写便り」として残す入口もあります。",
   },
   {
     id: "rabbit",

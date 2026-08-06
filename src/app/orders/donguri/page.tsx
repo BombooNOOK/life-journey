@@ -51,7 +51,7 @@ export default async function DonguriChoPage() {
       getDonguriChoView({ email: viewerEmail, profileId: activeProfileId }),
     );
 
-    return <DonguriChoPageClient view={view} unit={DONGURI_UNIT} />;
+    return <DonguriChoPageClient view={view} unit={DONGURI_UNIT} profileId={activeProfileId} />;
   } catch (e) {
     return (
       <LogHouseLoadErrorPanel

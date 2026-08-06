@@ -36,7 +36,7 @@ export const LOG_HOUSE_ROOM_SPOT_COPY: Record<LogHouseRoomSpotId, LogHouseRoomSp
   },
   chair: {
     label: "ひとやすみの椅子",
-    description: "この端末でつくった森ログを眺める",
+    description: "森ログを眺める・映写便りをつくる",
     actionLabel: "椅子にすわる",
   },
   goOut: {

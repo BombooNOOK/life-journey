@@ -23,7 +23,7 @@ export const metadata: Metadata = {
 };
 
 type Props = {
-  searchParams: Promise<{ view?: string }>;
+  searchParams: Promise<{ view?: string; draftId?: string }>;
 };
 
 export default async function HitoyasumiChairPage({ searchParams }: Props) {
@@ -33,7 +33,16 @@ export default async function HitoyasumiChairPage({ searchParams }: Props) {
   }
 
   const params = await searchParams;
-  const initialScreen = params.view === "browse" ? "browse" : "entrance";
+  const initialScreen =
+    params.view === "browse"
+      ? "browse"
+      : params.view === "movie_compose"
+        ? "movie_compose"
+        : "entrance";
+  const initialDraftId =
+    typeof params.draftId === "string" && params.draftId.trim()
+      ? params.draftId.trim()
+      : null;
 
   try {
     const { activeProfileId, profiles } = await withPrismaConnectionRetry(() =>
@@ -53,7 +62,11 @@ export default async function HitoyasumiChairPage({ searchParams }: Props) {
     }
 
     return (
-      <HitoyasumiChairPageClient profileId={activeProfileId} initialScreen={initialScreen} />
+      <HitoyasumiChairPageClient
+        profileId={activeProfileId}
+        initialScreen={initialScreen}
+        initialDraftId={initialDraftId}
+      />
     );
   } catch (e) {
     return (

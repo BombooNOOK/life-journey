@@ -5,7 +5,10 @@
 import {
   isMoriLogCardImageType,
   isMoriLogCardMovieType,
+  isMoriLogMediaBillingConfirmed,
+  resolveMoriLogMediaSourceOrigin,
   type MoriLogMedia,
+  type MoriLogMediaSourceOrigin,
   type MoriLogMediaType,
 } from "@/lib/journal/moriLog/moriLogMedia";
 import { getMoriLogMediaStore } from "@/lib/journal/moriLog/moriLogMediaStore";
@@ -108,12 +111,44 @@ export async function listHitoyasumiMedia(profileId: string): Promise<MoriLogMed
   const pid = profileId.trim();
   if (!pid) return [];
   const items = await getMoriLogMediaStore().list({ profileId: pid });
-  return items.filter((item) => isHitoyasumiBrowsableType(item.type));
+  return items.filter(
+    (item) =>
+      isHitoyasumiBrowsableType(item.type) &&
+      isMoriLogMediaBillingConfirmed(item),
+  );
 }
 
-export function hitoyasumiMediaTypeLabel(type: MoriLogMediaType): string {
-  if (type === "card_movie") return "ムービー";
-  if (type === "card_image") return "カード";
+/** 確定待ちの端末動画ムービー（一覧には出さない） */
+export async function listPendingDeviceMovieMedia(
+  profileId: string,
+): Promise<MoriLogMedia[]> {
+  const pid = profileId.trim();
+  if (!pid) return [];
+  const items = await getMoriLogMediaStore().list({ profileId: pid });
+  return items.filter(
+    (item) =>
+      item.sourceOrigin === "device_video" &&
+      item.type === "card_movie" &&
+      !isMoriLogMediaBillingConfirmed(item),
+  );
+}
+
+/** あしあと由来カードムービーのプレート */
+export const HITOYASUMI_PLATE_CARD_MOVIE = "ムービー" as const;
+/** 端末動画由来（森の映写機）のプレート */
+export const HITOYASUMI_PLATE_DEVICE_MOVIE = "森の映写機" as const;
+export const HITOYASUMI_PLATE_CARD_IMAGE = "カード" as const;
+
+export function hitoyasumiMediaTypeLabel(
+  type: MoriLogMediaType,
+  sourceOrigin?: MoriLogMediaSourceOrigin | null,
+): string {
+  if (type === "card_movie") {
+    return resolveMoriLogMediaSourceOrigin(sourceOrigin) === "device_video"
+      ? HITOYASUMI_PLATE_DEVICE_MOVIE
+      : HITOYASUMI_PLATE_CARD_MOVIE;
+  }
+  if (type === "card_image") return HITOYASUMI_PLATE_CARD_IMAGE;
   return "その他";
 }
 
@@ -121,6 +156,7 @@ export function hitoyasumiTemplateLabel(templateId: string): string {
   if (isMoriAshiatoTemplateId(templateId)) {
     return MORI_ASHIATO_TEMPLATES[templateId].label;
   }
+  if (templateId === "device_movie_basic") return "森の映写便り";
   if (templateId === "sns02") return "ひだまりフォト（横長）";
   if (templateId === "sns03") return "森のスクラップ（スクエア）";
   return templateId;

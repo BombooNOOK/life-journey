@@ -60,21 +60,47 @@ export function isMoriLogCardMovieType(type: MoriLogMediaType): boolean {
   return type === "card_movie";
 }
 
+export type MoriLogMediaSourceOrigin = "diary" | "device_video";
+
+/** 端末動画のどんぐり確定状態。未設定は confirmed（既存・日記由来） */
+export type MoriLogMediaBillingStatus = "pending" | "confirmed";
+
 export type MoriLogMedia = {
   id: string;
   /** 既存 Journal と同様のユーザー識別（email 等）。未取得時は空文字可 */
   userId: string;
   profileId: string;
-  /** 原本あしあと */
-  entryId: string;
+  /**
+   * 原本あしあと。端末動画由来は null。
+   * 既存データ互換のため、未設定は正規化時に diary 扱いへ寄せる。
+   */
+  entryId: string | null;
+  /**
+   * どこから作ったか。未設定の既存レコードは diary とみなす。
+   */
+  sourceOrigin?: MoriLogMediaSourceOrigin;
+  /**
+   * 端末動画ムービーの課金確定。未設定は confirmed。
+   * pending は完成扱いにせず、椅子の通常一覧にも出さない。
+   */
+  billingStatus?: MoriLogMediaBillingStatus;
   type: MoriLogMediaType;
   templateId: string;
+  /** device_movie_basic などの版。未設定は既存・日記由来 */
+  templateVersion?: number;
+  /** 森の映写便り小物。未設定の既存は再エンコードしない */
+  templateDecorationVariant?: "lantern" | "owl" | "quill";
   /** card_movie 用。元になった森ログカード履歴の id */
   sourceCardId?: string | null;
-  /** card_movie 用。card_image では省略可 */
+  /** card_movie 用。card_image では省略可。端末動画の original/mute は null */
   bgmId?: string | null;
+  /**
+   * 端末動画ムービーの音声モード。未設定の既存作品は再生に影響させない。
+   * diary 由来では通常未設定（bgm は bgmId から分かる）。
+   */
+  audioMode?: "original" | "mute" | "bgm" | null;
   durationSec?: number | null;
-  /** 日本暦 YYYY-MM-DD（去年の今日の鍵） */
+  /** 日本暦 YYYY-MM-DD（去年の今日の鍵）。端末動画は完成日のローカル日付 */
   entryDateKey: string;
   /** 生成時点のタグ写し */
   tags: string[];
@@ -157,6 +183,8 @@ export function buildMoriLogMovieCreateInput(input: {
     userId: input.userId,
     profileId: input.profileId,
     entryId: input.entryId,
+    sourceOrigin: "diary",
+    billingStatus: "confirmed",
     type: "card_movie",
     templateId: input.templateId,
     sourceCardId: input.sourceCardId,
@@ -174,4 +202,67 @@ export function buildMoriLogMovieCreateInput(input: {
     localUri: null,
     remoteUrl: null,
   };
+}
+
+/** 端末動画由来の card_movie（日記 ID なし） */
+export function buildMoriLogDeviceMovieCreateInput(input: {
+  userId?: string;
+  profileId: string;
+  templateId: string;
+  entryDateKey: string;
+  title?: string | null;
+  durationSec: number;
+  bgmId?: string | null;
+  audioMode?: "original" | "mute" | "bgm" | null;
+  id?: string;
+  templateVersion?: number;
+  templateDecorationVariant?: "lantern" | "owl" | "quill";
+}): MoriLogMediaCreateInput {
+  return {
+    id: input.id,
+    userId: input.userId ?? "",
+    profileId: input.profileId,
+    entryId: null,
+    sourceOrigin: "device_video",
+    billingStatus: "pending",
+    type: "card_movie",
+    templateId: input.templateId,
+    templateVersion: input.templateVersion,
+    templateDecorationVariant: input.templateDecorationVariant,
+    sourceCardId: null,
+    bgmId: input.bgmId ?? null,
+    audioMode: input.audioMode ?? null,
+    durationSec: input.durationSec,
+    entryDateKey: input.entryDateKey,
+    tags: [],
+    mood: null,
+    companionType: null,
+    title: input.title ?? null,
+    captionText: null,
+    hashtags: [],
+    outputFormat: "mp4",
+    storage: "local",
+    localUri: null,
+    remoteUrl: null,
+  };
+}
+
+/** 既存レコードの sourceOrigin を正規化（未設定は diary） */
+export function resolveMoriLogMediaSourceOrigin(
+  value: unknown,
+): MoriLogMediaSourceOrigin {
+  return value === "device_video" ? "device_video" : "diary";
+}
+
+/** 未設定・既存・日記由来は confirmed */
+export function resolveMoriLogMediaBillingStatus(
+  value: unknown,
+): MoriLogMediaBillingStatus {
+  return value === "pending" ? "pending" : "confirmed";
+}
+
+export function isMoriLogMediaBillingConfirmed(
+  media: Pick<MoriLogMedia, "billingStatus">,
+): boolean {
+  return resolveMoriLogMediaBillingStatus(media.billingStatus) === "confirmed";
 }

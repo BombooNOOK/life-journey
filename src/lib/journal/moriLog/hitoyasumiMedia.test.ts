@@ -48,6 +48,8 @@ describe("hitoyasumiMedia", () => {
   it("labels types for UI", () => {
     expect(hitoyasumiMediaTypeLabel("card_image")).toBe("カード");
     expect(hitoyasumiMediaTypeLabel("card_movie")).toBe("ムービー");
+    expect(hitoyasumiMediaTypeLabel("card_movie", "diary")).toBe("ムービー");
+    expect(hitoyasumiMediaTypeLabel("card_movie", "device_video")).toBe("森の映写機");
   });
 
   it("collects unique tags and filters by OR", () => {

@@ -3,11 +3,11 @@ export const LOG_HOUSE_HITOYASUMI_PAGE_PATH = "/orders/hitoyasumi" as const;
 export const LOG_HOUSE_HITOYASUMI_PAGE_TITLE = "ひとやすみの椅子" as const;
 
 export const LOG_HOUSE_HITOYASUMI_PAGE_DESCRIPTION =
-  "この端末でつくった森ログカードやムービーを、ここでゆっくり見返せます。" as const;
+  "この端末でつくった森ログを、ここでゆっくり見返せます。心に残った一場面は、森の映写便りとしても残せます。" as const;
 
 /** 入口ヘルプ（巨大アイコン向け） */
 export const LOG_HOUSE_HITOYASUMI_HELP_BODY =
-  "この端末でつくった森ログカードやムービーを見返せます。\n動画から森ログムービーをつくれます。\nカードやムービーをまとめてアルバムにできます。\n音のかけらを聴く場所も、これから少しずつ増やしていきます。" as const;
+  "この端末でつくった森ログカードやムービーを見返せます。\n森の映写便りでは、動画の中から心に残った一場面を小さな映像に残せます。\nカードやムービーをまとめてアルバムにできます。\n音のかけらを聴く場所も、これから少しずつ増やしていきます。" as const;
 
 export const LOG_HOUSE_HITOYASUMI_HELP_BUTTON_LABEL = "ひとやすみの椅子の説明" as const;
 
@@ -32,7 +32,7 @@ export const LOG_HOUSE_HITOYASUMI_ENTRY_CARD_SRC =
   "/images/ljd/hitoyasumi/chair-entry-card.png?v=2" as const;
 
 export const LOG_HOUSE_HITOYASUMI_ENTRY_MOVIE_SRC =
-  "/images/ljd/hitoyasumi/chair-entry-movie.png?v=2" as const;
+  "/images/ljd/hitoyasumi/chair-entry-movie.png?v=3" as const;
 
 export const LOG_HOUSE_HITOYASUMI_ENTRY_ALBUM_SRC =
   "/images/ljd/hitoyasumi/chair-entry-album.png?v=2" as const;
@@ -43,7 +43,7 @@ export const LOG_HOUSE_HITOYASUMI_ENTRY_SOUND_SRC =
 /** 木札ラベル（aria / ヘルプ用。画像側に焼き込み済み） */
 export const LOG_HOUSE_HITOYASUMI_ENTRY_CARD_LABEL = "これまでの森ログを見る" as const;
 
-export const LOG_HOUSE_HITOYASUMI_ENTRY_MOVIE_LABEL = "動画から森ログムービーを作る" as const;
+export const LOG_HOUSE_HITOYASUMI_ENTRY_MOVIE_LABEL = "森の映写便りをつくる" as const;
 
 export const LOG_HOUSE_HITOYASUMI_ENTRY_ALBUM_LABEL = "思い出をアルバムにまとめる" as const;
 
@@ -79,13 +79,17 @@ export const LOG_HOUSE_HITOYASUMI_ITEM_FRAME_CARD_SRC =
 export const LOG_HOUSE_HITOYASUMI_ITEM_FRAME_MOVIE_SRC =
   "/images/ljd/hitoyasumi/hitoyasumi-item-frame-movie.png" as const;
 
+/** 端末動画由来（森の映写機）の紙カード枠 */
+export const LOG_HOUSE_HITOYASUMI_ITEM_FRAME_EISHAKI_SRC =
+  "/images/ljd/hitoyasumi/hitoyasumi-item-frame-eishaki.png" as const;
+
 export const LOG_HOUSE_HITOYASUMI_ITEM_FRAME_ALBUM_SRC =
   "/images/ljd/hitoyasumi/hitoyasumi-item-frame-album.png" as const;
 
 export const LOG_HOUSE_HITOYASUMI_EMPTY_TITLE = "まだ森ログがありません" as const;
 
 export const LOG_HOUSE_HITOYASUMI_EMPTY_BODY =
-  "あしあとから「カードを作成」や「ムービーを作成」をすると、ここに並びます。\n端末への保存やSNSへの共有も、ここから行えます。" as const;
+  "あしあとからカードやムービーをつくると、ここに並びます。\n端末の動画からは、心に残った一場面を「森の映写便り」として残せます。\n端末への保存やSNSへの共有も、ここから行えます。" as const;
 
 export const LOG_HOUSE_HITOYASUMI_NO_PREVIEW =
   "プレビュー用の画像がこの端末にありません。あしあとからもう一度作成すると、ここで見返せます。" as const;
@@ -224,10 +228,12 @@ export const LOG_HOUSE_HITOYASUMI_ALBUM_SOON_TITLE = "アルバムは準備中�
 export const LOG_HOUSE_HITOYASUMI_ALBUM_SOON_BODY =
   "カードやムービーをタグや日付で選び、タイトルをつけて1冊にまとめる場所です。これから少しずつ育てていきます。" as const;
 
-export const LOG_HOUSE_HITOYASUMI_MOVIE_SOON_TITLE = "動画ムービーは準備中です" as const;
+/** @deprecated 映写便りは公開済み。準備中モーダルは使わない */
+export const LOG_HOUSE_HITOYASUMI_MOVIE_SOON_TITLE = "森の映写便り" as const;
 
+/** @deprecated */
 export const LOG_HOUSE_HITOYASUMI_MOVIE_SOON_BODY =
-  "元の動画から森ログムービーをつくる入口です。いまは準備中なので、あしあとからカード＋BGMのムービーをお楽しみください。" as const;
+  "動画の中から心に残った一場面を選び、小さな映像として残せます。入口の「森の映写便りをつくる」からどうぞ。" as const;
 
 export const LOG_HOUSE_HITOYASUMI_CLOSE_DETAIL = "閉じる" as const;
 

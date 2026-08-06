@@ -2,9 +2,10 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useCallback, useEffect, useId, useMemo, useState } from "react";
+import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 
 import { HitoyasumiAlbumViewer } from "@/components/orders/HitoyasumiAlbumViewer";
+import { HitoyasumiDeviceMovieComposer } from "@/components/orders/HitoyasumiDeviceMovieComposer";
 import { useLogHouseRoomTimeTheme } from "@/hooks/useLogHouseRoomTimeOfDay";
 import type { LogHouseRoomTimeOfDay } from "@/lib/loghouse/logHouseRoomTimeTheme";
 import {
@@ -16,8 +17,20 @@ import {
   hitoyasumiMediaTypeLabel,
   hitoyasumiTemplateLabel,
   listHitoyasumiMedia,
+  listPendingDeviceMovieMedia,
   type HitoyasumiMediaFilter,
 } from "@/lib/journal/moriLog/hitoyasumiMedia";
+import { confirmMoriLogDeviceMovieOnServer } from "@/lib/journal/moriLog/confirmMoriLogDeviceMovieClient";
+import {
+  DEVICE_MOVIE_CONFIRMING,
+  DEVICE_MOVIE_PENDING_BANNER,
+  DEVICE_MOVIE_PENDING_RETRY,
+} from "@/lib/journal/moriLog/deviceMovieComposerCopy";
+import {
+  discardPendingDeviceMovie,
+  setDeviceMovieBillingStatus,
+} from "@/lib/journal/moriLog/saveDeviceMovieToMoriLog";
+import { writeDonguriBalanceHint } from "@/lib/loghouse/donguriBalanceHint";
 import { journalListYearOptions } from "@/lib/journal/journalNav";
 import {
   defaultMoriLogAlbumTitle,
@@ -35,6 +48,7 @@ import {
 } from "@/lib/journal/moriLog/composeMoriLogStillMovie";
 import {
   isMoriLogCardMovieType,
+  resolveMoriLogMediaSourceOrigin,
   type MoriLogMedia,
   type MoriLogMediaType,
 } from "@/lib/journal/moriLog/moriLogMedia";
@@ -103,11 +117,10 @@ import {
   LOG_HOUSE_HITOYASUMI_ICON_BACK_LOGHOUSE_SRC,
   LOG_HOUSE_HITOYASUMI_ITEM_FRAME_ALBUM_SRC,
   LOG_HOUSE_HITOYASUMI_ITEM_FRAME_CARD_SRC,
+  LOG_HOUSE_HITOYASUMI_ITEM_FRAME_EISHAKI_SRC,
   LOG_HOUSE_HITOYASUMI_ITEM_FRAME_MOVIE_SRC,
   LOG_HOUSE_HITOYASUMI_MEDIA_DELETE_CONFIRM_BODY,
   LOG_HOUSE_HITOYASUMI_MEDIA_DELETE_CONFIRM_TITLE_MULTI,
-  LOG_HOUSE_HITOYASUMI_MOVIE_SOON_BODY,
-  LOG_HOUSE_HITOYASUMI_MOVIE_SOON_TITLE,
   LOG_HOUSE_HITOYASUMI_NAV_CHAIR_LABEL,
   LOG_HOUSE_HITOYASUMI_NAV_LOGHOUSE_LABEL,
   LOG_HOUSE_HITOYASUMI_NO_PREVIEW,
@@ -116,7 +129,7 @@ import {
   LOG_HOUSE_HITOYASUMI_SHARE,
 } from "@/lib/loghouse/logHouseHitoyasumiCopy";
 
-type Screen = "entrance" | "browse" | "album";
+type Screen = "entrance" | "browse" | "album" | "movie_compose";
 type AlbumMode = "shelf" | "compose";
 type BatchDeleteState =
   | { kind: "media"; ids: string[] }
@@ -147,6 +160,10 @@ function TrashIcon({ className }: { className?: string }) {
 type Props = {
   profileId: string;
   initialScreen?: Screen;
+  /** 下書き再開用（検索パラメータ draftId） */
+  initialDraftId?: string | null;
+  /** 開発確認用：小物装飾を強制（本番フローでは未使用） */
+  forceDecorationVariant?: "lantern" | "owl" | "quill" | null;
   /** プレビュー用：昼/夜を固定（未指定ならログハウスと同じ自動判定） */
   timeOfDayOverride?: LogHouseRoomTimeOfDay;
   /** プレビュー用：左上戻る先（未指定なら /orders） */
@@ -177,10 +194,16 @@ function HelpHintIcon() {
   );
 }
 
-function hitoyasumiItemFrameSrc(type: MoriLogMediaType): string {
-  return isMoriLogCardMovieType(type)
-    ? LOG_HOUSE_HITOYASUMI_ITEM_FRAME_MOVIE_SRC
-    : LOG_HOUSE_HITOYASUMI_ITEM_FRAME_CARD_SRC;
+function hitoyasumiItemFrameSrc(
+  type: MoriLogMediaType,
+  sourceOrigin?: MoriLogMedia["sourceOrigin"],
+): string {
+  if (isMoriLogCardMovieType(type)) {
+    return resolveMoriLogMediaSourceOrigin(sourceOrigin) === "device_video"
+      ? LOG_HOUSE_HITOYASUMI_ITEM_FRAME_EISHAKI_SRC
+      : LOG_HOUSE_HITOYASUMI_ITEM_FRAME_MOVIE_SRC;
+  }
+  return LOG_HOUSE_HITOYASUMI_ITEM_FRAME_CARD_SRC;
 }
 
 /** 一覧サムネの写真枠（下の破線より上）。札は別レイヤーで前面に重ねる */
@@ -280,13 +303,14 @@ function EntranceIconButton({
 export function HitoyasumiChairPageClient({
   profileId,
   initialScreen = "entrance",
+  initialDraftId = null,
+  forceDecorationVariant = null,
   timeOfDayOverride,
   backHref = "/orders",
   fillParent = false,
 }: Props) {
   const helpTitleId = useId();
   const albumTitleId = useId();
-  const movieTitleId = useId();
   const { timeOfDay: themeTimeOfDay } = useLogHouseRoomTimeTheme();
   const timeOfDay = timeOfDayOverride ?? themeTimeOfDay;
   const ambientBg = timeOfDay === "night" ? "#1a120c" : "#ebe4d4";
@@ -324,12 +348,15 @@ export function HitoyasumiChairPageClient({
   const [detailActionBusy, setDetailActionBusy] = useState(false);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [helpOpen, setHelpOpen] = useState(false);
-  const [movieSoonOpen, setMovieSoonOpen] = useState(false);
   const [browseCheckedIds, setBrowseCheckedIds] = useState<string[]>([]);
   const [albumShelfCheckedIds, setAlbumShelfCheckedIds] = useState<string[]>([]);
   const [batchDelete, setBatchDelete] = useState<BatchDeleteState | null>(null);
   const [batchDeleteBusy, setBatchDeleteBusy] = useState(false);
   const [batchDeleteNote, setBatchDeleteNote] = useState<string | null>(null);
+  const [pendingDeviceMovies, setPendingDeviceMovies] = useState<MoriLogMedia[]>([]);
+  const [pendingRetryBusy, setPendingRetryBusy] = useState(false);
+  const [pendingRetryNote, setPendingRetryNote] = useState<string | null>(null);
+  const pendingAutoTriedRef = useRef(false);
 
   const refresh = useCallback(async () => {
     setLoading(true);
@@ -402,6 +429,90 @@ export function HitoyasumiChairPageClient({
     }
   }, [profileId]);
 
+  const refreshPendingDeviceMovies = useCallback(async () => {
+    try {
+      const list = await listPendingDeviceMovieMedia(profileId);
+      setPendingDeviceMovies(list);
+    } catch {
+      setPendingDeviceMovies([]);
+    }
+  }, [profileId]);
+
+  const retryPendingDeviceMovie = useCallback(
+    async (media: MoriLogMedia) => {
+      if (pendingRetryBusy) return;
+      setPendingRetryBusy(true);
+      setPendingRetryNote(null);
+      try {
+        const outcome = await confirmMoriLogDeviceMovieOnServer({
+          profileId,
+          mediaId: media.id,
+        });
+        if (outcome.kind === "ok") {
+          await setDeviceMovieBillingStatus({
+            mediaId: media.id,
+            profileId,
+            billingStatus: "confirmed",
+          });
+          writeDonguriBalanceHint(profileId, outcome.data.balance);
+          setPendingRetryNote("森ログムービーの完成を確認できました。");
+          await refresh();
+          await refreshPendingDeviceMovies();
+          return;
+        }
+        if (outcome.kind === "insufficient" || outcome.kind === "clear_failure") {
+          await discardPendingDeviceMovie({ mediaId: media.id, profileId });
+          setPendingRetryNote(
+            outcome.kind === "insufficient"
+              ? "どんぐりが足りないため、仮保存を取り消しました。"
+              : "確定できなかったため、仮保存を取り消しました。",
+          );
+          await refreshPendingDeviceMovies();
+          return;
+        }
+        setPendingRetryNote("通信状態が不明です。もう一度お試しください。");
+      } catch {
+        setPendingRetryNote("確認に失敗しました。");
+      } finally {
+        setPendingRetryBusy(false);
+      }
+    },
+    [pendingRetryBusy, profileId, refresh, refreshPendingDeviceMovies],
+  );
+
+  useEffect(() => {
+    void refreshPendingDeviceMovies();
+  }, [refreshPendingDeviceMovies, screen]);
+
+  /** 起動時に一度だけ pending を再試行（無制限ループはしない） */
+  useEffect(() => {
+    if (pendingAutoTriedRef.current) return;
+    pendingAutoTriedRef.current = true;
+    void (async () => {
+      const list = await listPendingDeviceMovieMedia(profileId);
+      if (list.length === 0) return;
+      setPendingDeviceMovies(list);
+      const first = list[0];
+      if (!first) return;
+      const outcome = await confirmMoriLogDeviceMovieOnServer({
+        profileId,
+        mediaId: first.id,
+      });
+      if (outcome.kind === "ok") {
+        await setDeviceMovieBillingStatus({
+          mediaId: first.id,
+          profileId,
+          billingStatus: "confirmed",
+        });
+        writeDonguriBalanceHint(profileId, outcome.data.balance);
+        await refresh();
+      } else if (outcome.kind === "insufficient" || outcome.kind === "clear_failure") {
+        await discardPendingDeviceMovie({ mediaId: first.id, profileId });
+      }
+      await refreshPendingDeviceMovies();
+    })();
+  }, [profileId, refresh, refreshPendingDeviceMovies]);
+
   useEffect(() => {
     if (screen !== "browse" && screen !== "album") return;
     void refresh();
@@ -427,11 +538,10 @@ export function HitoyasumiChairPageClient({
   }, [detail]);
 
   useEffect(() => {
-    if (!helpOpen && !movieSoonOpen && !deleteConfirmOpen && !batchDelete) return;
+    if (!helpOpen && !deleteConfirmOpen && !batchDelete) return;
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key !== "Escape") return;
       setHelpOpen(false);
-      setMovieSoonOpen(false);
       setDeleteConfirmOpen(false);
       if (!batchDeleteBusy) {
         setBatchDelete(null);
@@ -440,7 +550,7 @@ export function HitoyasumiChairPageClient({
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [batchDelete, batchDeleteBusy, deleteConfirmOpen, helpOpen, movieSoonOpen]);
+  }, [batchDelete, batchDeleteBusy, deleteConfirmOpen, helpOpen]);
 
   const visible = useMemo(() => {
     const byType = filterHitoyasumiMedia(items, filter);
@@ -503,6 +613,10 @@ export function HitoyasumiChairPageClient({
     setBatchDeleteNote(null);
     setViewingAlbum(null);
     setScreen("album");
+  }, []);
+
+  const openMovieCompose = useCallback(() => {
+    setScreen("movie_compose");
   }, []);
 
   const openAlbumCompose = useCallback(() => {
@@ -851,7 +965,8 @@ export function HitoyasumiChairPageClient({
   const browseIsEmpty = !loading && items.length === 0;
   const showLoghouseOnlyChrome = screen === "entrance" || (screen === "browse" && browseIsEmpty);
   const showSubScreenDualNav =
-    (screen === "browse" && !browseIsEmpty) || screen === "album";
+    (screen === "browse" && !browseIsEmpty) || screen === "album" || screen === "movie_compose";
+  const hideHelpOnCompose = screen === "movie_compose";
 
   const shellMinClass = fillParent ? "h-full min-h-full" : "min-h-[100dvh]";
 
@@ -941,17 +1056,19 @@ export function HitoyasumiChairPageClient({
                 <TrashIcon className="h-5 w-5" />
               </button>
             ) : null}
-            <button
-              type="button"
-              className={`inline-flex h-10 w-10 items-center justify-center rounded-full border backdrop-blur-[3px] transition active:scale-[0.98] ${chromeButtonClass}`}
-              aria-label={LOG_HOUSE_HITOYASUMI_HELP_BUTTON_LABEL}
-              title={LOG_HOUSE_HITOYASUMI_HELP_BUTTON_LABEL}
-              aria-haspopup="dialog"
-              aria-expanded={helpOpen}
-              onClick={() => setHelpOpen(true)}
-            >
-              <HelpHintIcon />
-            </button>
+            {!hideHelpOnCompose ? (
+              <button
+                type="button"
+                className={`inline-flex h-10 w-10 items-center justify-center rounded-full border backdrop-blur-[3px] transition active:scale-[0.98] ${chromeButtonClass}`}
+                aria-label={LOG_HOUSE_HITOYASUMI_HELP_BUTTON_LABEL}
+                title={LOG_HOUSE_HITOYASUMI_HELP_BUTTON_LABEL}
+                aria-haspopup="dialog"
+                aria-expanded={helpOpen}
+                onClick={() => setHelpOpen(true)}
+              >
+                <HelpHintIcon />
+              </button>
+            ) : null}
           </div>
         </div>
 
@@ -960,6 +1077,25 @@ export function HitoyasumiChairPageClient({
             className="mx-auto flex w-full flex-1 flex-col justify-center px-0 py-1"
             aria-label="ひとやすみの椅子の入口"
           >
+            {pendingDeviceMovies.length > 0 ? (
+              <div className="mx-auto mb-4 w-full max-w-[26rem] rounded-2xl border border-[#e4d5c0]/80 bg-[#fffaf2]/92 px-3 py-3 text-[#3f3428] shadow-sm">
+                <p className="text-xs leading-relaxed">{DEVICE_MOVIE_PENDING_BANNER}</p>
+                {pendingRetryNote ? (
+                  <p className="mt-2 text-[11px] text-[#6a5846]">{pendingRetryNote}</p>
+                ) : null}
+                <button
+                  type="button"
+                  disabled={pendingRetryBusy}
+                  onClick={() => {
+                    const first = pendingDeviceMovies[0];
+                    if (first) void retryPendingDeviceMovie(first);
+                  }}
+                  className="mt-3 min-h-10 w-full rounded-xl bg-[#3f5f4c] px-3 text-sm font-semibold text-white disabled:opacity-40"
+                >
+                  {pendingRetryBusy ? DEVICE_MOVIE_CONFIRMING : DEVICE_MOVIE_PENDING_RETRY}
+                </button>
+              </div>
+            ) : null}
             {/* サンプル準拠の 2×2。アイコンを大きく・中央に */}
             <div className="mx-auto grid w-full max-w-[26rem] grid-cols-2 gap-x-1 gap-y-5 sm:gap-y-6">
               <EntranceIconButton
@@ -970,7 +1106,7 @@ export function HitoyasumiChairPageClient({
               <EntranceIconButton
                 src={LOG_HOUSE_HITOYASUMI_ENTRY_MOVIE_SRC}
                 label={LOG_HOUSE_HITOYASUMI_ENTRY_MOVIE_LABEL}
-                onClick={() => setMovieSoonOpen(true)}
+                onClick={openMovieCompose}
               />
               <EntranceIconButton
                 src={LOG_HOUSE_HITOYASUMI_ENTRY_ALBUM_SRC}
@@ -1122,11 +1258,11 @@ export function HitoyasumiChairPageClient({
                           type="button"
                           onClick={() => void openDetail(item)}
                           className="group relative block w-full text-left transition hover:-translate-y-0.5"
-                          aria-label={`${hitoyasumiMediaTypeLabel(item.type)} ${title}`}
+                          aria-label={`${hitoyasumiMediaTypeLabel(item.type, item.sourceOrigin)} ${title}`}
                         >
                           <div className="relative aspect-[819/1024] w-full">
                             <Image
-                              src={hitoyasumiItemFrameSrc(item.type)}
+                              src={hitoyasumiItemFrameSrc(item.type, item.sourceOrigin)}
                               alt=""
                               fill
                               sizes="(max-width: 768px) 46vw, 220px"
@@ -1161,7 +1297,7 @@ export function HitoyasumiChairPageClient({
                               aria-hidden
                             >
                               <Image
-                                src={hitoyasumiItemFrameSrc(item.type)}
+                                src={hitoyasumiItemFrameSrc(item.type, item.sourceOrigin)}
                                 alt=""
                                 fill
                                 sizes="(max-width: 768px) 46vw, 220px"
@@ -1188,6 +1324,22 @@ export function HitoyasumiChairPageClient({
 
             <div className="mt-auto pt-10" aria-hidden />
           </>
+        ) : screen === "movie_compose" ? (
+          <HitoyasumiDeviceMovieComposer
+            profileId={profileId}
+            initialDraftId={initialDraftId}
+            forceDecorationVariant={forceDecorationVariant}
+            onClose={backToEntrance}
+            onRefreshList={() => {
+              void refresh();
+              void refreshPendingDeviceMovies();
+            }}
+            onSaved={() => {
+              setScreen("browse");
+              void refresh();
+              void refreshPendingDeviceMovies();
+            }}
+          />
         ) : albumMode === "shelf" ? (
           <>
             <div className="mt-4 rounded-[1.25rem] border border-[#e4d5c0]/75 bg-[#fffaf2]/88 px-4 py-4 shadow-[0_10px_28px_rgba(40,28,16,0.14)] backdrop-blur-[2px]">
@@ -1480,7 +1632,7 @@ export function HitoyasumiChairPageClient({
                       >
                         <div className="relative aspect-[819/1024] w-full">
                           <Image
-                            src={hitoyasumiItemFrameSrc(item.type)}
+                            src={hitoyasumiItemFrameSrc(item.type, item.sourceOrigin)}
                             alt=""
                             fill
                             sizes="(max-width: 768px) 46vw, 220px"
@@ -1512,7 +1664,7 @@ export function HitoyasumiChairPageClient({
                             aria-hidden
                           >
                             <Image
-                              src={hitoyasumiItemFrameSrc(item.type)}
+                              src={hitoyasumiItemFrameSrc(item.type, item.sourceOrigin)}
                               alt=""
                               fill
                               sizes="(max-width: 768px) 46vw, 220px"
@@ -1535,7 +1687,7 @@ export function HitoyasumiChairPageClient({
                           <div className={HITOYASUMI_THUMB_META}>
                             <p className="truncate text-[11px] font-semibold text-[#3f3428]">{title}</p>
                             <p className="mt-0.5 truncate text-[9px] text-[#8a7660]">
-                              {hitoyasumiMediaTypeLabel(item.type)}
+                              {hitoyasumiMediaTypeLabel(item.type, item.sourceOrigin)}
                             </p>
                           </div>
                         </div>
@@ -1695,45 +1847,6 @@ export function HitoyasumiChairPageClient({
         </div>
       ) : null}
 
-      {movieSoonOpen ? (
-        <div className="fixed inset-0 z-[90] flex items-center justify-center px-4 py-8">
-          <button
-            type="button"
-            className="absolute inset-0 bg-stone-950/40"
-            aria-label="閉じる"
-            onClick={() => setMovieSoonOpen(false)}
-          />
-          <div
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby={movieTitleId}
-            className="relative z-[1] w-full max-w-sm rounded-2xl border border-[#e4d8c6] bg-[#fffdf8]/96 px-5 py-5 shadow-[0_12px_40px_rgba(40,28,16,0.28)]"
-          >
-            <h2 id={movieTitleId} className="text-base font-semibold tracking-wide text-[#3f3428]">
-              {LOG_HOUSE_HITOYASUMI_MOVIE_SOON_TITLE}
-            </h2>
-            <p className="mt-3 text-sm leading-relaxed text-[#4f4033]">
-              {LOG_HOUSE_HITOYASUMI_MOVIE_SOON_BODY}
-            </p>
-            <div className="mt-5 flex flex-col gap-2">
-              <button
-                type="button"
-                onClick={() => setMovieSoonOpen(false)}
-                className="inline-flex min-h-11 w-full items-center justify-center rounded-xl border border-[#d9cbb8] bg-[#f7f0e4] px-4 text-sm font-medium text-[#5c4a3a] shadow-sm transition hover:bg-[#f3ebe0]"
-              >
-                {LOG_HOUSE_HITOYASUMI_BACK_TO_ENTRANCE}
-              </button>
-              <Link
-                href={backHref}
-                className="inline-flex min-h-11 w-full items-center justify-center rounded-xl border border-[#c5b089]/70 bg-[#fffaf2] px-4 text-sm font-medium text-[#5c4a3a] transition hover:bg-[#f7f0e4]"
-              >
-                ← {LOG_HOUSE_RETURN_TO_LABEL}
-              </Link>
-            </div>
-          </div>
-        </div>
-      ) : null}
-
       {detail ? (
         <div
           className="fixed inset-0 z-50 flex items-end justify-center bg-[#120c08]/72 p-0 backdrop-blur-[2px] sm:items-center sm:p-4"
@@ -1749,7 +1862,7 @@ export function HitoyasumiChairPageClient({
             <div className="flex items-start justify-between gap-3 px-3 pt-3 sm:px-4 sm:pt-4">
               <div className="min-w-0">
                 <p className="inline-flex rounded-md border border-[#e0d2bc]/90 bg-[#f7efe3] px-2 py-0.5 text-xs font-medium text-[#5c4a35]">
-                  {hitoyasumiMediaTypeLabel(detail.item.type)}
+                  {hitoyasumiMediaTypeLabel(detail.item.type, detail.item.sourceOrigin)}
                 </p>
                 <h2 className="mt-2 truncate text-lg font-semibold text-[#3d3226]">
                   {detail.item.title?.trim() || hitoyasumiTemplateLabel(detail.item.templateId)}

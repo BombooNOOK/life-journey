@@ -118,9 +118,15 @@ const links: { href: string; label: string; note?: string; highlight?: boolean }
     highlight: true,
   },
   {
+    href: "/preview/mori-log-device-movie",
+    label: "端末動画→森の映写便り（エンコード検証）",
+    note: "切り出し検証。保存・どんぐり未接続（lab専用）。npm run dev 中のみ",
+    highlight: true,
+  },
+  {
     href: "/preview/hitoyasumi",
     label: "ひとやすみの椅子・入口UI（巨大アイコン2×2）",
-    note: "ログイン不要。カード／ムービー／アルバム＋音のかけら（グレーアウト）。npm run dev 中のみ",
+    note: "dev専用。映写便り作成・preview-hitoyasumi 用どんぐりmockあり。npm run dev 中のみ",
     highlight: true,
   },
   {
