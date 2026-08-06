@@ -83,6 +83,7 @@ import {
   DEVICE_MOVIE_UNCERTAIN_TITLE,
   deviceMovieErrorUserMessage,
 } from "@/lib/journal/moriLog/deviceMovieComposerCopy";
+import { captureVideoPosterObjectUrl } from "@/lib/journal/moriLog/captureVideoPosterFrame";
 import { listDeviceMovieBgmTracks } from "@/lib/journal/moriLog/deviceMovieBgmAudio";
 import { getDeviceMovieProjectorBgmTrack } from "@/lib/journal/moriLog/deviceMovieProjectorBgmCatalog";
 import {
@@ -136,6 +137,8 @@ export function HitoyasumiDeviceMovieComposer({
   const [step, setStep] = useState<Step>("select");
   const [file, setFile] = useState<File | null>(null);
   const [sourceUrl, setSourceUrl] = useState<string | null>(null);
+  /** 未再生時の真っ黒対策（選択動画の先頭コマ） */
+  const [sourcePosterUrl, setSourcePosterUrl] = useState<string | null>(null);
   const [probe, setProbe] = useState<MoriLogDeviceMovieSourceProbe | null>(null);
   const [selectError, setSelectError] = useState<string | null>(null);
 
@@ -232,6 +235,34 @@ export function HitoyasumiDeviceMovieComposer({
     setSourceUrl(url);
     return () => URL.revokeObjectURL(url);
   }, [file]);
+
+  useEffect(() => {
+    if (!sourceUrl) {
+      setSourcePosterUrl((prev) => {
+        if (prev) URL.revokeObjectURL(prev);
+        return null;
+      });
+      return;
+    }
+    let cancelled = false;
+    let postedUrl: string | null = null;
+    void (async () => {
+      const poster = await captureVideoPosterObjectUrl(sourceUrl);
+      if (cancelled) {
+        if (poster) URL.revokeObjectURL(poster);
+        return;
+      }
+      postedUrl = poster;
+      setSourcePosterUrl((prev) => {
+        if (prev) URL.revokeObjectURL(prev);
+        return poster;
+      });
+    })();
+    return () => {
+      cancelled = true;
+      if (postedUrl) URL.revokeObjectURL(postedUrl);
+    };
+  }, [sourceUrl]);
 
   useEffect(() => {
     if (!draftGatePosterUrl) return;
@@ -847,9 +878,11 @@ export function HitoyasumiDeviceMovieComposer({
           {sourceUrl && probe ? (
             <video
               src={sourceUrl}
+              poster={sourcePosterUrl ?? undefined}
               controls
               playsInline
-              className="mt-3 w-full rounded-xl bg-black"
+              preload="metadata"
+              className="mt-3 aspect-video w-full rounded-xl bg-[#2a221a] object-contain"
             />
           ) : null}
           {selectError ? (
@@ -1143,19 +1176,13 @@ export function HitoyasumiDeviceMovieComposer({
             <video
               ref={previewVideoRef}
               src={movieUrl}
+              poster={posterUrl ?? undefined}
               controls
               playsInline
+              preload="metadata"
               muted={result.audioMode === "mute"}
               onPlay={stopBgmPreview}
-              className="mt-3 w-full rounded-xl bg-black"
-            />
-          ) : null}
-          {posterUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={posterUrl}
-              alt="ポスター"
-              className="mt-3 w-full rounded-xl border border-[#e6dac8]"
+              className="mt-3 aspect-[4/5] w-full rounded-xl bg-[#2a221a] object-contain"
             />
           ) : null}
 
