@@ -61,38 +61,67 @@ export async function captureVideoPosterFrameBlob(
   video.src = videoSrc;
 
   try {
-    await waitForEvent(video, "loadeddata", 12_000);
-    const duration = Number.isFinite(video.duration) ? video.duration : 0;
-    const target =
-      duration > 0 ? Math.min(seekSec, Math.max(0, duration * 0.02)) : seekSec;
-
-    if (video.currentTime !== target) {
-      const seeked = waitForEvent(video, "seeked", 8_000);
-      video.currentTime = target;
-      await seeked;
+    // iOS は play→pause でデコードが走り、先頭コマが取れることがある
+    try {
+      const playPromise = video.play();
+      if (playPromise) await playPromise;
+      video.pause();
+    } catch {
+      // autoplay 制限など — seek のみで続行
     }
 
-    const vw = video.videoWidth || 0;
-    const vh = video.videoHeight || 0;
-    if (vw < 2 || vh < 2) return null;
+    await waitForEvent(video, "loadeddata", 12_000).catch(() => undefined);
+    const duration = Number.isFinite(video.duration) ? video.duration : 0;
+    const candidates = [
+      Math.min(seekSec, duration > 0 ? Math.max(0, duration * 0.02) : seekSec),
+      0.25,
+      0.5,
+      1,
+    ].filter((t, i, arr) => t >= 0 && (duration <= 0 || t < duration) && arr.indexOf(t) === i);
 
-    const scale = Math.min(1, maxWidth / vw);
-    const w = Math.max(1, Math.round(vw * scale));
-    const h = Math.max(1, Math.round(vh * scale));
-    const canvas = document.createElement("canvas");
-    canvas.width = w;
-    canvas.height = h;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return null;
-    ctx.drawImage(video, 0, 0, w, h);
+    for (const target of candidates) {
+      try {
+        if (Math.abs(video.currentTime - target) > 0.001) {
+          const seeked = waitForEvent(video, "seeked", 6_000);
+          video.currentTime = target;
+          await seeked;
+        }
+        const vw = video.videoWidth || 0;
+        const vh = video.videoHeight || 0;
+        if (vw < 2 || vh < 2) continue;
 
-    const blob = await new Promise<Blob | null>((resolve) => {
-      canvas.toBlob((b) => resolve(b), "image/jpeg", quality);
-    });
-    return blob && blob.size > 0 ? blob : null;
+        const scale = Math.min(1, maxWidth / vw);
+        const w = Math.max(1, Math.round(vw * scale));
+        const h = Math.max(1, Math.round(vh * scale));
+        const canvas = document.createElement("canvas");
+        canvas.width = w;
+        canvas.height = h;
+        const ctx = canvas.getContext("2d");
+        if (!ctx) continue;
+        ctx.drawImage(video, 0, 0, w, h);
+
+        // 真っ黒っぽいコマは次の候補へ（簡易チェック）
+        const sample = ctx.getImageData(Math.floor(w / 2), Math.floor(h / 2), 1, 1).data;
+        const brightness = (sample[0] + sample[1] + sample[2]) / 3;
+        if (brightness < 8) continue;
+
+        const blob = await new Promise<Blob | null>((resolve) => {
+          canvas.toBlob((b) => resolve(b), "image/jpeg", quality);
+        });
+        if (blob && blob.size > 0) return blob;
+      } catch {
+        // try next seek
+      }
+    }
+    return null;
   } catch {
     return null;
   } finally {
+    try {
+      video.pause();
+    } catch {
+      // ignore
+    }
     video.removeAttribute("src");
     video.load();
   }

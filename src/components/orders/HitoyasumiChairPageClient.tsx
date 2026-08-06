@@ -6,6 +6,7 @@ import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react"
 
 import { HitoyasumiAlbumViewer } from "@/components/orders/HitoyasumiAlbumViewer";
 import { HitoyasumiDeviceMovieComposer } from "@/components/orders/HitoyasumiDeviceMovieComposer";
+import { HitoyasumiSoftVideoPlayer } from "@/components/orders/HitoyasumiSoftVideoPlayer";
 import { useLogHouseRoomTimeTheme } from "@/hooks/useLogHouseRoomTimeOfDay";
 import type { LogHouseRoomTimeOfDay } from "@/lib/loghouse/logHouseRoomTimeTheme";
 import {
@@ -1898,13 +1899,12 @@ export function HitoyasumiChairPageClient({
             {detail.objectUrl ? (
               isMoriLogCardMovieType(detail.item.type) &&
               (detail.blobMimeType ?? "").startsWith("video/") ? (
-                <video
+                <HitoyasumiSoftVideoPlayer
                   src={detail.objectUrl}
-                  poster={detail.posterUrl ?? undefined}
-                  className="absolute inset-0 h-full w-full bg-black object-contain"
-                  controls
-                  playsInline
-                  preload="metadata"
+                  posterUrl={detail.posterUrl}
+                  className="absolute inset-0 h-full w-full"
+                  videoClassName="absolute inset-0 h-full w-full object-contain"
+                  label="森ログムービーを再生"
                 />
               ) : (
                 // eslint-disable-next-line @next/next/no-img-element

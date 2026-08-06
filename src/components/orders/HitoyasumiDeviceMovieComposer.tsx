@@ -7,6 +7,7 @@ import {
   MoriLogBgmPicker,
   type MoriLogBgmPickerHandle,
 } from "@/components/journal/MoriLogBgmPicker";
+import { HitoyasumiSoftVideoPlayer } from "@/components/orders/HitoyasumiSoftVideoPlayer";
 import {
   composeMoriLogDeviceMovie,
   inspectMoriLogDeviceMovieSource,
@@ -182,7 +183,6 @@ export function HitoyasumiDeviceMovieComposer({
   const decorationVariantRef = useRef<DeviceMovieDecorationVariant | null>(null);
   const createdDateKeyRef = useRef<string | null>(null);
   const bgmPickerRef = useRef<MoriLogBgmPickerHandle | null>(null);
-  const previewVideoRef = useRef<HTMLVideoElement | null>(null);
 
   const deviceMovieBgmTracks = useMemo(() => listDeviceMovieBgmTracks(), []);
   const selectedBgmName = useMemo(() => {
@@ -876,13 +876,11 @@ export function HitoyasumiDeviceMovieComposer({
             <p className="mt-2 truncate text-xs text-[#6a5b4a]">{file.name}</p>
           ) : null}
           {sourceUrl && probe ? (
-            <video
+            <HitoyasumiSoftVideoPlayer
               src={sourceUrl}
-              poster={sourcePosterUrl ?? undefined}
-              controls
-              playsInline
-              preload="metadata"
-              className="mt-3 aspect-video w-full rounded-xl bg-[#2a221a] object-contain"
+              posterUrl={sourcePosterUrl}
+              className="mt-3 aspect-video w-full rounded-xl"
+              label="選んだ動画を再生"
             />
           ) : null}
           {selectError ? (
@@ -1173,16 +1171,13 @@ export function HitoyasumiDeviceMovieComposer({
             </li>
           </ul>
           {movieUrl ? (
-            <video
-              ref={previewVideoRef}
+            <HitoyasumiSoftVideoPlayer
               src={movieUrl}
-              poster={posterUrl ?? undefined}
-              controls
-              playsInline
-              preload="metadata"
+              posterUrl={posterUrl}
               muted={result.audioMode === "mute"}
               onPlay={stopBgmPreview}
-              className="mt-3 aspect-[4/5] w-full rounded-xl bg-[#2a221a] object-contain"
+              className="mt-3 aspect-[4/5] w-full rounded-xl"
+              label="プレビューを再生"
             />
           ) : null}
 
