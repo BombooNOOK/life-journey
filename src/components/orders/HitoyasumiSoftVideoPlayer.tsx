@@ -4,14 +4,14 @@ import { useCallback, useEffect, useId, useRef, useState } from "react";
 
 type Props = {
   src: string;
-  /** 未再生時に見せる画像（iPhone の真っ黒／標準UIのグレー幕を避ける） */
+  /** 未再生時に見せる画像（取れた場合） */
   posterUrl?: string | null;
   className?: string;
   videoClassName?: string;
   muted?: boolean;
-  /** 再生開始時（BGMプリビュー停止など） */
+  /** マウント時に mute 再生→停止で1コマ描画（iPhone の選択直後真っ黒対策） */
+  autoPrime?: boolean;
   onPlay?: () => void;
-  /** アクセシブル名 */
   label?: string;
 };
 
@@ -24,20 +24,26 @@ export function HitoyasumiSoftVideoPlayer({
   className = "",
   videoClassName = "h-full w-full object-contain",
   muted = false,
+  autoPrime = true,
   onPlay,
   label = "動画を再生",
 }: Props) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
+  const primingRef = useRef(false);
   const [playing, setPlaying] = useState(false);
   const [busy, setBusy] = useState(false);
-  /** 一度再生したらポスターではなく一時停止フレームを見せる */
   const [hasPlayed, setHasPlayed] = useState(false);
+  const [primed, setPrimed] = useState(false);
   const labelId = useId();
+  const mutedRef = useRef(muted);
+  mutedRef.current = muted;
 
   useEffect(() => {
     setPlaying(false);
     setBusy(false);
     setHasPlayed(false);
+    setPrimed(false);
+    primingRef.current = false;
     const video = videoRef.current;
     if (!video) return;
     try {
@@ -48,59 +54,126 @@ export function HitoyasumiSoftVideoPlayer({
     }
   }, [src]);
 
-  /** iPhone で未再生フレームが真っ黒な端末向けに、わずかに seek して1コマ描画を促す */
   useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+    if (!primingRef.current) video.muted = muted;
+  }, [muted, src]);
+
+  useEffect(() => {
+    if (!autoPrime) {
+      setPrimed(true);
+      return;
+    }
     const video = videoRef.current;
     if (!video) return;
     let cancelled = false;
 
-    const paint = async () => {
+    const prime = async () => {
+      primingRef.current = true;
       try {
-        if (cancelled || !video.paused) return;
+        video.muted = true;
+        video.playsInline = true;
+        video.setAttribute("playsinline", "");
+        video.setAttribute("webkit-playsinline", "");
+
+        if (video.readyState < 2) {
+          await new Promise<void>((resolve, reject) => {
+            const t = window.setTimeout(() => {
+              cleanup();
+              reject(new Error("loadeddata timeout"));
+            }, 12_000);
+            const onOk = () => {
+              cleanup();
+              resolve();
+            };
+            const onErr = () => {
+              cleanup();
+              reject(new Error("media error"));
+            };
+            const cleanup = () => {
+              window.clearTimeout(t);
+              video.removeEventListener("loadeddata", onOk);
+              video.removeEventListener("error", onErr);
+            };
+            video.addEventListener("loadeddata", onOk, { once: true });
+            video.addEventListener("error", onErr, { once: true });
+          });
+        }
+        if (cancelled) return;
+
+        try {
+          const p = video.play();
+          if (p) await p;
+          // ごく短くデコードさせてから止める
+          await new Promise((r) => window.setTimeout(r, 80));
+        } catch {
+          // seek のみで続行
+        }
+        if (cancelled) return;
+        video.pause();
+
         const duration = Number.isFinite(video.duration) ? video.duration : 0;
-        const target = duration > 0.2 ? Math.min(0.12, duration * 0.02) : 0.01;
-        if (Math.abs(video.currentTime - target) < 0.001) return;
-        await new Promise<void>((resolve, reject) => {
-          const t = window.setTimeout(() => {
-            cleanup();
-            reject(new Error("seek timeout"));
-          }, 4000);
-          const onSeeked = () => {
-            cleanup();
-            resolve();
-          };
-          const cleanup = () => {
-            window.clearTimeout(t);
-            video.removeEventListener("seeked", onSeeked);
-          };
-          video.addEventListener("seeked", onSeeked, { once: true });
-          video.currentTime = target;
-        });
+        const target = duration > 0.2 ? Math.min(0.15, duration * 0.03) : 0.05;
+        try {
+          await new Promise<void>((resolve) => {
+            const t = window.setTimeout(() => {
+              cleanup();
+              resolve();
+            }, 2500);
+            const onSeeked = () => {
+              cleanup();
+              resolve();
+            };
+            const cleanup = () => {
+              window.clearTimeout(t);
+              video.removeEventListener("seeked", onSeeked);
+            };
+            video.addEventListener("seeked", onSeeked, { once: true });
+            video.currentTime = target;
+          });
+        } catch {
+          // ignore
+        }
       } catch {
-        // ignore — poster があればそちらを表示
+        // ignore
+      } finally {
+        if (!cancelled) {
+          video.muted = mutedRef.current;
+          primingRef.current = false;
+          setPlaying(false);
+          setPrimed(true);
+        }
       }
     };
 
-    const onLoaded = () => {
-      void paint();
-    };
-    if (video.readyState >= 2) void paint();
-    else video.addEventListener("loadeddata", onLoaded, { once: true });
+    void prime();
     return () => {
       cancelled = true;
-      video.removeEventListener("loadeddata", onLoaded);
+      primingRef.current = false;
+      try {
+        video.pause();
+        video.muted = mutedRef.current;
+      } catch {
+        // ignore
+      }
     };
-  }, [src]);
+  }, [autoPrime, src]);
 
   useEffect(() => {
     const video = videoRef.current;
     if (!video) return;
     const onPlayEv = () => {
+      if (primingRef.current) return;
       setPlaying(true);
       setHasPlayed(true);
     };
-    const onPauseEv = () => setPlaying(false);
+    const onPauseEv = () => {
+      if (primingRef.current) return;
+      setPlaying(false);
+    };
     const onEndedEv = () => {
+      if (primingRef.current) return;
       setPlaying(false);
       setHasPlayed(false);
       try {
@@ -121,10 +194,11 @@ export function HitoyasumiSoftVideoPlayer({
 
   const toggle = useCallback(async () => {
     const video = videoRef.current;
-    if (!video || busy) return;
+    if (!video || busy || primingRef.current) return;
     setBusy(true);
     try {
       if (video.paused || video.ended) {
+        video.muted = mutedRef.current;
         onPlay?.();
         await video.play();
       } else {
@@ -138,6 +212,8 @@ export function HitoyasumiSoftVideoPlayer({
   }, [busy, onPlay]);
 
   const showPoster = Boolean(posterUrl) && !playing && !hasPlayed;
+  const showLoading = !showPoster && !primed && !playing;
+  const hideVideo = showPoster || showLoading;
 
   return (
     <div className={["relative overflow-hidden bg-[#1a120c]", className].join(" ")}>
@@ -149,10 +225,7 @@ export function HitoyasumiSoftVideoPlayer({
         muted={muted}
         controls={false}
         disablePictureInPicture
-        className={[
-          videoClassName,
-          showPoster ? "opacity-0" : "opacity-100",
-        ].join(" ")}
+        className={[videoClassName, hideVideo ? "opacity-0" : "opacity-100"].join(" ")}
         aria-labelledby={labelId}
       />
       {showPoster ? (
@@ -162,6 +235,12 @@ export function HitoyasumiSoftVideoPlayer({
           alt=""
           className="pointer-events-none absolute inset-0 h-full w-full object-contain"
         />
+      ) : null}
+
+      {showLoading ? (
+        <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-[#2a221a]">
+          <p className="text-xs text-[#d9cbb8]">動画を読み込んでいます…</p>
+        </div>
       ) : null}
 
       <button

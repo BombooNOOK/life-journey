@@ -236,33 +236,7 @@ export function HitoyasumiDeviceMovieComposer({
     return () => URL.revokeObjectURL(url);
   }, [file]);
 
-  useEffect(() => {
-    if (!sourceUrl) {
-      setSourcePosterUrl((prev) => {
-        if (prev) URL.revokeObjectURL(prev);
-        return null;
-      });
-      return;
-    }
-    let cancelled = false;
-    let postedUrl: string | null = null;
-    void (async () => {
-      const poster = await captureVideoPosterObjectUrl(sourceUrl);
-      if (cancelled) {
-        if (poster) URL.revokeObjectURL(poster);
-        return;
-      }
-      postedUrl = poster;
-      setSourcePosterUrl((prev) => {
-        if (prev) URL.revokeObjectURL(prev);
-        return poster;
-      });
-    })();
-    return () => {
-      cancelled = true;
-      if (postedUrl) URL.revokeObjectURL(postedUrl);
-    };
-  }, [sourceUrl]);
+  // ポスターは onPick 側で先行取得。sourceUrl 変化だけでの二重キャプチャはしない。
 
   useEffect(() => {
     if (!draftGatePosterUrl) return;
@@ -394,7 +368,27 @@ export function HitoyasumiDeviceMovieComposer({
     setSaveError(null);
     setPendingMediaId(null);
     setResumedFromDraft(false);
+    setSourcePosterUrl((prev) => {
+      if (prev) URL.revokeObjectURL(prev);
+      return null;
+    });
     if (!next) return;
+
+    // 選択ジェスチャー内でポスター生成を即開始（iPhone の後追い capture 失敗対策）
+    const earlyUrl = URL.createObjectURL(next);
+    void captureVideoPosterObjectUrl(earlyUrl)
+      .then((poster) => {
+        if (poster) {
+          setSourcePosterUrl((prev) => {
+            if (prev) URL.revokeObjectURL(prev);
+            return poster;
+          });
+        }
+      })
+      .finally(() => {
+        URL.revokeObjectURL(earlyUrl);
+      });
+
     try {
       const info = await inspectMoriLogDeviceMovieSource(next);
       setProbe(info);
@@ -875,13 +869,17 @@ export function HitoyasumiDeviceMovieComposer({
           {file ? (
             <p className="mt-2 truncate text-xs text-[#6a5b4a]">{file.name}</p>
           ) : null}
-          {sourceUrl && probe ? (
+          {sourceUrl ? (
             <HitoyasumiSoftVideoPlayer
               src={sourceUrl}
               posterUrl={sourcePosterUrl}
+              autoPrime
               className="mt-3 aspect-video w-full rounded-xl"
               label="選んだ動画を再生"
             />
+          ) : null}
+          {file && !probe && !selectError ? (
+            <p className="mt-2 text-xs text-[#6a5b4a]">動画情報を確認しています…</p>
           ) : null}
           {selectError ? (
             <p
