@@ -9,11 +9,11 @@ import {
   normalizeDiaryCommentForPdfFlow,
 } from "./diaryPreviewCommentLineWrap";
 
-/** 読み解き欄の1行最大文字数（日記ブック v2 レイアウトと同期） */
+/** 読み解き欄の1行最大文字数（あしあとブック v2 レイアウトと同期） */
 export const DIARY_COMMENT_PDF_CHARS_PER_LINE =
   DIARY_BOOK_ENTRY_V2_COMMENT.contentMaxCharsPerLine;
 
-/** 読み解き欄スロット高さ（日記ブック v2 レイアウトと同期） */
+/** 読み解き欄スロット高さ（あしあとブック v2 レイアウトと同期） */
 export const DIARY_COMMENT_PDF_REGION_HEIGHT_PX =
   DIARY_BOOK_ENTRY_V2_COMMENT.contentHeightPx;
 

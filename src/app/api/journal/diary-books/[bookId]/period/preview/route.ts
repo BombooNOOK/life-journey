@@ -3,12 +3,16 @@ import { NextResponse } from "next/server";
 import { getViewerEmailFromCookie } from "@/lib/auth/viewer";
 import { assertFullAccessForApi } from "@/lib/entitlement/requireFullAccess";
 import { parseDiaryBookPeriodFields } from "@/lib/journal/diaryBookForm";
-import { listJournalEntriesForDiaryBookIncludePicker } from "@/lib/journal/diaryBookIncludePicker";
 import {
-  countJournalEntriesInDiaryBookPeriod,
+  countDiaryBookPeriodEntriesWithTagScope,
+  filterDiaryBookPickerEntriesByTagScope,
+  listJournalEntriesForDiaryBookIncludePicker,
+} from "@/lib/journal/diaryBookIncludePicker";
+import {
   NO_ENTRIES_IN_DIARY_BOOK_PERIOD_MESSAGE,
   NO_INCLUDED_ENTRIES_IN_DIARY_BOOK_PERIOD_MESSAGE,
 } from "@/lib/journal/diaryBookPeriod";
+import { diaryBookTagScopeFromRow } from "@/lib/journal/diaryBookTagFilter";
 import { loadDiaryBookPeriodEditEligibility } from "@/lib/journal/diaryBookPeriodEdit";
 
 const JSON_NO_STORE = {
@@ -67,32 +71,45 @@ export async function POST(req: Request, { params }: RouteParams) {
     );
   }
 
-  const pickerEntries = await listJournalEntriesForDiaryBookIncludePicker({
+  const tagScope = diaryBookTagScopeFromRow(eligibility.book);
+
+  const pickerEntriesAll = await listJournalEntriesForDiaryBookIncludePicker({
     email: viewerEmail,
     profileId: eligibility.book.profileId,
     startDate: parsed.data.startDate,
     endDate: parsed.data.endDate,
+    pageTemplate: eligibility.book.pageTemplate,
   });
 
-  const entryCount = await countJournalEntriesInDiaryBookPeriod({
+  const pickerEntries = await filterDiaryBookPickerEntriesByTagScope({
+    email: viewerEmail,
+    profileId: eligibility.book.profileId,
+    entries: pickerEntriesAll,
+    tagScope,
+  });
+
+  const counts = await countDiaryBookPeriodEntriesWithTagScope({
     email: viewerEmail,
     profileId: eligibility.book.profileId,
     startDate: parsed.data.startDate,
     endDate: parsed.data.endDate,
+    tagScope,
   });
 
-  const totalEntryCount = pickerEntries.length;
+  const entryCount = counts.includedCount;
+  const matchingEntryCount = counts.matchingCount;
   const canUpdate = entryCount > 0;
   const message = canUpdate
     ? undefined
-    : totalEntryCount === 0
+    : matchingEntryCount === 0
       ? NO_ENTRIES_IN_DIARY_BOOK_PERIOD_MESSAGE
       : NO_INCLUDED_ENTRIES_IN_DIARY_BOOK_PERIOD_MESSAGE;
 
   return NextResponse.json(
     {
       entryCount,
-      totalEntryCount,
+      matchingEntryCount,
+      totalEntryCount: matchingEntryCount,
       canUpdate,
       entries: pickerEntries,
       ...(message ? { message } : {}),

@@ -24,7 +24,7 @@ const EMPTY_BODY_PLACEHOLDER = "ここに本文が入ります。";
 type Props = DiaryBookEntryV2PreviewPageProps & {
   /** @deprecated v2 本文では未使用。呼び出し互換のため残す */
   designTheme?: DiaryDesignId;
-  /** page = 日記ページのみ（全画面プレビュー用）。省略時はカード付き */
+  /** page = あしあとページのみ（全画面プレビュー用）。省略時はカード付き */
   variant?: "card" | "page";
   /** DiaryPreviewScaledViewport に渡す className */
   scaledClassName?: string;
@@ -112,9 +112,9 @@ function DiaryDesignPreviewInner({
 
   return (
     <section className="lj-reading-exempt rounded-xl border border-stone-200 bg-white p-3 shadow-sm sm:p-4">
-      <h3 className="text-sm font-semibold text-stone-800">製本イメージ（日記ブック本文）</h3>
+      <h3 className="text-sm font-semibold text-stone-800">製本イメージ（あしあとブック本文）</h3>
       <p className="mt-1 text-xs text-stone-500">
-        入力内容を日記ブック本文ページに流し込んだ表示です（724×1024 固定・端末は拡大縮小のみ）。
+        入力内容をあしあとブック本文ページに流し込んだ表示です（724×1024 固定・端末は拡大縮小のみ）。
       </p>
       <DiaryPreviewScaledViewport fitMode="width" className="mx-auto mt-3 max-w-[720px]">
         {page}

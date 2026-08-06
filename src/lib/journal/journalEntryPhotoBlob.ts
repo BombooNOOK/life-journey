@@ -25,7 +25,7 @@ type JournalPhotoBlobTokenAuth = {
 
 export type JournalPhotoBlobAuth = JournalPhotoBlobOidcAuth | JournalPhotoBlobTokenAuth;
 
-/** 日記写真 Store ID。未設定時は Vercel 既定の BLOB_STORE_ID にフォールバックする。 */
+/** あしあと写真 Store ID。未設定時は Vercel 既定の BLOB_STORE_ID にフォールバックする。 */
 export function journalPhotoBlobStoreId(): string | null {
   const dedicated = process.env.JOURNAL_PHOTO_BLOB_STORE_ID?.trim();
   if (dedicated) return dedicated;
@@ -121,7 +121,7 @@ export async function putJournalEntryPhotoBufferToBlob(params: {
   const auth = resolveJournalPhotoBlobAuth();
   if (!auth) {
     throw new Error(
-      "日記写真 Blob の認証が未設定です（JOURNAL_PHOTO_BLOB_STORE_ID + VERCEL_OIDC_TOKEN、または JOURNAL_PHOTO_BLOB_READ_WRITE_TOKEN）。",
+      "あしあと写真 Blob の認証が未設定です（JOURNAL_PHOTO_BLOB_STORE_ID + VERCEL_OIDC_TOKEN、または JOURNAL_PHOTO_BLOB_READ_WRITE_TOKEN）。",
     );
   }
 

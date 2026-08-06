@@ -9,8 +9,8 @@ export type DailyNumberClosingVariant = (typeof DAILY_NUMBER_CLOSING_VARIANTS)[n
 
 export const DAILY_NUMBER_CLOSING_VARIANT_LABELS: Record<DailyNumberClosingVariant, string> = {
   animal_friends: "どうぶつ仲間",
-  diary_entry: "日記を残す",
-  one_word_diary: "ひとこと日記",
+  diary_entry: "あしあとを残す",
+  one_word_diary: "ひとことあしあと",
   animal_guides: "どうぶつ鑑定士",
 };
 

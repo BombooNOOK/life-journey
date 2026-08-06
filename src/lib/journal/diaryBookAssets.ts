@@ -7,17 +7,17 @@ function withCache(path: string): string {
   return `${path}?v=${DIARY_BOOK_IMAGE_CACHE_VERSION}`;
 }
 
-/** 日記ブック共通・中表紙テンプレ（724×1024） */
+/** あしあとブック共通・中表紙テンプレ（724×1024） */
 export function diaryBookInsideCoverImagePath(): string {
   return withCache("/images/diary-book-inside-cover.png");
 }
 
-/** 日記ブック共通・裏表紙（724×1024） */
+/** あしあとブック共通・裏表紙（724×1024） */
 export function diaryBookBackCoverImagePath(): string {
   return withCache("/images/diary-book-back.png");
 }
 
-/** 日記ブック共通・月インデックス用の元背景（724×1024・参照用） */
+/** あしあとブック共通・月インデックス用の元背景（724×1024・参照用） */
 export function diaryBookMonthIndexImagePath(): string {
   return withCache("/images/diary-book-month-index.png");
 }
@@ -47,7 +47,7 @@ export function diaryBookInsideCoverBackIllustrationImagePath(): string {
   return withCache("/images/diary-book-inside-cover-back-illustration.png");
 }
 
-/** 日記本文枚数の見開き調整（全月共通・724×1024） */
+/** あしあと本文枚数の見開き調整（全月共通・724×1024） */
 export function diaryBookMonthBodyOddAdjustmentIllustrationImagePath(): string {
   return withCache("/images/diary-book-month-body-odd-adjustment-illustration.png");
 }
@@ -73,7 +73,7 @@ export function diaryBookPreBackCoverIllustrationImagePath(): string {
 }
 
 /**
- * 日記ブック本文テンプレ（水彩 scrapbook 背景・キャラ別・724×1024）。
+ * あしあとブック本文テンプレ（水彩 scrapbook 背景・キャラ別・724×1024）。
  * フクロウ先生基準で位置合わせ済みのキャラ込み1枚 PNG。
  * `diary-book-body-design-base.png` はキャラなし版（将来のキャラ追加用）。
  */
@@ -117,7 +117,7 @@ export function diaryBookBodyTemplatePathForCompanion(companionType: string): st
   return diaryBookBodyDesignTemplatePathForCompanion(companionType);
 }
 
-/** 日記ブック本文の写真枠・読み込み中プレースホルダー */
+/** あしあとブック本文の写真枠・読み込み中プレースホルダー */
 export function diaryBookPhotoMemoryLoadingImagePath(): string {
   return withCache("/images/memory-loading-owl.png");
 }

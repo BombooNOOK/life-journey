@@ -51,9 +51,9 @@ export function DiaryBookTailPreviewClient() {
   return (
     <div className="min-h-screen bg-stone-50 text-stone-900">
       <div className="mx-auto max-w-3xl px-4 py-8">
-        <h1 className="text-xl font-semibold text-stone-800">日記ブック末尾ページ（製本イメージ）</h1>
+        <h1 className="text-xl font-semibold text-stone-800">あしあとブック末尾ページ（製本イメージ）</h1>
         <p className="mt-2 text-sm leading-relaxed text-stone-600">
-          最終月の日記本文のあとに続く固定ページです。724×1024 の製本イメージで表示します。ログイン不要。
+          最終月のあしあと本文のあとに続く固定ページです。724×1024 の製本イメージで表示します。ログイン不要。
         </p>
         <p className="mt-2 text-sm text-stone-600">
           <Link href="/preview" className="underline hover:text-stone-900">
@@ -82,7 +82,7 @@ export function DiaryBookTailPreviewClient() {
             </div>
           </div>
           <p className="text-xs leading-relaxed text-stone-500">
-            製本時の順番：… → 日記本文 →（奇数枚なら調整）→ 早見表 → 自由記入2P → 裏表紙前 → 裏表紙
+            製本時の順番：… → あしあと本文 →（奇数枚なら調整）→ 早見表 → 自由記入2P → 裏表紙前 → 裏表紙
           </p>
         </div>
 

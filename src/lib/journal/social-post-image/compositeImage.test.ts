@@ -1,5 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
+import sharp from "sharp";
 import { describe, expect, it } from "vitest";
 
 import {
@@ -126,5 +127,139 @@ describe("compositeJournalSocialPostImage", () => {
 
     const { buffer } = await compositeJournalSocialPostImage(input, { createdAt });
     expect(buffer.byteLength).toBeGreaterThan(50_000);
+  });
+});
+
+describe("mori ashiato templates", () => {
+  it("chiisana_ashiato (full) composites to 1080×1350", async () => {
+    const { buffer, basename } = await compositeJournalSocialPostImage(
+      buildJournalSocialPostImageInput({
+        templateId: "chiisana_ashiato",
+        title: "ちいさな一日",
+        bodyExcerpt: "公園で遊んだ。",
+        subtitle: "",
+        todayNumber: 25,
+        monthNumber: 7,
+        yearNumber: 6,
+        moodLabel: "",
+        commentExcerpt: "楽しかった",
+        photoBuffer: null,
+        companionType: "drfukuro",
+        createdAt: new Date("2026-07-25T03:00:00.000Z"),
+      }),
+    );
+    const meta = await sharp(buffer).metadata();
+    expect(meta.width).toBe(1080);
+    expect(meta.height).toBe(1350);
+    expect(basename).toContain("chiisana_ashiato");
+  });
+
+  it("kyou_no_ashiato_wide composites to 1080×1920", async () => {
+    const { buffer } = await compositeJournalSocialPostImage(
+      buildJournalSocialPostImageInput({
+        templateId: "kyou_no_ashiato_wide",
+        title: "",
+        bodyExcerpt: "",
+        subtitle: "",
+        todayNumber: null,
+        monthNumber: null,
+        yearNumber: null,
+        moodLabel: "",
+        commentExcerpt: "今日のひとこと",
+        photoBuffer: null,
+        companionType: "drfukuro",
+        createdAt: new Date("2026-07-25T03:00:00.000Z"),
+      }),
+    );
+    const meta = await sharp(buffer).metadata();
+    expect(meta.width).toBe(1080);
+    expect(meta.height).toBe(1920);
+  });
+
+  it("kyou_no_3koma_ashiato accepts photo in three slots", async () => {
+    const photoBuffer = await sharp({
+      create: { width: 400, height: 400, channels: 3, background: "#88aa66" },
+    })
+      .png()
+      .toBuffer();
+    const { buffer } = await compositeJournalSocialPostImage(
+      buildJournalSocialPostImageInput({
+        templateId: "kyou_no_3koma_ashiato",
+        title: "",
+        bodyExcerpt: "",
+        subtitle: "",
+        todayNumber: null,
+        monthNumber: null,
+        yearNumber: null,
+        moodLabel: "",
+        commentExcerpt: "朝・昼・夜",
+        photoBuffer,
+        companionType: "drfukuro",
+        createdAt: new Date("2026-07-25T03:00:00.000Z"),
+      }),
+    );
+    const meta = await sharp(buffer).metadata();
+    expect(meta.width).toBe(1080);
+    expect(meta.height).toBe(1920);
+  });
+
+  it("kyou_no_3koma_ashiato places different photos per panel assignment", async () => {
+    const main = await sharp({
+      create: { width: 400, height: 400, channels: 3, background: "#ff0000" },
+    })
+      .png()
+      .toBuffer();
+    const extra0 = await sharp({
+      create: { width: 400, height: 400, channels: 3, background: "#00ff00" },
+    })
+      .png()
+      .toBuffer();
+    const extra1 = await sharp({
+      create: { width: 400, height: 400, channels: 3, background: "#0000ff" },
+    })
+      .png()
+      .toBuffer();
+
+    const withAssignment = await compositeJournalSocialPostImage(
+      buildJournalSocialPostImageInput({
+        templateId: "kyou_no_3koma_ashiato",
+        title: "",
+        bodyExcerpt: "1",
+        subtitle: "",
+        todayNumber: null,
+        monthNumber: null,
+        yearNumber: null,
+        moodLabel: "",
+        commentExcerpt: "2",
+        summary: "3",
+        photoBuffer: main,
+        extraPhotoBuffers: [extra0, extra1],
+        panelPhotoSources: ["extra1", "main", "extra0"],
+        companionType: "drfukuro",
+        createdAt: new Date("2026-07-25T03:00:00.000Z"),
+      }),
+    );
+    const allMain = await compositeJournalSocialPostImage(
+      buildJournalSocialPostImageInput({
+        templateId: "kyou_no_3koma_ashiato",
+        title: "",
+        bodyExcerpt: "1",
+        subtitle: "",
+        todayNumber: null,
+        monthNumber: null,
+        yearNumber: null,
+        moodLabel: "",
+        commentExcerpt: "2",
+        summary: "3",
+        photoBuffer: main,
+        companionType: "drfukuro",
+        createdAt: new Date("2026-07-25T03:00:00.000Z"),
+      }),
+    );
+
+    expect(withAssignment.buffer.equals(allMain.buffer)).toBe(false);
+    const meta = await sharp(withAssignment.buffer).metadata();
+    expect(meta.width).toBe(1080);
+    expect(meta.height).toBe(1920);
   });
 });

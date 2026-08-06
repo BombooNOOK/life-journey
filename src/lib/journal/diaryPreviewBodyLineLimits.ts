@@ -9,7 +9,7 @@ import {
 import { getDiaryBookEntryV2BodyFontLayout } from "@/lib/journal/diaryBookEntryBodyFontLayout";
 
 /**
- * 日記ブック本文 v2（724×1024）に対する行数判定。
+ * あしあとブック本文 v2（724×1024）に対する行数判定。
  * PDF・本棚プレビュー・入力画面の製本警告で共通。
  */
 
@@ -43,11 +43,15 @@ export const DIARY_BODY_RECOMMENDED_MAX_LINES_BY_MODE: Record<ContentFontMode, n
 
 /** 入力欄・ステータス用（短いラベル） */
 export const DIARY_BODY_FRAME_OVERFLOW_MESSAGE_BY_MODE: Record<ContentFontMode, string> = {
-  relaxed: "本文枠：長めです。標準モードをおすすめします",
-  standard: "本文枠：長めです。たっぷりまたはぎゅっとをおすすめします",
-  generous: "本文枠：長めです。ぎゅっとをおすすめします",
-  compact: "本文枠：長めです。プレビューで確認してください",
+  relaxed: "本文枠：1ページに入りきりません。標準モードをおすすめします",
+  standard: "本文枠：1ページに入りきりません。たっぷりまたはぎゅっとをおすすめします",
+  generous: "本文枠：1ページに入りきりません。ぎゅっとをおすすめします",
+  compact: "本文枠：1ページに入りきりません。文章を短くしてください",
 };
+
+/** ギリ収まるかも／描画差あり得るときの注意（プレビュー確認） */
+export const DIARY_BODY_FRAME_CAUTION_MESSAGE =
+  "本文枠：製本プレビューで一度確認してみてください" as const;
 
 /**
  * 製本プレビュー用（1ページに載る範囲を超えたとき）。
@@ -63,6 +67,37 @@ export const DIARY_BINDING_BODY_OVERFLOW_MESSAGE_BY_MODE: Record<ContentFontMode
   compact:
     "このモードでは本文が1ページに入りきりません。本文を短くしてください。",
 };
+
+export const DIARY_BINDING_BODY_CAUTION_MESSAGE =
+  "本文が枠の上限付近です。製本プレビューで入りきるか確認してください。" as const;
+
+/** 本文枠の警告段階：ok＝収まる / caution＝プレビュー確認 / overflow＝明らかに入りきらない */
+export type BodyFrameSeverity = "ok" | "caution" | "overflow";
+
+/**
+ * 行数ベースの本文枠警告段階（テンプレなし＝v2 レイアウト）。
+ * 1行超過＝caution、2行以上＝overflow。
+ */
+export function resolveV2BodyFrameSeverity(
+  content: string,
+  contentFontMode: string | null | undefined,
+): BodyFrameSeverity {
+  const trimmed = content.trim();
+  if (!trimmed) return "ok";
+  const { maxLines } = getDiaryBodyLineLimit(contentFontMode);
+  const lines = countBodyLayoutLines(trimmed, contentFontMode);
+  if (lines <= maxLines) return "ok";
+  if (lines - maxLines <= 1) return "caution";
+  return "overflow";
+}
+
+export function bodyFrameSeverityFromLengthFlag(
+  flag: "ok" | "soft" | "strong",
+): BodyFrameSeverity {
+  if (flag === "strong") return "overflow";
+  if (flag === "soft") return "caution";
+  return "ok";
+}
 
 export function getDiaryBindingBodyOverflowMessage(
   contentFontMode: string | null | undefined,
@@ -152,18 +187,31 @@ export function isDiaryBodyOverLineLimit(
 
 export function getBodyFrameStatusLabel(
   contentFontMode: string | null | undefined,
-  bodyOverflows: boolean,
+  bodySeverity: BodyFrameSeverity | boolean,
   commentOverflows: boolean,
 ): string {
-  if (bodyOverflows && commentOverflows) {
-    return "本文枠・読み解き枠：長めです。プレビューで確認してください";
+  const severity: BodyFrameSeverity =
+    typeof bodySeverity === "boolean"
+      ? bodySeverity
+        ? "overflow"
+        : "ok"
+      : bodySeverity;
+
+  if (severity === "overflow" && commentOverflows) {
+    return "本文枠・読み解き枠：1ページに入りきりません";
   }
-  if (bodyOverflows) {
+  if (severity === "caution" && commentOverflows) {
+    return "本文枠・読み解き枠：製本プレビューで確認してください";
+  }
+  if (severity === "overflow") {
     const mode = normalizeContentFontMode(contentFontMode);
     return DIARY_BODY_FRAME_OVERFLOW_MESSAGE_BY_MODE[mode];
   }
+  if (severity === "caution") {
+    return DIARY_BODY_FRAME_CAUTION_MESSAGE;
+  }
   if (commentOverflows) {
-    return "読み解き枠：長めです。プレビューで確認してください";
+    return "読み解き枠：製本プレビューで確認してください";
   }
   return "本文枠：収まっています";
 }

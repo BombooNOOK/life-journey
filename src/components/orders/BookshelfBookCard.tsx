@@ -14,7 +14,7 @@ type Props = {
   id: string;
   kind: "diary-book" | "report";
   title: string;
-  /** タイトルと「読む」の間に表示（例: 日記ブックの対象期間） */
+  /** タイトルと「読む」の間に表示（例: あしあとブックの対象期間） */
   periodLabel?: string;
   href: string;
   tone: "emerald" | "amber";

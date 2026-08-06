@@ -10,7 +10,7 @@ export type DiaryBookPageKind =
   | { kind: "inside-cover-back-illustration" }
   | { kind: "month-index"; monthIndex: number; calendarYear: number }
   | { kind: "month-illustration"; monthIndex: number; calendarYear: number }
-  /** 日記本文枚数の見開き調整（③・全月共通ファイル） */
+  /** あしあと本文枚数の見開き調整（③・全月共通ファイル） */
   | { kind: "month-body-odd-adjustment"; monthIndex: number; calendarYear: number }
   | { kind: "entry"; entry: BoundDiaryEntry; entryIndex: number }
   /** 今日のすうじ 早見表（自由記入の直前） */
@@ -88,7 +88,7 @@ export function sortBoundDiaryEntriesChronological(
 
 /**
  * ③ 調整イラストを足すか（全月共通）。
- * 日記本文が奇数枚のとき 1 枚追加し、見開きの左右を揃える。
+ * あしあと本文が奇数枚のとき 1 枚追加し、見開きの左右を揃える。
  * 後続固定ページ（早見表1P＋自由記入2P＋裏表紙前1P＝4P）を踏まえ、最終月も同じルール。
  */
 export function monthNeedsBodyOddAdjustment(entryCount: number): boolean {
@@ -99,7 +99,7 @@ export function monthNeedsBodyOddAdjustment(entryCount: number): boolean {
 /**
  * 製本直送向けページ配列。
  *
- * 各月: 索引（右）→ 足跡 → 日記… →（必要なら③）
+ * 各月: 索引（右）→ 足跡 → あしあと… →（必要なら③）
  * 末尾: 今日のすうじ早見表 → 自由記入（見開き2P）→ 裏表紙直前イラスト（全員）→ 裏表紙
  */
 export function buildBoundDiaryBookPages(

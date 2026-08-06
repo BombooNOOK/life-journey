@@ -1,9 +1,13 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useState } from "react";
 
-import { readLoghouseTourReturnHref, readLoghouseTourStep } from "@/lib/onboarding/firstVisitWizard/loghouseTour";
+import { OwlNavButton } from "@/components/ui/OwlNavButton";
+import { LOG_HOUSE_LOADING_LABEL } from "@/lib/journal/logHouseLabels";
+import {
+  readLoghouseTourReturnHref,
+  readLoghouseTourStep,
+} from "@/lib/onboarding/firstVisitWizard/loghouseTour";
 import { LOGHOUSE_TOUR_RETURN_LABEL } from "@/lib/onboarding/firstVisitWizard/loghouseTourCopy";
 
 type Props = {
@@ -14,7 +18,9 @@ type Props = {
   className?: string;
 };
 
-/** はじめて案内中なら「案内に戻る」ラベルに切り替える戻るリンク */
+const TOUR_RETURN_LOADING_LABEL = "案内に戻っています…" as const;
+
+/** はじめて案内中なら「案内に戻る」ラベルに切り替える戻るリンク（遷移中はくるくるフクロウ） */
 export function LogHouseTourAwareBackLink({
   href = "/orders",
   fallbackLabel,
@@ -22,20 +28,23 @@ export function LogHouseTourAwareBackLink({
 }: Props) {
   const [label, setLabel] = useState(fallbackLabel);
   const [resolvedHref, setResolvedHref] = useState(href);
+  const [loadingLabel, setLoadingLabel] = useState(LOG_HOUSE_LOADING_LABEL);
 
   useEffect(() => {
     if (readLoghouseTourStep()) {
       setLabel(`← ${LOGHOUSE_TOUR_RETURN_LABEL}`);
       setResolvedHref(readLoghouseTourReturnHref());
+      setLoadingLabel(TOUR_RETURN_LOADING_LABEL);
       return;
     }
     setLabel(fallbackLabel);
     setResolvedHref(href);
+    setLoadingLabel(LOG_HOUSE_LOADING_LABEL);
   }, [fallbackLabel, href]);
 
   return (
-    <Link href={resolvedHref} className={className}>
+    <OwlNavButton href={resolvedHref} loadingLabel={loadingLabel} className={className}>
       {label}
-    </Link>
+    </OwlNavButton>
   );
 }

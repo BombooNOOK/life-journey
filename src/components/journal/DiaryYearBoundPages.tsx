@@ -3,7 +3,7 @@
 import Image from "next/image";
 
 import { MoodOwlIcon } from "@/components/journal/MoodOwlIcon";
-import { diaryCoverImagePath, normalizeDiaryCoverStyle } from "@/lib/journal/coverAssets";
+import { diaryCoverImagePath, getDiaryCoverStyleLabel, normalizeDiaryCoverStyle } from "@/lib/journal/coverAssets";
 import {
   diaryBookCalendarPawprintImagePath,
   diaryBookMonthIndexMoonImagePath,
@@ -50,7 +50,7 @@ export type BoundDiaryEntry = {
   designTheme?: string;
   /** 一覧APIでは省略。閲覧時は写真APIで別途取得 */
   photoDataUrl?: string | null;
-  /** photoDataUrl 本文を読まずに付与（日記ブック entries API 等） */
+  /** photoDataUrl 本文を読まずに付与（あしあとブック entries API 等） */
   hasPhoto?: boolean;
   generatedComment: string | null;
   includeInBook?: boolean;
@@ -65,7 +65,7 @@ export type BoundDiaryEntry = {
 
 const PAGE_ASPECT = { aspectRatio: "724 / 1024" as const };
 
-/** 日記ブック読書の月カレンダーは常に6週分のマス高さを確保 */
+/** あしあとブック読書の月カレンダーは常に6週分のマス高さを確保 */
 const DIARY_BOOK_READER_WEEK_ROWS = 6;
 /** 月インデックス背景 PNG の装飾が載る上部（1024px ページの約1/3） */
 const DIARY_BOOK_READER_INDEX_HEADER_HEIGHT_PX = 341;
@@ -192,7 +192,7 @@ export function DiaryBoundFrontCover({
       >
         <Image
           src={coverSrc}
-          alt={`${year}年の日記・表紙（${coverStyle === "kireime" ? "きれいめ" : "シンプル"}）`}
+          alt={`${year}年のあしあと・表紙（${getDiaryCoverStyleLabel(coverStyle)}）`}
           fill
           className="object-cover"
           sizes="540px"
@@ -241,7 +241,7 @@ export function DiaryBoundMonthCalendarPage({
   year: number;
   monthIndex: number;
   entries: BoundDiaryEntry[];
-  /** 日記ブック読書用（724×1024 フルページ・外枠なし） */
+  /** あしあとブック読書用（724×1024 フルページ・外枠なし） */
   bookReader?: boolean;
 }) {
   const monthEntriesAll = entriesInMonth(entries, year, monthIndex);
@@ -607,7 +607,7 @@ export function DiaryBoundGoalsPage({ year }: { year: number }) {
         </p>
         <div className="min-h-[42%] flex-1 rounded-md border border-dashed border-stone-300 bg-white/60" aria-label="目標を書く余白" />
         <p className="text-[11px] text-stone-500">
-          デジタル版では未入力です。思いついたら日記の本文や別のメモに残しても大丈夫です。
+          デジタル版では未入力です。思いついたらあしあとの本文や別のメモに残しても大丈夫です。
         </p>
       </div>
     </BookPageFrame>

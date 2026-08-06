@@ -6,7 +6,7 @@ import {
   CONTENT_FONT_MODE_LABELS_JA,
   type ContentFontMode,
 } from "@/lib/journal/contentFontMode";
-import { getBodyFrameStatusLabel } from "@/lib/journal/diaryPreviewBodyLineLimits";
+import { getBodyFrameStatusLabel, type BodyFrameSeverity } from "@/lib/journal/diaryPreviewBodyLineLimits";
 
 type Props = {
   contentFontMode: ContentFontMode;
@@ -15,6 +15,7 @@ type Props = {
   bodyLineCount: number;
   bodyMaxLines: number;
   bodyOverflows: boolean;
+  bodyFrameSeverity?: BodyFrameSeverity;
   commentOverflows: boolean;
   /** キーボード直上に固定するときの座標（visualViewport 基準） */
   docked?: boolean;
@@ -30,12 +31,13 @@ function CounterContent({
   bodyLineCount,
   bodyMaxLines,
   bodyOverflows,
+  bodyFrameSeverity,
   commentOverflows,
 }: Omit<Props, "docked" | "dockedStyle" | "rootRef" | "className">) {
-  const frameOverflows = bodyOverflows || commentOverflows;
+  const severity = bodyFrameSeverity ?? (bodyOverflows ? "overflow" : "ok");
   const frameLabel = getBodyFrameStatusLabel(
     contentFontMode,
-    bodyOverflows,
+    severity,
     commentOverflows,
   );
   const modeLabel = CONTENT_FONT_MODE_LABELS_JA[contentFontMode];
@@ -52,9 +54,11 @@ function CounterContent({
       </div>
       <p
         className={
-          frameOverflows
-            ? "mt-0.5 text-xs font-medium leading-snug text-amber-800"
-            : "mt-0.5 text-xs leading-snug text-stone-500"
+          severity === "overflow" || commentOverflows
+            ? "mt-0.5 text-xs font-medium leading-snug text-orange-800"
+            : severity === "caution"
+              ? "mt-0.5 text-xs font-medium leading-snug text-amber-800"
+              : "mt-0.5 text-xs leading-snug text-stone-500"
         }
       >
         {frameLabel}

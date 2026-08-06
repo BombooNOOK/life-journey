@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { OwlLoadingInline } from "@/components/ui/OwlLoadingInline";
@@ -11,6 +13,7 @@ import {
 import { parseFetchJsonResponse } from "@/lib/http/parseFetchJson";
 import { MoodOwlIcon } from "@/components/journal/MoodOwlIcon";
 import { getMoodMeta } from "@/lib/journal/meta";
+import { parseSafeJournalReturnTo } from "@/lib/journal/bookshelfReturnTo";
 
 type SavedPayload = {
   includedCount: number;
@@ -21,6 +24,11 @@ type Props = {
   entries: DiaryBookIncludePickerEntryDto[];
   onSaved: (payload: SavedPayload) => void;
   onDirtyChange?: (dirty: boolean) => void;
+  /** あしあと編集から戻る先。省略時は現在の path（許可リスト内のみ） */
+  editReturnTo?: string;
+  profileId?: string;
+  /** あしあとブックのページテンプレ。編集リンクに付与し、枠容量ヒントに使う */
+  pageTemplate?: string | null;
 };
 
 function includeSnapshot(entries: DiaryBookIncludePickerEntryDto[]): string {
@@ -29,19 +37,49 @@ function includeSnapshot(entries: DiaryBookIncludePickerEntryDto[]): string {
 
 function lengthHintLabel(flag: DiaryBookIncludePickerEntryDto["lengthFlag"]): string | null {
   if (flag === "ok") return null;
-  return "長め";
+  return "はみ出し注意";
+}
+
+function journalEditHref(params: {
+  entryId: string;
+  returnTo: string | null;
+  profileId?: string;
+  pageTemplate?: string | null;
+}): string {
+  const qs = new URLSearchParams();
+  qs.set("edit", params.entryId);
+  if (params.profileId) qs.set("profile", params.profileId);
+  if (params.returnTo) qs.set("returnTo", params.returnTo);
+  const template = params.pageTemplate?.trim();
+  if (template) qs.set("pageTemplate", template);
+  return `/journal?${qs.toString()}`;
 }
 
 export function DiaryBookIncludeInBookMonthList({
   entries: initialEntries,
   onSaved,
   onDirtyChange,
+  editReturnTo,
+  profileId,
+  pageTemplate,
 }: Props) {
+  const pathname = usePathname();
   const [entries, setEntries] = useState(initialEntries);
   const [savedSnapshot, setSavedSnapshot] = useState(() => includeSnapshot(initialEntries));
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+
+  const safeReturnTo = useMemo(
+    () => parseSafeJournalReturnTo(editReturnTo ?? pathname),
+    [editReturnTo, pathname],
+  );
+
+  const overflowIncludedCount = useMemo(
+    () =>
+      entries.filter((e) => e.includeInBook && e.lengthFlag !== "ok").length,
+    [entries],
+  );
 
   useEffect(() => {
     setEntries(initialEntries);
@@ -163,11 +201,18 @@ export function DiaryBookIncludeInBookMonthList({
   return (
     <section className="space-y-3 rounded-xl border border-emerald-200/80 bg-white p-4 shadow-sm">
       <div>
-        <h3 className="text-base font-semibold text-stone-900">本に入れる日記を選ぶ</h3>
+        <h3 className="text-base font-semibold text-stone-900">本に入れるあしあとを選ぶ</h3>
         <p className="mt-1 text-sm leading-relaxed text-stone-600">
-          日記としてはすべて保存されています。ここでは、日記ブックや製本に入れる日記だけを選べます。
+          あしあととしてはすべて保存されています。ここでは、あしあとブックや製本に入れるあしあとだけを選べます。
         </p>
       </div>
+
+      {overflowIncludedCount > 0 ? (
+        <p className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm leading-relaxed text-amber-950">
+          本に入れるあしあとのうち {overflowIncludedCount}{" "}
+          件が、選んだ文字サイズだとページからはみ出す可能性があります。「はみ出し注意」から文字サイズや文章を直せます。直したあと、この画面に戻って確認し直せます。
+        </p>
+      ) : null}
 
       <div className="space-y-4">
         {monthlyBuckets.map((bucket) => {
@@ -198,7 +243,7 @@ export function DiaryBookIncludeInBookMonthList({
             </div>
             {monthAllIncluded ? (
               <p className="mb-2 text-xs text-stone-500">
-                この月の日記はすでにすべて選択されています。
+                この月のあしあとはすでにすべて選択されています。
               </p>
             ) : null}
             <ul className="space-y-2">
@@ -217,7 +262,7 @@ export function DiaryBookIncludeInBookMonthList({
                         disabled={saving}
                         onChange={(e) => setEntryInclude(entry.id, e.target.checked)}
                         className="mt-0.5 h-5 w-5 shrink-0 rounded border-stone-300 text-emerald-700 focus:ring-emerald-600"
-                        aria-label={`${diaryBookIncludePickerDateLabel(entry.createdAt)}の日記を本に入れる`}
+                        aria-label={`${diaryBookIncludePickerDateLabel(entry.createdAt)}のあしあとを本に入れる`}
                       />
                       <span className="min-w-0 text-sm text-stone-800">
                         <span className="font-medium text-stone-900">
@@ -231,7 +276,7 @@ export function DiaryBookIncludeInBookMonthList({
                           {entry.contentExcerpt}
                         </span>
                         {entry.hasPhoto || lengthLabel ? (
-                          <span className="mt-1 flex flex-wrap gap-1.5">
+                          <span className="mt-1 flex flex-wrap items-center gap-1.5">
                             {entry.hasPhoto ? (
                               <span className="rounded bg-stone-200/80 px-1.5 py-0.5 text-[10px] font-medium text-stone-700">
                                 写真あり
@@ -241,6 +286,19 @@ export function DiaryBookIncludeInBookMonthList({
                               <span className="rounded bg-amber-100 px-1.5 py-0.5 text-[10px] font-medium text-amber-900">
                                 {lengthLabel}
                               </span>
+                            ) : null}
+                            {lengthLabel && safeReturnTo ? (
+                              <Link
+                                href={journalEditHref({
+                                  entryId: entry.id,
+                                  returnTo: safeReturnTo,
+                                  profileId,
+                                  pageTemplate,
+                                })}
+                                className="rounded border border-amber-300 bg-white px-1.5 py-0.5 text-[10px] font-medium text-amber-950 underline-offset-2 hover:bg-amber-50 hover:underline"
+                              >
+                                文字サイズを直す
+                              </Link>
                             ) : null}
                           </span>
                         ) : null}
@@ -256,7 +314,7 @@ export function DiaryBookIncludeInBookMonthList({
       </div>
 
       <p className="text-xs text-stone-500">
-        本に入れる日記:{" "}
+        本に入れるあしあと:{" "}
         <span className="font-semibold text-stone-800">{includedCount}件</span>
         {dirty ? "（未保存の変更があります）" : null}
       </p>

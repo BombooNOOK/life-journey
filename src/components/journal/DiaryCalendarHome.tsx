@@ -111,7 +111,7 @@ async function fetchJournalMonth(monthKey: string, profileId: string): Promise<D
     credentials: "same-origin",
   });
   const data = (await res.json()) as { entries?: DiaryCalendarEntry[]; error?: string };
-  if (!res.ok) throw new Error(data.error ?? "日記の取得に失敗しました。");
+  if (!res.ok) throw new Error(data.error ?? "あしあとの取得に失敗しました。");
   return data.entries ?? [];
 }
 
@@ -220,7 +220,7 @@ export function DiaryCalendarHome({
         getAppraiserDisplayName(companionComplete?.companionType ?? "owl"),
       );
   const CALENDAR_FETCH_ERROR =
-    "日記のあしあとを読み込めませんでした。時間をおいて再度お試しください。";
+    "あしあとを読み込めませんでした。時間をおいて再度お試しください。";
   const returnToBase = useMemo(() => {
     const qs = new URLSearchParams();
     if (selectedDay !== null) {
@@ -578,7 +578,7 @@ export function DiaryCalendarHome({
                 profileId={effectiveProfileId}
                 className={writeTodayButtonClass}
               >
-                {entitlement.tier === "trial_not_started" ? "はじめての日記を書く" : "今日の日記を書く"}
+                今日のあしあとを書く
               </DonguriWriteEntryLink>
               {showSelectedDayWriteButton && journalSelectedHref && selectedDayKey ? (
                 <DonguriWriteEntryLink
@@ -587,13 +587,13 @@ export function DiaryCalendarHome({
                   profileId={effectiveProfileId}
                   className={writeSelectedDayButtonClass}
                 >
-                  選択した日の日記を書く
+                  選択した日のあしあとを書く
                 </DonguriWriteEntryLink>
               ) : null}
             </div>
           ) : (
             <p className="rounded-lg border border-violet-200 bg-violet-50/70 px-3 py-2 text-center text-sm text-violet-950">
-              無料お試し期間が終了したため、新しい日記の作成はできません。下の一覧から過去の日記を読むことができます。
+              新しいあしあとを森に残す操作は、いまご利用いただけません。どんぐりと森の定期便のご案内をご確認ください。下の一覧から過去のあしあとを読むことができます。
             </p>
           )}
         </div>
@@ -601,7 +601,7 @@ export function DiaryCalendarHome({
         <div ref={listRef} className="scroll-mt-4 space-y-3">
           {selectedDay === null ? (
             <p className="rounded-xl border border-dashed border-[#e0d2bc]/90 bg-[#f7efe3]/70 px-4 py-6 text-center text-sm text-[#8a7b6a]">
-              日付をタップすると、その日の日記がここに表示されます。
+              日付をタップすると、その日のあしあとがここに表示されます。
             </p>
           ) : (
             <>
@@ -611,7 +611,7 @@ export function DiaryCalendarHome({
                   viewMonth.getMonth(),
                   selectedDay,
                 )}
-                の日記
+                のあしあと
                 <span className="ml-2 text-sm font-normal text-[#8a7b6a]">
                   {selectedDayEntries.length}件
                 </span>
@@ -623,7 +623,7 @@ export function DiaryCalendarHome({
                 >
                   <p className="font-medium text-[#8a6b3d]">この日に書きかけの下書きがあります</p>
                   <p className="mt-1 text-xs leading-relaxed text-[#7a6856]">
-                    「日記を書く」から続けると、下書きを復元できます。
+                    「あしあとを書く」から続けると、下書きを復元できます。
                   </p>
                 </div>
               ) : null}
@@ -633,7 +633,7 @@ export function DiaryCalendarHome({
                   <p>
                     {selectedDayHasDraft
                       ? "正式なあしあとはまだありません（下書きのみ）。"
-                      : "この日の日記はまだありません。"}
+                      : "この日のあしあとはまだありません。"}
                   </p>
                 </div>
               ) : (

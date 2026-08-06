@@ -34,7 +34,7 @@ type Props = PreviewProps & {
   returnHomeLabel: string;
 };
 
-/** スマホ：日記ページのみ全画面表示。PC はカード付きプレビュー（724×1024 固定 + scale のみ）。 */
+/** スマホ：あしあとページのみ全画面表示。PC はカード付きプレビュー（724×1024 固定 + scale のみ）。 */
 export function JournalPreviewSpread({ returnTo, returnHomeLabel, ...preview }: Props) {
   const [mobileFocus, setMobileFocus] = useState(false);
 
@@ -56,7 +56,7 @@ export function JournalPreviewSpread({ returnTo, returnHomeLabel, ...preview }: 
           type="button"
           className="w-full cursor-zoom-in rounded-lg border border-dashed border-stone-200 bg-stone-50/50 p-2 text-left active:bg-stone-100/80"
           onClick={() => setMobileFocus(true)}
-          aria-label="日記ページを全画面で見る"
+          aria-label="あしあとページを全画面で見る"
         >
           <div className="relative mx-auto aspect-[724/1024] w-full max-w-md overflow-hidden">
             <div className="absolute inset-0">
@@ -87,7 +87,7 @@ export function JournalPreviewSpread({ returnTo, returnHomeLabel, ...preview }: 
             className={`fixed inset-0 ${IMMERSIVE_OVERLAY_Z_CLASS} flex flex-col bg-[#f7f4ee] sm:hidden`}
             role="dialog"
             aria-modal="true"
-            aria-label="日記プレビュー全画面"
+            aria-label="あしあとプレビュー全画面"
           >
             <div className="flex shrink-0 items-center justify-between gap-2 border-b border-stone-200/90 bg-[#faf8f5]/95 px-3 py-2 pt-[max(0.5rem,env(safe-area-inset-top))]">
               <button

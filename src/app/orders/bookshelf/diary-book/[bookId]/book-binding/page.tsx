@@ -8,6 +8,7 @@ import {
   loadDiaryBookBindingSnapshotForBook,
 } from "@/lib/commerce/createDiaryBookBindingRequestForBook";
 import { diaryBookBindingOverviewValue } from "@/lib/journal/diaryBookBindingOffer";
+import { isAshiatoPageTemplateRightBound } from "@/lib/journal/ashiatoPageTemplates";
 import { getBookPlan } from "@/lib/order/bookBindingPlan";
 
 export const dynamic = "force-dynamic";
@@ -32,7 +33,7 @@ export default async function DiaryBookBindingPage({ params }: Props) {
           <Link href="/orders/bookshelf" className="text-sm text-stone-600 hover:text-stone-900">
             ← 本棚へ
           </Link>
-          <h1 className="mt-2 text-2xl font-bold text-stone-900">日記ブック製本版の注文</h1>
+          <h1 className="mt-2 text-2xl font-bold text-stone-900">あしあとブック製本版の注文</h1>
         </div>
         <div
           className={[
@@ -59,6 +60,7 @@ export default async function DiaryBookBindingPage({ params }: Props) {
   const rangeLabel = `${snapshot.startDate.replace(/-/g, "/")} 〜 ${snapshot.endDate.replace(/-/g, "/")}`;
   const pendingResult = await getPendingDiaryBookBindingForBook({ viewerEmail, bookId });
   const hasIssuedCode = pendingResult.ok && pendingResult.pending != null;
+  const rightBound = isAshiatoPageTemplateRightBound(snapshot.pageTemplate);
 
   return (
     <div className="space-y-6">
@@ -66,10 +68,10 @@ export default async function DiaryBookBindingPage({ params }: Props) {
         <Link href="/orders/bookshelf" className="text-sm text-stone-600 hover:text-stone-900">
           ← 本棚へ
         </Link>
-        <h1 className="mt-2 text-2xl font-bold text-stone-900">日記ブック製本版の注文</h1>
+        <h1 className="mt-2 text-2xl font-bold text-stone-900">あしあとブック製本版の注文</h1>
         {!hasIssuedCode ? (
           <p className="mt-2 text-sm leading-relaxed text-stone-700">
-            この日記ブックを、紙の本として注文できます。
+            このあしあとブックを、紙の本として注文できます。
             <br />
             「製本版を注文する」を押すと、製本コードが発行されます。
             <br />
@@ -78,12 +80,41 @@ export default async function DiaryBookBindingPage({ params }: Props) {
         ) : null}
       </div>
 
+      {rightBound ? (
+        <section
+          className="rounded-xl border-2 border-rose-400 bg-rose-50 px-4 py-4 text-rose-950 shadow-sm sm:px-5"
+          role="note"
+          aria-label="右とじの製本注意"
+        >
+          <p className="text-xs font-semibold tracking-wide text-rose-800">製本直送・注文時の確認</p>
+          <p className="mt-1 text-xl font-bold leading-tight sm:text-2xl">
+            とじ方向：右とじ
+          </p>
+          <p className="mt-2 text-sm leading-relaxed">
+            ページのかたち「{snapshot.pageTemplateLabel}」は縦書きのため、
+            <span className="font-semibold">右とじ</span>
+            で製本してください。BASEの商品ページでとじ方向を選ぶときは、必ず「右とじ」を選んでください（左とじにするとページのめくりが逆になります）。
+          </p>
+        </section>
+      ) : null}
+
       <section className="rounded-xl border border-emerald-200 bg-emerald-50/40 p-5 text-sm text-stone-800">
-        <h2 className="font-semibold text-stone-900">注文対象の日記ブック</h2>
+        <h2 className="font-semibold text-stone-900">注文対象のあしあとブック</h2>
         <dl className="mt-3 space-y-2">
           <div>
             <dt className="text-xs text-stone-500">タイトル</dt>
             <dd className="font-medium">{snapshot.displayTitle}</dd>
+          </div>
+          <div>
+            <dt className="text-xs text-stone-500">ページのかたち</dt>
+            <dd>
+              {snapshot.pageTemplateLabel}
+              {rightBound ? (
+                <span className="ml-2 inline-flex rounded-md border border-rose-300 bg-rose-100 px-1.5 py-0.5 text-[11px] font-semibold text-rose-900">
+                  右とじ
+                </span>
+              ) : null}
+            </dd>
           </div>
           <div>
             <dt className="text-xs text-stone-500">対象期間</dt>
@@ -105,10 +136,17 @@ export default async function DiaryBookBindingPage({ params }: Props) {
         pageCount={snapshot.pageCount}
         planId={snapshot.planId}
         orderable={plan.orderable}
+        rightBound={rightBound}
+        pageTemplateLabel={snapshot.pageTemplateLabel}
       />
 
       <ul className="list-inside list-disc space-y-0.5 text-xs leading-relaxed text-stone-500">
         <li>BASEでお支払い（製本コード入力が必要）</li>
+        {rightBound ? (
+          <li className="font-medium text-rose-800">
+            この本は右とじです。BASE注文時にとじ方向を間違えないでください
+          </li>
+        ) : null}
         <li>受注生産のため、注文後のキャンセルは原則できません</li>
         <li>森の定期便・どんぐりとは別料金です</li>
       </ul>

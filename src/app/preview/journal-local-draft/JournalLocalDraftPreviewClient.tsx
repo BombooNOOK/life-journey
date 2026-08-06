@@ -59,7 +59,7 @@ export function JournalLocalDraftPreviewClient() {
       </section>
 
       <section className="rounded-xl border border-stone-200 bg-white p-4 shadow-sm sm:p-5">
-        <h2 className="text-sm font-semibold text-stone-800">日記入力画面（バナー部分）</h2>
+        <h2 className="text-sm font-semibold text-stone-800">あしあと入力画面（バナー部分）</h2>
         {scenario === "online-idle" ? (
           <p className="mt-3 text-sm text-stone-500">
             （オンライン通常時は、ここにバナーは表示されません）

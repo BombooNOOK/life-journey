@@ -86,7 +86,7 @@ export type FirstVisitGuideCard = {
   buttons: FirstVisitGuideCardButton[];
 };
 
-/** 第3章前：行き先看板 → ログハウスで日記 */
+/** 第3章前：行き先看板 → ログハウスであしあと */
 export const FIRST_VISIT_CHAPTER_3_SIGN_CARD: FirstVisitGuideCard = {
   id: "chapter-3-sign",
   signLabel: FIRST_VISIT_CHAPTER_3_SIGN_LABEL,
@@ -165,7 +165,7 @@ export const FIRST_VISIT_LOGHOUSE_SIGN_CARD: FirstVisitGuideCard = {
 export const FIRST_VISIT_LOGHOUSE_BUILD_CARDS: FirstVisitGuideCard[] = [
   {
     id: "loghouse-build",
-    body: "あなただけのログハウスを建てています。\n日記や鑑定書をしまっておく、あなたの拠点です。",
+    body: "あなただけのログハウスを建てています。\nあしあとや鑑定書をしまっておく、あなたの拠点です。",
     buttons: [{ label: "次へ", action: "next", variant: "primary" }],
   },
   {

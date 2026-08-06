@@ -1,5 +1,5 @@
 /**
- * 日記「製本イメージ」プレビュー用の幅ベース段階（small / medium / large）。
+ * あしあと「製本イメージ」プレビュー用の幅ベース段階（small / medium / large）。
  * templateShellRef の実幅（px）で判定する。large は DiaryDesignPreview 内の既存「広い枠」式をそのまま使う。
  */
 

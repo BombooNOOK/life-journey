@@ -41,6 +41,8 @@ type Props = {
   meaningsReturnTo?: string | null;
   /** 「〇〇より」カード直下（伴走キャラ変更など） */
   afterCommentSlot?: ReactNode;
+  /** 読み解きのあとに出す森ログ案内など */
+  afterReadingSlot?: ReactNode;
   /** 伴走プレビュー案内：最下部到達の検知用 */
   previewEndRef?: Ref<HTMLDivElement>;
 };
@@ -95,6 +97,7 @@ export function JournalReadablePreview({
   canEdit = true,
   meaningsReturnTo,
   afterCommentSlot,
+  afterReadingSlot,
   previewEndRef,
 }: Props) {
   const displayContent = useMemo(() => stripTagsFromContent(content), [content]);
@@ -104,7 +107,7 @@ export function JournalReadablePreview({
   const activityMeta = getActivityMeta(activity);
   const editHref = journalEditPath(
     entryId,
-    meaningsReturnTo ?? returnTo ?? "/journal/preview",
+    returnTo ?? meaningsReturnTo ?? "/journal/preview",
     profileId ?? undefined,
   );
   const photoUrl =
@@ -122,7 +125,7 @@ export function JournalReadablePreview({
       <header className="flex items-start justify-between gap-3 border-b border-[#e8dcc8]/90 pb-4">
         <h2 className="text-[1.375rem] font-bold leading-snug text-[#3f3428] sm:text-2xl">{dateLabel}</h2>
         {canEdit ? (
-          <PencilEditLink href={editHref} label="この日記を編集する" />
+          <PencilEditLink href={editHref} label="このあしあとを編集する" />
         ) : null}
       </header>
 
@@ -157,6 +160,8 @@ export function JournalReadablePreview({
       ) : null}
 
       {afterCommentSlot ? <div>{afterCommentSlot}</div> : null}
+
+      {afterReadingSlot ? <div>{afterReadingSlot}</div> : null}
 
       {diaryNumbers ? (
         <DiaryNumbersHintSection

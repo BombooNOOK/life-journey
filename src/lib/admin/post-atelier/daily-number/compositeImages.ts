@@ -31,6 +31,7 @@ import type {
   DailyNumberPagePreview,
   DailyNumberTodayValue,
 } from "./types";
+import { buildCoverScheduledDateOverlay } from "./coverScheduledDate";
 import { buildInstagramCaption } from "./buildCopyText";
 import { DAILY_NUMBER_INSTAGRAM_CAPTION_FILENAME } from "./instagramCaptionCopy";
 import { dailyNumberZipBasename } from "./zipBasename";
@@ -188,7 +189,10 @@ export async function compositeDailyNumberCarousel(
     index: 1,
     filename: "01-cover.png",
     label: "表紙",
-    buffer: await compositeTemplate(dailyNumberCoverTemplatePath(character), null),
+    buffer: await compositeTemplate(
+      dailyNumberCoverTemplatePath(character),
+      buildCoverScheduledDateOverlay(payload.scheduledDate),
+    ),
   });
 
   slides.push({

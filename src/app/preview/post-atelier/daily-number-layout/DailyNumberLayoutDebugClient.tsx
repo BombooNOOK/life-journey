@@ -94,7 +94,7 @@ export function DailyNumberLayoutDebugClient({
         <p className="font-medium">テンプレート設計座標（819×1024）を 1:1 で表示しています。</p>
         <ul className="mt-2 list-disc space-y-1 pl-5 text-xs">
           <li>
-            <strong>5px マス</strong>は日記プレビューと同じく「設計 px の 5px」です。画面を縮小すると見た目の大きさは変わります。
+            <strong>5px マス</strong>はあしあとプレビューと同じく「設計 px の 5px」です。画面を縮小すると見た目の大きさは変わります。
           </li>
           <li>クリックで座標をコピーし、ピンクの {DAILY_NUMBER_LAYOUT_RULER_SQUARE_PX}px 正方形を置けます。</li>
           <li>紫のグリッドは 10px 細線・50px 太線（数値ラベル付き）です。</li>

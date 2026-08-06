@@ -32,7 +32,7 @@ export async function POST(_: Request, { params }: RouteParams) {
     console.error("[diary-book-refresh] failed", { bookId, error: e });
     return NextResponse.json(
       {
-        error: "日記ブックの更新に失敗しました。時間をおいて再度お試しください。",
+        error: "あしあとブックの更新に失敗しました。時間をおいて再度お試しください。",
         code: "REFRESH_FAILED",
       },
       { status: 500, ...JSON_NO_STORE },

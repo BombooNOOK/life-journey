@@ -1,5 +1,5 @@
 /**
- * 日記ブック製本 PDF 想定のページ左右（1-based）。
+ * あしあとブック製本 PDF 想定のページ左右（1-based）。
  * `pdfBindingBackground` と同じ: 3P 以降は奇数＝見開き左、偶数＝見開き右。
  */
 export function isDiaryBookLeftPage(pageNumber: number): boolean {

@@ -1,6 +1,6 @@
 /**
  * BASE ショップ URL（アプリ導線用）。
- * 日記製本（ページ数別）は `bookBindingPlan.ts` を参照。
+ * あしあと製本（ページ数別）は `bookBindingPlan.ts` を参照。
  */
 
 /** ライトプラン相当（旧 BASE 月額・定期便 URL。Stripe 移行後は参照のみ） */

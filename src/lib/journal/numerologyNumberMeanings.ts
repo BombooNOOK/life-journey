@@ -1,4 +1,4 @@
-/** 今日のすうじ（1〜9）の辞書データ。日記の振り返り用。 */
+/** 今日のすうじ（1〜9）の辞書データ。あしあとの振り返り用。 */
 
 export type DiaryNumberValue = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9;
 
@@ -7,7 +7,7 @@ export type NumerologyNumberMeaningEntry = {
   title: string;
   keywords: string[];
   description: string;
-  /** 日記を書く・読み返すときの見方 */
+  /** あしあとを書く・読み返すときの見方 */
   diaryHint: string;
 };
 
@@ -111,12 +111,12 @@ export function lookupNumerologyNumberMeaning(value: number): NumerologyNumberMe
 export const NUMEROLOGY_NUMBERS_PAGE_TITLE = "すうじの意味を見る";
 
 export const NUMEROLOGY_NUMBERS_PAGE_INTRO =
-  "Life Journey Diary では、日記を書く日に「今日のすうじ」として、今日・今月・今年のすうじをお伝えしています。ここでは、1〜9 それぞれがどんなテーマを表すのかをまとめています。";
+  "Life Journey Diary では、あしあとを書く日に「今日のすうじ」として、今日・今月・今年のすうじをお伝えしています。ここでは、1〜9 それぞれがどんなテーマを表すのかをまとめています。";
 
 export const NUMEROLOGY_NUMBERS_PAGE_FOOTNOTE =
   "未来を決めるものではなく、日々を振り返るヒントです。";
 
-/** 日記ブック最終付近の早見表タイトル */
+/** あしあとブック最終付近の早見表タイトル */
 export const DIARY_BOOK_NUMEROLOGY_QUICK_REFERENCE_TITLE = "今日のすうじ 早見表";
 
 /** 早見表1行（すうじ・テーマ名・短いキーワード） */

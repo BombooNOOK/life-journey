@@ -11,7 +11,7 @@ import {
   type GardenWateringFxBeat,
 } from "@/lib/garden/gardenWateringTransition";
 
-/** 生成り寄りのカード色（日記保存演出のデフォルトより少し温かめ） */
+/** 生成り寄りのカード色（あしあと保存演出のデフォルトより少し温かめ） */
 const KINARI_CARD = {
   borderColor: "rgba(186, 164, 132, 0.58)",
   backgroundColor: "rgba(255, 250, 242, 0.97)",

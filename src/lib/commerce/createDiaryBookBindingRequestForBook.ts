@@ -6,6 +6,11 @@ import {
 } from "@/lib/commerce/diaryBookBindingPendingLifecycle";
 import { prisma } from "@/lib/db";
 import { countBoundDiaryBookTotalPages } from "@/lib/journal/diaryBookBindingOffer";
+import {
+  getAshiatoPageTemplate,
+  normalizeAshiatoPageTemplateId,
+  type AshiatoPageTemplateId,
+} from "@/lib/journal/ashiatoPageTemplates";
 import { listJournalEntriesForDiaryBookRow } from "@/lib/journal/listDiaryBookEntries";
 import { buildDiaryBindingCode } from "@/lib/order/diaryBindingCode";
 import { getBookPlan, type BookPlanId } from "@/lib/order/bookBindingPlan";
@@ -31,6 +36,8 @@ export type DiaryBookBindingBookSnapshot = {
   pageCount: number;
   planId: BookPlanId;
   baseShopUrl: string;
+  pageTemplate: AshiatoPageTemplateId;
+  pageTemplateLabel: string;
 };
 
 export type DiaryBookBindingForBookPublic = {
@@ -72,7 +79,7 @@ export async function loadDiaryBookBindingSnapshotForBook(
     where: { id: input.bookId.trim(), email: input.viewerEmail },
   });
   if (!row) {
-    return { error: "日記ブックが見つかりません。" };
+    return { error: "あしあとブックが見つかりません。" };
   }
 
   const entries = await listJournalEntriesForDiaryBookRow({
@@ -83,7 +90,7 @@ export async function loadDiaryBookBindingSnapshotForBook(
 
   const pageCount = countBoundDiaryBookTotalPages(entries, row.startDate, row.endDate);
   if (pageCount <= 0) {
-    return { error: "製本するページがありません。期間内に日記があるか確認してください。" };
+    return { error: "製本するページがありません。期間内にあしあとがあるか確認してください。" };
   }
 
   const plan = getBookPlan(pageCount);
@@ -92,6 +99,9 @@ export async function loadDiaryBookBindingSnapshotForBook(
       error: plan.overLimitMessage ?? "ページ数が多いため、個別相談が必要です",
     };
   }
+
+  const pageTemplate = normalizeAshiatoPageTemplateId(row.pageTemplate);
+  const pageTemplateDef = getAshiatoPageTemplate(pageTemplate);
 
   return {
     diaryBookId: row.id,
@@ -103,6 +113,8 @@ export async function loadDiaryBookBindingSnapshotForBook(
     pageCount,
     planId: plan.plan,
     baseShopUrl: plan.baseUrl,
+    pageTemplate,
+    pageTemplateLabel: pageTemplateDef.label,
   };
 }
 

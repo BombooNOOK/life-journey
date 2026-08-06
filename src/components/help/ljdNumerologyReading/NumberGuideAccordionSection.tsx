@@ -76,7 +76,7 @@ function NumberGuideAccordionItem({ entry }: { entry: NumberGuideEntry }) {
           {entry.diaryHint ? (
             <div>
               <h4 className="text-xs font-semibold uppercase tracking-wide text-emerald-800/90">
-                日記を見返すとき
+                あしあとを見返すとき
               </h4>
               <p className="mt-2 text-sm leading-relaxed text-stone-700">{entry.diaryHint}</p>
             </div>

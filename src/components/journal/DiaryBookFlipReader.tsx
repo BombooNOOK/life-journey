@@ -19,7 +19,8 @@ import {
   DiaryBookPreBackCoverIllustrationPage,
 } from "@/components/journal/DiaryBookBoundPages";
 import { DiaryBookPageViewport } from "@/components/journal/DiaryBookPageViewport";
-import { DiaryBookEntryV2PreviewPage } from "@/components/journal/DiaryBookEntryV2PreviewPage";
+import { DiaryBookAshiatoEntryPreviewPage } from "@/components/journal/DiaryBookAshiatoEntryPreviewPage";
+import { DiaryBookEditActionsMenu } from "@/components/journal/DiaryBookEditActionsMenu";
 import { BodyPortal, IMMERSIVE_OVERLAY_Z_CLASS } from "@/components/ui/BodyPortal";
 import { InlineHelpButton } from "@/components/ui/InlineHelpButton";
 import { OwlLoadingInline } from "@/components/ui/OwlLoadingInline";
@@ -37,28 +38,44 @@ import {
   diaryBookDisplayYear,
 } from "@/lib/journal/diaryBookPages";
 import { normalizeContentFontMode } from "@/lib/journal/contentFontMode";
+import { isAshiatoPageTemplateRightBound } from "@/lib/journal/ashiatoPageTemplates";
 
-const READER_HELP_TEXT =
-  "表紙・中表紙のあと、期間内の月カレンダーと日記本文が続きます。PCはキーボードの左右矢印、スマホはスワイプでもめくれます。";
+const READER_HELP_TEXT_LEFT =
+  "表紙・中表紙のあと、期間内の月カレンダーとあしあと本文が続きます。PCはキーボードの左右矢印、スマホはスワイプでもめくれます。左スワイプ（→キー）で次のページです。";
 
-const FULLSCREEN_HELP_TOUCH =
-  "左右にスワイプしてページをめくれます。画面をタップするとメニューを表示できます。";
+const READER_HELP_TEXT_RIGHT =
+  "表紙・中表紙のあと、期間内の月カレンダーとあしあと本文が続きます。この本は右とじです。PCはキーボードの左右矢印、スマホはスワイプでもめくれます。右スワイプ（←キー）で次のページです。";
 
-const FULLSCREEN_HELP_POINTER =
-  "左右の矢印キーでページをめくれます。画面をクリックするとメニューを表示できます。";
+const FULLSCREEN_HELP_TOUCH_LEFT =
+  "左右にスワイプしてページをめくれます。左にスワイプで次のページです。画面をタップするとメニューを表示できます。";
 
-function useFullscreenReaderHintText(): string {
-  const [hint, setHint] = useState(FULLSCREEN_HELP_POINTER);
+const FULLSCREEN_HELP_TOUCH_RIGHT =
+  "左右にスワイプしてページをめくれます。右とじのため、右にスワイプで次のページです。画面をタップするとメニューを表示できます。";
+
+const FULLSCREEN_HELP_POINTER_LEFT =
+  "左右の矢印キーでページをめくれます。→キーで次のページです。画面をクリックするとメニューを表示できます。";
+
+const FULLSCREEN_HELP_POINTER_RIGHT =
+  "左右の矢印キーでページをめくれます。右とじのため、←キーで次のページです。画面をクリックするとメニューを表示できます。";
+
+function useFullscreenReaderHintText(rightBound: boolean): string {
+  const [hint, setHint] = useState(
+    rightBound ? FULLSCREEN_HELP_POINTER_RIGHT : FULLSCREEN_HELP_POINTER_LEFT,
+  );
 
   useEffect(() => {
     const touchQuery = window.matchMedia("(pointer: coarse)");
     const update = () => {
-      setHint(touchQuery.matches ? FULLSCREEN_HELP_TOUCH : FULLSCREEN_HELP_POINTER);
+      if (touchQuery.matches) {
+        setHint(rightBound ? FULLSCREEN_HELP_TOUCH_RIGHT : FULLSCREEN_HELP_TOUCH_LEFT);
+      } else {
+        setHint(rightBound ? FULLSCREEN_HELP_POINTER_RIGHT : FULLSCREEN_HELP_POINTER_LEFT);
+      }
     };
     update();
     touchQuery.addEventListener("change", update);
     return () => touchQuery.removeEventListener("change", update);
-  }, []);
+  }, [rightBound]);
 
   return hint;
 }
@@ -72,15 +89,18 @@ type Props = {
   startDate: string;
   endDate: string;
   coverTheme: string;
+  pageTemplate?: string;
   profileId: string;
   /** SSR 初期値。ヘッダーバッジと黄色カードで共有 */
   initialNeedsContentRefresh?: boolean;
   onNeedsContentRefreshChange?: (needsContentRefresh: boolean) => void;
+  showEditIncludes?: boolean;
+  showEditPeriod?: boolean;
 };
 
 function backLabelForHref(href: string): string {
   if (href.startsWith("/orders/calendar")) return "カレンダーへ戻る";
-  if (/^\/orders\/bookshelf\/diary\/\d{4}$/.test(href.split("?")[0] ?? "")) return "日記一覧へ戻る";
+  if (/^\/orders\/bookshelf\/diary\/\d{4}$/.test(href.split("?")[0] ?? "")) return "あしあと一覧へ戻る";
   if (href.startsWith("/orders/bookshelf")) return "本棚へ戻る";
   return "戻る";
 }
@@ -91,9 +111,12 @@ export function DiaryBookFlipReader({
   startDate,
   endDate,
   coverTheme,
+  pageTemplate,
   profileId,
   initialNeedsContentRefresh = false,
   onNeedsContentRefreshChange,
+  showEditIncludes = false,
+  showEditPeriod = false,
 }: Props) {
   const pathname = usePathname();
   const router = useRouter();
@@ -116,7 +139,9 @@ export function DiaryBookFlipReader({
   const [fullscreenOpen, setFullscreenOpen] = useState(false);
   const [fullscreenChromeVisible, setFullscreenChromeVisible] = useState(false);
   const viewportDock = useVisualViewportDock(fullscreenOpen);
-  const fullscreenHintText = useFullscreenReaderHintText();
+  const rightBound = isAshiatoPageTemplateRightBound(pageTemplate);
+  const readerHelpText = rightBound ? READER_HELP_TEXT_RIGHT : READER_HELP_TEXT_LEFT;
+  const fullscreenHintText = useFullscreenReaderHintText(rightBound);
   const touchStartRef = useRef<{ x: number; y: number } | null>(null);
   const didSwipeRef = useRef(false);
   const tapHandledRef = useRef(false);
@@ -195,12 +220,12 @@ export function DiaryBookFlipReader({
       const data = await parseFetchJsonResponse<{
         error?: string;
         needsContentRefresh?: boolean;
-      }>(res, "日記ブックの更新に失敗しました。");
-      if (!res.ok) throw new Error(data.error ?? "日記ブックの更新に失敗しました。");
+      }>(res, "あしあとブックの更新に失敗しました。");
+      if (!res.ok) throw new Error(data.error ?? "あしあとブックの更新に失敗しました。");
       setNeedsContentRefresh(data.needsContentRefresh === true);
       await loadEntries({ silent: true });
     } catch (e) {
-      setError(e instanceof Error ? e.message : "日記ブックの更新に失敗しました。");
+      setError(e instanceof Error ? e.message : "あしあとブックの更新に失敗しました。");
     } finally {
       setRefreshing(false);
     }
@@ -377,16 +402,16 @@ export function DiaryBookFlipReader({
       if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
       if (e.key === "ArrowRight") {
         e.preventDefault();
-        tryGoDelta(1);
+        tryGoDelta(rightBound ? -1 : 1);
       }
       if (e.key === "ArrowLeft") {
         e.preventDefault();
-        tryGoDelta(-1);
+        tryGoDelta(rightBound ? 1 : -1);
       }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [fullscreenOpen, tryGoDelta]);
+  }, [fullscreenOpen, rightBound, tryGoDelta]);
 
   const onTouchStart = useCallback((e: React.TouchEvent<HTMLElement>) => {
     didSwipeRef.current = false;
@@ -420,13 +445,14 @@ export function DiaryBookFlipReader({
         return;
       }
       didSwipeRef.current = true;
+      // 左とじ: 左スワイプ=次 / 右とじ: 右スワイプ=次
       if (dx < 0) {
-        tryGoDelta(1);
+        tryGoDelta(rightBound ? -1 : 1);
       } else {
-        tryGoDelta(-1);
+        tryGoDelta(rightBound ? 1 : -1);
       }
     },
-    [fullscreenOpen, openFullscreen, tryGoDelta],
+    [fullscreenOpen, openFullscreen, rightBound, tryGoDelta],
   );
 
   const onNormalViewerClick = useCallback(() => {
@@ -482,7 +508,8 @@ export function DiaryBookFlipReader({
         const photoLoading =
           shouldShowPhotoLoading(entry.id, entry.hasPhoto) && !resolvedPhoto;
         return (
-          <DiaryBookEntryV2PreviewPage
+          <DiaryBookAshiatoEntryPreviewPage
+            pageTemplate={pageTemplate}
             companionType={entry.companionType}
             mood={entry.mood}
             activity={entry.activity}
@@ -501,10 +528,10 @@ export function DiaryBookFlipReader({
       default:
         return null;
     }
-  }, [current, coverTheme, endDate, entries, getPhotoDataUrl, shouldShowPhotoLoading, startDate, title]);
+  }, [current, coverTheme, endDate, entries, getPhotoDataUrl, pageTemplate, shouldShowPhotoLoading, startDate, title]);
 
   if (loading && entries.length === 0) {
-    return <OwlLoadingPanel layout="section" label="日記ブックを読み込んでいます…" size="sm" />;
+    return <OwlLoadingPanel layout="section" label="あしあとブックを読み込んでいます…" size="sm" />;
   }
 
   if (error) {
@@ -514,7 +541,7 @@ export function DiaryBookFlipReader({
   if (!current) {
     return (
       <p className="text-sm text-stone-600">
-        この期間に表示できる日記がありません。本棚に戻って期間を確認してください。
+        この期間に表示できるあしあとがありません。本棚に戻って期間を確認してください。
       </p>
     );
   }
@@ -527,14 +554,24 @@ export function DiaryBookFlipReader({
   const lastDisabled = pageIndex >= totalPages - 1;
   const entryEditHref =
     current.kind === "entry"
-      ? `/journal?profile=${encodeURIComponent(profileId)}&edit=${encodeURIComponent(current.entry.id)}&returnTo=${editReturnToParam}`
+      ? (() => {
+          const base = `/journal?profile=${encodeURIComponent(profileId)}&edit=${encodeURIComponent(current.entry.id)}&returnTo=${editReturnToParam}`;
+          const template = pageTemplate?.trim();
+          return template
+            ? `${base}&pageTemplate=${encodeURIComponent(template)}`
+            : base;
+        })()
       : null;
 
   const normalPageViewport = (
     <div
       className={[
         "w-full transition duration-300 ease-out",
-        panelVisible ? "translate-x-0 opacity-100" : "-translate-x-4 opacity-0 sm:-translate-x-6",
+        panelVisible
+          ? "translate-x-0 opacity-100"
+          : rightBound
+            ? "translate-x-4 opacity-0 sm:translate-x-6"
+            : "-translate-x-4 opacity-0 sm:-translate-x-6",
       ].join(" ")}
     >
       <DiaryBookPageViewport fitMode="width">{pageContent}</DiaryBookPageViewport>
@@ -567,7 +604,7 @@ export function DiaryBookFlipReader({
         {needsContentRefresh ? (
           <div className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-3 text-sm text-amber-950">
             <p>
-              日記の追加・編集、または本への掲載変更があります。内容を反映するには更新してください。
+              あしあとの追加・編集、または本への掲載変更があります。内容を反映するには更新してください。
             </p>
             <div className="mt-2 flex flex-wrap gap-2">
               <button
@@ -578,47 +615,40 @@ export function DiaryBookFlipReader({
                 className="rounded-lg bg-emerald-800 px-3 py-2 text-xs font-medium text-white hover:bg-emerald-900 disabled:opacity-50"
               >
                 {refreshing ? (
-                  <OwlLoadingInline label="日記ブックを更新しています…" size="sm" />
+                  <OwlLoadingInline label="あしあとブックを更新しています…" size="sm" />
                 ) : (
-                  "日記ブックを更新する"
+                  "あしあとブックを更新する"
                 )}
               </button>
               <BookshelfEditIncludesNavButton
                 bookId={bookId}
                 className="rounded-lg border border-emerald-300 bg-white px-3 py-2 text-xs font-medium text-emerald-900 hover:bg-emerald-50"
-              />
+              >
+                本に入れるあしあとを編集
+              </BookshelfEditIncludesNavButton>
             </div>
           </div>
         ) : null}
 
-        {/* 通常ビューワー：戻る・アクション */}
-        <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
-          <Link
-            href={backHref}
-            className="text-xs text-stone-600 underline-offset-2 hover:text-stone-900 hover:underline sm:text-sm"
+        {/* 通常ビューワー：編集・全画面（戻るはページ上部のみ） */}
+        <div className="flex flex-wrap items-center justify-end gap-x-2 gap-y-1">
+          <DiaryBookEditActionsMenu
+            bookId={bookId}
+            bookTitle={title}
+            showEditIncludes={showEditIncludes}
+            showEditPeriod={showEditPeriod}
+            entryEditHref={showEditIncludes ? entryEditHref : null}
+          />
+          <button
+            type="button"
+            onClick={openFullscreen}
+            className={FULLSCREEN_ENTER_BUTTON_CLASS}
           >
-            ← {backLabel}
-          </Link>
-          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs sm:text-sm">
-            {entryEditHref ? (
-              <Link
-                href={entryEditHref}
-                className="font-medium text-emerald-800 underline-offset-2 hover:text-emerald-950 hover:underline"
-              >
-                この記事を編集
-              </Link>
-            ) : null}
-            <button
-              type="button"
-              onClick={openFullscreen}
-              className={FULLSCREEN_ENTER_BUTTON_CLASS}
-            >
-              <span aria-hidden className="text-[15px] leading-none">
-                ⛶
-              </span>
-              全画面で読む
-            </button>
-          </div>
+            <span aria-hidden className="text-[15px] leading-none">
+              ⛶
+            </span>
+            全画面で読む
+          </button>
         </div>
 
         {/* 通常ビューワー：ページ移動 */}
@@ -659,13 +689,13 @@ export function DiaryBookFlipReader({
             >
               最後 ≫
             </button>
-            <InlineHelpButton ariaLabel="日記ブックの読み方">{READER_HELP_TEXT}</InlineHelpButton>
+            <InlineHelpButton ariaLabel="あしあとブックの読み方">{readerHelpText}</InlineHelpButton>
           </div>
 
           <div className="space-y-1.5 sm:hidden">
             <div className="flex items-center justify-center gap-2">
               {pageStatus}
-              <InlineHelpButton ariaLabel="日記ブックの読み方">{READER_HELP_TEXT}</InlineHelpButton>
+              <InlineHelpButton ariaLabel="あしあとブックの読み方">{readerHelpText}</InlineHelpButton>
             </div>
             <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1">
               <button
@@ -732,7 +762,7 @@ export function DiaryBookFlipReader({
             style={fullscreenShellStyle}
             role="dialog"
             aria-modal="true"
-            aria-label="日記ブック全画面ビューワー"
+            aria-label="あしあとブック全画面ビューワー"
           >
             <div
               className="absolute inset-0 z-10 touch-pan-y"

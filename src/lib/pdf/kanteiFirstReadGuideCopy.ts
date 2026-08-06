@@ -21,7 +21,7 @@ export const KANTEI_FIRST_READ_TOC_LOCKED_HINT =
 export const KANTEI_FIRST_READ_COMPLETE_OWL_QUOTE = "ここまで読めましたね。" as const;
 
 export const KANTEI_FIRST_READ_COMPLETE_BODY =
-  "続きはいつでも本棚から読み返せます。\n目次をタップすれば、気になる章にすぐ飛べますよ。\n\nお試し期間の2週間、\nゆっくり開いてみてください。" as const;
+  "続きはいつでも本棚から読み返せます。\n目次をタップすれば、気になる章にすぐ飛べますよ。\n\nあとは、あなたのペースで\nゆっくり開いてみてください。" as const;
 
 export const KANTEI_FIRST_READ_COMPLETE_PRIMARY_BUTTON = "あしあとを残してみる" as const;
 

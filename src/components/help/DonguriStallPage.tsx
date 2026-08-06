@@ -74,7 +74,7 @@ export function DonguriStallPage({ backLink }: Props) {
         <h2 className="text-base font-semibold text-stone-900">いまできること</h2>
         <ul className="list-disc space-y-1.5 pl-5">
           <li>ヤギさん郵便やお祝いのおとどけで、どんぐりを受け取れます</li>
-          <li>日記の下書きはどんぐりなしで残せます</li>
+          <li>あしあとの下書きはどんぐりなしで残せます</li>
           <li>森にあしあとを残すときは、どんぐりを使います</li>
         </ul>
         <p className="pt-1 text-xs text-stone-600">

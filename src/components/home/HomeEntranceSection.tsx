@@ -40,7 +40,7 @@ function NewcomerBlock({ stacked = false }: { stacked?: boolean }) {
   return (
     <div className={`flex flex-col gap-1.5 ${stacked ? "items-stretch" : "items-start"}`}>
       <p className={heroCtaMicrocopyAboveButtonClass}>
-        クレジットカード登録なし／2週間無料お試し
+        クレジットカード登録なし／無料鑑定からはじまれます
       </p>
       <Link
         href="/about"

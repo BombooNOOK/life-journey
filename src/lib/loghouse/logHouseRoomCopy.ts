@@ -34,6 +34,11 @@ export const LOG_HOUSE_ROOM_SPOT_COPY: Record<LogHouseRoomSpotId, LogHouseRoomSp
     description: "カセットを選んで、森の音をながす（準備中）",
     actionLabel: "ラジカセを開く",
   },
+  chair: {
+    label: "ひとやすみの椅子",
+    description: "森ログを眺める・映写便りをつくる",
+    actionLabel: "椅子にすわる",
+  },
   goOut: {
     label: "おでかけ",
     description: "おでかけする",

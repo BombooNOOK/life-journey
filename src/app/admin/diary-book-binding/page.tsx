@@ -97,9 +97,9 @@ export default async function AdminDiaryBookBindingPage({ searchParams }: Props)
         <Link href="/admin" className="text-sm text-stone-600 hover:text-stone-900">
           ← 管理者（ユーザー一覧）
         </Link>
-        <h1 className="mt-2 text-2xl font-bold text-stone-900">日記 製本申込予定</h1>
+        <h1 className="mt-2 text-2xl font-bold text-stone-900">あしあと 製本申込予定</h1>
         <p className="mt-1 text-sm text-stone-600">
-          日記ブック本棚または年本棚から発行された製本申込予定です。BASEの「製本申込コード」と照合し、ステータスを更新してください。
+          あしあとブック本棚または年本棚から発行された製本申込予定です。BASEの「製本申込コード」と照合し、ステータスを更新してください。
           BASE未決済の申込予定は7日経過で通常一覧から外れます（ステータス「期限切れ」で確認できます）。
         </p>
       </div>
@@ -110,7 +110,7 @@ export default async function AdminDiaryBookBindingPage({ searchParams }: Props)
         keyword={keyword}
         statusCounts={statusCounts}
         openTotal={openTotal}
-        searchPlaceholder="検索（製本コード・メール・表示名・日記ブックID・BASE注文番号）"
+        searchPlaceholder="検索（製本コード・メール・表示名・あしあとブックID・BASE注文番号）"
         filterOptions={DIARY_BOOK_BINDING_ADMIN_FILTER_OPTIONS}
         getFilterHref={diaryBookBindingAdminFilterHref}
         getStatusFilterLabel={diaryBookBindingStatusFilterLabel}
@@ -145,7 +145,7 @@ export default async function AdminDiaryBookBindingPage({ searchParams }: Props)
                 <div className="sm:col-span-2">
                   <span className="text-stone-500">種別: </span>
                   {row.diaryBookId ? (
-                    <span className="font-medium text-emerald-900">日記ブック</span>
+                    <span className="font-medium text-emerald-900">あしあとブック</span>
                   ) : (
                     <span className="font-medium text-stone-800">年本棚（旧）</span>
                   )}
@@ -157,7 +157,7 @@ export default async function AdminDiaryBookBindingPage({ searchParams }: Props)
                 {row.diaryBookId ? (
                   <>
                     <div className="sm:col-span-2">
-                      <span className="text-stone-500">日記ブックID: </span>
+                      <span className="text-stone-500">あしあとブックID: </span>
                       <span className="font-mono text-xs">{row.diaryBookId}</span>
                     </div>
                     <div className="sm:col-span-2">
@@ -213,13 +213,13 @@ export default async function AdminDiaryBookBindingPage({ searchParams }: Props)
                   <div className="rounded-lg border border-emerald-200/80 bg-emerald-50/40 px-3 py-2.5">
                     <p className="text-[10px] font-medium text-emerald-950">製本内容の照合</p>
                     <p className="mt-1 text-[10px] leading-relaxed text-stone-600">
-                      申込ユーザーの日記ブックを本棚と同じ画面で確認できます（管理者 read-only）。
+                      申込ユーザーのあしあとブックを本棚と同じ画面で確認できます（管理者 read-only）。
                     </p>
                     <a
                       href={`/orders/bookshelf/diary-book/${encodeURIComponent(row.diaryBookId)}?returnTo=${encodeURIComponent("/admin/diary-book-binding")}`}
                       className="mt-2 inline-flex text-xs font-medium text-emerald-900 underline-offset-2 hover:underline"
                     >
-                      日記ブックを確認する
+                      あしあとブックを確認する
                     </a>
                   </div>
                   <DiaryBookBindingPrintDownload
@@ -234,7 +234,7 @@ export default async function AdminDiaryBookBindingPage({ searchParams }: Props)
                 </div>
               ) : (
                 <p className="mt-3 text-[10px] text-stone-500">
-                  年本棚（旧）の申込のため、日記ブックIDがありません。該当年の本棚から確認してください。
+                  年本棚（旧）の申込のため、あしあとブックIDがありません。該当年の本棚から確認してください。
                 </p>
               )}
 

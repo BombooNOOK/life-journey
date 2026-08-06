@@ -1,4 +1,4 @@
-/** LJD 下部ナビ・日記まわり半没入UIのアセット／面トーン */
+/** LJD 下部ナビ・あしあとまわり半没入UIのアセット／面トーン */
 
 export const LJD_NAV_ASSET_DIR = "/images/ljd/nav" as const;
 
@@ -22,10 +22,10 @@ export const LJD_ACORN = "#a67c3d" as const;
 export const LJD_GOLD = "#c49a3c" as const;
 export const LJD_GOLD_HOVER = "#b38a32" as const;
 
-/** 日記まわりページの生成り背景 */
+/** あしあとまわりページの生成り背景 */
 export const LJD_PAGE_BG_CLASS = "bg-[#f6f0e6]" as const;
 
-/** やわらかい紙カード（日記まわりで再利用） */
+/** やわらかい紙カード（あしあとまわりで再利用） */
 export const LJD_PAPER_CARD_CLASS =
   "rounded-[1.25rem] border border-[#e4d5c0]/95 bg-[#fdf8f0] shadow-[0_6px_18px_rgba(90,70,45,0.06)]" as const;
 

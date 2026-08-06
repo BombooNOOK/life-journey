@@ -5,6 +5,15 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 
 import { MyPageSubpageHeader } from "@/components/orders/MyPageSubpageHeader";
+import {
+  DEVICE_MOVIE_DONGURI_DRAFT_CTA,
+  DEVICE_MOVIE_DONGURI_DRAFT_TITLE,
+} from "@/lib/journal/moriLog/deviceMovieComposerCopy";
+import {
+  deviceMovieDraftResumePath,
+  getDeviceMovieDraftMeta,
+  type DeviceMovieDraftMeta,
+} from "@/lib/journal/moriLog/deviceMovieDraft";
 import { DONGURI_ICON_SRC } from "@/lib/loghouse/donguriAssets";
 import {
   DONGURI_BALANCE_LABEL,
@@ -24,15 +33,28 @@ import { LOG_HOUSE_RETURN_TO_LABEL } from "@/lib/journal/logHouseLabels";
 type Props = {
   view: DonguriChoView;
   unit: string;
+  profileId: string;
 };
 
 /** ユーザー向けどんぐり帳（半没入） */
-export function DonguriChoPageClient({ view: initialView, unit }: Props) {
+export function DonguriChoPageClient({ view: initialView, unit, profileId }: Props) {
   const [view, setView] = useState(initialView);
+  const [draftMeta, setDraftMeta] = useState<DeviceMovieDraftMeta | null>(null);
 
   useEffect(() => {
     setView(initialView);
   }, [initialView]);
+
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      const meta = await getDeviceMovieDraftMeta(profileId);
+      if (!cancelled) setDraftMeta(meta);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [profileId]);
 
   useEffect(() => {
     let cancelled = false;
@@ -63,6 +85,24 @@ export function DonguriChoPageClient({ view: initialView, unit }: Props) {
           backHref="/orders"
           backLabel={LOG_HOUSE_RETURN_TO_LABEL}
         />
+
+        {draftMeta ? (
+          <section
+            className={`px-4 py-4 ${LJD_PAPER_CARD_CLASS}`}
+            aria-label={DEVICE_MOVIE_DONGURI_DRAFT_TITLE}
+          >
+            <p className="text-sm font-semibold text-[#3d3226]">
+              {DEVICE_MOVIE_DONGURI_DRAFT_TITLE}
+            </p>
+            <p className="mt-1 truncate text-xs text-[#6e5c48]">{draftMeta.title}</p>
+            <Link
+              href={deviceMovieDraftResumePath(draftMeta.id)}
+              className="mt-3 flex min-h-11 items-center justify-center rounded-xl bg-[#3f5f4c] px-3 text-sm font-semibold text-white"
+            >
+              {DEVICE_MOVIE_DONGURI_DRAFT_CTA}
+            </Link>
+          </section>
+        ) : null}
 
         <section className={`px-5 py-5 text-center ${LJD_PAPER_CARD_CLASS}`}>
           <div className="flex items-center justify-center gap-2">

@@ -1,6 +1,9 @@
-/** 既存日記ユーザーのバックフィル起点（YYYY-MM-DD） */
+/**
+ * @deprecated 14日試用のバックフィル起点。試用廃止後は未使用。新規コードから参照しないこと。
+ */
 export const DEFAULT_OFFICIAL_LAUNCH_DATE = "2026-06-10";
 
+/** @deprecated */
 export function resolveOfficialLaunchDate(): Date {
   const raw =
     process.env.OFFICIAL_LAUNCH_DATE?.trim() ||

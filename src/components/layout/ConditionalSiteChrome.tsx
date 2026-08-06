@@ -7,6 +7,7 @@ import { SiteHeader } from "@/components/layout/SiteHeader";
 import {
   isDailyFortuneImmersivePath,
   isForestBookshelfImmersivePath,
+  isHitoyasumiImmersivePath,
   isLogHouseImmersivePreviewPath,
   isOrdersImmersiveMobilePath,
   useIsLogHouseMobileViewport,
@@ -29,6 +30,7 @@ export function ConditionalSiteChrome({ children }: Props) {
     isLogHouseImmersivePreviewPath(pathname) ||
     (isForestBookshelfImmersivePath(pathname) && isMobile) ||
     isDailyFortuneImmersivePath(pathname) ||
+    isHitoyasumiImmersivePath(pathname) ||
     (isOrdersImmersiveMobilePath(pathname) && isMobile);
 
   if (isFullBleedEntrance) {

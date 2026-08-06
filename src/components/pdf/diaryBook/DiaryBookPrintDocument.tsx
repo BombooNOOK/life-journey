@@ -1,7 +1,7 @@
 import React from "react";
 import { Document } from "@react-pdf/renderer";
 
-import { DiaryBookEntryPdfPage } from "@/components/pdf/diaryBook/DiaryBookEntryPdfPage";
+import { DiaryBookAshiatoEntryPdfPage } from "@/components/pdf/diaryBook/DiaryBookAshiatoEntryPdfPage";
 import { DiaryBookFullBleedPdfPage } from "@/components/pdf/diaryBook/DiaryBookFullBleedPdfPage";
 import { DiaryBookInsideCoverPdfPage } from "@/components/pdf/diaryBook/DiaryBookInsideCoverPdfPage";
 import { DiaryBookMonthIndexPdfPage } from "@/components/pdf/diaryBook/DiaryBookMonthIndexPdfPage";
@@ -31,6 +31,7 @@ export function DiaryBookPrintDocument({
   startDate,
   endDate,
   coverTheme,
+  pageTemplate,
   pages,
   entries,
   photoDataUriByEntryId,
@@ -90,10 +91,11 @@ export function DiaryBookPrintDocument({
             );
           case "entry":
             return (
-              <DiaryBookEntryPdfPage
+              <DiaryBookAshiatoEntryPdfPage
                 key={`entry-${page.entry.id}-${index}`}
                 entry={page.entry}
                 photoDataUri={photoDataUriByEntryId[page.entry.id] ?? null}
+                pageTemplate={pageTemplate}
               />
             );
           case "numerology-quick-reference":

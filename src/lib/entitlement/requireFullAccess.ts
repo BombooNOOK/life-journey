@@ -2,9 +2,6 @@ import { NextResponse } from "next/server";
 
 import { loadEntitlementContext } from "@/lib/entitlement/accountSettingsForEntitlement";
 import {
-  canCreateJournalEntry,
-  canUseContinuedFeatures,
-  continuedFeaturesDeniedMessage,
   resolveUserEntitlement,
   type EntitlementDenialCode,
   type UserEntitlement,
@@ -26,38 +23,17 @@ export async function loadUserEntitlement(viewerEmail: string): Promise<UserEnti
   return resolveUserEntitlement(ctx);
 }
 
+/** 試用期限なし。ログイン済みなら常に許可（将来の制限用にフックは残す） */
 export async function requireFullAccess(viewerEmail: string): Promise<UserEntitlement> {
-  const ctx = await loadEntitlementContext(viewerEmail);
-  const entitlement = resolveUserEntitlement(ctx);
-  if (!entitlement.canUseContinuedFeatures) {
-    const code =
-      entitlement.tier === "trial_not_started"
-        ? "FREE_TRIAL_NOT_STARTED"
-        : (entitlement.denialCode ?? "FREE_TRIAL_EXPIRED");
-    throw new EntitlementDeniedError(code, continuedFeaturesDeniedMessage(entitlement));
-  }
-  return entitlement;
+  return loadUserEntitlement(viewerEmail);
 }
 
-/** 無料鑑定の作成・氏名修正など、日記お試し前でも許可する操作 */
 export async function requireKanteiOrderAccess(viewerEmail: string): Promise<UserEntitlement> {
-  const ctx = await loadEntitlementContext(viewerEmail);
-  const entitlement = resolveUserEntitlement(ctx);
-  if (!entitlement.hasFullAccess) {
-    const code = entitlement.denialCode ?? "FREE_TRIAL_EXPIRED";
-    throw new EntitlementDeniedError(code, continuedFeaturesDeniedMessage(entitlement));
-  }
-  return entitlement;
+  return loadUserEntitlement(viewerEmail);
 }
 
 export async function requireJournalCreateAccess(viewerEmail: string): Promise<UserEntitlement> {
-  const ctx = await loadEntitlementContext(viewerEmail);
-  if (!canCreateJournalEntry(ctx)) {
-    const entitlement = resolveUserEntitlement(ctx);
-    const code = entitlement.denialCode ?? "FREE_TRIAL_EXPIRED";
-    throw new EntitlementDeniedError(code, continuedFeaturesDeniedMessage(entitlement));
-  }
-  return resolveUserEntitlement(ctx);
+  return loadUserEntitlement(viewerEmail);
 }
 
 export function entitlementDeniedResponse(error: EntitlementDeniedError) {
@@ -68,9 +44,11 @@ export function entitlementDeniedResponse(error: EntitlementDeniedError) {
 }
 
 export function entitlementDeniedResponseFromEntitlement(entitlement: UserEntitlement) {
-  const code = entitlement.denialCode ?? "FREE_TRIAL_EXPIRED";
   return NextResponse.json(
-    { error: continuedFeaturesDeniedMessage(entitlement), code },
+    {
+      error: entitlement.denialMessage ?? "この操作はご利用いただけません。",
+      code: entitlement.denialCode ?? "FREE_TRIAL_EXPIRED",
+    },
     { status: 403 },
   );
 }
@@ -79,9 +57,8 @@ export async function checkContinuedFeatures(viewerEmail: string): Promise<
   | { ok: true; entitlement: UserEntitlement }
   | { ok: false; entitlement: UserEntitlement }
 > {
-  const ctx = await loadEntitlementContext(viewerEmail);
-  const entitlement = resolveUserEntitlement(ctx);
-  if (!canUseContinuedFeatures(ctx)) {
+  const entitlement = await loadUserEntitlement(viewerEmail);
+  if (!entitlement.canUseContinuedFeatures) {
     return { ok: false, entitlement };
   }
   return { ok: true, entitlement };
@@ -100,7 +77,6 @@ export async function assertFullAccessForApi(viewerEmail: string): Promise<NextR
   }
 }
 
-/** 鑑定Orderの作成・救済修正用。日記お試し前（trial_not_started）でも許可 */
 export async function assertKanteiOrderAccessForApi(viewerEmail: string): Promise<NextResponse | null> {
   try {
     await requireKanteiOrderAccess(viewerEmail);

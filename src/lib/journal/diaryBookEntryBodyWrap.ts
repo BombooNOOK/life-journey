@@ -14,7 +14,7 @@ export function getDiaryBookEntryV2BodyMaxLines(
 }
 
 /**
- * 日記ブック本文 v2 の行配列（折り返し込み・行数上限なし）。
+ * あしあとブック本文 v2 の行配列（折り返し込み・行数上限なし）。
  * 製本オーバー判定用。
  */
 export function getDiaryBookEntryV2BodyLayoutLinesAll(
@@ -39,7 +39,7 @@ export function getDiaryBookEntryV2BodyLayoutLinesAll(
 }
 
 /**
- * 日記ブック本文 v2 の行配列（製本・プレビュー表示用）。
+ * あしあとブック本文 v2 の行配列（製本・プレビュー表示用）。
  * 手動改行を尊重し、各行内は字数上限＋括弧引き戻しで折り返す。
  */
 export function getDiaryBookEntryV2BodyLayoutLines(

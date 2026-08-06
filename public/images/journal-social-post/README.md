@@ -1,42 +1,52 @@
-# SNS 投稿画像用テンプレート
+# SNS 投稿画像用テンプレート / 森ログメーカー
+
+## 既存（伴走キャラ別）
 
 | ファイル | 用途 |
 |---------|------|
-| `sns02-template-base-drfukuro.png` | 角丸横長・下地（フクロウ先生） |
-| `sns02-template-base-harinezumi.png` | 角丸横長・下地（ハリネズミくん） |
-| `sns02-template-base-namakemono.png` | 角丸横長・下地（ナマケモノくん） |
-| `sns02-template-base-risu.png` | 角丸横長・下地（リスくん） |
-| `sns02-template-base-kerosion.png` | 角丸横長・下地（ケロシオン） |
-| `sns02-template-photo-overlay.png` | 角丸横長・写真上装飾（付箋・**全キャラ共通**・透明 PNG） |
-| `sns02-template-base.png` | 旧名（drfukuro と同内容・互換用） |
-| `sns03-template-base-drfukuro.png` | スクエア・ポラロイド・下地（フクロウ先生） |
-| `sns03-template-base-harinezumi.png` | スクエア・ポラロイド・下地（ハリネズミくん） |
-| `sns03-template-base-namakemono.png` | スクエア・ポラロイド・下地（ナマケモノくん） |
-| `sns03-template-base-risu.png` | スクエア・ポラロイド・下地（リスくん） |
-| `sns03-template-base-kerosion.png` | スクエア・ポラロイド・下地（ケロシオン） |
-| `sns03-template-blank.png` | 旧・共通下地（互換用・drfukuro と同内容） |
-| `sns02-template-sample.png` | 文字入り参考（sns02） |
-| `sns03-template-sample.png` | 文字入り参考（sns03） |
+| `sns02-template-base-{slug}.png` | ひだまりフォト・下地 |
+| `sns02-template-photo-overlay.png` | ひだまりフォト・写真上装飾 |
+| `sns03-template-base-{slug}.png` | 森のスクラップ・下地 |
 
-## sns03 の合成順
+## 森ログあしあと（今回追加）
 
-1. `sns03-template-base-{キャラslug}.png`（下地・伴走キャラで自動切替）
-2. ユーザーの写真（正方形 400×400）
-3. 文字（コード側）
+### 5:4（819×1024 → 出力 1080×1350）
 
-写真枠は正方形のため、sns02 と違い photo-overlay はありません。
+| ファイル | テンプレ |
+|---------|---------|
+| `mori_log_5x4_chiisana_ashiato_full.png` | ちいさなあしあと（1枚完結） |
+| `mori_log_5x4_kyou_no_ashiato_bg.png` / `_overlay.png` | 今日のあしあと |
+| `mori_log_5x4_odekake_ashiato_bg.png` / `_overlay.png` | おでかけあしあと |
+| `mori_log_5x4_oishii_ashiato_bg.png` / `_overlay.png` | おいしいあしあと |
+| `mori_log_5x4_totteoki_no_ashiato_bg.png` / `_overlay.png` | とっておきのあしあと |
 
-## sns02 の合成順
+### 16:9 縦＝9:16（576×1024 → 出力 1080×1920）
 
-1. `sns02-template-base-{キャラslug}.png`（下地・伴走キャラで自動切替）
-2. ユーザーの写真（角丸）
-3. `sns02-template-photo-overlay.png`（付箋など・共通）
-4. 文字・顔アイコン（コード側）
+| ファイル | テンプレ |
+|---------|---------|
+| `mori_log_16x9_kyou_no_ashiato_wide_bg.png` / `_overlay.png` | 今日のあしあと（ワイド） |
+| `mori_log_16x9_kyou_no_3koma_ashiato_bg.png` / `_overlay.png` | 今日の3コマあしあと |
 
-キャラ slug は日記ブックと同じ: `drfukuro` / `harinezumi` / `namakemono` / `risu` / `kerosion`
+## 選び用サムネ（デザイン一覧）
 
-出力サイズは Instagram 用に 1080×1350 に拡大します。
+本番と同じ合成（背景→写真→オーバーレイ→文字）で作った見本です。
 
-文字位置の調整は `src/lib/journal/social-post-image/templates.ts` を編集してください。
+| パターン | 例 |
+|---------|-----|
+| `*_picker_preview.jpg` | `mori_log_5x4_kyou_no_ashiato_picker_preview.jpg` |
 
-Canva から書き出すときは **PNG（背景透過）** を選んでください。白背景 JPEG だと写真が隠れます（コード側で白→透明の救済あり）。
+再生成: `npx tsx scripts/compose-mori-log-picker-previews.ts`
+
+## 合成順
+
+### 1枚完結
+1. `*_full.png`
+2. 写真・文字
+
+### 2枚構成
+1. `*_bg.png`
+2. 写真（3コマは同一写真を3枠へ・将来複数枚対応）
+3. `*_overlay.png`（白背景はコード側で透明化）
+4. 文字
+
+定義・座標は `src/lib/journal/social-post-image/templates.ts` と `moriAshiatoTemplates.ts`。

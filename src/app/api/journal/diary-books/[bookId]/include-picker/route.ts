@@ -2,7 +2,14 @@ import { NextResponse } from "next/server";
 
 import { getViewerEmailFromCookie } from "@/lib/auth/viewer";
 import { prisma } from "@/lib/db";
-import { listJournalEntriesForDiaryBookIncludePicker } from "@/lib/journal/diaryBookIncludePicker";
+import {
+  filterDiaryBookPickerEntriesByTagScope,
+  listJournalEntriesForDiaryBookIncludePicker,
+} from "@/lib/journal/diaryBookIncludePicker";
+import {
+  diaryBookTagScopeFromRow,
+  formatDiaryBookTagScopeSummary,
+} from "@/lib/journal/diaryBookTagFilter";
 import { resolveActiveProfileId } from "@/lib/profile/activeProfile";
 
 const JSON_NO_STORE = {
@@ -41,29 +48,41 @@ export async function GET(_: Request, { params }: RouteParams) {
 
   if (!row) {
     return NextResponse.json(
-      { error: "日記ブックが見つかりません。", code: "NOT_FOUND" },
+      { error: "あしあとブックが見つかりません。", code: "NOT_FOUND" },
       { status: 404, ...JSON_NO_STORE },
     );
   }
 
+  const tagScope = diaryBookTagScopeFromRow(row);
+
   let entries;
   try {
-    entries = await listJournalEntriesForDiaryBookIncludePicker({
+    const allEntries = await listJournalEntriesForDiaryBookIncludePicker({
       email: viewerEmail,
       profileId: row.profileId,
       startDate: row.startDate,
       endDate: row.endDate,
+      pageTemplate: row.pageTemplate,
+    });
+    entries = await filterDiaryBookPickerEntriesByTagScope({
+      email: viewerEmail,
+      profileId: row.profileId,
+      entries: allEntries,
+      tagScope,
     });
   } catch (e) {
     console.error("[include-picker] list failed", { bookId: row.id, error: e });
     return NextResponse.json(
       {
-        error: "日記一覧の取得に失敗しました。時間をおいて再度お試しください。",
+        error: "あしあと一覧の取得に失敗しました。時間をおいて再度お試しください。",
         code: "LIST_FAILED",
       },
       { status: 500, ...JSON_NO_STORE },
     );
   }
+
+  const matchingEntryCount = entries.length;
+  const includedCount = entries.filter((entry) => entry.includeInBook).length;
 
   return NextResponse.json(
     {
@@ -72,8 +91,14 @@ export async function GET(_: Request, { params }: RouteParams) {
         title: row.title,
         startDate: row.startDate,
         endDate: row.endDate,
+        pageTemplate: row.pageTemplate,
+        tagFilter: tagScope.tagFilter,
+        tagFilterMode: tagScope.tagFilterMode,
+        tagScopeSummary: formatDiaryBookTagScopeSummary(tagScope),
       },
       entries,
+      matchingEntryCount,
+      includedCount,
       code: "OK",
     },
     JSON_NO_STORE,

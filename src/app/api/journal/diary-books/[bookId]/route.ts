@@ -9,10 +9,11 @@ import {
   deleteDiaryBookForViewer,
   loadDiaryBookDeleteEligibility,
 } from "@/lib/journal/deleteDiaryBook";
+import { countDiaryBookPeriodEntriesWithTagScope } from "@/lib/journal/diaryBookIncludePicker";
 import {
-  countJournalEntriesInDiaryBookPeriod,
   NO_INCLUDED_ENTRIES_IN_DIARY_BOOK_PERIOD_MESSAGE,
 } from "@/lib/journal/diaryBookPeriod";
+import { diaryBookTagScopeFromRow } from "@/lib/journal/diaryBookTagFilter";
 import { loadDiaryBookPeriodEditEligibility } from "@/lib/journal/diaryBookPeriodEdit";
 import { countDiaryBookSnapshotEntries } from "@/lib/journal/diaryBookSnapshot";
 
@@ -37,7 +38,7 @@ export async function GET(_: Request, { params }: RouteParams) {
   const trimmedId = bookId.trim();
   if (!trimmedId) {
     return NextResponse.json(
-      { error: "日記ブックが見つかりません。", code: "NOT_FOUND" },
+      { error: "あしあとブックが見つかりません。", code: "NOT_FOUND" },
       { status: 404, ...JSON_NO_STORE },
     );
   }
@@ -48,17 +49,21 @@ export async function GET(_: Request, { params }: RouteParams) {
 
   if (!row) {
     return NextResponse.json(
-      { error: "日記ブックが見つかりません。", code: "NOT_FOUND" },
+      { error: "あしあとブックが見つかりません。", code: "NOT_FOUND" },
       { status: 404, ...JSON_NO_STORE },
     );
   }
 
+  const tagScope = diaryBookTagScopeFromRow(row);
+
   const [entryCount, deleteEligibility] = await Promise.all([
-    countJournalEntriesInDiaryBookPeriod({
+    countDiaryBookSnapshotEntries({
       email: viewerEmail,
       profileId: row.profileId,
       startDate: row.startDate,
       endDate: row.endDate,
+      bookUpdatedAt: row.updatedAt,
+      tagScope,
     }),
     loadDiaryBookDeleteEligibility({ bookId: trimmedId, viewerEmail }),
   ]);
@@ -131,13 +136,16 @@ export async function PATCH(req: Request, { params }: RouteParams) {
     );
   }
 
-  const includedCount = await countJournalEntriesInDiaryBookPeriod({
+  const tagScope = diaryBookTagScopeFromRow(eligibility.book);
+
+  const includedCount = await countDiaryBookPeriodEntriesWithTagScope({
     email: viewerEmail,
     profileId: eligibility.book.profileId,
     startDate: parsed.data.startDate,
     endDate: parsed.data.endDate,
+    tagScope,
   });
-  if (includedCount < 1) {
+  if (includedCount.includedCount < 1) {
     return NextResponse.json(
       {
         error: NO_INCLUDED_ENTRIES_IN_DIARY_BOOK_PERIOD_MESSAGE,
@@ -161,6 +169,7 @@ export async function PATCH(req: Request, { params }: RouteParams) {
     startDate: updated.startDate,
     endDate: updated.endDate,
     bookUpdatedAt: updated.updatedAt,
+    tagScope: diaryBookTagScopeFromRow(updated),
   });
 
   return NextResponse.json(

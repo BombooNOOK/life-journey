@@ -399,7 +399,7 @@ export function DiaryFlipReader({ year, initialSettings, bookshelfProfileId }: P
     return (
       <OwlLoadingPanel
         layout="section"
-        label={`${year}年の日記を読み込んでいます…`}
+        label={`${year}年のあしあとを読み込んでいます…`}
         size="sm"
       />
     );
@@ -461,7 +461,7 @@ export function DiaryFlipReader({ year, initialSettings, bookshelfProfileId }: P
               }
               className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-sm text-emerald-900 hover:bg-emerald-100"
             >
-              日記を書く
+              あしあとを書く
             </Link>
           ) : null}
         </div>
@@ -563,7 +563,7 @@ export function DiaryFlipReader({ year, initialSettings, bookshelfProfileId }: P
         <BookshelfDiaryBindingOrder year={year} pageCount={includedPageCount} />
 
         {monthlyBuckets.length === 0 ? (
-          <p className="text-sm text-stone-500">この年の日記がありません。</p>
+          <p className="text-sm text-stone-500">この年のあしあとがありません。</p>
         ) : (
           <div className="space-y-2">
             {monthlyBuckets.map((bucket) => {

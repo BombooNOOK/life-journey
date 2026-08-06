@@ -28,7 +28,7 @@ const CONVERSATIONS: ConversationBlock[] = [
   },
   {
     characterFace: "character-squirrel-face",
-    worry: "手帳や日記を始めても、いつの間にか続かなくなってしまう…",
+    worry: "手帳やあしあとを始めても、いつの間にか続かなくなってしまう…",
     reply: "書けた日だけ集めればいいんだよ。小さな一歩もちゃんと宝物。",
   },
   {

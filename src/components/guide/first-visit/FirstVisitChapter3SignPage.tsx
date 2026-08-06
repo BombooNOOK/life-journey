@@ -11,7 +11,7 @@ import { FIRST_VISIT_CHAPTER_3_ENTRY_HREF } from "@/lib/onboarding/firstVisitWiz
 import { FIRST_VISIT_ROUTES } from "@/lib/onboarding/firstVisitWizard/routes";
 import { setFirstVisitChapter3StartedFlag } from "@/lib/onboarding/firstVisitWizard/session";
 
-/** 第3章前：行き先看板 → ログハウスで日記 */
+/** 第3章前：行き先看板 → ログハウスであしあと */
 export function FirstVisitChapter3SignPage() {
   const { replace } = useTransitionNavigation();
 
@@ -32,7 +32,7 @@ export function FirstVisitChapter3SignPage() {
   return (
     <FirstVisitGuideCardPageLayout
       stepLabel="ログハウスへ"
-      ariaLabel="ログハウスでの日記の案内"
+      ariaLabel="ログハウスでのあしあとの案内"
       backHref={FIRST_VISIT_ROUTES.pathGuide}
       backLabel="はじめての道しるべへ戻る"
     >

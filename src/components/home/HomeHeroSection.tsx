@@ -86,7 +86,7 @@ export function HomeHeroSection() {
           <div className={heroCtaTextBandClass}>
             <div className={heroCtaMicrocopyGroupClass}>
               <p className={heroCtaMicrocopyAboveButtonClass}>
-                クレジットカード登録なしで、2週間無料お試し
+                クレジットカード登録なしで、無料鑑定からはじまれます
               </p>
               <p className={heroCtaMicrocopyBelowButtonClass}>
                 ※まずは、お名前と生年月日だけで無料鑑定へ

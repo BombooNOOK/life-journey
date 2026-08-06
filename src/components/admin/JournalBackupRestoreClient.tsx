@@ -33,7 +33,7 @@ const CONFIRMATION_LABELS: Record<AdminRestoreConfirmationKey, string> = {
   targetEmailReviewed: "復元先ユーザーのメールアドレスを確認しました",
   noOverwriteReviewed: "既存プロフィールを上書きしないことを確認しました",
   newProfileReviewed: "新規プロフィールとして復元されることを確認しました",
-  skippedItemsReviewed: "鑑定書・日記ブック・製本申込は復元されないことを確認しました",
+  skippedItemsReviewed: "鑑定書・あしあとブック・製本申込は復元されないことを確認しました",
 };
 
 function emptyConfirmations(): Record<AdminRestoreConfirmationKey, boolean> {
@@ -254,8 +254,8 @@ export function JournalBackupRestoreClient() {
             <h2 className="text-lg font-semibold text-amber-950">2. 復元内容の確認</h2>
             <p className="mt-2 text-sm leading-relaxed text-amber-950/90">
               この復元は、新規プロフィールとして作成されます。
-              既存プロフィールや既存日記は上書きされません。
-              鑑定書・日記ブック・製本申込は復元されません。
+              既存プロフィールや既存あしあとは上書きされません。
+              鑑定書・あしあとブック・製本申込は復元されません。
               鑑定書が必要な場合は、復元後に鑑定を作成してください。
             </p>
           </div>
@@ -278,7 +278,7 @@ export function JournalBackupRestoreClient() {
               <dd className="font-medium">{preview.restoreProfileNickname}</dd>
             </div>
             <div>
-              <dt className="text-stone-500">日記件数</dt>
+              <dt className="text-stone-500">あしあと件数</dt>
               <dd>{preview.entryCount}件</dd>
             </div>
             <div>
@@ -286,7 +286,7 @@ export function JournalBackupRestoreClient() {
               <dd>{preview.photoCount}件</dd>
             </div>
             <div>
-              <dt className="text-stone-500">日記ブック（復元しない）</dt>
+              <dt className="text-stone-500">あしあとブック（復元しない）</dt>
               <dd>{preview.skippedDiaryBooks}件</dd>
             </div>
             <div>
@@ -398,7 +398,7 @@ export function JournalBackupRestoreClient() {
               <dd className="break-all font-mono text-xs">{restoreSuccess.profileId}</dd>
             </div>
             <div>
-              <dt className="text-emerald-800/80">復元日記件数</dt>
+              <dt className="text-emerald-800/80">復元あしあと件数</dt>
               <dd>{restoreSuccess.entryCount}件</dd>
             </div>
             <div>

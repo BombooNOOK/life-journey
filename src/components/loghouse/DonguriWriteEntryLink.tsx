@@ -44,7 +44,7 @@ export function DonguriWriteEntryLink({
       <OwlDelayedBusyOverlay
         busy={checking}
         spinnerDelayMs={0}
-        message="日記の準備をしています…"
+        message="あしあとの準備をしています…"
         className="bg-white/20"
       />
       {gateModals}

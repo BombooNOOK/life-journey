@@ -88,7 +88,7 @@ function GuideFlowSection({
   );
 }
 
-/** 森の案内所④「日記の書き方」本文（辞書トーン・他画面と共有） */
+/** 森の案内所④「あしあとの書き方」本文（辞書トーン・他画面と共有） */
 export function LjdDiaryWritingGuideBody({
   variant = "dictionary",
   showLogHousePreview = true,
@@ -145,7 +145,7 @@ export function LjdDiaryWritingGuideBody({
         startIndex={1}
       >
         <LjdDiaryWritingGuideCalendarPreview />
-        <GuideAppLink href="/orders/calendar" label="カレンダーから日記を書く" feature="guide_calendar" />
+        <GuideAppLink href="/orders/calendar" label="カレンダーからあしあとを書く" feature="guide_calendar" />
       </GuideFlowSection>
 
       <details className="group rounded-lg border border-stone-200/80 bg-white">

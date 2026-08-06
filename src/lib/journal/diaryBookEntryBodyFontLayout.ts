@@ -23,7 +23,7 @@ const MODE_LINE_HEIGHT: Record<ContentFontMode, number> = {
  * 理論行数（枠高÷行高の floor）から引く製本余白。
  * プレビュー・PDF で下端にはみ出し気味になる分を吸収する。
  */
-const BINDING_MAX_LINES_SAFETY_MARGIN = 1;
+export const BINDING_MAX_LINES_SAFETY_MARGIN = 1;
 
 /** v2 最小＝ぎゅっとモード */
 export const DIARY_BOOK_ENTRY_V2_COMPACT_FONT_SIZE_PX = MODE_FONT_SIZE_PX.compact;

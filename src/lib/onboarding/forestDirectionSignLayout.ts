@@ -22,7 +22,7 @@ export const FOREST_DIRECTION_SIGN_DESIGN_SIZE = {
   heightPx: 1024,
 } as const;
 
-/** 看板板面：日記ブック見出しと同じ手書き風 Klee One */
+/** 看板板面：あしあとブック見出しと同じ手書き風 Klee One */
 export const FOREST_DIRECTION_SIGN_LABEL_FONT_FAMILY = DIARY_PREVIEW_LABEL_FONT_FAMILY;
 
 /** 看板板面の行き先名（茶系・森の案内板と同系色） */

@@ -18,7 +18,7 @@ import {
   diaryBookPreBackCoverIllustrationImagePath,
 } from "@/lib/journal/diaryBookAssets";
 import { DIARY_BOOK_INSIDE_COVER_TEXT } from "@/lib/journal/diaryBookInsideCoverLayout";
-import { diaryCoverImagePath, normalizeDiaryCoverStyle } from "@/lib/journal/coverAssets";
+import { diaryCoverImagePath, getDiaryCoverStyleLabel, normalizeDiaryCoverStyle } from "@/lib/journal/coverAssets";
 import {
   DiaryBoundMonthCalendarPage,
   type BoundDiaryEntry,
@@ -40,7 +40,7 @@ export function DiaryBookFrontCoverPage({
     <div className="relative overflow-hidden bg-[#f7f4ee]" style={PAGE_STYLE}>
       <Image
         src={coverSrc}
-        alt={`日記ブック・表紙（${coverStyle === "kireime" ? "きれいめ" : "シンプル"}）`}
+        alt={`あしあとブック・表紙（${getDiaryCoverStyleLabel(coverStyle)}）`}
         fill
         className="object-cover"
         sizes="540px"
@@ -67,7 +67,7 @@ export function DiaryBookInsideCoverPage({
     >
       <Image
         src={diaryBookInsideCoverImagePath()}
-        alt="日記ブック・中表紙"
+        alt="あしあとブック・中表紙"
         fill
         className="object-cover"
         sizes="540px"
@@ -101,7 +101,7 @@ export function DiaryBookBackCoverPage() {
     <div className="relative overflow-hidden bg-white" style={PAGE_STYLE}>
       <Image
         src={diaryBookBackCoverImagePath()}
-        alt="日記ブック・裏表紙"
+        alt="あしあとブック・裏表紙"
         fill
         className="object-cover"
         sizes="540px"
@@ -116,7 +116,7 @@ export function DiaryBookInsideCoverBackIllustrationPage() {
     <div className="relative overflow-hidden bg-[#fdfaf4]" style={PAGE_STYLE}>
       <Image
         src={diaryBookInsideCoverBackIllustrationImagePath()}
-        alt="日記ブック・中表紙裏"
+        alt="あしあとブック・中表紙裏"
         fill
         className="object-cover"
         sizes="540px"
@@ -125,7 +125,7 @@ export function DiaryBookInsideCoverBackIllustrationPage() {
   );
 }
 
-/** 日記本文枚数の見開き調整（全月共通・③） */
+/** あしあと本文枚数の見開き調整（全月共通・③） */
 export function DiaryBookMonthBodyOddAdjustmentPage({
   year,
   monthIndex,
@@ -156,7 +156,7 @@ export function DiaryBookNumerologyQuickReferencePage() {
     <div className="relative overflow-hidden bg-[#fdfaf4]" style={PAGE_STYLE}>
       <Image
         src={diaryBookNumerologyQuickReferenceImagePath()}
-        alt="日記ブック・今日のすうじ 早見表"
+        alt="あしあとブック・今日のすうじ 早見表"
         fill
         className="object-cover"
         sizes="540px"
@@ -175,7 +175,7 @@ export function DiaryBookFreeWritingPage({ spreadSide }: { spreadSide: "left" | 
     <div className="relative overflow-hidden bg-[#fdfaf4]" style={PAGE_STYLE}>
       <Image
         src={src}
-        alt={spreadSide === "left" ? "日記ブック・自由記入（左）" : "日記ブック・自由記入（右）"}
+        alt={spreadSide === "left" ? "あしあとブック・自由記入（左）" : "あしあとブック・自由記入（右）"}
         fill
         className="object-cover"
         sizes="540px"
@@ -190,7 +190,7 @@ export function DiaryBookPreBackCoverIllustrationPage() {
     <div className="relative overflow-hidden bg-[#fdfaf4]" style={PAGE_STYLE}>
       <Image
         src={diaryBookPreBackCoverIllustrationImagePath()}
-        alt="日記ブック・裏表紙前"
+        alt="あしあとブック・裏表紙前"
         fill
         className="object-cover"
         sizes="540px"

@@ -59,7 +59,7 @@ const labelTextProps = {
 };
 
 /**
- * 第4章末・フクロウ先生メッセージ＋日記案内（1P）。
+ * 第4章末・フクロウ先生メッセージ＋あしあと案内（1P）。
  * `journal-diary-invite-bg.png` + shime_honbun / shime_cm1 / shime_cm2 / shime_qr
  */
 export function JournalDiaryInviteBleedPage() {

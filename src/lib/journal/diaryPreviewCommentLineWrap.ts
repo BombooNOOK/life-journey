@@ -25,7 +25,7 @@ const PDF_MIN_NEXT_LINE_CHARS = 4;
 /** 行末を少し超えても孤立行を避ける（PDF・全角文字数） */
 const PDF_SOFT_LINE_OVERFLOW_CHARS = 5;
 
-/** 読み解き欄の最大行数（日記ブック v2：5行以内） */
+/** 読み解き欄の最大行数（あしあとブック v2：5行以内） */
 export const DIARY_COMMENT_MAX_LINES = 5;
 
 /** 段落（\n\n）間の追加余白（724×1024 基準 px） */

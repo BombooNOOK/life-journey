@@ -37,7 +37,7 @@ import { DonguriFootprintModal } from "@/components/loghouse/DonguriFootprintMod
 import { JournalSaveStoryTransitionOverlay } from "@/components/journal/JournalSaveStoryTransitionOverlay";
 import { ActiveProfileLabel } from "@/components/profile/ActiveProfileLabel";
 import { useEnsureActiveViewerProfile } from "@/hooks/useEnsureActiveViewerProfile";
-import { parseSafeJournalReturnTo } from "@/lib/journal/bookshelfReturnTo";
+import { parseSafeJournalReturnTo, resolveJournalReturnNavLabel } from "@/lib/journal/bookshelfReturnTo";
 import { LOG_HOUSE_NAV_LABEL } from "@/lib/journal/logHouseLabels";
 import {
   pickSaveAfterAnimalMessage,
@@ -60,13 +60,22 @@ import {
   CONTENT_FONT_MODES,
   DEFAULT_CONTENT_FONT_MODE,
   type ContentFontMode,
-  JOURNAL_CONTENT_SOFT_MAX_BY_MODE,
   normalizeContentFontMode,
 } from "@/lib/journal/contentFontMode";
 import {
+  ashiatoEntryBodyLengthFlag,
+  getAshiatoHorizontalBodyCapacity,
+  getAshiatoHorizontalBodyLayoutLinesAll,
+  normalizeAshiatoBodyContent,
+  resolveAshiatoEnikkiVerticalMetrics,
+  resolveAshiatoEntryRenderPlan,
+} from "@/lib/journal/ashiatoEntryRender";
+import { isAshiatoPageTemplateId } from "@/lib/journal/ashiatoPageTemplates";
+import { getDiaryBookEntryV2BodyFontLayout } from "@/lib/journal/diaryBookEntryBodyFontLayout";
+import {
+  bodyFrameSeverityFromLengthFlag,
   countBodyLayoutLines,
-  getDiaryBodyLineLimit,
-  isDiaryBodyOverLineLimit,
+  resolveV2BodyFrameSeverity,
 } from "@/lib/journal/diaryPreviewBodyLineLimits";
 import type { JournalNumerologyDebug } from "@/lib/journal/journalNumerologyDebug";
 import {
@@ -127,7 +136,7 @@ import {
   type JournalLocalDraftPayload,
 } from "@/lib/journal/journalLocalDraftStorage";
 
-const JOURNAL_EDIT_LOADING_LABEL = "フクロウ先生が日記を開いています…";
+const JOURNAL_EDIT_LOADING_LABEL = "フクロウ先生があしあとを開いています…";
 const CALENDAR_RETURN_LOADING_LABEL = "カレンダーに戻っています…";
 
 type Entry = {
@@ -176,7 +185,7 @@ function isValidDateInput(value: string): boolean {
   );
 }
 
-/** 日記写真はテンプレ上おおよそ5cm角の製本表示を想定し、720pxで十分な解像度を確保する */
+/** あしあと写真はテンプレ上おおよそ5cm角の製本表示を想定し、720pxで十分な解像度を確保する */
 async function compressToSquareDataUrl(file: File, offsetPercent: number): Promise<string> {
   const imageBitmap = await createImageBitmap(file);
   const targetSize = 720;
@@ -233,11 +242,19 @@ function JournalPageContent() {
     showNumerologyDebug ||
     showSyncDebug ||
     process.env.NODE_ENV === "development";
+  const pageTemplateFromQuery = (searchParams.get("pageTemplate") ?? "").trim();
+  const ashiatoPageTemplate = isAshiatoPageTemplateId(pageTemplateFromQuery)
+    ? pageTemplateFromQuery
+    : null;
   const safeReturnTo = useMemo(
     () => parseSafeJournalReturnTo(searchParams.get("returnTo")),
     [searchParams],
   );
   const returnToIsCalendar = safeReturnTo?.startsWith("/orders/calendar") ?? false;
+  const returnNavLabel = useMemo(
+    () => resolveJournalReturnNavLabel(safeReturnTo),
+    [safeReturnTo],
+  );
   const [content, setContent] = useState("");
   const [tagInput, setTagInput] = useState("");
   const [entryDate, setEntryDate] = useState(() => toDateInputValue(new Date()));
@@ -419,18 +436,24 @@ function JournalPageContent() {
     [navigatingToCalendar, router],
   );
 
-  const cancelEditingAndReturnToCalendar = useCallback(() => {
+  const cancelEditingAndReturn = useCallback(() => {
     if (navigatingToCalendar) return;
-    const monthKey = monthKeyFromEditingContext();
     editLoadGenerationRef.current += 1;
     setNavigatingToCalendar(true);
     resetJournalFormState();
+    if (safeReturnTo) {
+      router.push(safeReturnTo);
+      return;
+    }
+    const monthKey = monthKeyFromEditingContext();
     navigateToEntryMonthCalendar(monthKey);
   }, [
     monthKeyFromEditingContext,
     navigateToEntryMonthCalendar,
     navigatingToCalendar,
     resetJournalFormState,
+    router,
+    safeReturnTo,
   ]);
 
   useEffect(() => {
@@ -735,7 +758,7 @@ function JournalPageContent() {
         setEditServerSnapshot(null);
         if (draft) {
           setError(
-            "オフラインまたは通信エラーのため、サーバーから日記を開けませんでした。端末内の下書きから復元できます。",
+            "オフラインまたは通信エラーのため、サーバーからあしあとを開けませんでした。端末内の下書きから復元できます。",
           );
           return;
         }
@@ -798,11 +821,11 @@ function JournalPageContent() {
     setDraftNotice(null);
 
     if (editingId && !canEditJournal) {
-      setError("無料お試し期間が終了したため、記録の編集はできません。");
+      setError("あしあとを編集する操作は、いまご利用いただけません。どんぐりと森の定期便のご案内をご確認ください。");
       return;
     }
     if (!editingId && !canWriteJournal) {
-      setError("無料お試し期間が終了したため、新しい記録の作成はできません。");
+      setError("新しいあしあとを森に残す操作は、いまご利用いただけません。どんぐりと森の定期便のご案内をご確認ください。");
       return;
     }
 
@@ -952,6 +975,7 @@ function JournalPageContent() {
       };
 
       if (redirectMode === "stay") {
+        setDraftNotice("変更を残しました。");
         return;
       }
 
@@ -1062,7 +1086,7 @@ function JournalPageContent() {
       // 新規は専用ボタン（下書き / あしあと）から実行
       return;
     }
-    if (companionEditSession) {
+    if (companionEditSession || safeReturnTo) {
       await saveEntry("stay");
       return;
     }
@@ -1169,7 +1193,7 @@ function JournalPageContent() {
     const entryId = id.trim();
     if (!entryId) return;
 
-    const ok = window.confirm("この日記を本当に削除しますか？");
+    const ok = window.confirm("このあしあとを本当に削除しますか？");
     if (!ok) return;
 
     const monthKey = monthKeyFromEditingContext();
@@ -1202,21 +1226,80 @@ function JournalPageContent() {
 
   const trimmedContent = content.trim();
   const charCount = trimmedContent.length;
-  const charMax = JOURNAL_CONTENT_SOFT_MAX_BY_MODE[contentFontMode];
-  const { maxLines: bodyMaxLines } = getDiaryBodyLineLimit(contentFontMode);
-  const bodyLineCount = useMemo(
-    () => countBodyLayoutLines(trimmedContent, contentFontMode),
-    [trimmedContent, contentFontMode],
+  const v2BodyLayout = useMemo(
+    () => getDiaryBookEntryV2BodyFontLayout(contentFontMode),
+    [contentFontMode],
   );
-  const bodyOverflows = useMemo(
-    () => isDiaryBodyOverLineLimit(trimmedContent, contentFontMode),
-    [trimmedContent, contentFontMode],
-  );
+  const ashiatoBodyCapacity = useMemo(() => {
+    if (!ashiatoPageTemplate) return null;
+    const plan = resolveAshiatoEntryRenderPlan({ pageTemplate: ashiatoPageTemplate });
+    const body = plan.slotsPercent.body;
+    if (!body) return null;
+    if (plan.bodyWritingMode === "vertical") {
+      const metrics = resolveAshiatoEnikkiVerticalMetrics(contentFontMode, body);
+      return {
+        capacity: {
+          maxLines: metrics.maxColumns,
+          baseMaxCharsPerLine: metrics.maxCharsPerColumn,
+          maxCharsByLine: Array.from(
+            { length: metrics.maxColumns },
+            () => metrics.maxCharsPerColumn,
+          ),
+          maxBindingChars: metrics.maxCharsPerColumn * metrics.maxColumns,
+        },
+        body,
+        bodyTextLayout: plan.bodyTextLayout,
+        vertical: true as const,
+      };
+    }
+    return {
+      capacity: getAshiatoHorizontalBodyCapacity(
+        contentFontMode,
+        body,
+        plan.bodyTextLayout,
+      ),
+      body,
+      bodyTextLayout: plan.bodyTextLayout,
+      vertical: false as const,
+    };
+  }, [ashiatoPageTemplate, contentFontMode]);
+  const charMax =
+    ashiatoBodyCapacity?.capacity.maxBindingChars ?? v2BodyLayout.maxBindingChars;
+  const bodyMaxLines = ashiatoBodyCapacity?.capacity.maxLines ?? v2BodyLayout.maxLines;
+  const bodyLineCount = useMemo(() => {
+    if (ashiatoBodyCapacity?.vertical) {
+      const used = normalizeAshiatoBodyContent(trimmedContent).replace(/\n/g, "").length;
+      if (used <= 0) return 0;
+      return Math.ceil(used / Math.max(1, ashiatoBodyCapacity.capacity.baseMaxCharsPerLine));
+    }
+    if (ashiatoBodyCapacity) {
+      return getAshiatoHorizontalBodyLayoutLinesAll(
+        trimmedContent,
+        contentFontMode,
+        ashiatoBodyCapacity.body,
+        ashiatoBodyCapacity.bodyTextLayout,
+      ).length;
+    }
+    return countBodyLayoutLines(trimmedContent, contentFontMode);
+  }, [ashiatoBodyCapacity, trimmedContent, contentFontMode]);
+  const bodyFrameSeverity = useMemo(() => {
+    if (ashiatoPageTemplate) {
+      return bodyFrameSeverityFromLengthFlag(
+        ashiatoEntryBodyLengthFlag({
+          content: trimmedContent,
+          contentFontMode,
+          pageTemplate: ashiatoPageTemplate,
+        }),
+      );
+    }
+    return resolveV2BodyFrameSeverity(trimmedContent, contentFontMode);
+  }, [ashiatoPageTemplate, trimmedContent, contentFontMode]);
+  const bodyOverflows = bodyFrameSeverity !== "ok";
   const commentOverflows = false;
 
   const isEditEntryLoading = Boolean(editingId && loadingEdit);
   const recordPageTitle = isEditEntryLoading
-    ? "日記を開いています"
+    ? "あしあとを開いています"
     : formatJournalRecordPageTitle(entryDate);
   const bodyInputHeading = journalBodyInputHeading(entryDate);
 
@@ -1291,7 +1374,7 @@ function JournalPageContent() {
           {diaryTargetLabel !== null ? (
             <span
               className="hidden rounded-full border border-violet-200/90 bg-violet-50 px-2.5 py-0.5 text-xs font-medium text-violet-900 sm:inline"
-              title="いま書いている日記の対象"
+              title="いま書いているあしあとの対象"
             >
               {diaryTargetLabel}
             </span>
@@ -1311,9 +1394,6 @@ function JournalPageContent() {
           </p>
         ) : null}
         <p className="flex flex-wrap items-center gap-x-3 text-sm text-stone-500">
-          <Link href="/orders" className="underline-offset-2 hover:text-stone-600 hover:underline">
-            {LOG_HOUSE_NAV_LABEL}
-          </Link>
           {safeReturnTo ? (
             returnToIsCalendar ? (
               <button
@@ -1329,17 +1409,20 @@ function JournalPageContent() {
                 onClick={() => beginCalendarReturn(safeReturnTo)}
                 className="text-[#4a5440] underline-offset-2 hover:underline disabled:cursor-not-allowed disabled:opacity-60"
               >
-                カレンダーへ戻る
+                {returnNavLabel}
               </button>
             ) : (
               <Link
                 href={safeReturnTo}
                 className="text-[#4a5440] underline-offset-2 hover:underline"
               >
-                本の確認へ
+                {returnNavLabel}
               </Link>
             )
           ) : null}
+          <Link href="/orders" className="underline-offset-2 hover:text-stone-600 hover:underline">
+            {LOG_HOUSE_NAV_LABEL}
+          </Link>
         </p>
       </div>
 
@@ -1369,10 +1452,10 @@ function JournalPageContent() {
         </div>
       ) : !showJournalForm ? (
         <div className="lj-read-desc rounded-xl border border-violet-200 bg-violet-50/70 px-4 py-5 text-violet-950">
-          <p>無料お試し期間が終了したため、新しい日記の作成はできません。</p>
+          <p>新しいあしあとを森に残す操作は、いまご利用いただけません。どんぐりと森の定期便のご案内をご確認ください。</p>
           <p className="mt-2">
             <Link href="/orders/calendar" className="font-medium underline-offset-2 hover:underline">
-              カレンダーで過去の日記を見る
+              カレンダーで過去のあしあとを見る
             </Link>
           </p>
         </div>
@@ -1395,7 +1478,7 @@ function JournalPageContent() {
               onClick={() => void deleteEntry(editingId)}
               className="shrink-0 self-start text-xs font-medium text-red-700 underline underline-offset-2 hover:text-red-800 disabled:opacity-50 sm:self-center"
             >
-              {deletingId === editingId ? "削除中…" : "この日記を削除する"}
+              {deletingId === editingId ? "削除中…" : "このあしあとを削除する"}
             </button>
           </div>
         ) : null}
@@ -1458,6 +1541,7 @@ function JournalPageContent() {
           bodyLineCount={bodyLineCount}
           bodyMaxLines={bodyMaxLines}
           bodyOverflows={bodyOverflows}
+          bodyFrameSeverity={bodyFrameSeverity}
           commentOverflows={commentOverflows}
         />
         </div>
@@ -1499,7 +1583,7 @@ function JournalPageContent() {
         <JournalContentLengthAlerts
           contentFontMode={contentFontMode}
           contentLength={charCount}
-          bodyOverflows={bodyOverflows}
+          bodyFrameSeverity={bodyFrameSeverity}
           commentOverflows={commentOverflows}
         />
 
@@ -1723,9 +1807,12 @@ function JournalPageContent() {
           processingPhoto={processingPhoto}
           onSaveDraft={() => void saveServerDraft()}
           onFootprintSave={() => void saveEntry("preview")}
-          onEditSave={() => void saveEntry("preview")}
-          onEditSaveAndReturn={() => void saveEntry("returnTo")}
-          onCancelEdit={cancelEditingAndReturnToCalendar}
+          onEditSave={() => void saveEntry(safeReturnTo ? "stay" : "preview")}
+          onEditSaveAndReturn={
+            safeReturnTo ? () => void saveEntry("returnTo") : undefined
+          }
+          onCancelEdit={cancelEditingAndReturn}
+          cancelEditLabel={safeReturnTo ? "何もしないで戻る" : "編集をやめる"}
           cancelEditDisabled={deletingId === editingId || navigatingToCalendar}
         />
       </form>

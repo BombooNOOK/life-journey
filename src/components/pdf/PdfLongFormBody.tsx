@@ -169,7 +169,7 @@ type Props = {
   noWrapMinChars?: number;
   noWrapMinWidthPt?: number;
   /**
-   * 指定時は固定文字数で行配列化し、各行 wrap={false} で描画（日記読み解き・PY・ブリッジ「持つあなたへ」向け）。
+   * 指定時は固定文字数で行配列化し、各行 wrap={false} で描画（あしあと読み解き・PY・ブリッジ「持つあなたへ」向け）。
    */
   fixedWidthCharsPerLine?: number;
   /** `fixedWidthCharsPerLine` 時に原稿の空行（\\n\\n）で大ブロックを維持する */

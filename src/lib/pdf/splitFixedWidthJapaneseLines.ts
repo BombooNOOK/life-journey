@@ -1,10 +1,18 @@
 /** 次行先頭に来ると不自然な1文字 */
 const LINE_START_PULLBACK_CHARS = new Set(
-  "、。，．」』）〉》】〕ぁぃぅぇぉっゃゅょゎァィゥェォッャュョヮー",
+  "、。，．」』）〉》】〕ぁぃぅぇぉっゃゅょゎァィゥェォッャュョヮー！？!?､｡",
 );
 
 /** 行末に来ると不自然な1文字（開きカギカッコなど） */
 const LINE_END_PULLBACK_CHARS = new Set("「『（【");
+
+export function isJapaneseLineStartPullbackChar(ch: string): boolean {
+  return LINE_START_PULLBACK_CHARS.has(ch);
+}
+
+export function isJapaneseLineEndPullbackChar(ch: string): boolean {
+  return LINE_END_PULLBACK_CHARS.has(ch);
+}
 
 const QUOTE_PAIRS: ReadonlyArray<readonly [string, string]> = [
   ["『", "』"],
@@ -25,7 +33,7 @@ function minHeadChars(maxChars: number): number {
 
 /**
  * 機械分割点がカギカッコの途中なら、開き括弧の直前か閉じ括弧の直後へずらす。
- * 日記読み解きの wrapJapaneseTextForDiaryComment からも利用。
+ * あしあと読み解きの wrapJapaneseTextForDiaryComment からも利用。
  */
 export function findJapaneseQuoteAwareBreak(
   text: string,
@@ -96,11 +104,11 @@ function findNextFixedWidthBreakIndex(text: string, start: number, maxChars: num
   }
 
   while (breakAt > start + 1) {
-    if (breakAt < text.length && LINE_START_PULLBACK_CHARS.has(text[breakAt])) {
+    if (breakAt < text.length && isJapaneseLineStartPullbackChar(text[breakAt]!)) {
       breakAt -= 1;
       continue;
     }
-    if (LINE_END_PULLBACK_CHARS.has(text[breakAt - 1])) {
+    if (isJapaneseLineEndPullbackChar(text[breakAt - 1]!)) {
       breakAt -= 1;
       continue;
     }

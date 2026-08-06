@@ -14,7 +14,7 @@ const photoSelect = {
 
 export type JournalEntryPhotoRecord = JournalEntryPhotoRow & { id: string };
 
-/** 閲覧権限のある日記行（写真フィールドのみ） */
+/** 閲覧権限のあるあしあと行（写真フィールドのみ） */
 export async function getJournalEntryPhotoRecordForViewer(params: {
   entryId: string;
   viewerEmail: string;
@@ -30,7 +30,7 @@ export async function getJournalEntryPhotoRecordForViewer(params: {
     });
   }
 
-  // 日記ブック閲覧など、アクティブプロフィール以外の記事写真も email 一致で許可する
+  // あしあとブック閲覧など、アクティブプロフィール以外の記事写真も email 一致で許可する
   return prisma.journalEntry.findFirst({
     where: {
       id: trimmedId,

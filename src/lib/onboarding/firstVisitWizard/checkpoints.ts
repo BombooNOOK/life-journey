@@ -7,7 +7,7 @@ import type { FirstVisitProgressStage } from "@/lib/onboarding/firstVisitWizard/
 export const FIRST_VISIT_PAUSE_CHECKPOINT_STAGES = [
   "kantei", // ① アカウント作成〜ログハウス建築完了後
   "bookshelf-kantei", // ② 鑑定書作成・本棚到着後（別コンポーネントでも表示）
-  // ③ 初回日記後 — companion 完了画面で別管理
+  // ③ 初回あしあと後 — companion 完了画面で別管理
 ] as const satisfies readonly FirstVisitProgressStage[];
 
 export type FirstVisitPauseCheckpointStage = (typeof FIRST_VISIT_PAUSE_CHECKPOINT_STAGES)[number];

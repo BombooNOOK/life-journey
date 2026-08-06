@@ -33,7 +33,7 @@ export default async function DiaryBookReadPage({ params, searchParams }: Props)
           ← {backLabel}
         </Link>
         <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
-          指定の日記ブックは見つかりませんでした。表示中のプロフィールと一致しているか確認してください。
+          指定のあしあとブックは見つかりませんでした。表示中のプロフィールと一致しているか確認してください。
         </div>
       </div>
     );
@@ -55,7 +55,7 @@ export default async function DiaryBookReadPage({ params, searchParams }: Props)
           ← {backLabel}
         </Link>
         <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
-          指定の日記ブックは見つかりませんでした。表示中のプロフィールと一致しているか確認してください。
+          指定のあしあとブックは見つかりませんでした。表示中のプロフィールと一致しているか確認してください。
         </div>
       </div>
     );
@@ -75,7 +75,7 @@ export default async function DiaryBookReadPage({ params, searchParams }: Props)
     <div className="space-y-4">
       {adminBrowse ? (
         <div className="rounded-lg border border-violet-200 bg-violet-50 px-3 py-2 text-xs text-violet-950">
-          管理者として閲覧中です（申込ユーザーの日記ブック）。編集操作は行わず内容照合にご利用ください。
+          管理者として閲覧中です（申込ユーザーのあしあとブック）。編集操作は行わず内容照合にご利用ください。
         </div>
       ) : null}
       <div>
@@ -89,6 +89,7 @@ export default async function DiaryBookReadPage({ params, searchParams }: Props)
           startDate={book.startDate}
           endDate={book.endDate}
           coverTheme={book.coverTheme}
+          pageTemplate={book.pageTemplate}
           profileId={profileId}
           rangeLabel={rangeLabel}
           entryCount={book.entryCount}

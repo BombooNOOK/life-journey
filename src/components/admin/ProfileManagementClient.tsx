@@ -18,7 +18,7 @@ import { formatAdminEffectiveProfileLimitLabel } from "@/lib/profile/effectivePr
 const CONFIRMATION_LABELS: Record<AdminProfileDeleteConfirmationKey, string> = {
   profileReviewed: "削除対象プロフィールを確認しました",
   backupReviewed: "必要なバックアップが取得済みであることを確認しました",
-  journalDataReviewed: "日記本文・写真が削除されることを確認しました",
+  journalDataReviewed: "あしあと本文・写真が削除されることを確認しました",
   noOrderBindingReviewed: "実注文・製本申込に関わるデータがないことを確認しました",
   kanteiDataReviewed: "鑑定書データと鑑定書PDFも削除されることを確認しました",
 };
@@ -38,7 +38,7 @@ function formatDate(iso: string): string {
 }
 
 function BlockDetailCard({ detail }: { detail: AdminProfileDeleteBindingBlockDetail }) {
-  const kindLabel = detail.kind === "diary" ? "日記ブック製本申込" : "鑑定書製本申込";
+  const kindLabel = detail.kind === "diary" ? "あしあとブック製本申込" : "鑑定書製本申込";
   return (
     <div className="rounded-lg border border-red-300 bg-red-50 p-4 text-sm text-red-950">
       <p className="font-medium">削除できません。</p>
@@ -71,7 +71,7 @@ function BlockDetailCard({ detail }: { detail: AdminProfileDeleteBindingBlockDet
         </div>
         {detail.diaryBookId ? (
           <div>
-            <dt className="text-red-700">日記ブックID</dt>
+            <dt className="text-red-700">あしあとブックID</dt>
             <dd className="font-mono">{detail.diaryBookId}</dd>
           </div>
         ) : null}
@@ -368,7 +368,7 @@ export function ProfileManagementClient() {
               <dd className="text-stone-900">{formatDate(preview.profileUpdatedAt)}</dd>
             </div>
             <div>
-              <dt className="text-stone-500">日記件数</dt>
+              <dt className="text-stone-500">あしあと件数</dt>
               <dd className="text-stone-900">{preview.journalEntryCount}</dd>
             </div>
             <div>
@@ -376,7 +376,7 @@ export function ProfileManagementClient() {
               <dd className="text-stone-900">{preview.photoCount}</dd>
             </div>
             <div>
-              <dt className="text-stone-500">日記ブック件数</dt>
+              <dt className="text-stone-500">あしあとブック件数</dt>
               <dd className="text-stone-900">{preview.diaryBookCount}</dd>
             </div>
             <div>
@@ -388,7 +388,7 @@ export function ProfileManagementClient() {
               <dd className="text-stone-900">{preview.kanteiCreationDataCount}</dd>
             </div>
             <div>
-              <dt className="text-stone-500">日記製本申込件数</dt>
+              <dt className="text-stone-500">あしあと製本申込件数</dt>
               <dd className="text-stone-900">{preview.diaryBindingCount}</dd>
             </div>
             <div>
@@ -486,7 +486,7 @@ export function ProfileManagementClient() {
                   <table className="min-w-full text-xs">
                     <thead className="text-left text-stone-500">
                       <tr>
-                        <th className="px-2 py-1">日記製本</th>
+                        <th className="px-2 py-1">あしあと製本</th>
                         <th className="px-2 py-1">status</th>
                         <th className="px-2 py-1">BASE</th>
                         <th className="px-2 py-1">diaryBookId</th>
@@ -544,7 +544,7 @@ export function ProfileManagementClient() {
           <div className="rounded-lg border border-red-300 bg-white p-4 text-sm leading-relaxed text-red-950">
             <p className="font-medium">このプロフィールを削除します。</p>
             <p className="mt-2">
-              この操作により、このプロフィールに紐づく日記本文・写真・日記ブック
+              この操作により、このプロフィールに紐づくあしあと本文・写真・あしあとブック
               {preview.willDeleteKanteiData ? "・鑑定書データ・鑑定書PDF" : ""}
               が削除されます。この操作は元に戻せません。
             </p>
@@ -610,7 +610,7 @@ export function ProfileManagementClient() {
               <dd>{deleteResult.profileNickname}</dd>
             </div>
             <div>
-              <dt className="text-emerald-700">削除した日記</dt>
+              <dt className="text-emerald-700">削除したあしあと</dt>
               <dd>{deleteResult.deletedJournalEntryCount} 件</dd>
             </div>
             <div>
@@ -618,7 +618,7 @@ export function ProfileManagementClient() {
               <dd>{deleteResult.deletedPhotoBlobCount} 件</dd>
             </div>
             <div>
-              <dt className="text-emerald-700">日記ブック</dt>
+              <dt className="text-emerald-700">あしあとブック</dt>
               <dd>{deleteResult.deletedDiaryBookCount} 件</dd>
             </div>
             <div>
@@ -626,7 +626,7 @@ export function ProfileManagementClient() {
               <dd>{deleteResult.deletedBookshelfBookCount} 件</dd>
             </div>
             <div>
-              <dt className="text-emerald-700">日記製本申込</dt>
+              <dt className="text-emerald-700">あしあと製本申込</dt>
               <dd>{deleteResult.deletedDiaryBindingCount} 件</dd>
             </div>
             <div>
@@ -661,7 +661,7 @@ export function ProfileManagementClient() {
             href="/admin/journal-backup-restore"
             className="inline-block text-sm font-medium text-emerald-900 underline-offset-2 hover:underline"
           >
-            日記バックアップ復元ページへ →
+            あしあとバックアップ復元ページへ →
           </Link>
         </section>
       ) : null}

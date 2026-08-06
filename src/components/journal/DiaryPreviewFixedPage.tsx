@@ -152,7 +152,7 @@ function DiaryPreviewPhotoFrame({
         <img
           ref={imgRef}
           src={photoDisplaySrc}
-          alt="日記写真プレビュー"
+          alt="あしあと写真プレビュー"
           onLoad={() => setImageReady(true)}
           onError={() => setImageReady(true)}
           className={[
@@ -190,9 +190,9 @@ export type DiaryPreviewFixedPageProps = {
   kanteiOrderExists?: boolean;
   /** ?bodyLinesDebug=1 — 行配列確認・行ごと背景（本文のみ） */
   bodyLinesDebug?: boolean;
-  /** false のとき SVG 金枠を描画しない（日記ブック本文用） */
+  /** false のとき SVG 金枠を描画しない（あしあとブック本文用） */
   showGoldFrame?: boolean;
-  /** 背景テンプレ PNG を上書き（日記ブック本文テンプレ等） */
+  /** 背景テンプレ PNG を上書き（あしあとブック本文テンプレ等） */
   templateSrc?: string;
 };
 

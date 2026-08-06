@@ -11,12 +11,12 @@ export function HomeMockBookshelfCapture() {
         <BookshelfBookCard
           id="home-mock-diary-book"
           kind="diary-book"
-          title="2026年の日記ブック"
+          title="2026年のあしあとブック"
           periodLabel="2026/01/01 〜 2026/12/31"
           href="/orders/bookshelf/diary-book/demo"
           tone="emerald"
           coverImageSrc={diaryCoverImagePath("kireime", "owl")}
-          coverAlt="2026年の日記ブックの表紙"
+          coverAlt="2026年のあしあとブックの表紙"
           details={[
             { label: "期間", value: "2026/01/01 〜 2026/12/31" },
             { label: "記録数", value: "24件" },

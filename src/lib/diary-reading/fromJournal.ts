@@ -7,7 +7,7 @@ import {
 import { normalizeCompanionType } from "@/lib/journal/meta";
 
 /**
- * 日記 API → generateDiaryReading の橋渡し。
+ * あしあと API → generateDiaryReading の橋渡し。
  * ベース本文・アクセント文は companionType に応じて切り替え（pending 原稿）。
  */
 import { generateDiaryReading } from "./generateDiaryReading";

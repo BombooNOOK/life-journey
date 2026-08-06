@@ -39,7 +39,7 @@ export function TrialStatusBanner({ entitlement }: Props) {
       <p className="mt-2 text-sm leading-relaxed">{copy.body}</p>
       {entitlement.trialDaysRemaining !== null && entitlement.bannerVariant === "warning" ? (
         <p className="mt-2 text-xs font-medium">
-          無料お試し残り：あと {entitlement.trialDaysRemaining} 日
+          ご案内の確認をおすすめします（残り目安：あと {entitlement.trialDaysRemaining} 日）
         </p>
       ) : null}
       {showPlansLink ? (

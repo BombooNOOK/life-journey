@@ -78,7 +78,7 @@ type Props = {
   className?: string;
 };
 
-/** 日記タグ入力（任意・本文とは分離して保存時に結合） */
+/** あしあとタグ入力（任意・本文とは分離して保存時に結合） */
 export function DiaryTagInput({
   id = "diary-tags",
   value,

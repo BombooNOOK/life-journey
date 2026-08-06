@@ -7,7 +7,7 @@ type Props = {
   visibleCount: number;
 };
 
-/** 伴走保存後：日記ブック3枚が左・中・右へ順番に現れる（きのこ演出と同型） */
+/** 伴走保存後：あしあとブック3枚が左・中・右へ順番に現れる（きのこ演出と同型） */
 export function CompanionSaveForestDeliveryIndicator({ visibleCount }: Props) {
   return (
     <div

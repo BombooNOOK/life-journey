@@ -28,7 +28,7 @@ type Phase = "opening" | "animal";
 const OPENING_CARD_STYLE = guardianColorStyleForName(null);
 
 /**
- * 新規日記保存直後：2段構成の刹那演出。
+ * 新規あしあと保存直後：2段構成の刹那演出。
  * 1段目・2段目それぞれ要素をまとめて表示する（ぱっ、ぱっ）。
  * プレビューには残さない。
  */

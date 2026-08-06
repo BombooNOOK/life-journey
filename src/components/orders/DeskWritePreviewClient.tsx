@@ -30,7 +30,7 @@ export function DeskWritePreviewClient() {
     <div className="mx-auto flex min-h-[100dvh] w-full max-w-lg flex-col gap-3 px-3 py-5">
       <div className="rounded-xl border border-amber-200 bg-amber-50/95 px-3 py-2 text-[11px] leading-relaxed text-amber-950 shadow-sm">
         <p>
-          <strong>プレビュー</strong>（スマホ枠）。日記まわりの半没入トーンと下部ナビ4アイコンを確認できます。ログイン不要。
+          <strong>プレビュー</strong>（スマホ枠）。あしあとまわりの半没入トーンと下部ナビ4アイコンを確認できます。ログイン不要。
         </p>
         <p className="mt-1 flex flex-wrap gap-x-2 gap-y-1">
           <Link href="/preview" className="font-medium underline-offset-2 hover:underline">

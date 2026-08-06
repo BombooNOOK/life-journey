@@ -1,12 +1,3 @@
-import { resolveOfficialLaunchDate } from "@/lib/entitlement/officialLaunchDate";
-import {
-  FREE_TRIAL_DAYS,
-  FREE_TRIAL_WARNING_START_DAY,
-  isWithinTrial,
-  trialDayIndex,
-  trialDaysRemaining,
-} from "@/lib/entitlement/trialDuration";
-import { TRIAL_COPY, TRIAL_CONTINUED_FEATURES_DENIED_MESSAGE } from "@/lib/entitlement/trialStatusCopy";
 import { isStripeSubscriptionEntitled } from "@/lib/stripe/plans";
 
 export type EntitlementAccountSettings = {
@@ -14,6 +5,7 @@ export type EntitlementAccountSettings = {
   isMonitor?: boolean | null;
   subscriptionPlan?: string | null;
   subscriptionStatus?: string | null;
+  /** @deprecated 14日試用は廃止。互換のため型のみ残す */
   freeTrialStartedAt?: Date | null;
 };
 
@@ -23,17 +15,13 @@ export type ResolveUserEntitlementInput = {
   now?: Date;
 };
 
-export type EntitlementTier =
-  | "admin"
-  | "monitor"
-  | "subscriber"
-  | "trial_not_started"
-  | "trial_active"
-  | "trial_warning"
-  | "trial_expired";
+/** admin / monitor / subscriber 以外は free（どんぐり経済圏・試用期限なし） */
+export type EntitlementTier = "admin" | "monitor" | "subscriber" | "free";
 
+/** @deprecated 試用廃止後は常に none。UI 互換のため残す */
 export type TrialBannerVariant = "none" | "not_started" | "warning" | "expired";
 
+/** @deprecated 試用廃止後は付与しない。API 互換のため型のみ残す */
 export type EntitlementDenialCode = "FREE_TRIAL_NOT_STARTED" | "FREE_TRIAL_EXPIRED";
 
 export type UserEntitlement = {
@@ -66,7 +54,7 @@ export function isPaidSubscriber(settings: EntitlementAccountSettings | null | u
   );
 }
 
-function exemptResult(tier: "admin" | "monitor" | "subscriber"): UserEntitlement {
+function entitledResult(tier: EntitlementTier): UserEntitlement {
   return {
     hasFullAccess: true,
     canUseContinuedFeatures: true,
@@ -81,75 +69,21 @@ function exemptResult(tier: "admin" | "monitor" | "subscriber"): UserEntitlement
   };
 }
 
-function expiredResult(now: Date, startedAt: Date): UserEntitlement {
-  const dayIndex = trialDayIndex(startedAt, now);
-  return {
-    hasFullAccess: false,
-    canUseContinuedFeatures: false,
-    canCreateFirstJournal: false,
-    tier: "trial_expired",
-    showTrialBanner: true,
-    bannerVariant: "expired",
-    trialDaysRemaining: 0,
-    trialDayIndex: dayIndex,
-    denialCode: "FREE_TRIAL_EXPIRED",
-    denialMessage: TRIAL_COPY.expired.body,
-  };
-}
-
+/**
+ * どんぐり経済圏：課金プランなしでも機能は開放。
+ * 「森にあしあとを残す」は別途どんぐり消費で制限する。
+ */
 export function resolveUserEntitlement(input: ResolveUserEntitlementInput): UserEntitlement {
-  const now = input.now ?? new Date();
   const settings = input.settings;
-  const count = input.journalEntryCount;
 
-  if (settings?.isAdmin === true) return exemptResult("admin");
-  if (settings?.isMonitor === true) return exemptResult("monitor");
-  if (isPaidSubscriber(settings)) return exemptResult("subscriber");
-
-  const startedAt = settings?.freeTrialStartedAt ?? null;
-
-  if (startedAt === null && count === 0) {
-    return {
-      hasFullAccess: true,
-      canUseContinuedFeatures: false,
-      canCreateFirstJournal: true,
-      tier: "trial_not_started",
-      showTrialBanner: false,
-      bannerVariant: "none",
-      trialDaysRemaining: null,
-      trialDayIndex: null,
-      denialCode: null,
-      denialMessage: null,
-    };
-  }
-
-  const effectiveStartedAt = startedAt ?? resolveOfficialLaunchDate();
-
-  if (!isWithinTrial(effectiveStartedAt, now)) {
-    return expiredResult(now, effectiveStartedAt);
-  }
-
-  const dayIndex = trialDayIndex(effectiveStartedAt, now);
-  const isWarning = dayIndex >= FREE_TRIAL_WARNING_START_DAY && dayIndex <= FREE_TRIAL_DAYS;
-
-  return {
-    hasFullAccess: true,
-    canUseContinuedFeatures: true,
-    canCreateFirstJournal: count === 0,
-    tier: isWarning ? "trial_warning" : "trial_active",
-    showTrialBanner: isWarning,
-    bannerVariant: isWarning ? "warning" : "none",
-    trialDaysRemaining: trialDaysRemaining(effectiveStartedAt, now),
-    trialDayIndex: dayIndex,
-    denialCode: null,
-    denialMessage: null,
-  };
+  if (settings?.isAdmin === true) return entitledResult("admin");
+  if (settings?.isMonitor === true) return entitledResult("monitor");
+  if (isPaidSubscriber(settings)) return entitledResult("subscriber");
+  return entitledResult("free");
 }
 
 export function canCreateJournalEntry(input: ResolveUserEntitlementInput): boolean {
-  const entitlement = resolveUserEntitlement(input);
-  if (entitlement.canUseContinuedFeatures) return true;
-  return entitlement.canCreateFirstJournal;
+  return resolveUserEntitlement(input).canUseContinuedFeatures;
 }
 
 export function canUseContinuedFeatures(input: ResolveUserEntitlementInput): boolean {
@@ -168,9 +102,6 @@ export function serializeUserEntitlement(entitlement: UserEntitlement): Serializ
   };
 }
 
-export function continuedFeaturesDeniedMessage(entitlement: UserEntitlement): string {
-  if (entitlement.tier === "trial_not_started") {
-    return "この操作は、日記の無料お試し開始後にご利用いただけます。";
-  }
-  return entitlement.denialMessage ?? TRIAL_CONTINUED_FEATURES_DENIED_MESSAGE;
+export function continuedFeaturesDeniedMessage(_entitlement: UserEntitlement): string {
+  return "この操作はご利用いただけません。どんぐりと森の定期便のご案内をご確認ください。";
 }

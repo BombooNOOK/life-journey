@@ -87,7 +87,7 @@ export default function GuidePage() {
         </div>
         <p className="relative z-10 font-medium text-stone-900">もっとくわしく知りたいとき</p>
         <p className="relative z-10 mt-2 leading-6">
-          ログハウスや日記・本棚の意味や流れは、森の案内所にまとめています。操作で迷ったときの近道がこのページ、世界の歩き方が案内所、という役割分けです。
+          ログハウスやあしあと・本棚の意味や流れは、森の案内所にまとめています。操作で迷ったときの近道がこのページ、世界の歩き方が案内所、という役割分けです。
         </p>
         <p className="relative z-10 mt-3">
           <Link

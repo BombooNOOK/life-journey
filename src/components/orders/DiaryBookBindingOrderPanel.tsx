@@ -17,6 +17,9 @@ type Props = {
   pageCount: number;
   planId: BookPlanId;
   orderable: boolean;
+  /** 右とじテンプレのときだけ注文目印を出す */
+  rightBound?: boolean;
+  pageTemplateLabel?: string;
 };
 
 const COPY_FAIL_MESSAGE =
@@ -59,7 +62,14 @@ async function copyTextToClipboard(text: string): Promise<boolean> {
   }
 }
 
-export function DiaryBookBindingOrderPanel({ bookId, pageCount, planId, orderable }: Props) {
+export function DiaryBookBindingOrderPanel({
+  bookId,
+  pageCount,
+  planId,
+  orderable,
+  rightBound = false,
+  pageTemplateLabel,
+}: Props) {
   const plan = getBookPlan(pageCount);
   const [issueLoading, setIssueLoading] = useState(false);
   const [issueError, setIssueError] = useState<string | null>(null);
@@ -177,7 +187,17 @@ export function DiaryBookBindingOrderPanel({ bookId, pageCount, planId, orderabl
       <div className="space-y-4">
         {contentUpdatedNotice ? (
           <p className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900">
-            日記ブックの内容が更新されたため、ページ数とプラン情報を最新の状態に更新しました。製本コードはそのままお使いいただけます。
+            あしあとブックの内容が更新されたため、ページ数とプラン情報を最新の状態に更新しました。製本コードはそのままお使いいただけます。
+          </p>
+        ) : null}
+        {rightBound ? (
+          <p className="rounded-lg border-2 border-rose-400 bg-rose-50 px-3 py-2.5 text-sm font-medium leading-relaxed text-rose-950">
+            BASEへ進む前に確認：とじ方向は
+            <span className="mx-1 inline-block rounded-md bg-rose-600 px-2 py-0.5 text-base font-bold text-white">
+              右とじ
+            </span>
+            です
+            {pageTemplateLabel ? `（${pageTemplateLabel}）` : ""}。
           </p>
         ) : null}
         <div>
@@ -231,7 +251,7 @@ export function DiaryBookBindingOrderPanel({ bookId, pageCount, planId, orderabl
           {issueLoading ? (
             <OwlLoadingInline label="注文ページを準備しています…" size="sm" />
           ) : (
-            "申込内容を最新の日記に合わせて更新する"
+            "申込内容を最新のあしあとに合わせて更新する"
           )}
         </button>
       </div>
@@ -240,6 +260,15 @@ export function DiaryBookBindingOrderPanel({ bookId, pageCount, planId, orderabl
 
   return (
     <div className="space-y-3">
+      {rightBound ? (
+        <p className="rounded-lg border-2 border-rose-400 bg-rose-50 px-3 py-2.5 text-sm font-medium leading-relaxed text-rose-950">
+          この本は
+          <span className="mx-1 inline-block rounded-md bg-rose-600 px-2 py-0.5 text-base font-bold text-white">
+            右とじ
+          </span>
+          です。製本コード発行後、BASEで注文するときにとじ方向を間違えないでください。
+        </p>
+      ) : null}
       <p className="text-sm text-stone-700">
         製本対象：{BOOK_PLAN_LABELS_JA[planId]}（総ページ数 {pageCount} ページ）
       </p>

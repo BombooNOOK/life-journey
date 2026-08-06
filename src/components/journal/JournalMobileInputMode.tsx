@@ -9,7 +9,7 @@ import {
   CONTENT_FONT_MODES,
   type ContentFontMode,
 } from "@/lib/journal/contentFontMode";
-import { getBodyFrameStatusLabel } from "@/lib/journal/diaryPreviewBodyLineLimits";
+import { getBodyFrameStatusLabel, type BodyFrameSeverity } from "@/lib/journal/diaryPreviewBodyLineLimits";
 import { useVisualViewportDock } from "@/hooks/useVisualViewportDock";
 
 type CounterProps = {
@@ -19,6 +19,7 @@ type CounterProps = {
   bodyLineCount: number;
   bodyMaxLines: number;
   bodyOverflows: boolean;
+  bodyFrameSeverity?: BodyFrameSeverity;
   commentOverflows: boolean;
 };
 
@@ -77,6 +78,7 @@ export function JournalMobileInputMode({
   bodyLineCount,
   bodyMaxLines,
   bodyOverflows,
+  bodyFrameSeverity,
   commentOverflows,
 }: Props) {
   const internalTextareaRef = useRef<HTMLTextAreaElement>(null);
@@ -166,10 +168,11 @@ export function JournalMobileInputMode({
   }, [open, dock.height, dock.bottomInset, textareaRef]);
 
   const modeLabel = CONTENT_FONT_MODE_LABELS_JA[contentFontMode];
-  const frameOverflows = bodyOverflows || commentOverflows;
+  const severity = bodyFrameSeverity ?? (bodyOverflows ? "overflow" : "ok");
+  const frameOverflows = severity !== "ok" || commentOverflows;
   const frameLabel = getBodyFrameStatusLabel(
     contentFontMode,
-    bodyOverflows,
+    severity,
     commentOverflows,
   );
 
@@ -451,7 +454,13 @@ export function JournalMobileInputMode({
               本文行数：{bodyLineCount}/{bodyMaxLines}行
             </p>
             {frameOverflows ? (
-              <p className="mt-0.5 text-[10px] font-medium leading-tight text-amber-800">
+              <p
+                className={
+                  severity === "overflow" || commentOverflows
+                    ? "mt-0.5 text-[10px] font-medium leading-tight text-orange-800"
+                    : "mt-0.5 text-[10px] font-medium leading-tight text-amber-800"
+                }
+              >
                 {frameLabel}
               </p>
             ) : null}

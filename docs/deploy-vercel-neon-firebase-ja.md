@@ -35,6 +35,17 @@ npm run build
 - `NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET`
 - `NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID`
 - `NEXT_PUBLIC_FIREBASE_APP_ID`
+- `FIREBASE_SERVICE_ACCOUNT_JSON`（アカウント削除で Firebase ログイン情報も消すために **Production で必須**）
+
+  1. Firebase Console → プロジェクト設定 → サービスアカウント →「新しい秘密鍵の生成」
+  2. ダウンロードした JSON を Vercel 用に整形:
+
+     ```bash
+     node scripts/prepare-firebase-service-account-for-vercel.mjs ~/Downloads/あなたの鍵.json
+     ```
+
+  3. 出力された base64 を `FIREBASE_SERVICE_ACCOUNT_JSON` として Vercel に追加
+  4. Production を Redeploy
 
 ## 4. Prisma マイグレーションを作る（初回だけローカル）
 

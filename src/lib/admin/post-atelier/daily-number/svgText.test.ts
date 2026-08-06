@@ -1,5 +1,25 @@
 import { describe, expect, it } from "vitest";
-import { buildActionLinesSvg, buildSvgTextOverlay, wrapBulletActionLines, wrapTextWithLineRules } from "./svgText";
+import {
+  buildActionLinesSvg,
+  buildSvgTextOverlay,
+  wrapBulletActionLines,
+  wrapTextLines,
+  wrapTextWithLineRules,
+} from "./svgText";
+
+describe("wrapTextLines", () => {
+  it("明示的な改行を行として残す", () => {
+    expect(wrapTextLines("おはよう\nおやすみ", 20, 2)).toEqual(["おはよう", "おやすみ"]);
+  });
+
+  it("改行後も字数で折り返す", () => {
+    expect(wrapTextLines("あいうえお\nかきくけこさしすせそ", 5, 4)).toEqual([
+      "あいうえお",
+      "かきくけこ",
+      "さしすせそ",
+    ]);
+  });
+});
 
 describe("wrapBulletActionLines", () => {
   it("1行目は・分を除いた文字数で折り返す", () => {
@@ -188,5 +208,25 @@ describe("buildSvgTextOverlay", () => {
 
     expect(svg).toContain('transform="rotate(2, 625, 395)"');
     expect(svg).toContain('text-anchor="middle"');
+  });
+
+  it("yOrigin=top のときベースライン y へ変換する", () => {
+    const svg = buildSvgTextOverlay({
+      width: 100,
+      height: 100,
+      items: [
+        {
+          text: "日付",
+          style: {
+            x: 160,
+            y: 744,
+            fontSize: 20,
+            yOrigin: "top",
+          },
+        },
+      ],
+    }).toString("utf8");
+
+    expect(svg).toContain('y="760"'); // 744 + round(20 * 0.8)
   });
 });

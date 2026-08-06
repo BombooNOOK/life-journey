@@ -38,7 +38,7 @@ function parseDiaryNumberQueryValue(raw: string | null | undefined): number | nu
   return value;
 }
 
-/** 日記プレビューから渡す today / month / year（1〜9） */
+/** あしあとプレビューから渡す today / month / year（1〜9） */
 export function parsePersonalDiaryNumbersFromSearchParams(input: {
   today?: string | null;
   month?: string | null;

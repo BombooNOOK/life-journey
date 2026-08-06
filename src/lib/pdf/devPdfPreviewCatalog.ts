@@ -188,36 +188,36 @@ export const DEV_PDF_PREVIEW_ENTRIES: DevPdfPreviewEntry[] = [
   },
   {
     id: "journal-priorities",
-    group: "第4章・日記",
+    group: "第4章・あしあと",
     label: "この年大切にしたいこと",
     buildSrc: ({ quality }) =>
       `/api/dev/journal-priorities-preview?quality=${q(quality)}`,
   },
   {
     id: "journal-retrospect",
-    group: "第4章・日記",
+    group: "第4章・あしあと",
     label: "この年を振り返って",
     buildSrc: ({ quality }) =>
       `/api/dev/journal-retrospect-preview?quality=${q(quality)}`,
   },
   {
     id: "journal-memo-left",
-    group: "第4章・日記",
+    group: "第4章・あしあと",
     label: "余白のページ（左・方眼）",
     buildSrc: ({ quality }) =>
       `/api/dev/journal-memo-preview?page=left&quality=${q(quality)}`,
   },
   {
     id: "journal-memo-right",
-    group: "第4章・日記",
+    group: "第4章・あしあと",
     label: "余白のページ（右・フクロウ）",
     buildSrc: ({ quality }) =>
       `/api/dev/journal-memo-preview?page=right&quality=${q(quality)}`,
   },
   {
     id: "journal-diary-invite",
-    group: "第4章・日記",
-    label: "フクロウ先生メッセージ＋日記案内",
+    group: "第4章・あしあと",
+    label: "フクロウ先生メッセージ＋あしあと案内",
     buildSrc: ({ quality }) =>
       `/api/dev/journal-diary-invite-preview?quality=${q(quality)}`,
   },

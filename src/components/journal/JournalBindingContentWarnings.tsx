@@ -70,7 +70,7 @@ export function JournalBindingContentWarnings({ entries, buildPreviewHref }: Pro
       ) : null}
 
       <div>
-        <p className="text-xs font-medium text-amber-950">確認が必要な日記：</p>
+        <p className="text-xs font-medium text-amber-950">確認が必要なあしあと：</p>
         <ul className="mt-1.5 space-y-1">
           {flagged.map(({ entry, flag }) => (
             <li key={entry.id}>

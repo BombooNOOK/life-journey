@@ -5,10 +5,12 @@ import { fileURLToPath } from "node:url";
 const projectRoot = path.dirname(fileURLToPath(import.meta.url));
 
 const lanDevHost =
+  process.env.DEV_LAN_HOST?.trim() ||
   process.env.NEXT_PUBLIC_APP_URL?.trim()
     .replace(/^https?:\/\//, "")
     .replace(/\/$/, "")
-    .split(":")[0] || "192.168.1.28";
+    .split(":")[0] ||
+  "192.168.1.28";
 
 const nextConfig: NextConfig = {
   /** 親ディレクトリの lockfile 誤検知で CSS/チャンクが壊れるのを防ぐ */

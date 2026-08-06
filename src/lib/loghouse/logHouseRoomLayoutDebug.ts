@@ -99,6 +99,7 @@ const HOTSPOT_REGION_STYLE: Record<
   residentCard: { label: "住民票タップ", color: "rgba(168,85,247,0.08)", border: "rgba(147,51,234,0.55)" },
   todayResult: { label: "鑑定タップ", color: "rgba(236,72,153,0.08)", border: "rgba(219,39,119,0.55)" },
   radio: { label: "ラジオタップ", color: "rgba(234,179,8,0.08)", border: "rgba(202,138,4,0.55)" },
+  chair: { label: "椅子タップ", color: "rgba(20,184,166,0.08)", border: "rgba(13,148,136,0.55)" },
 };
 
 export function logHouseRoomLayoutRegions(): LogHouseRoomLayoutRegion[] {

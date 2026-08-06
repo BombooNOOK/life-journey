@@ -1,5 +1,6 @@
 import {
   DAILY_NUMBER_COVER_LAYOUT,
+  DAILY_NUMBER_COVER_SCHEDULED_DATE_LAYOUT,
   DAILY_NUMBER_LAYOUT_SAMPLE,
   dailyNumberPersonalPageLayout,
   dailyNumberPersonalPageSide,
@@ -7,7 +8,7 @@ import {
 } from "./imageLayout";
 import { dailyNumberCharmColorSvgPosition } from "./charmColorLayout";
 
-/** 日記プレビューと同じ考え方：テンプレート設計座標（819×1024）上の 1 辺 */
+/** あしあとプレビューと同じ考え方：テンプレート設計座標（819×1024）上の 1 辺 */
 export const DAILY_NUMBER_LAYOUT_RULER_SQUARE_PX = 5;
 
 export type DailyNumberLayoutSlide =
@@ -51,6 +52,7 @@ export function layoutSlideToPageIndex(slide: DailyNumberLayoutSlide): number | 
 
 export function coverLayoutAnchors(): LayoutAnchor[] {
   const layout = DAILY_NUMBER_COVER_LAYOUT;
+  const dateLayout = DAILY_NUMBER_COVER_SCHEDULED_DATE_LAYOUT;
   return [
     { id: "number", label: "今日のすうじ（数字）", x: layout.number.cx, y: layout.number.y, kind: "point" },
     { id: "title", label: "サブタイトル", x: layout.title.cx, y: layout.title.y, kind: "point" },
@@ -60,6 +62,13 @@ export function coverLayoutAnchors(): LayoutAnchor[] {
       x: layout.summary.x,
       y: layout.summary.y,
       kind: "topleft",
+    },
+    {
+      id: "scheduledDate",
+      label: "投稿予定日（地面付近）",
+      x: dateLayout.cx,
+      y: dateLayout.y,
+      kind: "point",
     },
   ];
 }

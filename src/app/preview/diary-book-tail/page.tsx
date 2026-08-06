@@ -5,7 +5,7 @@ import { DiaryBookTailPreviewClient } from "@/app/preview/diary-book-tail/DiaryB
 import { OwlSuspenseFallback } from "@/components/ui/OwlSuspenseFallback";
 
 export const metadata: Metadata = {
-  title: "日記ブック末尾ページ確認",
+  title: "あしあとブック末尾ページ確認",
   robots: { index: false, follow: false },
 };
 

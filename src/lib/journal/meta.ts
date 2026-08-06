@@ -46,7 +46,7 @@ export function getCompanionReadingHeading(companion: string): string {
   return `${getCompanionLabel(companion)}の読み解き`;
 }
 
-/** 日記ページ背景は罫線なしのみ。キャラ差は companion とテンプレ PNG で表現 */
+/** あしあとページ背景は罫線なしのみ。キャラ差は companion とテンプレ PNG で表現 */
 export const diaryDesignOptions = [
   { id: "simple_plain", label: "シンプル系（罫線なし）" },
 ] as const;

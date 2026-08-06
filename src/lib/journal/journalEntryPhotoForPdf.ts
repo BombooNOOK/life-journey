@@ -31,7 +31,7 @@ async function bytesToPdfDataUri(buffer: Buffer, mimeType: string): Promise<stri
 
 /**
  * @react-pdf は WebP 非対応のため、PDF 埋め込み用 data URI だけ JPEG/PNG に揃える。
- * 日記表示・Blob 保存には使わない。
+ * あしあと表示・Blob 保存には使わない。
  */
 export async function journalEntryPhotoPayloadToDataUriForPdf(
   payload: JournalEntryPhotoPayload,

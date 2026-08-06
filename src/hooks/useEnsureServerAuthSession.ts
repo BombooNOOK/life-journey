@@ -20,7 +20,7 @@ const INITIAL: State = {
 };
 
 /**
- * 日記 API は Cookie のメールでユーザーを特定する。
+ * あしあと API は Cookie のメールでユーザーを特定する。
  * Firebase だけログイン済みでサーバー Cookie が古い端末があるため、取得前に同期する。
  */
 export function useEnsureServerAuthSession(): State {

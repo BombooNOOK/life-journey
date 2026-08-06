@@ -180,7 +180,7 @@ function EntryTextLines({
 }
 
 /**
- * 日記ブック本文ページ v2（724×1024）。
+ * あしあとブック本文ページ v2（724×1024）。
  * 背景 PNG + 動的オーバーレイ。DiaryBookEntryPdfPage と同一レイアウト。
  */
 export function DiaryBookEntryV2PreviewPage({

@@ -20,10 +20,26 @@ import {
   resolveJournalSocialPostSubtitle,
 } from "./textExtract";
 import {
+  isMoriAshiatoTemplateId,
   normalizeJournalSocialPostTemplateId,
 } from "./templates";
 import type { JournalSocialPostPhotoAdjust } from "./photoAdjust";
 import type { JournalSocialPostImageInput } from "./types";
+
+/** 森ログカードの手動本文・ひとこと（あしあと／読み解き抜粋の代わり） */
+const MORI_MANUAL_TEXT_MAX_CHARS = 80;
+
+function clampManualCardText(raw: string): string {
+  // 明示改行は残し、行内空白だけ整える（2行枠のひとこと用）
+  return raw
+    .replace(/\r\n/g, "\n")
+    .replace(/\r/g, "\n")
+    .split("\n")
+    .map((line) => line.replace(/[ \t\u3000]+/g, " ").trim())
+    .join("\n")
+    .replace(/^\n+|\n+$/g, "")
+    .slice(0, MORI_MANUAL_TEXT_MAX_CHARS);
+}
 
 const entrySelect = {
   id: true,
@@ -72,8 +88,18 @@ export async function loadJournalSocialPostImageContext(params: {
   viewerEmail: string;
   title: string;
   subtitle?: string | null;
+  /** 指定時はあしあと本文抜粋の代わりに使う（森ログカード用） */
+  bodyExcerpt?: string | null;
+  /** 指定時は読み解き抜粋の代わりに使う（森ログカード用） */
+  commentExcerpt?: string | null;
+  /** 今日のあしあとなど：3択ラベル */
+  promptLabel?: string | null;
+  /** 3コマなど：全体のおまとめ（今日のひとこと） */
+  summary?: string | null;
   templateId?: string | null;
   photoAdjust?: JournalSocialPostPhotoAdjust;
+  extraPhotoBuffers?: [Buffer | null, Buffer | null];
+  panelPhotoSources?: JournalSocialPostImageInput["panelPhotoSources"];
 }): Promise<JournalSocialPostImageContext | null> {
   const entry = await findEntryForViewer(params.entryId, params.viewerEmail);
   if (!entry) return null;
@@ -115,6 +141,25 @@ export async function loadJournalSocialPostImageContext(params: {
 
   const moodMeta = getMoodMeta(entry.mood);
   const templateId = normalizeJournalSocialPostTemplateId(params.templateId);
+  const useMoriManualText =
+    isMoriAshiatoTemplateId(templateId) &&
+    (params.bodyExcerpt != null ||
+      params.commentExcerpt != null ||
+      params.promptLabel != null ||
+      params.summary != null);
+
+  const bodyExcerpt = useMoriManualText
+    ? clampManualCardText(params.bodyExcerpt ?? "")
+    : extractSocialPostBodyText(entry.content, templateId);
+  const commentExcerpt = useMoriManualText
+    ? clampManualCardText(params.commentExcerpt ?? "")
+    : commentRaw
+      ? extractSocialPostCommentText(commentRaw)
+      : "";
+  const promptLabel = useMoriManualText
+    ? clampManualCardText(params.promptLabel ?? "")
+    : "";
+  const summary = useMoriManualText ? clampManualCardText(params.summary ?? "") : "";
 
   return {
     entryId: entry.id,
@@ -122,14 +167,18 @@ export async function loadJournalSocialPostImageContext(params: {
     input: buildJournalSocialPostImageInput({
       templateId,
       title: clampJournalSocialPostTitle(params.title, templateId),
-      bodyExcerpt: extractSocialPostBodyText(entry.content, templateId),
+      bodyExcerpt,
       subtitle: resolveJournalSocialPostSubtitle(params.subtitle),
       todayNumber: diaryNumbers.today,
       monthNumber: diaryNumbers.month,
       yearNumber: diaryNumbers.year,
       moodLabel: moodMeta.label,
-      commentExcerpt: commentRaw ? extractSocialPostCommentText(commentRaw) : "",
+      commentExcerpt,
+      promptLabel,
+      summary,
       photoBuffer,
+      extraPhotoBuffers: params.extraPhotoBuffers,
+      panelPhotoSources: params.panelPhotoSources,
       photoAdjust: params.photoAdjust,
       companionType: normalizeCompanionType(entry.companionType),
       createdAt: entry.createdAt,

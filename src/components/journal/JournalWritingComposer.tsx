@@ -10,6 +10,7 @@ import {
   type ContentFontMode,
 } from "@/lib/journal/contentFontMode";
 import { useTapWithoutScroll } from "@/hooks/useTapWithoutScroll";
+import type { BodyFrameSeverity } from "@/lib/journal/diaryPreviewBodyLineLimits";
 
 type CounterProps = {
   contentFontMode: ContentFontMode;
@@ -18,6 +19,7 @@ type CounterProps = {
   bodyLineCount: number;
   bodyMaxLines: number;
   bodyOverflows: boolean;
+  bodyFrameSeverity?: BodyFrameSeverity;
   commentOverflows: boolean;
 };
 

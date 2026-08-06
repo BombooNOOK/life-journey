@@ -58,7 +58,7 @@ export async function POST(request: Request) {
         };
       },
       onUploadCompleted: async () => {
-        // 日記本文・写真はログに出さない
+        // あしあと本文・写真はログに出さない
       },
     });
     return NextResponse.json(jsonResponse, JSON_NO_STORE);

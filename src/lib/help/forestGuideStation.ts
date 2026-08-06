@@ -4,7 +4,7 @@ export const FOREST_GUIDE_STATION_TITLE = "森の案内所" as const;
 export const FOREST_GUIDE_STATION_SUBTITLE = "Life Journey Diaryの歩き方" as const;
 
 export const FOREST_GUIDE_STATION_DESCRIPTION =
-  "ここは、Life Journey Diaryの森で迷ったときに立ち寄れる案内所です。森の案内図や、はじめての道しるべ、日記の書き方、すうじの読み方を確認できます。" as const;
+  "ここは、Life Journey Diaryの森で迷ったときに立ち寄れる案内所です。森の案内図や、はじめての道しるべ、あしあとの書き方、すうじの読み方を確認できます。" as const;
 
 export const FOREST_GUIDE_STATION_MAP_SECTION_TITLE = "BambooNOOKの森の案内図" as const;
 
@@ -42,7 +42,7 @@ export const FOREST_GUIDE_FIRST_VISIT_STEPS: ForestGuideFirstVisitStep[] = [
   {
     step: 3,
     title: "フクロウ先生の案内",
-    body: "数字は毎日を決めるものではなく、日記を見返すための小さな手がかりです。",
+    body: "数字は毎日を決めるものではなく、あしあとを見返すための小さな手がかりです。",
     link: {
       href: FOREST_GUIDE_STATION_NUMEROLOGY_READING_HREF,
       label: FOREST_GUIDE_STATION_NUMEROLOGY_READING_LINK_LABEL,
@@ -66,7 +66,7 @@ export const FOREST_GUIDE_FIRST_VISIT_STEPS: ForestGuideFirstVisitStep[] = [
   {
     step: 7,
     title: "ログハウス建築",
-    body: "日記や鑑定書をしまっておく、あなたの拠点を建てます。",
+    body: "あしあとや鑑定書をしまっておく、あなたの拠点を建てます。",
   },
   {
     step: 8,

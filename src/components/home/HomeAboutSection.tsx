@@ -26,7 +26,7 @@ export function HomeAboutSection() {
         <p>
           そして、デジタルで残した日々を、手元に残る
           <br />
-          <span className="font-semibold text-stone-700">世界に一冊の「日記ブック」</span>へと
+          <span className="font-semibold text-stone-700">世界に一冊の「あしあとブック」</span>へと
           <br className="block md:hidden" />
           育てていくサービスです。
         </p>

@@ -10,7 +10,7 @@ export type BuildCompanionWritingContentInput = {
   generatedBody: string;
 };
 
-/** 既存 JournalEntry.content にそのまま保存できる自然な日記文 */
+/** 既存 JournalEntry.content にそのまま保存できる自然なあしあと文 */
 export function buildCompanionWritingEntryContent(
   input: BuildCompanionWritingContentInput,
 ): string {

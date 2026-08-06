@@ -29,7 +29,7 @@ describe("closingVariant", () => {
 
   it("使用ラベルを返す", () => {
     expect(formatDailyNumberClosingVariantUsageLabel("one_word_diary")).toBe(
-      "ラストページ：ランダム（今回：ひとこと日記）",
+      "ラストページ：ランダム（今回：ひとことあしあと）",
     );
   });
 });

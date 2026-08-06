@@ -86,7 +86,8 @@ export default async function LogHouseMailboxDetailPage({ params }: Props) {
       notFound();
     }
 
-    // 開いた時点で既読にする（一覧更新はクライアント refresh / API の revalidatePath）
+    // 開いた時点で既読にする（DBのみ）。revalidatePath は RSC 描画中に呼べないため
+    // クライアントの POST /api/loghouse/mailbox/.../read + router.refresh に任せる。
     if (notice.unread) {
       notice =
         (await withPrismaConnectionRetry(() =>

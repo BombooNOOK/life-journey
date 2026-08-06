@@ -249,7 +249,7 @@ export function AdminUserDirectory({ rows }: Props) {
             ]}
           />
           <FilterSelect<AdminDirectoryPresenceFilter>
-            label="日記"
+            label="あしあと"
             value={filters.hasJournal}
             onChange={(hasJournal) => setFilters((f) => ({ ...f, hasJournal }))}
             options={[
@@ -347,7 +347,7 @@ export function AdminUserDirectory({ rows }: Props) {
               <th className="px-4 py-3 font-medium">プラン開始日</th>
               <th className="px-4 py-3 font-medium">初回鑑定日</th>
               <th className="px-4 py-3 font-medium">鑑定</th>
-              <th className="px-4 py-3 font-medium">日記</th>
+              <th className="px-4 py-3 font-medium">あしあと</th>
               <th className="px-4 py-3 font-medium">プロフィール上限</th>
               <th className="px-4 py-3 font-medium">PDF無料回数</th>
               <th className="px-4 py-3 font-medium">鑑定書 高画質PDF</th>

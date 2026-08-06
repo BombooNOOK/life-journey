@@ -257,7 +257,7 @@ export async function deleteJournalDraft(params: {
   return true;
 }
 
-/** 正式保存時：下書き写真を日記へ移し、下書き行だけ消す（Blob は残す） */
+/** 正式保存時：下書き写真をあしあとへ移し、下書き行だけ消す（Blob は残す） */
 export async function transferJournalDraftPhotoToEntry(params: {
   email: string;
   profileId: string;

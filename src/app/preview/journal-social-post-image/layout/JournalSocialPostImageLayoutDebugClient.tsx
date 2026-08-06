@@ -6,21 +6,24 @@ import { useCallback, useMemo, useState } from "react";
 import {
   buildJournalSocialPostLayoutGridSvg,
   buildJournalSocialPostLayoutRulerSquareSvg,
+  designSizeForTemplate,
   JOURNAL_SOCIAL_POST_LAYOUT_RULER_SQUARE_PX,
   JOURNAL_SOCIAL_POST_LAYOUT_SLIDES,
   layoutAnchorsForTemplate,
   layoutSampleTextsForTemplate,
-  photoRectForTemplate,
+  photoRectsForTemplate,
   type LayoutAnchor,
 } from "@/lib/journal/social-post-image/layoutDebug";
 import { buildJournalSocialPostLayoutRulerHref } from "@/lib/journal/social-post-image/layoutRulerUrls";
 import {
-  JOURNAL_SOCIAL_POST_TEMPLATE_SIZE,
+  isMoriAshiatoTemplateId,
   JOURNAL_SOCIAL_POST_TEMPLATES,
+  type JournalSocialPostPhotoStyle,
   type JournalSocialPostTemplateId,
 } from "@/lib/journal/social-post-image/templates";
 
 const TEMPLATE_BASE = "/images/journal-social-post";
+const DEMO_PHOTO_SRC = "/images/home-mock/demo-journal-photo.png";
 
 type Props = {
   initialTemplate?: JournalSocialPostTemplateId;
@@ -28,7 +31,7 @@ type Props = {
 };
 
 export function JournalSocialPostImageLayoutDebugClient({
-  initialTemplate = "sns02",
+  initialTemplate = "chiisana_ashiato",
   returnTo = null,
 }: Props) {
   const [templateId, setTemplateId] = useState<JournalSocialPostTemplateId>(initialTemplate);
@@ -36,21 +39,28 @@ export function JournalSocialPostImageLayoutDebugClient({
   const [showAnchors, setShowAnchors] = useState(true);
   const [showSampleText, setShowSampleText] = useState(true);
   const [showPhotoRect, setShowPhotoRect] = useState(true);
+  const [showDemoPhoto, setShowDemoPhoto] = useState(true);
+  const [showOverlay, setShowOverlay] = useState(true);
   const [cursor, setCursor] = useState<{ x: number; y: number } | null>(null);
   const [pin, setPin] = useState<{ x: number; y: number } | null>(null);
   const [copyState, setCopyState] = useState<"idle" | "ok" | "fail">("idle");
 
   const slideMeta = JOURNAL_SOCIAL_POST_LAYOUT_SLIDES.find((s) => s.id === templateId)!;
+  const designSize = useMemo(() => designSizeForTemplate(templateId), [templateId]);
   const templateSrc = `${TEMPLATE_BASE}/${slideMeta.templateFile}`;
+  const overlaySrc = slideMeta.overlayFile
+    ? `${TEMPLATE_BASE}/${slideMeta.overlayFile}`
+    : null;
   const anchors = useMemo(() => layoutAnchorsForTemplate(templateId), [templateId]);
   const sampleTexts = useMemo(() => layoutSampleTextsForTemplate(templateId), [templateId]);
-  const photoRect = useMemo(() => photoRectForTemplate(templateId), [templateId]);
+  const photoRects = useMemo(() => photoRectsForTemplate(templateId), [templateId]);
   const layout = JOURNAL_SOCIAL_POST_TEMPLATES[templateId];
+  const isMori = isMoriAshiatoTemplateId(templateId);
 
   const gridDataUrl = useMemo(() => {
-    const svg = buildJournalSocialPostLayoutGridSvg();
+    const svg = buildJournalSocialPostLayoutGridSvg(designSize);
     return `data:image/svg+xml,${encodeURIComponent(svg)}`;
-  }, []);
+  }, [designSize]);
 
   const pinRulerDataUrl = useMemo(() => {
     if (!pin) return null;
@@ -58,9 +68,10 @@ export function JournalSocialPostImageLayoutDebugClient({
       x: pin.x,
       y: pin.y,
       label: `${JOURNAL_SOCIAL_POST_LAYOUT_RULER_SQUARE_PX}px 基準`,
+      canvas: designSize,
     });
     return `data:image/svg+xml,${encodeURIComponent(svg)}`;
-  }, [pin]);
+  }, [pin, designSize]);
 
   const handleMouseMove = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
     const rect = e.currentTarget.getBoundingClientRect();
@@ -88,14 +99,22 @@ export function JournalSocialPostImageLayoutDebugClient({
   return (
     <div className="space-y-6">
       <div className="rounded-xl border border-violet-200 bg-violet-50/60 p-4 text-sm leading-relaxed text-violet-950">
-        <p className="font-medium">投稿画像テンプレート（819×1024）を 1:1 で表示しています。</p>
+        <p className="font-medium">
+          {isMori ? "森ログカード" : "投稿画像"}テンプレートを設計座標のまま 1:1 表示しています（
+          {designSize.widthPx}×{designSize.heightPx}）。
+        </p>
         <ul className="mt-2 list-disc space-y-1 pl-5 text-xs">
           <li>
-            <strong>5px マス</strong>はこころ予報の定規と同じ考え方です。
+            座標の編集先は{" "}
+            <code className="rounded bg-white/70 px-1">
+              {isMori
+                ? "src/lib/journal/social-post-image/moriAshiatoTemplates.ts"
+                : "src/lib/journal/social-post-image/templates.ts"}
+            </code>
           </li>
           <li>クリックで座標をコピーし、ピンクの 5px 正方形を置けます。</li>
-          <li>水色の枠は写真エリア（<code className="rounded bg-white/70 px-1">templates.ts</code> の photo）。</li>
-          <li>オレンジの丸は文字の基準点（<code className="rounded bg-white/70 px-1">templates.ts</code> の現在値）。</li>
+          <li>水色の枠は写真エリア。デモ写真＋オーバーレイで実物に近い見え方も確認できます。</li>
+          <li>オレンジの丸／点は文字の基準点（templates の現在値）。</li>
           <li>緑のサンプル文字は位置確認用です（合成フォントと同一ではありません）。</li>
         </ul>
       </div>
@@ -111,7 +130,10 @@ export function JournalSocialPostImageLayoutDebugClient({
             <Link
               key={slide.id}
               href={href}
-              onClick={() => setTemplateId(slide.id)}
+              onClick={() => {
+                setTemplateId(slide.id);
+                setPin(null);
+              }}
               className={[
                 "rounded-md border px-2 py-1 text-xs font-medium transition",
                 active
@@ -131,20 +153,52 @@ export function JournalSocialPostImageLayoutDebugClient({
           グリッド（10/50px）
         </label>
         <label className="flex items-center gap-2">
-          <input type="checkbox" checked={showPhotoRect} onChange={(e) => setShowPhotoRect(e.target.checked)} />
-          写真エリア
+          <input
+            type="checkbox"
+            checked={showDemoPhoto}
+            onChange={(e) => setShowDemoPhoto(e.target.checked)}
+          />
+          デモ写真
         </label>
         <label className="flex items-center gap-2">
-          <input type="checkbox" checked={showAnchors} onChange={(e) => setShowAnchors(e.target.checked)} />
+          <input
+            type="checkbox"
+            checked={showPhotoRect}
+            onChange={(e) => setShowPhotoRect(e.target.checked)}
+          />
+          写真エリア枠
+        </label>
+        <label className="flex items-center gap-2">
+          <input
+            type="checkbox"
+            checked={showOverlay}
+            onChange={(e) => setShowOverlay(e.target.checked)}
+            disabled={!overlaySrc}
+          />
+          オーバーレイ
+        </label>
+        <label className="flex items-center gap-2">
+          <input
+            type="checkbox"
+            checked={showAnchors}
+            onChange={(e) => setShowAnchors(e.target.checked)}
+          />
           配置アンカー
         </label>
         <label className="flex items-center gap-2">
-          <input type="checkbox" checked={showSampleText} onChange={(e) => setShowSampleText(e.target.checked)} />
+          <input
+            type="checkbox"
+            checked={showSampleText}
+            onChange={(e) => setShowSampleText(e.target.checked)}
+          />
           サンプル文字
         </label>
       </div>
 
       <div className="flex flex-wrap items-center gap-4 font-mono text-xs text-stone-700">
+        <span>
+          キャンバス: {designSize.widthPx}×{designSize.heightPx}
+        </span>
         <span>カーソル: {cursor ? `x ${cursor.x}, y ${cursor.y}` : "—"}</span>
         <span>クリックピン: {pin ? `x ${pin.x}, y ${pin.y}` : "—"}</span>
         {copyState === "ok" ? <span className="text-emerald-700">座標をコピーしました</span> : null}
@@ -157,8 +211,8 @@ export function JournalSocialPostImageLayoutDebugClient({
         <div
           className="relative shrink-0 cursor-crosshair bg-white shadow-lg"
           style={{
-            width: `${JOURNAL_SOCIAL_POST_TEMPLATE_SIZE.widthPx}px`,
-            height: `${JOURNAL_SOCIAL_POST_TEMPLATE_SIZE.heightPx}px`,
+            width: `${designSize.widthPx}px`,
+            height: `${designSize.heightPx}px`,
           }}
           onMouseMove={handleMouseMove}
           onMouseLeave={() => setCursor(null)}
@@ -168,23 +222,42 @@ export function JournalSocialPostImageLayoutDebugClient({
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={templateSrc} alt="" className="absolute inset-0 block h-full w-full" draggable={false} />
 
+          {showDemoPhoto
+            ? photoRects.map((photo, index) => (
+                <DemoPhotoSlot key={`demo-${index}`} photo={photo} />
+              ))
+            : null}
+
+          {showOverlay && overlaySrc ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={overlaySrc}
+              alt=""
+              className="pointer-events-none absolute inset-0 block h-full w-full"
+              draggable={false}
+            />
+          ) : null}
+
           {showGrid ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img src={gridDataUrl} alt="" className="pointer-events-none absolute inset-0 h-full w-full" />
           ) : null}
 
-          {showPhotoRect ? (
-            <div
-              className="pointer-events-none absolute border-2 border-sky-500 bg-sky-300/25"
-              style={{
-                left: `${photoRect.x}px`,
-                top: `${photoRect.y}px`,
-                width: `${photoRect.width}px`,
-                height: `${photoRect.height}px`,
-                borderRadius: photoRect.borderRadiusPx ? `${photoRect.borderRadiusPx}px` : undefined,
-              }}
-            />
-          ) : null}
+          {showPhotoRect
+            ? photoRects.map((photo, index) => (
+                <div
+                  key={`rect-${index}`}
+                  className="pointer-events-none absolute border-2 border-sky-500 bg-sky-300/20"
+                  style={{
+                    left: `${photo.x}px`,
+                    top: `${photo.y}px`,
+                    width: `${photo.width}px`,
+                    height: `${photo.height}px`,
+                    borderRadius: photo.borderRadiusPx ? `${photo.borderRadiusPx}px` : undefined,
+                  }}
+                />
+              ))
+            : null}
 
           {showPhotoRect && layout.companionFace ? (
             <div
@@ -213,9 +286,7 @@ export function JournalSocialPostImageLayoutDebugClient({
           />
 
           {showAnchors
-            ? anchors.map((anchor) => (
-                <AnchorMarker key={anchor.id} anchor={anchor} />
-              ))
+            ? anchors.map((anchor) => <AnchorMarker key={anchor.id} anchor={anchor} />)
             : null}
 
           {showSampleText
@@ -244,6 +315,29 @@ export function JournalSocialPostImageLayoutDebugClient({
   );
 }
 
+function DemoPhotoSlot({ photo }: { photo: JournalSocialPostPhotoStyle }) {
+  return (
+    <div
+      className="pointer-events-none absolute overflow-hidden"
+      style={{
+        left: `${photo.x}px`,
+        top: `${photo.y}px`,
+        width: `${photo.width}px`,
+        height: `${photo.height}px`,
+        borderRadius: photo.borderRadiusPx ? `${photo.borderRadiusPx}px` : undefined,
+      }}
+    >
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src={DEMO_PHOTO_SRC}
+        alt=""
+        className="h-full w-full object-cover"
+        draggable={false}
+      />
+    </div>
+  );
+}
+
 function AnchorMarker({ anchor }: { anchor: LayoutAnchor }) {
   return (
     <div
@@ -254,7 +348,9 @@ function AnchorMarker({ anchor }: { anchor: LayoutAnchor }) {
         <div
           className={[
             "border-2 border-orange-500 bg-orange-300/80",
-            anchor.kind === "point" ? "h-3 w-3 -translate-x-1/2 -translate-y-1/2 rounded-full" : "h-2 w-2 -translate-y-1/2",
+            anchor.kind === "point"
+              ? "h-3 w-3 -translate-x-1/2 -translate-y-1/2 rounded-full"
+              : "h-2 w-2 -translate-y-1/2",
           ].join(" ")}
         />
         <span className="absolute left-3 top-0 max-w-[220px] whitespace-normal rounded bg-orange-100/95 px-1 py-0.5 font-mono text-[9px] leading-tight text-orange-900">

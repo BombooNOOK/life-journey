@@ -1,12 +1,14 @@
 "use client";
 
-import Link from "next/link";
-
 import { InlineHelpButton } from "@/components/ui/InlineHelpButton";
-import { LOG_HOUSE_BACK_TO_LINK_LABEL } from "@/lib/journal/logHouseLabels";
+import { OwlNavButton } from "@/components/ui/OwlNavButton";
+import {
+  LOG_HOUSE_BACK_TO_LINK_LABEL,
+  LOG_HOUSE_LOADING_LABEL,
+} from "@/lib/journal/logHouseLabels";
 
 const BOOKSHELF_HELP_TEXT =
-  "あなたの「日記」と「鑑定書」を、本のように並べて管理できます。鑑定書はブラウザで読める製本レイアウトのPDFにもなります。";
+  "あなたの「あしあと」と「鑑定書」を、本のように並べて管理できます。鑑定書はブラウザで読める製本レイアウトのPDFにもなります。";
 
 type Props = {
   activeProfileLabel: string;
@@ -17,9 +19,13 @@ type Props = {
 export function BookshelfPageHeader({ activeProfileLabel, deployRevision }: Props) {
   return (
     <div>
-      <Link href="/orders" className="text-sm text-stone-600 hover:text-stone-900">
+      <OwlNavButton
+        href="/orders"
+        loadingLabel={LOG_HOUSE_LOADING_LABEL}
+        className="text-sm text-stone-600 hover:text-stone-900"
+      >
         {LOG_HOUSE_BACK_TO_LINK_LABEL}
-      </Link>
+      </OwlNavButton>
       <h1 className="mt-2 text-2xl font-bold text-stone-900">本棚</h1>
       <div className="mt-2 flex flex-wrap items-center gap-2 text-sm text-stone-700">
         <span>

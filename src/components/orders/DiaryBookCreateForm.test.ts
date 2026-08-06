@@ -37,12 +37,18 @@ describe("diaryBookCreateDisabledReason", () => {
   it("requires preview before included entries", () => {
     expect(
       diaryBookCreateDisabledReason({ ...base, periodChecked: false, canCreate: false }),
-    ).toBe("掲載する日記を確認してください");
+    ).toBe("掲載するあしあとを確認してください");
   });
 
   it("reports no included entries last", () => {
     expect(diaryBookCreateDisabledReason({ ...base, canCreate: false })).toBe(
       "本に入れるあしあとがありません",
     );
+  });
+
+  it("blocks create when included entries overflow", () => {
+    expect(
+      diaryBookCreateDisabledReason({ ...base, hasOverflowIncluded: true }),
+    ).toBe("はみ出しのあるあしあとを直してから作成してください");
   });
 });

@@ -51,8 +51,8 @@ export function AboutPageQuickStartCta() {
           いつでも、記録を続けられます
         </h2>
         <div className="mx-auto mt-4 flex w-full max-w-sm flex-col gap-3">
-          <OwlNavButton href="/journal" loadingLabel="日記を開いています…" className={heroCtaPrimaryClass}>
-            日記を書く
+          <OwlNavButton href="/journal" loadingLabel="あしあとを開いています…" className={heroCtaPrimaryClass}>
+            あしあとを書く
           </OwlNavButton>
           <OwlNavButton
             href="/orders"
@@ -82,7 +82,7 @@ export function AboutPageQuickStartCta() {
           無料鑑定をはじめる
         </Link>
         <Link href={JOURNAL_LOGIN_HREF} className={heroCtaSecondaryClass}>
-          日記を書いてみる
+          あしあとを書いてみる
         </Link>
       </div>
       <p className="lj-read-desc mt-3 text-center leading-relaxed text-stone-600">

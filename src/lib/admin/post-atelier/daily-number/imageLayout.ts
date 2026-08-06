@@ -20,6 +20,14 @@ export const DAILY_NUMBER_COVER_LAYOUT = {
   },
 } as const;
 
+/** 表紙・投稿予定日（地面付近・819×1024 設計座標） */
+export const DAILY_NUMBER_COVER_SCHEDULED_DATE_LAYOUT = {
+  cx: 410,
+  y: 1002,
+  fontSize: 20,
+  fontWeight: 400 as const,
+} as const;
+
 export type DailyNumberPersonalPageSide = "left" | "right";
 
 /** page_01,03,05 = 左ページ / page_02,04,06 = 右ページ */

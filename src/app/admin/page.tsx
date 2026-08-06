@@ -716,13 +716,13 @@ export default async function AdminPage({ searchParams }: Props) {
             href="/admin/diary-book-binding"
             className="text-sm font-medium text-emerald-800 underline-offset-2 hover:underline"
           >
-            日記 製本申込予定一覧 →
+            あしあと 製本申込予定一覧 →
           </Link>
           <Link
             href="/admin/journal-backup-restore"
             className="text-sm font-medium text-amber-900 underline-offset-2 hover:underline"
           >
-            日記バックアップ復元 →
+            あしあとバックアップ復元 →
           </Link>
           <Link
             href="/admin/profile-management"

@@ -70,7 +70,7 @@ export function JournalCompanionCommentsPreviewClient() {
           <li>伴走キャラを変えると、読み解きの<strong>本文</strong>と<strong>アクセント文</strong>が切り替わります</li>
           <li>
             <Link href="/preview/diary-book-entry" className="text-emerald-800 underline">
-              日記ブック本文テンプレ
+              あしあとブック本文テンプレ
             </Link>
             の読み解きはレイアウト用サンプル固定です（ここでは切り替わりません）
           </li>

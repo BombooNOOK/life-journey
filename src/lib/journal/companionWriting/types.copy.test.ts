@@ -15,7 +15,7 @@ describe("companionWriting dynamic copy", () => {
 
   it("save loading and arrived text use companion name", () => {
     expect(companionWritingSaveLoadingLabel("ナマケモノくん")).toBe(
-      "ナマケモノくんが日記のあしあとを確認しています…",
+      "ナマケモノくんがあしあとを確認しています…",
     );
     expect(companionWritingForestDeliveryArrivedText("リスくん")).toBe(
       "今日の1ページ、受け取りましたよ\nリスくんより",

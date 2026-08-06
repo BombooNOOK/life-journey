@@ -58,7 +58,7 @@ type PersonalCycleGuideEntry = NumberGuideEntryBase & {
 export type NumberGuideEntry = CoreNumberGuideEntry | BridgeGuideEntry | PersonalCycleGuideEntry;
 
 const KANTEI_DIARY_HINT =
-  "日記の数字欄には直接は出ませんが、鑑定書や読み解きを読んだあと、日記を見返すときの視点の土台になります。";
+  "あしあとの数字欄には直接は出ませんが、鑑定書や読み解きを読んだあと、あしあとを見返すときの視点の土台になります。";
 
 export const NUMBER_GUIDE_ENTRIES: NumberGuideEntry[] = [
   {
@@ -70,7 +70,7 @@ export const NUMBER_GUIDE_ENTRIES: NumberGuideEntry[] = [
     listLabel: "ライフ・パス・ナンバー",
     subtitle: coreNumberIntroCopyJa.lifePath.label,
     ljdUsage:
-      "無料鑑定の鑑定書で最初に読むナンバーです。日記を保存したあとに届く読み解きコメントの土台にもなります。",
+      "無料鑑定の鑑定書で最初に読むナンバーです。あしあとを保存したあとに届く読み解きコメントの土台にもなります。",
     diaryHint: KANTEI_DIARY_HINT,
   },
   {
@@ -135,9 +135,9 @@ export const NUMBER_GUIDE_ENTRIES: NumberGuideEntry[] = [
     coreKey: "personalYear",
     listLabel: "パーソナル・イヤー・ナンバー",
     subtitle: "この一年の流れ",
-    ljdUsage: "日記を書く日に「今年のすうじ」として表示されます。",
+    ljdUsage: "あしあとを書く日に「今年のすうじ」として表示されます。",
     diaryHint:
-      "年のすうじは、この一年を通して育っていくテーマを表します。書き残した日記を、年単位で振り返るヒントとして使えます。",
+      "年のすうじは、この一年を通して育っていくテーマを表します。書き残したあしあとを、年単位で振り返るヒントとして使えます。",
   },
   {
     id: "personalMonth",
@@ -146,7 +146,7 @@ export const NUMBER_GUIDE_ENTRIES: NumberGuideEntry[] = [
     cycleKey: "personalMonth",
     listLabel: "パーソナル・マンス・ナンバー",
     subtitle: "この月の流れ",
-    ljdUsage: "日記を書く日に「今月のすうじ」として表示されます。",
+    ljdUsage: "あしあとを書く日に「今月のすうじ」として表示されます。",
     diaryHint:
       "月のすうじは、今月の中で意識しやすい流れを表します。月ごとの記録を見返すときの手がかりになります。",
   },
@@ -157,7 +157,7 @@ export const NUMBER_GUIDE_ENTRIES: NumberGuideEntry[] = [
     cycleKey: "personalDay",
     listLabel: "パーソナル・デー・ナンバー",
     subtitle: "今日の流れ",
-    ljdUsage: "日記を書く日に「今日のすうじ」として表示されます。",
+    ljdUsage: "あしあとを書く日に「今日のすうじ」として表示されます。",
     diaryHint:
       "今日のすうじは、この一日を振り返るための小さなテーマです。上の「1〜9のすうじ」で、それぞれのテーマの意味を確認できます。",
   },
@@ -168,7 +168,7 @@ export const NUMBER_GUIDE_ENTRIES: NumberGuideEntry[] = [
     listLabel: "ブリッジ・ナンバー",
     subtitle: "数字同士の関係",
     ljdUsage:
-      "鑑定書の第3章で、コアナンバー同士のあいだにある関係を読み解きます。日記の数字欄には直接は出ません。",
+      "鑑定書の第3章で、コアナンバー同士のあいだにある関係を読み解きます。あしあとの数字欄には直接は出ません。",
     diaryHint: KANTEI_DIARY_HINT,
   },
   {
@@ -179,7 +179,7 @@ export const NUMBER_GUIDE_ENTRIES: NumberGuideEntry[] = [
     listLabel: "ユニバーサル・ナンバー",
     subtitle: "その日みんなで共有する流れ",
     ljdUsage:
-      "日記では使いません。BambooNOOKのSNS「あなたのすうじで読む 今日のこころ予報」で「今日のすうじ」として紹介しています。",
+      "あしあとでは使いません。BambooNOOKのSNS「あなたのすうじで読む 今日のこころ予報」で「今日のすうじ」として紹介しています。",
     diaryHint: null,
   },
 ];

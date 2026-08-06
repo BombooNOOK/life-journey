@@ -36,11 +36,11 @@ export default async function PreviewNumerologyNumbersPage({ searchParams }: Pro
           </Link>
         </p>
         <p className="mt-2 text-xs leading-relaxed text-stone-500">
-          ログイン不要 · npm run dev 中のみ想定。下のリンクは日記プレビュー内カードの見た目です。
+          ログイン不要 · npm run dev 中のみ想定。下のリンクはあしあとプレビュー内カードの見た目です。
         </p>
 
         <div className="mt-6 space-y-3">
-          <p className="text-xs font-medium text-stone-600">日記プレビュー内カード（サンプル）</p>
+          <p className="text-xs font-medium text-stone-600">あしあとプレビュー内カード（サンプル）</p>
           <DiaryNumbersHintSection
             diaryNumbers={personalDiaryNumbers}
             meaningsReturnTo="/preview/numerology-numbers"

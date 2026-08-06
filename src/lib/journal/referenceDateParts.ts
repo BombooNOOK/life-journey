@@ -1,5 +1,5 @@
 /**
- * 日記の記録日は API で `Date.UTC(y, m - 1, d, 12, 0, 0)` として保存される。
+ * あしあとの記録日は API で `Date.UTC(y, m - 1, d, 12, 0, 0)` として保存される。
  * 数秘・読み解きでは「その暦日」をブラウザ／サーバーのローカル TZ に依存せず取り出す。
  */
 export function journalReferenceUtcYMD(date: Date): {

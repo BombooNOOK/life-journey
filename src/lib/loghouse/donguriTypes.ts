@@ -10,6 +10,8 @@ export const DONGURI_REASONS = [
   "acorn_purchase",
   "subscription_delivery",
   "adjustment",
+  "mori_log_device_movie_first_free",
+  "mori_log_device_movie_create",
 ] as const;
 
 export type DonguriReason = (typeof DONGURI_REASONS)[number];
@@ -28,6 +30,8 @@ export const DONGURI_REASON_LABELS: Record<DonguriReason, string> = {
   acorn_purchase: "どんぐり購入",
   subscription_delivery: "森の定期便",
   adjustment: "森からの調整",
+  mori_log_device_movie_first_free: "森の映写便り（はじめて）",
+  mori_log_device_movie_create: "森の映写便り",
 };
 
 export function donguriReasonLabel(reason: string): string {
@@ -67,7 +71,17 @@ export const DONGURI_BIRTHDAY_MAIL_BODY = [
 
 export const DONGURI_DIARY_SAVE_COST = 3 as const;
 export const DONGURI_DIARY_SAVE_TITLE = "今日のあしあと" as const;
-export const DONGURI_DIARY_SAVE_DESCRIPTION = "日記を森に残しました" as const;
+export const DONGURI_DIARY_SAVE_DESCRIPTION = "あしあとを森に残しました" as const;
+
+/** 端末動画→森ログムービー（2本目以降） */
+export const DONGURI_MORI_LOG_DEVICE_MOVIE_COST = 2 as const;
+export const DONGURI_MORI_LOG_DEVICE_MOVIE_FIRST_FREE_TITLE = "森の映写便り（はじめて）" as const;
+export const DONGURI_MORI_LOG_DEVICE_MOVIE_FIRST_FREE_DESCRIPTION =
+  "はじめての森の映写便り（森からの贈りもの）" as const;
+export const DONGURI_MORI_LOG_DEVICE_MOVIE_CREATE_TITLE = "森の映写便り" as const;
+export const DONGURI_MORI_LOG_DEVICE_MOVIE_CREATE_DESCRIPTION =
+  "心に残った一場面を、森の映写便りとして残しました" as const;
+export const DONGURI_MORI_LOG_DEVICE_MOVIE_FIRST_FREE_DATE_KEY = "first" as const;
 
 export const DONGURI_ADMIN_ADJUSTMENT_TITLE = "管理者調整" as const;
 export const DONGURI_ADMIN_ADJUSTMENT_USER_TITLE = "森からの調整" as const;

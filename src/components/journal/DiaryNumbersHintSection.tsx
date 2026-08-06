@@ -18,7 +18,7 @@ type DiaryNumbers = {
 
 type Props = {
   diaryNumbers: DiaryNumbers;
-  /** すうじの意味ページから戻る先（日記プレビュー URL など） */
+  /** すうじの意味ページから戻る先（あしあとプレビュー URL など） */
   meaningsReturnTo?: string | null;
 };
 

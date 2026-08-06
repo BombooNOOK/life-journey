@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "next dev --hostname 127.0.0.1 --port 3000",
     "dev:lan": "next dev --hostname 0.0.0.0 --port 3000",
+    "dev:lan:https": "node scripts/dev-lan-https.mjs",
     "dev:lan:fresh": "node scripts/kill-port.mjs 3000 && rm -rf .next node_modules/.cache && next dev --hostname 0.0.0.0 --port 3000",
     "dev:fresh": "node scripts/kill-port.mjs 3000 && rm -rf .next node_modules/.cache && next dev --hostname 127.0.0.1 --port 3000",
     "build": "next build",
@@ -48,6 +49,7 @@
     "pdf:preview-assets:soft": "PREVIEW_MAX_EDGE=800 PREVIEW_JPEG_QUALITY=65 node scripts/build-pdf-preview-assets.mjs",
     "capture:home-mock": "npx tsx scripts/capture-home-mock-screenshot.ts",
     "capture:home-mock:auto": "npx tsx scripts/capture-home-mock-screenshot.ts --auto",
+    "compose:mori-log-picker-previews": "npx tsx scripts/compose-mori-log-picker-previews.ts",
     "preview:diary-entry": "npx tsx scripts/preview-diary-book-entry-page.tsx",
     "preview:diary-entry-frame": "npx tsx scripts/preview-diary-book-entry-body-frame.tsx"
   },
@@ -62,6 +64,7 @@
     "fflate": "^0.8.3",
     "firebase": "^11.10.0",
     "firebase-admin": "^13.10.0",
+    "mediabunny": "^1.52.2",
     "next": "^15.2.0",
     "pdf-lib": "^1.17.1",
     "pdfjs-dist": "^4.10.38",

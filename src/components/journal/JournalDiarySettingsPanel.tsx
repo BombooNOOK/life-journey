@@ -20,7 +20,7 @@ export function JournalDiarySettingsPanel({ disabled = false, children }: Props)
         onClick={() => setOpen((prev) => !prev)}
         className="flex w-full items-center justify-between gap-2 px-3 py-2.5 text-left text-sm font-medium text-stone-800 transition hover:bg-stone-100/80 disabled:opacity-60"
       >
-        <span>日記の設定</span>
+        <span>あしあとの設定</span>
         <span className="text-xs font-normal text-stone-500" aria-hidden>
           {open ? "閉じる" : "開く"}
         </span>

@@ -104,7 +104,7 @@ export function DiaryBookEntryPreviewClient() {
   return (
     <div className="min-h-screen bg-stone-50 text-stone-900">
       <div className="mx-auto max-w-3xl px-4 py-8">
-        <h1 className="text-xl font-semibold text-stone-800">日記ブック本文テンプレ（v2）</h1>
+        <h1 className="text-xl font-semibold text-stone-800">あしあとブック本文テンプレ（v2）</h1>
         <p className="mt-2 text-sm leading-relaxed text-stone-600">
           {DIARY_BOOK_ENTRY_V2_USE_COMPANION_OVERLAY
             ? "共通背景＋伴走キャラ PNG 合成（724×1024）。伴走キャラ切り替えで確認できます。"

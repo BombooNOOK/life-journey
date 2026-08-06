@@ -76,7 +76,7 @@ export function ProfileSwitcher({ profiles, activeProfileId }: Props) {
     <div className="rounded-xl border border-stone-200 bg-white p-4 shadow-sm">
       <p className="text-sm font-semibold text-stone-900">プロフィールを選ぶ</p>
       <p className="mt-1 text-xs text-stone-600">
-        日記・鑑定・本棚は、選択中プロフィールに紐づきます（現在 {profileCount}件）。
+        あしあと・鑑定・本棚は、選択中プロフィールに紐づきます（現在 {profileCount}件）。
       </p>
       <div className="mt-3 flex flex-wrap items-center gap-2">
         <select

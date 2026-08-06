@@ -19,7 +19,7 @@ export default async function MyPageSettingsBackupPage() {
     <div className="mx-auto w-full max-w-md space-y-5 sm:space-y-6">
       <MyPageSubpageHeader
         title="バックアップ作成"
-        description="日記の記録をZIPファイルとして保存できます"
+        description="あしあとの記録をZIPファイルとして保存できます"
       />
 
       <MyPageBackupSection activeProfileNickname={activeProfile?.nickname ?? null} showHeading={false} />

@@ -5,7 +5,7 @@ import { DiaryBookEntryPreviewClient } from "@/app/preview/diary-book-entry/Diar
 import { OwlSuspenseFallback } from "@/components/ui/OwlSuspenseFallback";
 
 export const metadata: Metadata = {
-  title: "日記ブック本文テンプレ確認",
+  title: "あしあとブック本文テンプレ確認",
   robots: { index: false, follow: false },
 };
 

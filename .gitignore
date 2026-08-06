@@ -49,3 +49,9 @@ next-env.d.ts
 
 # ローカル Python venv
 /.venv/
+
+# ローカル検証用一時ファイル（端末動画サンプルなど）
+/tmp/
+
+# LAN HTTPS 実機検証用（mkcert）
+/.certs/

@@ -63,14 +63,14 @@ export function currentMonthAnchorInJapan(): Date {
   return new Date(y, m - 1, 1);
 }
 
-/** 日記一覧の年選択の下限（API の年フィルタと揃える） */
+/** あしあと一覧の年選択の下限（API の年フィルタと揃える） */
 export const JOURNAL_LIST_MIN_YEAR = 1970;
 
 export function currentYearInJapan(): number {
   return currentMonthAnchorInJapan().getFullYear();
 }
 
-/** 日記一覧の年プルダウン用（新しい年が上） */
+/** あしあと一覧の年プルダウン用（新しい年が上） */
 export function journalListYearOptions(maxYear: number = currentYearInJapan()): number[] {
   const years: number[] = [];
   for (let y = maxYear; y >= JOURNAL_LIST_MIN_YEAR; y -= 1) {
@@ -79,7 +79,7 @@ export function journalListYearOptions(maxYear: number = currentYearInJapan()): 
   return years;
 }
 
-/** 日記一覧の月プルダウン用（1〜12月） */
+/** あしあと一覧の月プルダウン用（1〜12月） */
 export function journalListMonthOptions(): Array<{ value: number; label: string }> {
   return Array.from({ length: 12 }, (_, i) => {
     const month = i + 1;
@@ -171,7 +171,7 @@ export function journalWithCompanionPath(
   return `/journal/with-companion?${qs.toString()}`;
 }
 
-/** 保存済み日記の続き（写真追加・本文追記） */
+/** 保存済みあしあとの続き（写真追加・本文追記） */
 export function journalEditContinuePath(params: {
   entryId: string;
   focus: "photo" | "body";

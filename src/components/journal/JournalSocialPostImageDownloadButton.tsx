@@ -7,10 +7,24 @@ import { OwlLoadingInline } from "@/components/ui/OwlLoadingInline";
 const IMAGE_FETCH_TIMEOUT_MS = 65_000;
 
 type Props = {
+  /** GET のとき使う URL。POST のときはエンドポイント URL */
   href: string;
+  /** 指定時は JSON POST（3コマ追加写真など） */
+  buildJsonBody?: () => Record<string, unknown>;
   suggestedFileName?: string;
   label?: string;
   className?: string;
+  /**
+   * true（既定）: 端末へのダウンロード／共有シートを開く
+   * false: 画像生成のみ行い、椅子保存用コールバックへ渡す（迷子になりやすい iOS 保存画面を出さない）
+   */
+  saveToDevice?: boolean;
+  /** 成功直後など。薄くして押せなくする（内容変更で解除） */
+  softLocked?: boolean;
+  softLockedHint?: string;
+  idleHint?: string;
+  /** 端末への保存が成功したあと（履歴記録など）。download した Blob を渡す */
+  onDownloaded?: (blob: Blob) => void | Promise<void>;
 };
 
 function parseFilenameFromContentDisposition(header: string | null): string | null {
@@ -29,10 +43,13 @@ function parseFilenameFromContentDisposition(header: string | null): string | nu
 }
 
 function parseImageErrorMessage(status: number, contentType: string, text: string): string {
+  if (status === 413) {
+    return "写真のデータが大きすぎます。追加写真を小さくしてから再度お試しください。";
+  }
   if (status === 504 || status === 524) {
     return "画像の作成がタイムアウトしました。しばらく待ってから再試行してください。";
   }
-  if (contentType.includes("application/json")) {
+  if (contentType.includes("application/json") || text.trim().startsWith("{")) {
     try {
       const j = JSON.parse(text) as { error?: string };
       return j.error ?? "画像を取得できませんでした。";
@@ -45,16 +62,22 @@ function parseImageErrorMessage(status: number, contentType: string, text: strin
 
 export function JournalSocialPostImageDownloadButton({
   href,
+  buildJsonBody,
   suggestedFileName,
   label = "画像を保存",
   className = "inline-flex min-h-[44px] items-center rounded-lg bg-emerald-800 px-4 py-2.5 text-sm font-medium text-white hover:bg-emerald-700 disabled:cursor-wait disabled:opacity-90",
+  saveToDevice = true,
+  softLocked = false,
+  softLockedHint,
+  idleHint,
+  onDownloaded,
 }: Props) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const busyRef = useRef(false);
 
   const runDownload = useCallback(async () => {
-    if (busyRef.current) return;
+    if (busyRef.current || softLocked) return;
     busyRef.current = true;
     setBusy(true);
     setError(null);
@@ -64,13 +87,18 @@ export function JournalSocialPostImageDownloadButton({
 
     try {
       const url = new URL(href, window.location.origin);
-      url.searchParams.set("_cb", String(Date.now()));
+      const usePost = Boolean(buildJsonBody);
+      if (!usePost) {
+        url.searchParams.set("_cb", String(Date.now()));
+      }
 
       const res = await fetch(url.toString(), {
-        method: "GET",
+        method: usePost ? "POST" : "GET",
         credentials: "same-origin",
         cache: "no-store",
         signal: controller.signal,
+        headers: usePost ? { "Content-Type": "application/json" } : undefined,
+        body: usePost ? JSON.stringify(buildJsonBody?.() ?? {}) : undefined,
       });
       const contentType = res.headers.get("Content-Type") ?? "";
 
@@ -92,20 +120,23 @@ export function JournalSocialPostImageDownloadButton({
         return;
       }
 
-      const downloadName =
-        parseFilenameFromContentDisposition(res.headers.get("Content-Disposition")) ??
-        suggestedFileName ??
-        "diary-sns.png";
+      if (saveToDevice) {
+        const downloadName =
+          parseFilenameFromContentDisposition(res.headers.get("Content-Disposition")) ??
+          suggestedFileName ??
+          "mori-log-card.png";
 
-      const objectUrl = URL.createObjectURL(blob);
-      const anchor = document.createElement("a");
-      anchor.href = objectUrl;
-      anchor.download = downloadName;
-      anchor.rel = "noopener";
-      document.body.appendChild(anchor);
-      anchor.click();
-      anchor.remove();
-      URL.revokeObjectURL(objectUrl);
+        const objectUrl = URL.createObjectURL(blob);
+        const anchor = document.createElement("a");
+        anchor.href = objectUrl;
+        anchor.download = downloadName;
+        anchor.rel = "noopener";
+        document.body.appendChild(anchor);
+        anchor.click();
+        anchor.remove();
+        URL.revokeObjectURL(objectUrl);
+      }
+      await onDownloaded?.(blob);
     } catch (e) {
       if (e instanceof Error && e.name === "AbortError") {
         setError("画像の作成がタイムアウトしました。しばらく待ってから再試行してください。");
@@ -117,23 +148,29 @@ export function JournalSocialPostImageDownloadButton({
       busyRef.current = false;
       setBusy(false);
     }
-  }, [href, suggestedFileName]);
+  }, [buildJsonBody, href, onDownloaded, saveToDevice, softLocked, suggestedFileName]);
+
+  const defaultIdleHint = saveToDevice
+    ? "タップすると保存が始まります。この画面のまま操作できます（別ページへ移りません）。"
+    : "タップするとカードを作成し、ログハウスの椅子から見返せるようにします。";
 
   return (
     <div className="space-y-2">
       <button
         type="button"
-        disabled={busy}
+        disabled={busy || softLocked}
         aria-busy={busy}
         onClick={() => void runDownload()}
-        className={className}
+        className={[className, softLocked ? "opacity-45" : ""].filter(Boolean).join(" ")}
       >
         {busy ? <OwlLoadingInline label="画像を作成中…" size="sm" /> : label}
       </button>
       <p className="max-w-sm text-xs leading-relaxed text-stone-600">
         {busy
           ? "画像を合成しています。完了までこの画面を閉じずにお待ちください。"
-          : "タップすると保存が始まります。この画面のまま操作できます（別ページへ移りません）。"}
+          : softLocked
+            ? (softLockedHint ?? "内容を変えると、もう一度作成できるようになります。")
+            : (idleHint ?? defaultIdleHint)}
       </p>
       {error ? (
         <p className="text-xs font-medium text-red-700" role="alert">

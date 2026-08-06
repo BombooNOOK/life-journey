@@ -13,9 +13,12 @@ import {
 } from "./dateFormat";
 import { loadJournalSocialPostTemplateBackground, loadJournalSocialPostTemplatePhotoOverlay } from "./templatePaths";
 import {
-  JOURNAL_SOCIAL_POST_TEMPLATE_SIZE,
   JOURNAL_SOCIAL_POST_TEMPLATES,
+  resolveJournalSocialPostDesignSize,
+  resolveJournalSocialPostOutputSize,
   resolveJournalSocialPostPhotoRenderSize,
+  resolveJournalSocialPostTextMode,
+  type JournalSocialPostPhotoStyle,
   type JournalSocialPostTemplateId,
   type JournalSocialPostTextStyle,
 } from "./templates";
@@ -26,7 +29,6 @@ import {
 } from "./photoAdjust";
 import { rotatePhotoLayerAroundTopLeft, journalSocialPostPhotoCompositePosition } from "./photoRotate";
 import { DEFAULT_JOURNAL_SOCIAL_POST_SUBTITLE } from "./textExtract";
-import { JOURNAL_SOCIAL_POST_IMAGE_SIZE } from "./types";
 import type { JournalSocialPostImageInput, JournalSocialPostImageResult } from "./types";
 
 async function buildPhotoLayer(
@@ -100,6 +102,8 @@ function textItem(
   text: string,
   style: JournalSocialPostTextStyle,
   multiline = false,
+  /** 位置合わせ定規（CSS top）と同じく、y を文字枠の上端として扱う */
+  yIsTop = false,
 ): Parameters<typeof buildSvgTextOverlay>[0]["items"][number] {
   return {
     text,
@@ -115,6 +119,7 @@ function textItem(
       rotateDeg: style.rotateDeg,
       maxCharsPerLine: style.maxCharsPerLine,
       maxLines: style.maxLines,
+      ...(yIsTop ? { yOrigin: "top" as const } : {}),
     },
   };
 }
@@ -124,6 +129,8 @@ function buildTextOverlay(
   templateId: JournalSocialPostTemplateId,
 ): Buffer {
   const layout = JOURNAL_SOCIAL_POST_TEMPLATES[templateId];
+  const design = resolveJournalSocialPostDesignSize(layout);
+  const textMode = resolveJournalSocialPostTextMode(layout);
   const moodText = input.moodLabel.trim() || "—";
   const commentText = input.commentExcerpt.trim();
 
@@ -134,26 +141,42 @@ function buildTextOverlay(
   ] as const;
 
   const items: Parameters<typeof buildSvgTextOverlay>[0]["items"] = [];
+  /** あしあとカードはレイアウト定規の CSS top 基準に合わせる */
+  const ashiatoYIsTop = textMode === "ashiato_lines";
+  const pushIfVisible = (
+    text: string,
+    style: JournalSocialPostTextStyle | undefined,
+    multiline = false,
+  ) => {
+    if (!style || style.fontSize <= 1) return;
+    if (!text) return;
+    items.push(textItem(text, style, multiline, ashiatoYIsTop));
+  };
 
-  if (templateId === "sns02") {
+  if (textMode === "sns02") {
     if (layout.dateRibbonYear) {
       items.push(textItem(input.dateRibbonYear, layout.dateRibbonYear));
     }
     if (layout.dateRibbonMonthDay) {
       items.push(textItem(input.dateRibbonMonthDay, layout.dateRibbonMonthDay));
     }
-  } else if (layout.dateScrapbook) {
-    items.push(textItem(input.dateScrapbook, layout.dateScrapbook));
-  }
-
-  if (templateId === "sns02") {
     const titleText = input.title.trim() || "（タイトル未入力）";
     items.push(textItem(titleText, layout.title, true));
     const bodyText = input.bodyExcerpt.trim();
     if (bodyText) {
       items.push(textItem(bodyText, layout.body, true));
     }
+  } else if (textMode === "ashiato_lines") {
+    pushIfVisible(input.dateScrapbook, layout.dateScrapbook);
+    pushIfVisible(input.title.trim(), layout.title, true);
+    pushIfVisible(input.bodyExcerpt.trim(), layout.body, true);
+    pushIfVisible((input.promptLabel ?? "").trim(), layout.promptLabel);
+    pushIfVisible(commentText, layout.comment, true);
+    pushIfVisible((input.summary ?? "").trim(), layout.summary, true);
   } else {
+    if (layout.dateScrapbook) {
+      items.push(textItem(input.dateScrapbook, layout.dateScrapbook));
+    }
     const titleText = input.title.trim();
     if (titleText) {
       items.push(textItem(titleText, layout.title, true));
@@ -168,19 +191,23 @@ function buildTextOverlay(
     }
   }
 
-  for (let i = 0; i < 3; i += 1) {
-    items.push(textItem(numbers[i]!, layout.numberSlots[i]!));
+  if (layout.numberSlots) {
+    for (let i = 0; i < 3; i += 1) {
+      items.push(textItem(numbers[i]!, layout.numberSlots[i]!));
+    }
   }
 
-  items.push(textItem(moodText, layout.mood, true));
+  if (layout.mood && textMode !== "ashiato_lines") {
+    items.push(textItem(moodText, layout.mood, true));
+  }
 
-  if (commentText) {
+  if (commentText && textMode !== "ashiato_lines") {
     items.push(textItem(commentText, layout.comment, true));
   }
 
   return buildSvgTextOverlay({
-    width: JOURNAL_SOCIAL_POST_TEMPLATE_SIZE.widthPx,
-    height: JOURNAL_SOCIAL_POST_TEMPLATE_SIZE.heightPx,
+    width: design.widthPx,
+    height: design.heightPx,
     items,
   });
 }
@@ -195,7 +222,11 @@ export function buildJournalSocialPostImageInput(params: {
   yearNumber: number | null;
   moodLabel: string;
   commentExcerpt: string;
+  promptLabel?: string;
+  summary?: string;
   photoBuffer: Buffer | null;
+  extraPhotoBuffers?: [Buffer | null, Buffer | null];
+  panelPhotoSources?: JournalSocialPostImageInput["panelPhotoSources"];
   photoAdjust?: JournalSocialPostPhotoAdjust;
   companionType: string;
   createdAt: Date;
@@ -211,7 +242,11 @@ export function buildJournalSocialPostImageInput(params: {
     yearNumber: params.yearNumber,
     moodLabel: params.moodLabel,
     commentExcerpt: params.commentExcerpt,
+    promptLabel: params.promptLabel?.trim() || undefined,
+    summary: params.summary?.trim() || undefined,
     photoBuffer: params.photoBuffer,
+    extraPhotoBuffers: params.extraPhotoBuffers,
+    panelPhotoSources: params.panelPhotoSources,
     photoAdjust: params.photoAdjust,
     companionType: params.companionType,
     dateRibbonYear: ribbon.year,
@@ -236,17 +271,13 @@ export async function compositeJournalSocialPostImage(
   options?: { createdAt?: Date; photoRotateDeg?: number },
 ): Promise<JournalSocialPostImageResult> {
   const layout = JOURNAL_SOCIAL_POST_TEMPLATES[input.templateId];
-  const photoStyle = {
-    ...layout.photo,
-    rotateDeg: options?.photoRotateDeg ?? layout.photo.rotateDeg ?? 0,
-  };
+  const outputSize = resolveJournalSocialPostOutputSize(layout);
+  const photoSlots: JournalSocialPostPhotoStyle[] = [
+    layout.photo,
+    ...(layout.extraPhotos ?? []),
+  ];
   const background = loadJournalSocialPostTemplateBackground(input.templateId, input.companionType);
   const photoOverlay = await loadJournalSocialPostTemplatePhotoOverlay(input.templateId);
-  const photoLayer = await buildPhotoLayer(
-    input.photoBuffer,
-    photoStyle,
-    input.photoAdjust ?? DEFAULT_JOURNAL_SOCIAL_POST_PHOTO_ADJUST,
-  );
   const faceLayer = layout.companionFace
     ? await buildCompanionFaceLayer(input.companionType, layout.companionFace)
     : null;
@@ -254,11 +285,29 @@ export async function compositeJournalSocialPostImage(
   const textPng = await prepareCompositeOverlay(textSvg);
 
   const composites: sharp.OverlayOptions[] = [];
-  if (photoLayer) {
+  for (let slotIndex = 0; slotIndex < photoSlots.length; slotIndex += 1) {
+    const slot = photoSlots[slotIndex]!;
+    const photoStyle = {
+      ...slot,
+      rotateDeg: options?.photoRotateDeg ?? slot.rotateDeg ?? 0,
+    };
+    const sourceId = input.panelPhotoSources?.[slotIndex] ?? "main";
+    const slotBuffer =
+      sourceId === "extra0"
+        ? (input.extraPhotoBuffers?.[0] ?? null)
+        : sourceId === "extra1"
+          ? (input.extraPhotoBuffers?.[1] ?? null)
+          : input.photoBuffer;
+    const slotAdjust =
+      sourceId === "main"
+        ? (input.photoAdjust ?? DEFAULT_JOURNAL_SOCIAL_POST_PHOTO_ADJUST)
+        : DEFAULT_JOURNAL_SOCIAL_POST_PHOTO_ADJUST;
+    const photoLayer = await buildPhotoLayer(slotBuffer, photoStyle, slotAdjust);
+    if (!photoLayer) continue;
     const rotateDeg = photoStyle.rotateDeg ?? 0;
     const renderSize = resolveJournalSocialPostPhotoRenderSize(photoStyle);
     const pos = journalSocialPostPhotoCompositePosition(
-      { ...layout.photo, width: renderSize.width, height: renderSize.height },
+      { ...slot, width: renderSize.width, height: renderSize.height },
       rotateDeg,
     );
     composites.push({
@@ -283,7 +332,7 @@ export async function compositeJournalSocialPostImage(
   const composed = await sharp(background).composite(composites).png().toBuffer();
 
   const buffer = await sharp(composed)
-    .resize(JOURNAL_SOCIAL_POST_IMAGE_SIZE.widthPx, JOURNAL_SOCIAL_POST_IMAGE_SIZE.heightPx)
+    .resize(outputSize.widthPx, outputSize.heightPx)
     .png()
     .toBuffer();
 

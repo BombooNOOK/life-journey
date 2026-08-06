@@ -5,7 +5,7 @@ import { useCallback, useRef, useState } from "react";
 import { journalEntryPhotoApiPath } from "@/lib/journal/journalEntryPhotoPath";
 
 /**
- * 日記ブック閲覧用: 写真は認証付き photo API の URL を img src に使う（Blob / legacy 両対応）。
+ * あしあとブック閲覧用: 写真は認証付き photo API の URL を img src に使う（Blob / legacy 両対応）。
  */
 export function useDiaryBookEntryPhotos() {
   const cacheRef = useRef<Map<string, string>>(new Map());

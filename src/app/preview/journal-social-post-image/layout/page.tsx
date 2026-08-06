@@ -1,43 +1,56 @@
 import Link from "next/link";
-import { notFound } from "next/navigation";
 
 import { JournalSocialPostImageLayoutDebugClient } from "./JournalSocialPostImageLayoutDebugClient";
+import { MoriAshiatoLayoutDebugClient } from "./MoriAshiatoLayoutDebugClient";
+import { assertDevOrAdminPreviewAccess } from "@/lib/preview/assertDevOrAdminPreviewAccess";
 import {
   buildJournalSocialPostLayoutRulerHref,
   parseJournalSocialPostLayoutRulerReturnTo,
   parseJournalSocialPostLayoutTemplate,
 } from "@/lib/journal/social-post-image/layoutRulerUrls";
-import { JOURNAL_SOCIAL_POST_TEMPLATES } from "@/lib/journal/social-post-image/templates";
+import {
+  isMoriAshiatoTemplateId,
+  type MoriAshiatoTemplateId,
+} from "@/lib/journal/social-post-image/moriAshiatoTemplates";
 
 type Props = {
   searchParams: Promise<{ returnTo?: string; template?: string }>;
 };
 
 export default async function JournalSocialPostImageLayoutPage({ searchParams }: Props) {
-  if (process.env.NODE_ENV !== "development") {
-    notFound();
-  }
+  await assertDevOrAdminPreviewAccess();
 
   const params = await searchParams;
   const returnTo = parseJournalSocialPostLayoutRulerReturnTo(params.returnTo);
-  const initialTemplate = parseJournalSocialPostLayoutTemplate(params.template) ?? "sns02";
+  const parsed = parseJournalSocialPostLayoutTemplate(params.template);
+  const useMoriEditor = !parsed || isMoriAshiatoTemplateId(parsed);
+  const moriInitial: MoriAshiatoTemplateId =
+    parsed && isMoriAshiatoTemplateId(parsed) ? parsed : "chiisana_ashiato";
 
   return (
     <div className="min-h-screen bg-stone-50 text-stone-900">
-      <div className="mx-auto max-w-[900px] px-4 py-10">
+      <div className="mx-auto max-w-[1100px] px-4 py-10">
         <p className="text-xs font-medium uppercase tracking-wide text-violet-800">Dev layout tool</p>
-        <h1 className="mt-2 text-xl font-semibold">日記・投稿画像レイアウト定規</h1>
+        <h1 className="mt-2 text-xl font-semibold">
+          {useMoriEditor
+            ? "森ログカード位置合わせ"
+            : "投稿画像レイアウト定規（sns）"}
+        </h1>
         <p className="mt-2 text-sm leading-relaxed text-stone-600">
-          テンプレート PNG と同じ 819×1024 座標で測ります。座標は{" "}
-          <code className="rounded bg-stone-200 px-1">src/lib/journal/social-post-image/templates.ts</code>{" "}
-          を編集してください。
+          {useMoriEditor
+            ? "本棚の本・あしあとテンプレと同じく、枠を選んで数値調整し、「ファイルに保存」できます。"
+            : "sns02/03 用の座標クリック定規です。森ログカードはテンプレ未指定またはあしあと系 ID で開いてください。"}
         </p>
 
         <div className="mt-8">
-          <JournalSocialPostImageLayoutDebugClient
-            initialTemplate={initialTemplate}
-            returnTo={returnTo}
-          />
+          {useMoriEditor ? (
+            <MoriAshiatoLayoutDebugClient initialTemplate={moriInitial} />
+          ) : (
+            <JournalSocialPostImageLayoutDebugClient
+              initialTemplate={parsed ?? "sns02"}
+              returnTo={returnTo}
+            />
+          )}
         </div>
 
         <p className="mt-10 flex flex-wrap gap-4 text-sm">
@@ -54,16 +67,16 @@ export default async function JournalSocialPostImageLayoutPage({ searchParams }:
             </Link>
           )}
           <Link
+            href={buildJournalSocialPostLayoutRulerHref({ template: "chiisana_ashiato" })}
+            className="text-stone-600 underline hover:text-stone-900"
+          >
+            森ログ定規
+          </Link>
+          <Link
             href={buildJournalSocialPostLayoutRulerHref({ template: "sns02" })}
             className="text-stone-600 underline hover:text-stone-900"
           >
-            {JOURNAL_SOCIAL_POST_TEMPLATES.sns02.label}
-          </Link>
-          <Link
-            href={buildJournalSocialPostLayoutRulerHref({ template: "sns03" })}
-            className="text-stone-600 underline hover:text-stone-900"
-          >
-            {JOURNAL_SOCIAL_POST_TEMPLATES.sns03.label}
+            sns02 定規
           </Link>
           <Link href="/preview" className="text-stone-600 underline hover:text-stone-900">
             校正メニューへ

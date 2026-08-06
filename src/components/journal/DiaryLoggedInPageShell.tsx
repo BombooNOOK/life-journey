@@ -10,6 +10,7 @@ import { LJD_PAGE_BG_CLASS } from "@/lib/ljd/ljdPaperSurface";
 import {
   isDailyFortuneImmersivePath,
   isForestBookshelfImmersivePath,
+  isHitoyasumiImmersivePath,
   isOrdersImmersiveMobilePath,
   useIsLogHouseMobileViewport,
 } from "@/lib/loghouse/logHouseViewport";
@@ -18,14 +19,14 @@ type Props = {
   children: React.ReactNode;
 };
 
-/** 日記まわり（半没入紙トーン）に生成り背景を当てる。ログハウス／お庭／本棚トップなどは対象外 */
+/** あしあとまわり（半没入紙トーン）に生成り背景を当てる。ログハウス／お庭／本棚トップなどは対象外 */
 function isDiaryPaperPath(pathname: string): boolean {
   if (pathname.startsWith("/journal/with-companion")) return false;
   if (pathname.startsWith("/journal")) return true;
   if (pathname.startsWith("/orders/calendar")) return true;
   if (pathname.startsWith("/orders/list")) return true;
   if (pathname.startsWith("/orders/write")) return true;
-  // 本棚トップは没入。日記ブック詳細など配下だけ紙トーン
+  // 本棚トップは没入。あしあとブック詳細など配下だけ紙トーン
   if (pathname.startsWith("/orders/bookshelf/")) return true;
   if (pathname.startsWith("/orders/mailbox")) return true;
   if (pathname.startsWith("/orders/donguri")) return true;
@@ -39,6 +40,7 @@ export function DiaryLoggedInPageShell({ children }: Props) {
   const immersiveOrders =
     (isForestBookshelfImmersivePath(pathname) && isMobile) ||
     isDailyFortuneImmersivePath(pathname) ||
+    isHitoyasumiImmersivePath(pathname) ||
     (isOrdersImmersiveMobilePath(pathname) && isMobile);
   const onCompanionWriting = pathname.startsWith("/journal/with-companion");
   const hideChrome = immersiveOrders || onCompanionWriting;

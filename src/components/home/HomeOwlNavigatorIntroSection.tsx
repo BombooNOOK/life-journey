@@ -62,7 +62,7 @@ export function HomeOwlNavigatorIntroSection() {
         <p>
           LJDでは、その意味やテーマを、
           <br className="block sm:hidden" />
-          日記を見返すときの小さな手がかりとして使います。
+          あしあとを見返すときの小さな手がかりとして使います。
         </p>
 
         <p className="border-l-[3px] border-stone-500 pl-3.5 text-[0.95em] italic leading-relaxed text-stone-500 sm:pl-4">

@@ -10,7 +10,7 @@ type Props = {
   className?: string;
 };
 
-/** 日記ブック詳細から「対象期間を変更」へ */
+/** あしあとブック詳細から「対象期間を変更」へ */
 export function BookshelfEditPeriodNavButton({
   bookId,
   children = "対象期間を変更",

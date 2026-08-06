@@ -44,8 +44,8 @@ export function MyPageMainActions({
 }: Props) {
   const canWriteJournal =
     entitlement.canUseContinuedFeatures || entitlement.canCreateFirstJournal;
-  const journalEmphasis = entitlement.tier === "trial_not_started";
-  const journalBlocked = entitlement.tier === "trial_expired" || !canWriteJournal;
+  const journalEmphasis = false;
+  const journalBlocked = !canWriteJournal;
   const showCompanionWriting =
     canWriteJournal && kanteiOrderId != null && firstVisitGuideState !== "needs_kantei";
   const companionEmphasis = firstVisitGuideState === "ready_first_journal";

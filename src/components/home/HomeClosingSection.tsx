@@ -12,7 +12,7 @@ import { FIRST_VISIT_ROUTES } from "@/lib/onboarding/firstVisitWizard/routes";
 const BODY_PARAGRAPHS = [
   "Life Journey Diaryは、日々のきもちや出来事を、スマホから気軽に残せる記録ノートです。",
   "そのときは何気なく書いた一言も、あとから読み返すと、今の自分を支えてくれる小さな宝物になることがあります。",
-  "デジタルで残した毎日は、いつか手元に残る「日記ブック」として、未来の自分へ、そして大切な家族へ届ける一冊に育っていきます。",
+  "デジタルで残した毎日は、いつか手元に残る「あしあとブック」として、未来の自分へ、そして大切な家族へ届ける一冊に育っていきます。",
   "まずは、あなたの数字を知るところから。森のどうぶつ鑑定士たちと一緒に、人生の旅の記録をはじめてみませんか。",
 ] as const;
 
@@ -43,7 +43,7 @@ export function HomeClosingSection() {
           <p className={`mt-3 ${heroCtaClosingMicrocopyClass}`}>
             お名前と生年月日だけで無料鑑定へ。
             <br className="sm:hidden" />
-            クレジットカード登録なしで、2週間日記をお試しいただけます。
+            クレジットカード登録なし。下書きはどんぐりなしで残せます。
           </p>
         </div>
 

@@ -3,7 +3,10 @@
 import { useEffect, useMemo, useState } from "react";
 
 import { JournalContentLengthAlerts } from "@/components/journal/JournalContentLengthAlerts";
-import { isDiaryBodyOverLineLimit } from "@/lib/journal/diaryPreviewBodyLineLimits";
+import {
+  resolveV2BodyFrameSeverity,
+  type BodyFrameSeverity,
+} from "@/lib/journal/diaryPreviewBodyLineLimits";
 import { normalizeContentFontMode } from "@/lib/journal/contentFontMode";
 import { measureDiaryPageTextOverflows } from "@/lib/journal/diaryPreviewMeasure";
 
@@ -11,6 +14,8 @@ type Props = {
   content: string;
   comment?: string | null;
   contentFontMode?: string | null;
+  /** 入力画面と同じ段階を渡せるとき（未指定なら v2 行数で算出） */
+  bodyFrameSeverity?: BodyFrameSeverity;
   className?: string;
 };
 
@@ -19,15 +24,18 @@ export function DiaryPreviewBindingAlerts({
   content,
   comment,
   contentFontMode: contentFontModeProp,
+  bodyFrameSeverity: bodyFrameSeverityProp,
   className = "",
 }: Props) {
   const trimmedBody = content.trim();
   const contentFontMode = normalizeContentFontMode(contentFontModeProp);
   const charCount = trimmedBody.length;
 
-  const bindingBodyOverflow = useMemo(
-    () => (trimmedBody ? isDiaryBodyOverLineLimit(trimmedBody, contentFontMode) : false),
-    [trimmedBody, contentFontMode],
+  const bodyFrameSeverity = useMemo(
+    () =>
+      bodyFrameSeverityProp ??
+      resolveV2BodyFrameSeverity(trimmedBody, contentFontMode),
+    [bodyFrameSeverityProp, trimmedBody, contentFontMode],
   );
 
   const [commentOverflows, setCommentOverflows] = useState(false);
@@ -39,14 +47,14 @@ export function DiaryPreviewBindingAlerts({
     return () => window.clearTimeout(id);
   }, [trimmedBody, comment, contentFontMode]);
 
-  if (!trimmedBody && !commentOverflows && !bindingBodyOverflow) return null;
+  if (!trimmedBody && !commentOverflows && bodyFrameSeverity === "ok") return null;
 
   return (
     <div className={className}>
       <JournalContentLengthAlerts
         contentFontMode={contentFontMode}
         contentLength={charCount}
-        bodyOverflows={bindingBodyOverflow}
+        bodyFrameSeverity={bodyFrameSeverity}
         commentOverflows={commentOverflows}
       />
     </div>

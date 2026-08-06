@@ -13,7 +13,7 @@ type Props = {
   children?: React.ReactNode;
 };
 
-/** 日記ブック PDF 共通：A5 1ページ＝背景＋オーバーレイ */
+/** あしあとブック PDF 共通：A5 1ページ＝背景＋オーバーレイ */
 export function DiaryBookPdfPageCanvas({ backgroundSrc, children }: Props) {
   return (
     <Page size="A5" orientation="portrait" style={diaryBookPdfPageStyle}>

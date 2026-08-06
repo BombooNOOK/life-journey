@@ -374,7 +374,7 @@ export const PDF_DESIGN_ASSET_ENTRIES: PdfDesignAssetEntry[] = [
   },
   {
     id: "journal-diary-invite-bg",
-    label: "フクロウ先生メッセージ＋日記案内（文字なし背景）",
+    label: "フクロウ先生メッセージ＋あしあと案内（文字なし背景）",
     runtimePng: "journal-diary-invite-bg.png",
     designPdf: null,
     codeConstant: "PDF_JOURNAL_DIARY_INVITE_BG_PATH",
@@ -382,14 +382,14 @@ export const PDF_DESIGN_ASSET_ENTRIES: PdfDesignAssetEntry[] = [
   },
   {
     id: "pm-extra",
-    label: "フクロウ先生メッセージ＋日記案内（レガシー・文字込み全面）",
+    label: "フクロウ先生メッセージ＋あしあと案内（レガシー・文字込み全面）",
     runtimePng: "personal-month-intro-extra.png",
     designPdf: null,
     codeConstant: "PDF_PERSONAL_MONTH_INTRO_EXTRA_PATH",
   },
   {
     id: "journal-1",
-    label: "日記導線 1（レガシー・旧fukuro04）",
+    label: "あしあと導線 1（レガシー・旧fukuro04）",
     runtimePng: "journal-invite-1.png",
     designPdf: null,
     codeConstant: "PDF_JOURNAL_INVITE_PAGE_1_PATH",

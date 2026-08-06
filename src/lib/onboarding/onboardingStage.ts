@@ -4,7 +4,7 @@ import { journalWithCompanionPath } from "@/lib/journal/journalNav";
 /** 第3章の「次の一歩」：看板ではなく机（伴走執筆）へ。看板は道しるべ専用の演出。 */
 export const ONBOARDING_CHAPTER3_DESK_WRITING_HREF = journalWithCompanionPath("/orders");
 
-/** 0=未登録 1=登録済・ログハウス未完成 2=ログハウス完成 3=鑑定完了 4=日記1件以上 */
+/** 0=未登録 1=登録済・ログハウス未完成 2=ログハウス完成 3=鑑定完了 4=あしあと1件以上 */
 export type OnboardingStage = 0 | 1 | 2 | 3 | 4;
 
 export type OnboardingStageInput = {
@@ -120,7 +120,7 @@ export function resolveOnboardingNextStep(
     return {
       href: ONBOARDING_CHAPTER3_DESK_WRITING_HREF,
       label: "机であしあとを残す",
-      body: "ログハウスの机から、どうぶつ鑑定士といっしょに、はじめての日記を書いてみましょう。",
+      body: "ログハウスの机から、どうぶつ鑑定士といっしょに、はじめてのあしあとを書いてみましょう。",
     };
   }
 

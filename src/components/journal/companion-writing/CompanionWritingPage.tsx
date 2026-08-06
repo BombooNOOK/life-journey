@@ -309,7 +309,7 @@ export function CompanionWritingPage() {
       return;
     }
     if (!canWriteJournal) {
-      setError("無料お試し期間が終了したため、新しい記録の作成はできません。");
+      setError("新しいあしあとを森に残す操作は、いまご利用いただけません。どんぐりと森の定期便のご案内をご確認ください。");
       return;
     }
     if (!effectiveProfileId) {
@@ -386,7 +386,7 @@ export function CompanionWritingPage() {
         throw new Error(data.error ?? `あしあとを残せませんでした。（${res.status}）`);
       }
       if (!data.entry?.id) {
-        throw new Error("保存に失敗しました。日記IDを取得できませんでした。");
+        throw new Error("保存に失敗しました。あしあとIDを取得できませんでした。");
       }
 
       if (typeof data.donguriBalance === "number") {
@@ -515,7 +515,7 @@ export function CompanionWritingPage() {
     return (
       <div className="mx-auto max-w-lg space-y-3 px-4 py-8">
         <h1 className="text-xl font-bold text-stone-900">{COMPANION_WRITING_FORMAL_TITLE}</h1>
-        <p className="text-sm text-stone-700">日記を書くにはログインが必要です。</p>
+        <p className="text-sm text-stone-700">あしあとを残すには、ログインが必要です。</p>
         <Link href="/login" className="text-sm font-medium text-[#4a5440] underline-offset-2 hover:underline">
           ログインする
         </Link>
@@ -528,13 +528,13 @@ export function CompanionWritingPage() {
       <div className="mx-auto max-w-lg space-y-3 px-4 py-8">
         <h1 className="text-xl font-bold text-stone-900">{COMPANION_WRITING_FORMAL_TITLE}</h1>
         <p className="rounded-lg border border-violet-200 bg-violet-50/70 px-4 py-3 text-sm text-violet-950">
-          無料お試し期間が終了したため、新しい日記の作成はできません。
+          新しいあしあとを森に残す操作は、いまご利用いただけません。どんぐりと森の定期便のご案内をご確認ください。
         </p>
         <Link
           href="/orders/calendar"
           className="text-sm font-medium text-[#4a5440] underline-offset-2 hover:underline"
         >
-          カレンダーで過去の日記を見る
+          カレンダーで過去のあしあとを見る
         </Link>
       </div>
     );
@@ -621,7 +621,7 @@ export function CompanionWritingPage() {
               )}
               className="text-sm font-medium text-[#4a5440] underline-offset-2 hover:underline"
             >
-              通常の日記入力へ
+              通常のあしあと入力へ
             </Link>
           </div>
         </section>
@@ -953,7 +953,7 @@ export function CompanionWritingPage() {
             )}
             className="mx-1 text-[#4a5440] underline-offset-2 hover:underline"
           >
-            通常の日記入力
+            通常のあしあと入力
           </Link>
           からも始められます。
         </p>

@@ -58,7 +58,7 @@ export const personalCycleGuideCopyJa: Record<PersonalCycleGuideKey, PersonalCyc
 知るための、いちばん身近な数字なんだ。
 
 Life Journey Diaryでは、
-日記を書く日に「今日のすうじ」として、
+あしあとを書く日に「今日のすうじ」として、
 今日・今月・今年のすうじをお伝えしています。
 そのうち「今日」にあたるのが、
 パーソナルデイナンバーなんだよ。
@@ -79,7 +79,7 @@ Life Journey Diaryでは、
 世の中全体にその日めぐっている流れを、
 静かに映してくれる数字なんだよ。
 
-Life Journey Diaryの日記そのものでは使わない数字だけれど、
+Life Journey Diaryのあしあとそのものでは使わない数字だけれど、
 BambooNOOKのSNS「あなたのすうじで読む 今日のこころ予報」では、
 その日みんなで共有している「今日のすうじ」として
 この考え方を使っているんだ。

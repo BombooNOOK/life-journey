@@ -12,7 +12,7 @@ type Props = {
   compact?: boolean;
   /** LJDの歩き方など：ページ見出し・導入を省略して一覧だけ表示 */
   embedded?: boolean;
-  /** 日記プレビューから渡された今日・月・年のすうじ */
+  /** あしあとプレビューから渡された今日・月・年のすうじ */
   personalDiaryNumbers?: PersonalDiaryNumbersQuery | null;
 };
 
@@ -72,7 +72,7 @@ export function NumerologyNumbersDictionaryView({
               </p>
               <p className="mt-2 text-sm leading-relaxed text-stone-700">{entry.description}</p>
               <p className="mt-3 border-t border-stone-200/80 pt-3 text-sm leading-relaxed text-stone-600">
-                <span className="font-medium text-stone-700">日記での見方：</span>
+                <span className="font-medium text-stone-700">あしあとでの見方：</span>
                 {entry.diaryHint}
               </p>
             </li>

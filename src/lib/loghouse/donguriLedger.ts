@@ -174,6 +174,7 @@ export type AppendDonguriEntryInput = {
   createdBy?: DonguriCreatedBy;
   relatedNoticeId?: string | null;
   relatedDiaryId?: string | null;
+  idempotencyKey?: string | null;
 };
 
 export async function appendDonguriLedgerEntry(
@@ -184,7 +185,15 @@ export async function appendDonguriLedgerEntry(
   if (!email || !profileId) {
     throw new Error("email / profileId が必要です");
   }
-  if (!Number.isFinite(input.amount) || input.amount === 0) {
+  const amount = Math.trunc(input.amount);
+  if (!Number.isFinite(amount)) {
+    throw new Error("amount は整数が必要です");
+  }
+  // 初回無料マーカーのみ amount 0 を許可。それ以外の 0 は誤記とみなす。
+  if (
+    amount === 0 &&
+    input.reason !== "mori_log_device_movie_first_free"
+  ) {
     throw new Error("amount は 0 以外の整数が必要です");
   }
 
@@ -192,7 +201,7 @@ export async function appendDonguriLedgerEntry(
     data: {
       email,
       profileId,
-      amount: Math.trunc(input.amount),
+      amount,
       reason: input.reason,
       title: input.title,
       description: input.description ?? null,
@@ -200,6 +209,7 @@ export async function appendDonguriLedgerEntry(
       createdBy: input.createdBy ?? "system",
       relatedNoticeId: input.relatedNoticeId ?? null,
       relatedDiaryId: input.relatedDiaryId ?? null,
+      idempotencyKey: input.idempotencyKey?.trim() || null,
     },
   });
   return toView(row);
@@ -524,7 +534,7 @@ export function diarySaveLedgerDateKey(journalEntryId: string): string {
 }
 
 /**
- * 森にあしあとを残す：日記1件につき -3（二重消費防止）。
+ * 森にあしあとを残す：1件につき -3（二重消費防止）。
  * 残高不足時は charged:false / insufficient:true。
  */
 export async function chargeDiarySaveAcorns(params: {

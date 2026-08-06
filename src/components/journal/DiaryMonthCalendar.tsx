@@ -65,7 +65,7 @@ export function DiaryMonthCalendar({
   draftDays,
   selectedDay,
   isFetching = false,
-  loadingLabel = "案内役が日記のあしあとを確認しています…",
+  loadingLabel = "案内役があしあとを確認しています…",
   onSelectDay,
   onPrevMonth,
   onNextMonth,
@@ -187,7 +187,7 @@ export function DiaryMonthCalendar({
                       : "border-[#ebe2d4] bg-[#fffaf4]/95 hover:border-[#c5b089] hover:bg-[#f7efe3]/80 focus-visible:outline-[#9a8b78]",
                 ].join(" ")}
                 style={isSelected ? { borderColor: LJD_SAGE } : undefined}
-                aria-label={`${day}日${hasEntry ? `・日記${count}件` : ""}${hasDraft ? "・下書きあり" : ""}${isToday ? "・今日" : ""}`}
+                aria-label={`${day}日${hasEntry ? `・あしあと${count}件` : ""}${hasDraft ? "・下書きあり" : ""}${isToday ? "・今日" : ""}`}
                 aria-pressed={isSelected}
               >
                 {isToday ? (
@@ -254,7 +254,7 @@ export function DiaryMonthCalendar({
       ) : null}
       </div>
       <p className="mt-1.5 hidden min-h-[2.5rem] text-[11px] leading-relaxed text-[#8a7b6a] sm:block">
-        あしあと（肉球）がある日は正式に残した日記、破線の「下」は下書きです。日付をタップすると下に一覧が表示されます。
+        あしあと（肉球）がある日は正式に残したあしあと、破線の「下」は下書きです。日付をタップすると下に一覧が表示されます。
       </p>
     </div>
   );

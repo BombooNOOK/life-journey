@@ -1,10 +1,10 @@
-/** 森の案内所「日記の書き方」— 辞書トーンの原稿（はじめて導線とは別） */
+/** 森の案内所「あしあとの書き方」— 辞書トーンの原稿（はじめて導線とは別） */
 
 export const LJD_DIARY_WRITING_GUIDE_SECTION_SUMMARY =
   "ログハウスの机から、ひとりで書くか・いっしょに書くかを選ぶ" as const;
 
 export const LJD_DIARY_WRITING_GUIDE_LEAD =
-  "日記は、ログハウスの机から書きます。机をタップすると、今日の書き方を選べます。" as const;
+  "あしあとは、ログハウスの机から書きます。机をタップすると、今日の書き方を選べます。" as const;
 
 export type LjdDiaryWritingGuideStep = {
   id: string;
@@ -23,13 +23,13 @@ export const LJD_DIARY_WRITING_GUIDE_COMMON_STEPS: readonly LjdDiaryWritingGuide
   {
     id: "profile",
     title: "プロフィールを確認する",
-    body: "どのプロフィールの日記として残すか、はじめに確認します。",
-    note: "プロフィールが複数あるときは、机のあとの「今日はどうしますか？」画面の上部で切り替えられます。日記は、すべてご自身に関する内容として書く想定です。",
+    body: "どのプロフィールのあしあととして残すか、はじめに確認します。",
+    note: "プロフィールが複数あるときは、机のあとの「今日はどうしますか？」画面の上部で切り替えられます。あしあとは、すべてご自身に関する内容として書く想定です。",
   },
   {
     id: "desk",
     title: "机をタップする",
-    body: "ログハウスの室内で、机をタップします。ここが日記のはじまりです。",
+    body: "ログハウスの室内で、机をタップします。ここがあしあとのはじまりです。",
   },
 ] as const;
 
@@ -46,7 +46,7 @@ export const LJD_DIARY_WRITING_GUIDE_CHOOSE_SOLO =
   "ひとりで書く場合は、「ひとりで書く」を選びます。カレンダーが開き、今日か別の日かで書き始め方が少し変わります。" as const;
 
 export const LJD_DIARY_WRITING_GUIDE_CHOOSE_FIRST_NOTE =
-  "はじめての日記（まだ1件も書いていないとき）は、この選択を挟まず、鑑定士といっしょに書く流れへ進みます。" as const;
+  "はじめてのあしあと（まだ1件も書いていないとき）は、この選択を挟まず、鑑定士といっしょに書く流れへ進みます。" as const;
 
 export const LJD_DIARY_WRITING_GUIDE_COMPANION_SECTION_TITLE =
   "鑑定士といっしょに書く場合" as const;
@@ -98,7 +98,7 @@ export const LJD_DIARY_WRITING_GUIDE_NORMAL_SECTION_TITLE =
 
 /** カレンダー中心の説明（通常モードの前提） */
 export const LJD_DIARY_WRITING_GUIDE_CALENDAR_HUB =
-  "Life Journey Diary の日記は、カレンダーを中心に記録します。月ごとに日付を見渡し、書きたい日を選んで1ページを残します。記録がある日は、カレンダー上でわかります。" as const;
+  "Life Journey Diary のあしあとは、カレンダーを中心に記録します。月ごとに日付を見渡し、書きたい日を選んで1ページを残します。記録がある日は、カレンダー上でわかります。" as const;
 
 export const LJD_DIARY_WRITING_GUIDE_NORMAL_CALENDAR_NOTE =
   "いったんカレンダーに慣れると、あとから「画面下のカレンダー」タブからも同じ画面を開けます。" as const;
@@ -164,7 +164,7 @@ export const LJD_DIARY_WRITING_GUIDE_DETAILS_TITLE =
 export const LJD_DIARY_WRITING_GUIDE_DETAILS_ITEMS: readonly { title: string; body: string }[] = [
   {
     title: "カレンダー",
-    body: "日記の起点です。本日は黄色、タップして選んだ日は緑色でハイライトされます。月を切り替えて日付を選び、記録のある日を見渡せます。",
+    body: "あしあとの起点です。本日は黄色、タップして選んだ日は緑色でハイライトされます。月を切り替えて日付を選び、記録のある日を見渡せます。",
   },
   {
     title: "1日1ページ",
@@ -188,9 +188,9 @@ export const LJD_DIARY_WRITING_GUIDE_DETAILS_ITEMS: readonly { title: string; bo
   },
 ] as const;
 
-/** 案内所から「日記の書き方」への誘導用の短い文 */
+/** 案内所から「あしあとの書き方」への誘導用の短い文 */
 export const LJD_DIARY_WRITING_GUIDE_COMPANION_CROSSREF =
-  "手順の全体像は、上の「日記の書き方」をご覧ください。" as const;
+  "手順の全体像は、上の「あしあとの書き方」をご覧ください。" as const;
 
 /** @deprecated 旧ステップ配列。表示は COMMON + 各フローへ移行済み */
 export const LJD_DIARY_WRITING_GUIDE_STEPS = LJD_DIARY_WRITING_GUIDE_COMMON_STEPS;

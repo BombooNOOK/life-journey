@@ -38,7 +38,7 @@ export async function findExistingOrderForProfile(params: {
   return order ? { id: order.id } : null;
 }
 
-/** 日記コメント生成に使う鑑定書（プロフィール単位・レガシー profileId="" 含む） */
+/** あしあとコメント生成に使う鑑定書（プロフィール単位・レガシー profileId="" 含む） */
 export async function findKanteiOrderForProfile(params: {
   viewerEmail: string;
   profileId: string;

@@ -29,6 +29,29 @@ describe("parseSafeJournalReturnTo", () => {
     ).toBe("/orders/bookshelf/diary-book/clxyz1234567890?p=3");
   });
 
+  it("allows diary book edit-includes return", () => {
+    expect(
+      parseSafeJournalReturnTo("/orders/bookshelf/diary-book/clxyz1234567890/edit-includes"),
+    ).toBe("/orders/bookshelf/diary-book/clxyz1234567890/edit-includes");
+  });
+
+  it("allows diary book edit-period and edit-tags return", () => {
+    expect(
+      parseSafeJournalReturnTo("/orders/bookshelf/diary-book/clxyz1234567890/edit-period"),
+    ).toBe("/orders/bookshelf/diary-book/clxyz1234567890/edit-period");
+    expect(
+      parseSafeJournalReturnTo("/orders/bookshelf/diary-book/clxyz1234567890/edit-tags"),
+    ).toBe("/orders/bookshelf/diary-book/clxyz1234567890/edit-tags");
+  });
+
+  it("rejects diary book edit subpath with query", () => {
+    expect(
+      parseSafeJournalReturnTo(
+        "/orders/bookshelf/diary-book/clxyz1234567890/edit-includes?evil=1",
+      ),
+    ).toBe("/orders/bookshelf/diary-book/clxyz1234567890/edit-includes");
+  });
+
   it("rejects diary book return with invalid id", () => {
     expect(parseSafeJournalReturnTo("/orders/bookshelf/diary-book/../evil")).toBeNull();
   });
@@ -47,5 +70,15 @@ describe("parseSafeJournalReturnTo", () => {
 
   it("allows bookshelf home return", () => {
     expect(parseSafeJournalReturnTo("/orders/bookshelf")).toBe("/orders/bookshelf");
+  });
+
+  it("allows bookshelf create resume return", () => {
+    expect(parseSafeJournalReturnTo("/orders/bookshelf?createBook=1")).toBe(
+      "/orders/bookshelf?createBook=1",
+    );
+  });
+
+  it("rejects bookshelf home with unknown query", () => {
+    expect(parseSafeJournalReturnTo("/orders/bookshelf?evil=1")).toBeNull();
   });
 });

@@ -75,8 +75,8 @@ export function ProfileAddCard({
       {showHeading ? <h2 className="text-lg font-semibold text-stone-900">プロフィールを追加</h2> : null}
       {blockContinuedFeatures && !atLimit ? (
         <div className={`${showHeading ? "mt-3" : ""} space-y-2 lj-read-desc text-stone-700`}>
-          <p>新規プロフィールの追加は、日記の無料お試し開始後にご利用いただけます。</p>
-          <p>まずは日記の記録からお試しください。</p>
+          <p>新規プロフィールの追加は、はじめてのあしあとを残したあとご利用いただけます。</p>
+          <p>まずはあしあとから残してみてください。</p>
         </div>
       ) : atLimit ? (
         isStandardPlanAtLimit ? (

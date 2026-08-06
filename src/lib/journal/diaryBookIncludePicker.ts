@@ -1,15 +1,21 @@
 import { Prisma } from "@prisma/client";
 
 import { prisma } from "@/lib/db";
+import { ashiatoEntryBodyLengthFlag } from "@/lib/journal/ashiatoEntryRender";
 import {
-  journalEntryContentLengthFlag,
+  journalEntryLayoutLengthFlag,
   type JournalContentLengthFlag,
 } from "@/lib/journal/contentFontMode";
 import {
   journalEntryCreatedAtRangeForBookPeriod,
   parseDiaryBookDateRange,
 } from "@/lib/journal/diaryBookPeriod";
-import { matchTag, stripTagsFromContent } from "@/lib/journal/diaryTags";
+import {
+  diaryBookTagScopeFromRow,
+  hasDiaryBookTagScope,
+  type DiaryBookTagScope,
+} from "@/lib/journal/diaryBookTagFilter";
+import { matchDiaryBookTagFilter, stripTagsFromContent } from "@/lib/journal/diaryTags";
 import { journalEntryDateToIsoDateInput } from "@/lib/journal/referenceDateParts";
 
 export type DiaryBookIncludePickerEntryDto = {
@@ -71,19 +77,23 @@ type IncludePickerRow = {
   id: string;
   createdAt: Date;
   mood: string;
-  contentSnippet: string | null;
+  content: string;
   includeInBook: boolean;
   contentFontMode: string;
-  contentCharLength: number | bigint;
   hasPhoto: boolean;
 };
 
-/** 月別一覧用。photoDataUrl 本文・content 全文は Neon から読まない */
+/**
+ * 月別一覧用。photoDataUrl / photoBlob は読まない。
+ * 期間リストは件数上限があるため content 全文を取り、改行込みのはみ出し判定に使う。
+ */
 export async function listJournalEntriesForDiaryBookIncludePicker(params: {
   email: string;
   profileId: string;
   startDate: string;
   endDate: string;
+  /** あしあとブックのページテンプレ。指定時は枠容量ベースの lengthFlag */
+  pageTemplate?: string | null;
 }): Promise<DiaryBookIncludePickerEntryDto[]> {
   const range = parseDiaryBookDateRange(params.startDate, params.endDate);
   if (!range) return [];
@@ -94,10 +104,9 @@ export async function listJournalEntriesForDiaryBookIncludePicker(params: {
       id,
       "createdAt",
       mood,
-      LEFT(TRIM(REGEXP_REPLACE(content, E'[[:space:]]+', ' ', 'g')), ${EXCERPT_MAX}::integer) AS "contentSnippet",
+      content,
       "includeInBook",
       "contentFontMode",
-      CAST(CHAR_LENGTH(content) AS INTEGER) AS "contentCharLength",
       (
         ("photoBlobUrl" IS NOT NULL AND btrim("photoBlobUrl") <> '')
         OR ("photoDataUrl" IS NOT NULL AND btrim("photoDataUrl") <> '')
@@ -110,33 +119,40 @@ export async function listJournalEntriesForDiaryBookIncludePicker(params: {
     ORDER BY "createdAt" ASC
   `);
 
+  const pageTemplate = params.pageTemplate?.trim() || null;
+
   return rows.map((row) => {
-    const snippet = row.contentSnippet ?? "";
-    const charLength = Number(row.contentCharLength);
+    const content = row.content ?? "";
     return {
       id: row.id,
       createdAt: row.createdAt.toISOString(),
       mood: row.mood,
-      contentExcerpt: journalEntryContentExcerpt(snippet),
+      contentExcerpt: journalEntryContentExcerpt(content),
       hasPhoto: Boolean(row.hasPhoto),
       includeInBook: row.includeInBook !== false,
-      lengthFlag: journalEntryContentLengthFlag(row.contentFontMode, charLength),
+      lengthFlag: pageTemplate
+        ? ashiatoEntryBodyLengthFlag({
+            content,
+            contentFontMode: row.contentFontMode,
+            pageTemplate,
+          })
+        : journalEntryLayoutLengthFlag(row.contentFontMode, content),
     };
   });
 }
 
-/** 期間内の日記を末尾タグで絞り込む（includeInBook の件数も返す） */
-export async function countDiaryBookPeriodEntriesWithOptionalTag(params: {
+/** 期間内のあしあとを末尾タグ条件で絞り込む（includeInBook の件数も返す） */
+export async function countDiaryBookPeriodEntriesWithTagScope(params: {
   email: string;
   profileId: string;
   startDate: string;
   endDate: string;
-  tag?: string;
-}): Promise<{ totalCount: number; includedCount: number }> {
+  tagScope?: DiaryBookTagScope;
+}): Promise<{ matchingCount: number; includedCount: number }> {
   const range = parseDiaryBookDateRange(params.startDate, params.endDate);
-  if (!range) return { totalCount: 0, includedCount: 0 };
+  if (!range) return { matchingCount: 0, includedCount: 0 };
 
-  const tagQuery = params.tag?.trim() ?? "";
+  const scope = params.tagScope ?? { tagFilter: "", tagFilterMode: "AND" };
   const createdAt = journalEntryCreatedAtRangeForBookPeriod(range);
   const rows = await prisma.journalEntry.findMany({
     where: {
@@ -147,25 +163,49 @@ export async function countDiaryBookPeriodEntriesWithOptionalTag(params: {
     select: { content: true, includeInBook: true },
   });
 
-  const filtered = tagQuery
-    ? rows.filter((row) => matchTag(row.content, tagQuery))
+  const filtered = hasDiaryBookTagScope(scope)
+    ? rows.filter((row) =>
+        matchDiaryBookTagFilter(row.content, scope.tagFilter, scope.tagFilterMode),
+      )
     : rows;
 
   return {
-    totalCount: filtered.length,
+    matchingCount: filtered.length,
     includedCount: filtered.filter((row) => row.includeInBook !== false).length,
   };
 }
 
-/** ピッカー一覧を末尾タグで絞り込む */
-export async function filterDiaryBookPickerEntriesByTag(params: {
+/** @deprecated {@link countDiaryBookPeriodEntriesWithTagScope} を使用 */
+export async function countDiaryBookPeriodEntriesWithOptionalTag(params: {
+  email: string;
+  profileId: string;
+  startDate: string;
+  endDate: string;
+  tag?: string;
+}): Promise<{ totalCount: number; includedCount: number }> {
+  const scope = diaryBookTagScopeFromRow({
+    tagFilter: params.tag?.trim() ?? "",
+    tagFilterMode: "OR",
+  });
+  const counts = await countDiaryBookPeriodEntriesWithTagScope({
+    email: params.email,
+    profileId: params.profileId,
+    startDate: params.startDate,
+    endDate: params.endDate,
+    tagScope: scope,
+  });
+  return { totalCount: counts.matchingCount, includedCount: counts.includedCount };
+}
+
+/** ピッカー一覧を末尾タグ条件で絞り込む */
+export async function filterDiaryBookPickerEntriesByTagScope(params: {
   email: string;
   profileId: string;
   entries: DiaryBookIncludePickerEntryDto[];
-  tag?: string;
+  tagScope?: DiaryBookTagScope;
 }): Promise<DiaryBookIncludePickerEntryDto[]> {
-  const tagQuery = params.tag?.trim() ?? "";
-  if (!tagQuery || params.entries.length === 0) return params.entries;
+  const scope = params.tagScope ?? { tagFilter: "", tagFilterMode: "AND" };
+  if (!hasDiaryBookTagScope(scope) || params.entries.length === 0) return params.entries;
 
   const rows = await prisma.journalEntry.findMany({
     where: {
@@ -177,7 +217,29 @@ export async function filterDiaryBookPickerEntriesByTag(params: {
   });
 
   const matchingIds = new Set(
-    rows.filter((row) => matchTag(row.content, tagQuery)).map((row) => row.id),
+    rows
+      .filter((row) =>
+        matchDiaryBookTagFilter(row.content, scope.tagFilter, scope.tagFilterMode),
+      )
+      .map((row) => row.id),
   );
   return params.entries.filter((entry) => matchingIds.has(entry.id));
+}
+
+/** @deprecated {@link filterDiaryBookPickerEntriesByTagScope} を使用 */
+export async function filterDiaryBookPickerEntriesByTag(params: {
+  email: string;
+  profileId: string;
+  entries: DiaryBookIncludePickerEntryDto[];
+  tag?: string;
+}): Promise<DiaryBookIncludePickerEntryDto[]> {
+  return filterDiaryBookPickerEntriesByTagScope({
+    email: params.email,
+    profileId: params.profileId,
+    entries: params.entries,
+    tagScope: diaryBookTagScopeFromRow({
+      tagFilter: params.tag?.trim() ?? "",
+      tagFilterMode: "OR",
+    }),
+  });
 }

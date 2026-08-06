@@ -1,5 +1,5 @@
 /**
- * 第4章末「フクロウ先生からのメッセージ＋日記のご案内」（`journal-diary-invite-bg.png` + 生成テキスト）。
+ * 第4章末「フクロウ先生からのメッセージ＋あしあとのご案内」（`journal-diary-invite-bg.png` + 生成テキスト）。
  * Canva: `shime_honbun` / `shime_cm1` / `shime_cm2` / `shime_qr`（QR は PNG）
  */
 export type JournalDiaryInviteCopy = {
@@ -28,7 +28,7 @@ export const journalDiaryInviteCopyJa: JournalDiaryInviteCopy = {
   signature: "フクロウ先生",
   diaryIntroBody: `日々の流れを、自分の言葉と一緒に残していく。
 その形として、
-「Life Journey Diary」という日記があります。
+「Life Journey Diary」というあしあとがあります。
 
 詳しくは、BambooNOOKのホームページをご覧ください。`,
   homeUrl: "https://bamboonook.base.shop/",

@@ -36,25 +36,33 @@ export function wrapTextLines(
   maxCharsPerLine: number,
   maxLines: number,
 ): string[] {
-  const normalized = text.replace(/\s+/g, " ").trim();
-  if (!normalized) return [];
+  if (maxLines <= 0 || maxCharsPerLine <= 0) return [];
 
+  const paragraphs = text
+    .replace(/\r\n/g, "\n")
+    .replace(/\r/g, "\n")
+    .split("\n");
   const lines: string[] = [];
-  let current = "";
 
-  for (const ch of normalized) {
-    const next = current + ch;
-    if (next.length > maxCharsPerLine && current) {
-      lines.push(current);
-      current = ch;
-      if (lines.length >= maxLines) break;
-    } else {
-      current = next;
+  for (const paragraph of paragraphs) {
+    const normalized = paragraph.replace(/\s+/g, " ").trim();
+    if (!normalized) continue;
+
+    let current = "";
+    for (const ch of normalized) {
+      const next = current + ch;
+      if (next.length > maxCharsPerLine && current) {
+        lines.push(current);
+        current = ch;
+        if (lines.length >= maxLines) return lines.slice(0, maxLines);
+      } else {
+        current = next;
+      }
     }
-  }
-
-  if (lines.length < maxLines && current) {
-    lines.push(current);
+    if (current) {
+      lines.push(current);
+      if (lines.length >= maxLines) return lines.slice(0, maxLines);
+    }
   }
 
   return lines.slice(0, maxLines);
@@ -154,7 +162,21 @@ type SvgTextStyle = {
   /** この行番号（1始まり）以降の行間（上段の6行目以降の逃がし用） */
   compactFromLine?: number;
   compactLineHeight?: number;
+  /**
+   * y の縦基準。
+   * - baseline（既定）: SVG のアルファベットベースライン
+   * - top: CSS の top / レイアウト定規のマス上端と同じ（内部でベースラインへ変換）
+   */
+  yOrigin?: "baseline" | "top";
 };
+
+/** Klee One で yOrigin=top のとき、上端 → ベースラインへ寄せる近似比 */
+export const SVG_TEXT_TOP_TO_BASELINE_RATIO = 0.8;
+
+export function svgTextBaselineY(style: Pick<SvgTextStyle, "y" | "fontSize" | "yOrigin">): number {
+  if (style.yOrigin !== "top") return style.y;
+  return style.y + Math.round(style.fontSize * SVG_TEXT_TOP_TO_BASELINE_RATIO);
+}
 
 function svgRotateTransform(deg: number | undefined, x: number, y: number): string {
   if (deg == null || deg === 0) return "";
@@ -175,7 +197,8 @@ export function buildSvgTextOverlay(input: {
     const anchor = style.textAnchor ?? "start";
     const weight = style.fontWeight ?? 400;
     const itemFill = style.fill ?? fill;
-    const rotateTransform = svgRotateTransform(style.rotateDeg, style.x, style.y);
+    const textY = svgTextBaselineY(style);
+    const rotateTransform = svgRotateTransform(style.rotateDeg, style.x, textY);
     const anchorAttr =
       anchor === "middle"
         ? `text-anchor="middle"`
@@ -199,7 +222,7 @@ export function buildSvgTextOverlay(input: {
 
       if (lines) {
         parts.push(
-          `<text x="${style.x}" y="${style.y}"${rotateTransform} ${anchorAttr} font-family="DailyNumberKlee" font-size="${style.fontSize}" font-weight="${weight}" fill="${itemFill}">`,
+          `<text x="${style.x}" y="${textY}"${rotateTransform} ${anchorAttr} font-family="DailyNumberKlee" font-size="${style.fontSize}" font-weight="${weight}" fill="${itemFill}">`,
         );
         for (let i = 0; i < lines.length; i += 1) {
           const line = lines[i]!;
@@ -228,7 +251,7 @@ export function buildSvgTextOverlay(input: {
       const indentChars = style.indentChars ?? 0;
       const indentPx = indentChars * style.fontSize;
       parts.push(
-        `<text x="${style.x}" y="${style.y}"${rotateTransform} ${anchorAttr} font-family="DailyNumberKlee" font-size="${style.fontSize}" font-weight="${weight}" fill="${itemFill}">`,
+        `<text x="${style.x}" y="${textY}"${rotateTransform} ${anchorAttr} font-family="DailyNumberKlee" font-size="${style.fontSize}" font-weight="${weight}" fill="${itemFill}">`,
       );
       for (let i = 0; i < plainLines.length; i += 1) {
         const dy = i === 0 ? 0 : lineHeight;
@@ -242,7 +265,7 @@ export function buildSvgTextOverlay(input: {
     }
 
     parts.push(
-      `<text x="${style.x}" y="${style.y}"${rotateTransform} ${anchorAttr} font-family="DailyNumberKlee" font-size="${style.fontSize}" font-weight="${weight}" fill="${itemFill}">${escapeXml(item.text)}</text>`,
+      `<text x="${style.x}" y="${textY}"${rotateTransform} ${anchorAttr} font-family="DailyNumberKlee" font-size="${style.fontSize}" font-weight="${weight}" fill="${itemFill}">${escapeXml(item.text)}</text>`,
     );
   }
 

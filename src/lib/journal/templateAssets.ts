@@ -2,7 +2,7 @@ import type { CompanionType } from "@/lib/journal/meta";
 import { isCompanionType } from "@/lib/journal/meta";
 import { companionTypeToTemplateSlug } from "@/lib/journal/coverAssets";
 
-/** 日記ページ背景（罫線なしのみ）。キャラ別 PNG。 */
+/** あしあとページ背景（罫線なしのみ）。キャラ別 PNG。 */
 const TEMPLATE_BASENAME = "diary-template-simple-plain";
 const TEMPLATE_CACHE_VERSION = "5";
 

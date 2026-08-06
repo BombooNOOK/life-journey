@@ -16,7 +16,7 @@ const HOST_FRAME_PADDING_PX = 12;
 const FULLSCREEN_HOST_PADDING_PX = 0;
 /** 横幅基準 scale の安全係数（高さには合わせない） */
 const FULLSCREEN_SAFE_FACTOR = 0.995;
-/** 日記ブック全画面：最小余白・縦横フィット最大化 */
+/** あしあとブック全画面：最小余白・縦横フィット最大化 */
 const BOOK_MAXIMIZE_PADDING_PX = 4;
 const BOOK_MAXIMIZE_SAFE_FACTOR = 0.98;
 

@@ -20,7 +20,7 @@ type Props = {
 };
 
 /**
- * 日記ブック読書用の共通ページ枠（724×1024 を同一 scale で表示）。
+ * あしあとブック読書用の共通ページ枠（724×1024 を同一 scale で表示）。
  */
 export function DiaryBookPageViewport({
   children,

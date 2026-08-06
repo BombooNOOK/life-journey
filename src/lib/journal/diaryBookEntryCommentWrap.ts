@@ -12,7 +12,7 @@ import {
   type DiaryCommentPdfRenderLayout,
 } from "@/lib/journal/diaryCommentPdfWrap";
 
-/** 日記ブック本文 v2：読み解き欄の行配列（PDF・プレビュー共通） */
+/** あしあとブック本文 v2：読み解き欄の行配列（PDF・プレビュー共通） */
 export function getDiaryBookEntryV2CommentLayoutLines(text: string): string[] {
   return getDiaryCommentLinesForBindingAtSchedule(
     text,
@@ -24,7 +24,7 @@ export function getDiaryBookEntryV2CommentLayoutLines(text: string): string[] {
   );
 }
 
-/** 日記ブック本文 v2：読み解き欄の描画レイアウト（PDF・プレビュー共通） */
+/** あしあとブック本文 v2：読み解き欄の描画レイアウト（PDF・プレビュー共通） */
 export function resolveDiaryBookEntryV2CommentRenderLayout(
   text: string,
 ): DiaryCommentPdfRenderLayout {

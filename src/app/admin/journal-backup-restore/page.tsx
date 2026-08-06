@@ -19,9 +19,9 @@ export default async function AdminJournalBackupRestorePage() {
         <Link href="/admin" className="text-sm text-stone-600 hover:text-stone-900">
           ← 管理者ページ
         </Link>
-        <h1 className="mt-2 text-2xl font-bold text-stone-900">日記バックアップ復元</h1>
+        <h1 className="mt-2 text-2xl font-bold text-stone-900">あしあとバックアップ復元</h1>
         <p className="mt-1 text-sm text-stone-600">
-          バックアップZIPから、復元先ユーザーの新規プロフィールとして日記を復元します。既存データは上書きしません。
+          バックアップZIPから、復元先ユーザーの新規プロフィールとしてあしあとを復元します。既存データは上書きしません。
         </p>
       </div>
 

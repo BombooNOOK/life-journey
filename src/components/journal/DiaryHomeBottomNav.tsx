@@ -171,7 +171,7 @@ export function DiaryHomeBottomNav({
   return (
     <nav
       className="lj-bottom-nav fixed inset-x-0 bottom-0 z-40 border-t border-[#e8dcc8]/80 bg-[#f7f0e4]/96 backdrop-blur-md"
-      aria-label="日記メニュー"
+      aria-label="あしあとメニュー"
       aria-busy={syncing || undefined}
     >
       <div className="mx-auto flex max-w-3xl pb-[max(0px,env(safe-area-inset-bottom))]">

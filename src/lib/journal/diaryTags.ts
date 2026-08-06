@@ -1,4 +1,4 @@
-/** 日記本文末尾のタグ行（DBなし・content 内保存） */
+/** あしあと本文末尾のタグ行（DBなし・content 内保存） */
 
 const FULLWIDTH_HASH = "\uFF03";
 
@@ -122,15 +122,30 @@ export function mergeTagsIntoContent(body: string, tagInput: string): string {
   return `${trimmedBody}\n\n${tagLine}`;
 }
 
-/** 末尾タグ行に query が含まれるか（タグ検索用） */
+/** 末尾タグ行に query が含まれるか（タグ検索用・複数タグは OR） */
 export function matchTag(content: string, tagQuery: string): boolean {
-  const queryTags = parseDiaryTagInput(tagQuery);
+  return matchDiaryBookTagFilter(content, tagQuery, "OR");
+}
+
+export type DiaryBookTagFilterMode = "AND" | "OR";
+
+/** あしあとブックのタグ条件（末尾タグ行のみ・AND/OR） */
+export function matchDiaryBookTagFilter(
+  content: string,
+  tagFilter: string,
+  mode: DiaryBookTagFilterMode = "AND",
+): boolean {
+  const queryTags = parseDiaryTagInput(tagFilter);
   if (queryTags.length === 0) return true;
 
   const { tags } = extractTagsFromContent(content);
   const normalizedEntryTags = new Set(tags.map((tag) => tag.toLowerCase()));
+  const normalizedQuery = queryTags.map((query) => query.toLowerCase());
 
-  return queryTags.some((query) => normalizedEntryTags.has(query.toLowerCase()));
+  if (mode === "OR") {
+    return normalizedQuery.some((query) => normalizedEntryTags.has(query));
+  }
+  return normalizedQuery.every((query) => normalizedEntryTags.has(query));
 }
 
 /** キーワード検索（本文全体・タグ行は対象外） */
@@ -140,7 +155,7 @@ export function matchesDiaryKeyword(content: string, keyword: string): boolean {
   return stripTagsFromContent(content).includes(query);
 }
 
-/** 複数日記から過去タグ一覧を抽出（出現順・重複除去） */
+/** 複数あしあとから過去タグ一覧を抽出（出現順・重複除去） */
 export function collectDiaryTagsFromContents(contents: readonly string[]): string[] {
   const seen = new Set<string>();
   const result: string[] = [];

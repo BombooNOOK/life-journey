@@ -180,7 +180,7 @@ export const PDF_BRIDGE_STAR_3_PATH = `${process.cwd()}/src/components/pdf/asset
 export const PDF_BRIDGE_STAR_4_PATH = `${process.cwd()}/src/components/pdf/assets/bridge-star-4.png`;
 export const PDF_BRIDGE_STAR_5_PATH = `${process.cwd()}/src/components/pdf/assets/bridge-star-5.png`;
 
-/** おまけの後に差し込む日記アプリ導線＋記入ページ（全面画像 5P） */
+/** おまけの後に差し込むあしあとアプリ導線＋記入ページ（全面画像 5P） */
 export const PDF_JOURNAL_INVITE_PAGE_1_PATH = `${process.cwd()}/src/components/pdf/assets/journal-invite-1.png`;
 /** レガシー・文字込み全面（参照用） */
 export const PDF_JOURNAL_INVITE_PAGE_2_PATH = `${process.cwd()}/src/components/pdf/assets/journal-invite-2.png`;
@@ -210,13 +210,13 @@ export const PDF_CHAPTER_DIVIDER_BG_PATH = `${process.cwd()}/src/components/pdf/
 export const PDF_CHAPTER_4_DIVIDER_PATH = `${process.cwd()}/src/components/pdf/assets/chapter-4-divider.png`;
 
 /** パーソナルマンス直前の補足ページ（全面画像 1P） */
-/** レガシー・日記案内全面（参照用） */
+/** レガシー・あしあと案内全面（参照用） */
 export const PDF_PERSONAL_MONTH_INTRO_EXTRA_PATH = `${process.cwd()}/src/components/pdf/assets/personal-month-intro-extra.png`;
 
-/** 第4章末・フクロウ先生メッセージ＋日記案内（文字なし背景） */
+/** 第4章末・フクロウ先生メッセージ＋あしあと案内（文字なし背景） */
 export const PDF_JOURNAL_DIARY_INVITE_BG_PATH = `${process.cwd()}/src/components/pdf/assets/journal-diary-invite-bg.png`;
 
-/** 日記案内 QR（`shime_qr`） */
+/** あしあと案内 QR（`shime_qr`） */
 export const PDF_JOURNAL_DIARY_INVITE_QR_PATH = `${process.cwd()}/src/components/pdf/assets/journal-diary-invite-qr.png`;
 
 /** おわりに・左P（文字なし背景） */

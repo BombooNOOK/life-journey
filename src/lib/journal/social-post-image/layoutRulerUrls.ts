@@ -1,4 +1,8 @@
-import type { JournalSocialPostTemplateId } from "./templates";
+import {
+  JOURNAL_SOCIAL_POST_TEMPLATES,
+  normalizeJournalSocialPostTemplateId,
+  type JournalSocialPostTemplateId,
+} from "./templates";
 
 const RULER_PATH = "/preview/journal-social-post-image/layout";
 
@@ -13,7 +17,10 @@ export function parseJournalSocialPostLayoutRulerReturnTo(
 export function parseJournalSocialPostLayoutTemplate(
   raw: string | null | undefined,
 ): JournalSocialPostTemplateId | null {
-  return raw === "sns03" ? "sns03" : raw === "sns02" ? "sns02" : null;
+  if (!raw?.trim()) return null;
+  const normalized = normalizeJournalSocialPostTemplateId(raw);
+  // 未知IDは normalize が sns02 に落とすので、明示一致のみ通す
+  return raw in JOURNAL_SOCIAL_POST_TEMPLATES ? normalized : null;
 }
 
 export function buildJournalSocialPostLayoutRulerHref(input?: {

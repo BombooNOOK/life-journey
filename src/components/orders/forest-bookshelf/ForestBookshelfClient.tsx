@@ -59,6 +59,7 @@ import {
 } from "@/lib/ljd/forestBookshelfLayout";
 import { LOG_HOUSE_BACK_TO_LINK_LABEL } from "@/lib/journal/logHouseLabels";
 import { LJD_PAPER_LINK_CLASS } from "@/lib/ljd/ljdPaperSurface";
+import { readDiaryBookCreateDraft } from "@/lib/journal/diaryBookCreateDraft";
 
 export type ForestBookshelfKanteiItem = {
   id: string;
@@ -184,6 +185,16 @@ export function ForestBookshelfClient({
   const closeAll = useCallback(() => {
     setSelectedSpot(null);
     setPanel("none");
+  }, []);
+
+  useEffect(() => {
+    const resumeFromQuery =
+      typeof window !== "undefined" &&
+      new URLSearchParams(window.location.search).get("createBook") === "1";
+    const draft = readDiaryBookCreateDraft();
+    if (resumeFromQuery || draft?.periodChecked) {
+      setPanel("create");
+    }
   }, []);
 
   const peekCard = useMemo((): ForestBookshelfPeekCardModel | null => {

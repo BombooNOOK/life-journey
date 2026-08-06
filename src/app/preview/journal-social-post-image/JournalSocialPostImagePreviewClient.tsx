@@ -271,7 +271,7 @@ export function JournalSocialPostImagePreviewClient({
         <p className="text-xs font-medium text-violet-800">見るだけページ（ログイン不要）</p>
         <h1 className="mt-2 text-xl font-bold text-stone-900">投稿画像のプレビュー</h1>
         <p className="mt-2 text-sm leading-relaxed text-stone-600">
-          日記プレビューの「投稿画像」と同じ画面です。2種類のデザインを試せます。
+          あしあとプレビューの「投稿画像」と同じ画面です。2種類のデザインを試せます。
         </p>
         <p className="mt-3 text-sm">
           <Link
