@@ -46,7 +46,7 @@
 ### 2枚構成
 1. `*_bg.png`
 2. 写真（3コマは同一写真を3枠へ・将来複数枚対応）
-3. `*_overlay.png`（**真の透過 RGBA**。旧ファイルは白マット JPEG／RGB だったが、2026-08-08 差し替え済み）
+3. `*_overlay.png`（**真の透過 RGBA**。設計サイズまたは出力サイズどちらでも可。読込時に設計サイズへリサイズ）
 4. 文字
 
 定義・座標は `src/lib/journal/social-post-image/templates.ts` と `moriAshiatoTemplates.ts`。

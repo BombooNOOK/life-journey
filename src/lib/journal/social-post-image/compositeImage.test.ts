@@ -154,6 +154,28 @@ describe("mori ashiato templates", () => {
     expect(basename).toContain("chiisana_ashiato");
   });
 
+  it("kyou_no_ashiato (5:4 overlay at output resolution) composites to 1080×1350", async () => {
+    const { buffer } = await compositeJournalSocialPostImage(
+      buildJournalSocialPostImageInput({
+        templateId: "kyou_no_ashiato",
+        title: "",
+        bodyExcerpt: "",
+        subtitle: "",
+        todayNumber: null,
+        monthNumber: null,
+        yearNumber: null,
+        moodLabel: "",
+        commentExcerpt: "プレビュー確認",
+        photoBuffer: null,
+        companionType: "drfukuro",
+        createdAt: new Date("2026-08-08T03:00:00.000Z"),
+      }),
+    );
+    const meta = await sharp(buffer).metadata();
+    expect(meta.width).toBe(1080);
+    expect(meta.height).toBe(1350);
+  });
+
   it("kyou_no_ashiato_wide composites to 1080×1920", async () => {
     const { buffer } = await compositeJournalSocialPostImage(
       buildJournalSocialPostImageInput({
