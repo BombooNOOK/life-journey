@@ -31,8 +31,17 @@ export type LogHouseGoOutDestination = {
 
 const GO_OUT_RETURN_TO = LOG_HOUSE_GO_OUT_PAGE_PATH;
 
-/** おでかけページの行き先（追加時はここに足す） */
+/** おでかけページの行き先（追加時はここに足す。先頭＝優先導線） */
 export const LOG_HOUSE_GO_OUT_DESTINATIONS: LogHouseGoOutDestination[] = [
+  {
+    id: "garden",
+    title: "お庭に出る",
+    description: "植物にお水をあげられる場所。\n少しだけ、森で過ごしてみましょう。",
+    icon: { src: GARDEN_DESTINATION_ICON_SRC },
+    route: GARDEN_PAGE_PATH,
+    actionLabel: "ここに行く",
+    status: "active",
+  },
   {
     id: "guideStation",
     title: "森の案内所",
@@ -48,15 +57,6 @@ export const LOG_HOUSE_GO_OUT_DESTINATIONS: LogHouseGoOutDestination[] = [
     description: "あなたの数字を、\n短いメッセージで読み返したいときに。",
     icon: "kanteiHall",
     route: "kanteiHall",
-    actionLabel: "ここに行く",
-    status: "active",
-  },
-  {
-    id: "garden",
-    title: "お庭に出る",
-    description: "植物にお水をあげられる場所。\n少しだけ、森で過ごしてみましょう。",
-    icon: { src: GARDEN_DESTINATION_ICON_SRC },
-    route: GARDEN_PAGE_PATH,
     actionLabel: "ここに行く",
     status: "active",
   },
