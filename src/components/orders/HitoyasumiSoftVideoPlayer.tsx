@@ -238,7 +238,7 @@ export function HitoyasumiSoftVideoPlayer({
       ) : null}
 
       {showLoading ? (
-        <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-[#2a221a]">
+        <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-[#2a221a]/55">
           <p className="text-xs text-[#d9cbb8]">動画を読み込んでいます…</p>
         </div>
       ) : null}
@@ -248,10 +248,7 @@ export function HitoyasumiSoftVideoPlayer({
         id={labelId}
         onClick={() => void toggle()}
         aria-label={playing ? "一時停止" : label}
-        className={[
-          "absolute inset-0 z-[1] flex items-center justify-center",
-          playing ? "bg-transparent" : "bg-black/10",
-        ].join(" ")}
+        className="absolute inset-0 z-[1] flex items-center justify-center bg-transparent"
       >
         {!playing ? (
           <span className="flex h-14 w-14 items-center justify-center rounded-full border border-white/85 bg-white/95 text-[#1a120c] shadow-lg">

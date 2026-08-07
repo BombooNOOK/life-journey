@@ -96,6 +96,7 @@ import {
   LOG_HOUSE_HITOYASUMI_DELETE_CONFIRM_BODY,
   LOG_HOUSE_HITOYASUMI_DELETE_CONFIRM_TITLE,
   LOG_HOUSE_HITOYASUMI_DELETE_FAIL,
+  LOG_HOUSE_HITOYASUMI_DETAIL_PREVIEW_BG_SRC,
   LOG_HOUSE_HITOYASUMI_EMPTY_BODY,
   LOG_HOUSE_HITOYASUMI_EMPTY_TITLE,
   LOG_HOUSE_HITOYASUMI_ENTRY_ALBUM_LABEL,
@@ -1841,7 +1842,10 @@ export function HitoyasumiChairPageClient({
 
       {detail ? (
         <div
-          className="fixed inset-0 z-50 flex flex-col bg-[#120c08]"
+          className="fixed inset-0 z-50 flex flex-col bg-[#120c08] bg-cover bg-center bg-no-repeat"
+          style={{
+            backgroundImage: `url(${LOG_HOUSE_HITOYASUMI_DETAIL_PREVIEW_BG_SRC})`,
+          }}
           role="dialog"
           aria-modal="true"
           aria-label={detail.item.title?.trim() || LOG_HOUSE_HITOYASUMI_PAGE_TITLE}
