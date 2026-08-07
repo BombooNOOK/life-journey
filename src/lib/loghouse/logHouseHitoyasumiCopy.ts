@@ -63,9 +63,12 @@ export const LOG_HOUSE_HITOYASUMI_BG_BY_TIME = {
 /** @deprecated 昼背景。LOG_HOUSE_HITOYASUMI_BG_BY_TIME.day を使ってください */
 export const LOG_HOUSE_HITOYASUMI_BG_SRC = LOG_HOUSE_HITOYASUMI_BG_BY_TIME.day;
 
-/** 椅子詳細ビュー：暗い部屋で映写を見る雰囲気の背景 */
-export const LOG_HOUSE_HITOYASUMI_DETAIL_PREVIEW_BG_SRC =
+/** 詳細／アルバム連続再生：暗い部屋で映写を見る雰囲気の背景 */
+export const LOG_HOUSE_HITOYASUMI_PLAYBACK_ROOM_BG_SRC =
   "/images/ljd/hitoyasumi/chair-detail-preview-bg.jpg" as const;
+/** @deprecated 別名。PLAYBACK_ROOM_BG_SRC を使う */
+export const LOG_HOUSE_HITOYASUMI_DETAIL_PREVIEW_BG_SRC =
+  LOG_HOUSE_HITOYASUMI_PLAYBACK_ROOM_BG_SRC;
 
 export const LOG_HOUSE_HITOYASUMI_FILTER_CARD_SRC =
   "/images/ljd/hitoyasumi/hitoyasumi-filter-card.png" as const;

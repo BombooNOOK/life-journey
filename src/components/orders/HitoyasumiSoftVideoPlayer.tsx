@@ -216,7 +216,7 @@ export function HitoyasumiSoftVideoPlayer({
   const hideVideo = showPoster || showLoading;
 
   return (
-    <div className={["relative overflow-hidden bg-[#1a120c] [touch-action:manipulation]", className].join(" ")}>
+    <div className={["relative overflow-hidden bg-transparent [touch-action:manipulation]", className].join(" ")}>
       <video
         ref={videoRef}
         src={src}
@@ -225,7 +225,11 @@ export function HitoyasumiSoftVideoPlayer({
         muted={muted}
         controls={false}
         disablePictureInPicture
-        className={[videoClassName, hideVideo ? "opacity-0" : "opacity-100"].join(" ")}
+        className={[
+          videoClassName,
+          "bg-transparent",
+          hideVideo ? "opacity-0" : "opacity-100",
+        ].join(" ")}
         aria-labelledby={labelId}
       />
       {showPoster ? (

@@ -96,7 +96,7 @@ import {
   LOG_HOUSE_HITOYASUMI_DELETE_CONFIRM_BODY,
   LOG_HOUSE_HITOYASUMI_DELETE_CONFIRM_TITLE,
   LOG_HOUSE_HITOYASUMI_DELETE_FAIL,
-  LOG_HOUSE_HITOYASUMI_DETAIL_PREVIEW_BG_SRC,
+  LOG_HOUSE_HITOYASUMI_PLAYBACK_ROOM_BG_SRC,
   LOG_HOUSE_HITOYASUMI_EMPTY_BODY,
   LOG_HOUSE_HITOYASUMI_EMPTY_TITLE,
   LOG_HOUSE_HITOYASUMI_ENTRY_ALBUM_LABEL,
@@ -1844,13 +1844,13 @@ export function HitoyasumiChairPageClient({
         <div
           className="fixed inset-0 z-50 flex flex-col bg-[#120c08] bg-cover bg-center bg-no-repeat"
           style={{
-            backgroundImage: `url(${LOG_HOUSE_HITOYASUMI_DETAIL_PREVIEW_BG_SRC})`,
+            backgroundImage: `url(${LOG_HOUSE_HITOYASUMI_PLAYBACK_ROOM_BG_SRC})`,
           }}
           role="dialog"
           aria-modal="true"
           aria-label={detail.item.title?.trim() || LOG_HOUSE_HITOYASUMI_PAGE_TITLE}
         >
-          <div className="flex shrink-0 items-start justify-between gap-3 bg-gradient-to-b from-black/80 to-transparent px-3 pb-4 pt-[max(0.75rem,env(safe-area-inset-top))] sm:px-4">
+          <div className="flex shrink-0 items-start justify-between gap-3 bg-gradient-to-b from-black/55 to-transparent px-3 pb-4 pt-[max(0.75rem,env(safe-area-inset-top))] sm:px-4">
             <div className="min-w-0 text-white">
               <p className="inline-flex rounded-md border border-white/25 bg-white/15 px-2 py-0.5 text-xs font-medium">
                 {hitoyasumiMediaTypeLabel(detail.item.type, detail.item.sourceOrigin)}
@@ -1872,15 +1872,15 @@ export function HitoyasumiChairPageClient({
             </button>
           </div>
 
-          <div className="relative min-h-0 flex-1">
+          <div className="relative min-h-0 flex-1 bg-transparent">
             {detail.objectUrl ? (
               isMoriLogCardMovieType(detail.item.type) &&
               (detail.blobMimeType ?? "").startsWith("video/") ? (
                 <HitoyasumiSoftVideoPlayer
                   src={detail.objectUrl}
                   posterUrl={detail.posterUrl}
-                  className="absolute inset-0 h-full w-full"
-                  videoClassName="absolute inset-0 h-full w-full object-contain"
+                  className="absolute inset-0 h-full w-full bg-transparent"
+                  videoClassName="absolute inset-0 h-full w-full bg-transparent object-contain"
                   label="森ログムービーを再生"
                 />
               ) : (
@@ -1898,7 +1898,7 @@ export function HitoyasumiChairPageClient({
             )}
           </div>
 
-          <div className="shrink-0 space-y-2 border-t border-white/10 bg-black/85 px-3 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:px-4">
+          <div className="shrink-0 space-y-2 border-t border-white/15 bg-black/35 px-3 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] backdrop-blur-[6px] sm:px-4">
             {detail.blob ? (
               <>
                 <p className="text-xs leading-relaxed text-white/70">

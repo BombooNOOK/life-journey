@@ -25,6 +25,7 @@ import {
   LOG_HOUSE_HITOYASUMI_CLOSE_DETAIL,
   LOG_HOUSE_HITOYASUMI_DELETE,
   LOG_HOUSE_HITOYASUMI_NO_PREVIEW,
+  LOG_HOUSE_HITOYASUMI_PLAYBACK_ROOM_BG_SRC,
 } from "@/lib/loghouse/logHouseHitoyasumiCopy";
 
 /** 静止画の連続再生での表示秒数 */
@@ -393,17 +394,20 @@ export function HitoyasumiAlbumViewer({ album, pages, onClose, onDelete }: Props
 
   return (
     <div
-      className="fixed inset-0 z-[70] flex flex-col bg-black"
+      className="fixed inset-0 z-[70] flex flex-col bg-[#120c08] bg-cover bg-center bg-no-repeat"
+      style={{
+        backgroundImage: `url(${LOG_HOUSE_HITOYASUMI_PLAYBACK_ROOM_BG_SRC})`,
+      }}
       role="dialog"
       aria-modal="true"
       aria-label={album.title}
       onClick={() => setChromeVisible(true)}
     >
-      <div className="relative min-h-0 flex-1">
+      <div className="relative min-h-0 flex-1 bg-transparent">
         <video
           ref={videoRef}
           className={[
-            "absolute inset-0 h-full w-full bg-black object-contain",
+            "absolute inset-0 h-full w-full bg-transparent object-contain",
             isVideoSlide ? "opacity-100" : "pointer-events-none opacity-0",
           ].join(" ")}
           playsInline
@@ -440,7 +444,7 @@ export function HitoyasumiAlbumViewer({ album, pages, onClose, onDelete }: Props
               void startPlayback();
             }}
             onMouseDown={(e) => e.preventDefault()}
-            className="absolute inset-0 z-[2] flex flex-col items-center justify-center gap-3 bg-black/25 px-6"
+            className="absolute inset-0 z-[2] flex flex-col items-center justify-center gap-3 bg-black/15 px-6"
           >
             <span className="flex h-16 w-16 items-center justify-center rounded-full border border-white/80 bg-white/95 text-[#1a120c] shadow-lg">
               <svg aria-hidden className="ml-1 h-7 w-7" viewBox="0 0 24 24" fill="currentColor">
@@ -455,7 +459,7 @@ export function HitoyasumiAlbumViewer({ album, pages, onClose, onDelete }: Props
 
         <div
           className={[
-            "pointer-events-none absolute inset-x-0 top-0 z-[3] bg-gradient-to-b from-black/70 to-transparent px-3 pb-10 pt-[max(0.75rem,env(safe-area-inset-top))] transition-opacity duration-300",
+            "pointer-events-none absolute inset-x-0 top-0 z-[3] bg-gradient-to-b from-black/55 to-transparent px-3 pb-10 pt-[max(0.75rem,env(safe-area-inset-top))] transition-opacity duration-300",
             chromeVisible || needsGesture || !playing ? "opacity-100" : "opacity-0",
           ].join(" ")}
         >
@@ -527,7 +531,7 @@ export function HitoyasumiAlbumViewer({ album, pages, onClose, onDelete }: Props
 
       <div
         className={[
-          "z-[3] border-t border-white/10 bg-black/80 px-3 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] transition-opacity duration-300",
+          "z-[3] border-t border-white/15 bg-black/35 px-3 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] backdrop-blur-[6px] transition-opacity duration-300",
           chromeVisible || needsGesture || !playing ? "opacity-100" : "opacity-0",
           chromeVisible || needsGesture || !playing
             ? "pointer-events-auto"
