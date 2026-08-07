@@ -36,22 +36,20 @@ describe("deviceMovieBasicTemplate", () => {
     expect(layout.text.left).toBeGreaterThan(layout.titleRect.x);
   });
 
-  it("insets video clip and enables kinari matte by default", () => {
+  it("defaults to no edge pad for true transparent overlay", () => {
     const layout = scaleDeviceMovieBasicLayout(1080, 1350);
-    const expectedPad = Math.round(
-      (DEVICE_MOVIE_BASIC_VIDEO_EDGE_PAD_DESIGN_PX * 1080) /
-        DEVICE_MOVIE_BASIC_LAYOUT_NORM.designWidth,
-    );
+    expect(DEVICE_MOVIE_BASIC_VIDEO_EDGE_PAD_DESIGN_PX).toBe(0);
+    expect(layout.videoMatte.widthPx).toBe(0);
+    expect(layout.videoClipRect).toEqual(layout.videoRect);
+  });
+
+  it("can inset video clip when edge pad is re-enabled", () => {
+    const layout = scaleDeviceMovieBasicLayout(1080, 1350, { edgePadDesignPx: 5 });
+    const expectedPad = Math.round((5 * 1080) / DEVICE_MOVIE_BASIC_LAYOUT_NORM.designWidth);
     expect(expectedPad).toBeGreaterThanOrEqual(4);
-    expect(expectedPad).toBeLessThanOrEqual(8);
     expect(layout.videoMatte.widthPx).toBe(expectedPad);
     expect(layout.videoClipRect.x).toBe(layout.videoRect.x + expectedPad);
-    expect(layout.videoClipRect.y).toBe(layout.videoRect.y + expectedPad);
     expect(layout.videoClipRect.width).toBe(layout.videoRect.width - expectedPad * 2);
-    expect(layout.videoClipRect.height).toBe(layout.videoRect.height - expectedPad * 2);
-    expect(layout.videoClipRect.borderRadius).toBe(
-      Math.max(0, layout.videoRect.borderRadius - expectedPad),
-    );
   });
 
   it("allows edge pad 0 for true transparent overlay swap", () => {

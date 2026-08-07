@@ -37,11 +37,10 @@ export const DEVICE_MOVIE_BASIC_CANVAS_APPLE = {
 } as const;
 
 /**
- * 応急: 動画クリップを窓より内側へ縮める量（制作 819px 基準）。
- * 黒マット焼き直しオーバーレイのギザ・黒縁が見えるときだけ >0。
- * 真の透過PNGへ差し替えたら **0** にする。
+ * 窓縁の応急 inset（制作 819px 基準）。
+ * 真の透過PNG運用時は 0。黒マット焼き直し材のギザが戻ったら一時的に >0 も可。
  */
-export const DEVICE_MOVIE_BASIC_VIDEO_EDGE_PAD_DESIGN_PX = 5 as const;
+export const DEVICE_MOVIE_BASIC_VIDEO_EDGE_PAD_DESIGN_PX = 0 as const;
 
 /**
  * 応急内枠（生成り）色。紙／キャンバス下地に近い色。
