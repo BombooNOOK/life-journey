@@ -344,8 +344,6 @@ export function HitoyasumiChairPageClient({
   const [albumSaveBusy, setAlbumSaveBusy] = useState(false);
   const [viewingAlbum, setViewingAlbum] = useState<MoriLogAlbum | null>(null);
   const [thumbUrls, setThumbUrls] = useState<Record<string, string>>({});
-  /** thumb が video/* なら true。ムービーでもポスター画像だけの場合あり */
-  const [thumbIsVideo, setThumbIsVideo] = useState<Record<string, boolean>>({});
   const [detail, setDetail] = useState<DetailState | null>(null);
   const [detailActionNote, setDetailActionNote] = useState<string | null>(null);
   const [detailActionBusy, setDetailActionBusy] = useState(false);
@@ -360,27 +358,28 @@ export function HitoyasumiChairPageClient({
   const [pendingRetryBusy, setPendingRetryBusy] = useState(false);
   const [pendingRetryNote, setPendingRetryNote] = useState<string | null>(null);
   const pendingAutoTriedRef = useRef(false);
+  /** 並列 refresh が古い結果で表示中 blob URL を revoke しないための世代 */
+  const refreshGenRef = useRef(0);
 
   const refresh = useCallback(async () => {
+    const gen = ++refreshGenRef.current;
     setLoading(true);
     const createdUrls: string[] = [];
     try {
       const list = await listHitoyasumiMedia(profileId);
       const nextItems: MoriLogMedia[] = [];
       const nextThumbs: Record<string, string> = {};
-      const nextThumbIsVideo: Record<string, boolean> = {};
       for (const item of list) {
         const mediaBlob = await getMoriLogMediaBlob(item.id);
         if (!mediaBlob || mediaBlob.size === 0) continue;
 
-        // ムービーは iPhone で <video> サムネが真っ黒になりやすいので、ポスター画像を優先
-        let thumbBlob = mediaBlob;
+        // 一覧タイルは静止画のみ。動画 blob を <video preload> すると iPhone で ❔/黒になりやすい
+        let thumbBlob: Blob | null = null;
         if (isMoriLogCardMovieType(item.type)) {
           const poster = await getMoriLogMediaPosterBlob(item.id);
-          if (poster && poster.size > 0) {
+          if (poster && poster.size > 0 && !(poster.type || "").startsWith("video/")) {
             thumbBlob = poster;
           } else {
-            // 旧データ: カードも保存済みならその画像をサムネに使う
             const sourceId = (item.sourceCardId ?? "").trim();
             if (sourceId && sourceId !== "preview-unsaved") {
               const cardBlob = await getMoriLogMediaBlob(sourceId);
@@ -393,30 +392,38 @@ export function HitoyasumiChairPageClient({
               }
             }
           }
+        } else if (!(mediaBlob.type || "").startsWith("video/")) {
+          thumbBlob = mediaBlob;
         }
 
-        const url = URL.createObjectURL(thumbBlob);
-        createdUrls.push(url);
         nextItems.push(item);
-        nextThumbs[item.id] = url;
-        nextThumbIsVideo[item.id] = (thumbBlob.type || "").startsWith("video/");
+        if (thumbBlob) {
+          const url = URL.createObjectURL(thumbBlob);
+          createdUrls.push(url);
+          nextThumbs[item.id] = url;
+        }
+      }
+      if (gen !== refreshGenRef.current) {
+        for (const url of createdUrls) URL.revokeObjectURL(url);
+        return;
       }
       setThumbUrls((prev) => {
         for (const url of Object.values(prev)) URL.revokeObjectURL(url);
         return nextThumbs;
       });
-      setThumbIsVideo(nextThumbIsVideo);
       setItems(nextItems);
     } catch {
       for (const url of createdUrls) URL.revokeObjectURL(url);
+      if (gen !== refreshGenRef.current) return;
       setItems([]);
       setThumbUrls((prev) => {
         for (const url of Object.values(prev)) URL.revokeObjectURL(url);
         return {};
       });
-      setThumbIsVideo({});
     } finally {
-      setLoading(false);
+      if (gen === refreshGenRef.current) {
+        setLoading(false);
+      }
     }
   }, [profileId]);
 
@@ -1259,7 +1266,6 @@ export function HitoyasumiChairPageClient({
               <ul className="mt-5 grid grid-cols-2 gap-2.5 sm:gap-3">
                 {visible.map((item) => {
                   const thumb = thumbUrls[item.id];
-                  const isMovie = isMoriLogCardMovieType(item.type);
                   const title = item.title?.trim() || hitoyasumiTemplateLabel(item.templateId);
                   return (
                     <li key={item.id}>
@@ -1290,18 +1296,8 @@ export function HitoyasumiChairPageClient({
 
                             <div className={HITOYASUMI_THUMB_WINDOW}>
                               {thumb ? (
-                                isMovie && thumbIsVideo[item.id] ? (
-                                  <video
-                                    src={thumb}
-                                    className="h-full w-full object-cover"
-                                    muted
-                                    playsInline
-                                    preload="metadata"
-                                  />
-                                ) : (
-                                  // eslint-disable-next-line @next/next/no-img-element
-                                  <img src={thumb} alt="" className="h-full w-full object-cover" />
-                                )
+                                // eslint-disable-next-line @next/next/no-img-element
+                                <img src={thumb} alt="" className="h-full w-full object-cover" />
                               ) : (
                                 <div className="flex h-full items-center justify-center px-2 text-center text-[10px] leading-relaxed text-[#8a7660]">
                                   {LOG_HOUSE_HITOYASUMI_NO_PREVIEW}
@@ -1350,12 +1346,12 @@ export function HitoyasumiChairPageClient({
             forceDecorationVariant={forceDecorationVariant}
             onClose={backToEntrance}
             onRefreshList={() => {
-              void refresh();
+              // 完成直後はまだ compose 画面。一覧 refresh は browse 遷移時の useEffect に任せる
+              // （ここで重ねると blob URL の revoke 競合で最新サムネが壊れる）
               void refreshPendingDeviceMovies();
             }}
             onSaved={() => {
               setScreen("browse");
-              void refresh();
               void refreshPendingDeviceMovies();
             }}
           />
@@ -1413,8 +1409,6 @@ export function HitoyasumiChairPageClient({
               <ul className="mt-4 grid grid-cols-2 gap-2.5 sm:gap-3">
                 {albums.map((album) => {
                   const coverThumb = thumbUrls[album.coverMediaId];
-                  const coverIsVideo = !!thumbIsVideo[album.coverMediaId];
-                  const isMovieCover = album.coverType === "card_movie";
                   return (
                     <li key={album.id}>
                       <div className="relative">
@@ -1444,22 +1438,12 @@ export function HitoyasumiChairPageClient({
 
                             <div className={HITOYASUMI_THUMB_WINDOW}>
                               {coverThumb ? (
-                                isMovieCover && coverIsVideo ? (
-                                  <video
-                                    src={coverThumb}
-                                    className="h-full w-full object-cover"
-                                    muted
-                                    playsInline
-                                    preload="metadata"
-                                  />
-                                ) : (
-                                  // eslint-disable-next-line @next/next/no-img-element
-                                  <img
-                                    src={coverThumb}
-                                    alt=""
-                                    className="h-full w-full object-cover"
-                                  />
-                                )
+                                // eslint-disable-next-line @next/next/no-img-element
+                                <img
+                                  src={coverThumb}
+                                  alt=""
+                                  className="h-full w-full object-cover"
+                                />
                               ) : (
                                 <div className="flex h-full items-center justify-center px-2 text-center text-[10px] leading-relaxed text-[#8a7660]">
                                   {LOG_HOUSE_HITOYASUMI_NO_PREVIEW}
@@ -1634,7 +1618,6 @@ export function HitoyasumiChairPageClient({
               <ul className="mt-4 grid grid-cols-2 gap-2.5 sm:gap-3">
                 {albumCandidates.map((item) => {
                   const thumb = thumbUrls[item.id];
-                  const isMovie = isMoriLogCardMovieType(item.type);
                   const title = item.title?.trim() || hitoyasumiTemplateLabel(item.templateId);
                   const checked = albumCheckedIds.includes(item.id);
                   return (
@@ -1659,18 +1642,8 @@ export function HitoyasumiChairPageClient({
                           />
                           <div className={HITOYASUMI_THUMB_WINDOW}>
                             {thumb ? (
-                              isMovie && thumbIsVideo[item.id] ? (
-                                <video
-                                  src={thumb}
-                                  className="h-full w-full object-cover"
-                                  muted
-                                  playsInline
-                                  preload="metadata"
-                                />
-                              ) : (
-                                // eslint-disable-next-line @next/next/no-img-element
-                                <img src={thumb} alt="" className="h-full w-full object-cover" />
-                              )
+                              // eslint-disable-next-line @next/next/no-img-element
+                              <img src={thumb} alt="" className="h-full w-full object-cover" />
                             ) : (
                               <div className="flex h-full items-center justify-center px-2 text-center text-[10px] text-[#8a7660]">
                                 {LOG_HOUSE_HITOYASUMI_NO_PREVIEW}
