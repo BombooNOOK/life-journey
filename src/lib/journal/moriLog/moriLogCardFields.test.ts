@@ -131,6 +131,19 @@ describe("moriLogCardFields", () => {
     });
 
     expect(
+      assembleMoriLogCardTextSlots("odekake_ashiato", {
+        place: "海辺",
+        hitokoto: "風が気持ちよかった\n貝がらをひろった\nまたいきたい",
+      }),
+    ).toEqual({
+      title: "海辺",
+      body: "",
+      comment: "風が気持ちよかった\n貝がらをひろった\nまたいきたい",
+      summary: "",
+      promptLabel: "",
+    });
+
+    expect(
       assembleMoriLogCardTextSlots("oishii_ashiato", {
         place: "近所のカフェ",
         menu: "チーズケーキ",
@@ -161,6 +174,8 @@ describe("moriLogCardFields", () => {
     });
     expect(slots.comment).toBe("おはよう\nおやすみ");
     expect(moriLogCardFieldForTextSlot("chiisana_ashiato", "comment")?.maxLines).toBe(2);
+    expect(moriLogCardFieldForTextSlot("odekake_ashiato", "comment")?.maxLines).toBe(3);
+    expect(moriLogCardFieldForTextSlot("odekake_ashiato", "comment")?.maxChars).toBe(54);
   });
 
   it("maps layout slots to card field labels for the ruler", () => {

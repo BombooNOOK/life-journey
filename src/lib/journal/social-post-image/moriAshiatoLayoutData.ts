@@ -98,7 +98,7 @@ export const MORI_ASHIATO_LAYOUTS: Record<MoriAshiatoTemplateId, MoriAshiatoLayo
     dateScrapbook: { x: 222, y: 713, fontSize: 20, lineHeight: 30, fill: "#4a3728", textAnchor: "start", maxCharsPerLine: 20, maxLines: 1 },
     title: { x: 222, y: 761, fontSize: 22, lineHeight: 30, fontWeight: 600, fill: "#4a3728", textAnchor: "start", maxCharsPerLine: 16, maxLines: 1 },
     body: { x: 150, y: 830, fontSize: 20, lineHeight: 30, fill: "#4a3728", textAnchor: "start", maxCharsPerLine: 18, maxLines: 1 },
-    comment: { x: 222, y: 816, fontSize: 20, lineHeight: 20, fill: "#4a3728", textAnchor: "start", maxCharsPerLine: 20, maxLines: 5 },
+    comment: { x: 222, y: 816, fontSize: 20, lineHeight: 28, fill: "#4a3728", textAnchor: "start", maxCharsPerLine: 18, maxLines: 3 },
   },
   oishii_ashiato: {
     photo: { x: 161, y: 215, width: 499, height: 488, fit: "cover", borderRadiusPx: 8 },

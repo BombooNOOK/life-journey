@@ -124,7 +124,8 @@ export const MORI_LOG_CARD_FIELDS_BY_TEMPLATE: Record<
       label: "ひとこと",
       placeholder: "たのしかったこと",
       slot: "comment",
-      maxChars: 18,
+      maxChars: 54,
+      maxLines: 3,
     },
   ],
   oishii_ashiato: [
