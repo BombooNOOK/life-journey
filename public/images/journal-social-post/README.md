@@ -46,7 +46,8 @@
 ### 2枚構成
 1. `*_bg.png`
 2. 写真（3コマは同一写真を3枠へ・将来複数枚対応）
-3. `*_overlay.png`（白背景はコード側で透明化）
+3. `*_overlay.png`（**真の透過 RGBA**。旧ファイルは白マット JPEG／RGB だったが、2026-08-08 差し替え済み）
 4. 文字
 
 定義・座標は `src/lib/journal/social-post-image/templates.ts` と `moriAshiatoTemplates.ts`。
+`photoOverlayPrepare` はアルファ無し素材向けの白→透明フォールバックを残しているが、現行 overlay は `hasAlpha` でそのまま通過する。
