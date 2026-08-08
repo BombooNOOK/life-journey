@@ -68,6 +68,24 @@ import {
   LOG_HOUSE_HITOYASUMI_ALBUM_DELETE_CONFIRM_TITLE_MULTI,
   LOG_HOUSE_HITOYASUMI_ALBUM_DELETE_FAIL,
   LOG_HOUSE_HITOYASUMI_ALBUM_DESELECT_VISIBLE,
+  LOG_HOUSE_HITOYASUMI_ALBUM_EDIT_ADD,
+  LOG_HOUSE_HITOYASUMI_ALBUM_EDIT_ADD_CONFIRM,
+  LOG_HOUSE_HITOYASUMI_ALBUM_EDIT_ADD_EMPTY,
+  LOG_HOUSE_HITOYASUMI_ALBUM_EDIT_ADD_NEED,
+  LOG_HOUSE_HITOYASUMI_ALBUM_EDIT_ADD_TITLE,
+  LOG_HOUSE_HITOYASUMI_ALBUM_EDIT_ARIA,
+  LOG_HOUSE_HITOYASUMI_ALBUM_EDIT_BACK,
+  LOG_HOUSE_HITOYASUMI_ALBUM_EDIT_EMPTY,
+  LOG_HOUSE_HITOYASUMI_ALBUM_EDIT_HINT,
+  LOG_HOUSE_HITOYASUMI_ALBUM_EDIT_MOVE_DOWN,
+  LOG_HOUSE_HITOYASUMI_ALBUM_EDIT_MOVE_UP,
+  LOG_HOUSE_HITOYASUMI_ALBUM_EDIT_NEED_ONE,
+  LOG_HOUSE_HITOYASUMI_ALBUM_EDIT_REMOVE,
+  LOG_HOUSE_HITOYASUMI_ALBUM_EDIT_REMOVE_NEED,
+  LOG_HOUSE_HITOYASUMI_ALBUM_EDIT_SAVE,
+  LOG_HOUSE_HITOYASUMI_ALBUM_EDIT_SAVE_EMPTY,
+  LOG_HOUSE_HITOYASUMI_ALBUM_EDIT_SAVE_FAIL,
+  LOG_HOUSE_HITOYASUMI_ALBUM_EDIT_TITLE,
   LOG_HOUSE_HITOYASUMI_ALBUM_ITEM_COUNT,
   LOG_HOUSE_HITOYASUMI_ALBUM_MATCH_COUNT,
   LOG_HOUSE_HITOYASUMI_ALBUM_SAVE,
@@ -115,6 +133,7 @@ import {
   LOG_HOUSE_HITOYASUMI_HELP_BODY,
   LOG_HOUSE_HITOYASUMI_HELP_BUTTON_LABEL,
   LOG_HOUSE_HITOYASUMI_HELP_DISMISS,
+  LOG_HOUSE_HITOYASUMI_ICON_ALBUM_EDIT_SRC,
   LOG_HOUSE_HITOYASUMI_ICON_BACK_CHAIR_SRC,
   LOG_HOUSE_HITOYASUMI_ICON_BACK_LOGHOUSE_SRC,
   LOG_HOUSE_HITOYASUMI_ITEM_FRAME_ALBUM_SRC,
@@ -132,10 +151,13 @@ import {
 } from "@/lib/loghouse/logHouseHitoyasumiCopy";
 
 type Screen = "entrance" | "browse" | "album" | "movie_compose";
-type AlbumMode = "shelf" | "compose";
+type AlbumMode = "shelf" | "compose" | "edit" | "edit_add";
 type BatchDeleteState =
   | { kind: "media"; ids: string[] }
   | { kind: "album"; ids: string[] };
+
+const ALBUM_SHELF_TOOL_BTN =
+  "inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[#c5b089]/80 bg-[#f7efe3] text-[#5c4a35] shadow-sm transition active:scale-[0.98] hover:bg-[#f3ead8]";
 
 function TrashIcon({ className }: { className?: string }) {
   return (
@@ -155,6 +177,22 @@ function TrashIcon({ className }: { className?: string }) {
         d="M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12"
       />
       <path strokeLinecap="round" strokeLinejoin="round" d="M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />
+    </svg>
+  );
+}
+
+function ChevronUpIcon({ className }: { className?: string }) {
+  return (
+    <svg aria-hidden className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M6 14l6-6 6 6" />
+    </svg>
+  );
+}
+
+function ChevronDownIcon({ className }: { className?: string }) {
+  return (
+    <svg aria-hidden className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M6 10l6 6 6-6" />
     </svg>
   );
 }
@@ -343,6 +381,12 @@ export function HitoyasumiChairPageClient({
   const [albumTitle, setAlbumTitle] = useState("");
   const [albumSaveNote, setAlbumSaveNote] = useState<string | null>(null);
   const [albumSaveBusy, setAlbumSaveBusy] = useState(false);
+  const [editingAlbumId, setEditingAlbumId] = useState<string | null>(null);
+  const [editMediaIds, setEditMediaIds] = useState<string[]>([]);
+  const [editCheckedIds, setEditCheckedIds] = useState<string[]>([]);
+  const [editAddCheckedIds, setEditAddCheckedIds] = useState<string[]>([]);
+  const [editNote, setEditNote] = useState<string | null>(null);
+  const [editBusy, setEditBusy] = useState(false);
   const [viewingAlbum, setViewingAlbum] = useState<MoriLogAlbum | null>(null);
   const [thumbUrls, setThumbUrls] = useState<Record<string, string>>({});
   const [detail, setDetail] = useState<DetailState | null>(null);
@@ -596,6 +640,19 @@ export function HitoyasumiChairPageClient({
   const albumAllVisibleSelected =
     albumCandidates.length > 0 && albumVisibleSelectedCount === albumCandidates.length;
 
+  const editingAlbum = useMemo(
+    () => (editingAlbumId ? albums.find((a) => a.id === editingAlbumId) ?? null : null),
+    [albums, editingAlbumId],
+  );
+
+  const editMediaIdSet = useMemo(() => new Set(editMediaIds), [editMediaIds]);
+
+  const editAddCandidates = useMemo(() => {
+    const byType = filterHitoyasumiMedia(items, albumTypeFilter);
+    const byTags = filterHitoyasumiMediaByTags(byType, albumSelectedTags);
+    return byTags.filter((item) => !editMediaIdSet.has(item.id));
+  }, [albumSelectedTags, albumTypeFilter, editMediaIdSet, items]);
+
   const viewingAlbumPages = useMemo(() => {
     if (!viewingAlbum) return [];
     const pages: MoriLogMedia[] = [];
@@ -613,6 +670,15 @@ export function HitoyasumiChairPageClient({
     setScreen("browse");
   }, []);
 
+  const resetAlbumEditState = useCallback(() => {
+    setEditingAlbumId(null);
+    setEditMediaIds([]);
+    setEditCheckedIds([]);
+    setEditAddCheckedIds([]);
+    setEditNote(null);
+    setEditBusy(false);
+  }, []);
+
   const openAlbum = useCallback(() => {
     setAlbumMode("shelf");
     setAlbumTypeFilter("all");
@@ -622,9 +688,10 @@ export function HitoyasumiChairPageClient({
     setAlbumTitle("");
     setAlbumSaveNote(null);
     setBatchDeleteNote(null);
+    resetAlbumEditState();
     setViewingAlbum(null);
     setScreen("album");
-  }, []);
+  }, [resetAlbumEditState]);
 
   const openMovieCompose = useCallback(() => {
     setScreen("movie_compose");
@@ -636,14 +703,161 @@ export function HitoyasumiChairPageClient({
     setAlbumCheckedIds([]);
     setAlbumTitle("");
     setAlbumSaveNote(null);
+    resetAlbumEditState();
     setAlbumMode("compose");
-  }, []);
+  }, [resetAlbumEditState]);
 
   const backToAlbumShelf = useCallback(() => {
     setAlbumMode("shelf");
     setAlbumSaveNote(null);
+    resetAlbumEditState();
     void refreshAlbums();
-  }, [refreshAlbums]);
+  }, [refreshAlbums, resetAlbumEditState]);
+
+  const requestAlbumEdit = useCallback(() => {
+    if (albumShelfCheckedIds.length !== 1) {
+      setBatchDeleteNote(LOG_HOUSE_HITOYASUMI_ALBUM_EDIT_NEED_ONE);
+      return;
+    }
+    const albumId = albumShelfCheckedIds[0]!;
+    const album = albums.find((a) => a.id === albumId);
+    if (!album) {
+      setBatchDeleteNote(LOG_HOUSE_HITOYASUMI_ALBUM_EDIT_NEED_ONE);
+      return;
+    }
+    setBatchDeleteNote(null);
+    setEditingAlbumId(album.id);
+    setEditMediaIds([...album.mediaIds]);
+    setEditCheckedIds([]);
+    setEditAddCheckedIds([]);
+    setEditNote(null);
+    setAlbumTypeFilter("all");
+    setAlbumSelectedTags([]);
+    setAlbumMode("edit");
+  }, [albumShelfCheckedIds, albums]);
+
+  const toggleEditChecked = useCallback((id: string) => {
+    setEditCheckedIds((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
+    );
+  }, []);
+
+  const removeCheckedFromEdit = useCallback(() => {
+    if (editCheckedIds.length === 0) {
+      setEditNote(LOG_HOUSE_HITOYASUMI_ALBUM_EDIT_REMOVE_NEED);
+      return;
+    }
+    const removeSet = new Set(editCheckedIds);
+    setEditMediaIds((prev) => prev.filter((id) => !removeSet.has(id)));
+    setEditCheckedIds([]);
+    setEditNote(null);
+  }, [editCheckedIds]);
+
+  const moveEditMedia = useCallback((id: string, direction: -1 | 1) => {
+    setEditMediaIds((prev) => {
+      const index = prev.indexOf(id);
+      if (index < 0) return prev;
+      const nextIndex = index + direction;
+      if (nextIndex < 0 || nextIndex >= prev.length) return prev;
+      const next = [...prev];
+      const tmp = next[index]!;
+      next[index] = next[nextIndex]!;
+      next[nextIndex] = tmp;
+      return next;
+    });
+    setEditNote(null);
+  }, []);
+
+  const openAlbumEditAdd = useCallback(() => {
+    setAlbumTypeFilter("all");
+    setAlbumSelectedTags([]);
+    setEditAddCheckedIds([]);
+    setEditNote(null);
+    setAlbumMode("edit_add");
+  }, []);
+
+  const backToAlbumEdit = useCallback(() => {
+    setEditAddCheckedIds([]);
+    setEditNote(null);
+    setAlbumMode("edit");
+  }, []);
+
+  const toggleEditAddChecked = useCallback((id: string) => {
+    setEditAddCheckedIds((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
+    );
+  }, []);
+
+  const confirmEditAdd = useCallback(() => {
+    if (editAddCheckedIds.length === 0) {
+      setEditNote(LOG_HOUSE_HITOYASUMI_ALBUM_EDIT_ADD_NEED);
+      return;
+    }
+    setEditMediaIds((prev) => {
+      const next = [...prev];
+      const seen = new Set(prev);
+      for (const id of editAddCheckedIds) {
+        if (!seen.has(id)) {
+          next.push(id);
+          seen.add(id);
+        }
+      }
+      return next;
+    });
+    setEditAddCheckedIds([]);
+    setEditNote(null);
+    setAlbumMode("edit");
+  }, [editAddCheckedIds]);
+
+  const saveAlbumEdit = useCallback(async () => {
+    if (!editingAlbumId || editBusy) return;
+    const album = albums.find((a) => a.id === editingAlbumId);
+    if (!album) {
+      setEditNote(LOG_HOUSE_HITOYASUMI_ALBUM_EDIT_SAVE_FAIL);
+      return;
+    }
+    const nextIds = editMediaIds.filter((id) => itemsById.has(id));
+    if (nextIds.length === 0) {
+      setEditNote(LOG_HOUSE_HITOYASUMI_ALBUM_EDIT_SAVE_EMPTY);
+      return;
+    }
+    const coverId = nextIds.includes(album.coverMediaId) ? album.coverMediaId : nextIds[0]!;
+    const coverItem = itemsById.get(coverId);
+    const coverType =
+      coverItem && isMoriLogCardMovieType(coverItem.type) ? "card_movie" : "card_image";
+
+    setEditBusy(true);
+    setEditNote(null);
+    try {
+      await getMoriLogAlbumStore().upsert({
+        id: album.id,
+        profileId,
+        title: album.title,
+        mediaIds: nextIds,
+        coverMediaId: coverId,
+        coverType,
+        createdAt: album.createdAt,
+      });
+      await refreshAlbums();
+      setAlbumMode("shelf");
+      resetAlbumEditState();
+      setAlbumShelfCheckedIds([]);
+    } catch (err) {
+      console.error("[hitoyasumi] album edit failed", err);
+      setEditNote(LOG_HOUSE_HITOYASUMI_ALBUM_EDIT_SAVE_FAIL);
+    } finally {
+      setEditBusy(false);
+    }
+  }, [
+    albums,
+    editBusy,
+    editMediaIds,
+    editingAlbumId,
+    itemsById,
+    profileId,
+    refreshAlbums,
+    resetAlbumEditState,
+  ]);
 
   const toggleAlbumTag = useCallback((tag: string) => {
     setAlbumSelectedTags((prev) =>
@@ -1376,15 +1590,32 @@ export function HitoyasumiChairPageClient({
                   </p>
                 </div>
                 {albums.length > 0 ? (
-                  <button
-                    type="button"
-                    onClick={requestAlbumShelfBatchDelete}
-                    aria-label={LOG_HOUSE_HITOYASUMI_BATCH_DELETE_ARIA}
-                    title={LOG_HOUSE_HITOYASUMI_BATCH_DELETE_ARIA}
-                    className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[#c5b089]/80 bg-[#f7efe3] text-[#5c4a35] shadow-sm transition active:scale-[0.98] hover:bg-[#f3ead8]"
-                  >
-                    <TrashIcon className="h-5 w-5" />
-                  </button>
+                  <div className="flex shrink-0 items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={requestAlbumEdit}
+                      aria-label={LOG_HOUSE_HITOYASUMI_ALBUM_EDIT_ARIA}
+                      title={LOG_HOUSE_HITOYASUMI_ALBUM_EDIT_ARIA}
+                      className={ALBUM_SHELF_TOOL_BTN}
+                    >
+                      <Image
+                        src={LOG_HOUSE_HITOYASUMI_ICON_ALBUM_EDIT_SRC}
+                        alt=""
+                        width={20}
+                        height={20}
+                        className="h-5 w-5 object-contain"
+                      />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={requestAlbumShelfBatchDelete}
+                      aria-label={LOG_HOUSE_HITOYASUMI_BATCH_DELETE_ARIA}
+                      title={LOG_HOUSE_HITOYASUMI_BATCH_DELETE_ARIA}
+                      className={ALBUM_SHELF_TOOL_BTN}
+                    >
+                      <TrashIcon className="h-5 w-5" />
+                    </button>
+                  </div>
                 ) : null}
               </div>
               {albumShelfCheckedIds.length > 0 ? (
@@ -1487,6 +1718,353 @@ export function HitoyasumiChairPageClient({
             )}
 
             <div className="mt-auto pt-10" aria-hidden />
+          </>
+        ) : albumMode === "edit" ? (
+          <>
+            <div className="mt-4 rounded-[1.25rem] border border-[#e4d5c0]/75 bg-[#fffaf2]/88 px-4 py-4 shadow-[0_10px_28px_rgba(40,28,16,0.14)] backdrop-blur-[2px]">
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0 flex-1">
+                  <h2
+                    id={albumTitleId}
+                    className="text-base font-semibold tracking-wide text-[#3f3428]"
+                  >
+                    {LOG_HOUSE_HITOYASUMI_ALBUM_EDIT_TITLE}
+                  </h2>
+                  {editingAlbum ? (
+                    <p className="mt-1 truncate text-sm font-medium text-[#5c4a35]">
+                      {editingAlbum.title}
+                    </p>
+                  ) : null}
+                  <p className="mt-2 text-xs leading-relaxed text-[#6e5c48]">
+                    {LOG_HOUSE_HITOYASUMI_ALBUM_EDIT_HINT}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={backToAlbumShelf}
+                  className="shrink-0 rounded-lg border border-[#e0d2bc] bg-[#f7efe3] px-2.5 py-1.5 text-[11px] font-medium text-[#5c4a35]"
+                >
+                  {LOG_HOUSE_HITOYASUMI_ALBUM_EDIT_BACK}
+                </button>
+              </div>
+
+              <div className="mt-4 flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={removeCheckedFromEdit}
+                  className="inline-flex min-h-[40px] flex-1 items-center justify-center rounded-xl border border-[#c5b089]/80 bg-[#f7efe3] px-3 text-xs font-medium text-[#5c4a35]"
+                >
+                  {LOG_HOUSE_HITOYASUMI_ALBUM_EDIT_REMOVE}
+                </button>
+                <button
+                  type="button"
+                  onClick={openAlbumEditAdd}
+                  className="inline-flex min-h-[40px] flex-1 items-center justify-center rounded-xl border border-emerald-800 bg-emerald-800 px-3 text-xs font-medium text-white hover:bg-emerald-900"
+                >
+                  {LOG_HOUSE_HITOYASUMI_ALBUM_EDIT_ADD}
+                </button>
+              </div>
+
+              {editNote ? (
+                <p
+                  className="mt-3 rounded-xl border border-[#e4d5c0] bg-[#fffaf2] px-3 py-2 text-xs text-[#8a4f3d]"
+                  role="status"
+                >
+                  {editNote}
+                </p>
+              ) : null}
+            </div>
+
+            {editMediaIds.length === 0 ? (
+              <div className="mt-5 rounded-[1.25rem] border border-[#e4d5c0]/75 bg-[#fffaf2]/82 px-4 py-6 text-center text-sm leading-relaxed text-[#6e5c48]">
+                {LOG_HOUSE_HITOYASUMI_ALBUM_EDIT_EMPTY}
+              </div>
+            ) : (
+              <ul className="mt-4 space-y-2">
+                {editMediaIds.map((id, index) => {
+                  const item = itemsById.get(id);
+                  const title =
+                    item?.title?.trim() ||
+                    (item ? hitoyasumiTemplateLabel(item.templateId) : "（見つかりません）");
+                  const thumb = thumbUrls[id];
+                  const checked = editCheckedIds.includes(id);
+                  return (
+                    <li
+                      key={id}
+                      className="flex items-stretch gap-2 rounded-2xl border border-[#e4d5c0]/75 bg-[#fffaf2]/90 p-2 shadow-sm"
+                    >
+                      <button
+                        type="button"
+                        onClick={() => toggleEditChecked(id)}
+                        aria-pressed={checked}
+                        className="flex min-w-0 flex-1 items-center gap-3 rounded-xl px-1 py-1 text-left"
+                      >
+                        <span
+                          className={[
+                            "flex h-6 w-6 shrink-0 items-center justify-center rounded-md border-2",
+                            checked
+                              ? "border-emerald-800 bg-emerald-800 text-white"
+                              : "border-[#d9cbb8] bg-white text-transparent",
+                          ].join(" ")}
+                          aria-hidden
+                        >
+                          <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                          </svg>
+                        </span>
+                        <div className="h-14 w-11 shrink-0 overflow-hidden rounded-md bg-[#efe6d6]">
+                          {thumb ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img src={thumb} alt="" className="h-full w-full object-cover" />
+                          ) : null}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate text-sm font-medium text-[#3f3428]">{title}</p>
+                          <p className="mt-0.5 text-[10px] text-[#8a7660]">{index + 1}枚目</p>
+                        </div>
+                      </button>
+                      <div className="flex shrink-0 flex-col justify-center gap-1">
+                        <button
+                          type="button"
+                          disabled={index === 0}
+                          onClick={() => moveEditMedia(id, -1)}
+                          aria-label={LOG_HOUSE_HITOYASUMI_ALBUM_EDIT_MOVE_UP}
+                          title={LOG_HOUSE_HITOYASUMI_ALBUM_EDIT_MOVE_UP}
+                          className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-[#c5b089]/80 bg-[#f7efe3] text-[#5c4a35] disabled:opacity-35"
+                        >
+                          <ChevronUpIcon className="h-4 w-4" />
+                        </button>
+                        <button
+                          type="button"
+                          disabled={index === editMediaIds.length - 1}
+                          onClick={() => moveEditMedia(id, 1)}
+                          aria-label={LOG_HOUSE_HITOYASUMI_ALBUM_EDIT_MOVE_DOWN}
+                          title={LOG_HOUSE_HITOYASUMI_ALBUM_EDIT_MOVE_DOWN}
+                          className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-[#c5b089]/80 bg-[#f7efe3] text-[#5c4a35] disabled:opacity-35"
+                        >
+                          <ChevronDownIcon className="h-4 w-4" />
+                        </button>
+                      </div>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+
+            <div className="mt-5 space-y-2 pb-[calc(5.5rem+env(safe-area-inset-bottom,0px))]" />
+
+            <div className="pointer-events-none fixed inset-x-0 bottom-0 z-40">
+              <div className="pointer-events-auto mx-auto w-full max-w-md px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-2">
+                <button
+                  type="button"
+                  disabled={editBusy}
+                  onClick={() => void saveAlbumEdit()}
+                  className="inline-flex min-h-[52px] w-full items-center justify-center rounded-xl border border-emerald-800 bg-emerald-800 px-4 text-sm font-semibold text-white shadow-[0_8px_24px_rgba(20,12,8,0.35)] hover:bg-emerald-900 active:scale-[0.99] disabled:opacity-60"
+                >
+                  {editBusy
+                    ? "残しています…"
+                    : `${LOG_HOUSE_HITOYASUMI_ALBUM_EDIT_SAVE}（${editMediaIds.length}）`}
+                </button>
+              </div>
+            </div>
+          </>
+        ) : albumMode === "edit_add" ? (
+          <>
+            <div className="mt-4 rounded-[1.25rem] border border-[#e4d5c0]/75 bg-[#fffaf2]/88 px-4 py-4 shadow-[0_10px_28px_rgba(40,28,16,0.14)] backdrop-blur-[2px]">
+              <div className="flex items-start justify-between gap-3">
+                <h2
+                  id={albumTitleId}
+                  className="text-base font-semibold tracking-wide text-[#3f3428]"
+                >
+                  {LOG_HOUSE_HITOYASUMI_ALBUM_EDIT_ADD_TITLE}
+                </h2>
+                <button
+                  type="button"
+                  onClick={backToAlbumEdit}
+                  className="shrink-0 rounded-lg border border-[#e0d2bc] bg-[#f7efe3] px-2.5 py-1.5 text-[11px] font-medium text-[#5c4a35]"
+                >
+                  戻る
+                </button>
+              </div>
+
+              <div className="mt-4" role="tablist" aria-label={LOG_HOUSE_HITOYASUMI_FILTER_BAR_LABEL}>
+                <p className="mb-2 text-xs font-medium text-[#6e5c48]">
+                  {LOG_HOUSE_HITOYASUMI_FILTER_BAR_LABEL}
+                </p>
+                <div className="flex items-center gap-1.5">
+                  {(
+                    [
+                      ["all", LOG_HOUSE_HITOYASUMI_FILTER_ALL],
+                      ["card_image", LOG_HOUSE_HITOYASUMI_FILTER_STILL],
+                      ["card_movie", LOG_HOUSE_HITOYASUMI_FILTER_VIDEO],
+                    ] as const
+                  ).map(([id, label]) => (
+                    <button
+                      key={id}
+                      type="button"
+                      role="tab"
+                      aria-selected={albumTypeFilter === id}
+                      className={[
+                        "inline-flex min-h-[36px] flex-1 items-center justify-center rounded-full border px-3 text-xs font-medium transition",
+                        albumTypeFilter === id
+                          ? "border-[#c5b089]/90 bg-[#f3ead9] text-[#3f3428]"
+                          : "border-[#e0d2bc] bg-white text-[#6e5c48] hover:bg-[#faf3e8]",
+                      ].join(" ")}
+                      onClick={() => setAlbumTypeFilter(id)}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="mt-4">
+                <p className="mb-2 text-xs font-medium text-[#6e5c48]">
+                  {LOG_HOUSE_HITOYASUMI_ALBUM_TAG_LABEL}
+                </p>
+                {albumTagOptions.length === 0 ? (
+                  <p className="text-xs leading-relaxed text-[#8a7660]">
+                    {LOG_HOUSE_HITOYASUMI_ALBUM_TAG_EMPTY}
+                  </p>
+                ) : (
+                  <div className="flex flex-wrap gap-1.5">
+                    {albumTagOptions.map((tag) => {
+                      const active = albumSelectedTags.includes(tag);
+                      return (
+                        <button
+                          key={tag}
+                          type="button"
+                          aria-pressed={active}
+                          onClick={() => toggleAlbumTag(tag)}
+                          className={[
+                            "inline-flex min-h-[32px] items-center rounded-full border px-2.5 text-[11px] font-medium transition",
+                            active
+                              ? "border-emerald-800/70 bg-emerald-800 text-white"
+                              : "border-[#e0d2bc] bg-white text-[#5c4a35] hover:bg-[#faf3e8]",
+                          ].join(" ")}
+                        >
+                          #{tag}
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+
+              <p className="mt-4 text-sm font-medium text-[#3f3428]">
+                {LOG_HOUSE_HITOYASUMI_ALBUM_MATCH_COUNT(editAddCandidates.length)}
+                {editAddCheckedIds.length > 0 ? (
+                  <span className="ml-2 text-xs font-normal text-[#6e5c48]">
+                    {LOG_HOUSE_HITOYASUMI_ALBUM_SELECTED_COUNT(editAddCheckedIds.length)}
+                  </span>
+                ) : null}
+              </p>
+
+              {editNote ? (
+                <p
+                  className="mt-3 rounded-xl border border-[#e4d5c0] bg-[#fffaf2] px-3 py-2 text-xs text-[#8a4f3d]"
+                  role="status"
+                >
+                  {editNote}
+                </p>
+              ) : null}
+            </div>
+
+            {editAddCandidates.length === 0 ? (
+              <div className="mt-5 rounded-[1.25rem] border border-[#e4d5c0]/75 bg-[#fffaf2]/82 px-4 py-6 text-center text-sm leading-relaxed text-[#6e5c48]">
+                {LOG_HOUSE_HITOYASUMI_ALBUM_EDIT_ADD_EMPTY}
+              </div>
+            ) : (
+              <ul className="mt-4 grid grid-cols-2 gap-2.5 sm:gap-3">
+                {editAddCandidates.map((item) => {
+                  const thumb = thumbUrls[item.id];
+                  const title = item.title?.trim() || hitoyasumiTemplateLabel(item.templateId);
+                  const checked = editAddCheckedIds.includes(item.id);
+                  return (
+                    <li key={item.id}>
+                      <button
+                        type="button"
+                        onClick={() => toggleEditAddChecked(item.id)}
+                        aria-pressed={checked}
+                        aria-label={`${checked ? "選択解除" : "選択"}：${title}`}
+                        className={[
+                          "relative block w-full text-left transition",
+                          checked ? "ring-2 ring-emerald-700/70 ring-offset-2 ring-offset-transparent" : "",
+                        ].join(" ")}
+                      >
+                        <div className="relative aspect-[819/1024] w-full">
+                          <Image
+                            src={hitoyasumiItemFrameSrc(item.type, item.sourceOrigin)}
+                            alt=""
+                            fill
+                            sizes="(max-width: 768px) 46vw, 220px"
+                            className={`pointer-events-none object-contain drop-shadow-[0_6px_14px_rgba(20,12,8,0.2)] ${HITOYASUMI_ASSET_TONE}`}
+                          />
+                          <div className={HITOYASUMI_THUMB_WINDOW}>
+                            {thumb ? (
+                              // eslint-disable-next-line @next/next/no-img-element
+                              <img src={thumb} alt="" className="h-full w-full object-cover" />
+                            ) : (
+                              <div className="flex h-full items-center justify-center px-2 text-center text-[10px] text-[#8a7660]">
+                                {LOG_HOUSE_HITOYASUMI_NO_PREVIEW}
+                              </div>
+                            )}
+                          </div>
+                          <div
+                            className="pointer-events-none absolute inset-0 z-[2]"
+                            style={{ clipPath: HITOYASUMI_THUMB_BADGE_CLIP }}
+                            aria-hidden
+                          >
+                            <Image
+                              src={hitoyasumiItemFrameSrc(item.type, item.sourceOrigin)}
+                              alt=""
+                              fill
+                              sizes="(max-width: 768px) 46vw, 220px"
+                              className={`object-contain ${HITOYASUMI_ASSET_TONE}`}
+                            />
+                          </div>
+                          <span
+                            className={[
+                              "absolute right-[8%] top-[8%] z-[3] flex h-7 w-7 items-center justify-center rounded-md border-2 shadow-sm",
+                              checked
+                                ? "border-emerald-800 bg-emerald-800 text-white"
+                                : "border-[#d9cbb8] bg-[#fffdf8]/95 text-transparent",
+                            ].join(" ")}
+                            aria-hidden
+                          >
+                            <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                            </svg>
+                          </span>
+                          <div className={HITOYASUMI_THUMB_META}>
+                            <p className="truncate text-[11px] font-semibold text-[#3f3428]">{title}</p>
+                            <p className="mt-0.5 truncate text-[9px] text-[#8a7660]">
+                              {hitoyasumiMediaTypeLabel(item.type, item.sourceOrigin)}
+                            </p>
+                          </div>
+                        </div>
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+
+            <div className="mt-5 space-y-2 pb-[calc(5.5rem+env(safe-area-inset-bottom,0px))]" />
+
+            <div className="pointer-events-none fixed inset-x-0 bottom-0 z-40">
+              <div className="pointer-events-auto mx-auto w-full max-w-md px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-2">
+                <button
+                  type="button"
+                  onClick={confirmEditAdd}
+                  className="inline-flex min-h-[52px] w-full items-center justify-center rounded-xl border border-emerald-800 bg-emerald-800 px-4 text-sm font-semibold text-white shadow-[0_8px_24px_rgba(20,12,8,0.35)] hover:bg-emerald-900 active:scale-[0.99]"
+                >
+                  {editAddCheckedIds.length > 0
+                    ? `${LOG_HOUSE_HITOYASUMI_ALBUM_EDIT_ADD_CONFIRM}（${editAddCheckedIds.length}）`
+                    : LOG_HOUSE_HITOYASUMI_ALBUM_EDIT_ADD_CONFIRM}
+                </button>
+              </div>
+            </div>
           </>
         ) : (
           <>

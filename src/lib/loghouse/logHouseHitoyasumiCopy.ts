@@ -27,6 +27,11 @@ export const LOG_HOUSE_HITOYASUMI_ICON_BACK_LOGHOUSE_SRC =
 export const LOG_HOUSE_HITOYASUMI_ICON_BACK_CHAIR_SRC =
   "/images/ljd/hitoyasumi/icon-back-chair.png" as const;
 
+/** アルバムの中身を足す・整える（白丸ツール列用・黒線画） */
+export const LOG_HOUSE_HITOYASUMI_ICON_ALBUM_EDIT_SRC =
+  "/images/ljd/hitoyasumi/icon-album-edit-list-plus.png" as const;
+
+
 /** 入口：巨大アイコン（背景とは分離） */
 export const LOG_HOUSE_HITOYASUMI_ENTRY_CARD_SRC =
   "/images/ljd/hitoyasumi/chair-entry-card.png?v=2" as const;
@@ -202,7 +207,56 @@ export const LOG_HOUSE_HITOYASUMI_ALBUM_DELETE_CONFIRM_TITLE_MULTI = (n: number)
 export const LOG_HOUSE_HITOYASUMI_ALBUM_DELETE_FAIL =
   "アルバムを削除できませんでした。もう一度お試しください。" as const;
 
+export const LOG_HOUSE_HITOYASUMI_ALBUM_EDIT_ARIA =
+  "選んだアルバムの中身を整える" as const;
+
+export const LOG_HOUSE_HITOYASUMI_ALBUM_EDIT_NEED_ONE =
+  "中身を整えるアルバムを、1冊だけチェックしてください。" as const;
+
+export const LOG_HOUSE_HITOYASUMI_ALBUM_EDIT_TITLE = "アルバムの中身" as const;
+
+export const LOG_HOUSE_HITOYASUMI_ALBUM_EDIT_HINT =
+  "チェックして外す、＋で足す、矢印で並べ替えできます。森ログ本体は消えません。" as const;
+
+export const LOG_HOUSE_HITOYASUMI_ALBUM_EDIT_EMPTY =
+  "このアルバムに入れる森ログがありません。＋から足してみてください。" as const;
+
+export const LOG_HOUSE_HITOYASUMI_ALBUM_EDIT_REMOVE =
+  "選んだものをアルバムから外す" as const;
+
+export const LOG_HOUSE_HITOYASUMI_ALBUM_EDIT_REMOVE_NEED =
+  "外す森ログにチェックを入れてください。" as const;
+
+export const LOG_HOUSE_HITOYASUMI_ALBUM_EDIT_ADD = "森ログを足す" as const;
+
+export const LOG_HOUSE_HITOYASUMI_ALBUM_EDIT_ADD_TITLE =
+  "アルバムに足す森ログ" as const;
+
+export const LOG_HOUSE_HITOYASUMI_ALBUM_EDIT_ADD_CONFIRM =
+  "選んだものを末尾に足す" as const;
+
+export const LOG_HOUSE_HITOYASUMI_ALBUM_EDIT_ADD_NEED =
+  "足す森ログにチェックを入れてください。" as const;
+
+export const LOG_HOUSE_HITOYASUMI_ALBUM_EDIT_ADD_EMPTY =
+  "いま足せる森ログがありません。すでに入っているか、椅子に作品がありません。" as const;
+
+export const LOG_HOUSE_HITOYASUMI_ALBUM_EDIT_SAVE = "この内容で残す" as const;
+
+export const LOG_HOUSE_HITOYASUMI_ALBUM_EDIT_SAVE_FAIL =
+  "アルバムを更新できませんでした。もう一度お試しください。" as const;
+
+export const LOG_HOUSE_HITOYASUMI_ALBUM_EDIT_SAVE_EMPTY =
+  "アルバムには1件以上の森ログが必要です。" as const;
+
+export const LOG_HOUSE_HITOYASUMI_ALBUM_EDIT_MOVE_UP = "上へ" as const;
+
+export const LOG_HOUSE_HITOYASUMI_ALBUM_EDIT_MOVE_DOWN = "下へ" as const;
+
+export const LOG_HOUSE_HITOYASUMI_ALBUM_EDIT_BACK = "アルバム棚へ戻る" as const;
+
 export const LOG_HOUSE_HITOYASUMI_BATCH_DELETE_ARIA = "選んだものを削除" as const;
+
 
 export const LOG_HOUSE_HITOYASUMI_BATCH_DELETE_NEED_SELECTION =
   "削除する項目にチェックを入れてください。" as const;
