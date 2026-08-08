@@ -47,6 +47,23 @@ import {
   downloadBlobFile,
   downloadOrShareBlobFile,
 } from "@/lib/journal/moriLog/composeMoriLogStillMovie";
+import { copyTextToClipboard } from "@/lib/clipboard/copyTextToClipboard";
+import { extractTagsFromContent } from "@/lib/journal/diaryTags";
+import { fetchJournalPreviewPayload } from "@/lib/journal/journalPreviewPrefetch";
+import { buildMoriLogShareCaption } from "@/lib/journal/moriLog/moriLogShareCaption";
+import {
+  MORI_LOG_SHARE_PREP_BODY_FALLBACK_NOTE,
+  MORI_LOG_SHARE_PREP_CAPTION_LABEL,
+  MORI_LOG_SHARE_PREP_CLOSE,
+  MORI_LOG_SHARE_PREP_COPY,
+  MORI_LOG_SHARE_PREP_COPY_FAIL,
+  MORI_LOG_SHARE_PREP_COPY_OK,
+  MORI_LOG_SHARE_PREP_LOADING,
+  MORI_LOG_SHARE_PREP_PRIVACY_NOTE,
+  MORI_LOG_SHARE_PREP_SAVE_DEVICE,
+  MORI_LOG_SHARE_PREP_SHARE_MEDIA,
+  MORI_LOG_SHARE_PREP_TITLE,
+} from "@/lib/journal/moriLog/moriLogSharePrepCopy";
 import {
   isMoriLogCardMovieType,
   resolveMoriLogMediaSourceOrigin,
@@ -393,6 +410,13 @@ export function HitoyasumiChairPageClient({
   const [detailActionNote, setDetailActionNote] = useState<string | null>(null);
   const [detailActionBusy, setDetailActionBusy] = useState(false);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [sharePrepOpen, setSharePrepOpen] = useState(false);
+  const [sharePrepLoading, setSharePrepLoading] = useState(false);
+  const [sharePrepCaption, setSharePrepCaption] = useState("");
+  const [sharePrepNote, setSharePrepNote] = useState<string | null>(null);
+  const [sharePrepBodyFallback, setSharePrepBodyFallback] = useState(false);
+  const [sharePrepShowPrivacy, setSharePrepShowPrivacy] = useState(false);
+  const sharePrepGenRef = useRef(0);
   const [helpOpen, setHelpOpen] = useState(false);
   const [browseCheckedIds, setBrowseCheckedIds] = useState<string[]>([]);
   const [albumShelfCheckedIds, setAlbumShelfCheckedIds] = useState<string[]>([]);
@@ -593,7 +617,7 @@ export function HitoyasumiChairPageClient({
   }, [detail]);
 
   useEffect(() => {
-    if (!helpOpen && !deleteConfirmOpen && !batchDelete) return;
+    if (!helpOpen && !deleteConfirmOpen && !batchDelete && !sharePrepOpen) return;
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key !== "Escape") return;
       setHelpOpen(false);
@@ -602,10 +626,27 @@ export function HitoyasumiChairPageClient({
         setBatchDelete(null);
         setBatchDeleteNote(null);
       }
+      if (!sharePrepLoading && !detailActionBusy) {
+        setSharePrepOpen(false);
+        setSharePrepCaption("");
+        setSharePrepNote(null);
+        setSharePrepBodyFallback(false);
+        setSharePrepShowPrivacy(false);
+        setSharePrepLoading(false);
+        sharePrepGenRef.current += 1;
+      }
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [batchDelete, batchDeleteBusy, deleteConfirmOpen, helpOpen]);
+  }, [
+    batchDelete,
+    batchDeleteBusy,
+    deleteConfirmOpen,
+    detailActionBusy,
+    helpOpen,
+    sharePrepLoading,
+    sharePrepOpen,
+  ]);
 
   const visible = useMemo(() => {
     const byType = filterHitoyasumiMedia(items, filter);
@@ -895,6 +936,13 @@ export function HitoyasumiChairPageClient({
       posterBlob && posterBlob.size > 0 ? URL.createObjectURL(posterBlob) : null;
     setDetailActionNote(null);
     setDeleteConfirmOpen(false);
+    sharePrepGenRef.current += 1;
+    setSharePrepOpen(false);
+    setSharePrepLoading(false);
+    setSharePrepCaption("");
+    setSharePrepNote(null);
+    setSharePrepBodyFallback(false);
+    setSharePrepShowPrivacy(false);
     setViewingAlbum(null);
     setDetail((prev) => {
       if (prev?.objectUrl) URL.revokeObjectURL(prev.objectUrl);
@@ -913,12 +961,97 @@ export function HitoyasumiChairPageClient({
     setDetailActionNote(null);
     setDetailActionBusy(false);
     setDeleteConfirmOpen(false);
+    sharePrepGenRef.current += 1;
+    setSharePrepOpen(false);
+    setSharePrepLoading(false);
+    setSharePrepCaption("");
+    setSharePrepNote(null);
+    setSharePrepBodyFallback(false);
+    setSharePrepShowPrivacy(false);
     setDetail((prev) => {
       if (prev?.objectUrl) URL.revokeObjectURL(prev.objectUrl);
       if (prev?.posterUrl) URL.revokeObjectURL(prev.posterUrl);
       return null;
     });
   }, []);
+
+  const closeSharePrep = useCallback(() => {
+    if (detailActionBusy) return;
+    sharePrepGenRef.current += 1;
+    setSharePrepOpen(false);
+    setSharePrepLoading(false);
+    setSharePrepCaption("");
+    setSharePrepNote(null);
+    setSharePrepBodyFallback(false);
+    setSharePrepShowPrivacy(false);
+  }, [detailActionBusy]);
+
+  const openSharePrep = useCallback(async () => {
+    if (!detail?.blob || sharePrepLoading) return;
+
+    const gen = ++sharePrepGenRef.current;
+    const item = detail.item;
+    const origin = resolveMoriLogMediaSourceOrigin(item.sourceOrigin);
+    const isDiary = origin === "diary";
+
+    setSharePrepOpen(true);
+    setSharePrepLoading(true);
+    setSharePrepNote(null);
+    setSharePrepCaption("");
+    setSharePrepBodyFallback(false);
+    setSharePrepShowPrivacy(isDiary);
+    setDetailActionNote(null);
+
+    let body: string | null = null;
+    let bodyFailed = false;
+
+    if (isDiary) {
+      const entryId = (item.entryId ?? "").trim();
+      if (!entryId) {
+        bodyFailed = true;
+      } else {
+        try {
+          const payload = await fetchJournalPreviewPayload(entryId);
+          if (gen !== sharePrepGenRef.current) return;
+          const content =
+            payload?.entry && typeof payload.entry.content === "string"
+              ? payload.entry.content
+              : null;
+          if (content == null) {
+            bodyFailed = true;
+          } else {
+            body = extractTagsFromContent(content).body;
+          }
+        } catch {
+          if (gen !== sharePrepGenRef.current) return;
+          bodyFailed = true;
+        }
+      }
+    }
+
+    if (gen !== sharePrepGenRef.current) return;
+
+    const built = buildMoriLogShareCaption({
+      body: bodyFailed ? null : body,
+      title: item.title,
+      tags: item.tags,
+      sourceOrigin: origin,
+    });
+    setSharePrepCaption(built.text);
+    setSharePrepBodyFallback(isDiary && bodyFailed);
+    setSharePrepLoading(false);
+  }, [detail, sharePrepLoading]);
+
+  const copySharePrepCaption = useCallback(async () => {
+    if (sharePrepLoading || detailActionBusy) return;
+    const text = sharePrepCaption;
+    if (!text.trim()) {
+      setSharePrepNote(MORI_LOG_SHARE_PREP_COPY_FAIL);
+      return;
+    }
+    const ok = await copyTextToClipboard(text);
+    setSharePrepNote(ok ? MORI_LOG_SHARE_PREP_COPY_OK : MORI_LOG_SHARE_PREP_COPY_FAIL);
+  }, [detailActionBusy, sharePrepCaption, sharePrepLoading]);
 
   const openAlbumViewer = useCallback(
     (album: MoriLogAlbum) => {
@@ -1149,26 +1282,57 @@ export function HitoyasumiChairPageClient({
     }
   }, [detail, detailActionBusy, detailFileName]);
 
-  const shareDetail = useCallback(async () => {
-    if (!detail?.blob || detailActionBusy) return;
+  const shareDetail = useCallback(() => {
+    if (!detail?.blob || detailActionBusy || sharePrepLoading) return;
+    void openSharePrep();
+  }, [detail, detailActionBusy, openSharePrep, sharePrepLoading]);
+
+  const shareDetailMediaFromPrep = useCallback(async () => {
+    if (!detail?.blob || detailActionBusy || sharePrepLoading) return;
     setDetailActionBusy(true);
-    setDetailActionNote(null);
+    setSharePrepNote(null);
     try {
       const result = await downloadOrShareBlobFile(
         detail.blob,
         detailFileName(detail.item, detail.blob),
       );
       if (result === "cancelled") {
-        setDetailActionNote(LOG_HOUSE_HITOYASUMI_ACTION_CANCELLED);
+        setSharePrepNote(LOG_HOUSE_HITOYASUMI_ACTION_CANCELLED);
       } else {
-        setDetailActionNote(LOG_HOUSE_HITOYASUMI_ACTION_OK);
+        setSharePrepNote(LOG_HOUSE_HITOYASUMI_ACTION_OK);
       }
     } catch {
-      setDetailActionNote(LOG_HOUSE_HITOYASUMI_ACTION_FAIL);
+      setSharePrepNote(LOG_HOUSE_HITOYASUMI_ACTION_FAIL);
     } finally {
       setDetailActionBusy(false);
     }
-  }, [detail, detailActionBusy, detailFileName]);
+  }, [detail, detailActionBusy, detailFileName, sharePrepLoading]);
+
+  const saveDetailToDeviceFromPrep = useCallback(async () => {
+    if (!detail?.blob || detailActionBusy || sharePrepLoading) return;
+    setDetailActionBusy(true);
+    setSharePrepNote(null);
+    try {
+      const result = await downloadOrShareBlobFile(
+        detail.blob,
+        detailFileName(detail.item, detail.blob),
+      );
+      if (result === "cancelled") {
+        setSharePrepNote(LOG_HOUSE_HITOYASUMI_ACTION_CANCELLED);
+      } else {
+        setSharePrepNote(LOG_HOUSE_HITOYASUMI_ACTION_OK);
+      }
+    } catch {
+      try {
+        downloadBlobFile(detail.blob, detailFileName(detail.item, detail.blob));
+        setSharePrepNote(LOG_HOUSE_HITOYASUMI_ACTION_OK);
+      } catch {
+        setSharePrepNote(LOG_HOUSE_HITOYASUMI_ACTION_FAIL);
+      }
+    } finally {
+      setDetailActionBusy(false);
+    }
+  }, [detail, detailActionBusy, detailFileName, sharePrepLoading]);
 
   const typeChipClass = (active: boolean) =>
     [
@@ -2497,8 +2661,8 @@ export function HitoyasumiChairPageClient({
                   </button>
                   <button
                     type="button"
-                    disabled={detailActionBusy}
-                    onClick={() => void shareDetail()}
+                    disabled={detailActionBusy || sharePrepLoading}
+                    onClick={() => shareDetail()}
                     className="inline-flex min-h-[44px] flex-1 items-center justify-center gap-2 rounded-xl border border-white/25 bg-white/10 px-4 text-sm font-medium text-white hover:bg-white/15 disabled:opacity-60"
                   >
                     <svg aria-hidden className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -2526,6 +2690,110 @@ export function HitoyasumiChairPageClient({
                 {detailActionNote}
               </p>
             ) : null}
+          </div>
+        </div>
+      ) : null}
+
+      {sharePrepOpen && detail ? (
+        <div
+          className="fixed inset-0 z-[65] flex items-end justify-center bg-[#1a120c]/55 p-0 backdrop-blur-[2px] sm:items-center sm:p-4"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="hitoyasumi-share-prep-title"
+          onClick={closeSharePrep}
+        >
+          <div
+            className="flex max-h-[min(92dvh,40rem)] w-full max-w-md flex-col overflow-hidden rounded-t-3xl border border-[#e4d5c0]/95 bg-[#fffaf2] shadow-[0_16px_40px_rgba(40,28,16,0.28)] sm:rounded-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="shrink-0 border-b border-[#e4d5c0]/80 px-5 pb-3 pt-4">
+              <div className="flex items-start justify-between gap-3">
+                <h2
+                  id="hitoyasumi-share-prep-title"
+                  className="text-base font-semibold tracking-wide text-[#3f3428]"
+                >
+                  {MORI_LOG_SHARE_PREP_TITLE}
+                </h2>
+                <button
+                  type="button"
+                  disabled={detailActionBusy}
+                  onClick={closeSharePrep}
+                  className="shrink-0 rounded-lg border border-[#e0d2bc] bg-[#f7efe3] px-2.5 py-1.5 text-[11px] font-medium text-[#5c4a35] disabled:opacity-60"
+                >
+                  {MORI_LOG_SHARE_PREP_CLOSE}
+                </button>
+              </div>
+            </div>
+
+            <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4">
+              {sharePrepLoading ? (
+                <p className="py-8 text-center text-sm text-[#6e5c48]" role="status">
+                  {MORI_LOG_SHARE_PREP_LOADING}
+                </p>
+              ) : (
+                <>
+                  {sharePrepShowPrivacy ? (
+                    <p className="mb-3 text-xs leading-relaxed text-[#6e5c48]">
+                      {MORI_LOG_SHARE_PREP_PRIVACY_NOTE}
+                    </p>
+                  ) : null}
+                  {sharePrepBodyFallback ? (
+                    <p className="mb-3 rounded-xl border border-[#e4d5c0] bg-[#fff8ee] px-3 py-2 text-xs leading-relaxed text-[#6e5c48]" role="status">
+                      {MORI_LOG_SHARE_PREP_BODY_FALLBACK_NOTE}
+                    </p>
+                  ) : null}
+
+                  <label className="block text-xs font-medium text-[#6e5c48]">
+                    {MORI_LOG_SHARE_PREP_CAPTION_LABEL}
+                    <textarea
+                      value={sharePrepCaption}
+                      onChange={(e) => {
+                        setSharePrepCaption(e.target.value);
+                        setSharePrepNote(null);
+                      }}
+                      rows={8}
+                      className="mt-1.5 w-full resize-y rounded-xl border border-[#e0d2bc] bg-white px-3 py-2.5 text-[16px] leading-relaxed text-[#3f3428] outline-none focus:border-[#c5b089]"
+                    />
+                  </label>
+
+                  <button
+                    type="button"
+                    disabled={detailActionBusy}
+                    onClick={() => void copySharePrepCaption()}
+                    className="mt-3 inline-flex min-h-[48px] w-full items-center justify-center rounded-xl border border-emerald-800 bg-emerald-800 px-4 text-sm font-semibold text-white hover:bg-emerald-900 disabled:opacity-60"
+                  >
+                    {MORI_LOG_SHARE_PREP_COPY}
+                  </button>
+
+                  <div className="my-4 border-t border-[#e4d5c0]/90" aria-hidden />
+
+                  <div className="flex flex-col gap-2">
+                    <button
+                      type="button"
+                      disabled={detailActionBusy || !detail.blob}
+                      onClick={() => void shareDetailMediaFromPrep()}
+                      className="inline-flex min-h-[44px] w-full items-center justify-center rounded-xl border border-[#c5b089]/80 bg-[#f3ead9] px-4 text-sm font-medium text-[#3f3428] hover:bg-[#ebe0cc] disabled:opacity-60"
+                    >
+                      {MORI_LOG_SHARE_PREP_SHARE_MEDIA}
+                    </button>
+                    <button
+                      type="button"
+                      disabled={detailActionBusy || !detail.blob}
+                      onClick={() => void saveDetailToDeviceFromPrep()}
+                      className="inline-flex min-h-[44px] w-full items-center justify-center rounded-xl border border-[#e0d2bc] bg-white px-4 text-sm font-medium text-[#5c4a35] hover:bg-[#faf3e8] disabled:opacity-60"
+                    >
+                      {MORI_LOG_SHARE_PREP_SAVE_DEVICE}
+                    </button>
+                  </div>
+
+                  {sharePrepNote ? (
+                    <p className="mt-3 text-xs leading-relaxed text-[#5c4a35]" role="status">
+                      {sharePrepNote}
+                    </p>
+                  ) : null}
+                </>
+              )}
+            </div>
           </div>
         </div>
       ) : null}
