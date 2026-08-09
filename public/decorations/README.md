@@ -9,7 +9,6 @@
 | `forest-guide-station-md.webp` | `/help/ljd`（森の案内所）タイトル横 |
 | `forest-direction-sign-left.png` | 行き先看板（左向き・1024×1024） |
 | `forest-direction-sign-right.png` | 行き先看板（右向き・1024×1024）／鑑定のへや案内 |
-| `forest-direction-sign.png` | （旧）行き先看板。新素材では未使用 |
 | `first-visit-resident-registration-owl-frame.png` | `/guide/first/register` 森の住民登録・フクロウコメント枠 |
 | `kantei-hall-md.png` | （旧）鑑定のへや案内カード |
 
