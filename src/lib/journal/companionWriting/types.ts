@@ -75,7 +75,7 @@ export const COMPANION_WRITING_COMPLETE_FINISH_LABEL = "確認しておしまい
 /** 伴走保存〜カレンダー表示までの確認文言（鑑定士名を差し込む） */
 export function companionWritingSaveLoadingLabel(companionName: string): string {
   const name = companionName.trim() || "案内役";
-  return `${name}が日記のあしあとを確認しています…`;
+  return `${name}があしあとを確認しています…`;
 }
 
 /** 届け演出：飛行中（鑑定のへやへ） */
@@ -151,7 +151,7 @@ export const COMPANION_WRITING_PREVIEW_GUIDE_READ_BODY =
 export const COMPANION_WRITING_PREVIEW_GUIDE_WRITE_TITLE = "また書きたくなったら";
 
 export const COMPANION_WRITING_PREVIEW_GUIDE_WRITE_BODY =
-  "「日記を書く」や「どうぶつ鑑定士といっしょに書く」から、いつでも新しい記録を始められます。";
+  "「あしあとを残す」や「どうぶつ鑑定士といっしょに書く」から、いつでも新しい記録を始められます。";
 
 export const COMPANION_WRITING_PREVIEW_GUIDE_CLOSING = "また会えるのを、楽しみにしているね。";
 

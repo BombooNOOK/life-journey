@@ -55,7 +55,7 @@ export default async function AccountDeletePage() {
     <div className="space-y-5 sm:space-y-6">
       <MyPageSubpageHeader
         title="住民登録をやめる"
-        description="解除すると、日記やログイン情報も削除されます。内容をよくご確認ください"
+        description="解除すると、あしあとやログイン情報も削除されます。内容をよくご確認ください"
       />
 
       <section className="rounded-xl border border-stone-200 bg-white p-4 shadow-sm sm:p-5">

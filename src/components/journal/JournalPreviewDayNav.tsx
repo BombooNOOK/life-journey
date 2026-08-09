@@ -27,7 +27,7 @@ export function JournalPreviewDayNav({ neighbors, designTheme, returnTo, profile
   return (
     <nav
       className="flex items-center justify-between gap-3 border-t border-stone-200/80 pt-4"
-      aria-label="前後の日記"
+      aria-label="前後のあしあと"
     >
       {prev ? (
         <Link href={hrefFor(prev.id)} className={linkClass}>

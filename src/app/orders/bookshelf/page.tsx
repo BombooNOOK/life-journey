@@ -233,7 +233,7 @@ export default async function BookshelfPage() {
 
         {diaryBookCards.length === 0 ? (
           <p className="text-xs text-stone-500">
-            まだ日記ブックはありません。「本にする」から作成すると、ここに並びます。
+            まだあしあとブックはありません。「本にする」から作成すると、ここに並びます。
           </p>
         ) : null}
 
@@ -241,7 +241,7 @@ export default async function BookshelfPage() {
           <div className="rounded-xl border border-stone-200 bg-white p-5 text-sm text-stone-600 shadow-sm">
             <p>まだ本棚に並べる本がありません。</p>
             <p className="mt-2 text-xs text-stone-500">
-              日記ブックは「本にする」から、鑑定書は鑑定作成後に表示されます。
+              あしあとブックは「本にする」から、鑑定書は鑑定作成後に表示されます。
             </p>
           </div>
         ) : (

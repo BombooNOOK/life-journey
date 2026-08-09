@@ -1,4 +1,4 @@
-/** 日記入力画面の表示用（保存ロジックは変更しない） */
+/** あしあと入力画面の表示用（保存ロジックは変更しない） */
 
 export function isValidJournalDateInput(value: string): boolean {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
@@ -26,9 +26,9 @@ export function isJournalEntryDateToday(entryDate: string): boolean {
 
 /** 例: 2026年5月26日の日記 */
 export function formatJournalRecordPageTitle(entryDate: string): string {
-  if (!isValidJournalDateInput(entryDate)) return "日記";
+  if (!isValidJournalDateInput(entryDate)) return "あしあと";
   const [y, m, d] = entryDate.split("-").map(Number);
-  return `${y}年${m}月${d}日の日記`;
+  return `${y}年${m}月${d}日のあしあと`;
 }
 
 /** 日記プレビュー見出し用（例: 2026年6月16日） */

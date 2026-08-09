@@ -32,7 +32,7 @@ export function FirstVisitChapter3SignPage() {
   return (
     <FirstVisitGuideCardPageLayout
       stepLabel="ログハウスへ"
-      ariaLabel="ログハウスでの日記の案内"
+      ariaLabel="ログハウスでのあしあと案内"
       backHref={FIRST_VISIT_ROUTES.pathGuide}
       backLabel="はじめての道しるべへ戻る"
     >

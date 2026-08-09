@@ -18,7 +18,7 @@ export async function GET(_req: Request, { params }: RouteParams) {
   const { bookId } = await params;
   const trimmed = bookId?.trim();
   if (!trimmed) {
-    return NextResponse.json({ error: "日記ブックの指定が不正です。" }, { status: 400 });
+    return NextResponse.json({ error: "あしあとブックの指定が不正です。" }, { status: 400 });
   }
 
   const result = await getPendingDiaryBookBindingForBook({
@@ -48,7 +48,7 @@ export async function POST(_req: Request, { params }: RouteParams) {
   const { bookId } = await params;
   const trimmed = bookId?.trim();
   if (!trimmed) {
-    return NextResponse.json({ error: "日記ブックの指定が不正です。" }, { status: 400 });
+    return NextResponse.json({ error: "あしあとブックの指定が不正です。" }, { status: 400 });
   }
 
   const result = await createOrReusePendingDiaryBookBindingForBook({

@@ -16,22 +16,22 @@ export function MyPageBackupSection({ activeProfileNickname, showHeading = true 
           <h2 className="text-lg font-semibold text-stone-900">バックアップ作成</h2>
           {activeProfileNickname ? (
             <p className="mt-1 lj-read-caption text-stone-600">
-              現在選択中のプロフィール「{activeProfileNickname}」の日記を書き出します。
+              現在選択中のプロフィール「{activeProfileNickname}」のあしあとを書き出します。
             </p>
           ) : null}
         </div>
       ) : activeProfileNickname ? (
         <p className="lj-read-caption text-stone-600">
-          現在選択中のプロフィール「{activeProfileNickname}」の日記を書き出します。
+          現在選択中のプロフィール「{activeProfileNickname}」のあしあとを書き出します。
         </p>
       ) : null}
       <p className="lj-read-desc text-stone-700">
-        日記本文・写真・気分・製本に使う情報をZIPファイルとして保存できます。
+        あしあと本文・写真・気分・製本に使う情報をZIPファイルとして保存できます。
         バックアップファイルには個人的な内容が含まれるため、安全な場所に保管してください。
       </p>
       <p className="lj-read-caption leading-relaxed text-stone-600">
         バックアップファイルからの復元は、現在、運営確認のうえ個別に対応しています。
-        復元時は、既存の日記を上書きせず、新しいプロフィールとして復元します。
+        復元時は、既存のあしあとを上書きせず、新しいプロフィールとして復元します。
         復元をご希望の場合は、お問い合わせください。
       </p>
       <JournalBackupDownloadButton />

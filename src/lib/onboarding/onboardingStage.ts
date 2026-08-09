@@ -120,7 +120,7 @@ export function resolveOnboardingNextStep(
     return {
       href: ONBOARDING_CHAPTER3_DESK_WRITING_HREF,
       label: "机であしあとを残す",
-      body: "ログハウスの机から、どうぶつ鑑定士といっしょに、はじめての日記を書いてみましょう。",
+      body: "ログハウスの机から、どうぶつ鑑定士といっしょに、はじめてのあしあとを残してみましょう。",
     };
   }
 

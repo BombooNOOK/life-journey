@@ -33,7 +33,7 @@ export const FIRST_VISIT_CHAPTERS: FirstVisitChapterDefinition[] = [
   {
     id: 3,
     label: "第3章",
-    title: "はじめての日記を\n書いてみる",
+    title: "はじめてのあしあとを\n残してみる",
     description: "写真と言葉で、\n今日の1ページを残してみます。",
     timeEstimate: "約1〜3分",
     reviewHref: "/help/ljd#writing",

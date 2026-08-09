@@ -82,7 +82,7 @@ export async function loadDiaryBookPrintPdfPayload(
   const bookId = request.diaryBookId?.trim() ?? "";
   if (!bookId) {
     throw new DiaryBookPrintPdfError(
-      "この申込は旧年本棚形式のため、日記ブックPDFを生成できません。",
+      "この申込は旧年本棚形式のため、あしあとブックPDFを生成できません。",
       "LEGACY_REQUEST",
       400,
     );
@@ -91,7 +91,7 @@ export async function loadDiaryBookPrintPdfPayload(
   const book = await prisma.diaryBook.findUnique({ where: { id: bookId } });
   if (!book) {
     throw new DiaryBookPrintPdfError(
-      "日記ブックが見つかりません。",
+      "あしあとブックが見つかりません。",
       "BOOK_NOT_FOUND",
       404,
     );
@@ -113,7 +113,7 @@ export async function loadDiaryBookPrintPdfPayload(
 
   return {
     bindingCode: request.diaryBindingCode,
-    bookTitle: book.title.trim() || request.displayTitle?.trim() || "日記ブック",
+    bookTitle: book.title.trim() || request.displayTitle?.trim() || "あしあとブック",
     startDate: book.startDate,
     endDate: book.endDate,
     coverTheme: book.coverTheme,

@@ -56,7 +56,7 @@ export default async function LogHouseDeskWritePage() {
             title={LOG_HOUSE_DESK_WRITE_PAGE_TITLE}
             description={LOG_HOUSE_DESK_WRITE_PAGE_DESCRIPTION}
           />
-          <p className="text-sm text-stone-600">日記を書くには、プロフィールが必要です。</p>
+          <p className="text-sm text-stone-600">あしあとを残すには、プロフィールが必要です。</p>
           <Link href="/orders" className="text-sm text-emerald-900 underline-offset-2 hover:underline">
             {LOG_HOUSE_RETURN_TO_LABEL}
           </Link>

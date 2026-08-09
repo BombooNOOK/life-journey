@@ -58,7 +58,7 @@ export const personalCycleGuideCopyJa: Record<PersonalCycleGuideKey, PersonalCyc
 知るための、いちばん身近な数字なんだ。
 
 Life Journey Diaryでは、
-日記を書く日に「今日のすうじ」として、
+あしあとを残す日に「今日のすうじ」として、
 今日・今月・今年のすうじをお伝えしています。
 そのうち「今日」にあたるのが、
 パーソナルデイナンバーなんだよ。

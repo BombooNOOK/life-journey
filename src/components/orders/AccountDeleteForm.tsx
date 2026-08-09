@@ -56,7 +56,7 @@ export function AccountDeleteForm({ blockMessage = null }: Props) {
     <div className="space-y-6">
       <div className={`space-y-3 ${mobileReadable.body}`}>
         <p>
-          住民登録を解除すると、LJDに保存された日記・写真・鑑定結果などのデータに加え、
+          住民登録を解除すると、LJDに保存されたあしあと・写真・鑑定結果などのデータに加え、
           ログイン情報（メール・パスワード、Googleログインの紐づけ）も削除されます。
           解除後は復元できず、同じメールで再ログインすることもできません。
         </p>

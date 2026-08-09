@@ -19,7 +19,7 @@ export function FirstVisitPathGuideWritingHabitCard({ onDismiss }: Props) {
       className="rounded-xl border border-emerald-200/70 bg-[#fffdf9] px-4 py-4 shadow-sm sm:px-5 sm:py-5"
     >
       <h2 id="path-guide-writing-habit-heading" className="sr-only">
-        日記の書き方のご案内
+        あしあとの残し方のご案内
       </h2>
       <div className="flex items-start gap-2.5 sm:gap-3">
         <CharacterFaceIcon name="character-owl-face" />

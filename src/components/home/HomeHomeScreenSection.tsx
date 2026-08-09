@@ -14,7 +14,7 @@ export function HomeHomeScreenSection() {
           </h2>
           <p className="lj-read-desc mt-2 leading-relaxed text-stone-700">
             スマホのホーム画面に追加すると、アプリのようにすぐ開けます。
-            日記を書くときに、毎回ブラウザで探さなくて済みます。
+            あしあとを残すときに、毎回ブラウザで探さなくて済みます。
           </p>
           <p className="mt-3.5">
             <Link

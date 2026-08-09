@@ -72,7 +72,7 @@ export function NumerologyNumbersDictionaryView({
               </p>
               <p className="mt-2 text-sm leading-relaxed text-stone-700">{entry.description}</p>
               <p className="mt-3 border-t border-stone-200/80 pt-3 text-sm leading-relaxed text-stone-600">
-                <span className="font-medium text-stone-700">日記での見方：</span>
+                <span className="font-medium text-stone-700">あしあとでの見方：</span>
                 {entry.diaryHint}
               </p>
             </li>

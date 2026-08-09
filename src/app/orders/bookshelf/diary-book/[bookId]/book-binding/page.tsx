@@ -33,7 +33,7 @@ export default async function DiaryBookBindingPage({ params }: Props) {
           <Link href="/orders/bookshelf" className="text-sm text-stone-600 hover:text-stone-900">
             ← 本棚へ
           </Link>
-          <h1 className="mt-2 text-2xl font-bold text-stone-900">日記ブック製本版の注文</h1>
+          <h1 className="mt-2 text-2xl font-bold text-stone-900">あしあとブック製本版の注文</h1>
         </div>
         <div
           className={[
@@ -68,10 +68,10 @@ export default async function DiaryBookBindingPage({ params }: Props) {
         <Link href="/orders/bookshelf" className="text-sm text-stone-600 hover:text-stone-900">
           ← 本棚へ
         </Link>
-        <h1 className="mt-2 text-2xl font-bold text-stone-900">日記ブック製本版の注文</h1>
+        <h1 className="mt-2 text-2xl font-bold text-stone-900">あしあとブック製本版の注文</h1>
         {!hasIssuedCode ? (
           <p className="mt-2 text-sm leading-relaxed text-stone-700">
-            この日記ブックを、紙の本として注文できます。
+            このあしあとブックを、紙の本として注文できます。
             <br />
             「製本版を注文する」を押すと、製本コードが発行されます。
             <br />
@@ -99,7 +99,7 @@ export default async function DiaryBookBindingPage({ params }: Props) {
       ) : null}
 
       <section className="rounded-xl border border-emerald-200 bg-emerald-50/40 p-5 text-sm text-stone-800">
-        <h2 className="font-semibold text-stone-900">注文対象の日記ブック</h2>
+        <h2 className="font-semibold text-stone-900">注文対象のあしあとブック</h2>
         <dl className="mt-3 space-y-2">
           <div>
             <dt className="text-xs text-stone-500">タイトル</dt>

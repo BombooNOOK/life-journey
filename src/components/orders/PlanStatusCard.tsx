@@ -11,7 +11,7 @@ export function PlanStatusCard() {
       <p className="mt-3 text-sm leading-relaxed text-stone-700">
         初回14日間は無料でお試しいただけます。
         <br />
-        日記・本棚・鑑定書PDFを使いながら、Life Journey Diaryの流れを確認できます。
+        あしあと・本棚・鑑定書PDFを使いながら、Life Journey Diaryの流れを確認できます。
       </p>
       <p className="mt-3 text-sm leading-relaxed text-stone-700">
         無料期間終了後も続ける場合は、どんぐりと森の定期便のご案内をご確認ください（現在準備中です）。

@@ -71,7 +71,7 @@ export const DONGURI_BIRTHDAY_MAIL_BODY = [
 
 export const DONGURI_DIARY_SAVE_COST = 3 as const;
 export const DONGURI_DIARY_SAVE_TITLE = "今日のあしあと" as const;
-export const DONGURI_DIARY_SAVE_DESCRIPTION = "日記を森に残しました" as const;
+export const DONGURI_DIARY_SAVE_DESCRIPTION = "あしあとを森に残しました" as const;
 
 /** 端末動画→森ログムービー（2本目以降） */
 export const DONGURI_MORI_LOG_DEVICE_MOVIE_COST = 2 as const;

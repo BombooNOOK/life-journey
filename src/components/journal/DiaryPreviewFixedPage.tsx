@@ -152,7 +152,7 @@ function DiaryPreviewPhotoFrame({
         <img
           ref={imgRef}
           src={photoDisplaySrc}
-          alt="日記写真プレビュー"
+          alt="あしあと写真プレビュー"
           onLoad={() => setImageReady(true)}
           onError={() => setImageReady(true)}
           className={[

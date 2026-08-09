@@ -167,7 +167,7 @@ export function MyPageAccountSection({
 
       <MyPageAccountSectionCard title="データ管理">
         <p className={mobileReadable.bodyMuted}>
-          保存されている日記・写真・鑑定結果などの管理ができます。
+          保存されているあしあと・写真・鑑定結果などの管理ができます。
         </p>
         <div className="border-t border-stone-100 pt-4">
           <Link

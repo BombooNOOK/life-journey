@@ -33,8 +33,8 @@ export function findBlockingDiaryBookBindingRequest(
         code: row.status === "ordered" ? "BINDING_ORDERED" : "BINDING_IN_PROGRESS",
         message:
           row.status === "ordered"
-            ? `製本申込（${row.diaryBindingCode}）は決済確認済みのため、この日記ブックは削除できません。`
-            : `製本申込（${row.diaryBindingCode}）は${statusLabel}のため、この日記ブックは削除できません。`,
+            ? `製本申込（${row.diaryBindingCode}）は決済確認済みのため、このあしあとブックは削除できません。`
+            : `製本申込（${row.diaryBindingCode}）は${statusLabel}のため、このあしあとブックは削除できません。`,
         bindingCode: row.diaryBindingCode,
         statusLabel,
       };
@@ -45,7 +45,7 @@ export function findBlockingDiaryBookBindingRequest(
     if (hasBaseOrderNumber(row.baseOrderNumber)) {
       return {
         code: "BINDING_ORDERED",
-        message: `製本申込（${row.diaryBindingCode}）は決済情報が登録済みのため、この日記ブックは削除できません。`,
+        message: `製本申込（${row.diaryBindingCode}）は決済情報が登録済みのため、このあしあとブックは削除できません。`,
         bindingCode: row.diaryBindingCode,
         statusLabel: DIARY_BOOK_BINDING_STATUS_LABELS.pending,
       };
@@ -86,7 +86,7 @@ export async function loadDiaryBookDeleteEligibility(params: {
     select: { id: true, title: true, profileId: true },
   });
   if (!book) {
-    return { ok: false, code: "NOT_FOUND", message: "日記ブックが見つかりません。" };
+    return { ok: false, code: "NOT_FOUND", message: "あしあとブックが見つかりません。" };
   }
 
   await expireStaleUnpaidPendingForScope({ diaryBookId: book.id });

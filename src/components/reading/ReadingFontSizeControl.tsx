@@ -82,7 +82,7 @@ export function ReadingFontSizeControl({
         <p className="lj-read-caption mt-2 text-stone-500">
           現在：
           {READING_FONT_SIZE_LABELS[readingFontSize]}
-          。日記本文や説明文など、読む部分に反映されます。製本イメージは変わりません。
+          。あしあと本文や説明文など、読む部分に反映されます。製本イメージは変わりません。
         </p>
       </div>
     );

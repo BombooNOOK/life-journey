@@ -187,7 +187,7 @@ export function DiaryBookBindingOrderPanel({
       <div className="space-y-4">
         {contentUpdatedNotice ? (
           <p className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900">
-            日記ブックの内容が更新されたため、ページ数とプラン情報を最新の状態に更新しました。製本コードはそのままお使いいただけます。
+            あしあとブックの内容が更新されたため、ページ数とプラン情報を最新の状態に更新しました。製本コードはそのままお使いいただけます。
           </p>
         ) : null}
         {rightBound ? (
@@ -251,7 +251,7 @@ export function DiaryBookBindingOrderPanel({
           {issueLoading ? (
             <OwlLoadingInline label="注文ページを準備しています…" size="sm" />
           ) : (
-            "申込内容を最新の日記に合わせて更新する"
+            "申込内容を最新のあしあとに合わせて更新する"
           )}
         </button>
       </div>

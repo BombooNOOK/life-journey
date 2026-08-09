@@ -12,7 +12,7 @@ export const FIRST_VISIT_ROADMAP_STEPS = [
   "あなたのログハウスができる",
   "鑑定のへやで鑑定を受ける",
   "鑑定書が本棚に届く",
-  "はじめての日記を\n書いてみる",
+  "はじめてのあしあとを\n残してみる",
 ] as const;
 
 export const FIRST_VISIT_ROADMAP_CLOSING =

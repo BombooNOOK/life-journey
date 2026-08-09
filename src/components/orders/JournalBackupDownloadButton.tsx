@@ -140,7 +140,7 @@ export function JournalBackupDownloadButton({
       {busy ? (
         <p className="flex items-start gap-2 text-sm leading-relaxed text-stone-800" role="status" aria-live="polite">
           <OwlSpinIndicator size="md" />
-          <span>日記と写真をZIPにまとめています。完了まで画面を閉じずにお待ちください。</span>
+          <span>あしあとと写真をZIPにまとめています。完了まで画面を閉じずにお待ちください。</span>
         </p>
       ) : (
         <p className="text-xs leading-relaxed text-stone-500">

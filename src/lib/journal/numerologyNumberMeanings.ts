@@ -111,7 +111,7 @@ export function lookupNumerologyNumberMeaning(value: number): NumerologyNumberMe
 export const NUMEROLOGY_NUMBERS_PAGE_TITLE = "すうじの意味を見る";
 
 export const NUMEROLOGY_NUMBERS_PAGE_INTRO =
-  "Life Journey Diary では、日記を書く日に「今日のすうじ」として、今日・今月・今年のすうじをお伝えしています。ここでは、1〜9 それぞれがどんなテーマを表すのかをまとめています。";
+  "Life Journey Diary では、あしあとを残す日に「今日のすうじ」として、今日・今月・今年のすうじをお伝えしています。ここでは、1〜9 それぞれがどんなテーマを表すのかをまとめています。";
 
 export const NUMEROLOGY_NUMBERS_PAGE_FOOTNOTE =
   "未来を決めるものではなく、日々を振り返るヒントです。";

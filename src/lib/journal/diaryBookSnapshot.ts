@@ -119,7 +119,7 @@ export async function refreshDiaryBookContent(params: {
     where: { id: params.bookId.trim(), email: params.viewerEmail },
   });
   if (!row) {
-    return { ok: false, status: 404, error: "日記ブックが見つかりません。", code: "NOT_FOUND" };
+    return { ok: false, status: 404, error: "あしあとブックが見つかりません。", code: "NOT_FOUND" };
   }
 
   const updated = await prisma.diaryBook.update({

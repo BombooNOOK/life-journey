@@ -28,7 +28,7 @@ export async function GET(_: Request, { params }: RouteParams) {
 
   if (!payload) {
     return NextResponse.json(
-      { error: "日記ブックが見つかりません。", code: "NOT_FOUND" },
+      { error: "あしあとブックが見つかりません。", code: "NOT_FOUND" },
       { status: 404, ...JSON_NO_STORE },
     );
   }

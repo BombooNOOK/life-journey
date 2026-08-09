@@ -73,7 +73,7 @@ export function FirstVisitOwlPage() {
           <p>
             LJDではそのテーマを、
             <br className="block sm:hidden" />
-            日記を見返すときの
+            あしあとを見返すときの
             <br className="hidden sm:block" />
             小さな手がかりとして使います。
           </p>

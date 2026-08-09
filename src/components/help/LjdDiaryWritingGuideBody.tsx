@@ -145,7 +145,7 @@ export function LjdDiaryWritingGuideBody({
         startIndex={1}
       >
         <LjdDiaryWritingGuideCalendarPreview />
-        <GuideAppLink href="/orders/calendar" label="カレンダーから日記を書く" feature="guide_calendar" />
+        <GuideAppLink href="/orders/calendar" label="カレンダーからあしあとを残す" feature="guide_calendar" />
       </GuideFlowSection>
 
       <details className="group rounded-lg border border-stone-200/80 bg-white">

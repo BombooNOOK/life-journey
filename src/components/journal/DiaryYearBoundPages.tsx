@@ -192,7 +192,7 @@ export function DiaryBoundFrontCover({
       >
         <Image
           src={coverSrc}
-          alt={`${year}年の日記・表紙（${getDiaryCoverStyleLabel(coverStyle)}）`}
+          alt={`${year}年のあしあと・表紙（${getDiaryCoverStyleLabel(coverStyle)}）`}
           fill
           className="object-cover"
           sizes="540px"
@@ -607,7 +607,7 @@ export function DiaryBoundGoalsPage({ year }: { year: number }) {
         </p>
         <div className="min-h-[42%] flex-1 rounded-md border border-dashed border-stone-300 bg-white/60" aria-label="目標を書く余白" />
         <p className="text-[11px] text-stone-500">
-          デジタル版では未入力です。思いついたら日記の本文や別のメモに残しても大丈夫です。
+          デジタル版では未入力です。思いついたらあしあとの本文や別のメモに残しても大丈夫です。
         </p>
       </div>
     </BookPageFrame>

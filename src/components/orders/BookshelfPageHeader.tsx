@@ -6,7 +6,7 @@ import { InlineHelpButton } from "@/components/ui/InlineHelpButton";
 import { LOG_HOUSE_BACK_TO_LINK_LABEL } from "@/lib/journal/logHouseLabels";
 
 const BOOKSHELF_HELP_TEXT =
-  "あなたの「日記」と「鑑定書」を、本のように並べて管理できます。鑑定書はブラウザで読める製本レイアウトのPDFにもなります。";
+  "あなたの「あしあと」と「鑑定書」を、本のように並べて管理できます。鑑定書はブラウザで読める製本レイアウトのPDFにもなります。";
 
 type Props = {
   activeProfileLabel: string;

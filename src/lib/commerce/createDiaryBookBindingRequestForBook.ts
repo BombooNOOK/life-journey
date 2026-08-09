@@ -79,7 +79,7 @@ export async function loadDiaryBookBindingSnapshotForBook(
     where: { id: input.bookId.trim(), email: input.viewerEmail },
   });
   if (!row) {
-    return { error: "日記ブックが見つかりません。" };
+    return { error: "あしあとブックが見つかりません。" };
   }
 
   const entries = await listJournalEntriesForDiaryBookRow({

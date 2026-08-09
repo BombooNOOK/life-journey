@@ -66,9 +66,9 @@ export function DiaryBookTagFilterFields({
             </button>
           </div>
           <p className="text-xs leading-relaxed text-stone-500">
-            すべて含む：入力したタグがすべて付いている日記を表示します。
+            すべて含む：入力したタグがすべて付いているあしあとを表示します。
             <br />
-            どれか含む：入力したタグのどれかが付いている日記を表示します。
+            どれか含む：入力したタグのどれかが付いているあしあとを表示します。
           </p>
         </fieldset>
       ) : null}

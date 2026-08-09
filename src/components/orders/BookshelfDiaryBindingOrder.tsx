@@ -36,7 +36,7 @@ function navigateToShop(url: string) {
 
 const BINDING_CONFIRM_CHECK_ITEMS = [
   { id: "date", label: "掲載する日付を確認しました" },
-  { id: "content", label: "日記本文を確認しました" },
+  { id: "content", label: "あしあと本文を確認しました" },
   { id: "photo", label: "写真を確認しました" },
   { id: "consent", label: "表示内容を確認し、この内容で製本に進むことを了承します" },
 ] as const;
@@ -83,7 +83,7 @@ function DiaryBindingCodePanel({
   const helpText =
     variant === "inline"
       ? "このコードは、BASEで注文するときに必要です。コピーし忘れた場合も、ここから再度コピーできます。"
-      : "このコードは、どの日記を製本するか確認するために必要です。BASEの商品ページで「製本申込コード」欄に必ず貼り付けてください。";
+      : "このコードは、どのあしあとを製本するか確認するために必要です。BASEの商品ページで「製本申込コード」欄に必ず貼り付けてください。";
 
   return (
     <div className={variant === "inline" ? "space-y-3" : "space-y-4"}>
@@ -331,11 +331,11 @@ export function BookshelfDiaryBindingOrder({
             <span className="font-semibold text-stone-900">現在の製本対象：{pageCount}ページ</span>
           </p>
           <p className="text-[12px] leading-snug text-stone-600">
-            ※日記本文のみを数えます（1投稿＝1ページ）。表紙・カレンダー・振り返り等は含みません。
+            ※あしあと本文のみを数えます（1投稿＝1ページ）。表紙・カレンダー・振り返り等は含みません。
           </p>
           {!hasPages ? (
             <p className="text-[13px] leading-relaxed text-amber-900">
-              本に入れるページがありません。製本したい日記をONにしてください。
+              本に入れるページがありません。製本したいあしあとをONにしてください。
             </p>
           ) : (
             <PlanSummaryBlock plan={planData} />
@@ -399,10 +399,10 @@ export function BookshelfDiaryBindingOrder({
                     製本前に、プレビューで内容をご確認ください。
                   </p>
                   <p>
-                    掲載する日付・日記本文・写真に誤りがないか、ご自身で確認してからお進みください。
+                    掲載する日付・あしあと本文・写真に誤りがないか、ご自身で確認してからお進みください。
                   </p>
                   <p>
-                    運営側では、日記本文を読んで校正したり、内容を確認したりすることはありません。
+                    運営側では、あしあと本文を読んで校正したり、内容を確認したりすることはありません。
                   </p>
                   <p>
                     ご本人が確認した内容をもとに、製本用データを作成し、原則としてそのまま印刷・製本手配に使用します。
