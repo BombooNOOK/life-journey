@@ -90,7 +90,7 @@ export async function loadDiaryBookBindingSnapshotForBook(
 
   const pageCount = countBoundDiaryBookTotalPages(entries, row.startDate, row.endDate);
   if (pageCount <= 0) {
-    return { error: "製本するページがありません。期間内に日記があるか確認してください。" };
+    return { error: "製本するページがありません。期間内にあしあとがあるか確認してください。" };
   }
 
   const plan = getBookPlan(pageCount);

@@ -212,7 +212,7 @@ export function findProfileDeleteBlockingDiaryBinding(
       return buildDiaryBlockDetail(
         row,
         row.status === "ordered" ? "BINDING_ORDERED" : "BINDING_IN_PROGRESS",
-        `日記ブック製本申込（${code}）は${statusLabel}のため、このプロフィールは削除できません。`,
+        `あしあとブック製本申込（${code}）は${statusLabel}のため、このプロフィールは削除できません。`,
         "実注文・製本処理中の申込は削除できません。",
       );
     }
@@ -222,7 +222,7 @@ export function findProfileDeleteBlockingDiaryBinding(
         return buildDiaryBlockDetail(
           row,
           "BINDING_CANCELLED_WITH_BASE_ORDER",
-          `日記ブック製本申込（${code}）は取り下げ済みですが、BASE注文番号があるため削除できません。`,
+          `あしあとブック製本申込（${code}）は取り下げ済みですが、BASE注文番号があるため削除できません。`,
           "BASE注文番号を確認し、実注文に関わらないことを確認してください。",
         );
       }
@@ -234,7 +234,7 @@ export function findProfileDeleteBlockingDiaryBinding(
         return buildDiaryBlockDetail(
           row,
           "BINDING_EXPIRED_WITH_BASE_ORDER",
-          `日記ブック製本申込（${code}）は期限切れですが、BASE注文番号があるため削除できません。`,
+          `あしあとブック製本申込（${code}）は期限切れですが、BASE注文番号があるため削除できません。`,
           "BASE注文番号を確認し、実注文に関わらないことを確認してください。",
         );
       }
@@ -247,8 +247,8 @@ export function findProfileDeleteBlockingDiaryBinding(
       return buildDiaryBlockDetail(
         row,
         "BINDING_PENDING_WITH_BASE_ORDER",
-        `有効な日記ブック製本申込（${code}）があります。BASE注文番号が登録済みです。`,
-        "管理者の日記製本申込画面で状況を確認してください。",
+        `有効なあしあとブック製本申込（${code}）があります。BASE注文番号が登録済みです。`,
+        "管理者のあしあとブック製本申込画面で状況を確認してください。",
       );
     }
 
@@ -256,8 +256,8 @@ export function findProfileDeleteBlockingDiaryBinding(
       return buildDiaryBlockDetail(
         row,
         "BINDING_PENDING_ACTIVE",
-        `有効な日記ブック製本申込（${code}）があります。`,
-        "管理者の日記製本申込画面（/admin/diary-book-binding）で取り下げてください。",
+        `有効なあしあとブック製本申込（${code}）があります。`,
+        "管理者のあしあとブック製本申込画面（/admin/diary-book-binding）で取り下げてください。",
       );
     }
   }

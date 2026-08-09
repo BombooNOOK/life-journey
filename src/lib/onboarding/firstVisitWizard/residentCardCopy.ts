@@ -9,7 +9,7 @@ export const FIRST_VISIT_RESIDENT_CARD_EMAIL_NOTE =
   "登録完了のお知らせをメールでもお送りしました。\nあとでゆっくり確認してみてくださいね。" as const;
 
 export const FIRST_VISIT_RESIDENT_CARD_GROWTH_HINT =
-  "日記を書いていくと、住民票も少しずつ育っていきます" as const;
+  "あしあとを残していくと、住民票も少しずつ育っていきます" as const;
 
 export const FIRST_VISIT_RESIDENT_CARD_NEXT_BUTTON = "次へ" as const;
 

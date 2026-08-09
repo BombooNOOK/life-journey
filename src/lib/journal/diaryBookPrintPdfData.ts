@@ -46,7 +46,7 @@ async function resolveEntryPhotoDataUri(entry: BoundDiaryEntry): Promise<string>
   });
   if (!row) {
     throw new DiaryBookPrintPdfError(
-      `日記（ID: ${entry.id}）が見つかりません。`,
+      `あしあと（ID: ${entry.id}）が見つかりません。`,
       "ENTRY_NOT_FOUND",
       500,
     );
@@ -56,7 +56,7 @@ async function resolveEntryPhotoDataUri(entry: BoundDiaryEntry): Promise<string>
   if (!payload) {
     const created = entry.createdAt.slice(0, 10);
     throw new DiaryBookPrintPdfError(
-      `日記（記録日: ${created}、ID: ${entry.id}）の写真を取得できませんでした。写真の保存状態を確認してから再度お試しください。`,
+      `あしあと（記録日: ${created}、ID: ${entry.id}）の写真を取得できませんでした。写真の保存状態を確認してから再度お試しください。`,
       "PHOTO_LOAD_FAILED",
       500,
     );

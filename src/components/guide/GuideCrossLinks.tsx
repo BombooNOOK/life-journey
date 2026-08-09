@@ -10,7 +10,7 @@ export function LinkToDiaryGuide() {
         <SoftIllustrationAccent variant="moon" size="sm" tone="amber" />
       </div>
       <p className="relative z-10 text-sm leading-6 text-stone-700">
-        Life Journey Diary の考え方や、鑑定書と日記のつながりを知りたい方へ。
+        Life Journey Diary の考え方や、鑑定書とあしあとのつながりを知りたい方へ。
       </p>
       <Link
         href="/diary-guide"

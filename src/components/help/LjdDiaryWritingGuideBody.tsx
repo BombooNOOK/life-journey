@@ -88,7 +88,7 @@ function GuideFlowSection({
   );
 }
 
-/** 森の案内所④「日記の書き方」本文（辞書トーン・他画面と共有） */
+/** 森の案内所④「あしあとの書き方」本文（辞書トーン・他画面と共有） */
 export function LjdDiaryWritingGuideBody({
   variant = "dictionary",
   showLogHousePreview = true,

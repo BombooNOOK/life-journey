@@ -165,7 +165,7 @@ export const FIRST_VISIT_LOGHOUSE_SIGN_CARD: FirstVisitGuideCard = {
 export const FIRST_VISIT_LOGHOUSE_BUILD_CARDS: FirstVisitGuideCard[] = [
   {
     id: "loghouse-build",
-    body: "あなただけのログハウスを建てています。\n日記や鑑定書をしまっておく、あなたの拠点です。",
+    body: "あなただけのログハウスを建てています。\nあしあとや鑑定書をしまっておく、あなたの拠点です。",
     buttons: [{ label: "次へ", action: "next", variant: "primary" }],
   },
   {

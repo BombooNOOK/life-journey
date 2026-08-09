@@ -27,7 +27,7 @@ export default async function PlansPage() {
         </Link>
         <h1 className="mt-2 text-2xl font-bold text-stone-900">どんぐりと森の定期便</h1>
         <p className="mt-1 text-sm text-stone-600">
-          日記を「森のあしあと」として残すときなどに使うどんぐりの、受け取り方の案内です。いまは準備中のため、新たなおとどけのお手続きはできません。
+          あしあとを「森のあしあと」として残すときなどに使うどんぐりの、受け取り方の案内です。いまは準備中のため、新たなおとどけのお手続きはできません。
         </p>
         {!viewerEmail ? (
           <p className="mt-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">
@@ -47,7 +47,7 @@ export default async function PlansPage() {
       <section className="space-y-2 rounded-xl border border-stone-200 bg-white px-4 py-4 text-sm leading-relaxed text-stone-700 shadow-sm sm:px-5">
         <h2 className="text-base font-semibold text-stone-900">いまできること</h2>
         <ul className="list-disc space-y-1.5 pl-5">
-          <li>日記の下書きはどんぐりなしで残せます</li>
+          <li>あしあとの下書きはどんぐりなしで残せます</li>
           <li>森にあしあとを残すときは、どんぐりを3こ使います</li>
           <li>ヤギさん郵便や住民登録のお祝いなど、森からのおとどけでどんぐりが増えます</li>
         </ul>

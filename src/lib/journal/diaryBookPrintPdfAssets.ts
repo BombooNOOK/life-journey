@@ -5,11 +5,11 @@ import path from "node:path";
 export function resolveDiaryBookPublicImagePath(webPath: string): string {
   const clean = webPath.split("?")[0]?.trim() ?? "";
   if (!clean.startsWith("/images/")) {
-    throw new Error(`日記ブック画像パスが不正です: ${webPath}`);
+    throw new Error(`あしあとブック画像パスが不正です: ${webPath}`);
   }
   const abs = path.join(process.cwd(), "public", clean.replace(/^\//, ""));
   if (!fs.existsSync(abs)) {
-    throw new Error(`日記ブック画像が見つかりません: ${clean}`);
+    throw new Error(`あしあとブック画像が見つかりません: ${clean}`);
   }
   return abs;
 }

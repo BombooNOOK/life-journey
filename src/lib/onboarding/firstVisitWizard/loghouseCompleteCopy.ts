@@ -2,7 +2,7 @@
 export const FIRST_VISIT_LOGHOUSE_COMPLETE_TITLE = "ログハウスが完成しました" as const;
 
 export const FIRST_VISIT_LOGHOUSE_COMPLETE_BODY =
-  "これで、あなたの森の拠点ができました。\n\nここには、これから届く鑑定書や、\n日々書き残した日記が少しずつしまわれていきます。" as const;
+  "これで、あなたの森の拠点ができました。\n\nここには、これから届く鑑定書や、\n日々書き残したあしあとが少しずつしまわれていきます。" as const;
 
 export const FIRST_VISIT_LOGHOUSE_COMPLETE_LOGHOUSE_GUIDE_NOTE =
   "ログハウスの使い方は、あとでわたしがご案内しますね。" as const;

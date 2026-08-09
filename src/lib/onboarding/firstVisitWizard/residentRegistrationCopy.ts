@@ -9,7 +9,7 @@ export const FIRST_VISIT_RESIDENT_REGISTRATION_OWL_QUOTE =
   "おっと、まだ森の住民登録が\nお済みでないようですね。\n\nログハウスを建てるために、\nまずは森の住民登録をしましょう。" as const;
 
 export const FIRST_VISIT_RESIDENT_REGISTRATION_SUPPLEMENT =
-  "登録すると、鑑定書や日記を\nあなたのログハウスにしまっておけます。" as const;
+  "登録すると、鑑定書やあしあとを\nあなたのログハウスにしまっておけます。" as const;
 
 export const FIRST_VISIT_RESIDENT_REGISTRATION_NOTE =
   "メールアドレスとパスワードでアカウントを作成します。" as const;
@@ -18,7 +18,7 @@ export const FIRST_VISIT_RESIDENT_REGISTRATION_NOTE =
 export const FIRST_VISIT_RESIDENT_REGISTRATION_INTRO_LEAD = "森の住民登録をすると" as const;
 
 export const FIRST_VISIT_RESIDENT_REGISTRATION_INTRO_BODY =
-  "あなた専用の住民票カードが発行され、\n森の中にログハウスが建ちます。\n\nログハウスには、\nこれから届く鑑定書や\n日々書き残した日記がしまわれていきます。\n\nまずは、森の住民登録をしましょう。" as const;
+  "あなた専用の住民票カードが発行され、\n森の中にログハウスが建ちます。\n\nログハウスには、\nこれから届く鑑定書や\n日々書き残したあしあとがしまわれていきます。\n\nまずは、森の住民登録をしましょう。" as const;
 
 export const FIRST_VISIT_RESIDENT_REGISTRATION_INTRO_FOOTNOTE =
   "登録には、メールアドレスとパスワードを使います。" as const;
@@ -43,7 +43,7 @@ export const FIRST_VISIT_RESIDENT_REGISTRATION_LOGIN_BUTTON =
   "住民登録してログハウスへ" as const;
 
 export const FIRST_VISIT_RESIDENT_REGISTRATION_BODY =
-  "ログハウスを建てるために、\nまずは森の住民登録をしましょう。\n\n登録すると、あなたの鑑定書や日記を\nログハウスにしまっておけるようになります。" as const;
+  "ログハウスを建てるために、\nまずは森の住民登録をしましょう。\n\n登録すると、あなたの鑑定書やあしあとを\nログハウスにしまっておけるようになります。" as const;
 
 export const FIRST_VISIT_RESIDENT_REGISTRATION_COMPLETE_TITLE =
   "森の住民登録が完了しました" as const;

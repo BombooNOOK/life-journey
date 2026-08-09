@@ -44,9 +44,9 @@ export const HOME_PRODUCT_MOCK_STEPS: HomeProductMockStep[] = [
   },
   {
     stepLabel: "②",
-    title: "あとから日記を読み返す",
+    title: "これまでのあしあとを振り返る",
     description:
-      "書いた日記は、日記プレビューで読み返せます。フクロウ先生の言葉も添えられ、その日をやさしく振り返ることができます。",
+      "残したあしあとは、あしあとプレビューで読み返せます。フクロウ先生の言葉も添えられ、その日をやさしく振り返ることができます。",
     imageSrc: HOME_PRODUCT_MOCK_IMAGES.journalPreview,
     imageAlt: "あしあとプレビュー画面",
     imageWidth: 390,
@@ -56,7 +56,7 @@ export const HOME_PRODUCT_MOCK_STEPS: HomeProductMockStep[] = [
   {
     stepLabel: "③",
     title: "本棚のように並べて読む",
-    description: "書いた日記や鑑定書は、本棚のように並び、あとからまとめて読み返せます。",
+    description: "残したあしあとや鑑定書は、本棚のように並び、あとからまとめて読み返せます。",
     imageSrc: HOME_PRODUCT_MOCK_IMAGES.bookshelf,
     imageAlt: "本棚画面",
     imageWidth: 390,
@@ -66,7 +66,7 @@ export const HOME_PRODUCT_MOCK_STEPS: HomeProductMockStep[] = [
   {
     stepLabel: "④",
     title: "手元に残る一冊へ",
-    description: "デジタルで残した日々が、いつか手元に残る「日記ブック」へ育っていきます。",
+    description: "デジタルで残した日々が、いつか手元に残る「あしあとブック」へ育っていきます。",
     imageSrc: HOME_PRODUCT_MOCK_IMAGES.diaryBook,
     imageAlt: "製本されたあしあとブック",
     imageWidth: 240,

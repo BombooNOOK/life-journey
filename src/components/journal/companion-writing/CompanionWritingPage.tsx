@@ -386,7 +386,7 @@ export function CompanionWritingPage() {
         throw new Error(data.error ?? `あしあとを残せませんでした。（${res.status}）`);
       }
       if (!data.entry?.id) {
-        throw new Error("保存に失敗しました。日記IDを取得できませんでした。");
+        throw new Error("保存に失敗しました。あしあとIDを取得できませんでした。");
       }
 
       if (typeof data.donguriBalance === "number") {

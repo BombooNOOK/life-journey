@@ -29,7 +29,7 @@ export function FirstVisitGuidePanel({ state, profileId, companionWritingHref }:
           まずは無料鑑定から
         </h2>
         <p className="mt-2 text-sm leading-6 text-stone-700">
-          Life Journey Diary では、鑑定書と日記がつながっています。日記の読み解きコメントを受け取るには、先に無料鑑定が必要です。
+          Life Journey Diary では、鑑定書とあしあとがつながっています。あしあとの読み解きコメントを受け取るには、先に無料鑑定が必要です。
         </p>
         <p className="mt-2 text-sm leading-6 text-stone-600">{LOG_HOUSE_TAGLINE}</p>
         <div className="mt-4 flex flex-wrap gap-2">

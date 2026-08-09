@@ -28,7 +28,8 @@ export const journalDiaryInviteCopyJa: JournalDiaryInviteCopy = {
   signature: "フクロウ先生",
   diaryIntroBody: `日々の流れを、自分の言葉と一緒に残していく。
 その形として、
-「Life Journey Diary」という日記があります。
+「Life Journey Diary」があります。
+写真と言葉で、毎日の小さなあしあとを残していくアプリです。
 
 詳しくは、BambooNOOKのホームページをご覧ください。`,
   homeUrl: "https://bamboonook.base.shop/",

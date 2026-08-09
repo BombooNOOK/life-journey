@@ -84,7 +84,7 @@ export function LjdNumerologyReadingPage() {
           {LJD_NUMEROLOGY_READING_THEME_SECTION_TITLE}
         </h2>
         <p className="text-sm leading-relaxed text-stone-600 sm:text-base sm:leading-7">
-          日記の「今日・今月・今年のすうじ」は、1〜9 それぞれにテーマがあります。
+          あしあとの「今日・今月・今年のすうじ」は、1〜9 それぞれにテーマがあります。
         </p>
         <NumerologyNumbersDictionaryView embedded />
       </section>

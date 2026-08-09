@@ -87,7 +87,7 @@ export async function loadDiaryBindingSnapshot(
   ).length;
 
   if (pageCount <= 0) {
-    return { error: "本に入れるページがありません。製本したい日記をONにしてください。" };
+    return { error: "本に入れるページがありません。製本したいあしあとをONにしてください。" };
   }
 
   const plan = getBookPlan(pageCount);
