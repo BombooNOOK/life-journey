@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 import { MyPageSubpageHeader } from "@/components/orders/MyPageSubpageHeader";
+import { RESIDENT_REGISTRATION_INFO_LABEL } from "@/lib/account/residentRegistrationUiCopy";
 import { mobileReadable } from "@/lib/auth/mobileReadableStyles";
 import { SUBSCRIPTION_CANCEL_COMPLETE_NOTE } from "@/lib/stripe/subscriptionBillingCopy";
 
@@ -16,7 +17,7 @@ export default function AccountCancelPlanCompletePage() {
         </div>
 
         <Link href="/orders/account" className={mobileReadable.buttonPrimary}>
-          アカウント情報へ戻る
+          {RESIDENT_REGISTRATION_INFO_LABEL}へ戻る
         </Link>
       </section>
     </div>
