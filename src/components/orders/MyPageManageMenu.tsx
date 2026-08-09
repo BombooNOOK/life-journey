@@ -2,8 +2,8 @@ import type { ReactNode } from "react";
 
 import { MyPageManageMenuRow } from "@/components/orders/MyPageManageMenuRow";
 import {
-  RECORD_BACKUP_LABEL,
-  RECORD_BACKUP_LOADING_LABEL,
+  ASHIATO_BACKUP_LABEL,
+  ASHIATO_BACKUP_LOADING_LABEL,
   RESIDENT_REGISTRATION_INFO_LABEL,
   RESIDENT_REGISTRATION_INFO_LOADING_LABEL,
 } from "@/lib/account/residentRegistrationUiCopy";
@@ -31,7 +31,7 @@ export function MyPageManageMenuSection({ title, description, children, classNam
   );
 }
 
-/** ログハウス歯車／設定：住民票・住民登録情報・記録のバックアップを軸にする */
+/** ログハウス歯車／設定：住民票・住民登録情報・あしあとのバックアップを軸にする */
 export function MyPageManageHub() {
   return (
     <div className="w-full space-y-5 border-t border-stone-200/80 pt-5">
@@ -53,9 +53,9 @@ export function MyPageManageHub() {
         />
         <MyPageManageMenuRow
           href="/orders/settings/backup"
-          label={RECORD_BACKUP_LABEL}
+          label={ASHIATO_BACKUP_LABEL}
           icon="↓"
-          loadingLabel={RECORD_BACKUP_LOADING_LABEL}
+          loadingLabel={ASHIATO_BACKUP_LOADING_LABEL}
         />
       </MyPageManageMenuSection>
 

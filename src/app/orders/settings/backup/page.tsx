@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 
 import { MyPageBackupSection } from "@/components/orders/MyPageBackupSection";
 import { MyPageSubpageHeader } from "@/components/orders/MyPageSubpageHeader";
-import { RECORD_BACKUP_LABEL } from "@/lib/account/residentRegistrationUiCopy";
+import { ASHIATO_BACKUP_LABEL } from "@/lib/account/residentRegistrationUiCopy";
 import { getViewerEmailFromCookie } from "@/lib/auth/viewer";
 
 export const dynamic = "force-dynamic";
@@ -16,7 +16,7 @@ export default async function MyPageSettingsBackupPage() {
   return (
     <div className="mx-auto w-full max-w-md space-y-5 sm:space-y-6">
       <MyPageSubpageHeader
-        title={RECORD_BACKUP_LABEL}
+        title={ASHIATO_BACKUP_LABEL}
         description="あしあと本文・写真などをZIPファイルとして端末に残せます"
       />
 

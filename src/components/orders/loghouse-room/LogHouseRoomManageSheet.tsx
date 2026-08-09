@@ -30,7 +30,7 @@ type Props = {
   previewMode?: boolean;
 };
 
-/** ログハウス室内：設定シート（一般は住民票・住民登録情報・記録のバックアップ。adminのみ既存枠切替） */
+/** ログハウス室内：設定シート（一般は住民票・住民登録情報・あしあとのバックアップ。adminのみ既存枠切替） */
 export function LogHouseRoomManageSheet({
   open,
   onClose,

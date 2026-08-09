@@ -4,8 +4,8 @@ import { redirect } from "next/navigation";
 import { MyPageManageMenuRow, MyPageManageMenuSection } from "@/components/orders/MyPageManageMenu";
 import { MyPageSubpageHeader } from "@/components/orders/MyPageSubpageHeader";
 import {
-  RECORD_BACKUP_LABEL,
-  RECORD_BACKUP_LOADING_LABEL,
+  ASHIATO_BACKUP_LABEL,
+  ASHIATO_BACKUP_LOADING_LABEL,
   RESIDENT_REGISTRATION_INFO_LABEL,
   RESIDENT_REGISTRATION_INFO_LOADING_LABEL,
 } from "@/lib/account/residentRegistrationUiCopy";
@@ -24,7 +24,7 @@ export default async function MyPageSettingsIndexPage() {
     <div className="mx-auto w-full max-w-md space-y-5 sm:space-y-6">
       <MyPageSubpageHeader
         title="設定"
-        description="住民票・登録情報・記録のバックアップを確認できます"
+        description="住民票・登録情報・あしあとのバックアップを確認できます"
       />
 
       <MyPageManageMenuSection
@@ -45,9 +45,9 @@ export default async function MyPageSettingsIndexPage() {
         />
         <MyPageManageMenuRow
           href="/orders/settings/backup"
-          label={RECORD_BACKUP_LABEL}
+          label={ASHIATO_BACKUP_LABEL}
           icon="↓"
-          loadingLabel={RECORD_BACKUP_LOADING_LABEL}
+          loadingLabel={ASHIATO_BACKUP_LOADING_LABEL}
         />
       </MyPageManageMenuSection>
 

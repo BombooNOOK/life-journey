@@ -1,19 +1,19 @@
 "use client";
 
 import { JournalBackupDownloadButton } from "@/components/orders/JournalBackupDownloadButton";
-import { RECORD_BACKUP_LABEL } from "@/lib/account/residentRegistrationUiCopy";
+import { ASHIATO_BACKUP_LABEL } from "@/lib/account/residentRegistrationUiCopy";
 
 type Props = {
   showHeading?: boolean;
 };
 
-/** 設定：記録のバックアップ（ZIP書き出し） */
+/** 設定：あしあとのバックアップ（ZIP書き出し。森ログ等は現状対象外） */
 export function MyPageBackupSection({ showHeading = true }: Props) {
   return (
     <section className="space-y-3 rounded-xl border border-stone-200 bg-white p-4 shadow-sm sm:p-5">
       {showHeading ? (
         <div>
-          <h2 className="text-lg font-semibold text-stone-900">{RECORD_BACKUP_LABEL}</h2>
+          <h2 className="text-lg font-semibold text-stone-900">{ASHIATO_BACKUP_LABEL}</h2>
           <p className="mt-1 lj-read-caption text-stone-600">
             このアカウントに保存されたあしあとを書き出せます。
           </p>
