@@ -169,8 +169,10 @@ async function captureTarget(
   baseUrl: string,
   target: (typeof TARGETS)[TargetKey],
   auto: boolean,
+  outputDir: string,
+  updateAssets: boolean,
 ): Promise<{ width: number; height: number; outputPath: string }> {
-  const outputPath = join(process.cwd(), "public/images/home-mock", target.outputFile);
+  const outputPath = join(outputDir, target.outputFile);
   mkdirSync(dirname(outputPath), { recursive: true });
 
   const url = auto ? `${baseUrl}${target.previewPath}` : `${baseUrl}${target.path}`;
@@ -218,7 +220,11 @@ async function captureTarget(
     throw new Error(`幅が 350px 未満です (${width}px)。撮影に失敗した可能性があります。`);
   }
 
-  updateHomeProductMockAssets(target.assetsKey, width, height);
+  if (updateAssets) {
+    updateHomeProductMockAssets(target.assetsKey, width, height);
+  } else {
+    console.log(`assets 更新スキップ（一時出力先: ${outputDir}）`);
+  }
   return { width, height, outputPath };
 }
 
@@ -235,6 +241,10 @@ async function main() {
   }
 
   const baseUrl = process.env.MOCK_CAPTURE_BASE_URL?.trim() || "http://127.0.0.1:3000";
+  const outputDir =
+    process.env.MOCK_CAPTURE_OUT_DIR?.trim() ||
+    join(process.cwd(), "public/images/home-mock");
+  const updateAssets = !process.env.MOCK_CAPTURE_OUT_DIR?.trim();
   const keys: TargetKey[] =
     targetArg === "all"
       ? (["journal", "journalPreview", "bookshelf", "diaryBook"] as TargetKey[])
@@ -242,6 +252,8 @@ async function main() {
 
   console.log(`モード: ${auto ? "自動（ログイン不要）" : "手動（ログイン必要）"}`);
   console.log(`ベースURL: ${baseUrl}`);
+  console.log(`出力先: ${outputDir}`);
+  console.log(`assets 更新: ${updateAssets ? "する" : "しない"}`);
   console.log(`ビューポート: ${VIEWPORT_WIDTH} x ${VIEWPORT_HEIGHT}`);
   console.log("");
 
@@ -269,7 +281,7 @@ async function main() {
       const target = TARGETS[key];
       console.log("");
       console.log(`--- ${target.label} ---`);
-      const result = await captureTarget(page, baseUrl, target, auto);
+      const result = await captureTarget(page, baseUrl, target, auto, outputDir, updateAssets);
       console.log(`保存: ${result.outputPath}`);
       console.log(`サイズ: ${result.width} x ${result.height}px`);
     }

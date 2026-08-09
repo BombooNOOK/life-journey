@@ -39,7 +39,7 @@ export const HOME_PRODUCT_MOCK_STEPS: HomeProductMockStep[] = [
     imageSrc: HOME_PRODUCT_MOCK_IMAGES.journalEntry,
     imageAlt: "あしあと入力画面",
     imageWidth: 390,
-    imageHeight: 2021,
+    imageHeight: 1820,
     frame: "phone",
   },
   {
@@ -50,7 +50,7 @@ export const HOME_PRODUCT_MOCK_STEPS: HomeProductMockStep[] = [
     imageSrc: HOME_PRODUCT_MOCK_IMAGES.journalPreview,
     imageAlt: "あしあとプレビュー画面",
     imageWidth: 390,
-    imageHeight: 1466,
+    imageHeight: 1567,
     frame: "phone",
   },
   {

@@ -24,14 +24,14 @@ export function isJournalEntryDateToday(entryDate: string): boolean {
   return entryDate === localTodayDateInputValue();
 }
 
-/** 例: 2026年5月26日の日記 */
+/** 例: 2026年5月26日のあしあと */
 export function formatJournalRecordPageTitle(entryDate: string): string {
   if (!isValidJournalDateInput(entryDate)) return "あしあと";
   const [y, m, d] = entryDate.split("-").map(Number);
   return `${y}年${m}月${d}日のあしあと`;
 }
 
-/** 日記プレビュー見出し用（例: 2026年6月16日） */
+/** あしあとプレビュー見出し用（例: 2026年6月16日） */
 export function formatJournalPreviewDateHeading(value: string | number | Date): string {
   const d =
     typeof value === "string" || typeof value === "number" ? new Date(value) : value;
