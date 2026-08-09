@@ -5,7 +5,6 @@ import { JournalContentLengthAlerts } from "@/components/journal/JournalContentL
 import { JournalWritingComposer } from "@/components/journal/JournalWritingComposer";
 import { MoodOwlIcon } from "@/components/journal/MoodOwlIcon";
 import { FieldLabelWithHelp } from "@/components/ui/InlineHelpButton";
-import { ActiveProfileLabel } from "@/components/profile/ActiveProfileLabel";
 import {
   DEFAULT_CONTENT_FONT_MODE,
   JOURNAL_CONTENT_SOFT_MAX_BY_MODE,
@@ -51,7 +50,6 @@ export function HomeMockJournalCapture() {
             メイン
           </span>
         </div>
-        <ActiveProfileLabel nickname="メイン" className="sm:hidden" />
         <p className="flex flex-wrap items-center gap-x-3 text-sm text-stone-500">
           <span className="underline-offset-2">ログハウス</span>
           <span className="text-emerald-800 underline-offset-2">カレンダーへ戻る</span>

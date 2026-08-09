@@ -1,5 +1,4 @@
 import { JournalReadablePreview } from "@/components/journal/JournalReadablePreview";
-import { ActiveProfileLabel } from "@/components/profile/ActiveProfileLabel";
 
 const DEMO_ENTRY_ID = "home-mock-preview-entry";
 const DEMO_CREATED_AT = "2026-08-13T09:00:00.000Z";
@@ -15,7 +14,6 @@ export function HomeMockJournalPreviewCapture() {
       <div className="space-y-3">
         <div>
           <h1 className="text-[1.375rem] font-bold text-stone-900 sm:text-[1.75rem]">あしあとプレビュー</h1>
-          <ActiveProfileLabel nickname="メイン" className="mt-2" />
         </div>
         <div className="flex flex-wrap gap-2">
           <button

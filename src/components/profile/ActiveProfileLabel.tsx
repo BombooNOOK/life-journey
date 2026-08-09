@@ -3,7 +3,7 @@ type Props = {
   className?: string;
 };
 
-/** 選択中プロフィールの控えめな表示 */
+/** admin 向け：選択中記録枠の控えめな表示 */
 export function ActiveProfileLabel({ nickname, className = "" }: Props) {
   return (
     <p
@@ -13,9 +13,9 @@ export function ActiveProfileLabel({ nickname, className = "" }: Props) {
       ]
         .filter(Boolean)
         .join(" ")}
-      title={`現在のプロフィール：${nickname}`}
+      title={`現在の記録枠：${nickname}`}
     >
-      現在のプロフィール：<span className="font-medium text-stone-700">{nickname}</span>
+      現在の記録枠：<span className="font-medium text-stone-700">{nickname}</span>
     </p>
   );
 }

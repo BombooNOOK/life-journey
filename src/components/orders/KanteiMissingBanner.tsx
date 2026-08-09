@@ -5,7 +5,7 @@ type Props = {
   blockNewKantei?: boolean;
 };
 
-/** 選択中プロフィールに鑑定Orderがないときの再鑑定導線 */
+/** 鑑定 Order がないときの再鑑定導線 */
 export function KanteiMissingBanner({ profileId, blockNewKantei = false }: Props) {
   const orderHref = `/order?profile=${encodeURIComponent(profileId)}`;
 
@@ -15,10 +15,10 @@ export function KanteiMissingBanner({ profileId, blockNewKantei = false }: Props
       className="rounded-xl border border-amber-200 bg-amber-50/80 p-4 shadow-sm sm:p-5"
     >
       <h2 id="kantei-missing-banner-heading" className="text-sm font-semibold text-amber-950">
-        このプロフィールには鑑定情報がありません。
+        まだ鑑定情報がありません。
       </h2>
       <p className="mt-2 lj-read-desc text-amber-950/90">
-        バックアップから復元されたプロフィールなどでは、あしあと本文と写真は戻りますが、鑑定書は復元されません。
+        バックアップからの復元などでは、あしあと本文と写真は戻っても鑑定書は含まれないことがあります。
         鑑定を作成すると、鑑定書が本棚に表示され、今後のあしあとの数字やコメント生成にも使えるようになります。
       </p>
       {blockNewKantei ? (

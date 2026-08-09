@@ -56,7 +56,7 @@ export type AccountDeleteResult = {
 };
 
 const FIREBASE_ADMIN_NOT_CONFIGURED_MESSAGE =
-  "現在、住民登録の解除を完了できません。しばらくしてから再度お試しいただくか、お問い合わせください。";
+  "現在、アカウントの削除を完了できません。しばらくしてから再度お試しいただくか、お問い合わせください。";
 
 function assertFirebaseAdminReadyForAccountDelete(): void {
   if (process.env.NODE_ENV === "production" && !isFirebaseAdminConfigured()) {
@@ -177,7 +177,7 @@ export async function deleteUserAccount(params: {
   const preview = await buildAccountDeletePreview(params.emailInput);
   if (!preview.canDelete) {
     throw new AccountDeleteError(
-      preview.blockMessage ?? "住民登録を解除できません。",
+      preview.blockMessage ?? "アカウントを削除できません。",
       preview.blockCode ?? "DELETE_BLOCKED",
     );
   }

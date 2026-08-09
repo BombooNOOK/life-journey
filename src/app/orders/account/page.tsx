@@ -6,7 +6,6 @@ import { MyPageSubpageHeader } from "@/components/orders/MyPageSubpageHeader";
 import { getViewerEmailFromCookie } from "@/lib/auth/viewer";
 import { prisma } from "@/lib/db";
 import { withPrismaConnectionRetry } from "@/lib/db/prismaRetry";
-import { effectiveProfileLimit } from "@/lib/profile/effectiveProfileLimit";
 import { resolveSubscriptionCancelState } from "@/lib/stripe/subscriptionCancelState";
 
 export const dynamic = "force-dynamic";
@@ -23,8 +22,6 @@ export default async function MyPageAccountPage() {
         where: { email: viewerEmail },
         select: {
           createdAt: true,
-          profileLimit: true,
-          isMonitor: true,
           subscriptionPlan: true,
           subscriptionStatus: true,
           stripeSubscriptionId: true,
@@ -51,8 +48,6 @@ export default async function MyPageAccountPage() {
       <MyPageAccountSection
         viewerEmail={viewerEmail}
         subscriptionPlan={settings?.subscriptionPlan ?? null}
-        profileLimit={effectiveProfileLimit(settings)}
-        isMonitor={settings?.isMonitor === true}
         registeredAtLabel={
           createdAt ? createdAt.toLocaleDateString("ja-JP") : "登録日を確認できません"
         }

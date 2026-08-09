@@ -1,10 +1,11 @@
 import { NextResponse } from "next/server";
 
-import { getViewerEmailFromCookie, normalizeEmail } from "@/lib/auth/viewer";
-import { prisma } from "@/lib/db";
-import { assertFullAccessForApi } from "@/lib/entitlement/requireFullAccess";
+import { getViewerEmailFromCookie } from "@/lib/auth/viewer";
 import { listProfilesAndActiveProfileId } from "@/lib/profile/activeProfile";
-import { effectiveProfileLimit } from "@/lib/profile/effectiveProfileLimit";
+import {
+  isViewerProfileCreateEnabled,
+  PROFILE_CREATE_DISABLED_USER_MESSAGE,
+} from "@/lib/profile/viewerProfileUiPolicy";
 
 export async function GET() {
   const viewerEmail = await getViewerEmailFromCookie();
@@ -15,50 +16,20 @@ export async function GET() {
   return NextResponse.json({ profiles, activeProfileId, code: "OK" });
 }
 
-export async function POST(req: Request) {
+/** 本人中心化：一般・管理者とも新規 Profile 作成は停止（既定1件の ensure は別経路） */
+export async function POST() {
   const viewerEmail = await getViewerEmailFromCookie();
   if (!viewerEmail) {
     return NextResponse.json({ error: "ログインが必要です", code: "AUTH_REQUIRED" }, { status: 401 });
   }
-
-  const denied = await assertFullAccessForApi(viewerEmail);
-  if (denied) return denied;
-
-  let json: unknown;
-  try {
-    json = await req.json();
-  } catch {
-    return NextResponse.json({ error: "JSONが不正です", code: "BAD_JSON" }, { status: 400 });
-  }
-  const nickname =
-    typeof json === "object" && json !== null && "nickname" in json
-      ? String((json as { nickname: unknown }).nickname).trim()
-      : "";
-  if (!nickname) {
-    return NextResponse.json({ error: "ニックネームを入力してください", code: "EMPTY_NICKNAME" }, { status: 400 });
-  }
-  if (nickname.length > 40) {
+  if (!isViewerProfileCreateEnabled()) {
     return NextResponse.json(
-      { error: "ニックネームは40文字以内で入力してください", code: "NICKNAME_TOO_LONG" },
-      { status: 400 },
+      { error: PROFILE_CREATE_DISABLED_USER_MESSAGE, code: "PROFILE_CREATE_DISABLED" },
+      { status: 403 },
     );
   }
-  const email = normalizeEmail(viewerEmail);
-  const settings = await prisma.accountSettings.findUnique({
-    where: { email },
-    select: { profileLimit: true, isMonitor: true },
-  });
-  const limit = effectiveProfileLimit(settings);
-  const currentCount = await prisma.profile.count({ where: { email, isArchived: false } });
-  if (currentCount >= limit) {
-    return NextResponse.json(
-      { error: `現在のプラン上限（${limit}プロフィール）に達しています`, code: "PROFILE_LIMIT" },
-      { status: 400 },
-    );
-  }
-  const profile = await prisma.profile.create({
-    data: { email, nickname },
-    select: { id: true, nickname: true },
-  });
-  return NextResponse.json({ profile, code: "OK" });
+  return NextResponse.json(
+    { error: PROFILE_CREATE_DISABLED_USER_MESSAGE, code: "PROFILE_CREATE_DISABLED" },
+    { status: 403 },
+  );
 }

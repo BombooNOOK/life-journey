@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
@@ -14,7 +13,7 @@ type Props = {
   activeProfileId: string;
 };
 
-/** マイページ：プロフィールを選ぶ */
+/** admin 向け：記録枠の切替（一般 UI では非表示） */
 export function MyPageProfileList({ profiles, activeProfileId }: Props) {
   const router = useRouter();
   const [busyId, setBusyId] = useState<string | null>(null);
@@ -38,28 +37,17 @@ export function MyPageProfileList({ profiles, activeProfileId }: Props) {
     }
   }
 
-
   return (
     <section id="profile-list" className="space-y-3">
       <div>
         <FieldLabelWithHelp
-          label="① プロフィールを選ぶ"
+          label="① 記録枠を選ぶ"
           labelClassName="text-lg font-semibold text-stone-900"
-          helpAriaLabel="プロフィール一覧の説明"
+          helpAriaLabel="記録枠一覧の説明"
           help={
             <>
-              <p>使うプロフィールを選んでから、下の「やりたいことを選ぶ」へ進んでください。</p>
-              <p className="mt-1.5">
-                プロフィールの追加は
-                <Link
-                  href="/orders/settings/add-profile"
-                  className="font-medium text-stone-800 underline-offset-2 hover:underline"
-                >
-                  こちら
-                </Link>
-                からできます。
-              </p>
-              <p className="mt-1.5">家族やテーマごとに、記録を分けて残せます。</p>
+              <p>使う記録枠を選んでから、下の「やりたいことを選ぶ」へ進んでください。</p>
+              <p className="mt-1.5">管理者向けの互換表示です。新しい記録枠の追加はできません。</p>
             </>
           }
         />
@@ -70,7 +58,7 @@ export function MyPageProfileList({ profiles, activeProfileId }: Props) {
         </p>
       ) : null}
       {profiles.length === 0 ? (
-        <p className="lj-read-desc text-stone-600">プロフィールがまだありません。下から追加してください。</p>
+        <p className="lj-read-desc text-stone-600">記録枠がまだありません。</p>
       ) : (
         <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {profiles.map((profile) => {

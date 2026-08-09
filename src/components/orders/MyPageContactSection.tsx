@@ -58,7 +58,7 @@ export function MyPageContactSection({ viewerEmail }: Props) {
       <div>
         <h2 className="text-lg font-semibold text-stone-900">お問い合わせ</h2>
         <p className="mt-2 lj-read-desc text-stone-700">
-          プロフィール削除、バックアップ復元、製本申込、その他ご不明点がある場合はこちらからお問い合わせください。
+          データの削除、バックアップ復元、製本申込、その他ご不明点がある場合はこちらからお問い合わせください。
         </p>
         <p className="mt-2 lj-read-caption text-stone-500">
           ログイン中のアカウント（{viewerEmail}）として送信します。返信はこのページのチャットで確認できます。

@@ -3,6 +3,7 @@ import { Suspense } from "react";
 
 import { DiaryJournalListHome } from "@/components/journal/DiaryJournalListHome";
 import { OwlSuspenseFallback } from "@/components/ui/OwlSuspenseFallback";
+import { isAdminEmail } from "@/lib/admin/access";
 import { getViewerEmailFromCookie } from "@/lib/auth/viewer";
 import { withPrismaConnectionRetry } from "@/lib/db/prismaRetry";
 import { listProfilesAndActiveProfileId } from "@/lib/profile/activeProfile";
@@ -24,6 +25,7 @@ export default async function OrdersJournalListPage() {
   );
   const activeProfileNickname =
     profiles.find((p) => p.id === activeProfileId)?.nickname ?? "メイン";
+  const viewerIsAdmin = await isAdminEmail(viewerEmail);
 
   return (
     <Suspense fallback={<ListFallback />}>
@@ -31,6 +33,7 @@ export default async function OrdersJournalListPage() {
         profiles={profiles}
         activeProfileId={activeProfileId}
         activeProfileNickname={activeProfileNickname}
+        viewerIsAdmin={viewerIsAdmin}
       />
     </Suspense>
   );

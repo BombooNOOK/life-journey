@@ -5,6 +5,7 @@ import Link from "next/link";
 import { LogHouseDeskWritingChoice } from "@/components/orders/LogHouseDeskWritingChoice";
 import { LogHouseLoadErrorPanel } from "@/components/orders/LogHouseLoadErrorPanel";
 import { MyPageSubpageHeader } from "@/components/orders/MyPageSubpageHeader";
+import { isAdminEmail } from "@/lib/admin/access";
 import { getViewerEmailFromCookie } from "@/lib/auth/viewer";
 import { withPrismaConnectionRetry } from "@/lib/db/prismaRetry";
 import { loadEntitlementContext } from "@/lib/entitlement/accountSettingsForEntitlement";
@@ -33,7 +34,7 @@ export default async function LogHouseDeskWritePage() {
   }
 
   try {
-    const { activeProfileId, profiles, kanteiOrder, journalEntryCount } =
+    const { activeProfileId, profiles, kanteiOrder, journalEntryCount, viewerIsAdmin } =
       await withPrismaConnectionRetry(async () => {
         const profileData = await listProfilesAndActiveProfileId(viewerEmail);
         const kantei = await resolvePrimaryKanteiOrderForProfile({
@@ -41,11 +42,13 @@ export default async function LogHouseDeskWritePage() {
           profileId: profileData.activeProfileId,
         });
         const entitlementCtx = await loadEntitlementContext(viewerEmail);
+        const viewerIsAdmin = await isAdminEmail(viewerEmail);
         return {
           activeProfileId: profileData.activeProfileId,
           profiles: profileData.profiles,
           kanteiOrder: kantei,
           journalEntryCount: entitlementCtx.journalEntryCount,
+          viewerIsAdmin,
         };
       });
 
@@ -56,7 +59,7 @@ export default async function LogHouseDeskWritePage() {
             title={LOG_HOUSE_DESK_WRITE_PAGE_TITLE}
             description={LOG_HOUSE_DESK_WRITE_PAGE_DESCRIPTION}
           />
-          <p className="text-sm text-stone-600">あしあとを残すには、プロフィールが必要です。</p>
+          <p className="text-sm text-stone-600">あしあとを残す準備ができていません。時間をおいて再度お試しください。</p>
           <Link href="/orders" className="text-sm text-emerald-900 underline-offset-2 hover:underline">
             {LOG_HOUSE_RETURN_TO_LABEL}
           </Link>
@@ -89,6 +92,7 @@ export default async function LogHouseDeskWritePage() {
         companionWritingHref={companionWritingHref}
         profiles={profiles}
         activeProfileId={activeProfileId}
+        viewerIsAdmin={viewerIsAdmin}
       />
     );
   } catch (e) {

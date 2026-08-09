@@ -24,6 +24,7 @@ import {
 import type { DonguriChoView } from "@/lib/loghouse/donguriTypes";
 import { useIsLogHouseMobileViewport } from "@/lib/loghouse/logHouseViewport";
 import type { FirstVisitReadyContext } from "@/lib/viewer/firstVisitReadyContext";
+import { canShowAdminProfileSwitchUi } from "@/lib/profile/viewerProfileUiPolicy";
 
 type ProfileRow = { id: string; nickname: string };
 
@@ -192,8 +193,13 @@ export function LogHouseHub({
       return (
         <div className="space-y-5 px-4 py-6 sm:space-y-6">
           <MyPagePageHeader />
-          <MyPageProfileList profiles={profiles} activeProfileId={activeProfileId} />
-          <MyPageManageHub activeProfileId={activeProfileId || null} />
+          {canShowAdminProfileSwitchUi({
+            isAdmin: viewerIsAdmin,
+            profileCount: profiles.length,
+          }) ? (
+            <MyPageProfileList profiles={profiles} activeProfileId={activeProfileId} />
+          ) : null}
+          <MyPageManageHub />
           <div className="border-t border-stone-200 pt-6">{legalFooter}</div>
         </div>
       );
@@ -224,6 +230,7 @@ export function LogHouseHub({
           activeProfileId={activeProfileId}
           companionWritingHref={companionWritingHref}
           viewerEmail={viewerEmail}
+          viewerIsAdmin={viewerIsAdmin}
         />
       </>
     );
@@ -233,7 +240,12 @@ export function LogHouseHub({
     <div className="space-y-5 sm:space-y-6">
       <MyPagePageHeader />
 
-      <MyPageProfileList profiles={profiles} activeProfileId={activeProfileId} />
+      {canShowAdminProfileSwitchUi({
+        isAdmin: viewerIsAdmin,
+        profileCount: profiles.length,
+      }) ? (
+        <MyPageProfileList profiles={profiles} activeProfileId={activeProfileId} />
+      ) : null}
 
       <TrialStatusBanner entitlement={entitlement} />
 
@@ -268,7 +280,7 @@ export function LogHouseHub({
 
       <MyPageGuideLink />
 
-      <MyPageManageHub activeProfileId={activeProfileId || null} />
+      <MyPageManageHub />
 
       <div className="border-t border-stone-200 pt-6">{legalFooter}</div>
       {viewerIsAdmin ? <div className="border-t border-stone-200 pt-6">{adminLink}</div> : null}

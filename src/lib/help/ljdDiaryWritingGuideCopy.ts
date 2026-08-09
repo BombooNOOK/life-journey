@@ -21,12 +21,6 @@ export const LJD_DIARY_WRITING_GUIDE_COMMON_STEPS: readonly LjdDiaryWritingGuide
     body: "上部のメニュー、または森の入口から入ります。",
   },
   {
-    id: "profile",
-    title: "プロフィールを確認する",
-    body: "どのプロフィールのあしあととして残すか、はじめに確認します。",
-    note: "プロフィールが複数あるときは、机のあとの「今日はどうしますか？」画面の上部で切り替えられます。あしあとは、すべてご自身に関する内容として残す想定です。",
-  },
-  {
     id: "desk",
     title: "机をタップする",
     body: "ログハウスの室内で、机をタップします。ここがあしあとのはじまりです。",

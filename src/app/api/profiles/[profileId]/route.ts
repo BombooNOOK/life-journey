@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 
+import { isAdminEmail } from "@/lib/admin/access";
 import { getViewerEmailFromCookie } from "@/lib/auth/viewer";
 import { prisma } from "@/lib/db";
 import { assertFullAccessForApi } from "@/lib/entitlement/requireFullAccess";
@@ -17,12 +18,23 @@ export async function PATCH(req: Request, { params }: Params) {
   const denied = await assertFullAccessForApi(viewerEmail);
   if (denied) return denied;
 
+  // 一般ユーザー向けの内部ニックネーム変更は停止。admin の既存枠識別用のみ許可。
+  if (!(await isAdminEmail(viewerEmail))) {
+    return NextResponse.json(
+      {
+        error: "表示名の変更は、森の住民票のおなまえから行えます。",
+        code: "PROFILE_NICKNAME_EDIT_DISABLED",
+      },
+      { status: 403 },
+    );
+  }
+
   const { profileId: profileIdRaw } = await params;
   const profileId = parseProfileIdFromRouteParam(profileIdRaw);
   const existing = await profileByIdForViewer(profileId, viewerEmail);
   if (!existing) {
     return NextResponse.json(
-      { error: "指定プロフィールへアクセスできません", code: "FORBIDDEN_PROFILE" },
+      { error: "指定の記録枠へアクセスできません", code: "FORBIDDEN_PROFILE" },
       { status: 403 },
     );
   }

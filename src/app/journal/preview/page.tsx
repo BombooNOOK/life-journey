@@ -9,7 +9,6 @@ import { JournalReadablePreview } from "@/components/journal/JournalReadablePrev
 import { CompanionWritingPreviewFarewellGuide } from "@/components/journal/companion-writing/CompanionWritingPreviewFarewellGuide";
 import { MoriLogMakerPanel } from "@/components/journal/MoriLogMakerPanel";
 import { MoriLogReadableCta } from "@/components/journal/MoriLogReadableCta";
-import { ActiveProfileLabel } from "@/components/profile/ActiveProfileLabel";
 import { OwlLoadingPanel } from "@/components/ui/OwlLoadingPanel";
 import { OwlSuspenseFallback } from "@/components/ui/OwlSuspenseFallback";
 import { useEnsureServerAuthSession } from "@/hooks/useEnsureServerAuthSession";
@@ -314,9 +313,6 @@ function JournalPreviewPageContent() {
       <div className="space-y-3">
         <div>
           <h1 className="text-[1.375rem] font-bold text-stone-900 sm:text-[1.75rem]">{TERM_FOOTPRINT_PREVIEW}</h1>
-          {profileState.ready && profileState.hasProfiles ? (
-            <ActiveProfileLabel nickname={profileState.activeProfileNickname} className="mt-2" />
-          ) : null}
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <button

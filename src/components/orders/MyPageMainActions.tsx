@@ -32,7 +32,7 @@ type Props = {
 const navButtonClass =
   "block w-full rounded-2xl text-left transition-[transform,opacity] duration-75 active:scale-[0.99]";
 
-/** マイページトップ：選択中プロフィールで何をするか */
+/** マイページトップ：やりたいことを選ぶ */
 export function MyPageMainActions({
   profileId,
   isActive,
@@ -54,12 +54,12 @@ export function MyPageMainActions({
   return (
     <section id="main-actions" className="space-y-3">
       <FieldLabelWithHelp
-        label="② やりたいことを選ぶ"
+        label="やりたいことを選ぶ"
         labelClassName="text-lg font-semibold text-stone-900"
         helpAriaLabel="ログハウスの操作説明"
         help={
           <p>
-            選んだプロフィールのあしあとを残したり、あしあと帳や本棚・ポスト・鑑定結果を開けます。森の住民票はアカウント共通です。
+            あしあとを残したり、あしあと帳や本棚・ポスト・鑑定結果を開けます。森の住民票はアカウント共通です。
           </p>
         }
       />

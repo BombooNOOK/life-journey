@@ -10,7 +10,7 @@ export default function BillingSuccessPage() {
     <div className="mx-auto max-w-lg space-y-5 rounded-xl border border-emerald-200 bg-emerald-50/40 p-6 shadow-sm">
       <h1 className="text-2xl font-bold text-stone-900">お支払いが完了しました</h1>
       <p className="text-sm leading-relaxed text-stone-700">
-        プラン反映まで少し時間がかかる場合があります。しばらくしてから{LOG_HOUSE_SHORT_LABEL}でプランとプロフィール上限をご確認ください。
+        プラン反映まで少し時間がかかる場合があります。しばらくしてから{LOG_HOUSE_SHORT_LABEL}でご確認ください。
       </p>
       <div className="flex flex-wrap gap-2">
         <Link

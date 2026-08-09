@@ -92,7 +92,7 @@ export function ForestResidentDisplayNameEditor({ initialDisplayName }: Props) {
         </button>
       </div>
       <p className="text-xs leading-relaxed text-stone-500">
-        {FOREST_RESIDENT_DISPLAY_NAME_MAX_LENGTH}文字以内。プロフィール名とは別に、住民票に載るおなまえです。
+        {FOREST_RESIDENT_DISPLAY_NAME_MAX_LENGTH}文字以内。森の住民票に載るおなまえです。
       </p>
       {error ? (
         <p className="text-xs text-red-700" role="alert">

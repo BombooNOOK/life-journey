@@ -7,7 +7,6 @@ import { MyPageAccountSectionCard } from "@/components/orders/MyPageAccountSecti
 import { OwlLoadingInline } from "@/components/ui/OwlLoadingInline";
 import { mobileReadable } from "@/lib/auth/mobileReadableStyles";
 import { MYPAGE_CONTACT_FORM_PATH } from "@/lib/legal/legalDocumentLinks";
-import { formatMyPageProfileLimitLabel } from "@/lib/profile/effectiveProfileLimit";
 import { deriveForestDeliveryStatusLabel } from "@/lib/stripe/plans";
 import { SUBSCRIPTION_CANCEL_PENDING_BILLING_NOTE } from "@/lib/stripe/subscriptionBillingCopy";
 import type { SubscriptionCancelState } from "@/lib/stripe/subscriptionCancelState";
@@ -15,8 +14,6 @@ import type { SubscriptionCancelState } from "@/lib/stripe/subscriptionCancelSta
 type Props = {
   viewerEmail: string;
   subscriptionPlan: string | null;
-  profileLimit: number;
-  isMonitor?: boolean;
   registeredAtLabel: string;
   subscriptionCancelState: SubscriptionCancelState;
 };
@@ -31,8 +28,6 @@ function usesGoogleSignInOnly(user: ReturnType<typeof useFirebaseAuth>["user"]):
 export function MyPageAccountSection({
   viewerEmail,
   subscriptionPlan,
-  profileLimit,
-  isMonitor = false,
   registeredAtLabel,
   subscriptionCancelState,
 }: Props) {
@@ -60,11 +55,6 @@ export function MyPageAccountSection({
         <dl className="lj-read-desc grid gap-3 sm:grid-cols-[7.5rem_1fr]">
           <dt className="text-stone-500">森の定期便</dt>
           <dd className="text-stone-900">{forestStatusLabel}</dd>
-
-          <dt className="text-stone-500">プロフィール上限</dt>
-          <dd className="text-stone-900">
-            {formatMyPageProfileLimitLabel({ isMonitor, profileLimit })}
-          </dd>
         </dl>
 
         <div className="space-y-3 border-t border-stone-100 pt-4">
@@ -149,20 +139,18 @@ export function MyPageAccountSection({
         </div>
       </MyPageAccountSectionCard>
 
-      <MyPageAccountSectionCard
-        title="申込・コード確認"
-        footer={
+      <MyPageAccountSectionCard title="申込・コード確認">
+        <p className={`${mobileReadable.bodyMuted} text-sm`}>
+          鑑定コード・製本申し込みコードは、本棚から確認できます。
+        </p>
+        <div className="border-t border-stone-100 pt-4">
           <Link
-            href="#profile-list"
+            href="/orders/bookshelf"
             className="inline-flex text-sm font-medium text-emerald-900 underline-offset-2 hover:underline"
           >
-            プロフィール一覧へ
+            本棚へ
           </Link>
-        }
-      >
-        <p className={`${mobileReadable.bodyMuted} text-sm`}>
-          鑑定コード・製本申し込みコードは、各プロフィールの本棚から確認できます。
-        </p>
+        </div>
       </MyPageAccountSectionCard>
 
       <MyPageAccountSectionCard title="データ管理">
@@ -174,7 +162,7 @@ export function MyPageAccountSection({
             href="/orders/account/delete"
             className="inline-flex min-h-[44px] items-center rounded-lg border border-red-200 bg-white px-4 py-2.5 text-base font-medium text-red-800 transition hover:bg-red-50"
           >
-            住民登録をやめる
+            アカウントを削除する
           </Link>
         </div>
       </MyPageAccountSectionCard>

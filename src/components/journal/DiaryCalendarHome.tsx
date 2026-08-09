@@ -15,6 +15,7 @@ import {
 import { DonguriWriteEntryLink } from "@/components/loghouse/DonguriWriteEntryLink";
 import { ProfileSwitcher } from "@/components/profile/ProfileSwitcher";
 import { useEnsureServerAuthSession } from "@/hooks/useEnsureServerAuthSession";
+import { canShowAdminProfileSwitchUi } from "@/lib/profile/viewerProfileUiPolicy";
 import {
   formatDateTimeJa,
   formatJournalListCreatedLabel,
@@ -76,6 +77,7 @@ type Props = {
   activeProfileId: string;
   activeProfileNickname: string;
   entitlement: SerializedUserEntitlement;
+  viewerIsAdmin?: boolean;
 };
 
 function toMonthKey(date: Date): string {
@@ -138,6 +140,7 @@ export function DiaryCalendarHome({
   activeProfileId,
   activeProfileNickname,
   entitlement,
+  viewerIsAdmin = false,
 }: Props) {
   const canWriteJournal =
     entitlement.canUseContinuedFeatures || entitlement.canCreateFirstJournal;
@@ -151,6 +154,10 @@ export function DiaryCalendarHome({
   const debugDay = searchParams.get("debugDay");
   const debugEntryId = searchParams.get("debugEntry");
   const [effectiveProfileId, setEffectiveProfileId] = useState(activeProfileId);
+  const showAdminProfileUi = canShowAdminProfileSwitchUi({
+    isAdmin: viewerIsAdmin,
+    profileCount: profiles.length,
+  });
 
   const effectiveProfileNickname = useMemo(() => {
     const match = profiles.find((p) => p.id === effectiveProfileId);
@@ -170,7 +177,7 @@ export function DiaryCalendarHome({
   const [isFetching, setIsFetching] = useState(true);
   const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [showProfilePanel, setShowProfilePanel] = useState(false);
+  const [showProfileSwitch, setShowProfileSwitch] = useState(false);
   const companionGuideFromUrl = useMemo(
     () =>
       parseCompanionWritingCalendarGuidePhase(
@@ -498,37 +505,47 @@ export function DiaryCalendarHome({
             {LOG_HOUSE_BACK_LINK.label}
           </Link>
           <h1 className="mt-0 hidden text-xl font-bold leading-snug text-[#3f3428] sm:mt-2 sm:block sm:text-2xl">
-            <button
-              type="button"
-              onClick={() => setShowProfilePanel((v) => !v)}
-              className={`${LJD_PAPER_LINK_CLASS} underline-offset-4`}
-              aria-expanded={showProfilePanel}
-              aria-controls="diary-profile-switcher"
-            >
-              【{effectiveProfileNickname}】
-            </button>
+            {showAdminProfileUi ? (
+              <button
+                type="button"
+                onClick={() => setShowProfileSwitch((v) => !v)}
+                className={`${LJD_PAPER_LINK_CLASS} underline-offset-4`}
+                aria-expanded={showProfileSwitch}
+                aria-controls="diary-profile-switcher"
+              >
+                【{effectiveProfileNickname}】
+              </button>
+            ) : null}
             Life Journey Diary
           </h1>
-          <p
-            className="flex min-w-0 items-baseline gap-0.5 text-xs leading-snug sm:hidden"
-            title={`現在のプロフィール：${effectiveProfileNickname}`}
-          >
-            <span className="shrink-0 text-stone-500">現在のプロフィール：</span>
-            <button
-              type="button"
-              onClick={() => setShowProfilePanel((v) => !v)}
-              className={profileNameButtonClass}
-              aria-expanded={showProfilePanel}
-              aria-controls="diary-profile-switcher"
+          {showAdminProfileUi ? (
+            <p
+              className="flex min-w-0 items-baseline gap-0.5 text-xs leading-snug sm:hidden"
+              title={`管理者用記録枠：${effectiveProfileNickname}`}
             >
-              {effectiveProfileNickname}
-            </button>
-          </p>
+              <span className="shrink-0 text-stone-500">記録枠：</span>
+              <button
+                type="button"
+                onClick={() => setShowProfileSwitch((v) => !v)}
+                className={profileNameButtonClass}
+                aria-expanded={showProfileSwitch}
+                aria-controls="diary-profile-switcher"
+              >
+                {effectiveProfileNickname}
+              </button>
+            </p>
+          ) : (
+            <p className="text-xs leading-snug text-stone-500 sm:hidden">あしあとのカレンダー</p>
+          )}
         </div>
 
-        {showProfilePanel ? (
+        {showAdminProfileUi && showProfileSwitch ? (
           <div id="diary-profile-switcher">
-            <ProfileSwitcher profiles={profiles} activeProfileId={effectiveProfileId} />
+            <ProfileSwitcher
+              profiles={profiles}
+              activeProfileId={effectiveProfileId}
+              viewerIsAdmin={viewerIsAdmin}
+            />
           </div>
         ) : null}
 

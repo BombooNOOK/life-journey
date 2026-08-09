@@ -25,64 +25,44 @@ export function MyPageManageMenuSection({ title, description, children, classNam
   );
 }
 
-type HubProps = {
-  activeProfileId: string | null;
-};
-
-/** マイページ下部：設定・アカウント・お問い合わせ履歴の控えめな導線 */
-export function MyPageManageHub({ activeProfileId }: HubProps) {
-  const profileRenameHref = activeProfileId
-    ? "/orders/settings/rename-profile"
-    : "/orders/settings/add-profile";
-
+/** ログハウス歯車／設定：住民票・アカウント・データ管理を軸にする */
+export function MyPageManageHub() {
   return (
     <div className="w-full space-y-5 border-t border-stone-200/80 pt-5">
       <MyPageManageMenuSection
-        title="設定"
-        description="プロフィールや表示の設定を変更できます"
+        title="森のくらし"
+        description="本人の住民票と、アカウント周りの確認ができます"
       >
         <MyPageManageMenuRow
-          href="/orders/settings/add-profile"
-          label="プロフィールを追加"
-          icon="＋"
-          loadingLabel="プロフィール追加を開いています…"
+          href="/orders/resident-card"
+          label="森の住民票"
+          icon="◎"
+          loadingLabel="森の住民票を開いています…"
         />
         <MyPageManageMenuRow
-          href={profileRenameHref}
-          label="プロフィール名を変更"
-          icon="✎"
-          loadingLabel="プロフィール名の変更を開いています…"
+          href="/orders/account"
+          label="アカウント情報"
+          icon="☰"
+          loadingLabel="アカウント情報を開いています…"
         />
+        <MyPageManageMenuRow
+          href="/orders/settings/backup"
+          label="データ管理"
+          icon="↓"
+          loadingLabel="データ管理を開いています…"
+        />
+      </MyPageManageMenuSection>
+
+      <MyPageManageMenuSection
+        title="表示・サポート"
+        description="見やすさやお問い合わせの確認ができます"
+      >
         <MyPageManageMenuRow
           href="/orders/settings/display"
           label="表示設定"
           icon="Aa"
           loadingLabel="表示設定を開いています…"
         />
-        <MyPageManageMenuRow
-          href="/orders/settings/backup"
-          label="バックアップ作成"
-          icon="↓"
-          loadingLabel="バックアップ作成を開いています…"
-        />
-      </MyPageManageMenuSection>
-
-      <MyPageManageMenuSection
-        title="アカウント情報"
-        description="登録情報や利用状況を確認できます"
-      >
-        <MyPageManageMenuRow
-          href="/orders/account"
-          label="アカウント情報"
-          icon="◎"
-          loadingLabel="アカウント情報を開いています…"
-        />
-      </MyPageManageMenuSection>
-
-      <MyPageManageMenuSection
-        title="お問い合わせ履歴"
-        description="これまでのお問い合わせを確認できます"
-      >
         <MyPageManageMenuRow
           href="/orders/support"
           label="お問い合わせ履歴"

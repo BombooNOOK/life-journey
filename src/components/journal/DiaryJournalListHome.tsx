@@ -40,6 +40,7 @@ import {
   LJD_PAPER_CHIP_IDLE_CLASS,
 } from "@/lib/ljd/ljdPaperSurface";
 import { TERM_FOOTPRINT_LEDGER } from "@/lib/journal/footprintTerminology";
+import { canShowAdminProfileSwitchUi } from "@/lib/profile/viewerProfileUiPolicy";
 
 const JOURNAL_LIST_DELETE_CONFIRM = "このあしあとを本当に削除しますか？" as const;
 
@@ -49,6 +50,7 @@ type Props = {
   profiles: ProfileOption[];
   activeProfileId: string;
   activeProfileNickname: string;
+  viewerIsAdmin?: boolean;
 };
 
 const listSelectClass =
@@ -101,6 +103,7 @@ export function DiaryJournalListHome({
   profiles,
   activeProfileId,
   activeProfileNickname,
+  viewerIsAdmin = false,
 }: Props) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -110,6 +113,10 @@ export function DiaryJournalListHome({
   );
   const [effectiveProfileId, setEffectiveProfileId] = useState(activeProfileId);
   const [showProfilePanel, setShowProfilePanel] = useState(false);
+  const showAdminProfileUi = canShowAdminProfileSwitchUi({
+    isAdmin: viewerIsAdmin,
+    profileCount: profiles.length,
+  });
   const [entries, setEntries] = useState<JournalListEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
@@ -335,21 +342,29 @@ export function DiaryJournalListHome({
               {JOURNAL_LIST_HELP_TEXT}
             </InlineHelpButton>
           </div>
-          <ActiveProfileLabel nickname={effectiveProfileNickname} className="mt-2" />
-          <button
-            type="button"
-            onClick={() => setShowProfilePanel((v) => !v)}
-            className={`mt-2 text-sm ${LJD_PAPER_LINK_CLASS}`}
-            aria-expanded={showProfilePanel}
-            aria-controls="list-profile-switcher"
-          >
-            プロフィールを切り替える
-          </button>
+          {showAdminProfileUi ? (
+            <>
+              <ActiveProfileLabel nickname={effectiveProfileNickname} className="mt-2" />
+              <button
+                type="button"
+                onClick={() => setShowProfilePanel((v) => !v)}
+                className={`mt-2 text-sm ${LJD_PAPER_LINK_CLASS}`}
+                aria-expanded={showProfilePanel}
+                aria-controls="list-profile-switcher"
+              >
+                記録枠を切り替える
+              </button>
+            </>
+          ) : null}
         </div>
 
-        {showProfilePanel ? (
+        {showAdminProfileUi && showProfilePanel ? (
           <div id="list-profile-switcher">
-            <ProfileSwitcher profiles={profiles} activeProfileId={effectiveProfileId} />
+            <ProfileSwitcher
+              profiles={profiles}
+              activeProfileId={effectiveProfileId}
+              viewerIsAdmin={viewerIsAdmin}
+            />
           </div>
         ) : null}
 

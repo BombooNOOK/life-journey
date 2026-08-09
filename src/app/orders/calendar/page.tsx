@@ -4,6 +4,7 @@ import { Suspense } from "react";
 
 import { DiaryCalendarHome } from "@/components/journal/DiaryCalendarHome";
 import { OwlSuspenseFallback } from "@/components/ui/OwlSuspenseFallback";
+import { isAdminEmail } from "@/lib/admin/access";
 import { getViewerEmailFromCookie } from "@/lib/auth/viewer";
 import { withPrismaConnectionRetry } from "@/lib/db/prismaRetry";
 import { listProfilesAndActiveProfileId } from "@/lib/profile/activeProfile";
@@ -35,14 +36,14 @@ export default async function OrdersCalendarPage() {
     profiles = loaded.profiles;
     activeProfileId = loaded.activeProfileId;
   } catch (e) {
-    const detail = e instanceof Error ? e.message : "プロフィール情報を読み込めませんでした。";
+    const detail = e instanceof Error ? e.message : "アカウント情報を読み込めませんでした。";
     return (
       <div className="space-y-4">
         <Link href="/orders" className="text-sm text-stone-600 hover:text-stone-900">
           {LOG_HOUSE_BACK_LINK.label}
         </Link>
         <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800">
-          プロフィール情報を読み込めませんでした。しばらくしてから再度お試しください。
+          アカウント情報を読み込めませんでした。しばらくしてから再度お試しください。
         </p>
         <details className="rounded-lg border border-red-200/80 bg-white px-3 py-2 text-xs text-stone-700">
           <summary className="cursor-pointer select-none font-medium text-stone-700">
@@ -66,6 +67,7 @@ export default async function OrdersCalendarPage() {
     loadEntitlementContext(viewerEmail),
   );
   const entitlement = serializeUserEntitlement(resolveUserEntitlement(entitlementCtx));
+  const viewerIsAdmin = await isAdminEmail(viewerEmail);
 
   return (
     <Suspense fallback={<CalendarFallback />}>
@@ -74,6 +76,7 @@ export default async function OrdersCalendarPage() {
         activeProfileId={activeProfileId}
         activeProfileNickname={activeProfileNickname}
         entitlement={entitlement}
+        viewerIsAdmin={viewerIsAdmin}
       />
     </Suspense>
   );

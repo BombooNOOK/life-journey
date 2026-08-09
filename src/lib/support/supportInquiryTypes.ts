@@ -29,7 +29,7 @@ export const SUPPORT_INQUIRY_REPLY_CHANNEL_LABELS: Record<SupportInquiryReplyCha
 export type SupportInquiryCategory = (typeof SUPPORT_INQUIRY_CATEGORIES)[number];
 
 export const SUPPORT_INQUIRY_CATEGORY_LABELS: Record<SupportInquiryCategory, string> = {
-  profile_deletion: "プロフィール削除について",
+  profile_deletion: "保存データの削除について",
   backup_restore: "バックアップ・復元について",
   book_binding: "製本申込について",
   kantei: "鑑定書について",

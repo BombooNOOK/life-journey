@@ -26,6 +26,7 @@ import {
   LJD_PAPER_CHIP_IDLE_CLASS,
 } from "@/lib/ljd/ljdPaperSurface";
 import { selectViewerProfile } from "@/lib/profile/selectViewerProfile";
+import { canShowAdminProfileSwitchUi } from "@/lib/profile/viewerProfileUiPolicy";
 
 type ProfileRow = { id: string; nickname: string };
 
@@ -33,18 +34,23 @@ type Props = {
   companionWritingHref: string;
   profiles: ProfileRow[];
   activeProfileId: string;
+  viewerIsAdmin?: boolean;
 };
 
-/** 机からの書き方選択（ソロ / 鑑定士と）。複数プロフィール時のみ上部で切替。 */
+/** 机からの書き方選択（ソロ / 鑑定士と）。admin かつ複数記録枠のときのみ上部で切替。 */
 export function LogHouseDeskWritingChoice({
   companionWritingHref,
   profiles,
   activeProfileId,
+  viewerIsAdmin = false,
 }: Props) {
   const router = useRouter();
   const [busyId, setBusyId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const showProfilePicker = profiles.length > 1;
+  const showProfilePicker = canShowAdminProfileSwitchUi({
+    isAdmin: viewerIsAdmin,
+    profileCount: profiles.length,
+  });
   const activeProfile = profiles.find((p) => p.id === activeProfileId) ?? profiles[0]!;
 
   async function selectProfile(profileId: string) {
@@ -119,9 +125,8 @@ export function LogHouseDeskWritingChoice({
               );
             })}
           </div>
-
           {error ? (
-            <p className="relative mt-2 text-xs text-red-700" role="alert">
+            <p className="relative mt-2 text-xs text-red-800" role="alert">
               {error}
             </p>
           ) : null}

@@ -313,7 +313,7 @@ export function CompanionWritingPage() {
       return;
     }
     if (!effectiveProfileId) {
-      setError("プロフィールを確認できませんでした。ページを再読み込みしてください。");
+      setError("記録を確認できませんでした。ページを再読み込みしてください。");
       return;
     }
     if (!isValidDateInput(entryDate)) {
@@ -432,7 +432,7 @@ export function CompanionWritingPage() {
       return;
     }
     if (!effectiveProfileId) {
-      setError("プロフィールを確認できませんでした。ページを再読み込みしてください。");
+      setError("記録を確認できませんでした。ページを再読み込みしてください。");
       return;
     }
     if (!isValidDateInput(entryDate)) {
@@ -567,12 +567,6 @@ export function CompanionWritingPage() {
         </p>
         {step === "companion" ? (
           <>
-            <p className="text-xs leading-snug text-stone-500">
-              プロフィール：
-              <span className="font-medium text-stone-700">
-                {profileState.activeProfileNickname}
-              </span>
-            </p>
             {entitlement ? <TrialStatusBanner entitlement={entitlement} /> : null}
             <div>
               <h1 className="text-xl font-bold leading-snug text-stone-900 sm:text-2xl">
@@ -585,12 +579,6 @@ export function CompanionWritingPage() {
           </>
         ) : step === "mood" || step === "activity" || step === "write" || step === "confirm" ? (
           <>
-            <p className="text-xs leading-snug text-stone-500">
-              プロフィール：
-              <span className="font-medium text-stone-700">
-                {profileState.activeProfileNickname}
-              </span>
-            </p>
             <h1 className="text-xl font-bold leading-snug text-stone-900 sm:text-2xl">
               {step === "write" ? writeStepHeading : stepHeadingByStep[step]}
             </h1>

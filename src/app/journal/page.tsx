@@ -35,7 +35,6 @@ import {
 } from "@/components/journal/JournalLocalDraftBanner";
 import { DonguriFootprintModal } from "@/components/loghouse/DonguriFootprintModal";
 import { JournalSaveStoryTransitionOverlay } from "@/components/journal/JournalSaveStoryTransitionOverlay";
-import { ActiveProfileLabel } from "@/components/profile/ActiveProfileLabel";
 import { useEnsureActiveViewerProfile } from "@/hooks/useEnsureActiveViewerProfile";
 import { parseSafeJournalReturnTo, resolveJournalReturnNavLabel } from "@/lib/journal/bookshelfReturnTo";
 import { LOG_HOUSE_NAV_LABEL } from "@/lib/journal/logHouseLabels";
@@ -1354,9 +1353,6 @@ function JournalPageContent() {
             <OwlLoadingInline label="読み込み中…" size="sm" className="text-[11px] text-stone-400" />
           ) : null}
         </div>
-        {diaryTargetLabel !== null ? (
-          <ActiveProfileLabel nickname={diaryTargetLabel} className="sm:hidden" />
-        ) : null}
         {showAuthDebug && user?.email ? (
           <p className="text-[10px] leading-snug text-stone-400">
             ログイン: {user.email}

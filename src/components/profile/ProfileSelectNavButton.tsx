@@ -11,13 +11,13 @@ type Props = {
   href: string;
   className?: string;
   children: ReactNode;
-  /** true のとき cookie 更新済み想定でそのまま遷移（マイページ上の現プロフィール向け） */
+  /** true のとき cookie 更新済み想定でそのまま遷移（マイページ上の選択済み記録枠向け） */
   directNav?: boolean;
   /** 遷移中に表示する文言 */
   loadingLabel?: string;
 };
 
-/** 遷移前に /api/profiles/select で選択中プロフィールを切り替える（必要時） */
+/** 遷移前に /api/profiles/select で選択中記録枠を切り替える（必要時） */
 export function ProfileSelectNavButton({
   profileId,
   href,

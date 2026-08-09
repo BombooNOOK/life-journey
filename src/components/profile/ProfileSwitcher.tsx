@@ -3,21 +3,38 @@
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 
+import { canShowAdminProfileSwitchUi } from "@/lib/profile/viewerProfileUiPolicy";
+
 type ProfileOption = { id: string; nickname: string };
 
 type Props = {
   profiles: ProfileOption[];
   activeProfileId: string | null;
+  /** 管理者のみ表示。一般ユーザーには出さない */
+  viewerIsAdmin?: boolean;
 };
 
-export function ProfileSwitcher({ profiles, activeProfileId }: Props) {
+/** admin 互換：既存複数 Profile の切替のみ（追加なし） */
+export function ProfileSwitcher({
+  profiles,
+  activeProfileId,
+  viewerIsAdmin = false,
+}: Props) {
   const router = useRouter();
   const [selected, setSelected] = useState(activeProfileId ?? "");
-  const [nickname, setNickname] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const profileCount = useMemo(() => profiles.length, [profiles]);
+  const show = useMemo(
+    () =>
+      canShowAdminProfileSwitchUi({
+        isAdmin: viewerIsAdmin,
+        profileCount: profiles.length,
+      }),
+    [viewerIsAdmin, profiles.length],
+  );
+
+  if (!show) return null;
 
   async function selectProfile(nextId: string) {
     setError(null);
@@ -31,84 +48,37 @@ export function ProfileSwitcher({ profiles, activeProfileId }: Props) {
       });
       const data = (await res.json()) as { error?: string };
       if (!res.ok) {
-        setError(data.error ?? "プロフィール切替に失敗しました。");
+        setError(data.error ?? "記録枠の切替に失敗しました。");
         return;
       }
       setSelected(nextId);
       router.refresh();
     } catch {
-      setError("プロフィール切替に失敗しました。");
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  async function createProfile() {
-    setError(null);
-    const v = nickname.trim();
-    if (!v) {
-      setError("ニックネームを入力してください。");
-      return;
-    }
-    setBusy(true);
-    try {
-      const res = await fetch("/api/profiles", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "same-origin",
-        body: JSON.stringify({ nickname: v }),
-      });
-      const data = (await res.json()) as { error?: string; profile?: ProfileOption };
-      if (!res.ok || !data.profile) {
-        setError(data.error ?? "プロフィール作成に失敗しました。");
-        return;
-      }
-      setNickname("");
-      await selectProfile(data.profile.id);
-    } catch {
-      setError("プロフィール作成に失敗しました。");
+      setError("記録枠の切替に失敗しました。");
     } finally {
       setBusy(false);
     }
   }
 
   return (
-    <div className="rounded-xl border border-stone-200 bg-white p-4 shadow-sm">
-      <p className="text-sm font-semibold text-stone-900">プロフィールを選ぶ</p>
-      <p className="mt-1 text-xs text-stone-600">
-        あしあと・鑑定・本棚は、選択中プロフィールに紐づきます（現在 {profileCount}件）。
+    <div className="rounded-xl border border-amber-200 bg-amber-50/80 p-4 shadow-sm">
+      <p className="text-sm font-semibold text-amber-950">管理者：既存の記録枠を切り替える</p>
+      <p className="mt-1 text-xs text-amber-900/80">
+        一般向けの複数記録枠機能は停止しています。過去データ確認用の切替です（現在 {profiles.length}件）。
       </p>
       <div className="mt-3 flex flex-wrap items-center gap-2">
         <select
           value={selected}
           onChange={(e) => void selectProfile(e.target.value)}
           disabled={busy || profiles.length === 0}
-          className="rounded-md border border-stone-300 px-3 py-2 text-sm"
+          className="rounded-md border border-amber-300 bg-white px-3 py-2 text-sm"
         >
-          {profiles.length === 0 ? <option value="">プロフィール未作成</option> : null}
           {profiles.map((p) => (
             <option key={p.id} value={p.id}>
               {p.nickname}
             </option>
           ))}
         </select>
-      </div>
-      <div className="mt-3 flex flex-wrap items-center gap-2">
-        <input
-          type="text"
-          value={nickname}
-          onChange={(e) => setNickname(e.target.value)}
-          placeholder="新しいプロフィール名（例: 自分 / 長女）"
-          className="w-full max-w-xs rounded-md border border-stone-300 px-3 py-2 text-sm"
-        />
-        <button
-          type="button"
-          disabled={busy}
-          onClick={() => void createProfile()}
-          className="rounded-md bg-stone-800 px-3 py-2 text-xs font-medium text-white hover:bg-stone-700 disabled:opacity-60"
-        >
-          追加
-        </button>
       </div>
       {error ? <p className="mt-2 text-xs text-red-700">{error}</p> : null}
     </div>

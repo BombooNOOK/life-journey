@@ -3,7 +3,6 @@ import { redirect } from "next/navigation";
 import { MyPageBackupSection } from "@/components/orders/MyPageBackupSection";
 import { MyPageSubpageHeader } from "@/components/orders/MyPageSubpageHeader";
 import { getViewerEmailFromCookie } from "@/lib/auth/viewer";
-import { loadMyPageSettingsContext } from "@/lib/mypage/loadMyPageSettingsContext";
 
 export const dynamic = "force-dynamic";
 
@@ -13,16 +12,14 @@ export default async function MyPageSettingsBackupPage() {
     redirect("/login?returnTo=/orders/settings/backup");
   }
 
-  const { activeProfile } = await loadMyPageSettingsContext(viewerEmail);
-
   return (
     <div className="mx-auto w-full max-w-md space-y-5 sm:space-y-6">
       <MyPageSubpageHeader
-        title="バックアップ作成"
-        description="あしあとの記録をZIPファイルとして保存できます"
+        title="データ管理"
+        description="あしあとのバックアップや、アカウント削除の案内ができます"
       />
 
-      <MyPageBackupSection activeProfileNickname={activeProfile?.nickname ?? null} showHeading={false} />
+      <MyPageBackupSection showHeading={false} />
     </div>
   );
 }

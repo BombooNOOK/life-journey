@@ -119,7 +119,7 @@ export function MoriLogMakerPanel({
       const pid = (profileId ?? "").trim();
       if (!pid) {
         setHistoryNote(
-          "プロフィールを読み込めなかったため、椅子用の記録は残していません。画像のダウンロードは完了しています。",
+          "記録を読み込めなかったため、椅子用の記録は残していません。画像のダウンロードは完了しています。",
         );
         return;
       }

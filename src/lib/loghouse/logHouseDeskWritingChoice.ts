@@ -19,10 +19,11 @@ export const LOG_HOUSE_DESK_WRITE_COMPANION_DESCRIPTION =
 
 export const LOG_HOUSE_DESK_WRITE_SOLO_HREF = "/orders/calendar" as const;
 
-export const LOG_HOUSE_DESK_WRITE_PROFILE_LABEL = "このプロフィールで書く" as const;
+/** admin 向け記録枠切替（一般 UI では非表示） */
+export const LOG_HOUSE_DESK_WRITE_PROFILE_LABEL = "この記録枠で書く" as const;
 
 export const LOG_HOUSE_DESK_WRITE_PROFILE_HINT =
-  "プロフィールが複数あるときだけ、ここで切り替えられます。" as const;
+  "記録枠が複数あるときだけ、ここで切り替えられます。" as const;
 
 /**
  * はじめての日記（鑑定済み・あしあと0件）は選択画面を挟まず伴走執筆へ。
