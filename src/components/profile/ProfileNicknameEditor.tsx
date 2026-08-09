@@ -10,6 +10,7 @@ type Props = {
   initialNickname: string;
 };
 
+/** admin 向け：内部記録枠の識別名編集（一般 UI では使わない） */
 export function ProfileNicknameEditor({ profileId, initialNickname }: Props) {
   const router = useRouter();
   const [nickname, setNickname] = useState(initialNickname);
@@ -30,7 +31,7 @@ export function ProfileNicknameEditor({ profileId, initialNickname }: Props) {
     setError(null);
     setSavedMessage(null);
     if (!trimmed) {
-      setError("プロフィール名を入力してください。");
+      setError("記録枠の名前を入力してください。");
       return;
     }
     if (trimmed === savedNickname) return;
@@ -48,15 +49,15 @@ export function ProfileNicknameEditor({ profileId, initialNickname }: Props) {
         profile?: { id: string; nickname: string };
       };
       if (!res.ok || !data.profile) {
-        setError(data.error ?? "プロフィール名の変更に失敗しました。");
+        setError(data.error ?? "記録枠の名前の変更に失敗しました。");
         return;
       }
       setSavedNickname(data.profile.nickname);
       setNickname(data.profile.nickname);
-      setSavedMessage("プロフィール名を変更しました。");
+      setSavedMessage("記録枠の名前を変更しました。");
       router.refresh();
     } catch {
-      setError("プロフィール名の変更に失敗しました。");
+      setError("記録枠の名前の変更に失敗しました。");
     } finally {
       setBusy(false);
     }
@@ -66,7 +67,7 @@ export function ProfileNicknameEditor({ profileId, initialNickname }: Props) {
     <div className="space-y-3">
       <div className="space-y-2">
         <label className="block text-sm font-medium text-stone-700" htmlFor="profile-nickname">
-          プロフィール名
+          記録枠の名前
         </label>
         <input
           id="profile-nickname"
@@ -91,7 +92,7 @@ export function ProfileNicknameEditor({ profileId, initialNickname }: Props) {
         </button>
       </div>
       <p className="text-xs leading-relaxed text-stone-500">
-        40文字以内。ログハウスの一覧にも反映されます。
+        40文字以内。管理者の切替一覧での識別用です。
       </p>
       {error ? (
         <p className="text-xs text-red-700" role="alert">

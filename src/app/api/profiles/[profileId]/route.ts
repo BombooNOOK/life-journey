@@ -51,11 +51,11 @@ export async function PATCH(req: Request, { params }: Params) {
       ? String((json as { nickname: unknown }).nickname).trim()
       : "";
   if (!nickname) {
-    return NextResponse.json({ error: "プロフィール名を入力してください", code: "EMPTY_NICKNAME" }, { status: 400 });
+    return NextResponse.json({ error: "記録枠の名前を入力してください", code: "EMPTY_NICKNAME" }, { status: 400 });
   }
   if (nickname.length > 40) {
     return NextResponse.json(
-      { error: "プロフィール名は40文字以内で入力してください", code: "NICKNAME_TOO_LONG" },
+      { error: "記録枠の名前は40文字以内で入力してください", code: "NICKNAME_TOO_LONG" },
       { status: 400 },
     );
   }
