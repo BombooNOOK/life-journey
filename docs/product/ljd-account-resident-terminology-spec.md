@@ -87,3 +87,5 @@ LJD を利用している本人を、BambooNOOK の森の中で表す呼称。
 ## 関連ドキュメント
 
 - `docs/product/ljd-acorn-monetization-spec.md`（課金・どんぐり方針）
+- `docs/product/ljd-product-worldview-source-of-truth.md`（製品思想・世界観）
+- `docs/product/ljd-local-first-and-moving-policy.md`（Local-first・森のお引越し便方針。バックアップとの関係は別機能維持）
