@@ -41,9 +41,9 @@ export function HomeClosingSection() {
             はじめての方はこちら
           </Link>
           <p className={`mt-3 ${heroCtaClosingMicrocopyClass}`}>
-            お名前と生年月日だけで無料鑑定へ。
+            お名前と生年月日だけで、無料鑑定からはじまれます。
             <br className="sm:hidden" />
-            クレジットカード登録なしで、2週間あしあとをお試しいただけます。
+            クレジットカードの登録は不要です。
           </p>
         </div>
 

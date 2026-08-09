@@ -86,7 +86,7 @@ export function AboutPageQuickStartCta() {
         </Link>
       </div>
       <p className="lj-read-desc mt-3 text-center leading-relaxed text-stone-600">
-        お名前と生年月日だけで、Life Journey Diaryをお試しできます。
+        お名前と生年月日だけで、Life Journey Diaryをはじめられます。
       </p>
       <p className="lj-read-desc mt-2 text-center text-stone-600">
         <Link href={FIRST_VISIT_ROUTES.pathGuide} className="text-emerald-900 hover:underline">

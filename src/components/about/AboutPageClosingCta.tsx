@@ -61,12 +61,12 @@ export function AboutPageClosingCta() {
         {showReturningUserCtas ? null : (
           <div className={`mt-6 sm:mt-8 ${heroCtaClosingStackClass}`}>
             <Link href={FIRST_VISIT_ROUTES.pathGuide} className={heroCtaPrimaryClass}>
-              はじめての方はこちら
+              Life Journey Diaryをはじめる
             </Link>
             <p className={`mt-3 ${heroCtaClosingMicrocopyClass}`}>
-              お名前と生年月日だけで無料鑑定へ。
+              お名前と生年月日だけで、無料鑑定からはじまれます。
               <br className="sm:hidden" />
-              クレジットカード登録なしで、2週間あしあとをお試しいただけます。
+              まずは森を歩いてみてください。
             </p>
           </div>
         )}
