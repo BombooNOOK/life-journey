@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { AccountDeleteForm } from "@/components/orders/AccountDeleteForm";
 import { MyPageSubpageHeader } from "@/components/orders/MyPageSubpageHeader";
 import { accountDeleteBlockMessageForSettings } from "@/lib/account/deleteUserAccount";
-import { LEAVE_RESIDENT_REGISTRATION_LABEL } from "@/lib/account/residentRegistrationUiCopy";
+import { LEAVE_RESIDENT_REGISTRATION_BEFORE_HEADING } from "@/lib/account/residentRegistrationUiCopy";
 import { isAdminEmail } from "@/lib/admin/access";
 import { getViewerEmailFromCookie } from "@/lib/auth/viewer";
 import { prisma } from "@/lib/db";
@@ -54,10 +54,7 @@ export default async function AccountDeletePage() {
 
   return (
     <div className="space-y-5 sm:space-y-6">
-      <MyPageSubpageHeader
-        title={LEAVE_RESIDENT_REGISTRATION_LABEL}
-        description="実際にはアカウントと保存データが削除されます。内容をよくご確認ください"
-      />
+      <MyPageSubpageHeader title={LEAVE_RESIDENT_REGISTRATION_BEFORE_HEADING} />
 
       <section className="rounded-xl border border-stone-200 bg-white p-4 shadow-sm sm:p-5">
         <AccountDeleteForm blockMessage={blockMessage} />

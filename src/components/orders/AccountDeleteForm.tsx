@@ -2,15 +2,18 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 
 import { useFirebaseAuth } from "@/components/auth/FirebaseAuthProvider";
 import { OwlLoadingInline } from "@/components/ui/OwlLoadingInline";
+import { ACCOUNT_DELETE_CONFIRMATION_WORD } from "@/lib/account/accountDeleteTypes";
 import {
-  ACCOUNT_DELETE_CONFIRMATION_WORD,
-  ACCOUNT_DELETE_DATA_ITEMS,
-} from "@/lib/account/accountDeleteTypes";
-import { LEAVE_RESIDENT_REGISTRATION_LABEL } from "@/lib/account/residentRegistrationUiCopy";
+  ASHIATO_BACKUP_LABEL,
+  LEAVE_RESIDENT_REGISTRATION_CONFIRM_BODY,
+  LEAVE_RESIDENT_REGISTRATION_CONFIRM_SUBMIT,
+  LEAVE_RESIDENT_REGISTRATION_CONFIRM_TITLE,
+  LEAVE_RESIDENT_REGISTRATION_LABEL,
+} from "@/lib/account/residentRegistrationUiCopy";
 import { mobileReadable } from "@/lib/auth/mobileReadableStyles";
 import { clearAllFirstVisitClientState } from "@/lib/onboarding/firstVisitWizard/session";
 
@@ -22,10 +25,25 @@ export function AccountDeleteForm({ blockMessage = null }: Props) {
   const router = useRouter();
   const { signOutUser } = useFirebaseAuth();
   const [confirmationWord, setConfirmationWord] = useState("");
+  const [confirmOpen, setConfirmOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const dialogTitleId = useId();
+  const dialogRef = useRef<HTMLDivElement>(null);
 
   const canSubmit = !blockMessage && confirmationWord.trim() === ACCOUNT_DELETE_CONFIRMATION_WORD;
+
+  useEffect(() => {
+    if (!confirmOpen) return;
+    dialogRef.current?.focus();
+    function onKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape" && !busy) {
+        setConfirmOpen(false);
+      }
+    }
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [confirmOpen, busy]);
 
   async function submitDelete() {
     if (!canSubmit) return;
@@ -40,6 +58,7 @@ export function AccountDeleteForm({ blockMessage = null }: Props) {
       });
       const json = (await res.json()) as { error?: string; code?: string };
       if (!res.ok) {
+        setConfirmOpen(false);
         setError(json.error ?? "アカウントの削除に失敗しました。");
         return;
       }
@@ -49,6 +68,7 @@ export function AccountDeleteForm({ blockMessage = null }: Props) {
       router.push("/");
       router.refresh();
     } catch {
+      setConfirmOpen(false);
       setError("アカウントの削除に失敗しました。時間をおいて再度お試しください。");
     } finally {
       setBusy(false);
@@ -59,25 +79,15 @@ export function AccountDeleteForm({ blockMessage = null }: Props) {
     <div className="space-y-6">
       <div className={`space-y-3 ${mobileReadable.body}`}>
         <p>
-          「住民登録をやめる」と進めると、実際にはログイン用のアカウントと、
-          LJDに保存されたあしあと・写真・鑑定結果・住民票などの関連データが削除されます。
+          この手続きをすると、ログイン情報と、森に残したあしあと・写真・鑑定結果などの保存データが削除されます。あとから元に戻すことはできません。大切な記録がある場合は、先に
+          <Link
+            href="/orders/settings/backup"
+            className="mx-0.5 font-medium text-emerald-900 underline underline-offset-2 hover:text-emerald-800"
+          >
+            『{ASHIATO_BACKUP_LABEL}』
+          </Link>
+          をご確認ください。
         </p>
-        <p>
-          あわせて、メール／パスワードや Google ログインの紐づけも削除されます。
-          削除後は復元できず、同じメールで再ログインすることもできません。
-        </p>
-        <p>
-          製本注文済みの商品や決済・注文履歴については、法令上または運営上必要な範囲で一定期間保管される場合があります。
-        </p>
-      </div>
-
-      <div className="rounded-lg border border-stone-200 bg-stone-50/70 px-4 py-4">
-        <p className="text-base font-medium text-stone-900">削除される主なデータ</p>
-        <ul className="mt-3 list-disc space-y-1.5 pl-5 text-base leading-[1.6] text-stone-700">
-          {ACCOUNT_DELETE_DATA_ITEMS.map((item) => (
-            <li key={item}>{item}</li>
-          ))}
-        </ul>
       </div>
 
       {blockMessage ? (
@@ -91,7 +101,7 @@ export function AccountDeleteForm({ blockMessage = null }: Props) {
           最終確認（「{ACCOUNT_DELETE_CONFIRMATION_WORD}」と入力）
         </label>
         <p className="text-sm text-stone-600">
-          アカウント削除を実行するには、下の欄に「{ACCOUNT_DELETE_CONFIRMATION_WORD}」と入力してください。
+          間違えのないよう、下の欄に「{ACCOUNT_DELETE_CONFIRMATION_WORD}」と入力してから進んでください。
         </p>
         <input
           id="account-delete-confirmation"
@@ -115,19 +125,69 @@ export function AccountDeleteForm({ blockMessage = null }: Props) {
         <button
           type="button"
           disabled={!canSubmit || busy}
-          onClick={() => void submitDelete()}
+          onClick={() => {
+            setError(null);
+            setConfirmOpen(true);
+          }}
           className="inline-flex min-h-[44px] w-full items-center justify-center rounded-lg border border-red-300 bg-red-50 px-4 py-2.5 text-base font-medium text-red-900 hover:bg-red-100 disabled:opacity-50"
         >
-          {busy ? (
-            <OwlLoadingInline label="削除中…" size="sm" />
-          ) : (
-            LEAVE_RESIDENT_REGISTRATION_LABEL
-          )}
+          {LEAVE_RESIDENT_REGISTRATION_LABEL}
         </button>
         <Link href="/orders/account" className={mobileReadable.buttonSecondary}>
           やめずに戻る
         </Link>
       </div>
+
+      {confirmOpen ? (
+        <div
+          className="fixed inset-0 z-50 flex items-end justify-center bg-black/45 p-4 sm:items-center"
+          role="presentation"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget && !busy) {
+              setConfirmOpen(false);
+            }
+          }}
+        >
+          <div
+            ref={dialogRef}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby={dialogTitleId}
+            tabIndex={-1}
+            className="w-full max-w-md rounded-xl border border-stone-200 bg-white p-5 shadow-xl outline-none"
+            onMouseDown={(event) => event.stopPropagation()}
+          >
+            <h2 id={dialogTitleId} className="text-base font-semibold text-stone-900">
+              {LEAVE_RESIDENT_REGISTRATION_CONFIRM_TITLE}
+            </h2>
+            <p className="mt-3 text-sm leading-relaxed text-stone-700">
+              {LEAVE_RESIDENT_REGISTRATION_CONFIRM_BODY}
+            </p>
+            <div className="mt-6 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+              <button
+                type="button"
+                disabled={busy}
+                onClick={() => setConfirmOpen(false)}
+                className="inline-flex min-h-[44px] items-center justify-center rounded-lg border border-stone-300 bg-white px-4 py-2.5 text-base font-medium text-stone-800 hover:bg-stone-50 disabled:opacity-50"
+              >
+                やめておく
+              </button>
+              <button
+                type="button"
+                disabled={busy || !canSubmit}
+                onClick={() => void submitDelete()}
+                className="inline-flex min-h-[44px] items-center justify-center rounded-lg border border-red-300 bg-red-50 px-4 py-2.5 text-base font-medium text-red-900 hover:bg-red-100 disabled:opacity-50"
+              >
+                {busy ? (
+                  <OwlLoadingInline label="削除中…" size="sm" />
+                ) : (
+                  LEAVE_RESIDENT_REGISTRATION_CONFIRM_SUBMIT
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }

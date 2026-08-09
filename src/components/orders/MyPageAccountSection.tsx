@@ -155,14 +155,14 @@ export function MyPageAccountSection({
 
       <MyPageAccountSectionCard title="住民登録をやめる">
         <p className={mobileReadable.bodyMuted}>
-          登録を終了すると、アカウントと保存されたデータが削除されます。取り消せません。
+          森での住民登録を終える前に、内容を確認できます。大切な記録がある場合は、先に「あしあとのバックアップ」をご確認ください。
         </p>
         <div className="border-t border-stone-100 pt-4">
           <Link
             href="/orders/account/delete"
             className="inline-flex min-h-[44px] items-center rounded-lg border border-red-200 bg-white px-4 py-2.5 text-base font-medium text-red-800 transition hover:bg-red-50"
           >
-            住民登録をやめる（アカウント削除）
+            住民登録をやめる
           </Link>
         </div>
       </MyPageAccountSectionCard>
