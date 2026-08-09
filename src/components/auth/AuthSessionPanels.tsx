@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 
 import { useFirebaseAuth } from "@/components/auth/FirebaseAuthProvider";
 import { mobileReadable } from "@/lib/auth/mobileReadableStyles";
+import { FOREST_LEAVE_LABEL } from "@/lib/auth/forestSessionCopy";
 import { LOG_HOUSE_GO_LABEL } from "@/lib/journal/logHouseLabels";
 import {
   FIRST_VISIT_RESIDENT_REGISTRATION_COMPLETE_BODY,
@@ -30,7 +31,7 @@ export function MyPageLogoutButton({ className = "" }: { className?: string }) {
           })();
         }}
       >
-        ログアウトする
+        {FOREST_LEAVE_LABEL}
       </button>
     </div>
   );
@@ -44,8 +45,8 @@ export function AlreadyLoggedInPanel() {
   return (
     <div className="mx-auto max-w-md space-y-5 rounded-xl border border-stone-200 bg-white p-6 shadow-sm sm:p-8">
       <div className="space-y-2 text-center">
-        <h1 className={mobileReadable.pageTitle}>すでにログインしています</h1>
-        <p className={mobileReadable.body}>{LOG_HOUSE_GO_LABEL}か、ログアウトできます。</p>
+        <h1 className={mobileReadable.pageTitle}>すでに森のなかにいます</h1>
+        <p className={mobileReadable.body}>{LOG_HOUSE_GO_LABEL}か、森から出られます。</p>
       </div>
 
       <div className="space-y-3">
@@ -62,7 +63,7 @@ export function AlreadyLoggedInPanel() {
             })();
           }}
         >
-          ログアウトする
+          {FOREST_LEAVE_LABEL}
         </button>
       </div>
     </div>

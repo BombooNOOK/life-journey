@@ -5,6 +5,11 @@ import { useEffect, useState, type ReactNode } from "react";
 
 import { useFirebaseAuth } from "@/components/auth/FirebaseAuthProvider";
 import { MyPageManageHub } from "@/components/orders/MyPageManageMenu";
+import {
+  FOREST_INSIDE_ACCOUNT_CAPTION,
+  FOREST_LEAVE_BUSY_LABEL,
+  FOREST_LEAVE_LABEL,
+} from "@/lib/auth/forestSessionCopy";
 import { canShowAdminProfileSwitchUi } from "@/lib/profile/viewerProfileUiPolicy";
 import { selectViewerProfile } from "@/lib/profile/selectViewerProfile";
 
@@ -25,7 +30,7 @@ type Props = {
   previewMode?: boolean;
 };
 
-/** ログハウス室内：設定シート（一般は住民票・アカウント・データ管理。adminのみ既存枠切替） */
+/** ログハウス室内：設定シート（一般は住民票・住民登録情報・記録のバックアップ。adminのみ既存枠切替） */
 export function LogHouseRoomManageSheet({
   open,
   onClose,
@@ -161,7 +166,7 @@ export function LogHouseRoomManageSheet({
         <MyPageManageHub />
 
         <section className="mt-6 border-t border-stone-200 pt-4">
-          <p className="text-xs text-stone-500">ログイン中のアカウント</p>
+          <p className="text-xs text-stone-500">{FOREST_INSIDE_ACCOUNT_CAPTION}</p>
           <p className="mt-1 break-all text-sm text-stone-800">
             {previewMode
               ? "preview@example.com"
@@ -173,7 +178,7 @@ export function LogHouseRoomManageSheet({
             onClick={() => void handleSignOut()}
             className="mt-3 inline-flex min-h-[44px] w-full items-center justify-center rounded-xl border border-stone-300 bg-white px-4 text-sm font-medium text-stone-800 transition hover:bg-stone-50 disabled:opacity-60"
           >
-            {signingOut ? "ログアウト中…" : "ログアウト"}
+            {signingOut ? FOREST_LEAVE_BUSY_LABEL : FOREST_LEAVE_LABEL}
           </button>
         </section>
       </div>

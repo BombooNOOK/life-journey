@@ -99,7 +99,7 @@ export function MyPageAccountSection({
         </div>
       </MyPageAccountSectionCard>
 
-      <MyPageAccountSectionCard title="ログインとセキュリティ">
+      <MyPageAccountSectionCard title="セキュリティ">
         <div className={`space-y-4 ${mobileReadable.body}`}>
           <div>
             <p className="font-medium text-stone-900">メールアドレスの変更</p>
@@ -153,16 +153,16 @@ export function MyPageAccountSection({
         </div>
       </MyPageAccountSectionCard>
 
-      <MyPageAccountSectionCard title="データ管理">
+      <MyPageAccountSectionCard title="住民登録をやめる">
         <p className={mobileReadable.bodyMuted}>
-          保存されているあしあと・写真・鑑定結果などの管理ができます。
+          登録を終了すると、アカウントと保存されたデータが削除されます。取り消せません。
         </p>
         <div className="border-t border-stone-100 pt-4">
           <Link
             href="/orders/account/delete"
             className="inline-flex min-h-[44px] items-center rounded-lg border border-red-200 bg-white px-4 py-2.5 text-base font-medium text-red-800 transition hover:bg-red-50"
           >
-            アカウントを削除する
+            住民登録をやめる（アカウント削除）
           </Link>
         </div>
       </MyPageAccountSectionCard>

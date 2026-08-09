@@ -6,7 +6,11 @@ import { useState } from "react";
 
 import { useFirebaseAuth } from "@/components/auth/FirebaseAuthProvider";
 import { OwlLoadingInline } from "@/components/ui/OwlLoadingInline";
-import { ACCOUNT_DELETE_CONFIRMATION_WORD, ACCOUNT_DELETE_DATA_ITEMS } from "@/lib/account/accountDeleteTypes";
+import {
+  ACCOUNT_DELETE_CONFIRMATION_WORD,
+  ACCOUNT_DELETE_DATA_ITEMS,
+} from "@/lib/account/accountDeleteTypes";
+import { LEAVE_RESIDENT_REGISTRATION_LABEL } from "@/lib/account/residentRegistrationUiCopy";
 import { mobileReadable } from "@/lib/auth/mobileReadableStyles";
 import { clearAllFirstVisitClientState } from "@/lib/onboarding/firstVisitWizard/session";
 
@@ -40,7 +44,6 @@ export function AccountDeleteForm({ blockMessage = null }: Props) {
         return;
       }
 
-      // 端末に残った初回導線フラグ／古い鑑定動画IDを消してからサインアウト
       clearAllFirstVisitClientState();
       await signOutUser();
       router.push("/");
@@ -56,8 +59,11 @@ export function AccountDeleteForm({ blockMessage = null }: Props) {
     <div className="space-y-6">
       <div className={`space-y-3 ${mobileReadable.body}`}>
         <p>
-          アカウントを削除すると、LJDに保存されたあしあと・写真・鑑定結果などのデータに加え、
-          ログイン情報（メール・パスワード、Googleログインの紐づけ）も削除されます。
+          「住民登録をやめる」と進めると、実際にはログイン用のアカウントと、
+          LJDに保存されたあしあと・写真・鑑定結果・住民票などの関連データが削除されます。
+        </p>
+        <p>
+          あわせて、メール／パスワードや Google ログインの紐づけも削除されます。
           削除後は復元できず、同じメールで再ログインすることもできません。
         </p>
         <p>
@@ -85,7 +91,7 @@ export function AccountDeleteForm({ blockMessage = null }: Props) {
           最終確認（「{ACCOUNT_DELETE_CONFIRMATION_WORD}」と入力）
         </label>
         <p className="text-sm text-stone-600">
-          削除を実行するには、下の欄に「{ACCOUNT_DELETE_CONFIRMATION_WORD}」と入力してください。
+          アカウント削除を実行するには、下の欄に「{ACCOUNT_DELETE_CONFIRMATION_WORD}」と入力してください。
         </p>
         <input
           id="account-delete-confirmation"
@@ -115,11 +121,11 @@ export function AccountDeleteForm({ blockMessage = null }: Props) {
           {busy ? (
             <OwlLoadingInline label="削除中…" size="sm" />
           ) : (
-            "アカウントを削除する"
+            LEAVE_RESIDENT_REGISTRATION_LABEL
           )}
         </button>
         <Link href="/orders/account" className={mobileReadable.buttonSecondary}>
-          削除せずに戻る
+          やめずに戻る
         </Link>
       </div>
     </div>

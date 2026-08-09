@@ -3,6 +3,12 @@ import { redirect } from "next/navigation";
 
 import { MyPageManageMenuRow, MyPageManageMenuSection } from "@/components/orders/MyPageManageMenu";
 import { MyPageSubpageHeader } from "@/components/orders/MyPageSubpageHeader";
+import {
+  RECORD_BACKUP_LABEL,
+  RECORD_BACKUP_LOADING_LABEL,
+  RESIDENT_REGISTRATION_INFO_LABEL,
+  RESIDENT_REGISTRATION_INFO_LOADING_LABEL,
+} from "@/lib/account/residentRegistrationUiCopy";
 import { getViewerEmailFromCookie } from "@/lib/auth/viewer";
 import { LOG_HOUSE_RETURN_TO_LABEL } from "@/lib/journal/logHouseLabels";
 
@@ -18,12 +24,12 @@ export default async function MyPageSettingsIndexPage() {
     <div className="mx-auto w-full max-w-md space-y-5 sm:space-y-6">
       <MyPageSubpageHeader
         title="設定"
-        description="住民票・アカウント・データの確認ができます"
+        description="住民票・登録情報・記録のバックアップを確認できます"
       />
 
       <MyPageManageMenuSection
         title="森のくらし"
-        description="本人の住民票と、アカウント周りの確認ができます"
+        description="住民票と登録内容の確認、あしあとの書き出しができます"
       >
         <MyPageManageMenuRow
           href="/orders/resident-card"
@@ -33,15 +39,15 @@ export default async function MyPageSettingsIndexPage() {
         />
         <MyPageManageMenuRow
           href="/orders/account"
-          label="アカウント情報"
+          label={RESIDENT_REGISTRATION_INFO_LABEL}
           icon="☰"
-          loadingLabel="アカウント情報を開いています…"
+          loadingLabel={RESIDENT_REGISTRATION_INFO_LOADING_LABEL}
         />
         <MyPageManageMenuRow
           href="/orders/settings/backup"
-          label="データ管理"
+          label={RECORD_BACKUP_LABEL}
           icon="↓"
-          loadingLabel="データ管理を開いています…"
+          loadingLabel={RECORD_BACKUP_LOADING_LABEL}
         />
       </MyPageManageMenuSection>
 

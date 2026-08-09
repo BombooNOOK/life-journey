@@ -6,6 +6,7 @@ import { useFirebaseAuth } from "@/components/auth/FirebaseAuthProvider";
 import { LoggedInStatusBadge } from "@/components/auth/LoggedInStatusBadge";
 import { OwlNavButton } from "@/components/ui/OwlNavButton";
 import { useClientAuthNavState } from "@/hooks/useClientAuthNavState";
+import { FOREST_ENTER_LABEL, FOREST_LEAVE_LABEL } from "@/lib/auth/forestSessionCopy";
 import {
   GUEST_CONTACT_FORM_LABEL,
   GUEST_CONTACT_FORM_PATH,
@@ -176,18 +177,18 @@ export function SiteHeaderMobileNavItems({ onNavigate }: Props) {
             })();
           }}
         >
-          ログアウト
+          {FOREST_LEAVE_LABEL}
         </button>
       ) : null}
 
       {showGuestLoginNav ? (
         pathname === "/login" ? (
           <span className={`${mobileMenuItemClass} text-stone-400`} aria-current="page">
-            ログイン
+            {FOREST_ENTER_LABEL}
           </span>
         ) : (
           <MobileMenuNavButton href="/login?returnTo=%2Forders" router={router}>
-            ログイン
+            {FOREST_ENTER_LABEL}
           </MobileMenuNavButton>
         )
       ) : null}

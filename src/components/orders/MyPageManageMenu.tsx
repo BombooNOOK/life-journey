@@ -1,6 +1,12 @@
 import type { ReactNode } from "react";
 
 import { MyPageManageMenuRow } from "@/components/orders/MyPageManageMenuRow";
+import {
+  RECORD_BACKUP_LABEL,
+  RECORD_BACKUP_LOADING_LABEL,
+  RESIDENT_REGISTRATION_INFO_LABEL,
+  RESIDENT_REGISTRATION_INFO_LOADING_LABEL,
+} from "@/lib/account/residentRegistrationUiCopy";
 
 export { MyPageManageMenuRow } from "@/components/orders/MyPageManageMenuRow";
 
@@ -25,13 +31,13 @@ export function MyPageManageMenuSection({ title, description, children, classNam
   );
 }
 
-/** ログハウス歯車／設定：住民票・アカウント・データ管理を軸にする */
+/** ログハウス歯車／設定：住民票・住民登録情報・記録のバックアップを軸にする */
 export function MyPageManageHub() {
   return (
     <div className="w-full space-y-5 border-t border-stone-200/80 pt-5">
       <MyPageManageMenuSection
         title="森のくらし"
-        description="本人の住民票と、アカウント周りの確認ができます"
+        description="住民票と登録内容の確認、あしあとの書き出しができます"
       >
         <MyPageManageMenuRow
           href="/orders/resident-card"
@@ -41,15 +47,15 @@ export function MyPageManageHub() {
         />
         <MyPageManageMenuRow
           href="/orders/account"
-          label="アカウント情報"
+          label={RESIDENT_REGISTRATION_INFO_LABEL}
           icon="☰"
-          loadingLabel="アカウント情報を開いています…"
+          loadingLabel={RESIDENT_REGISTRATION_INFO_LOADING_LABEL}
         />
         <MyPageManageMenuRow
           href="/orders/settings/backup"
-          label="データ管理"
+          label={RECORD_BACKUP_LABEL}
           icon="↓"
-          loadingLabel="データ管理を開いています…"
+          loadingLabel={RECORD_BACKUP_LOADING_LABEL}
         />
       </MyPageManageMenuSection>
 

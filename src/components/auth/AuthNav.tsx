@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 
 import { useFirebaseAuth } from "@/components/auth/FirebaseAuthProvider";
 import { useClientAuthNavState } from "@/hooks/useClientAuthNavState";
+import { FOREST_ENTER_LABEL, FOREST_LEAVE_LABEL } from "@/lib/auth/forestSessionCopy";
 
 function AuthSeparator() {
   return (
@@ -37,7 +38,7 @@ export function AuthNav() {
             })();
           }}
         >
-          ログアウト
+          {FOREST_LEAVE_LABEL}
         </button>
       </>
     );
@@ -48,7 +49,7 @@ export function AuthNav() {
       <>
         <AuthSeparator />
         <Link href="/login?returnTo=%2Forders" className={authActionClass}>
-          ログイン
+          {FOREST_ENTER_LABEL}
         </Link>
       </>
     );

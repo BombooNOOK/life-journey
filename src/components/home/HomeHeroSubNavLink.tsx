@@ -15,6 +15,7 @@ import {
   LOG_HOUSE_TO_LABEL,
 } from "@/lib/journal/logHouseLabels";
 import { isLjLoggedInOnClient } from "@/lib/auth/clientCookies";
+import { FOREST_ENTER_LABEL } from "@/lib/auth/forestSessionCopy";
 
 const MY_PAGE_HREF = "/orders";
 const LOGIN_HREF = buildLoginHref(MY_PAGE_HREF);
@@ -43,7 +44,7 @@ export function HomeHeroSubNavLink({ className = "", variant = "default" }: Prop
 
   if (variant === "entrance") {
     const entranceClass = [entranceContinueButtonClass, className].filter(Boolean).join(" ");
-    const subLabel = isLoggedIn ? LOG_HOUSE_TO_LABEL : "ログイン";
+    const subLabel = isLoggedIn ? LOG_HOUSE_TO_LABEL : FOREST_ENTER_LABEL;
 
     if (isLoggedIn) {
       return (
@@ -84,7 +85,7 @@ export function HomeHeroSubNavLink({ className = "", variant = "default" }: Prop
   return (
     <Link href={LOGIN_HREF} className={continueClass}>
       <span className={heroCtaContinueLeadClass}>記録の続きはこちら</span>
-      <span className={heroCtaContinueSubClass}>ログイン</span>
+      <span className={heroCtaContinueSubClass}>{FOREST_ENTER_LABEL}</span>
     </Link>
   );
 }

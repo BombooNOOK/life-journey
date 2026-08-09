@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { MyPageLogoutButton } from "@/components/auth/AuthSessionPanels";
 import { MyPageAccountSection } from "@/components/orders/MyPageAccountSection";
 import { MyPageSubpageHeader } from "@/components/orders/MyPageSubpageHeader";
+import { RESIDENT_REGISTRATION_INFO_LABEL } from "@/lib/account/residentRegistrationUiCopy";
 import { getViewerEmailFromCookie } from "@/lib/auth/viewer";
 import { prisma } from "@/lib/db";
 import { withPrismaConnectionRetry } from "@/lib/db/prismaRetry";
@@ -41,8 +42,8 @@ export default async function MyPageAccountPage() {
   return (
     <div className="space-y-5 sm:space-y-6">
       <MyPageSubpageHeader
-        title="アカウント情報"
-        description="登録情報・森の定期便・解約手続きなどを確認できます"
+        title={RESIDENT_REGISTRATION_INFO_LABEL}
+        description="登録内容・森の定期便・解約手続きなどを確認できます"
       />
 
       <MyPageAccountSection

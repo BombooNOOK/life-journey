@@ -1,7 +1,8 @@
 "use client";
 
-import { ForestResidentDisplayNameEditor } from "@/components/orders/ForestResidentDisplayNameEditor";
+import { ForestResidentAvatarChangePanel } from "@/components/orders/ForestResidentAvatarChangePanel";
 import { ForestResidentCardExpandable } from "@/components/orders/ForestResidentCardExpandable";
+import { ForestResidentDisplayNameEditor } from "@/components/orders/ForestResidentDisplayNameEditor";
 import type { ForestResidentCardData } from "@/lib/forestResident/forestResidentNumber";
 
 type Props = {
@@ -13,6 +14,8 @@ export function LogHouseResidentCardPageContent({ initialCard }: Props) {
   return (
     <div className="space-y-4">
       <ForestResidentCardExpandable card={initialCard} />
+
+      <ForestResidentAvatarChangePanel />
 
       <details className="group rounded-lg border border-stone-200/80 bg-white">
         <summary className="cursor-pointer list-none px-3 py-2.5 text-sm font-medium text-stone-700 marker:content-none [&::-webkit-details-marker]:hidden">
