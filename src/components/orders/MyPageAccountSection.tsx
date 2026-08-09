@@ -153,7 +153,7 @@ export function MyPageAccountSection({
         </div>
       </MyPageAccountSectionCard>
 
-      <MyPageAccountSectionCard title="住民登録をやめる">
+      <MyPageAccountSectionCard title="住民登録について">
         <p className={mobileReadable.bodyMuted}>
           森での住民登録を終える前に、内容を確認できます。大切な記録がある場合は、先に「あしあとのバックアップ」をご確認ください。
         </p>
