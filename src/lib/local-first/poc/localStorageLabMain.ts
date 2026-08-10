@@ -1,26 +1,25 @@
 /**
- * Phase 4B-2A Local-first Storage Lab entry (bundled into capacitor-www).
- * Not a production LJD route. Native-only.
+ * Local-first Storage Lab — Phase 4B-2B Journal Repository PoC controls.
+ * Still not production Journal UI. Native-only.
  */
 
 import { Capacitor } from "@capacitor/core";
 
 import {
-  clearAllPocMedia,
-  deletePocMediaFile,
-  readPocMediaAsUri,
-  writePocMediaFile,
-} from "@/lib/local-first/poc/filesystemPocMedia";
+  RAIN_FOREST_SEED_ASSET_URL,
+  RAIN_FOREST_SERVER_FIXTURE,
+} from "@/lib/local-first/journal/fixture";
+import { mapServerJournalEntryLikeToLocal } from "@/lib/local-first/journal/mapper";
 import {
-  clearPocJournals,
-  insertPocJournal,
-  listPocJournals,
-  openPocDatabase,
-} from "@/lib/local-first/poc/sqlitePocDatabase";
-import type { LocalJournalPocRow } from "@/lib/local-first/poc/types";
-
-const SEED_ASSET_URL = "./assets/poc-seed-acorn.png";
-const FIXED_POC_ID = "poc-ashiato-001";
+  deleteJournalMediaRelative,
+  resolveJournalMediaUri,
+  sha256HexOfBase64,
+  writeJournalMediaRelative,
+} from "@/lib/local-first/journal/mediaStore";
+import { JournalRepository } from "@/lib/local-first/journal/repository";
+import { searchLocalJournals } from "@/lib/local-first/journal/search";
+import { createLocalStableId } from "@/lib/local-first/journal/stableId";
+import { openLocalJournalDatabase } from "@/lib/local-first/journal/database";
 
 function $(id: string): HTMLElement {
   const el = document.getElementById(id);
@@ -34,55 +33,6 @@ function setStatus(message: string, isError = false): void {
   el.className = isError ? "status err" : "status ok";
 }
 
-async function fetchSeedImageBase64(): Promise<string> {
-  const res = await fetch(SEED_ASSET_URL);
-  if (!res.ok) throw new Error(`Seed image fetch failed: ${res.status}`);
-  const buf = await res.arrayBuffer();
-  const bytes = new Uint8Array(buf);
-  let binary = "";
-  for (let i = 0; i < bytes.length; i += 1) {
-    binary += String.fromCharCode(bytes[i]!);
-  }
-  return btoa(binary);
-}
-
-async function renderList(): Promise<void> {
-  const listEl = $("list");
-  const previewEl = $("preview") as HTMLImageElement;
-  listEl.innerHTML = "";
-  previewEl.removeAttribute("src");
-  previewEl.hidden = true;
-
-  const rows = await listPocJournals();
-  if (rows.length === 0) {
-    listEl.innerHTML = "<p class='muted'>まだ端末にあしあとがありません。</p>";
-    return;
-  }
-
-  for (const row of rows) {
-    const card = document.createElement("article");
-    card.className = "card";
-    card.innerHTML = `
-      <h3>${escapeHtml(row.title)}</h3>
-      <p>${escapeHtml(row.content)}</p>
-      <p class="meta">id: ${escapeHtml(row.id)}</p>
-      <p class="meta">createdAt: ${escapeHtml(row.createdAt)}</p>
-      <p class="meta">mediaPath: ${escapeHtml(row.mediaPath ?? "(none)")}</p>
-    `;
-    listEl.appendChild(card);
-
-    if (row.mediaPath) {
-      try {
-        const uri = await readPocMediaAsUri(row.mediaPath);
-        previewEl.src = uri;
-        previewEl.hidden = false;
-      } catch (err) {
-        setStatus(`画像URI取得失敗: ${String(err)}`, true);
-      }
-    }
-  }
-}
-
 function escapeHtml(value: string): string {
   return value
     .replaceAll("&", "&amp;")
@@ -91,83 +41,147 @@ function escapeHtml(value: string): string {
     .replaceAll('"', "&quot;");
 }
 
-async function onSave(): Promise<void> {
-  setStatus("保存中…");
-  await openPocDatabase();
+async function fetchSeedImageBase64(): Promise<string> {
+  const res = await fetch(RAIN_FOREST_SEED_ASSET_URL);
+  if (!res.ok) throw new Error(`Seed image fetch failed: ${res.status}`);
+  const buf = await res.arrayBuffer();
+  const bytes = new Uint8Array(buf);
+  let binary = "";
+  for (let i = 0; i < bytes.length; i += 1) binary += String.fromCharCode(bytes[i]!);
+  return btoa(binary);
+}
+
+async function renderEntries(
+  entries: Awaited<ReturnType<typeof JournalRepository.list>>,
+): Promise<void> {
+  const listEl = $("list");
+  const previewEl = $("preview") as HTMLImageElement;
+  listEl.innerHTML = "";
+  previewEl.removeAttribute("src");
+  previewEl.hidden = true;
+
+  if (entries.length === 0) {
+    listEl.innerHTML = "<p class='muted'>Local Journal にまだエントリがありません。</p>";
+    return;
+  }
+
+  for (const entry of entries) {
+    const card = document.createElement("article");
+    card.className = "card";
+    card.innerHTML = `
+      <h3>${escapeHtml(entry.title)}</h3>
+      <p>${escapeHtml(entry.content)}</p>
+      <p class="meta">stableId: ${escapeHtml(entry.stableId)}</p>
+      <p class="meta">legacyServerId: ${escapeHtml(entry.legacyServerId ?? "(none)")}</p>
+      <p class="meta">dateKey: ${escapeHtml(entry.dateKey)}</p>
+      <p class="meta">tags: ${escapeHtml(entry.tags.join(" "))}</p>
+      <p class="meta">media: ${escapeHtml(
+        entry.mediaRefs.map((m) => m.relativePath).join(", ") || "(none)",
+      )}</p>
+    `;
+    listEl.appendChild(card);
+
+    const firstMedia = entry.mediaRefs[0];
+    if (firstMedia) {
+      try {
+        previewEl.src = await resolveJournalMediaUri(firstMedia.relativePath);
+        previewEl.hidden = false;
+      } catch (err) {
+        setStatus(`画像URI取得失敗: ${String(err)}`, true);
+      }
+    }
+  }
+}
+
+async function onSaveMappedFixture(): Promise<void> {
+  setStatus("fixture → mapper → SQLite + Library 保存中…");
+  await openLocalJournalDatabase();
   const base64 = await fetchSeedImageBase64();
-  const mediaPath = await writePocMediaFile("poc-seed-acorn.png", base64);
-  const row: LocalJournalPocRow = {
-    id: FIXED_POC_ID,
-    title: "森のテストあしあと",
-    content:
-      "これは端末の中だけに残るLocal-firstテストです。本番あしあと／Neon／Blobは触っていません。",
-    createdAt: new Date().toISOString(),
-    mediaPath,
-  };
-  await insertPocJournal(row);
-  await renderList();
-  setStatus(`保存完了（SQLite + Library media）。mediaPath=${mediaPath}`);
+  const checksum = await sha256HexOfBase64(base64);
+  const journalStableId = createLocalStableId();
+  const mediaStableId = createLocalStableId();
+  const relativePath = await writeJournalMediaRelative(
+    `${journalStableId}-${mediaStableId}.png`,
+    base64,
+  );
+
+  const local = mapServerJournalEntryLikeToLocal(RAIN_FOREST_SERVER_FIXTURE, {
+    journalStableId,
+    mediaStableId,
+    mediaRelativePath: relativePath,
+    mediaChecksum: checksum,
+  });
+
+  await JournalRepository.save(local);
+  await renderEntries(await JournalRepository.list());
+  setStatus(
+    `保存完了\nstableId=${local.stableId}\nlegacyServerId=${local.legacyServerId}\nrelativePath=${relativePath}\nchecksum=${checksum.slice(0, 12)}…`,
+  );
 }
 
 async function onLoad(): Promise<void> {
   setStatus("読込中…");
-  await openPocDatabase();
-  await renderList();
-  const rows = await listPocJournals();
-  setStatus(`読込完了: ${rows.length} 件`);
+  await openLocalJournalDatabase();
+  const entries = await JournalRepository.list();
+  await renderEntries(entries);
+  setStatus(`読込完了: ${entries.length} 件 (count=${await JournalRepository.count()})`);
+}
+
+async function onSearch(): Promise<void> {
+  setStatus("検索中…");
+  await openLocalJournalDatabase();
+  const byTag = await searchLocalJournals({ tag: "#森" });
+  const byDate = await searchLocalJournals({ dateKey: "2026-08-10" });
+  const byText = await searchLocalJournals({ text: "雨" });
+  await renderEntries(byTag);
+  setStatus(
+    `検索PoC\n#森 → ${byTag.length}件\ndateKey=2026-08-10 → ${byDate.length}件\ntext=雨 → ${byText.length}件`,
+  );
 }
 
 async function onClear(): Promise<void> {
-  setStatus("削除中…");
-  const rows = await listPocJournals();
-  for (const row of rows) {
-    if (row.mediaPath) await deletePocMediaFile(row.mediaPath);
-  }
-  await clearPocJournals();
-  await clearAllPocMedia();
-  await renderList();
-  setStatus("テストデータを削除しました。");
+  setStatus("PoCデータ削除中…");
+  const paths = await JournalRepository.deletePocData();
+  for (const p of paths) await deleteJournalMediaRelative(p);
+  await renderEntries([]);
+  setStatus("Local Journal PoCデータを削除しました。");
 }
 
 async function boot(): Promise<void> {
-  const platformEl = $("platform");
-  platformEl.textContent = `platform=${Capacitor.getPlatform()} native=${String(
+  $("platform").textContent = `platform=${Capacitor.getPlatform()} native=${String(
     Capacitor.isNativePlatform(),
-  )} remoteShell=false (local assets)`;
+  )} phase=4B-2B remoteShell=false`;
 
   if (!Capacitor.isNativePlatform()) {
-    setStatus(
-      "このLabはネイティブ（Capacitor iOS）専用です。ブラウザではSQLite/Filesystemを呼び出しません。",
-      true,
-    );
-    ($("btn-save") as HTMLButtonElement).disabled = true;
-    ($("btn-load") as HTMLButtonElement).disabled = true;
-    ($("btn-clear") as HTMLButtonElement).disabled = true;
+    setStatus("ネイティブ専用です。WebではRepositoryを呼びません。", true);
+    for (const id of ["btn-save", "btn-load", "btn-search", "btn-clear"]) {
+      ($(id) as HTMLButtonElement).disabled = true;
+    }
     return;
   }
 
   $("btn-save").addEventListener("click", () => {
-    void onSave().catch((err) => setStatus(String(err), true));
+    void onSaveMappedFixture().catch((e) => setStatus(String(e), true));
   });
   $("btn-load").addEventListener("click", () => {
-    void onLoad().catch((err) => setStatus(String(err), true));
+    void onLoad().catch((e) => setStatus(String(e), true));
+  });
+  $("btn-search").addEventListener("click", () => {
+    void onSearch().catch((e) => setStatus(String(e), true));
   });
   $("btn-clear").addEventListener("click", () => {
-    void onClear().catch((err) => setStatus(String(err), true));
+    void onClear().catch((e) => setStatus(String(e), true));
   });
 
   try {
-    await openPocDatabase();
-    await renderList();
-    setStatus("Local-first Storage Lab 準備完了。サーバーなしで動けます。");
+    await openLocalJournalDatabase();
+    await renderEntries(await JournalRepository.list());
+    setStatus("4B-2B Local Journal Lab 準備完了（サーバーなし可）。");
 
-    // Optional one-shot verification (Simulator agent). Leave unset / false in shipped Lab.
     const auto = (globalThis as { __LJD_POC_AUTOVERIFY__?: boolean }).__LJD_POC_AUTOVERIFY__;
     if (auto === true) {
-      await onSave();
-      await onLoad();
-      const prev = $("status").textContent ?? "";
-      setStatus(`${prev}\n[autoverify] save+load done`);
+      await onSaveMappedFixture();
+      await onSearch();
     }
   } catch (err) {
     setStatus(`初期化失敗: ${String(err)}`, true);

@@ -6,7 +6,7 @@
       name="viewport"
       content="width=device-width, initial-scale=1, viewport-fit=cover"
     />
-    <title>Local-first Storage Lab｜LJD PoC</title>
+    <title>Local-first Storage Lab｜4B-2B</title>
     <style>
       :root {
         color-scheme: light;
@@ -18,101 +18,42 @@
         --accent: #3f5d4a;
         --danger: #9a3412;
       }
-      * {
-        box-sizing: border-box;
-      }
+      * { box-sizing: border-box; }
       body {
         margin: 0;
         min-height: 100vh;
         font-family: ui-rounded, "Hiragino Sans", "Noto Sans JP", system-ui, sans-serif;
         background: linear-gradient(180deg, #eef3ea 0%, var(--paper) 40%);
         color: var(--ink);
-        padding: max(1rem, env(safe-area-inset-top)) 1rem
-          max(1.5rem, env(safe-area-inset-bottom));
+        padding: max(1rem, env(safe-area-inset-top)) 1rem max(1.5rem, env(safe-area-inset-bottom));
       }
-      main {
-        max-width: 36rem;
-        margin: 0 auto;
-      }
-      h1 {
-        font-size: 1.35rem;
-        margin: 0 0 0.35rem;
-      }
-      .note {
-        color: var(--muted);
-        font-size: 0.9rem;
-        line-height: 1.5;
-        margin: 0 0 1rem;
-      }
-      .actions {
-        display: grid;
-        gap: 0.6rem;
-        margin: 1rem 0;
-      }
+      main { max-width: 36rem; margin: 0 auto; }
+      h1 { font-size: 1.3rem; margin: 0 0 0.35rem; }
+      .note, .muted, #platform, .meta { color: var(--muted); font-size: 0.85rem; line-height: 1.45; }
+      .actions { display: grid; gap: 0.55rem; margin: 1rem 0; }
       button {
-        appearance: none;
-        border: 1px solid var(--line);
-        background: var(--card);
-        color: var(--ink);
-        border-radius: 0.75rem;
-        padding: 0.85rem 1rem;
-        font-size: 1rem;
-        font-weight: 600;
+        appearance: none; border: 1px solid var(--line); background: var(--card);
+        color: var(--ink); border-radius: 0.75rem; padding: 0.8rem 1rem;
+        font-size: 0.95rem; font-weight: 600;
       }
-      button:disabled {
-        opacity: 0.45;
-      }
-      #btn-save {
-        background: var(--accent);
-        color: #fff;
-        border-color: transparent;
-      }
-      #btn-clear {
-        color: var(--danger);
-      }
+      button:disabled { opacity: 0.45; }
+      #btn-save { background: var(--accent); color: #fff; border-color: transparent; }
+      #btn-clear { color: var(--danger); }
       .status {
-        margin: 0.75rem 0;
-        padding: 0.75rem 0.9rem;
-        border-radius: 0.75rem;
-        background: #fff;
-        border: 1px solid var(--line);
-        font-size: 0.9rem;
-        line-height: 1.45;
-        white-space: pre-wrap;
+        margin: 0.75rem 0; padding: 0.75rem 0.9rem; border-radius: 0.75rem;
+        background: #fff; border: 1px solid var(--line); font-size: 0.88rem;
+        line-height: 1.45; white-space: pre-wrap;
       }
-      .status.err {
-        border-color: #fecaca;
-        background: #fff7f5;
-        color: var(--danger);
-      }
+      .status.err { border-color: #fecaca; background: #fff7f5; color: var(--danger); }
       .card {
-        background: var(--card);
-        border: 1px solid var(--line);
-        border-radius: 0.85rem;
-        padding: 0.9rem 1rem;
-        margin: 0.6rem 0;
+        background: var(--card); border: 1px solid var(--line); border-radius: 0.85rem;
+        padding: 0.9rem 1rem; margin: 0.6rem 0;
       }
-      .card h3 {
-        margin: 0 0 0.4rem;
-        font-size: 1.05rem;
-      }
-      .card p {
-        margin: 0.25rem 0;
-        line-height: 1.45;
-      }
-      .meta,
-      .muted,
-      #platform {
-        color: var(--muted);
-        font-size: 0.8rem;
-      }
+      .card h3 { margin: 0 0 0.4rem; font-size: 1.05rem; }
+      .card p { margin: 0.25rem 0; line-height: 1.45; }
       #preview {
-        display: block;
-        max-width: 10rem;
-        margin: 0.75rem 0 0;
-        border-radius: 0.75rem;
-        border: 1px solid var(--line);
-        background: #fff;
+        display: block; max-width: 10rem; margin: 0.75rem 0 0;
+        border-radius: 0.75rem; border: 1px solid var(--line); background: #fff;
       }
     </style>
   </head>
@@ -120,15 +61,16 @@
     <main>
       <h1>Local-first Storage Lab</h1>
       <p class="note">
-        Phase 4B-2A 実験画面です。正式 LJD UI ではありません。本番あしあと・Neon・Blob
-        は使いません。SQLite（本文）＋ Filesystem Library（画像）のみ。
+        Phase 4B-2B｜Journal Repository PoC。正式あしあと UI ではありません。
+        Server-like fixture → mapper → LocalJournal → SQLite + Library media。
       </p>
       <p id="platform" class="muted">platform…</p>
 
       <div class="actions">
-        <button type="button" id="btn-save">テストあしあとを端末に残す</button>
-        <button type="button" id="btn-load">端末のあしあとを読む</button>
-        <button type="button" id="btn-clear">テストデータを削除</button>
+        <button type="button" id="btn-save">雨あがりの森を端末へ保存</button>
+        <button type="button" id="btn-load">Local Journal を読む</button>
+        <button type="button" id="btn-search">tag/date/text 検索PoC</button>
+        <button type="button" id="btn-clear">PoCデータを削除</button>
       </div>
 
       <p id="status" class="status">起動中…</p>
@@ -136,11 +78,10 @@
       <section>
         <h2 style="font-size: 1rem">読込結果</h2>
         <div id="list"></div>
-        <img id="preview" alt="PoC media preview" hidden />
+        <img id="preview" alt="" hidden />
       </section>
     </main>
     <script>
-      // One-shot agent assist. Default false for normal Lab use.
       window.__LJD_POC_AUTOVERIFY__ = false;
     </script>
     <script src="./lab.js"></script>

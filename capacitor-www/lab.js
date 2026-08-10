@@ -1596,7 +1596,111 @@
   // src/lib/local-first/poc/localStorageLabMain.ts
   init_dist();
 
-  // src/lib/local-first/poc/filesystemPocMedia.ts
+  // src/lib/local-first/journal/fixture.ts
+  var RAIN_FOREST_SERVER_FIXTURE = {
+    id: "cuid_fixture_rain_forest_0001",
+    createdAt: "2026-08-10T02:15:00.000Z",
+    updatedAt: "2026-08-10T02:15:00.000Z",
+    email: "fixture@example.invalid",
+    profileId: "fixture-profile-poc",
+    content: "\u4ECA\u65E5\u306F\u96E8\u304C\u3042\u304C\u3063\u305F\u3042\u3068\u3001\u5C11\u3057\u3060\u3051\u68EE\u3092\u6B69\u3044\u305F\u3002\u8449\u3063\u3071\u306E\u5302\u3044\u304C\u8FD1\u304F\u3066\u3001\u8DB3\u5143\u306E\u77F3\u304C\u307E\u3060\u306C\u308C\u3066\u3044\u305F\u3002",
+    mood: "calm",
+    activity: "record_anyway",
+    companionType: "owl",
+    designTheme: "simple",
+    contentFontMode: "standard",
+    photoDataUrl: null,
+    photoBlobUrl: "https://example.invalid/fixture/rain-forest.png",
+    photoBlobPathname: "fixture/rain-forest.png",
+    photoMimeType: "image/png",
+    photoSizeBytes: 24218,
+    photoStorageProvider: "fixture",
+    generatedComment: null,
+    includeInBook: true,
+    dateKey: "2026-08-10",
+    title: "\u96E8\u3042\u304C\u308A\u306E\u68EE",
+    tags: ["#\u96E8", "#\u68EE"]
+  };
+  var RAIN_FOREST_SEED_ASSET_URL = "./assets/poc-seed-acorn.png";
+
+  // src/lib/local-first/journal/stableId.ts
+  var CROCKFORD = "0123456789ABCDEFGHJKMNPQRSTVWXYZ";
+  function encodeTime(ms, length) {
+    let value = ms;
+    let out = "";
+    for (let i = 0; i < length; i += 1) {
+      const mod = value % 32;
+      out = CROCKFORD[mod] + out;
+      value = Math.floor(value / 32);
+    }
+    return out;
+  }
+  function encodeRandom(length) {
+    const bytes = new Uint8Array(length);
+    crypto.getRandomValues(bytes);
+    let out = "";
+    for (let i = 0; i < length; i += 1) {
+      out += CROCKFORD[bytes[i] % 32];
+    }
+    return out;
+  }
+  function createLocalStableId() {
+    return `${encodeTime(Date.now(), 10)}${encodeRandom(16)}`;
+  }
+
+  // src/lib/local-first/journal/types.ts
+  var LOCAL_JOURNAL_REPO_DB_NAME = "ljd_local_journal_repo";
+  var LOCAL_JOURNAL_SCHEMA_USER_VERSION = 1;
+  var LOCAL_JOURNAL_MEDIA_ROOT = "ljd/media/journal";
+
+  // src/lib/local-first/journal/mapper.ts
+  function mapServerJournalEntryLikeToLocal(server, options = {}) {
+    const now = (/* @__PURE__ */ new Date()).toISOString();
+    const journalStableId = options.journalStableId ?? createLocalStableId();
+    const mediaRefs = [];
+    const hasPhotoHint = Boolean(server.photoBlobUrl) || Boolean(server.photoBlobPathname) || Boolean(server.photoDataUrl) || Boolean(options.mediaRelativePath);
+    if (hasPhotoHint && options.mediaRelativePath) {
+      mediaRefs.push({
+        stableId: options.mediaStableId ?? createLocalStableId(),
+        journalStableId,
+        type: "image",
+        relativePath: options.mediaRelativePath,
+        createdAt: server.createdAt,
+        checksum: options.mediaChecksum ?? null,
+        mimeType: server.photoMimeType
+      });
+    }
+    return {
+      stableId: journalStableId,
+      dateKey: server.dateKey,
+      title: server.title.trim() || "\u7121\u984C\u306E\u3042\u3057\u3042\u3068",
+      content: server.content,
+      createdAt: server.createdAt,
+      updatedAt: server.updatedAt,
+      tags: normalizeTags(server.tags),
+      mediaRefs,
+      schemaVersion: LOCAL_JOURNAL_SCHEMA_USER_VERSION,
+      source: "mapped_server_shape",
+      localStatus: "active",
+      importedAt: options.importedAt ?? now,
+      legacyServerId: server.id
+    };
+  }
+  function normalizeTags(tags) {
+    const out = [];
+    const seen = /* @__PURE__ */ new Set();
+    for (const raw of tags) {
+      const t = raw.trim();
+      if (!t) continue;
+      const withHash = t.startsWith("#") ? t : `#${t}`;
+      if (seen.has(withHash)) continue;
+      seen.add(withHash);
+      out.push(withHash);
+    }
+    return out;
+  }
+
+  // src/lib/local-first/journal/mediaStore.ts
   init_dist();
 
   // node_modules/@capacitor/filesystem/dist/esm/index.js
@@ -1656,34 +1760,27 @@
   });
   f();
 
-  // src/lib/local-first/poc/types.ts
-  var LOCAL_JOURNAL_POC_SCHEMA_VERSION = 1;
-  var LOCAL_JOURNAL_POC_DB_NAME = "ljd_local_first_poc";
-  var LOCAL_POC_MEDIA_DIR = "ljd-poc/media";
-
-  // src/lib/local-first/poc/filesystemPocMedia.ts
+  // src/lib/local-first/journal/mediaStore.ts
   function assertNative() {
     if (!Capacitor.isNativePlatform()) {
-      throw new Error(
-        "Local-first Filesystem PoC is native-only (Capacitor.isNativePlatform() required)."
-      );
+      throw new Error("Local Journal media store is native-only.");
     }
   }
-  async function ensurePocMediaDir() {
+  async function ensureJournalMediaDir() {
     assertNative();
     try {
       await Filesystem.mkdir({
-        path: LOCAL_POC_MEDIA_DIR,
+        path: LOCAL_JOURNAL_MEDIA_ROOT,
         directory: Directory.Library,
         recursive: true
       });
     } catch {
     }
   }
-  async function writePocMediaFile(fileName, base64Data) {
+  async function writeJournalMediaRelative(fileName, base64Data) {
     assertNative();
-    await ensurePocMediaDir();
-    const relativePath = `${LOCAL_POC_MEDIA_DIR}/${fileName}`;
+    await ensureJournalMediaDir();
+    const relativePath = `${LOCAL_JOURNAL_MEDIA_ROOT}/${fileName}`;
     await Filesystem.writeFile({
       path: relativePath,
       data: base64Data,
@@ -1691,7 +1788,7 @@
     });
     return relativePath;
   }
-  async function readPocMediaAsUri(relativePath) {
+  async function resolveJournalMediaUri(relativePath) {
     assertNative();
     const result = await Filesystem.getUri({
       path: relativePath,
@@ -1699,7 +1796,7 @@
     });
     return Capacitor.convertFileSrc(result.uri);
   }
-  async function deletePocMediaFile(relativePath) {
+  async function deleteJournalMediaRelative(relativePath) {
     assertNative();
     try {
       await Filesystem.deleteFile({
@@ -1709,23 +1806,15 @@
     } catch {
     }
   }
-  async function clearAllPocMedia() {
-    assertNative();
-    try {
-      const listing = await Filesystem.readdir({
-        path: LOCAL_POC_MEDIA_DIR,
-        directory: Directory.Library
-      });
-      for (const entry of listing.files) {
-        const name = typeof entry === "string" ? entry : entry.name;
-        if (!name) continue;
-        await deletePocMediaFile(`${LOCAL_POC_MEDIA_DIR}/${name}`);
-      }
-    } catch {
-    }
+  async function sha256HexOfBase64(base64Data) {
+    const binary = atob(base64Data);
+    const bytes = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i += 1) bytes[i] = binary.charCodeAt(i);
+    const digest = await crypto.subtle.digest("SHA-256", bytes);
+    return [...new Uint8Array(digest)].map((b) => b.toString(16).padStart(2, "0")).join("");
   }
 
-  // src/lib/local-first/poc/sqlitePocDatabase.ts
+  // src/lib/local-first/journal/database.ts
   init_dist();
 
   // node_modules/@capacitor-community/sqlite/dist/esm/index.js
@@ -2562,104 +2651,280 @@
     electron: () => window.CapacitorCustomPlatform.plugins.CapacitorSQLite
   });
 
-  // src/lib/local-first/poc/sqlitePocDatabase.ts
+  // src/lib/local-first/journal/database.ts
   var connection = null;
   var db = null;
-  function assertNative2() {
+  function assertLocalJournalNative() {
     if (!Capacitor.isNativePlatform()) {
-      throw new Error(
-        "Local-first SQLite PoC is native-only (Capacitor.isNativePlatform() required)."
-      );
+      throw new Error("Local Journal Repository PoC is native-only.");
     }
   }
   function getConnection() {
-    if (!connection) {
-      connection = new SQLiteConnection(CapacitorSQLite);
-    }
+    if (!connection) connection = new SQLiteConnection(CapacitorSQLite);
     return connection;
   }
-  async function openPocDatabase() {
-    assertNative2();
+  var SCHEMA_V1 = `
+CREATE TABLE IF NOT EXISTS local_journal_entries_v1 (
+  stable_id TEXT PRIMARY KEY NOT NULL,
+  date_key TEXT NOT NULL,
+  title TEXT NOT NULL,
+  content TEXT NOT NULL,
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL,
+  tags_json TEXT NOT NULL DEFAULT '[]',
+  schema_version INTEGER NOT NULL,
+  source TEXT NOT NULL,
+  local_status TEXT NOT NULL,
+  imported_at TEXT,
+  legacy_server_id TEXT
+);
+
+CREATE INDEX IF NOT EXISTS idx_local_journal_date
+  ON local_journal_entries_v1 (date_key);
+
+CREATE INDEX IF NOT EXISTS idx_local_journal_updated
+  ON local_journal_entries_v1 (updated_at);
+
+CREATE TABLE IF NOT EXISTS local_journal_tags_v1 (
+  journal_stable_id TEXT NOT NULL,
+  tag TEXT NOT NULL,
+  PRIMARY KEY (journal_stable_id, tag)
+);
+
+CREATE INDEX IF NOT EXISTS idx_local_journal_tags_tag
+  ON local_journal_tags_v1 (tag);
+
+CREATE TABLE IF NOT EXISTS local_media_v1 (
+  stable_id TEXT PRIMARY KEY NOT NULL,
+  journal_stable_id TEXT NOT NULL,
+  type TEXT NOT NULL,
+  relative_path TEXT NOT NULL,
+  created_at TEXT NOT NULL,
+  checksum TEXT,
+  mime_type TEXT
+);
+
+CREATE INDEX IF NOT EXISTS idx_local_media_journal
+  ON local_media_v1 (journal_stable_id);
+`;
+  async function migrateToV1(database) {
+    await database.execute(SCHEMA_V1);
+    await database.execute(`PRAGMA user_version = ${LOCAL_JOURNAL_SCHEMA_USER_VERSION};`);
+  }
+  async function openLocalJournalDatabase() {
+    assertLocalJournalNative();
     if (db) return db;
     const sqlite = getConnection();
     const consistency = await sqlite.checkConnectionsConsistency();
-    const isConn = (await sqlite.isConnection(LOCAL_JOURNAL_POC_DB_NAME, false)).result;
+    const isConn = (await sqlite.isConnection(LOCAL_JOURNAL_REPO_DB_NAME, false)).result;
     if (consistency.result && isConn) {
-      db = await sqlite.retrieveConnection(LOCAL_JOURNAL_POC_DB_NAME, false);
+      db = await sqlite.retrieveConnection(LOCAL_JOURNAL_REPO_DB_NAME, false);
     } else {
       db = await sqlite.createConnection(
-        LOCAL_JOURNAL_POC_DB_NAME,
+        LOCAL_JOURNAL_REPO_DB_NAME,
         false,
         "no-encryption",
-        LOCAL_JOURNAL_POC_SCHEMA_VERSION,
+        LOCAL_JOURNAL_SCHEMA_USER_VERSION,
         false
       );
     }
     await db.open();
-    await initPocSchema(db);
+    const versionResult = await db.query("PRAGMA user_version;");
+    const raw = versionResult.values?.[0];
+    const current = typeof raw?.user_version === "number" ? raw.user_version : typeof raw?.user_version === "string" ? Number(raw.user_version) : Number(Object.values(raw ?? {})[0] ?? 0);
+    if (!Number.isFinite(current) || current < 1) {
+      await migrateToV1(db);
+    }
     return db;
   }
-  async function initPocSchema(database) {
-    await database.execute(`
-    CREATE TABLE IF NOT EXISTS schema_meta (
-      key TEXT PRIMARY KEY NOT NULL,
-      value TEXT NOT NULL
-    );
-  `);
-    await database.execute(`
-    CREATE TABLE IF NOT EXISTS local_journal_poc (
-      id TEXT PRIMARY KEY NOT NULL,
-      title TEXT NOT NULL,
-      content TEXT NOT NULL,
-      created_at TEXT NOT NULL,
-      media_path TEXT
-    );
-  `);
-    const ver = await database.query(
-      "SELECT value FROM schema_meta WHERE key = ?;",
-      ["schema_version"]
-    );
-    const current = ver.values?.[0]?.value;
-    if (current == null) {
-      await database.run(
-        "INSERT INTO schema_meta (key, value) VALUES (?, ?);",
-        ["schema_version", String(LOCAL_JOURNAL_POC_SCHEMA_VERSION)]
-      );
+
+  // src/lib/local-first/journal/repository.ts
+  function parseTagsJson(raw) {
+    try {
+      const parsed = JSON.parse(raw);
+      if (!Array.isArray(parsed)) return [];
+      return parsed.map(String);
+    } catch {
+      return [];
     }
   }
-  async function insertPocJournal(row) {
-    const database = await openPocDatabase();
-    await database.run(
-      `INSERT OR REPLACE INTO local_journal_poc
-      (id, title, content, created_at, media_path)
-     VALUES (?, ?, ?, ?, ?);`,
-      [row.id, row.title, row.content, row.createdAt, row.mediaPath]
+  async function loadMediaForJournal(journalStableId) {
+    const db2 = await openLocalJournalDatabase();
+    const result = await db2.query(
+      `SELECT stable_id, journal_stable_id, type, relative_path, created_at, checksum, mime_type
+     FROM local_media_v1 WHERE journal_stable_id = ?;`,
+      [journalStableId]
     );
+    return (result.values ?? []).map((r) => ({
+      stableId: String(r.stable_id),
+      journalStableId: String(r.journal_stable_id),
+      type: String(r.type),
+      relativePath: String(r.relative_path),
+      createdAt: String(r.created_at),
+      checksum: r.checksum == null ? null : String(r.checksum),
+      mimeType: r.mime_type == null ? null : String(r.mime_type)
+    }));
   }
-  async function listPocJournals() {
-    const database = await openPocDatabase();
-    const result = await database.query(
-      `SELECT id, title, content, created_at, media_path
-     FROM local_journal_poc
-     ORDER BY created_at DESC;`
-    );
-    const rows = result.values ?? [];
-    return rows.map((r) => ({
-      id: String(r.id),
+  function mapEntryRow(r, mediaRefs) {
+    return {
+      stableId: String(r.stable_id),
+      dateKey: String(r.date_key),
       title: String(r.title),
       content: String(r.content),
       createdAt: String(r.created_at),
-      mediaPath: r.media_path == null || r.media_path === "" ? null : String(r.media_path)
-    }));
+      updatedAt: String(r.updated_at),
+      tags: parseTagsJson(String(r.tags_json ?? "[]")),
+      mediaRefs,
+      schemaVersion: Number(r.schema_version),
+      source: String(r.source),
+      localStatus: String(r.local_status),
+      importedAt: r.imported_at == null ? null : String(r.imported_at),
+      legacyServerId: r.legacy_server_id == null ? null : String(r.legacy_server_id)
+    };
   }
-  async function clearPocJournals() {
-    const database = await openPocDatabase();
-    await database.execute("DELETE FROM local_journal_poc;");
+  var JournalRepository = {
+    async save(entry) {
+      const db2 = await openLocalJournalDatabase();
+      await db2.run(
+        `INSERT OR REPLACE INTO local_journal_entries_v1 (
+        stable_id, date_key, title, content, created_at, updated_at,
+        tags_json, schema_version, source, local_status, imported_at, legacy_server_id
+      ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?);`,
+        [
+          entry.stableId,
+          entry.dateKey,
+          entry.title,
+          entry.content,
+          entry.createdAt,
+          entry.updatedAt,
+          JSON.stringify(entry.tags),
+          entry.schemaVersion,
+          entry.source,
+          entry.localStatus,
+          entry.importedAt,
+          entry.legacyServerId
+        ]
+      );
+      await db2.run(`DELETE FROM local_journal_tags_v1 WHERE journal_stable_id = ?;`, [
+        entry.stableId
+      ]);
+      for (const tag of entry.tags) {
+        await db2.run(
+          `INSERT OR REPLACE INTO local_journal_tags_v1 (journal_stable_id, tag) VALUES (?, ?);`,
+          [entry.stableId, tag]
+        );
+      }
+      await db2.run(`DELETE FROM local_media_v1 WHERE journal_stable_id = ?;`, [entry.stableId]);
+      for (const media of entry.mediaRefs) {
+        await db2.run(
+          `INSERT OR REPLACE INTO local_media_v1 (
+          stable_id, journal_stable_id, type, relative_path, created_at, checksum, mime_type
+        ) VALUES (?,?,?,?,?,?,?);`,
+          [
+            media.stableId,
+            media.journalStableId,
+            media.type,
+            media.relativePath,
+            media.createdAt,
+            media.checksum,
+            media.mimeType
+          ]
+        );
+      }
+    },
+    async getById(stableId) {
+      const db2 = await openLocalJournalDatabase();
+      const result = await db2.query(
+        `SELECT * FROM local_journal_entries_v1 WHERE stable_id = ? AND local_status = 'active' LIMIT 1;`,
+        [stableId]
+      );
+      const row = result.values?.[0];
+      if (!row) return null;
+      const media = await loadMediaForJournal(stableId);
+      return mapEntryRow(row, media);
+    },
+    async list() {
+      const db2 = await openLocalJournalDatabase();
+      const result = await db2.query(
+        `SELECT * FROM local_journal_entries_v1
+       WHERE local_status = 'active'
+       ORDER BY date_key DESC, created_at DESC;`
+      );
+      const rows = result.values ?? [];
+      const out = [];
+      for (const row of rows) {
+        const r = row;
+        const media = await loadMediaForJournal(String(r.stable_id));
+        out.push(mapEntryRow(r, media));
+      }
+      return out;
+    },
+    async count() {
+      const db2 = await openLocalJournalDatabase();
+      const result = await db2.query(
+        `SELECT COUNT(*) AS c FROM local_journal_entries_v1 WHERE local_status = 'active';`
+      );
+      const row = result.values?.[0];
+      return Number(row?.c ?? 0);
+    },
+    /**
+     * PoC cleanup — deletes active PoC / fixture journals and related media rows.
+     * Does not touch production Neon.
+     */
+    async deletePocData() {
+      const db2 = await openLocalJournalDatabase();
+      const listed = await this.list();
+      const relativePaths = [];
+      for (const entry of listed) {
+        for (const m of entry.mediaRefs) relativePaths.push(m.relativePath);
+        await db2.run(`DELETE FROM local_media_v1 WHERE journal_stable_id = ?;`, [entry.stableId]);
+        await db2.run(`DELETE FROM local_journal_tags_v1 WHERE journal_stable_id = ?;`, [
+          entry.stableId
+        ]);
+        await db2.run(`DELETE FROM local_journal_entries_v1 WHERE stable_id = ?;`, [entry.stableId]);
+      }
+      return relativePaths;
+    }
+  };
+
+  // src/lib/local-first/journal/search.ts
+  async function searchLocalJournals(query) {
+    const db2 = await openLocalJournalDatabase();
+    const params = [];
+    const where = [`e.local_status = 'active'`];
+    if (query.dateKey) {
+      where.push(`e.date_key = ?`);
+      params.push(query.dateKey);
+    }
+    if (query.text?.trim()) {
+      where.push(`(e.title LIKE ? OR e.content LIKE ?)`);
+      const like = `%${query.text.trim()}%`;
+      params.push(like, like);
+    }
+    if (query.tag?.trim()) {
+      const tag = query.tag.trim().startsWith("#") ? query.tag.trim() : `#${query.tag.trim()}`;
+      where.push(
+        `EXISTS (SELECT 1 FROM local_journal_tags_v1 t WHERE t.journal_stable_id = e.stable_id AND t.tag = ?)`
+      );
+      params.push(tag);
+    }
+    const sql = `
+    SELECT e.stable_id FROM local_journal_entries_v1 e
+    WHERE ${where.join(" AND ")}
+    ORDER BY e.date_key DESC, e.created_at DESC
+    LIMIT 100;
+  `;
+    const result = await db2.query(sql, params);
+    const ids = (result.values ?? []).map((r) => String(r.stable_id));
+    const out = [];
+    for (const id of ids) {
+      const entry = await JournalRepository.getById(id);
+      if (entry) out.push(entry);
+    }
+    return out;
   }
 
   // src/lib/local-first/poc/localStorageLabMain.ts
-  var SEED_ASSET_URL = "./assets/poc-seed-acorn.png";
-  var FIXED_POC_ID = "poc-ashiato-001";
   function $(id) {
     const el = document.getElementById(id);
     if (!el) throw new Error(`Missing #${id}`);
@@ -2670,43 +2935,47 @@
     el.textContent = message;
     el.className = isError ? "status err" : "status ok";
   }
+  function escapeHtml(value) {
+    return value.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;");
+  }
   async function fetchSeedImageBase64() {
-    const res = await fetch(SEED_ASSET_URL);
+    const res = await fetch(RAIN_FOREST_SEED_ASSET_URL);
     if (!res.ok) throw new Error(`Seed image fetch failed: ${res.status}`);
     const buf = await res.arrayBuffer();
     const bytes = new Uint8Array(buf);
     let binary = "";
-    for (let i = 0; i < bytes.length; i += 1) {
-      binary += String.fromCharCode(bytes[i]);
-    }
+    for (let i = 0; i < bytes.length; i += 1) binary += String.fromCharCode(bytes[i]);
     return btoa(binary);
   }
-  async function renderList() {
+  async function renderEntries(entries) {
     const listEl = $("list");
     const previewEl = $("preview");
     listEl.innerHTML = "";
     previewEl.removeAttribute("src");
     previewEl.hidden = true;
-    const rows = await listPocJournals();
-    if (rows.length === 0) {
-      listEl.innerHTML = "<p class='muted'>\u307E\u3060\u7AEF\u672B\u306B\u3042\u3057\u3042\u3068\u304C\u3042\u308A\u307E\u305B\u3093\u3002</p>";
+    if (entries.length === 0) {
+      listEl.innerHTML = "<p class='muted'>Local Journal \u306B\u307E\u3060\u30A8\u30F3\u30C8\u30EA\u304C\u3042\u308A\u307E\u305B\u3093\u3002</p>";
       return;
     }
-    for (const row of rows) {
+    for (const entry of entries) {
       const card = document.createElement("article");
       card.className = "card";
       card.innerHTML = `
-      <h3>${escapeHtml(row.title)}</h3>
-      <p>${escapeHtml(row.content)}</p>
-      <p class="meta">id: ${escapeHtml(row.id)}</p>
-      <p class="meta">createdAt: ${escapeHtml(row.createdAt)}</p>
-      <p class="meta">mediaPath: ${escapeHtml(row.mediaPath ?? "(none)")}</p>
+      <h3>${escapeHtml(entry.title)}</h3>
+      <p>${escapeHtml(entry.content)}</p>
+      <p class="meta">stableId: ${escapeHtml(entry.stableId)}</p>
+      <p class="meta">legacyServerId: ${escapeHtml(entry.legacyServerId ?? "(none)")}</p>
+      <p class="meta">dateKey: ${escapeHtml(entry.dateKey)}</p>
+      <p class="meta">tags: ${escapeHtml(entry.tags.join(" "))}</p>
+      <p class="meta">media: ${escapeHtml(
+        entry.mediaRefs.map((m) => m.relativePath).join(", ") || "(none)"
+      )}</p>
     `;
       listEl.appendChild(card);
-      if (row.mediaPath) {
+      const firstMedia = entry.mediaRefs[0];
+      if (firstMedia) {
         try {
-          const uri = await readPocMediaAsUri(row.mediaPath);
-          previewEl.src = uri;
+          previewEl.src = await resolveJournalMediaUri(firstMedia.relativePath);
           previewEl.hidden = false;
         } catch (err) {
           setStatus(`\u753B\u50CFURI\u53D6\u5F97\u5931\u6557: ${String(err)}`, true);
@@ -2714,78 +2983,92 @@
       }
     }
   }
-  function escapeHtml(value) {
-    return value.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;");
-  }
-  async function onSave() {
-    setStatus("\u4FDD\u5B58\u4E2D\u2026");
-    await openPocDatabase();
+  async function onSaveMappedFixture() {
+    setStatus("fixture \u2192 mapper \u2192 SQLite + Library \u4FDD\u5B58\u4E2D\u2026");
+    await openLocalJournalDatabase();
     const base64 = await fetchSeedImageBase64();
-    const mediaPath = await writePocMediaFile("poc-seed-acorn.png", base64);
-    const row = {
-      id: FIXED_POC_ID,
-      title: "\u68EE\u306E\u30C6\u30B9\u30C8\u3042\u3057\u3042\u3068",
-      content: "\u3053\u308C\u306F\u7AEF\u672B\u306E\u4E2D\u3060\u3051\u306B\u6B8B\u308BLocal-first\u30C6\u30B9\u30C8\u3067\u3059\u3002\u672C\u756A\u3042\u3057\u3042\u3068\uFF0FNeon\uFF0FBlob\u306F\u89E6\u3063\u3066\u3044\u307E\u305B\u3093\u3002",
-      createdAt: (/* @__PURE__ */ new Date()).toISOString(),
-      mediaPath
-    };
-    await insertPocJournal(row);
-    await renderList();
-    setStatus(`\u4FDD\u5B58\u5B8C\u4E86\uFF08SQLite + Library media\uFF09\u3002mediaPath=${mediaPath}`);
+    const checksum = await sha256HexOfBase64(base64);
+    const journalStableId = createLocalStableId();
+    const mediaStableId = createLocalStableId();
+    const relativePath = await writeJournalMediaRelative(
+      `${journalStableId}-${mediaStableId}.png`,
+      base64
+    );
+    const local = mapServerJournalEntryLikeToLocal(RAIN_FOREST_SERVER_FIXTURE, {
+      journalStableId,
+      mediaStableId,
+      mediaRelativePath: relativePath,
+      mediaChecksum: checksum
+    });
+    await JournalRepository.save(local);
+    await renderEntries(await JournalRepository.list());
+    setStatus(
+      `\u4FDD\u5B58\u5B8C\u4E86
+stableId=${local.stableId}
+legacyServerId=${local.legacyServerId}
+relativePath=${relativePath}
+checksum=${checksum.slice(0, 12)}\u2026`
+    );
   }
   async function onLoad() {
     setStatus("\u8AAD\u8FBC\u4E2D\u2026");
-    await openPocDatabase();
-    await renderList();
-    const rows = await listPocJournals();
-    setStatus(`\u8AAD\u8FBC\u5B8C\u4E86: ${rows.length} \u4EF6`);
+    await openLocalJournalDatabase();
+    const entries = await JournalRepository.list();
+    await renderEntries(entries);
+    setStatus(`\u8AAD\u8FBC\u5B8C\u4E86: ${entries.length} \u4EF6 (count=${await JournalRepository.count()})`);
+  }
+  async function onSearch() {
+    setStatus("\u691C\u7D22\u4E2D\u2026");
+    await openLocalJournalDatabase();
+    const byTag = await searchLocalJournals({ tag: "#\u68EE" });
+    const byDate = await searchLocalJournals({ dateKey: "2026-08-10" });
+    const byText = await searchLocalJournals({ text: "\u96E8" });
+    await renderEntries(byTag);
+    setStatus(
+      `\u691C\u7D22PoC
+#\u68EE \u2192 ${byTag.length}\u4EF6
+dateKey=2026-08-10 \u2192 ${byDate.length}\u4EF6
+text=\u96E8 \u2192 ${byText.length}\u4EF6`
+    );
   }
   async function onClear() {
-    setStatus("\u524A\u9664\u4E2D\u2026");
-    const rows = await listPocJournals();
-    for (const row of rows) {
-      if (row.mediaPath) await deletePocMediaFile(row.mediaPath);
-    }
-    await clearPocJournals();
-    await clearAllPocMedia();
-    await renderList();
-    setStatus("\u30C6\u30B9\u30C8\u30C7\u30FC\u30BF\u3092\u524A\u9664\u3057\u307E\u3057\u305F\u3002");
+    setStatus("PoC\u30C7\u30FC\u30BF\u524A\u9664\u4E2D\u2026");
+    const paths = await JournalRepository.deletePocData();
+    for (const p of paths) await deleteJournalMediaRelative(p);
+    await renderEntries([]);
+    setStatus("Local Journal PoC\u30C7\u30FC\u30BF\u3092\u524A\u9664\u3057\u307E\u3057\u305F\u3002");
   }
   async function boot() {
-    const platformEl = $("platform");
-    platformEl.textContent = `platform=${Capacitor.getPlatform()} native=${String(
+    $("platform").textContent = `platform=${Capacitor.getPlatform()} native=${String(
       Capacitor.isNativePlatform()
-    )} remoteShell=false (local assets)`;
+    )} phase=4B-2B remoteShell=false`;
     if (!Capacitor.isNativePlatform()) {
-      setStatus(
-        "\u3053\u306ELab\u306F\u30CD\u30A4\u30C6\u30A3\u30D6\uFF08Capacitor iOS\uFF09\u5C02\u7528\u3067\u3059\u3002\u30D6\u30E9\u30A6\u30B6\u3067\u306FSQLite/Filesystem\u3092\u547C\u3073\u51FA\u3057\u307E\u305B\u3093\u3002",
-        true
-      );
-      $("btn-save").disabled = true;
-      $("btn-load").disabled = true;
-      $("btn-clear").disabled = true;
+      setStatus("\u30CD\u30A4\u30C6\u30A3\u30D6\u5C02\u7528\u3067\u3059\u3002Web\u3067\u306FRepository\u3092\u547C\u3073\u307E\u305B\u3093\u3002", true);
+      for (const id of ["btn-save", "btn-load", "btn-search", "btn-clear"]) {
+        $(id).disabled = true;
+      }
       return;
     }
     $("btn-save").addEventListener("click", () => {
-      void onSave().catch((err) => setStatus(String(err), true));
+      void onSaveMappedFixture().catch((e) => setStatus(String(e), true));
     });
     $("btn-load").addEventListener("click", () => {
-      void onLoad().catch((err) => setStatus(String(err), true));
+      void onLoad().catch((e) => setStatus(String(e), true));
+    });
+    $("btn-search").addEventListener("click", () => {
+      void onSearch().catch((e) => setStatus(String(e), true));
     });
     $("btn-clear").addEventListener("click", () => {
-      void onClear().catch((err) => setStatus(String(err), true));
+      void onClear().catch((e) => setStatus(String(e), true));
     });
     try {
-      await openPocDatabase();
-      await renderList();
-      setStatus("Local-first Storage Lab \u6E96\u5099\u5B8C\u4E86\u3002\u30B5\u30FC\u30D0\u30FC\u306A\u3057\u3067\u52D5\u3051\u307E\u3059\u3002");
+      await openLocalJournalDatabase();
+      await renderEntries(await JournalRepository.list());
+      setStatus("4B-2B Local Journal Lab \u6E96\u5099\u5B8C\u4E86\uFF08\u30B5\u30FC\u30D0\u30FC\u306A\u3057\u53EF\uFF09\u3002");
       const auto = globalThis.__LJD_POC_AUTOVERIFY__;
       if (auto === true) {
-        await onSave();
-        await onLoad();
-        const prev = $("status").textContent ?? "";
-        setStatus(`${prev}
-[autoverify] save+load done`);
+        await onSaveMappedFixture();
+        await onSearch();
       }
     } catch (err) {
       setStatus(`\u521D\u671F\u5316\u5931\u6557: ${String(err)}`, true);
