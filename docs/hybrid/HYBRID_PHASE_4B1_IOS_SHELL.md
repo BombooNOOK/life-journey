@@ -111,3 +111,11 @@ Shell が安定したら:
 
 - appId: `app.bamboonook.ljd`
 - display name: `Life Journey Diary`
+
+## Phase 4B-1b 結果メモ（2026-08-10）
+
+メールログイン往復（入林〜ログハウス〜森から出る）を Simulator で確認。詳細は `HYBRID_PHASE_4B1B_HANDOFF_FOR_CHATGPT.md`。
+
+- AppIcon: 正式資産 `public/icons/icon-512.png` 由来に差し替え
+- 外部 Safari 固定 / `@capacitor/browser` は未実装（follow-up）
+- ローカル Docker DB のためデータ空は想定内
