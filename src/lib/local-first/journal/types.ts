@@ -6,7 +6,7 @@
 export const LOCAL_JOURNAL_REPO_DB_NAME = "ljd_local_journal_repo" as const;
 
 /** SQLite PRAGMA user_version for this PoC schema */
-export const LOCAL_JOURNAL_SCHEMA_USER_VERSION = 1 as const;
+export const LOCAL_JOURNAL_SCHEMA_USER_VERSION = 2 as const;
 
 /** Filesystem root under Directory.Library (relative, never absolute device paths) */
 export const LOCAL_JOURNAL_MEDIA_ROOT = "ljd/media/journal" as const;
@@ -36,11 +36,13 @@ export type LocalJournalEntry = {
   mediaRefs: LocalMediaRef[];
   schemaVersion: number;
   /** Optional provenance */
-  source: "fixture" | "mapped_server_shape" | "local_poc";
+  source: "fixture" | "mapped_server_shape" | "local_poc" | "migrated_server";
   localStatus: "active" | "deleted_poc";
   importedAt: string | null;
   /** Former Neon cuid when known — never the permanent cross-device identity alone */
   legacyServerId: string | null;
+  /** Server timestamps retained for future conflict detection (not authority) */
+  serverUpdatedAt: string | null;
 };
 
 /**

@@ -48,6 +48,7 @@ function mapEntryRow(r: Record<string, unknown>, mediaRefs: LocalMediaRef[]): Lo
     localStatus: String(r.local_status) as LocalJournalEntry["localStatus"],
     importedAt: r.imported_at == null ? null : String(r.imported_at),
     legacyServerId: r.legacy_server_id == null ? null : String(r.legacy_server_id),
+    serverUpdatedAt: r.server_updated_at == null ? null : String(r.server_updated_at),
   };
 }
 
@@ -57,8 +58,9 @@ export const JournalRepository = {
     await db.run(
       `INSERT OR REPLACE INTO local_journal_entries_v1 (
         stable_id, date_key, title, content, created_at, updated_at,
-        tags_json, schema_version, source, local_status, imported_at, legacy_server_id
-      ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?);`,
+        tags_json, schema_version, source, local_status, imported_at, legacy_server_id,
+        server_updated_at
+      ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?);`,
       [
         entry.stableId,
         entry.dateKey,
@@ -72,6 +74,7 @@ export const JournalRepository = {
         entry.localStatus,
         entry.importedAt,
         entry.legacyServerId,
+        entry.serverUpdatedAt,
       ],
     );
 
@@ -113,6 +116,19 @@ export const JournalRepository = {
     const row = result.values?.[0] as Record<string, unknown> | undefined;
     if (!row) return null;
     const media = await loadMediaForJournal(stableId);
+    return mapEntryRow(row, media);
+  },
+
+  async findByLegacyServerId(legacyServerId: string): Promise<LocalJournalEntry | null> {
+    const db = await openLocalJournalDatabase();
+    const result = await db.query(
+      `SELECT * FROM local_journal_entries_v1
+       WHERE legacy_server_id = ? AND local_status = 'active' LIMIT 1;`,
+      [legacyServerId],
+    );
+    const row = result.values?.[0] as Record<string, unknown> | undefined;
+    if (!row) return null;
+    const media = await loadMediaForJournal(String(row.stable_id));
     return mapEntryRow(row, media);
   },
 

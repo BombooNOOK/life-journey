@@ -20,5 +20,18 @@ describe("mapServerJournalEntryLikeToLocal", () => {
     expect(local.mediaRefs).toHaveLength(1);
     expect(local.mediaRefs[0]?.relativePath).toBe("ljd/media/journal/rain.png");
     expect(local.mediaRefs[0]?.relativePath.includes("/var/mobile")).toBe(false);
+    expect(local.serverUpdatedAt).toBe(RAIN_FOREST_SERVER_FIXTURE.updatedAt);
+  });
+
+  it("sets migrated_server source and keeps legacyServerId for dedupe", () => {
+    const local = mapServerJournalEntryLikeToLocal(RAIN_FOREST_SERVER_FIXTURE, {
+      journalStableId: "01TESTJOURNALSTABLEID00002",
+      source: "migrated_server",
+      importedAt: "2026-08-11T00:00:00.000Z",
+    });
+    expect(local.source).toBe("migrated_server");
+    expect(local.legacyServerId).toBe(RAIN_FOREST_SERVER_FIXTURE.id);
+    expect(local.importedAt).toBe("2026-08-11T00:00:00.000Z");
+    expect(local.serverUpdatedAt).toBe(RAIN_FOREST_SERVER_FIXTURE.updatedAt);
   });
 });

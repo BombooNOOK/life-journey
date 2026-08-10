@@ -519,6 +519,484 @@
     }
   });
 
+  // node_modules/@capacitor-community/sqlite/dist/esm/web.js
+  var web_exports = {};
+  __export(web_exports, {
+    CapacitorSQLiteWeb: () => CapacitorSQLiteWeb
+  });
+  var CapacitorSQLiteWeb;
+  var init_web = __esm({
+    "node_modules/@capacitor-community/sqlite/dist/esm/web.js"() {
+      init_dist();
+      CapacitorSQLiteWeb = class extends WebPlugin {
+        constructor() {
+          super(...arguments);
+          this.jeepSqliteElement = null;
+          this.isWebStoreOpen = false;
+        }
+        async initWebStore() {
+          await customElements.whenDefined("jeep-sqlite");
+          this.jeepSqliteElement = document.querySelector("jeep-sqlite");
+          this.ensureJeepSqliteIsAvailable();
+          this.jeepSqliteElement.addEventListener("jeepSqliteImportProgress", (event) => {
+            this.notifyListeners("sqliteImportProgressEvent", event.detail);
+          });
+          this.jeepSqliteElement.addEventListener("jeepSqliteExportProgress", (event) => {
+            this.notifyListeners("sqliteExportProgressEvent", event.detail);
+          });
+          this.jeepSqliteElement.addEventListener("jeepSqliteHTTPRequestEnded", (event) => {
+            this.notifyListeners("sqliteHTTPRequestEndedEvent", event.detail);
+          });
+          this.jeepSqliteElement.addEventListener("jeepSqlitePickDatabaseEnded", (event) => {
+            this.notifyListeners("sqlitePickDatabaseEndedEvent", event.detail);
+          });
+          this.jeepSqliteElement.addEventListener("jeepSqliteSaveDatabaseToDisk", (event) => {
+            this.notifyListeners("sqliteSaveDatabaseToDiskEvent", event.detail);
+          });
+          if (!this.isWebStoreOpen) {
+            this.isWebStoreOpen = await this.jeepSqliteElement.isStoreOpen();
+          }
+          return;
+        }
+        async saveToStore(options) {
+          this.ensureJeepSqliteIsAvailable();
+          this.ensureWebstoreIsOpen();
+          try {
+            await this.jeepSqliteElement.saveToStore(options);
+            return;
+          } catch (err) {
+            throw new Error(`${err}`);
+          }
+        }
+        async getFromLocalDiskToStore(options) {
+          this.ensureJeepSqliteIsAvailable();
+          this.ensureWebstoreIsOpen();
+          try {
+            await this.jeepSqliteElement.getFromLocalDiskToStore(options);
+            return;
+          } catch (err) {
+            throw new Error(`${err}`);
+          }
+        }
+        async saveToLocalDisk(options) {
+          this.ensureJeepSqliteIsAvailable();
+          this.ensureWebstoreIsOpen();
+          try {
+            await this.jeepSqliteElement.saveToLocalDisk(options);
+            return;
+          } catch (err) {
+            throw new Error(`${err}`);
+          }
+        }
+        async echo(options) {
+          this.ensureJeepSqliteIsAvailable();
+          const echoResult = await this.jeepSqliteElement.echo(options);
+          return echoResult;
+        }
+        async createConnection(options) {
+          this.ensureJeepSqliteIsAvailable();
+          this.ensureWebstoreIsOpen();
+          try {
+            await this.jeepSqliteElement.createConnection(options);
+            return;
+          } catch (err) {
+            throw new Error(`${err}`);
+          }
+        }
+        async open(options) {
+          this.ensureJeepSqliteIsAvailable();
+          this.ensureWebstoreIsOpen();
+          try {
+            await this.jeepSqliteElement.open(options);
+            return;
+          } catch (err) {
+            throw new Error(`${err}`);
+          }
+        }
+        async closeConnection(options) {
+          this.ensureJeepSqliteIsAvailable();
+          this.ensureWebstoreIsOpen();
+          try {
+            await this.jeepSqliteElement.closeConnection(options);
+            return;
+          } catch (err) {
+            throw new Error(`${err}`);
+          }
+        }
+        async getVersion(options) {
+          this.ensureJeepSqliteIsAvailable();
+          this.ensureWebstoreIsOpen();
+          try {
+            const versionResult = await this.jeepSqliteElement.getVersion(options);
+            return versionResult;
+          } catch (err) {
+            throw new Error(`${err}`);
+          }
+        }
+        async checkConnectionsConsistency(options) {
+          this.ensureJeepSqliteIsAvailable();
+          try {
+            const consistencyResult = await this.jeepSqliteElement.checkConnectionsConsistency(options);
+            return consistencyResult;
+          } catch (err) {
+            throw new Error(`${err}`);
+          }
+        }
+        async close(options) {
+          this.ensureJeepSqliteIsAvailable();
+          this.ensureWebstoreIsOpen();
+          try {
+            await this.jeepSqliteElement.close(options);
+            return;
+          } catch (err) {
+            throw new Error(`${err}`);
+          }
+        }
+        async beginTransaction(options) {
+          this.ensureJeepSqliteIsAvailable();
+          this.ensureWebstoreIsOpen();
+          try {
+            const changes = await this.jeepSqliteElement.beginTransaction(options);
+            return changes;
+          } catch (err) {
+            throw new Error(`${err}`);
+          }
+        }
+        async commitTransaction(options) {
+          this.ensureJeepSqliteIsAvailable();
+          this.ensureWebstoreIsOpen();
+          try {
+            const changes = await this.jeepSqliteElement.commitTransaction(options);
+            return changes;
+          } catch (err) {
+            throw new Error(`${err}`);
+          }
+        }
+        async rollbackTransaction(options) {
+          this.ensureJeepSqliteIsAvailable();
+          this.ensureWebstoreIsOpen();
+          try {
+            const changes = await this.jeepSqliteElement.rollbackTransaction(options);
+            return changes;
+          } catch (err) {
+            throw new Error(`${err}`);
+          }
+        }
+        async isTransactionActive(options) {
+          this.ensureJeepSqliteIsAvailable();
+          this.ensureWebstoreIsOpen();
+          try {
+            const result = await this.jeepSqliteElement.isTransactionActive(options);
+            return result;
+          } catch (err) {
+            throw new Error(`${err}`);
+          }
+        }
+        async getTableList(options) {
+          this.ensureJeepSqliteIsAvailable();
+          this.ensureWebstoreIsOpen();
+          try {
+            const tableListResult = await this.jeepSqliteElement.getTableList(options);
+            return tableListResult;
+          } catch (err) {
+            throw new Error(`${err}`);
+          }
+        }
+        async execute(options) {
+          this.ensureJeepSqliteIsAvailable();
+          this.ensureWebstoreIsOpen();
+          try {
+            const executeResult = await this.jeepSqliteElement.execute(options);
+            return executeResult;
+          } catch (err) {
+            throw new Error(`${err}`);
+          }
+        }
+        async executeSet(options) {
+          this.ensureJeepSqliteIsAvailable();
+          this.ensureWebstoreIsOpen();
+          try {
+            const executeResult = await this.jeepSqliteElement.executeSet(options);
+            return executeResult;
+          } catch (err) {
+            throw new Error(`${err}`);
+          }
+        }
+        async run(options) {
+          this.ensureJeepSqliteIsAvailable();
+          this.ensureWebstoreIsOpen();
+          try {
+            const runResult = await this.jeepSqliteElement.run(options);
+            return runResult;
+          } catch (err) {
+            throw new Error(`${err}`);
+          }
+        }
+        async query(options) {
+          this.ensureJeepSqliteIsAvailable();
+          this.ensureWebstoreIsOpen();
+          try {
+            const queryResult = await this.jeepSqliteElement.query(options);
+            return queryResult;
+          } catch (err) {
+            throw new Error(`${err}`);
+          }
+        }
+        async isDBExists(options) {
+          this.ensureJeepSqliteIsAvailable();
+          this.ensureWebstoreIsOpen();
+          try {
+            const dbExistsResult = await this.jeepSqliteElement.isDBExists(options);
+            return dbExistsResult;
+          } catch (err) {
+            throw new Error(`${err}`);
+          }
+        }
+        async isDBOpen(options) {
+          this.ensureJeepSqliteIsAvailable();
+          this.ensureWebstoreIsOpen();
+          try {
+            const isDBOpenResult = await this.jeepSqliteElement.isDBOpen(options);
+            return isDBOpenResult;
+          } catch (err) {
+            throw new Error(`${err}`);
+          }
+        }
+        async isDatabase(options) {
+          this.ensureJeepSqliteIsAvailable();
+          this.ensureWebstoreIsOpen();
+          try {
+            const isDatabaseResult = await this.jeepSqliteElement.isDatabase(options);
+            return isDatabaseResult;
+          } catch (err) {
+            throw new Error(`${err}`);
+          }
+        }
+        async isTableExists(options) {
+          this.ensureJeepSqliteIsAvailable();
+          this.ensureWebstoreIsOpen();
+          try {
+            const tableExistsResult = await this.jeepSqliteElement.isTableExists(options);
+            return tableExistsResult;
+          } catch (err) {
+            throw new Error(`${err}`);
+          }
+        }
+        async deleteDatabase(options) {
+          this.ensureJeepSqliteIsAvailable();
+          this.ensureWebstoreIsOpen();
+          try {
+            await this.jeepSqliteElement.deleteDatabase(options);
+            return;
+          } catch (err) {
+            throw new Error(`${err}`);
+          }
+        }
+        async isJsonValid(options) {
+          this.ensureJeepSqliteIsAvailable();
+          this.ensureWebstoreIsOpen();
+          try {
+            const isJsonValidResult = await this.jeepSqliteElement.isJsonValid(options);
+            return isJsonValidResult;
+          } catch (err) {
+            throw new Error(`${err}`);
+          }
+        }
+        async importFromJson(options) {
+          this.ensureJeepSqliteIsAvailable();
+          this.ensureWebstoreIsOpen();
+          try {
+            const importFromJsonResult = await this.jeepSqliteElement.importFromJson(options);
+            return importFromJsonResult;
+          } catch (err) {
+            throw new Error(`${err}`);
+          }
+        }
+        async exportToJson(options) {
+          this.ensureJeepSqliteIsAvailable();
+          this.ensureWebstoreIsOpen();
+          try {
+            const exportToJsonResult = await this.jeepSqliteElement.exportToJson(options);
+            return exportToJsonResult;
+          } catch (err) {
+            throw new Error(`${err}`);
+          }
+        }
+        async createSyncTable(options) {
+          this.ensureJeepSqliteIsAvailable();
+          this.ensureWebstoreIsOpen();
+          try {
+            const createSyncTableResult = await this.jeepSqliteElement.createSyncTable(options);
+            return createSyncTableResult;
+          } catch (err) {
+            throw new Error(`${err}`);
+          }
+        }
+        async setSyncDate(options) {
+          this.ensureJeepSqliteIsAvailable();
+          this.ensureWebstoreIsOpen();
+          try {
+            await this.jeepSqliteElement.setSyncDate(options);
+            return;
+          } catch (err) {
+            throw new Error(`${err}`);
+          }
+        }
+        async getSyncDate(options) {
+          this.ensureJeepSqliteIsAvailable();
+          this.ensureWebstoreIsOpen();
+          try {
+            const getSyncDateResult = await this.jeepSqliteElement.getSyncDate(options);
+            return getSyncDateResult;
+          } catch (err) {
+            throw new Error(`${err}`);
+          }
+        }
+        async deleteExportedRows(options) {
+          this.ensureJeepSqliteIsAvailable();
+          this.ensureWebstoreIsOpen();
+          try {
+            await this.jeepSqliteElement.deleteExportedRows(options);
+            return;
+          } catch (err) {
+            throw new Error(`${err}`);
+          }
+        }
+        async addUpgradeStatement(options) {
+          this.ensureJeepSqliteIsAvailable();
+          this.ensureWebstoreIsOpen();
+          try {
+            await this.jeepSqliteElement.addUpgradeStatement(options);
+            return;
+          } catch (err) {
+            throw new Error(`${err}`);
+          }
+        }
+        async copyFromAssets(options) {
+          this.ensureJeepSqliteIsAvailable();
+          this.ensureWebstoreIsOpen();
+          try {
+            await this.jeepSqliteElement.copyFromAssets(options);
+            return;
+          } catch (err) {
+            throw new Error(`${err}`);
+          }
+        }
+        async getFromHTTPRequest(options) {
+          this.ensureJeepSqliteIsAvailable();
+          this.ensureWebstoreIsOpen();
+          try {
+            await this.jeepSqliteElement.getFromHTTPRequest(options);
+            return;
+          } catch (err) {
+            throw new Error(`${err}`);
+          }
+        }
+        async getDatabaseList() {
+          this.ensureJeepSqliteIsAvailable();
+          this.ensureWebstoreIsOpen();
+          try {
+            const databaseListResult = await this.jeepSqliteElement.getDatabaseList();
+            return databaseListResult;
+          } catch (err) {
+            throw new Error(`${err}`);
+          }
+        }
+        /**
+         * Checks if the `jeep-sqlite` element is present in the DOM.
+         * If it's not in the DOM, this method throws an Error.
+         *
+         * Attention: This will always fail, if the `intWebStore()` method wasn't called before.
+         */
+        ensureJeepSqliteIsAvailable() {
+          if (this.jeepSqliteElement === null) {
+            throw new Error(`The jeep-sqlite element is not present in the DOM! Please check the @capacitor-community/sqlite documentation for instructions regarding the web platform.`);
+          }
+        }
+        ensureWebstoreIsOpen() {
+          if (!this.isWebStoreOpen) {
+            throw new Error('WebStore is not open yet. You have to call "initWebStore()" first.');
+          }
+        }
+        ////////////////////////////////////
+        ////// UNIMPLEMENTED METHODS
+        ////////////////////////////////////
+        async getUrl() {
+          throw this.unimplemented("Not implemented on web.");
+        }
+        async getMigratableDbList(options) {
+          console.log("getMigratableDbList", options);
+          throw this.unimplemented("Not implemented on web.");
+        }
+        async addSQLiteSuffix(options) {
+          console.log("addSQLiteSuffix", options);
+          throw this.unimplemented("Not implemented on web.");
+        }
+        async deleteOldDatabases(options) {
+          console.log("deleteOldDatabases", options);
+          throw this.unimplemented("Not implemented on web.");
+        }
+        async moveDatabasesAndAddSuffix(options) {
+          console.log("moveDatabasesAndAddSuffix", options);
+          throw this.unimplemented("Not implemented on web.");
+        }
+        async isSecretStored() {
+          throw this.unimplemented("Not implemented on web.");
+        }
+        async setEncryptionSecret(options) {
+          console.log("setEncryptionSecret", options);
+          throw this.unimplemented("Not implemented on web.");
+        }
+        async changeEncryptionSecret(options) {
+          console.log("changeEncryptionSecret", options);
+          throw this.unimplemented("Not implemented on web.");
+        }
+        async clearEncryptionSecret() {
+          console.log("clearEncryptionSecret");
+          throw this.unimplemented("Not implemented on web.");
+        }
+        async checkEncryptionSecret(options) {
+          console.log("checkEncryptionPassPhrase", options);
+          throw this.unimplemented("Not implemented on web.");
+        }
+        async getNCDatabasePath(options) {
+          console.log("getNCDatabasePath", options);
+          throw this.unimplemented("Not implemented on web.");
+        }
+        async createNCConnection(options) {
+          console.log("createNCConnection", options);
+          throw this.unimplemented("Not implemented on web.");
+        }
+        async closeNCConnection(options) {
+          console.log("closeNCConnection", options);
+          throw this.unimplemented("Not implemented on web.");
+        }
+        async isNCDatabase(options) {
+          console.log("isNCDatabase", options);
+          throw this.unimplemented("Not implemented on web.");
+        }
+        async isDatabaseEncrypted(options) {
+          console.log("isDatabaseEncrypted", options);
+          throw this.unimplemented("Not implemented on web.");
+        }
+        async isInConfigEncryption() {
+          throw this.unimplemented("Not implemented on web.");
+        }
+        async isInConfigBiometricAuth() {
+          throw this.unimplemented("Not implemented on web.");
+        }
+        async loadExtension(options) {
+          console.log("loadExtension", options);
+          throw this.unimplemented("Not implemented on web.");
+        }
+        async enableLoadExtension(options) {
+          console.log("enableLoadExtension", options);
+          throw this.unimplemented("Not implemented on web.");
+        }
+      };
+    }
+  });
+
   // node_modules/@capacitor/filesystem/dist/esm/definitions.js
   var Directory, Encoding;
   var init_definitions = __esm({
@@ -543,8 +1021,8 @@
   });
 
   // node_modules/@capacitor/filesystem/dist/esm/web.js
-  var web_exports = {};
-  __export(web_exports, {
+  var web_exports2 = {};
+  __export(web_exports2, {
     FilesystemWeb: () => FilesystemWeb
   });
   function resolve(path) {
@@ -567,7 +1045,7 @@
     return parent !== children && pathsA.every((value, index) => value === pathsB[index]);
   }
   var FilesystemWeb;
-  var init_web = __esm({
+  var init_web2 = __esm({
     "node_modules/@capacitor/filesystem/dist/esm/web.js"() {
       init_dist();
       init_definitions();
@@ -1115,704 +1593,8 @@
     }
   });
 
-  // node_modules/@capacitor-community/sqlite/dist/esm/web.js
-  var web_exports2 = {};
-  __export(web_exports2, {
-    CapacitorSQLiteWeb: () => CapacitorSQLiteWeb
-  });
-  var CapacitorSQLiteWeb;
-  var init_web2 = __esm({
-    "node_modules/@capacitor-community/sqlite/dist/esm/web.js"() {
-      init_dist();
-      CapacitorSQLiteWeb = class extends WebPlugin {
-        constructor() {
-          super(...arguments);
-          this.jeepSqliteElement = null;
-          this.isWebStoreOpen = false;
-        }
-        async initWebStore() {
-          await customElements.whenDefined("jeep-sqlite");
-          this.jeepSqliteElement = document.querySelector("jeep-sqlite");
-          this.ensureJeepSqliteIsAvailable();
-          this.jeepSqliteElement.addEventListener("jeepSqliteImportProgress", (event) => {
-            this.notifyListeners("sqliteImportProgressEvent", event.detail);
-          });
-          this.jeepSqliteElement.addEventListener("jeepSqliteExportProgress", (event) => {
-            this.notifyListeners("sqliteExportProgressEvent", event.detail);
-          });
-          this.jeepSqliteElement.addEventListener("jeepSqliteHTTPRequestEnded", (event) => {
-            this.notifyListeners("sqliteHTTPRequestEndedEvent", event.detail);
-          });
-          this.jeepSqliteElement.addEventListener("jeepSqlitePickDatabaseEnded", (event) => {
-            this.notifyListeners("sqlitePickDatabaseEndedEvent", event.detail);
-          });
-          this.jeepSqliteElement.addEventListener("jeepSqliteSaveDatabaseToDisk", (event) => {
-            this.notifyListeners("sqliteSaveDatabaseToDiskEvent", event.detail);
-          });
-          if (!this.isWebStoreOpen) {
-            this.isWebStoreOpen = await this.jeepSqliteElement.isStoreOpen();
-          }
-          return;
-        }
-        async saveToStore(options) {
-          this.ensureJeepSqliteIsAvailable();
-          this.ensureWebstoreIsOpen();
-          try {
-            await this.jeepSqliteElement.saveToStore(options);
-            return;
-          } catch (err) {
-            throw new Error(`${err}`);
-          }
-        }
-        async getFromLocalDiskToStore(options) {
-          this.ensureJeepSqliteIsAvailable();
-          this.ensureWebstoreIsOpen();
-          try {
-            await this.jeepSqliteElement.getFromLocalDiskToStore(options);
-            return;
-          } catch (err) {
-            throw new Error(`${err}`);
-          }
-        }
-        async saveToLocalDisk(options) {
-          this.ensureJeepSqliteIsAvailable();
-          this.ensureWebstoreIsOpen();
-          try {
-            await this.jeepSqliteElement.saveToLocalDisk(options);
-            return;
-          } catch (err) {
-            throw new Error(`${err}`);
-          }
-        }
-        async echo(options) {
-          this.ensureJeepSqliteIsAvailable();
-          const echoResult = await this.jeepSqliteElement.echo(options);
-          return echoResult;
-        }
-        async createConnection(options) {
-          this.ensureJeepSqliteIsAvailable();
-          this.ensureWebstoreIsOpen();
-          try {
-            await this.jeepSqliteElement.createConnection(options);
-            return;
-          } catch (err) {
-            throw new Error(`${err}`);
-          }
-        }
-        async open(options) {
-          this.ensureJeepSqliteIsAvailable();
-          this.ensureWebstoreIsOpen();
-          try {
-            await this.jeepSqliteElement.open(options);
-            return;
-          } catch (err) {
-            throw new Error(`${err}`);
-          }
-        }
-        async closeConnection(options) {
-          this.ensureJeepSqliteIsAvailable();
-          this.ensureWebstoreIsOpen();
-          try {
-            await this.jeepSqliteElement.closeConnection(options);
-            return;
-          } catch (err) {
-            throw new Error(`${err}`);
-          }
-        }
-        async getVersion(options) {
-          this.ensureJeepSqliteIsAvailable();
-          this.ensureWebstoreIsOpen();
-          try {
-            const versionResult = await this.jeepSqliteElement.getVersion(options);
-            return versionResult;
-          } catch (err) {
-            throw new Error(`${err}`);
-          }
-        }
-        async checkConnectionsConsistency(options) {
-          this.ensureJeepSqliteIsAvailable();
-          try {
-            const consistencyResult = await this.jeepSqliteElement.checkConnectionsConsistency(options);
-            return consistencyResult;
-          } catch (err) {
-            throw new Error(`${err}`);
-          }
-        }
-        async close(options) {
-          this.ensureJeepSqliteIsAvailable();
-          this.ensureWebstoreIsOpen();
-          try {
-            await this.jeepSqliteElement.close(options);
-            return;
-          } catch (err) {
-            throw new Error(`${err}`);
-          }
-        }
-        async beginTransaction(options) {
-          this.ensureJeepSqliteIsAvailable();
-          this.ensureWebstoreIsOpen();
-          try {
-            const changes = await this.jeepSqliteElement.beginTransaction(options);
-            return changes;
-          } catch (err) {
-            throw new Error(`${err}`);
-          }
-        }
-        async commitTransaction(options) {
-          this.ensureJeepSqliteIsAvailable();
-          this.ensureWebstoreIsOpen();
-          try {
-            const changes = await this.jeepSqliteElement.commitTransaction(options);
-            return changes;
-          } catch (err) {
-            throw new Error(`${err}`);
-          }
-        }
-        async rollbackTransaction(options) {
-          this.ensureJeepSqliteIsAvailable();
-          this.ensureWebstoreIsOpen();
-          try {
-            const changes = await this.jeepSqliteElement.rollbackTransaction(options);
-            return changes;
-          } catch (err) {
-            throw new Error(`${err}`);
-          }
-        }
-        async isTransactionActive(options) {
-          this.ensureJeepSqliteIsAvailable();
-          this.ensureWebstoreIsOpen();
-          try {
-            const result = await this.jeepSqliteElement.isTransactionActive(options);
-            return result;
-          } catch (err) {
-            throw new Error(`${err}`);
-          }
-        }
-        async getTableList(options) {
-          this.ensureJeepSqliteIsAvailable();
-          this.ensureWebstoreIsOpen();
-          try {
-            const tableListResult = await this.jeepSqliteElement.getTableList(options);
-            return tableListResult;
-          } catch (err) {
-            throw new Error(`${err}`);
-          }
-        }
-        async execute(options) {
-          this.ensureJeepSqliteIsAvailable();
-          this.ensureWebstoreIsOpen();
-          try {
-            const executeResult = await this.jeepSqliteElement.execute(options);
-            return executeResult;
-          } catch (err) {
-            throw new Error(`${err}`);
-          }
-        }
-        async executeSet(options) {
-          this.ensureJeepSqliteIsAvailable();
-          this.ensureWebstoreIsOpen();
-          try {
-            const executeResult = await this.jeepSqliteElement.executeSet(options);
-            return executeResult;
-          } catch (err) {
-            throw new Error(`${err}`);
-          }
-        }
-        async run(options) {
-          this.ensureJeepSqliteIsAvailable();
-          this.ensureWebstoreIsOpen();
-          try {
-            const runResult = await this.jeepSqliteElement.run(options);
-            return runResult;
-          } catch (err) {
-            throw new Error(`${err}`);
-          }
-        }
-        async query(options) {
-          this.ensureJeepSqliteIsAvailable();
-          this.ensureWebstoreIsOpen();
-          try {
-            const queryResult = await this.jeepSqliteElement.query(options);
-            return queryResult;
-          } catch (err) {
-            throw new Error(`${err}`);
-          }
-        }
-        async isDBExists(options) {
-          this.ensureJeepSqliteIsAvailable();
-          this.ensureWebstoreIsOpen();
-          try {
-            const dbExistsResult = await this.jeepSqliteElement.isDBExists(options);
-            return dbExistsResult;
-          } catch (err) {
-            throw new Error(`${err}`);
-          }
-        }
-        async isDBOpen(options) {
-          this.ensureJeepSqliteIsAvailable();
-          this.ensureWebstoreIsOpen();
-          try {
-            const isDBOpenResult = await this.jeepSqliteElement.isDBOpen(options);
-            return isDBOpenResult;
-          } catch (err) {
-            throw new Error(`${err}`);
-          }
-        }
-        async isDatabase(options) {
-          this.ensureJeepSqliteIsAvailable();
-          this.ensureWebstoreIsOpen();
-          try {
-            const isDatabaseResult = await this.jeepSqliteElement.isDatabase(options);
-            return isDatabaseResult;
-          } catch (err) {
-            throw new Error(`${err}`);
-          }
-        }
-        async isTableExists(options) {
-          this.ensureJeepSqliteIsAvailable();
-          this.ensureWebstoreIsOpen();
-          try {
-            const tableExistsResult = await this.jeepSqliteElement.isTableExists(options);
-            return tableExistsResult;
-          } catch (err) {
-            throw new Error(`${err}`);
-          }
-        }
-        async deleteDatabase(options) {
-          this.ensureJeepSqliteIsAvailable();
-          this.ensureWebstoreIsOpen();
-          try {
-            await this.jeepSqliteElement.deleteDatabase(options);
-            return;
-          } catch (err) {
-            throw new Error(`${err}`);
-          }
-        }
-        async isJsonValid(options) {
-          this.ensureJeepSqliteIsAvailable();
-          this.ensureWebstoreIsOpen();
-          try {
-            const isJsonValidResult = await this.jeepSqliteElement.isJsonValid(options);
-            return isJsonValidResult;
-          } catch (err) {
-            throw new Error(`${err}`);
-          }
-        }
-        async importFromJson(options) {
-          this.ensureJeepSqliteIsAvailable();
-          this.ensureWebstoreIsOpen();
-          try {
-            const importFromJsonResult = await this.jeepSqliteElement.importFromJson(options);
-            return importFromJsonResult;
-          } catch (err) {
-            throw new Error(`${err}`);
-          }
-        }
-        async exportToJson(options) {
-          this.ensureJeepSqliteIsAvailable();
-          this.ensureWebstoreIsOpen();
-          try {
-            const exportToJsonResult = await this.jeepSqliteElement.exportToJson(options);
-            return exportToJsonResult;
-          } catch (err) {
-            throw new Error(`${err}`);
-          }
-        }
-        async createSyncTable(options) {
-          this.ensureJeepSqliteIsAvailable();
-          this.ensureWebstoreIsOpen();
-          try {
-            const createSyncTableResult = await this.jeepSqliteElement.createSyncTable(options);
-            return createSyncTableResult;
-          } catch (err) {
-            throw new Error(`${err}`);
-          }
-        }
-        async setSyncDate(options) {
-          this.ensureJeepSqliteIsAvailable();
-          this.ensureWebstoreIsOpen();
-          try {
-            await this.jeepSqliteElement.setSyncDate(options);
-            return;
-          } catch (err) {
-            throw new Error(`${err}`);
-          }
-        }
-        async getSyncDate(options) {
-          this.ensureJeepSqliteIsAvailable();
-          this.ensureWebstoreIsOpen();
-          try {
-            const getSyncDateResult = await this.jeepSqliteElement.getSyncDate(options);
-            return getSyncDateResult;
-          } catch (err) {
-            throw new Error(`${err}`);
-          }
-        }
-        async deleteExportedRows(options) {
-          this.ensureJeepSqliteIsAvailable();
-          this.ensureWebstoreIsOpen();
-          try {
-            await this.jeepSqliteElement.deleteExportedRows(options);
-            return;
-          } catch (err) {
-            throw new Error(`${err}`);
-          }
-        }
-        async addUpgradeStatement(options) {
-          this.ensureJeepSqliteIsAvailable();
-          this.ensureWebstoreIsOpen();
-          try {
-            await this.jeepSqliteElement.addUpgradeStatement(options);
-            return;
-          } catch (err) {
-            throw new Error(`${err}`);
-          }
-        }
-        async copyFromAssets(options) {
-          this.ensureJeepSqliteIsAvailable();
-          this.ensureWebstoreIsOpen();
-          try {
-            await this.jeepSqliteElement.copyFromAssets(options);
-            return;
-          } catch (err) {
-            throw new Error(`${err}`);
-          }
-        }
-        async getFromHTTPRequest(options) {
-          this.ensureJeepSqliteIsAvailable();
-          this.ensureWebstoreIsOpen();
-          try {
-            await this.jeepSqliteElement.getFromHTTPRequest(options);
-            return;
-          } catch (err) {
-            throw new Error(`${err}`);
-          }
-        }
-        async getDatabaseList() {
-          this.ensureJeepSqliteIsAvailable();
-          this.ensureWebstoreIsOpen();
-          try {
-            const databaseListResult = await this.jeepSqliteElement.getDatabaseList();
-            return databaseListResult;
-          } catch (err) {
-            throw new Error(`${err}`);
-          }
-        }
-        /**
-         * Checks if the `jeep-sqlite` element is present in the DOM.
-         * If it's not in the DOM, this method throws an Error.
-         *
-         * Attention: This will always fail, if the `intWebStore()` method wasn't called before.
-         */
-        ensureJeepSqliteIsAvailable() {
-          if (this.jeepSqliteElement === null) {
-            throw new Error(`The jeep-sqlite element is not present in the DOM! Please check the @capacitor-community/sqlite documentation for instructions regarding the web platform.`);
-          }
-        }
-        ensureWebstoreIsOpen() {
-          if (!this.isWebStoreOpen) {
-            throw new Error('WebStore is not open yet. You have to call "initWebStore()" first.');
-          }
-        }
-        ////////////////////////////////////
-        ////// UNIMPLEMENTED METHODS
-        ////////////////////////////////////
-        async getUrl() {
-          throw this.unimplemented("Not implemented on web.");
-        }
-        async getMigratableDbList(options) {
-          console.log("getMigratableDbList", options);
-          throw this.unimplemented("Not implemented on web.");
-        }
-        async addSQLiteSuffix(options) {
-          console.log("addSQLiteSuffix", options);
-          throw this.unimplemented("Not implemented on web.");
-        }
-        async deleteOldDatabases(options) {
-          console.log("deleteOldDatabases", options);
-          throw this.unimplemented("Not implemented on web.");
-        }
-        async moveDatabasesAndAddSuffix(options) {
-          console.log("moveDatabasesAndAddSuffix", options);
-          throw this.unimplemented("Not implemented on web.");
-        }
-        async isSecretStored() {
-          throw this.unimplemented("Not implemented on web.");
-        }
-        async setEncryptionSecret(options) {
-          console.log("setEncryptionSecret", options);
-          throw this.unimplemented("Not implemented on web.");
-        }
-        async changeEncryptionSecret(options) {
-          console.log("changeEncryptionSecret", options);
-          throw this.unimplemented("Not implemented on web.");
-        }
-        async clearEncryptionSecret() {
-          console.log("clearEncryptionSecret");
-          throw this.unimplemented("Not implemented on web.");
-        }
-        async checkEncryptionSecret(options) {
-          console.log("checkEncryptionPassPhrase", options);
-          throw this.unimplemented("Not implemented on web.");
-        }
-        async getNCDatabasePath(options) {
-          console.log("getNCDatabasePath", options);
-          throw this.unimplemented("Not implemented on web.");
-        }
-        async createNCConnection(options) {
-          console.log("createNCConnection", options);
-          throw this.unimplemented("Not implemented on web.");
-        }
-        async closeNCConnection(options) {
-          console.log("closeNCConnection", options);
-          throw this.unimplemented("Not implemented on web.");
-        }
-        async isNCDatabase(options) {
-          console.log("isNCDatabase", options);
-          throw this.unimplemented("Not implemented on web.");
-        }
-        async isDatabaseEncrypted(options) {
-          console.log("isDatabaseEncrypted", options);
-          throw this.unimplemented("Not implemented on web.");
-        }
-        async isInConfigEncryption() {
-          throw this.unimplemented("Not implemented on web.");
-        }
-        async isInConfigBiometricAuth() {
-          throw this.unimplemented("Not implemented on web.");
-        }
-        async loadExtension(options) {
-          console.log("loadExtension", options);
-          throw this.unimplemented("Not implemented on web.");
-        }
-        async enableLoadExtension(options) {
-          console.log("enableLoadExtension", options);
-          throw this.unimplemented("Not implemented on web.");
-        }
-      };
-    }
-  });
-
   // src/lib/local-first/poc/localStorageLabMain.ts
   init_dist();
-
-  // src/lib/local-first/journal/fixture.ts
-  var RAIN_FOREST_SERVER_FIXTURE = {
-    id: "cuid_fixture_rain_forest_0001",
-    createdAt: "2026-08-10T02:15:00.000Z",
-    updatedAt: "2026-08-10T02:15:00.000Z",
-    email: "fixture@example.invalid",
-    profileId: "fixture-profile-poc",
-    content: "\u4ECA\u65E5\u306F\u96E8\u304C\u3042\u304C\u3063\u305F\u3042\u3068\u3001\u5C11\u3057\u3060\u3051\u68EE\u3092\u6B69\u3044\u305F\u3002\u8449\u3063\u3071\u306E\u5302\u3044\u304C\u8FD1\u304F\u3066\u3001\u8DB3\u5143\u306E\u77F3\u304C\u307E\u3060\u306C\u308C\u3066\u3044\u305F\u3002",
-    mood: "calm",
-    activity: "record_anyway",
-    companionType: "owl",
-    designTheme: "simple",
-    contentFontMode: "standard",
-    photoDataUrl: null,
-    photoBlobUrl: "https://example.invalid/fixture/rain-forest.png",
-    photoBlobPathname: "fixture/rain-forest.png",
-    photoMimeType: "image/png",
-    photoSizeBytes: 24218,
-    photoStorageProvider: "fixture",
-    generatedComment: null,
-    includeInBook: true,
-    dateKey: "2026-08-10",
-    title: "\u96E8\u3042\u304C\u308A\u306E\u68EE",
-    tags: ["#\u96E8", "#\u68EE"]
-  };
-  var RAIN_FOREST_SEED_ASSET_URL = "./assets/poc-seed-acorn.png";
-
-  // src/lib/local-first/journal/stableId.ts
-  var CROCKFORD = "0123456789ABCDEFGHJKMNPQRSTVWXYZ";
-  function encodeTime(ms, length) {
-    let value = ms;
-    let out = "";
-    for (let i = 0; i < length; i += 1) {
-      const mod = value % 32;
-      out = CROCKFORD[mod] + out;
-      value = Math.floor(value / 32);
-    }
-    return out;
-  }
-  function encodeRandom(length) {
-    const bytes = new Uint8Array(length);
-    crypto.getRandomValues(bytes);
-    let out = "";
-    for (let i = 0; i < length; i += 1) {
-      out += CROCKFORD[bytes[i] % 32];
-    }
-    return out;
-  }
-  function createLocalStableId() {
-    return `${encodeTime(Date.now(), 10)}${encodeRandom(16)}`;
-  }
-
-  // src/lib/local-first/journal/types.ts
-  var LOCAL_JOURNAL_REPO_DB_NAME = "ljd_local_journal_repo";
-  var LOCAL_JOURNAL_SCHEMA_USER_VERSION = 1;
-  var LOCAL_JOURNAL_MEDIA_ROOT = "ljd/media/journal";
-
-  // src/lib/local-first/journal/mapper.ts
-  function mapServerJournalEntryLikeToLocal(server, options = {}) {
-    const now = (/* @__PURE__ */ new Date()).toISOString();
-    const journalStableId = options.journalStableId ?? createLocalStableId();
-    const mediaRefs = [];
-    const hasPhotoHint = Boolean(server.photoBlobUrl) || Boolean(server.photoBlobPathname) || Boolean(server.photoDataUrl) || Boolean(options.mediaRelativePath);
-    if (hasPhotoHint && options.mediaRelativePath) {
-      mediaRefs.push({
-        stableId: options.mediaStableId ?? createLocalStableId(),
-        journalStableId,
-        type: "image",
-        relativePath: options.mediaRelativePath,
-        createdAt: server.createdAt,
-        checksum: options.mediaChecksum ?? null,
-        mimeType: server.photoMimeType
-      });
-    }
-    return {
-      stableId: journalStableId,
-      dateKey: server.dateKey,
-      title: server.title.trim() || "\u7121\u984C\u306E\u3042\u3057\u3042\u3068",
-      content: server.content,
-      createdAt: server.createdAt,
-      updatedAt: server.updatedAt,
-      tags: normalizeTags(server.tags),
-      mediaRefs,
-      schemaVersion: LOCAL_JOURNAL_SCHEMA_USER_VERSION,
-      source: "mapped_server_shape",
-      localStatus: "active",
-      importedAt: options.importedAt ?? now,
-      legacyServerId: server.id
-    };
-  }
-  function normalizeTags(tags) {
-    const out = [];
-    const seen = /* @__PURE__ */ new Set();
-    for (const raw of tags) {
-      const t = raw.trim();
-      if (!t) continue;
-      const withHash = t.startsWith("#") ? t : `#${t}`;
-      if (seen.has(withHash)) continue;
-      seen.add(withHash);
-      out.push(withHash);
-    }
-    return out;
-  }
-
-  // src/lib/local-first/journal/mediaStore.ts
-  init_dist();
-
-  // node_modules/@capacitor/filesystem/dist/esm/index.js
-  init_dist();
-
-  // node_modules/@capacitor/synapse/dist/synapse.mjs
-  function s(t) {
-    t.CapacitorUtils.Synapse = new Proxy(
-      {},
-      {
-        get(e, n) {
-          return new Proxy({}, {
-            get(w, o) {
-              return (c, p, r) => {
-                const i = t.Capacitor.Plugins[n];
-                if (i === void 0) {
-                  r(new Error(`Capacitor plugin ${n} not found`));
-                  return;
-                }
-                if (typeof i[o] != "function") {
-                  r(new Error(`Method ${o} not found in Capacitor plugin ${n}`));
-                  return;
-                }
-                (async () => {
-                  try {
-                    const a = await i[o](c);
-                    p(a);
-                  } catch (a) {
-                    r(a);
-                  }
-                })();
-              };
-            }
-          });
-        }
-      }
-    );
-  }
-  function u(t) {
-    t.CapacitorUtils.Synapse = new Proxy(
-      {},
-      {
-        get(e, n) {
-          return t.cordova.plugins[n];
-        }
-      }
-    );
-  }
-  function f(t = false) {
-    typeof window > "u" || (window.CapacitorUtils = window.CapacitorUtils || {}, window.Capacitor !== void 0 && !t ? s(window) : window.cordova !== void 0 && u(window));
-  }
-
-  // node_modules/@capacitor/filesystem/dist/esm/index.js
-  init_definitions();
-  var Filesystem = registerPlugin("Filesystem", {
-    web: () => Promise.resolve().then(() => (init_web(), web_exports)).then((m) => new m.FilesystemWeb())
-  });
-  f();
-
-  // src/lib/local-first/journal/mediaStore.ts
-  function assertNative() {
-    if (!Capacitor.isNativePlatform()) {
-      throw new Error("Local Journal media store is native-only.");
-    }
-  }
-  async function ensureJournalMediaDir() {
-    assertNative();
-    try {
-      await Filesystem.mkdir({
-        path: LOCAL_JOURNAL_MEDIA_ROOT,
-        directory: Directory.Library,
-        recursive: true
-      });
-    } catch {
-    }
-  }
-  async function writeJournalMediaRelative(fileName, base64Data) {
-    assertNative();
-    await ensureJournalMediaDir();
-    const relativePath = `${LOCAL_JOURNAL_MEDIA_ROOT}/${fileName}`;
-    await Filesystem.writeFile({
-      path: relativePath,
-      data: base64Data,
-      directory: Directory.Library
-    });
-    return relativePath;
-  }
-  async function resolveJournalMediaUri(relativePath) {
-    assertNative();
-    const result = await Filesystem.getUri({
-      path: relativePath,
-      directory: Directory.Library
-    });
-    return Capacitor.convertFileSrc(result.uri);
-  }
-  async function deleteJournalMediaRelative(relativePath) {
-    assertNative();
-    try {
-      await Filesystem.deleteFile({
-        path: relativePath,
-        directory: Directory.Library
-      });
-    } catch {
-    }
-  }
-  async function sha256HexOfBase64(base64Data) {
-    const binary = atob(base64Data);
-    const bytes = new Uint8Array(binary.length);
-    for (let i = 0; i < binary.length; i += 1) bytes[i] = binary.charCodeAt(i);
-    const digest = await crypto.subtle.digest("SHA-256", bytes);
-    return [...new Uint8Array(digest)].map((b) => b.toString(16).padStart(2, "0")).join("");
-  }
 
   // src/lib/local-first/journal/database.ts
   init_dist();
@@ -2647,9 +2429,13 @@
 
   // node_modules/@capacitor-community/sqlite/dist/esm/index.js
   var CapacitorSQLite = registerPlugin("CapacitorSQLite", {
-    web: () => Promise.resolve().then(() => (init_web2(), web_exports2)).then((m) => new m.CapacitorSQLiteWeb()),
+    web: () => Promise.resolve().then(() => (init_web(), web_exports)).then((m) => new m.CapacitorSQLiteWeb()),
     electron: () => window.CapacitorCustomPlatform.plugins.CapacitorSQLite
   });
+
+  // src/lib/local-first/journal/types.ts
+  var LOCAL_JOURNAL_REPO_DB_NAME = "ljd_local_journal_repo";
+  var LOCAL_JOURNAL_SCHEMA_USER_VERSION = 2;
 
   // src/lib/local-first/journal/database.ts
   var connection = null;
@@ -2663,7 +2449,7 @@
     if (!connection) connection = new SQLiteConnection(CapacitorSQLite);
     return connection;
   }
-  var SCHEMA_V1 = `
+  var SCHEMA_BASE = `
 CREATE TABLE IF NOT EXISTS local_journal_entries_v1 (
   stable_id TEXT PRIMARY KEY NOT NULL,
   date_key TEXT NOT NULL,
@@ -2676,7 +2462,8 @@ CREATE TABLE IF NOT EXISTS local_journal_entries_v1 (
   source TEXT NOT NULL,
   local_status TEXT NOT NULL,
   imported_at TEXT,
-  legacy_server_id TEXT
+  legacy_server_id TEXT,
+  server_updated_at TEXT
 );
 
 CREATE INDEX IF NOT EXISTS idx_local_journal_date
@@ -2707,9 +2494,34 @@ CREATE TABLE IF NOT EXISTS local_media_v1 (
 CREATE INDEX IF NOT EXISTS idx_local_media_journal
   ON local_media_v1 (journal_stable_id);
 `;
-  async function migrateToV1(database) {
-    await database.execute(SCHEMA_V1);
+  async function readUserVersion(database) {
+    const versionResult = await database.query("PRAGMA user_version;");
+    const raw = versionResult.values?.[0];
+    const current = typeof raw?.user_version === "number" ? raw.user_version : typeof raw?.user_version === "string" ? Number(raw.user_version) : Number(Object.values(raw ?? {})[0] ?? 0);
+    return Number.isFinite(current) ? current : 0;
+  }
+  async function migrateFresh(database) {
+    await database.execute(SCHEMA_BASE);
+    await database.execute(`
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_local_journal_legacy_server
+      ON local_journal_entries_v1 (legacy_server_id)
+      WHERE legacy_server_id IS NOT NULL;
+  `);
     await database.execute(`PRAGMA user_version = ${LOCAL_JOURNAL_SCHEMA_USER_VERSION};`);
+  }
+  async function migrateToV2(database) {
+    try {
+      await database.execute(
+        `ALTER TABLE local_journal_entries_v1 ADD COLUMN server_updated_at TEXT;`
+      );
+    } catch {
+    }
+    await database.execute(`
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_local_journal_legacy_server
+      ON local_journal_entries_v1 (legacy_server_id)
+      WHERE legacy_server_id IS NOT NULL;
+  `);
+    await database.execute(`PRAGMA user_version = 2;`);
   }
   async function openLocalJournalDatabase() {
     assertLocalJournalNative();
@@ -2729,13 +2541,98 @@ CREATE INDEX IF NOT EXISTS idx_local_media_journal
       );
     }
     await db.open();
-    const versionResult = await db.query("PRAGMA user_version;");
-    const raw = versionResult.values?.[0];
-    const current = typeof raw?.user_version === "number" ? raw.user_version : typeof raw?.user_version === "string" ? Number(raw.user_version) : Number(Object.values(raw ?? {})[0] ?? 0);
-    if (!Number.isFinite(current) || current < 1) {
-      await migrateToV1(db);
+    const current = await readUserVersion(db);
+    if (current < 1) {
+      await migrateFresh(db);
+    } else if (current < 2) {
+      await migrateToV2(db);
     }
     return db;
+  }
+
+  // src/lib/local-first/journal/mediaStore.ts
+  init_dist();
+
+  // node_modules/@capacitor/filesystem/dist/esm/index.js
+  init_dist();
+
+  // node_modules/@capacitor/synapse/dist/synapse.mjs
+  function s(t) {
+    t.CapacitorUtils.Synapse = new Proxy(
+      {},
+      {
+        get(e, n) {
+          return new Proxy({}, {
+            get(w, o) {
+              return (c, p, r) => {
+                const i = t.Capacitor.Plugins[n];
+                if (i === void 0) {
+                  r(new Error(`Capacitor plugin ${n} not found`));
+                  return;
+                }
+                if (typeof i[o] != "function") {
+                  r(new Error(`Method ${o} not found in Capacitor plugin ${n}`));
+                  return;
+                }
+                (async () => {
+                  try {
+                    const a = await i[o](c);
+                    p(a);
+                  } catch (a) {
+                    r(a);
+                  }
+                })();
+              };
+            }
+          });
+        }
+      }
+    );
+  }
+  function u(t) {
+    t.CapacitorUtils.Synapse = new Proxy(
+      {},
+      {
+        get(e, n) {
+          return t.cordova.plugins[n];
+        }
+      }
+    );
+  }
+  function f(t = false) {
+    typeof window > "u" || (window.CapacitorUtils = window.CapacitorUtils || {}, window.Capacitor !== void 0 && !t ? s(window) : window.cordova !== void 0 && u(window));
+  }
+
+  // node_modules/@capacitor/filesystem/dist/esm/index.js
+  init_definitions();
+  var Filesystem = registerPlugin("Filesystem", {
+    web: () => Promise.resolve().then(() => (init_web2(), web_exports2)).then((m) => new m.FilesystemWeb())
+  });
+  f();
+
+  // src/lib/local-first/journal/mediaStore.ts
+  function assertNative() {
+    if (!Capacitor.isNativePlatform()) {
+      throw new Error("Local Journal media store is native-only.");
+    }
+  }
+  async function resolveJournalMediaUri(relativePath) {
+    assertNative();
+    const result = await Filesystem.getUri({
+      path: relativePath,
+      directory: Directory.Library
+    });
+    return Capacitor.convertFileSrc(result.uri);
+  }
+  async function deleteJournalMediaRelative(relativePath) {
+    assertNative();
+    try {
+      await Filesystem.deleteFile({
+        path: relativePath,
+        directory: Directory.Library
+      });
+    } catch {
+    }
   }
 
   // src/lib/local-first/journal/repository.ts
@@ -2779,7 +2676,8 @@ CREATE INDEX IF NOT EXISTS idx_local_media_journal
       source: String(r.source),
       localStatus: String(r.local_status),
       importedAt: r.imported_at == null ? null : String(r.imported_at),
-      legacyServerId: r.legacy_server_id == null ? null : String(r.legacy_server_id)
+      legacyServerId: r.legacy_server_id == null ? null : String(r.legacy_server_id),
+      serverUpdatedAt: r.server_updated_at == null ? null : String(r.server_updated_at)
     };
   }
   var JournalRepository = {
@@ -2788,8 +2686,9 @@ CREATE INDEX IF NOT EXISTS idx_local_media_journal
       await db2.run(
         `INSERT OR REPLACE INTO local_journal_entries_v1 (
         stable_id, date_key, title, content, created_at, updated_at,
-        tags_json, schema_version, source, local_status, imported_at, legacy_server_id
-      ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?);`,
+        tags_json, schema_version, source, local_status, imported_at, legacy_server_id,
+        server_updated_at
+      ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?);`,
         [
           entry.stableId,
           entry.dateKey,
@@ -2802,7 +2701,8 @@ CREATE INDEX IF NOT EXISTS idx_local_media_journal
           entry.source,
           entry.localStatus,
           entry.importedAt,
-          entry.legacyServerId
+          entry.legacyServerId,
+          entry.serverUpdatedAt
         ]
       );
       await db2.run(`DELETE FROM local_journal_tags_v1 WHERE journal_stable_id = ?;`, [
@@ -2841,6 +2741,18 @@ CREATE INDEX IF NOT EXISTS idx_local_media_journal
       const row = result.values?.[0];
       if (!row) return null;
       const media = await loadMediaForJournal(stableId);
+      return mapEntryRow(row, media);
+    },
+    async findByLegacyServerId(legacyServerId) {
+      const db2 = await openLocalJournalDatabase();
+      const result = await db2.query(
+        `SELECT * FROM local_journal_entries_v1
+       WHERE legacy_server_id = ? AND local_status = 'active' LIMIT 1;`,
+        [legacyServerId]
+      );
+      const row = result.values?.[0];
+      if (!row) return null;
+      const media = await loadMediaForJournal(String(row.stable_id));
       return mapEntryRow(row, media);
     },
     async list() {
@@ -2887,43 +2799,6 @@ CREATE INDEX IF NOT EXISTS idx_local_media_journal
     }
   };
 
-  // src/lib/local-first/journal/search.ts
-  async function searchLocalJournals(query) {
-    const db2 = await openLocalJournalDatabase();
-    const params = [];
-    const where = [`e.local_status = 'active'`];
-    if (query.dateKey) {
-      where.push(`e.date_key = ?`);
-      params.push(query.dateKey);
-    }
-    if (query.text?.trim()) {
-      where.push(`(e.title LIKE ? OR e.content LIKE ?)`);
-      const like = `%${query.text.trim()}%`;
-      params.push(like, like);
-    }
-    if (query.tag?.trim()) {
-      const tag = query.tag.trim().startsWith("#") ? query.tag.trim() : `#${query.tag.trim()}`;
-      where.push(
-        `EXISTS (SELECT 1 FROM local_journal_tags_v1 t WHERE t.journal_stable_id = e.stable_id AND t.tag = ?)`
-      );
-      params.push(tag);
-    }
-    const sql = `
-    SELECT e.stable_id FROM local_journal_entries_v1 e
-    WHERE ${where.join(" AND ")}
-    ORDER BY e.date_key DESC, e.created_at DESC
-    LIMIT 100;
-  `;
-    const result = await db2.query(sql, params);
-    const ids = (result.values ?? []).map((r) => String(r.stable_id));
-    const out = [];
-    for (const id of ids) {
-      const entry = await JournalRepository.getById(id);
-      if (entry) out.push(entry);
-    }
-    return out;
-  }
-
   // src/lib/local-first/poc/localStorageLabMain.ts
   function $(id) {
     const el = document.getElementById(id);
@@ -2938,23 +2813,15 @@ CREATE INDEX IF NOT EXISTS idx_local_media_journal
   function escapeHtml(value) {
     return value.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;");
   }
-  async function fetchSeedImageBase64() {
-    const res = await fetch(RAIN_FOREST_SEED_ASSET_URL);
-    if (!res.ok) throw new Error(`Seed image fetch failed: ${res.status}`);
-    const buf = await res.arrayBuffer();
-    const bytes = new Uint8Array(buf);
-    let binary = "";
-    for (let i = 0; i < bytes.length; i += 1) binary += String.fromCharCode(bytes[i]);
-    return btoa(binary);
-  }
-  async function renderEntries(entries) {
+  async function renderEntries() {
     const listEl = $("list");
     const previewEl = $("preview");
     listEl.innerHTML = "";
     previewEl.removeAttribute("src");
     previewEl.hidden = true;
+    const entries = await JournalRepository.list();
     if (entries.length === 0) {
-      listEl.innerHTML = "<p class='muted'>Local Journal \u306B\u307E\u3060\u30A8\u30F3\u30C8\u30EA\u304C\u3042\u308A\u307E\u305B\u3093\u3002</p>";
+      listEl.innerHTML = "<p class='muted'>\u7AEF\u672B\u306BLocal Journal\u304C\u3042\u308A\u307E\u305B\u3093\u3002remote shell\u3067 /preview/local-first-lab \u304B\u30891\u4EF6\u53D7\u3051\u53D6\u3063\u3066\u304F\u3060\u3055\u3044\u3002</p>";
       return;
     }
     for (const entry of entries) {
@@ -2965,6 +2832,7 @@ CREATE INDEX IF NOT EXISTS idx_local_media_journal
       <p>${escapeHtml(entry.content)}</p>
       <p class="meta">stableId: ${escapeHtml(entry.stableId)}</p>
       <p class="meta">legacyServerId: ${escapeHtml(entry.legacyServerId ?? "(none)")}</p>
+      <p class="meta">source: ${escapeHtml(entry.source)}</p>
       <p class="meta">dateKey: ${escapeHtml(entry.dateKey)}</p>
       <p class="meta">tags: ${escapeHtml(entry.tags.join(" "))}</p>
       <p class="meta">media: ${escapeHtml(
@@ -2972,104 +2840,46 @@ CREATE INDEX IF NOT EXISTS idx_local_media_journal
       )}</p>
     `;
       listEl.appendChild(card);
-      const firstMedia = entry.mediaRefs[0];
-      if (firstMedia) {
+      const first = entry.mediaRefs[0];
+      if (first) {
         try {
-          previewEl.src = await resolveJournalMediaUri(firstMedia.relativePath);
+          previewEl.src = await resolveJournalMediaUri(first.relativePath);
           previewEl.hidden = false;
         } catch (err) {
-          setStatus(`\u753B\u50CFURI\u53D6\u5F97\u5931\u6557: ${String(err)}`, true);
+          setStatus(`\u753B\u50CFURI\u5931\u6557: ${String(err)}`, true);
         }
       }
     }
   }
-  async function onSaveMappedFixture() {
-    setStatus("fixture \u2192 mapper \u2192 SQLite + Library \u4FDD\u5B58\u4E2D\u2026");
-    await openLocalJournalDatabase();
-    const base64 = await fetchSeedImageBase64();
-    const checksum = await sha256HexOfBase64(base64);
-    const journalStableId = createLocalStableId();
-    const mediaStableId = createLocalStableId();
-    const relativePath = await writeJournalMediaRelative(
-      `${journalStableId}-${mediaStableId}.png`,
-      base64
-    );
-    const local = mapServerJournalEntryLikeToLocal(RAIN_FOREST_SERVER_FIXTURE, {
-      journalStableId,
-      mediaStableId,
-      mediaRelativePath: relativePath,
-      mediaChecksum: checksum
-    });
-    await JournalRepository.save(local);
-    await renderEntries(await JournalRepository.list());
-    setStatus(
-      `\u4FDD\u5B58\u5B8C\u4E86
-stableId=${local.stableId}
-legacyServerId=${local.legacyServerId}
-relativePath=${relativePath}
-checksum=${checksum.slice(0, 12)}\u2026`
-    );
-  }
-  async function onLoad() {
-    setStatus("\u8AAD\u8FBC\u4E2D\u2026");
-    await openLocalJournalDatabase();
-    const entries = await JournalRepository.list();
-    await renderEntries(entries);
-    setStatus(`\u8AAD\u8FBC\u5B8C\u4E86: ${entries.length} \u4EF6 (count=${await JournalRepository.count()})`);
-  }
-  async function onSearch() {
-    setStatus("\u691C\u7D22\u4E2D\u2026");
-    await openLocalJournalDatabase();
-    const byTag = await searchLocalJournals({ tag: "#\u68EE" });
-    const byDate = await searchLocalJournals({ dateKey: "2026-08-10" });
-    const byText = await searchLocalJournals({ text: "\u96E8" });
-    await renderEntries(byTag);
-    setStatus(
-      `\u691C\u7D22PoC
-#\u68EE \u2192 ${byTag.length}\u4EF6
-dateKey=2026-08-10 \u2192 ${byDate.length}\u4EF6
-text=\u96E8 \u2192 ${byText.length}\u4EF6`
-    );
-  }
-  async function onClear() {
-    setStatus("PoC\u30C7\u30FC\u30BF\u524A\u9664\u4E2D\u2026");
-    const paths = await JournalRepository.deletePocData();
-    for (const p of paths) await deleteJournalMediaRelative(p);
-    await renderEntries([]);
-    setStatus("Local Journal PoC\u30C7\u30FC\u30BF\u3092\u524A\u9664\u3057\u307E\u3057\u305F\u3002");
-  }
   async function boot() {
     $("platform").textContent = `platform=${Capacitor.getPlatform()} native=${String(
       Capacitor.isNativePlatform()
-    )} phase=4B-2B remoteShell=false`;
+    )} phase=4B-2C remoteShell=false (offline list)`;
     if (!Capacitor.isNativePlatform()) {
-      setStatus("\u30CD\u30A4\u30C6\u30A3\u30D6\u5C02\u7528\u3067\u3059\u3002Web\u3067\u306FRepository\u3092\u547C\u3073\u307E\u305B\u3093\u3002", true);
-      for (const id of ["btn-save", "btn-load", "btn-search", "btn-clear"]) {
-        $(id).disabled = true;
-      }
+      setStatus("\u30CD\u30A4\u30C6\u30A3\u30D6\u5C02\u7528\u3067\u3059\u3002", true);
       return;
     }
-    $("btn-save").addEventListener("click", () => {
-      void onSaveMappedFixture().catch((e) => setStatus(String(e), true));
-    });
     $("btn-load").addEventListener("click", () => {
-      void onLoad().catch((e) => setStatus(String(e), true));
-    });
-    $("btn-search").addEventListener("click", () => {
-      void onSearch().catch((e) => setStatus(String(e), true));
+      void (async () => {
+        await openLocalJournalDatabase();
+        await renderEntries();
+        setStatus(`\u8AAD\u8FBC\u5B8C\u4E86 count=${await JournalRepository.count()}\uFF08\u30B5\u30FC\u30D0\u30FC\u518D\u53D6\u5F97\u3067\u306F\u3042\u308A\u307E\u305B\u3093\uFF09`);
+      })().catch((e) => setStatus(String(e), true));
     });
     $("btn-clear").addEventListener("click", () => {
-      void onClear().catch((e) => setStatus(String(e), true));
+      void (async () => {
+        const paths = await JournalRepository.deletePocData();
+        for (const p of paths) await deleteJournalMediaRelative(p);
+        await renderEntries();
+        setStatus("\u7AEF\u672BPoC\u524A\u9664\u5B8C\u4E86\uFF08\u30B5\u30FC\u30D0\u30FC\u672A\u5909\u66F4\uFF09\u3002");
+      })().catch((e) => setStatus(String(e), true));
     });
     try {
       await openLocalJournalDatabase();
-      await renderEntries(await JournalRepository.list());
-      setStatus("4B-2B Local Journal Lab \u6E96\u5099\u5B8C\u4E86\uFF08\u30B5\u30FC\u30D0\u30FC\u306A\u3057\u53EF\uFF09\u3002");
-      const auto = globalThis.__LJD_POC_AUTOVERIFY__;
-      if (auto === true) {
-        await onSaveMappedFixture();
-        await onSearch();
-      }
+      await renderEntries();
+      setStatus(
+        "Offline Lab\u6E96\u5099\u5B8C\u4E86\u3002\u30B5\u30FC\u30D0\u30FC\u304B\u3089\u306E\u53D7\u3051\u53D6\u308A\u306F remote shell \u306E /preview/local-first-lab \u3067\u884C\u3044\u307E\u3059\u3002"
+      );
     } catch (err) {
       setStatus(`\u521D\u671F\u5316\u5931\u6557: ${String(err)}`, true);
     }

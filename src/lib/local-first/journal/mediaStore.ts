@@ -41,6 +41,19 @@ export async function writeJournalMediaRelative(
   return relativePath;
 }
 
+/** Read media bytes back as base64 for post-write integrity checks. */
+export async function readJournalMediaBase64(relativePath: string): Promise<string> {
+  assertNative();
+  const result = await Filesystem.readFile({
+    path: relativePath,
+    directory: Directory.Library,
+  });
+  if (typeof result.data !== "string" || !result.data) {
+    throw new Error("media read returned empty data");
+  }
+  return result.data;
+}
+
 export async function resolveJournalMediaUri(relativePath: string): Promise<string> {
   assertNative();
   const result = await Filesystem.getUri({

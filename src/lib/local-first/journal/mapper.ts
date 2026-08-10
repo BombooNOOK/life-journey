@@ -17,6 +17,7 @@ export type MapServerJournalOptions = {
   mediaRelativePath?: string | null;
   mediaChecksum?: string | null;
   importedAt?: string;
+  source?: LocalJournalEntry["source"];
 };
 
 export function mapServerJournalEntryLikeToLocal(
@@ -55,10 +56,11 @@ export function mapServerJournalEntryLikeToLocal(
     tags: normalizeTags(server.tags),
     mediaRefs,
     schemaVersion: LOCAL_JOURNAL_SCHEMA_USER_VERSION,
-    source: "mapped_server_shape",
+    source: options.source ?? "mapped_server_shape",
     localStatus: "active",
     importedAt: options.importedAt ?? now,
     legacyServerId: server.id,
+    serverUpdatedAt: server.updatedAt,
   };
 }
 

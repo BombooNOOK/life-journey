@@ -29,7 +29,7 @@ function getConnection(): SQLiteConnection {
   return connection;
 }
 
-const SCHEMA_V1 = `
+const SCHEMA_BASE = `
 CREATE TABLE IF NOT EXISTS local_journal_entries_v1 (
   stable_id TEXT PRIMARY KEY NOT NULL,
   date_key TEXT NOT NULL,
@@ -42,7 +42,8 @@ CREATE TABLE IF NOT EXISTS local_journal_entries_v1 (
   source TEXT NOT NULL,
   local_status TEXT NOT NULL,
   imported_at TEXT,
-  legacy_server_id TEXT
+  legacy_server_id TEXT,
+  server_updated_at TEXT
 );
 
 CREATE INDEX IF NOT EXISTS idx_local_journal_date
@@ -74,9 +75,42 @@ CREATE INDEX IF NOT EXISTS idx_local_media_journal
   ON local_media_v1 (journal_stable_id);
 `;
 
-async function migrateToV1(database: SQLiteDBConnection): Promise<void> {
-  await database.execute(SCHEMA_V1);
+async function readUserVersion(database: SQLiteDBConnection): Promise<number> {
+  const versionResult = await database.query("PRAGMA user_version;");
+  const raw = versionResult.values?.[0] as Record<string, unknown> | undefined;
+  const current =
+    typeof raw?.user_version === "number"
+      ? raw.user_version
+      : typeof raw?.user_version === "string"
+        ? Number(raw.user_version)
+        : Number(Object.values(raw ?? {})[0] ?? 0);
+  return Number.isFinite(current) ? current : 0;
+}
+
+async function migrateFresh(database: SQLiteDBConnection): Promise<void> {
+  await database.execute(SCHEMA_BASE);
+  await database.execute(`
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_local_journal_legacy_server
+      ON local_journal_entries_v1 (legacy_server_id)
+      WHERE legacy_server_id IS NOT NULL;
+  `);
   await database.execute(`PRAGMA user_version = ${LOCAL_JOURNAL_SCHEMA_USER_VERSION};`);
+}
+
+async function migrateToV2(database: SQLiteDBConnection): Promise<void> {
+  try {
+    await database.execute(
+      `ALTER TABLE local_journal_entries_v1 ADD COLUMN server_updated_at TEXT;`,
+    );
+  } catch {
+    /* column may already exist */
+  }
+  await database.execute(`
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_local_journal_legacy_server
+      ON local_journal_entries_v1 (legacy_server_id)
+      WHERE legacy_server_id IS NOT NULL;
+  `);
+  await database.execute(`PRAGMA user_version = 2;`);
 }
 
 export async function openLocalJournalDatabase(): Promise<SQLiteDBConnection> {
@@ -101,17 +135,11 @@ export async function openLocalJournalDatabase(): Promise<SQLiteDBConnection> {
 
   await db.open();
 
-  const versionResult = await db.query("PRAGMA user_version;");
-  const raw = versionResult.values?.[0] as Record<string, unknown> | undefined;
-  const current =
-    typeof raw?.user_version === "number"
-      ? raw.user_version
-      : typeof raw?.user_version === "string"
-        ? Number(raw.user_version)
-        : Number(Object.values(raw ?? {})[0] ?? 0);
-
-  if (!Number.isFinite(current) || current < 1) {
-    await migrateToV1(db);
+  const current = await readUserVersion(db);
+  if (current < 1) {
+    await migrateFresh(db);
+  } else if (current < 2) {
+    await migrateToV2(db);
   }
 
   return db;
