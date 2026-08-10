@@ -586,6 +586,7 @@ UI・format名（`life-journey-diary-backup` vs `life-journey-ashiato-parcel`）
 
 - 用語SoTの「森のお引越しは別機能」と整合  
 - Local-first方針の第二防衛線を本仕様が具体化  
+- 端末配置・復元UXは `ljd-device-storage-and-restore-spec.md`  
 - 人間可読exportは別紙（未作成）  
 
-矛盾時優先: 世界観 → Local-first方針 → **本パッケージ仕様** → 用語 → コードコメント。
+矛盾時優先: 世界観 → Local-first方針 → **本パッケージ仕様** → 端末保存・復元仕様 → 用語 → コードコメント。

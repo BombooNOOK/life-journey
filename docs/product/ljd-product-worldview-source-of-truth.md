@@ -199,6 +199,7 @@ Hybrid版 LJD の基本方針は **Local-first / Device-first** である。
 - `docs/product/ljd-acorn-monetization-spec.md` — 料金・どんぐり SoT
 - `docs/product/ljd-local-first-and-moving-policy.md` — Local-first・お引越し便方針 SoT
 - `docs/product/ljd-moving-package-spec.md` — あしあと小包パッケージ仕様（Pre-Implementation）
+- `docs/product/ljd-device-storage-and-restore-spec.md` — 端末保存・自己復元・オフライン（Pre-Implementation）
 - Phase 0 棚卸し（作業キャンバス）: 調査メモ。製品正本は本ディレクトリの仕様書
 
 ---

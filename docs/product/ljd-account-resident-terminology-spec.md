@@ -90,3 +90,4 @@ LJD を利用している本人を、BambooNOOK の森の中で表す呼称。
 - `docs/product/ljd-product-worldview-source-of-truth.md`（製品思想・世界観）
 - `docs/product/ljd-local-first-and-moving-policy.md`（Local-first・森のお引越し便方針。バックアップとの関係は別機能維持）
 - `docs/product/ljd-moving-package-spec.md`（あしあと小包・パッケージアーキテクチャ。Pre-Implementation）
+- `docs/product/ljd-device-storage-and-restore-spec.md`（端末保存・自己復元・オフライン。Pre-Implementation）
