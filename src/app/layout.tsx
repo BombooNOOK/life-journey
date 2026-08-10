@@ -1,6 +1,7 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 
 import { FirebaseAuthProvider } from "@/components/auth/FirebaseAuthProvider";
+import { CapacitorShellInit } from "@/components/capacitor/CapacitorShellInit";
 import { ConditionalSiteChrome } from "@/components/layout/ConditionalSiteChrome";
 import { LogHouseRadioPlayerProvider } from "@/components/orders/loghouse-room/LogHouseRadioPlayerProvider";
 import { OnboardingStageProvider } from "@/components/onboarding/OnboardingStageProvider";
@@ -13,6 +14,12 @@ import {
 } from "@/lib/branding/appDisplayName";
 import "./globals.css";
 
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  /** iPhone notch / Dynamic Island / home indicator — Phase 4B-1 hybrid shell */
+  viewportFit: "cover",
+};
 export const metadata: Metadata = {
   metadataBase:
     process.env.NEXT_PUBLIC_APP_URL != null && process.env.NEXT_PUBLIC_APP_URL !== ""
@@ -58,6 +65,7 @@ export default function RootLayout({
   return (
     <html lang="ja">
       <body className="flex min-h-screen flex-col antialiased">
+        <CapacitorShellInit />
         <FirebaseAuthProvider>
           <ReadingFontSizeProvider>
             <OnboardingStageProvider>

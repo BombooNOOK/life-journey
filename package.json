@@ -50,9 +50,18 @@
     "capture:home-mock:auto": "npx tsx scripts/capture-home-mock-screenshot.ts --auto",
     "compose:mori-log-picker-previews": "npx tsx scripts/compose-mori-log-picker-previews.ts",
     "preview:diary-entry": "npx tsx scripts/preview-diary-book-entry-page.tsx",
-    "preview:diary-entry-frame": "npx tsx scripts/preview-diary-book-entry-body-frame.tsx"
+    "preview:diary-entry-frame": "npx tsx scripts/preview-diary-book-entry-body-frame.tsx",
+    "cap:sync": "node scripts/cap-sync.mjs",
+    "cap:sync:ios": "node scripts/cap-sync.mjs ios",
+    "cap:sync:ios:local": "CAPACITOR_SERVER_URL=http://127.0.0.1:3000 node scripts/cap-sync.mjs ios",
+    "cap:open:ios": "npx cap open ios",
+    "cap:run:ios": "CAPACITOR_SERVER_URL=http://127.0.0.1:3000 npx cap run ios"
   },
   "dependencies": {
+    "@capacitor/app": "^8.1.1",
+    "@capacitor/core": "^8.5.0",
+    "@capacitor/keyboard": "^8.0.5",
+    "@capacitor/status-bar": "^8.0.3",
     "@fontsource/klee-one": "^5.2.8",
     "@fontsource/noto-sans-jp": "^5.2.5",
     "@prisma/client": "^6.6.0",
@@ -75,6 +84,8 @@
     "seed": "npx tsx prisma/seed.ts"
   },
   "devDependencies": {
+    "@capacitor/cli": "^8.5.0",
+    "@capacitor/ios": "^8.5.0",
     "@eslint/eslintrc": "^3.0.0",
     "@tailwindcss/postcss": "^4.0.0",
     "@types/archiver": "^8.0.0",

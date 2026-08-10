@@ -44,7 +44,9 @@ export function SiteHeader() {
   return (
     <Suspense
       fallback={
-        <header className={`sticky top-0 z-50 ${LJD_PAPER_HEADER_BAR_CLASS}`}>
+        <header
+          className={`sticky top-0 z-50 pt-[env(safe-area-inset-top)] ${LJD_PAPER_HEADER_BAR_CLASS}`}
+        >
           <div className="mx-auto max-w-3xl px-4 py-3 sm:py-4">
             <span className="font-semibold text-[#3f3428] text-base sm:text-lg">Life Journey Diary</span>
           </div>
@@ -124,7 +126,7 @@ function SiteHeaderInner() {
   return (
     <header
       ref={headerRef}
-      className={`sticky top-0 z-50 overflow-visible ${LJD_PAPER_HEADER_BAR_CLASS}`}
+      className={`sticky top-0 z-50 overflow-visible pt-[env(safe-area-inset-top)] ${LJD_PAPER_HEADER_BAR_CLASS}`}
     >
       <div className="mx-auto max-w-3xl overflow-visible px-4 py-3 sm:py-4">
         <div className="flex items-center justify-between gap-3">

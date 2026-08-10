@@ -43,6 +43,15 @@ yarn-error.log*
 # typescript
 next-env.d.ts
 
+# Capacitor / Xcode local noise (commit ios/ project; ignore user state)
+ios/DerivedData/
+ios/App/App.xcworkspace/xcuserdata/
+ios/App/App.xcodeproj/xcuserdata/
+ios/App/Pods/
+ios/App/Podfile.lock
+*.xcuserstate
+tsconfig.tsbuildinfo
+
 # ローカル生成のサンプルPDF（大容量・再生成可）
 /sample-booklet.pdf
 /sample-booklet-*-preview.pdf
