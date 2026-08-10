@@ -451,5 +451,6 @@ Local-first ≠ 複数端末自動同期。
 | terminology | 「森のお引越しは別機能」「バックアップ範囲をここで広げない」→ 本方針の案Aと整合 |
 | acorn monetization | 期間制限なしの森利用・どんぐり消費 → オフライン新規あしあとの課金整合は未決だが世界観非矛盾 |
 | worldview SoT | 本ファイルがデータ面の詳細を担う |
+| moving package spec | `ljd-moving-package-spec.md` が第二防衛線のパッケージ詳細を担う（Pre-Implementation） |
 
-矛盾が生じた場合の優先順: 体験世界観 → 本Local-first方針 → 用語 → どんぐり（料金）→ コード内コメント。
+矛盾が生じた場合の優先順: 体験世界観 → 本Local-first方針 → パッケージ仕様 → 用語 → どんぐり（料金）→ コード内コメント。
