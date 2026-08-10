@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+  <dict>
+    <key>NSPrivacyTracking</key>
+    <false/>
+    <key>NSPrivacyTrackingDomains</key>
+    <array/>
+    <key>NSPrivacyCollectedDataTypes</key>
+    <array/>
+    <key>NSPrivacyAccessedAPITypes</key>
+    <array>
+      <!--
+        Required for @capacitor/filesystem (Capacitor official docs).
+        Reason C617.1 is the code recommended by Capacitor for this plugin
+        (file timestamp / size metadata inside the app container).
+        Do not invent alternate reason codes without Apple/Capacitor basis.
+      -->
+      <dict>
+        <key>NSPrivacyAccessedAPIType</key>
+        <string>NSPrivacyAccessedAPICategoryFileTimestamp</string>
+        <key>NSPrivacyAccessedAPITypeReasons</key>
+        <array>
+          <string>C617.1</string>
+        </array>
+      </dict>
+    </array>
+  </dict>
+</plist>
