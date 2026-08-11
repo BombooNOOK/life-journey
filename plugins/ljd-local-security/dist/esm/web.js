@@ -33,4 +33,10 @@ export class LjdLocalSecurityWeb extends WebPlugin {
     async inspectGenericPasswordAccessibility() {
         throw this.unimplemented('Not implemented on web.');
     }
+    async setExcludedFromBackup() {
+        throw this.unimplemented('Not implemented on web.');
+    }
+    async resolveApplicationSupportLjdDir() {
+        throw this.unimplemented('Not implemented on web.');
+    }
 }

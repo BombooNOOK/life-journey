@@ -25,6 +25,8 @@ public class LjdLocalSecurityPlugin: CAPPlugin, CAPBridgedPlugin {
         CAPPluginMethod(name: "ensureProbeFile", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "deletePath", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "inspectGenericPasswordAccessibility", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "setExcludedFromBackup", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "resolveApplicationSupportLjdDir", returnType: CAPPluginReturnPromise),
     ]
 
     private let keychainService = "app.bamboonook.ljd.securekeystore.poc"
@@ -348,6 +350,54 @@ public class LjdLocalSecurityPlugin: CAPPlugin, CAPBridgedPlugin {
             "verdictHint": verdictHint,
             "returnedSecretData": false,
             "note": "kSecReturnData=false; secret body never read",
+        ])
+    }
+
+    /**
+     * Explicitly set NSURLIsExcludedFromBackupKey without touching file contents.
+     * Used to counter plugin createDatabaseLocation(isExcluded:true) when needed.
+     */
+    @objc func setExcludedFromBackup(_ call: CAPPluginCall) {
+        guard let path = call.getString("path"), !path.isEmpty else {
+            call.reject("path required")
+            return
+        }
+        guard let excluded = call.getBool("excluded") else {
+            call.reject("excluded bool required")
+            return
+        }
+        var url = URL(fileURLWithPath: normalizePath(path))
+        do {
+            var values = URLResourceValues()
+            values.isExcludedFromBackup = excluded
+            try url.setResourceValues(values)
+            call.resolve(inspect(url: url))
+        } catch {
+            call.reject("setExcludedFromBackup failed: \(error.localizedDescription)")
+        }
+    }
+
+    /**
+     * Resolve LJD Application Support directory via Foundation (no hardcoded absolute path).
+     * Subdir = Bundle.main.bundleIdentifier (Apple convention).
+     */
+    @objc func resolveApplicationSupportLjdDir(_ call: CAPPluginCall) {
+        let fm = FileManager.default
+        guard let appSupport = fm.urls(for: .applicationSupportDirectory, in: .userDomainMask).first else {
+            call.reject("applicationSupportDirectory unavailable")
+            return
+        }
+        let bundleId = Bundle.main.bundleIdentifier ?? "app.bamboonook.ljd"
+        let ljdDir = appSupport.appendingPathComponent(bundleId, isDirectory: true)
+        let databasesDir = ljdDir.appendingPathComponent("databases", isDirectory: true)
+        call.resolve([
+            "applicationSupportRoot": appSupport.path,
+            "bundleIdentifier": bundleId,
+            "ljdApplicationSupportDir": ljdDir.path,
+            "ljdDatabasesDir": databasesDir.path,
+            /** Relative path consumable by community sqlite iosDatabaseLocation (Library/...). */
+            "pluginRelativeLocation": "Library/Application Support/\(bundleId)",
+            "note": "pluginRelativeLocation is relative to container; absolute paths from FileManager only",
         ])
     }
 

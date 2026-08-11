@@ -20,6 +20,10 @@ import {
   persistKeyIntegrationReport,
   runKeyIntegrationPoc,
 } from "@/lib/local-first/security/runKeyIntegrationPoc";
+import {
+  persistStorageLocationReport,
+  runStorageLocationPoc,
+} from "@/lib/local-first/security/runStorageLocationPoc";
 
 function $(id: string): HTMLElement {
   const el = document.getElementById(id);
@@ -157,18 +161,29 @@ async function boot(): Promise<void> {
     })().catch((e) => setStatus(String(e), true));
   });
 
-  try {
-    await openLocalJournalDatabase();
-    await renderEntries();
-    setStatus("Diagnostics準備完了（SQLite foundation）。");
-
-    if (Capacitor.isNativePlatform()) {
-      setStatus("Key integration PoC autorun…");
-      const report = await runKeyIntegrationPoc();
-      await persistKeyIntegrationReport(report);
+  $("btn-storage-location").addEventListener("click", () => {
+    void (async () => {
+      setStatus("Storage location PoC…");
+      const report = await runStorageLocationPoc();
+      await persistStorageLocationReport(report);
       $("security-report").textContent = JSON.stringify(report, null, 2);
       setStatus(
-        `Key integration autorun OK accessibility=${report.accessibilityVerdict} planA=${report.plans.planA_builtIn} documentsCandidate=${report.summary.documentsDbLocationCandidate}`,
+        `Storage location 完了 recommend=${report.recommendation} bridgeNeeded=${String(report.additionalNativeBridgeNeededInProduction)}`,
+      );
+    })().catch((e) => setStatus(String(e), true));
+  });
+
+  try {
+    // Do not open/migrate ljd_local_journal here — storage PoC uses dummy DB only.
+    setStatus("Diagnostics準備完了（journal untouched）。");
+
+    if (Capacitor.isNativePlatform()) {
+      setStatus("Storage location PoC autorun…");
+      const report = await runStorageLocationPoc();
+      await persistStorageLocationReport(report);
+      $("security-report").textContent = JSON.stringify(report, null, 2);
+      setStatus(
+        `Storage location autorun recommend=${report.recommendation} AS=${String(report.summary.appSupportPlaceOk)} exclForce=${String(report.summary.canForceIncludeBackup)} relaunch=${String(report.summary.includeSurvivesRelaunch)}`,
       );
     }
   } catch (err) {

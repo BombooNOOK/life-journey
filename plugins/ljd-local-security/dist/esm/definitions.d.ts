@@ -84,6 +84,20 @@ export interface InspectGenericPasswordAccessibilityResult {
   note?: string;
 }
 
+export interface SetExcludedFromBackupOptions {
+  path: string;
+  excluded: boolean;
+}
+
+export interface ApplicationSupportLjdDirResult {
+  applicationSupportRoot: string;
+  bundleIdentifier: string;
+  ljdApplicationSupportDir: string;
+  ljdDatabasesDir: string;
+  pluginRelativeLocation: string;
+  note?: string;
+}
+
 export interface LjdLocalSecurityPlugin {
   generateSecret(options?: GenerateSecretOptions): Promise<GenerateSecretResult>;
   setSecret(options: SetSecretOptions): Promise<SetSecretResult>;
@@ -98,4 +112,6 @@ export interface LjdLocalSecurityPlugin {
   inspectGenericPasswordAccessibility(
     options: InspectGenericPasswordAccessibilityOptions,
   ): Promise<InspectGenericPasswordAccessibilityResult>;
+  setExcludedFromBackup(options: SetExcludedFromBackupOptions): Promise<PathAttributes>;
+  resolveApplicationSupportLjdDir(): Promise<ApplicationSupportLjdDirResult>;
 }

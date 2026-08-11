@@ -2,12 +2,11 @@
  * Life Journey Diary｜Local-first データ保護・暗号化方針
  *
  * Status: Pre-Implementation Local Data Security Architecture / Source of Truth
- * Updated: 2026-08-11（4B-3A.1: Keychain WhenUnlocked第一候補／DB保存場所未確定／backup実測必須）
+ * Updated: 2026-08-11（4B-3C.1 branch提案: DB鍵=plugin built-in WhenUnlocked／DB場所=Application Support候補）
  * Baseline main: 50d5efb9c9c67ad479e8142d031aa675e510a10d
  * Tag: baseline/local-first-foundation-2026-08-11
- * Scope: 設計のみ。SQLCipher有効化・Keychain導入・media暗号化・DB migration・
- *        bulk migration・Local原本化・お引越し便実装・Firebase変更・Android実装・
- *        App Store設定変更・保存場所のコード確定は含まない。
+ * Scope: 設計＋PoC結果の反映案。本番暗号化切替・main merge・bulk migrationは含まない。
+ *        本ファイルの鍵／保存場所更新は feature branch 内ドラフト。main 反映は別承認後。
  *
  * 親方針:
  * - docs/product/ljd-product-worldview-source-of-truth.md
@@ -15,6 +14,8 @@
  * - docs/product/ljd-moving-package-spec.md
  * - docs/product/ljd-device-storage-and-restore-spec.md
  * - docs/hybrid/HYBRID_PHASE_4B2D_LOCAL_FIRST_FOUNDATION.md
+ * - docs/hybrid/HYBRID_PHASE_4B3B_LOCAL_DATA_PROTECTION_POC.md
+ * - docs/hybrid/HYBRID_PHASE_4B3B1_SQLCIPHER_KEY_INTEGRATION_POC.md
  */
 
 # Life Journey Diary｜Local-first データ保護・暗号化方針
@@ -109,7 +110,7 @@
 | --- | --- |
 | 暗号実装 | Native: SQLCipher（iOS/Android）。Web: 暗号化非対応 |
 | API例 | `setEncryptionSecret` / `changeEncryptionSecret` / `clearEncryptionSecret` / `isDatabaseEncrypted`、接続時 `encrypted: true` と mode |
-| 鍵保管 | プラグインは passphrase を secure store（iOS Keychain / Android Keystore系）へ置く経路を提供 |
+| 鍵保管 | **製品第一候補（4B-3B.1実測）:** plugin `setEncryptionSecret` → built-in Keychain（service `unlockSecret` / account `${iosKeychainPrefix}_CapacitorSQLitePlugin`）。実測 `kSecAttrAccessibleWhenUnlocked`。LJD SecureKeyStore bridgeをSQLCipher DB鍵経路へ統合する必要はない |
 | plaintext → encrypted | **その場で上書き変換は不可／非推奨**。新規暗号化DBを作り copy（SQLCipher `sqlcipher_export` 相当）。完了後に平文を安全削除 |
 | key変更 | `changeEncryptionSecret` 系（実装Phaseで検証必須） |
 | key紛失 | DBは開けない。**お引越し便で別途復旧**が前提 |
@@ -124,58 +125,69 @@
 
 - 平文PoC DBは後から **コピー移行で暗号化可能**（段階導入可）
 - 鍵を ThisDeviceOnly だけで持つと Quick Start／水没と衝突しうる → §5・§12
-- **iOS上の正式DBパス／バックアップ属性は未確定** → §4.3・Phase 4B-3Bで実測決定
+- **iOS正式DBパス:** Application Support を第一候補（§4.3 / 4B-3C.1）。main未反映
 
-### 4.3 正式DB保存場所（製品判断: 未確定）
+### 4.3 正式DB保存場所（製品判断: Application Support 第一候補・main未merge）
 
 親SoTは **OS標準移行（Quick Start / バックアップ）を第一防衛線**とする。  
-したがって、foundation の暫定設定だけでは正式採用できない。
+Apple File System Programming Guide に照らし、**ユーザーが Files 等で直接管理しないアプリ生成データ**は `Documents/` ではなく **`Library/Application Support/<bundleId>/`** へ置く。
 
-**FACT（現状コード）:** `@capacitor-community/sqlite` 向けに  
-`plugins.CapacitorSQLite.iosDatabaseLocation = "Library/CapacitorDatabase"`  
-を指定している。現行ハイブリッド docs／プラグイン説明上、この指定は **バックアップ非対象として扱われ得る配置**であり、  
-「Library＝バックアップされるはず」という推測で確定してはならない。
+**FACT:**
 
-**製品判断:**  
-**正式DB保存場所は Phase 4B-3B でバックアップ属性を実測して決定する。** 本SoTでは確定しない。コード変更も本修正では行わない。
+- foundation 暫定コード: `Library/CapacitorDatabase`（親 `isExcludedFromBackup=true` 実測）
+- PoC branch 4B-3C.1: `iosDatabaseLocation = "Library/Application Support/app.bamboonook.ljd"`（相対。絶対pathは FileManager）
+- community plugin は初回 `createDatabaseLocation` でディレクトリへ **`isExcludedFromBackup=true`**（UtilsFile.swift）
+- Documents は比較対照のみ。production 即決しない
 
-比較候補（実測後に採否）:
+**製品判断（branchドラフト）:**
 
-| 候補 | 内容 |
+| 候補 | 採否 |
 | --- | --- |
-| A | pluginデフォルト Documents 配置 |
-| B | Library 配置＋ backup exclusion の解除／非除外を実測で証明できる場合のみ |
-| C | LJD独自 native storage bridge（path・protection・backupフラグを明示制御） |
-| D | その他、親SoTの「永続・backup対象」と矛盾しない安全な方式 |
+| **A Application Support + backup included** | **第一候補**（必要なら LJD native で exclusion=false） |
+| B Documents + backup included | 比較用。ユーザー document 露出のため production 即決しない |
+| C Library/CapacitorDatabase + parent excluded | 現行暫定。formal 不採用方向 |
 
-推測禁止。`NSURLIsExcludedFromBackupKey` 等の **実測値** を正とする（§15）。
+media は当面 `Library/ljd/media/...`（4B-3B: `isExcludedFromBackup=false`）を維持。
+
+推測禁止。`NSURLIsExcludedFromBackupKey` 実測を正とする（§15）。
 
 ---
 
 ## 5. Keychain 設計（製品判断・第一候補）
 
-端末内 **Local DB 暗号鍵（および将来の media 鍵候補）** を、抽象化した **SecureKeyStore port** 経由で Keychain に置く。
+### 5.0 SQLCipher DB鍵の保管経路（4B-3B.1 実証）
 
-**Domain層へ iOS Keychain API を直接散らさない。** Android Keystore への置換を前提に adapter 化。
+**製品第一候補:** Capacitor SQLite **plugin built-in Keychain**
+
+| 項目 | 値 |
+| --- | --- |
+| API | `setEncryptionSecret` / `changeEncryptionSecret` / `clearEncryptionSecret` |
+| service | `unlockSecret` |
+| account | `${iosKeychainPrefix}_CapacitorSQLitePlugin`（例: `ljd_CapacitorSQLitePlugin`） |
+| accessibility（実測） | `kSecAttrAccessibleWhenUnlocked` |
+| open | `Database.open` → `UtilsSecret.getPassphrase` → SQLCipher。JSから `createConnection` への直接 passphrase 渡しは不可 |
+
+**LJD SecureKeyStore bridge（WhenUnlocked明示）は SQLCipher DB鍵経路には不要。**  
+将来の非plugin秘密・Android Keystore port・別ドメイン用に残し得るが、**DB open の鍵供給に統合しない**（二重Keychain＋JS handoffを避ける）。
+
+Domain層へ iOS Keychain API を直接散らさない方針は維持（plugin API / 将来 port の裏）。
 
 ### 5.1 Accessibility 比較
 
 | 属性 | 利便 | 盗取・ロック中 | 機種変更 | 備考 |
 | --- | --- | --- | --- | --- |
-| **WhenUnlocked**（`kSecAttrAccessibleWhenUnlocked`） | unlock中のみ取得 | **強い**（ロック中不可） | 暗号化バックアップ経由で新端末移行対象（OS仕様） | **LJD人生DB鍵の第一候補** |
+| **WhenUnlocked**（`kSecAttrAccessibleWhenUnlocked`） | unlock中のみ取得 | **強い**（ロック中不可） | 暗号化バックアップ経由で新端末移行対象（OS仕様） | **DB鍵の第一候補（plugin実測一致）** |
 | AfterFirstUnlock（`kSecAttrAccessibleAfterFirstUnlock`） | 初回unlock後はBGでも取得可 | 中（ロック中も取得し得る） | 移りやすい | **将来BG処理が必要になった場合の比較候補** |
 | ThisDeviceOnly 系 | — | 強い | **弱い／移らない** | **森を守る唯一の鍵にしない** |
 | WhenPasscodeSetThisDeviceOnly | passcode必須 | 強い | 弱い | 同上 |
 
 **製品判断（第一候補）:**
 
-1. **端末DB鍵:** `kSecAttrAccessibleWhenUnlocked` を **iOS第一候補**とする。  
-   - 人生記録DBは通常バックグラウンドアクセスを必要としない  
-   - 端末ロック中の鍵アクセスを許さない  
-   - Apple仕様上、暗号化バックアップ経由の新端末移行対象  
+1. **端末DB鍵:** plugin built-in Keychain の **WhenUnlocked（実測）** を iOS第一候補とする。  
 2. **`AfterFirstUnlock` は比較候補として残す**（将来、正当なBG読込が製品要件になった場合のみ再評価）。  
-3. **ThisDeviceOnly 系を「森を守る唯一の鍵」にしない。** device-trust 補助や明示ロック用途に限定し得るが、人生復旧の単一鍵にしない。  
-4. **お引越し便の鍵材料は Keychain に閉じない**（復元コード wrap。親 moving-package SoT）。
+3. **ThisDeviceOnly 系を「森を守る唯一の鍵」にしない。**  
+4. **お引越し便の鍵材料は Keychain に閉じない**（復元コード wrap。親 moving-package SoT）。  
+5. Source上 plugin は accessibility を明示setしないが、**保存item実測は WhenUnlocked**。正式導入時は実機backupでも確認する。
 
 ### 5.2 シナリオ
 

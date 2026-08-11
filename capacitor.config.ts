@@ -43,19 +43,20 @@ const config: CapacitorConfig = {
   plugins: {
     CapacitorSQLite: {
       /**
-       * Provisional location (Security SoT: formal path undecided until 4B-3B measure).
-       * Candidate A for backup attribute PoC.
+       * 4B-3C.1 PoC: production-candidate location under Application Support.
+       * Relative form required by @capacitor-community/sqlite getFolderURL (Library/...).
+       * Absolute path resolved at runtime via FileManager (see LjdLocalSecurity.resolveApplicationSupportLjdDir).
+       * Dummy PoC DBs only — foundation still does not encrypt / migrate ljd_local_journal.
+       * Do NOT treat this config change as production cutover yet.
        */
-      iosDatabaseLocation: "Library/CapacitorDatabase",
+      iosDatabaseLocation: "Library/Application Support/app.bamboonook.ljd",
       /**
-       * Enables SQLCipher plugin APIs for Security PoC (4B-3B).
+       * Enables SQLCipher plugin APIs for Security PoC.
        * Production journal connection remains mode "no-encryption".
-       * Not a production encryption rollout.
        */
       iosIsEncryption: true,
       /**
-       * Required by plugin for setEncryptionSecret / changeEncryptionSecret.
-       * Plugin KeychainWrapper still omits kSecAttrAccessible (verdict B).
+       * Plugin built-in Keychain prefix (WhenUnlocked measured in 4B-3B.1).
        */
       iosKeychainPrefix: "ljd",
     },
