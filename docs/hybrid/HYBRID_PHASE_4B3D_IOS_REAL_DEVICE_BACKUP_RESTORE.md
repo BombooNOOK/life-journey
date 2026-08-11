@@ -54,8 +54,8 @@
 | Keychain accessibility | **kSecAttrAccessibleWhenUnlocked**（secret本文未取得） |
 | encrypted reopen（同一セッション） | **pass**（dummy text一致） |
 | lock中アクセス | **未実施**（推測でPASSにしない） |
-| app kill → reopen（同一鍵・同一DB） | **pass**（ユーザー確認: kill後も kc/reopen/media すべて true） |
-| reboot | **未実施**（ユーザー操作待ち。eraseなしで実施可） |
+| app kill → reopen（同一鍵・同一DB） | **pass**（kill後も kc/reopen/media すべて true） |
+| reboot → unlock → reopen | **pass**（ユーザー確認: reboot後も全部 true） |
 | OS backup作成・中身確認 | **未実施**（合意後） |
 | restore / Quick Start / uninstall | **禁止のため未実施** |
 
@@ -77,35 +77,30 @@
 | --- | --- |
 | Application Support 正式採用 | **A（Group A属性は実機一致）** ※backup/restore実体は未 |
 | SQLCipher 正式採用 | **A（実機 encrypt/reopen PASS）** ※restore後openは未 |
-| built-in Keychain 正式採用 | **A（実機 WhenUnlocked + kill後 persistence）** ※reboot後は未 |
-| media OS Data Protection | **A寄り（実機 read/excl）** ※lock・restore未 |
-| production Local-first 基盤昇格 | **まだ B寄り**（OS backup/restore・lock・reboot未了） |
+| built-in Keychain 正式採用 | **A（WhenUnlocked + kill/reboot後 persistence）** |
+| media OS Data Protection | **A寄り（実機 read/excl + kill/reboot後read）** ※lock・restore未 |
+| production Local-first 基盤昇格 | **まだ保留寄り**（OS backup中身・restore・lock未了。会社端末では restore 禁止） |
 
 ---
 
-## 4. 未実施と理由
+## 4. 未実施と理由（会社端末方針）
 
 | 項目 | 理由 |
 | --- | --- |
-| lock test | ロック中native probeは別手順。未実施＝未実証 |
-| reboot | ユーザー操作が必要。eraseなしで実施可 |
 | Finder/iCloud backup中身 | 会社データ取り扱い合意が必要 |
 | restore / Quick Start / uninstall | **禁止** |
+| lock test | ロック中native probeは別手順。未実施＝未実証 |
 
 ---
 
-## 5. Next（任意・非破壊）
+## 5. Group A 終了（この端末で可能な範囲）
 
-Group A コア + kill/relaunch は完了。
+**完了:** 属性再測 + app kill persistence + reboot→unlock persistence  
+**端末:** 会社用 iPhone SE (3rd) / iOS 18.5（`iPhone (2)`）  
+**禁止を守った:** erase / restore / uninstall / 既存データ削除は未実施  
+**Artifact:** `docs/hybrid/_real_device_group_a_report.json`／`_real_device_group_a_persistence.json`  
+（persistence最終: `2026-08-11T23:23:23.606Z` — reboot後 kc/reopen/media すべて pass）
 
-残りの任意:
+**main merge: forbidden**
 
-1. **reboot**（電源オフ→オン→unlock）後、アプリ起動して Persistence が true か  
-2. **lock test**は厳密手順が別途必要。無理にPASSにしない  
-3. **backup/restore / Quick Start / uninstall** は会社端末方針上 **やらない**
-
-次の合図例:
-
-> reboot後も Persistence 全部 true  
-または  
-> Group Aはここまでで止めて報告して
+残り（任意・別合意）: lock 厳密計測 / backup中身確認。restore 系はこの端末では行わない。
