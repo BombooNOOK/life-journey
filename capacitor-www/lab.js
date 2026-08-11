@@ -4052,6 +4052,255 @@ CREATE INDEX IF NOT EXISTS idx_local_media_journal
     });
   }
 
+  // src/lib/local-first/security/runRealDeviceGroupAPoc.ts
+  init_dist();
+  var REAL_DEVICE_GROUP_A_DB = "ljd_real_device_group_a_poc";
+  var REAL_DEVICE_GROUP_A_MEDIA = "ljd/media/real-device-group-a";
+  var REAL_DEVICE_GROUP_A_TEXT = "real-device Group A dummy journal text";
+  function assertNative6() {
+    if (!Capacitor.isNativePlatform()) {
+      throw new Error("Group A PoC is native-only.");
+    }
+  }
+  function errMsg4(e) {
+    return e instanceof Error ? e.message : String(e);
+  }
+  function fmt(a) {
+    if (!a) return "n/a";
+    return `excl=${String(a.isExcludedFromBackup)} prot=${a.fileProtection} exists=${String(a.exists)}`;
+  }
+  function randomPassphrase4(bytes = 24) {
+    const arr = new Uint8Array(bytes);
+    crypto.getRandomValues(arr);
+    let out = "";
+    for (const b of arr) out += b.toString(16).padStart(2, "0");
+    return out;
+  }
+  async function closeIfOpen4(sqlite, name) {
+    try {
+      await sqlite.checkConnectionsConsistency();
+    } catch {
+    }
+    try {
+      if ((await sqlite.isConnection(name, false)).result) {
+        await sqlite.closeConnection(name, false);
+      }
+    } catch {
+      try {
+        await CapacitorSQLite.closeConnection({ database: name, readonly: false });
+      } catch {
+      }
+    }
+  }
+  async function runRealDeviceGroupAPoc() {
+    assertNative6();
+    const steps = [];
+    const push = (id, title, status, detail) => steps.push({ id, title, status, detail });
+    push(
+      "policy",
+      "device policy",
+      "info",
+      "Group A only: no erase/restore/uninstall/journal wipe. Dummy DB/media only. Personal everyday phone excluded."
+    );
+    const asMeta = await LjdLocalSecurity.resolveApplicationSupportLjdDir();
+    push(
+      "as-resolve",
+      "Application Support resolve",
+      "info",
+      `bundleId=${asMeta.bundleIdentifier} ljdDir=${asMeta.ljdApplicationSupportDir}`
+    );
+    const sqlite = new SQLiteConnection(CapacitorSQLite);
+    let dbLocationOk = false;
+    let backupIncludeOk = null;
+    let completeProtectionOk = null;
+    let keychainWhenUnlocked = null;
+    let mediaReadOk = false;
+    let encryptedReopenOk = false;
+    let dbUrl = "";
+    try {
+      try {
+        await CapacitorSQLite.clearEncryptionSecret();
+      } catch {
+      }
+      await closeIfOpen4(sqlite, REAL_DEVICE_GROUP_A_DB);
+      await LjdLocalSecurity.deletePath({
+        path: `${asMeta.ljdApplicationSupportDir}/${REAL_DEVICE_GROUP_A_DB}SQLite.db`
+      });
+      const parent0 = await LjdLocalSecurity.inspectPath({
+        path: asMeta.ljdApplicationSupportDir
+      });
+      if (parent0.isExcludedFromBackup === true) {
+        await LjdLocalSecurity.setExcludedFromBackup({
+          path: asMeta.ljdApplicationSupportDir,
+          excluded: false
+        });
+      }
+      const passphrase = randomPassphrase4();
+      await CapacitorSQLite.setEncryptionSecret({ passphrase });
+      void passphrase;
+      {
+        const db2 = await sqlite.createConnection(
+          REAL_DEVICE_GROUP_A_DB,
+          true,
+          "secret",
+          1,
+          false
+        );
+        await db2.open();
+        await db2.execute(`
+        CREATE TABLE IF NOT EXISTS g_rows (
+          id INTEGER PRIMARY KEY NOT NULL,
+          body TEXT NOT NULL
+        );
+        DELETE FROM g_rows;
+        INSERT INTO g_rows (id, body) VALUES (1, '${REAL_DEVICE_GROUP_A_TEXT}');
+      `);
+        dbUrl = (await db2.getUrl()).url ?? "";
+        await sqlite.closeConnection(REAL_DEVICE_GROUP_A_DB, false);
+        dbLocationOk = Boolean(dbUrl);
+        push(
+          "A2-db",
+          "dummy encrypted DB create",
+          dbLocationOk ? "pass" : "fail",
+          `dbUrlPresent=${String(dbLocationOk)}`
+        );
+      }
+      const parent = await LjdLocalSecurity.inspectPath({
+        path: asMeta.ljdApplicationSupportDir
+      });
+      const dbAttrs = dbUrl ? await LjdLocalSecurity.inspectPath({ path: dbUrl }) : void 0;
+      backupIncludeOk = parent.isExcludedFromBackup === false && (dbAttrs?.isExcludedFromBackup === false || dbAttrs?.isExcludedFromBackup === "unset");
+      push(
+        "A3-backup",
+        "backup exclusion measure",
+        backupIncludeOk ? "pass" : "info",
+        `db=${fmt(dbAttrs)} parent=${fmt(parent)}`
+      );
+      if (dbUrl) {
+        const after = await LjdLocalSecurity.setCompleteProtection({ path: dbUrl });
+        await closeIfOpen4(sqlite, REAL_DEVICE_GROUP_A_DB);
+        const db2 = await sqlite.createConnection(
+          REAL_DEVICE_GROUP_A_DB,
+          true,
+          "secret",
+          1,
+          false
+        );
+        await db2.open();
+        const q = await db2.query("SELECT body FROM g_rows LIMIT 1;");
+        const body = String(
+          q.values?.[0]?.body ?? ""
+        );
+        await sqlite.closeConnection(REAL_DEVICE_GROUP_A_DB, false);
+        const afterOpen = await LjdLocalSecurity.inspectPath({ path: dbUrl });
+        encryptedReopenOk = body === REAL_DEVICE_GROUP_A_TEXT;
+        completeProtectionOk = after.fileProtection === "NSFileProtectionComplete" && afterOpen.fileProtection === "NSFileProtectionComplete";
+        push(
+          "A3-fp",
+          "file protection Complete",
+          completeProtectionOk ? "pass" : "info",
+          `afterSet=${after.fileProtection} afterReopen=${afterOpen.fileProtection}`
+        );
+        push(
+          "A7-reopen",
+          "encrypted reopen (session)",
+          encryptedReopenOk ? "pass" : "fail",
+          `contentMatch=${String(encryptedReopenOk)}`
+        );
+      }
+      const kc = await LjdLocalSecurity.inspectGenericPasswordAccessibility({
+        service: "unlockSecret",
+        account: "ljd_CapacitorSQLitePlugin"
+      });
+      keychainWhenUnlocked = kc.found && kc.accessibility === "kSecAttrAccessibleWhenUnlocked";
+      push(
+        "A3-keychain",
+        "plugin Keychain accessibility (no secret read)",
+        keychainWhenUnlocked ? "pass" : "fail",
+        `found=${String(kc.found)} accessibility=${kc.accessibility ?? "null"} returnedSecretData=${String(kc.returnedSecretData ?? false)}`
+      );
+      await Filesystem.mkdir({
+        path: REAL_DEVICE_GROUP_A_MEDIA,
+        directory: Directory.Library,
+        recursive: true
+      }).catch(() => void 0);
+      const tinyPng = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==";
+      const mediaRel = `${REAL_DEVICE_GROUP_A_MEDIA}/dummy.png`;
+      await Filesystem.writeFile({
+        path: mediaRel,
+        data: tinyPng,
+        directory: Directory.Library
+      });
+      const uri = await Filesystem.getUri({
+        path: mediaRel,
+        directory: Directory.Library
+      });
+      const mediaAttrs = await LjdLocalSecurity.inspectPath({ path: uri.uri });
+      await LjdLocalSecurity.setCompleteProtection({ path: uri.uri });
+      const readBack = await Filesystem.readFile({
+        path: mediaRel,
+        directory: Directory.Library
+      });
+      mediaReadOk = typeof readBack.data === "string" && readBack.data.length > 0;
+      push(
+        "A2-media",
+        "dummy media write/read + attrs",
+        mediaReadOk ? "pass" : "fail",
+        `${fmt(mediaAttrs)} readOk=${String(mediaReadOk)}`
+      );
+      push(
+        "A6-lock",
+        "lock-state access",
+        "skip",
+        "not_run_in_this_suite \u2014 requires user-operated device lock + separate native probe while locked; do not invent PASS"
+      );
+      push(
+        "A8-reboot",
+        "reboot test",
+        "skip",
+        "user-operated: after reboot+unlock, re-run Group A reopen / Keychain exists check. No erase."
+      );
+    } catch (e) {
+      push("error", "Group A suite", "fail", errMsg4(e));
+    }
+    push(
+      "cleanup-note",
+      "cleanup policy",
+      "info",
+      "dummy DB/media left for kill/relaunch observe; production journal untouched; secret value never logged"
+    );
+    return {
+      ranAt: (/* @__PURE__ */ new Date()).toISOString(),
+      platform: Capacitor.getPlatform(),
+      deviceClass: "real_device_expected",
+      destructiveOps: "forbidden",
+      simulatorNote: "Do not merge these numbers into Simulator section of 4B-3D docs until confirmed on company device.",
+      steps,
+      summary: {
+        dbLocationOk,
+        backupIncludeOk,
+        completeProtectionOk,
+        keychainWhenUnlocked,
+        mediaReadOk,
+        encryptedReopenOk,
+        lockTest: "not_run_in_this_suite"
+      }
+    };
+  }
+  async function persistGroupAReport(report) {
+    await Filesystem.mkdir({
+      path: "ljd/security-poc",
+      directory: Directory.Library,
+      recursive: true
+    }).catch(() => void 0);
+    await Filesystem.writeFile({
+      path: "ljd/security-poc/real-device-group-a-report.json",
+      directory: Directory.Library,
+      encoding: Encoding.UTF8,
+      data: JSON.stringify(report, null, 2)
+    });
+  }
+
   // src/lib/local-first/diagnostics/localStorageDiagnosticsMain.ts
   function $(id) {
     const el = document.getElementById(id);
@@ -4182,17 +4431,24 @@ CREATE INDEX IF NOT EXISTS idx_local_media_journal
         );
       })().catch((e) => setStatus(String(e), true));
     });
-    try {
-      setStatus("Diagnostics\u6E96\u5099\u5B8C\u4E86\uFF08journal untouched\uFF09\u3002");
-      if (Capacitor.isNativePlatform()) {
-        setStatus("Storage location PoC autorun\u2026");
-        const report = await runStorageLocationPoc();
-        await persistStorageLocationReport(report);
+    $("btn-group-a").addEventListener("click", () => {
+      void (async () => {
+        setStatus("Group A\uFF08\u975E\u7834\u58CA\u30FBdummy only\uFF09\u2026 secret\u975E\u8868\u793A");
+        const report = await runRealDeviceGroupAPoc();
+        await persistGroupAReport(report);
         $("security-report").textContent = JSON.stringify(report, null, 2);
         setStatus(
-          `Storage location autorun recommend=${report.recommendation} AS=${String(report.summary.appSupportPlaceOk)} exclForce=${String(report.summary.canForceIncludeBackup)} relaunch=${String(report.summary.includeSurvivesRelaunch)}`
+          `Group A \u5B8C\u4E86 db=${String(report.summary.dbLocationOk)} reopen=${String(report.summary.encryptedReopenOk)} kc=${String(report.summary.keychainWhenUnlocked)}`
         );
-      }
+      })().catch((e) => setStatus(String(e), true));
+    });
+    try {
+      $("platform").textContent = `platform=${Capacitor.getPlatform()} native=${String(
+        Capacitor.isNativePlatform()
+      )} phase=4B-3D GroupA-ready autorun=off`;
+      setStatus(
+        "\u6E96\u5099\u5B8C\u4E86\u3002\u4F1A\u793E\u7528\u5B9F\u6A5F\u3067\u306F Group A \u30DC\u30BF\u30F3\u306E\u307F\u3002\u500B\u4EBA\u7AEF\u672B\u30FBerase/restore/uninstall/\u7AEF\u672B\u30AF\u30EA\u30A2\u306F\u7981\u6B62\u3002"
+      );
     } catch (err) {
       setStatus(`\u521D\u671F\u5316\u5931\u6557: ${String(err)}`, true);
     }

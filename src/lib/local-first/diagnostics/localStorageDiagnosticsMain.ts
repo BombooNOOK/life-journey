@@ -24,6 +24,10 @@ import {
   persistStorageLocationReport,
   runStorageLocationPoc,
 } from "@/lib/local-first/security/runStorageLocationPoc";
+import {
+  persistGroupAReport,
+  runRealDeviceGroupAPoc,
+} from "@/lib/local-first/security/runRealDeviceGroupAPoc";
 
 function $(id: string): HTMLElement {
   const el = document.getElementById(id);
@@ -173,19 +177,26 @@ async function boot(): Promise<void> {
     })().catch((e) => setStatus(String(e), true));
   });
 
-  try {
-    // Do not open/migrate ljd_local_journal here — storage PoC uses dummy DB only.
-    setStatus("Diagnostics準備完了（journal untouched）。");
-
-    if (Capacitor.isNativePlatform()) {
-      setStatus("Storage location PoC autorun…");
-      const report = await runStorageLocationPoc();
-      await persistStorageLocationReport(report);
+  $("btn-group-a").addEventListener("click", () => {
+    void (async () => {
+      setStatus("Group A（非破壊・dummy only）… secret非表示");
+      const report = await runRealDeviceGroupAPoc();
+      await persistGroupAReport(report);
       $("security-report").textContent = JSON.stringify(report, null, 2);
       setStatus(
-        `Storage location autorun recommend=${report.recommendation} AS=${String(report.summary.appSupportPlaceOk)} exclForce=${String(report.summary.canForceIncludeBackup)} relaunch=${String(report.summary.includeSurvivesRelaunch)}`,
+        `Group A 完了 db=${String(report.summary.dbLocationOk)} reopen=${String(report.summary.encryptedReopenOk)} kc=${String(report.summary.keychainWhenUnlocked)}`,
       );
-    }
+    })().catch((e) => setStatus(String(e), true));
+  });
+
+  try {
+    // No autorun of destructive or journal ops. Wait for explicit buttons.
+    $("platform").textContent = `platform=${Capacitor.getPlatform()} native=${String(
+      Capacitor.isNativePlatform(),
+    )} phase=4B-3D GroupA-ready autorun=off`;
+    setStatus(
+      "準備完了。会社用実機では Group A ボタンのみ。個人端末・erase/restore/uninstall/端末クリアは禁止。",
+    );
   } catch (err) {
     setStatus(`初期化失敗: ${String(err)}`, true);
   }
