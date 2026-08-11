@@ -54,8 +54,8 @@
 | Keychain accessibility | **kSecAttrAccessibleWhenUnlocked**（secret本文未取得） |
 | encrypted reopen（同一セッション） | **pass**（dummy text一致） |
 | lock中アクセス | **未実施**（推測でPASSにしない） |
-| app kill → reopen（同一鍵・同一DB） | **未回収**（次: persistenceチェックビルド後） |
-| reboot | **未実施**（ユーザー操作待ち） |
+| app kill → reopen（同一鍵・同一DB） | **pass**（ユーザー確認: kill後も kc/reopen/media すべて true） |
+| reboot | **未実施**（ユーザー操作待ち。eraseなしで実施可） |
 | OS backup作成・中身確認 | **未実施**（合意後） |
 | restore / Quick Start / uninstall | **禁止のため未実施** |
 
@@ -77,7 +77,7 @@
 | --- | --- |
 | Application Support 正式採用 | **A（Group A属性は実機一致）** ※backup/restore実体は未 |
 | SQLCipher 正式採用 | **A（実機 encrypt/reopen PASS）** ※restore後openは未 |
-| built-in Keychain 正式採用 | **A（実機 WhenUnlocked）** ※reboot後は未 |
+| built-in Keychain 正式採用 | **A（実機 WhenUnlocked + kill後 persistence）** ※reboot後は未 |
 | media OS Data Protection | **A寄り（実機 read/excl）** ※lock・restore未 |
 | production Local-first 基盤昇格 | **まだ B寄り**（OS backup/restore・lock・reboot未了） |
 
@@ -94,9 +94,18 @@
 
 ---
 
-## 5. Next for you（非破壊）
+## 5. Next（任意・非破壊）
 
-1. こちらが persistence 用 assets を同期したら、Xcode **▶** をもう一度（会社用）
-2. 起動後ステータスに `Persistence: kc=true reopen=true` が出るか確認
-3. 任意: アプリをスワイプで終了 → 再度起動 → 同様に Persistence PASS か確認
-4. 任意: 端末をロック→解除のみ（ロック中アクセスは別途案内するまで無理にやらない）
+Group A コア + kill/relaunch は完了。
+
+残りの任意:
+
+1. **reboot**（電源オフ→オン→unlock）後、アプリ起動して Persistence が true か  
+2. **lock test**は厳密手順が別途必要。無理にPASSにしない  
+3. **backup/restore / Quick Start / uninstall** は会社端末方針上 **やらない**
+
+次の合図例:
+
+> reboot後も Persistence 全部 true  
+または  
+> Group Aはここまでで止めて報告して

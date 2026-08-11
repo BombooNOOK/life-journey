@@ -1,0 +1,28 @@
+{
+  "ranAt": "2026-08-11T22:22:05.421Z",
+  "platform": "ios",
+  "secretDisplayed": false,
+  "steps": [
+    {
+      "id": "kc",
+      "status": "pass",
+      "detail": "found=true accessibility=kSecAttrAccessibleWhenUnlocked secretRead=false"
+    },
+    {
+      "id": "db-reopen",
+      "status": "pass",
+      "detail": "contentMatch=true (same dummy DB; no wipe)"
+    },
+    {
+      "id": "media",
+      "status": "pass",
+      "detail": "readOk=true"
+    }
+  ],
+  "summary": {
+    "keychainExists": true,
+    "keychainWhenUnlocked": true,
+    "encryptedReopenOk": true,
+    "mediaReadOk": true
+  }
+}
