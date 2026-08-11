@@ -1,14 +1,18 @@
 /**
- * Phase 4B-2B Local Journal domain types (PoC).
- * Not a copy of Prisma JournalEntry. Dummy / fixture only.
+ * Local-first Journal foundation types (Phase 4B-2D).
+ * Device-primary domain model — not a Prisma JournalEntry copy.
  */
 
-export const LOCAL_JOURNAL_REPO_DB_NAME = "ljd_local_journal_repo" as const;
+/** Capacitor SQLite database name (Library/CapacitorDatabase). */
+export const LOCAL_JOURNAL_DB_NAME = "ljd_local_journal" as const;
 
-/** SQLite PRAGMA user_version for this PoC schema */
-export const LOCAL_JOURNAL_SCHEMA_USER_VERSION = 2 as const;
+/**
+ * PRAGMA user_version for the foundation schema.
+ * 4B-2A/2B/2C PoC DBs used other names/versions and are not auto-merged.
+ */
+export const LOCAL_JOURNAL_SCHEMA_USER_VERSION = 1 as const;
 
-/** Filesystem root under Directory.Library (relative, never absolute device paths) */
+/** Filesystem root under Directory.Library (relative paths only in DB). */
 export const LOCAL_JOURNAL_MEDIA_ROOT = "ljd/media/journal" as const;
 
 export type LocalMediaType = "image" | "video" | "other";
@@ -17,7 +21,7 @@ export type LocalMediaRef = {
   stableId: string;
   journalStableId: string;
   type: LocalMediaType;
-  /** Relative to LJD Library management root (e.g. ljd/media/journal/...) */
+  /** Relative to Library management root (e.g. ljd/media/journal/...). */
   relativePath: string;
   createdAt: string;
   checksum: string | null;
@@ -35,19 +39,18 @@ export type LocalJournalEntry = {
   tags: string[];
   mediaRefs: LocalMediaRef[];
   schemaVersion: number;
-  /** Optional provenance */
-  source: "fixture" | "mapped_server_shape" | "local_poc" | "migrated_server";
-  localStatus: "active" | "deleted_poc";
+  source: "mapped_server_shape" | "migrated_server" | "local";
+  localStatus: "active" | "deleted";
   importedAt: string | null;
-  /** Former Neon cuid when known — never the permanent cross-device identity alone */
+  /** Former Neon cuid when known — never the sole cross-device identity. */
   legacyServerId: string | null;
-  /** Server timestamps retained for future conflict detection (not authority) */
+  /** Server updatedAt retained for future conflict detection (not authority). */
   serverUpdatedAt: string | null;
 };
 
 /**
- * Server / Web JournalEntry-like shape for mapper tests.
- * Includes PoC display fields (title/dateKey/tags) that Neon row may lack.
+ * Server / Web JournalEntry-like shape for mapper / migration helpers.
+ * Includes display aids (title/dateKey/tags) that may be derived client-side.
  */
 export type ServerJournalEntryLike = {
   id: string;
@@ -69,7 +72,6 @@ export type ServerJournalEntryLike = {
   photoStorageProvider: string | null;
   generatedComment: string | null;
   includeInBook: boolean;
-  /** PoC / mapping aids (not all live on Prisma row today) */
   dateKey: string;
   title: string;
   tags: string[];

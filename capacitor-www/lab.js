@@ -1593,7 +1593,7 @@
     }
   });
 
-  // src/lib/local-first/poc/localStorageLabMain.ts
+  // src/lib/local-first/diagnostics/localStorageDiagnosticsMain.ts
   init_dist();
 
   // src/lib/local-first/journal/database.ts
@@ -2434,23 +2434,23 @@
   });
 
   // src/lib/local-first/journal/types.ts
-  var LOCAL_JOURNAL_REPO_DB_NAME = "ljd_local_journal_repo";
-  var LOCAL_JOURNAL_SCHEMA_USER_VERSION = 2;
+  var LOCAL_JOURNAL_DB_NAME = "ljd_local_journal";
+  var LOCAL_JOURNAL_SCHEMA_USER_VERSION = 1;
 
   // src/lib/local-first/journal/database.ts
   var connection = null;
   var db = null;
   function assertLocalJournalNative() {
     if (!Capacitor.isNativePlatform()) {
-      throw new Error("Local Journal Repository PoC is native-only.");
+      throw new Error("Local Journal foundation is native-only.");
     }
   }
   function getConnection() {
     if (!connection) connection = new SQLiteConnection(CapacitorSQLite);
     return connection;
   }
-  var SCHEMA_BASE = `
-CREATE TABLE IF NOT EXISTS local_journal_entries_v1 (
+  var SCHEMA_SQL = `
+CREATE TABLE IF NOT EXISTS local_journal_entries (
   stable_id TEXT PRIMARY KEY NOT NULL,
   date_key TEXT NOT NULL,
   title TEXT NOT NULL,
@@ -2467,21 +2467,25 @@ CREATE TABLE IF NOT EXISTS local_journal_entries_v1 (
 );
 
 CREATE INDEX IF NOT EXISTS idx_local_journal_date
-  ON local_journal_entries_v1 (date_key);
+  ON local_journal_entries (date_key);
 
 CREATE INDEX IF NOT EXISTS idx_local_journal_updated
-  ON local_journal_entries_v1 (updated_at);
+  ON local_journal_entries (updated_at);
 
-CREATE TABLE IF NOT EXISTS local_journal_tags_v1 (
+CREATE UNIQUE INDEX IF NOT EXISTS idx_local_journal_legacy_server
+  ON local_journal_entries (legacy_server_id)
+  WHERE legacy_server_id IS NOT NULL;
+
+CREATE TABLE IF NOT EXISTS local_journal_tags (
   journal_stable_id TEXT NOT NULL,
   tag TEXT NOT NULL,
   PRIMARY KEY (journal_stable_id, tag)
 );
 
 CREATE INDEX IF NOT EXISTS idx_local_journal_tags_tag
-  ON local_journal_tags_v1 (tag);
+  ON local_journal_tags (tag);
 
-CREATE TABLE IF NOT EXISTS local_media_v1 (
+CREATE TABLE IF NOT EXISTS local_media (
   stable_id TEXT PRIMARY KEY NOT NULL,
   journal_stable_id TEXT NOT NULL,
   type TEXT NOT NULL,
@@ -2492,7 +2496,7 @@ CREATE TABLE IF NOT EXISTS local_media_v1 (
 );
 
 CREATE INDEX IF NOT EXISTS idx_local_media_journal
-  ON local_media_v1 (journal_stable_id);
+  ON local_media (journal_stable_id);
 `;
   async function readUserVersion(database) {
     const versionResult = await database.query("PRAGMA user_version;");
@@ -2500,40 +2504,36 @@ CREATE INDEX IF NOT EXISTS idx_local_media_journal
     const current = typeof raw?.user_version === "number" ? raw.user_version : typeof raw?.user_version === "string" ? Number(raw.user_version) : Number(Object.values(raw ?? {})[0] ?? 0);
     return Number.isFinite(current) ? current : 0;
   }
-  async function migrateFresh(database) {
-    await database.execute(SCHEMA_BASE);
-    await database.execute(`
-    CREATE UNIQUE INDEX IF NOT EXISTS idx_local_journal_legacy_server
-      ON local_journal_entries_v1 (legacy_server_id)
-      WHERE legacy_server_id IS NOT NULL;
-  `);
+  async function applyFoundationSchema(database) {
+    await database.execute(SCHEMA_SQL);
     await database.execute(`PRAGMA user_version = ${LOCAL_JOURNAL_SCHEMA_USER_VERSION};`);
   }
-  async function migrateToV2(database) {
+  async function withLocalJournalTransaction(fn) {
+    const database = await openLocalJournalDatabase();
+    await database.execute("BEGIN;");
     try {
-      await database.execute(
-        `ALTER TABLE local_journal_entries_v1 ADD COLUMN server_updated_at TEXT;`
-      );
-    } catch {
+      const result = await fn(database);
+      await database.execute("COMMIT;");
+      return result;
+    } catch (err) {
+      try {
+        await database.execute("ROLLBACK;");
+      } catch {
+      }
+      throw err;
     }
-    await database.execute(`
-    CREATE UNIQUE INDEX IF NOT EXISTS idx_local_journal_legacy_server
-      ON local_journal_entries_v1 (legacy_server_id)
-      WHERE legacy_server_id IS NOT NULL;
-  `);
-    await database.execute(`PRAGMA user_version = 2;`);
   }
   async function openLocalJournalDatabase() {
     assertLocalJournalNative();
     if (db) return db;
     const sqlite = getConnection();
     const consistency = await sqlite.checkConnectionsConsistency();
-    const isConn = (await sqlite.isConnection(LOCAL_JOURNAL_REPO_DB_NAME, false)).result;
+    const isConn = (await sqlite.isConnection(LOCAL_JOURNAL_DB_NAME, false)).result;
     if (consistency.result && isConn) {
-      db = await sqlite.retrieveConnection(LOCAL_JOURNAL_REPO_DB_NAME, false);
+      db = await sqlite.retrieveConnection(LOCAL_JOURNAL_DB_NAME, false);
     } else {
       db = await sqlite.createConnection(
-        LOCAL_JOURNAL_REPO_DB_NAME,
+        LOCAL_JOURNAL_DB_NAME,
         false,
         "no-encryption",
         LOCAL_JOURNAL_SCHEMA_USER_VERSION,
@@ -2542,10 +2542,8 @@ CREATE INDEX IF NOT EXISTS idx_local_media_journal
     }
     await db.open();
     const current = await readUserVersion(db);
-    if (current < 1) {
-      await migrateFresh(db);
-    } else if (current < 2) {
-      await migrateToV2(db);
+    if (current < LOCAL_JOURNAL_SCHEMA_USER_VERSION) {
+      await applyFoundationSchema(db);
     }
     return db;
   }
@@ -2649,7 +2647,7 @@ CREATE INDEX IF NOT EXISTS idx_local_media_journal
     const db2 = await openLocalJournalDatabase();
     const result = await db2.query(
       `SELECT stable_id, journal_stable_id, type, relative_path, created_at, checksum, mime_type
-     FROM local_media_v1 WHERE journal_stable_id = ?;`,
+     FROM local_media WHERE journal_stable_id = ?;`,
       [journalStableId]
     );
     return (result.values ?? []).map((r) => ({
@@ -2682,124 +2680,130 @@ CREATE INDEX IF NOT EXISTS idx_local_media_journal
   }
   var JournalRepository = {
     async save(entry) {
-      const db2 = await openLocalJournalDatabase();
-      await db2.run(
-        `INSERT OR REPLACE INTO local_journal_entries_v1 (
-        stable_id, date_key, title, content, created_at, updated_at,
-        tags_json, schema_version, source, local_status, imported_at, legacy_server_id,
-        server_updated_at
-      ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?);`,
-        [
-          entry.stableId,
-          entry.dateKey,
-          entry.title,
-          entry.content,
-          entry.createdAt,
-          entry.updatedAt,
-          JSON.stringify(entry.tags),
-          entry.schemaVersion,
-          entry.source,
-          entry.localStatus,
-          entry.importedAt,
-          entry.legacyServerId,
-          entry.serverUpdatedAt
-        ]
-      );
-      await db2.run(`DELETE FROM local_journal_tags_v1 WHERE journal_stable_id = ?;`, [
-        entry.stableId
-      ]);
-      for (const tag of entry.tags) {
+      await withLocalJournalTransaction(async (db2) => {
         await db2.run(
-          `INSERT OR REPLACE INTO local_journal_tags_v1 (journal_stable_id, tag) VALUES (?, ?);`,
-          [entry.stableId, tag]
-        );
-      }
-      await db2.run(`DELETE FROM local_media_v1 WHERE journal_stable_id = ?;`, [entry.stableId]);
-      for (const media of entry.mediaRefs) {
-        await db2.run(
-          `INSERT OR REPLACE INTO local_media_v1 (
-          stable_id, journal_stable_id, type, relative_path, created_at, checksum, mime_type
-        ) VALUES (?,?,?,?,?,?,?);`,
+          `INSERT OR REPLACE INTO local_journal_entries (
+          stable_id, date_key, title, content, created_at, updated_at,
+          tags_json, schema_version, source, local_status, imported_at, legacy_server_id,
+          server_updated_at
+        ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?);`,
           [
-            media.stableId,
-            media.journalStableId,
-            media.type,
-            media.relativePath,
-            media.createdAt,
-            media.checksum,
-            media.mimeType
+            entry.stableId,
+            entry.dateKey,
+            entry.title,
+            entry.content,
+            entry.createdAt,
+            entry.updatedAt,
+            JSON.stringify(entry.tags),
+            entry.schemaVersion,
+            entry.source,
+            entry.localStatus,
+            entry.importedAt,
+            entry.legacyServerId,
+            entry.serverUpdatedAt
           ]
         );
-      }
+        await db2.run(`DELETE FROM local_journal_tags WHERE journal_stable_id = ?;`, [
+          entry.stableId
+        ]);
+        for (const tag of entry.tags) {
+          await db2.run(
+            `INSERT OR REPLACE INTO local_journal_tags (journal_stable_id, tag) VALUES (?, ?);`,
+            [entry.stableId, tag]
+          );
+        }
+        await db2.run(`DELETE FROM local_media WHERE journal_stable_id = ?;`, [entry.stableId]);
+        for (const media of entry.mediaRefs) {
+          await db2.run(
+            `INSERT OR REPLACE INTO local_media (
+            stable_id, journal_stable_id, type, relative_path, created_at, checksum, mime_type
+          ) VALUES (?,?,?,?,?,?,?);`,
+            [
+              media.stableId,
+              media.journalStableId,
+              media.type,
+              media.relativePath,
+              media.createdAt,
+              media.checksum,
+              media.mimeType
+            ]
+          );
+        }
+      });
     },
     async getById(stableId) {
       const db2 = await openLocalJournalDatabase();
       const result = await db2.query(
-        `SELECT * FROM local_journal_entries_v1 WHERE stable_id = ? AND local_status = 'active' LIMIT 1;`,
+        `SELECT * FROM local_journal_entries WHERE stable_id = ? AND local_status = 'active' LIMIT 1;`,
         [stableId]
       );
       const row = result.values?.[0];
       if (!row) return null;
-      const media = await loadMediaForJournal(stableId);
-      return mapEntryRow(row, media);
+      return mapEntryRow(row, await loadMediaForJournal(stableId));
     },
-    async findByLegacyServerId(legacyServerId) {
+    async getByLegacyServerId(legacyServerId) {
       const db2 = await openLocalJournalDatabase();
       const result = await db2.query(
-        `SELECT * FROM local_journal_entries_v1
+        `SELECT * FROM local_journal_entries
        WHERE legacy_server_id = ? AND local_status = 'active' LIMIT 1;`,
         [legacyServerId]
       );
       const row = result.values?.[0];
       if (!row) return null;
-      const media = await loadMediaForJournal(String(row.stable_id));
-      return mapEntryRow(row, media);
+      return mapEntryRow(row, await loadMediaForJournal(String(row.stable_id)));
+    },
+    /** @deprecated Prefer getByLegacyServerId */
+    async findByLegacyServerId(legacyServerId) {
+      return this.getByLegacyServerId(legacyServerId);
     },
     async list() {
       const db2 = await openLocalJournalDatabase();
       const result = await db2.query(
-        `SELECT * FROM local_journal_entries_v1
+        `SELECT * FROM local_journal_entries
        WHERE local_status = 'active'
        ORDER BY date_key DESC, created_at DESC;`
       );
-      const rows = result.values ?? [];
       const out = [];
-      for (const row of rows) {
+      for (const row of result.values ?? []) {
         const r = row;
-        const media = await loadMediaForJournal(String(r.stable_id));
-        out.push(mapEntryRow(r, media));
+        out.push(mapEntryRow(r, await loadMediaForJournal(String(r.stable_id))));
       }
       return out;
     },
     async count() {
       const db2 = await openLocalJournalDatabase();
       const result = await db2.query(
-        `SELECT COUNT(*) AS c FROM local_journal_entries_v1 WHERE local_status = 'active';`
+        `SELECT COUNT(*) AS c FROM local_journal_entries WHERE local_status = 'active';`
       );
       const row = result.values?.[0];
       return Number(row?.c ?? 0);
     },
     /**
-     * PoC cleanup — deletes active PoC / fixture journals and related media rows.
-     * Does not touch production Neon.
+     * Diagnostics / test cleanup only — deletes all local journal rows + returns media paths.
+     * Does not touch Neon / Blob.
      */
-    async deletePocData() {
-      const db2 = await openLocalJournalDatabase();
+    async deleteAll() {
       const listed = await this.list();
       const relativePaths = [];
-      for (const entry of listed) {
-        for (const m of entry.mediaRefs) relativePaths.push(m.relativePath);
-        await db2.run(`DELETE FROM local_media_v1 WHERE journal_stable_id = ?;`, [entry.stableId]);
-        await db2.run(`DELETE FROM local_journal_tags_v1 WHERE journal_stable_id = ?;`, [
-          entry.stableId
-        ]);
-        await db2.run(`DELETE FROM local_journal_entries_v1 WHERE stable_id = ?;`, [entry.stableId]);
-      }
+      await withLocalJournalTransaction(async (db2) => {
+        for (const entry of listed) {
+          for (const m of entry.mediaRefs) relativePaths.push(m.relativePath);
+          await db2.run(`DELETE FROM local_media WHERE journal_stable_id = ?;`, [entry.stableId]);
+          await db2.run(`DELETE FROM local_journal_tags WHERE journal_stable_id = ?;`, [
+            entry.stableId
+          ]);
+          await db2.run(`DELETE FROM local_journal_entries WHERE stable_id = ?;`, [entry.stableId]);
+        }
+      });
       return relativePaths;
+    },
+    /** @deprecated Prefer deleteAll */
+    async deletePocData() {
+      return this.deleteAll();
     }
   };
 
-  // src/lib/local-first/poc/localStorageLabMain.ts
+  // src/lib/local-first/diagnostics/localStorageDiagnosticsMain.ts
   function $(id) {
     const el = document.getElementById(id);
     if (!el) throw new Error(`Missing #${id}`);
@@ -2821,7 +2825,7 @@ CREATE INDEX IF NOT EXISTS idx_local_media_journal
     previewEl.hidden = true;
     const entries = await JournalRepository.list();
     if (entries.length === 0) {
-      listEl.innerHTML = "<p class='muted'>\u7AEF\u672B\u306BLocal Journal\u304C\u3042\u308A\u307E\u305B\u3093\u3002remote shell\u3067 /preview/local-first-lab \u304B\u30891\u4EF6\u53D7\u3051\u53D6\u3063\u3066\u304F\u3060\u3055\u3044\u3002</p>";
+      listEl.innerHTML = "<p class='muted'>Local Journal \u306F\u7A7A\u3067\u3059\u3002remote shell \u306E /preview/local-storage-diagnostics \u3067\u521D\u671F\u5316\u30FB\u8A3A\u65AD\u3057\u3066\u304F\u3060\u3055\u3044\u3002</p>";
       return;
     }
     for (const entry of entries) {
@@ -2829,7 +2833,6 @@ CREATE INDEX IF NOT EXISTS idx_local_media_journal
       card.className = "card";
       card.innerHTML = `
       <h3>${escapeHtml(entry.title)}</h3>
-      <p>${escapeHtml(entry.content)}</p>
       <p class="meta">stableId: ${escapeHtml(entry.stableId)}</p>
       <p class="meta">legacyServerId: ${escapeHtml(entry.legacyServerId ?? "(none)")}</p>
       <p class="meta">source: ${escapeHtml(entry.source)}</p>
@@ -2854,7 +2857,7 @@ CREATE INDEX IF NOT EXISTS idx_local_media_journal
   async function boot() {
     $("platform").textContent = `platform=${Capacitor.getPlatform()} native=${String(
       Capacitor.isNativePlatform()
-    )} phase=4B-2C remoteShell=false (offline list)`;
+    )} diagnostics=local-storage remoteShell=false`;
     if (!Capacitor.isNativePlatform()) {
       setStatus("\u30CD\u30A4\u30C6\u30A3\u30D6\u5C02\u7528\u3067\u3059\u3002", true);
       return;
@@ -2863,23 +2866,21 @@ CREATE INDEX IF NOT EXISTS idx_local_media_journal
       void (async () => {
         await openLocalJournalDatabase();
         await renderEntries();
-        setStatus(`\u8AAD\u8FBC\u5B8C\u4E86 count=${await JournalRepository.count()}\uFF08\u30B5\u30FC\u30D0\u30FC\u518D\u53D6\u5F97\u3067\u306F\u3042\u308A\u307E\u305B\u3093\uFF09`);
+        setStatus(`\u8AAD\u8FBC\u5B8C\u4E86 count=${await JournalRepository.count()}\uFF08\u30B5\u30FC\u30D0\u30FC\u518D\u53D6\u5F97\u306A\u3057\uFF09`);
       })().catch((e) => setStatus(String(e), true));
     });
     $("btn-clear").addEventListener("click", () => {
       void (async () => {
-        const paths = await JournalRepository.deletePocData();
+        const paths = await JournalRepository.deleteAll();
         for (const p of paths) await deleteJournalMediaRelative(p);
         await renderEntries();
-        setStatus("\u7AEF\u672BPoC\u524A\u9664\u5B8C\u4E86\uFF08\u30B5\u30FC\u30D0\u30FC\u672A\u5909\u66F4\uFF09\u3002");
+        setStatus("\u7AEF\u672BLocal\u8A3A\u65AD\u30C7\u30FC\u30BF\u3092\u524A\u9664\uFF08\u30B5\u30FC\u30D0\u30FC\u672A\u5909\u66F4\uFF09\u3002");
       })().catch((e) => setStatus(String(e), true));
     });
     try {
       await openLocalJournalDatabase();
       await renderEntries();
-      setStatus(
-        "Offline Lab\u6E96\u5099\u5B8C\u4E86\u3002\u30B5\u30FC\u30D0\u30FC\u304B\u3089\u306E\u53D7\u3051\u53D6\u308A\u306F remote shell \u306E /preview/local-first-lab \u3067\u884C\u3044\u307E\u3059\u3002"
-      );
+      setStatus("Diagnostics\u6E96\u5099\u5B8C\u4E86\uFF08SQLite foundation\uFF09\u3002");
     } catch (err) {
       setStatus(`\u521D\u671F\u5316\u5931\u6557: ${String(err)}`, true);
     }

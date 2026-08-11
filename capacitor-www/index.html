@@ -6,69 +6,67 @@
       name="viewport"
       content="width=device-width, initial-scale=1, viewport-fit=cover"
     />
-    <title>Local-first Storage Lab｜4B-2C Offline</title>
+    <title>Local Storage Diagnostics｜Developer</title>
     <style>
       :root {
         color-scheme: light;
         --ink: #1c1917;
         --muted: #78716c;
-        --paper: #faf8f4;
-        --card: #fffdf9;
-        --line: #e7e0d5;
-        --accent: #3f5d4a;
+        --paper: #f4f6f3;
+        --card: #ffffff;
+        --line: #e7e5e4;
         --danger: #9a3412;
       }
       * { box-sizing: border-box; }
       body {
         margin: 0; min-height: 100vh;
-        font-family: ui-rounded, "Hiragino Sans", "Noto Sans JP", system-ui, sans-serif;
-        background: linear-gradient(180deg, #eef3ea 0%, var(--paper) 40%);
+        font-family: ui-monospace, "SF Mono", Menlo, monospace;
+        background: var(--paper);
         color: var(--ink);
         padding: max(1rem, env(safe-area-inset-top)) 1rem max(1.5rem, env(safe-area-inset-bottom));
       }
       main { max-width: 36rem; margin: 0 auto; }
-      h1 { font-size: 1.25rem; margin: 0 0 0.35rem; }
-      .note, .muted, #platform, .meta { color: var(--muted); font-size: 0.85rem; line-height: 1.45; }
+      h1 { font-size: 1.1rem; margin: 0 0 0.35rem; font-family: system-ui, sans-serif; }
+      .note, .muted, #platform, .meta { color: var(--muted); font-size: 0.82rem; line-height: 1.45; }
       .actions { display: grid; gap: 0.55rem; margin: 1rem 0; }
       button {
         appearance: none; border: 1px solid var(--line); background: var(--card);
-        color: var(--ink); border-radius: 0.75rem; padding: 0.8rem 1rem;
-        font-size: 0.95rem; font-weight: 600;
+        color: var(--ink); border-radius: 0.5rem; padding: 0.75rem 1rem;
+        font-size: 0.9rem; font-weight: 600; font-family: system-ui, sans-serif;
       }
       #btn-clear { color: var(--danger); }
       .status {
-        margin: 0.75rem 0; padding: 0.75rem 0.9rem; border-radius: 0.75rem;
-        background: #fff; border: 1px solid var(--line); font-size: 0.88rem;
+        margin: 0.75rem 0; padding: 0.75rem 0.9rem; border-radius: 0.5rem;
+        background: #fff; border: 1px solid var(--line); font-size: 0.82rem;
         line-height: 1.45; white-space: pre-wrap;
       }
       .status.err { border-color: #fecaca; background: #fff7f5; color: var(--danger); }
       .card {
-        background: var(--card); border: 1px solid var(--line); border-radius: 0.85rem;
-        padding: 0.9rem 1rem; margin: 0.6rem 0;
+        background: var(--card); border: 1px solid var(--line); border-radius: 0.5rem;
+        padding: 0.85rem 1rem; margin: 0.55rem 0;
       }
-      .card h3 { margin: 0 0 0.4rem; font-size: 1.05rem; }
-      .card p { margin: 0.25rem 0; line-height: 1.45; }
+      .card h3 { margin: 0 0 0.4rem; font-size: 1rem; font-family: system-ui, sans-serif; }
+      .card p { margin: 0.2rem 0; }
       #preview {
         display: block; max-width: 10rem; margin: 0.75rem 0 0;
-        border-radius: 0.75rem; border: 1px solid var(--line); background: #fff;
+        border-radius: 0.5rem; border: 1px solid var(--line); background: #fff;
       }
     </style>
   </head>
   <body>
     <main>
-      <h1>Local-first Storage Lab</h1>
+      <h1>開発者用 Local Storage Diagnostics</h1>
       <p class="note">
-        Phase 4B-2C Offline list。表示は SQLite＋Filesystem のみ（サーバー再取得なし）。
-        受け取り操作は remote shell の確認用ページで行います。
+        Offline list。表示は SQLite＋Filesystem のみ。製品UIではありません。
       </p>
       <p id="platform" class="muted">platform…</p>
       <div class="actions">
         <button type="button" id="btn-load">端末から読む</button>
-        <button type="button" id="btn-clear">端末PoCデータを削除</button>
+        <button type="button" id="btn-clear">端末Localをクリア</button>
       </div>
       <p id="status" class="status">起動中…</p>
       <section>
-        <h2 style="font-size: 1rem">読込結果</h2>
+        <h2 style="font-size: 0.95rem; font-family: system-ui, sans-serif">読込結果</h2>
         <div id="list"></div>
         <img id="preview" alt="" hidden />
       </section>

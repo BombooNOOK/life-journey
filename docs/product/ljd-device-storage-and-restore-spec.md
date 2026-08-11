@@ -363,16 +363,25 @@ Web案内例（穏やか・実装は後日）:
 
 ## 19. 未決事項
 
-- SQLiteプラグイン確定・SQL schema初版  
-- Capacitor Directory最終マッピング（Library vs Dataの検証ビルド）  
+- ~~SQLiteプラグイン確定・SQL schema初版~~ → **実証中:** `@capacitor-community/sqlite` + foundation schema（`docs/hybrid/HYBRID_PHASE_4B2D_LOCAL_FIRST_FOUNDATION.md`）。**community plugin**・at-rest暗号化・export complianceは未完  
+- Capacitor Directory最終マッピング（Library vs Dataの検証ビルド）→ Library/CapacitorDatabase + Filesystem Library を第一候補として実証中  
 - 鑑定PDFキャッシュをbackup対象にするか  
 - offline grace日数、生体フォールバック詳細  
 - 復元コード再発行の本人確認フロー  
 - Web閲覧専用のAPI拒否実装時期  
 - 旧端末ロックのサーバ連携方式  
 - 「十分な移行期間」の長さ  
+- **Media at-rest protection**（現状: 平文アプリ領域＋sandbox。人生記録として十分かは未決）
 
 ---
+
+## 19.1 実装実証メモ（Hybrid 4B-2D・方針変更ではない）
+
+製品方針の変更ではない。技術選定の実証進捗を追記するのみ。
+
+- SQLite / Filesystem / relative path / 1件 Server→Device copy（server untouched）まで実証  
+- Local原本化・Web閲覧専用化・bulk migration・暗号化は未実装  
+- 詳細: `docs/hybrid/HYBRID_PHASE_4B2D_LOCAL_FIRST_FOUNDATION.md`
 
 ## 20. 実装禁止の確認
 

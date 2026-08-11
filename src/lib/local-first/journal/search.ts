@@ -1,5 +1,5 @@
 /**
- * Lightweight search over Local Journal SQLite (PoC evaluation for thousands of rows).
+ * Local journal search over foundation SQLite tables.
  */
 
 import { openLocalJournalDatabase } from "@/lib/local-first/journal/database";
@@ -35,13 +35,13 @@ export async function searchLocalJournals(
       ? query.tag.trim()
       : `#${query.tag.trim()}`;
     where.push(
-      `EXISTS (SELECT 1 FROM local_journal_tags_v1 t WHERE t.journal_stable_id = e.stable_id AND t.tag = ?)`,
+      `EXISTS (SELECT 1 FROM local_journal_tags t WHERE t.journal_stable_id = e.stable_id AND t.tag = ?)`,
     );
     params.push(tag);
   }
 
   const sql = `
-    SELECT e.stable_id FROM local_journal_entries_v1 e
+    SELECT e.stable_id FROM local_journal_entries e
     WHERE ${where.join(" AND ")}
     ORDER BY e.date_key DESC, e.created_at DESC
     LIMIT 100;

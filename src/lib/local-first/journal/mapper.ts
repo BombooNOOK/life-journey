@@ -64,6 +64,11 @@ export function mapServerJournalEntryLikeToLocal(
   };
 }
 
+/** Exported for unit tests / shared tag normalization. */
+export function normalizeLocalJournalTags(tags: string[]): string[] {
+  return normalizeTags(tags);
+}
+
 function normalizeTags(tags: string[]): string[] {
   const out: string[] = [];
   const seen = new Set<string>();

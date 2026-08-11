@@ -453,5 +453,6 @@ Local-first ≠ 複数端末自動同期。
 | worldview SoT | 本ファイルがデータ面の詳細を担う |
 | moving package spec | `ljd-moving-package-spec.md` が第二防衛線のパッケージ詳細を担う（Pre-Implementation） |
 | device storage / restore | `ljd-device-storage-and-restore-spec.md` が端末配置・オフライン・自己復元UXを担う（Pre-Implementation） |
+| Hybrid 4B-2D foundation（実証メモ） | `docs/hybrid/HYBRID_PHASE_4B2D_LOCAL_FIRST_FOUNDATION.md` — SQLite/FS選定の技術実証。製品方針変更ではない |
 
 矛盾が生じた場合の優先順: 体験世界観 → 本Local-first方針 → パッケージ仕様 → 端末保存・復元仕様 → 用語 → どんぐり（料金）→ コード内コメント。

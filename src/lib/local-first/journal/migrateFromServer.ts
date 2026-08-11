@@ -1,7 +1,8 @@
 /**
- * Server → Device read-only copy (Phase 4B-2C).
+ * Server → Device read-only copy helper (foundation).
  * Uses authenticated cookie session APIs only — no Neon credentials in native.
  * Does not update/delete/own server records.
+ * Not a product bulk-migration / user-facing feature.
  */
 
 import { Capacitor } from "@capacitor/core";
@@ -227,7 +228,7 @@ export async function migrateServerJournalEntryToDevice(
   }
 
   // Stage 1: dedupe by legacyServerId (no new ULID if already present)
-  const existing = await JournalRepository.findByLegacyServerId(id);
+  const existing = await JournalRepository.getByLegacyServerId(id);
   if (existing) {
     return {
       ok: true,

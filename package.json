@@ -54,11 +54,11 @@
     "cap:sync": "node scripts/cap-sync.mjs",
     "cap:sync:ios": "node scripts/cap-sync.mjs ios",
     "cap:sync:ios:local": "CAPACITOR_SERVER_URL=http://127.0.0.1:3000 node scripts/cap-sync.mjs ios",
-    "cap:sync:ios:lab": "npm run build:local-storage-lab && CAPACITOR_LOCAL_ASSETS=1 node scripts/cap-sync.mjs ios --local-assets",
+    "cap:sync:ios:diagnostics": "npm run build:local-storage-diagnostics && CAPACITOR_LOCAL_ASSETS=1 node scripts/cap-sync.mjs ios --local-assets",
     "cap:open:ios": "npx cap open ios",
     "cap:run:ios": "CAPACITOR_SERVER_URL=http://127.0.0.1:3000 npx cap run ios",
-    "cap:run:ios:lab": "npm run build:local-storage-lab && CAPACITOR_LOCAL_ASSETS=1 npx cap run ios",
-    "build:local-storage-lab": "node scripts/build-local-storage-lab.mjs"
+    "cap:run:ios:diagnostics": "npm run build:local-storage-diagnostics && CAPACITOR_LOCAL_ASSETS=1 npx cap run ios",
+    "build:local-storage-diagnostics": "node scripts/build-local-storage-diagnostics.mjs"
   },
   "dependencies": {
     "@capacitor-community/sqlite": "^8.1.1",

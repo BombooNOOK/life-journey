@@ -1,6 +1,6 @@
 /**
- * Local-first Storage Lab — offline list for migrated / local journals (4B-2C).
- * Authenticated server copy runs on /preview/local-first-lab (remote shell).
+ * Offline Local Storage Diagnostics entry (local asset Cap mode).
+ * Developer-only; not a product surface.
  */
 
 import { Capacitor } from "@capacitor/core";
@@ -42,7 +42,7 @@ async function renderEntries(): Promise<void> {
   const entries = await JournalRepository.list();
   if (entries.length === 0) {
     listEl.innerHTML =
-      "<p class='muted'>端末にLocal Journalがありません。remote shellで /preview/local-first-lab から1件受け取ってください。</p>";
+      "<p class='muted'>Local Journal は空です。remote shell の /preview/local-storage-diagnostics で初期化・診断してください。</p>";
     return;
   }
 
@@ -51,7 +51,6 @@ async function renderEntries(): Promise<void> {
     card.className = "card";
     card.innerHTML = `
       <h3>${escapeHtml(entry.title)}</h3>
-      <p>${escapeHtml(entry.content)}</p>
       <p class="meta">stableId: ${escapeHtml(entry.stableId)}</p>
       <p class="meta">legacyServerId: ${escapeHtml(entry.legacyServerId ?? "(none)")}</p>
       <p class="meta">source: ${escapeHtml(entry.source)}</p>
@@ -77,7 +76,7 @@ async function renderEntries(): Promise<void> {
 async function boot(): Promise<void> {
   $("platform").textContent = `platform=${Capacitor.getPlatform()} native=${String(
     Capacitor.isNativePlatform(),
-  )} phase=4B-2C remoteShell=false (offline list)`;
+  )} diagnostics=local-storage remoteShell=false`;
 
   if (!Capacitor.isNativePlatform()) {
     setStatus("ネイティブ専用です。", true);
@@ -88,25 +87,23 @@ async function boot(): Promise<void> {
     void (async () => {
       await openLocalJournalDatabase();
       await renderEntries();
-      setStatus(`読込完了 count=${await JournalRepository.count()}（サーバー再取得ではありません）`);
+      setStatus(`読込完了 count=${await JournalRepository.count()}（サーバー再取得なし）`);
     })().catch((e) => setStatus(String(e), true));
   });
 
   $("btn-clear").addEventListener("click", () => {
     void (async () => {
-      const paths = await JournalRepository.deletePocData();
+      const paths = await JournalRepository.deleteAll();
       for (const p of paths) await deleteJournalMediaRelative(p);
       await renderEntries();
-      setStatus("端末PoC削除完了（サーバー未変更）。");
+      setStatus("端末Local診断データを削除（サーバー未変更）。");
     })().catch((e) => setStatus(String(e), true));
   });
 
   try {
     await openLocalJournalDatabase();
     await renderEntries();
-    setStatus(
-      "Offline Lab準備完了。サーバーからの受け取りは remote shell の /preview/local-first-lab で行います。",
-    );
+    setStatus("Diagnostics準備完了（SQLite foundation）。");
   } catch (err) {
     setStatus(`初期化失敗: ${String(err)}`, true);
   }

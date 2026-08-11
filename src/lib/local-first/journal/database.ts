@@ -1,6 +1,6 @@
 /**
- * Shared SQLite open helpers for Local Journal Repository PoC.
- * Uses PRAGMA user_version for schema versioning (see docs).
+ * Local Journal SQLite foundation — open / migrate / transaction helpers.
+ * Native-only. Not invoked by Web journal save paths.
  */
 
 import { Capacitor } from "@capacitor/core";
@@ -11,7 +11,7 @@ import {
 } from "@capacitor-community/sqlite";
 
 import {
-  LOCAL_JOURNAL_REPO_DB_NAME,
+  LOCAL_JOURNAL_DB_NAME,
   LOCAL_JOURNAL_SCHEMA_USER_VERSION,
 } from "@/lib/local-first/journal/types";
 
@@ -20,7 +20,7 @@ let db: SQLiteDBConnection | null = null;
 
 export function assertLocalJournalNative(): void {
   if (!Capacitor.isNativePlatform()) {
-    throw new Error("Local Journal Repository PoC is native-only.");
+    throw new Error("Local Journal foundation is native-only.");
   }
 }
 
@@ -29,8 +29,8 @@ function getConnection(): SQLiteConnection {
   return connection;
 }
 
-const SCHEMA_BASE = `
-CREATE TABLE IF NOT EXISTS local_journal_entries_v1 (
+const SCHEMA_SQL = `
+CREATE TABLE IF NOT EXISTS local_journal_entries (
   stable_id TEXT PRIMARY KEY NOT NULL,
   date_key TEXT NOT NULL,
   title TEXT NOT NULL,
@@ -47,21 +47,25 @@ CREATE TABLE IF NOT EXISTS local_journal_entries_v1 (
 );
 
 CREATE INDEX IF NOT EXISTS idx_local_journal_date
-  ON local_journal_entries_v1 (date_key);
+  ON local_journal_entries (date_key);
 
 CREATE INDEX IF NOT EXISTS idx_local_journal_updated
-  ON local_journal_entries_v1 (updated_at);
+  ON local_journal_entries (updated_at);
 
-CREATE TABLE IF NOT EXISTS local_journal_tags_v1 (
+CREATE UNIQUE INDEX IF NOT EXISTS idx_local_journal_legacy_server
+  ON local_journal_entries (legacy_server_id)
+  WHERE legacy_server_id IS NOT NULL;
+
+CREATE TABLE IF NOT EXISTS local_journal_tags (
   journal_stable_id TEXT NOT NULL,
   tag TEXT NOT NULL,
   PRIMARY KEY (journal_stable_id, tag)
 );
 
 CREATE INDEX IF NOT EXISTS idx_local_journal_tags_tag
-  ON local_journal_tags_v1 (tag);
+  ON local_journal_tags (tag);
 
-CREATE TABLE IF NOT EXISTS local_media_v1 (
+CREATE TABLE IF NOT EXISTS local_media (
   stable_id TEXT PRIMARY KEY NOT NULL,
   journal_stable_id TEXT NOT NULL,
   type TEXT NOT NULL,
@@ -72,7 +76,7 @@ CREATE TABLE IF NOT EXISTS local_media_v1 (
 );
 
 CREATE INDEX IF NOT EXISTS idx_local_media_journal
-  ON local_media_v1 (journal_stable_id);
+  ON local_media (journal_stable_id);
 `;
 
 async function readUserVersion(database: SQLiteDBConnection): Promise<number> {
@@ -87,30 +91,32 @@ async function readUserVersion(database: SQLiteDBConnection): Promise<number> {
   return Number.isFinite(current) ? current : 0;
 }
 
-async function migrateFresh(database: SQLiteDBConnection): Promise<void> {
-  await database.execute(SCHEMA_BASE);
-  await database.execute(`
-    CREATE UNIQUE INDEX IF NOT EXISTS idx_local_journal_legacy_server
-      ON local_journal_entries_v1 (legacy_server_id)
-      WHERE legacy_server_id IS NOT NULL;
-  `);
+async function applyFoundationSchema(database: SQLiteDBConnection): Promise<void> {
+  await database.execute(SCHEMA_SQL);
   await database.execute(`PRAGMA user_version = ${LOCAL_JOURNAL_SCHEMA_USER_VERSION};`);
 }
 
-async function migrateToV2(database: SQLiteDBConnection): Promise<void> {
+/**
+ * Best-effort transaction. Cap SQLite execute may bundle statements;
+ * callers should still treat Filesystem + SQLite as a logical unit.
+ */
+export async function withLocalJournalTransaction<T>(
+  fn: (database: SQLiteDBConnection) => Promise<T>,
+): Promise<T> {
+  const database = await openLocalJournalDatabase();
+  await database.execute("BEGIN;");
   try {
-    await database.execute(
-      `ALTER TABLE local_journal_entries_v1 ADD COLUMN server_updated_at TEXT;`,
-    );
-  } catch {
-    /* column may already exist */
+    const result = await fn(database);
+    await database.execute("COMMIT;");
+    return result;
+  } catch (err) {
+    try {
+      await database.execute("ROLLBACK;");
+    } catch {
+      /* ignore rollback errors */
+    }
+    throw err;
   }
-  await database.execute(`
-    CREATE UNIQUE INDEX IF NOT EXISTS idx_local_journal_legacy_server
-      ON local_journal_entries_v1 (legacy_server_id)
-      WHERE legacy_server_id IS NOT NULL;
-  `);
-  await database.execute(`PRAGMA user_version = 2;`);
 }
 
 export async function openLocalJournalDatabase(): Promise<SQLiteDBConnection> {
@@ -119,13 +125,13 @@ export async function openLocalJournalDatabase(): Promise<SQLiteDBConnection> {
 
   const sqlite = getConnection();
   const consistency = await sqlite.checkConnectionsConsistency();
-  const isConn = (await sqlite.isConnection(LOCAL_JOURNAL_REPO_DB_NAME, false)).result;
+  const isConn = (await sqlite.isConnection(LOCAL_JOURNAL_DB_NAME, false)).result;
 
   if (consistency.result && isConn) {
-    db = await sqlite.retrieveConnection(LOCAL_JOURNAL_REPO_DB_NAME, false);
+    db = await sqlite.retrieveConnection(LOCAL_JOURNAL_DB_NAME, false);
   } else {
     db = await sqlite.createConnection(
-      LOCAL_JOURNAL_REPO_DB_NAME,
+      LOCAL_JOURNAL_DB_NAME,
       false,
       "no-encryption",
       LOCAL_JOURNAL_SCHEMA_USER_VERSION,
@@ -136,10 +142,8 @@ export async function openLocalJournalDatabase(): Promise<SQLiteDBConnection> {
   await db.open();
 
   const current = await readUserVersion(db);
-  if (current < 1) {
-    await migrateFresh(db);
-  } else if (current < 2) {
-    await migrateToV2(db);
+  if (current < LOCAL_JOURNAL_SCHEMA_USER_VERSION) {
+    await applyFoundationSchema(db);
   }
 
   return db;
@@ -148,6 +152,6 @@ export async function openLocalJournalDatabase(): Promise<SQLiteDBConnection> {
 export async function closeLocalJournalDatabase(): Promise<void> {
   if (!db) return;
   const sqlite = getConnection();
-  await sqlite.closeConnection(LOCAL_JOURNAL_REPO_DB_NAME, false);
+  await sqlite.closeConnection(LOCAL_JOURNAL_DB_NAME, false);
   db = null;
 }
