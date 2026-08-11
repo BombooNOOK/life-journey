@@ -21,6 +21,10 @@ import {
   runLocalDataProtectionPoc,
   type SecurityPocReport,
 } from "@/lib/local-first/security/runLocalDataProtectionPoc";
+import {
+  runKeyIntegrationPoc,
+  type KeyIntegrationReport,
+} from "@/lib/local-first/security/runKeyIntegrationPoc";
 
 export function LocalStorageDiagnosticsClient() {
   const [entryId, setEntryId] = useState("");
@@ -28,6 +32,7 @@ export function LocalStorageDiagnosticsClient() {
   const [entries, setEntries] = useState<LocalJournalEntry[]>([]);
   const [previewUri, setPreviewUri] = useState<string | null>(null);
   const [securityReport, setSecurityReport] = useState<SecurityPocReport | null>(null);
+  const [keyReport, setKeyReport] = useState<KeyIntegrationReport | null>(null);
   const [securityBusy, setSecurityBusy] = useState(false);
   const native = Capacitor.isNativePlatform();
 
@@ -81,6 +86,20 @@ export function LocalStorageDiagnosticsClient() {
       const fails = report.steps.filter((s) => s.status === "fail").length;
       setStatus(
         `Security PoC 完了 fail=${fails} sqlcipherOk=${String(report.summary.sqlcipherOk)} keyStoreOk=${String(report.summary.secureKeyStoreOk)} builtIn=${report.summary.builtInStoreVerdict}`,
+      );
+    } finally {
+      setSecurityBusy(false);
+    }
+  }, []);
+
+  const onKeyIntegration = useCallback(async () => {
+    setSecurityBusy(true);
+    setStatus("Key integration PoC…（secret非表示）");
+    try {
+      const report = await runKeyIntegrationPoc();
+      setKeyReport(report);
+      setStatus(
+        `Key integration 完了 accessibility=${report.accessibilityVerdict} builtInAdopt=${report.summary.builtInAdoptForDbKey} planA=${report.plans.planA_builtIn}`,
       );
     } finally {
       setSecurityBusy(false);
@@ -160,12 +179,25 @@ export function LocalStorageDiagnosticsClient() {
           </button>
           <button
             type="button"
+            disabled={securityBusy}
+            className="rounded-lg bg-teal-800 px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-60"
+            onClick={() => void onKeyIntegration().catch((e) => setStatus(String(e)))}
+          >
+            Run Key Integration PoC
+          </button>
+          <button
+            type="button"
             className="rounded-lg border border-stone-300 bg-white px-4 py-2.5 text-sm"
             onClick={() => void onKeyPersistence().catch((e) => setStatus(String(e)))}
           >
             Keychain persistence check
           </button>
         </div>
+        {keyReport ? (
+          <pre className="max-h-80 overflow-auto whitespace-pre-wrap text-xs leading-relaxed text-stone-700">
+            {JSON.stringify(keyReport, null, 2)}
+          </pre>
+        ) : null}
         {securityReport ? (
           <pre className="max-h-80 overflow-auto whitespace-pre-wrap text-xs leading-relaxed text-stone-700">
             {JSON.stringify(

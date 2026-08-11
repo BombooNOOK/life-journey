@@ -30,4 +30,7 @@ export class LjdLocalSecurityWeb extends WebPlugin {
     async deletePath() {
         throw this.unimplemented('Not implemented on web.');
     }
+    async inspectGenericPasswordAccessibility() {
+        throw this.unimplemented('Not implemented on web.');
+    }
 }

@@ -68,6 +68,22 @@ export interface CandidatePathsResult {
   mediaLibraryLjdSecurityPoc: string;
 }
 
+export interface InspectGenericPasswordAccessibilityOptions {
+  service: string;
+  account: string;
+}
+
+export interface InspectGenericPasswordAccessibilityResult {
+  found: boolean;
+  service: string;
+  account: string;
+  accessibility: string | null;
+  accessibilityRawPresent: boolean;
+  verdictHint: "A" | "B" | "C";
+  returnedSecretData?: boolean;
+  note?: string;
+}
+
 export interface LjdLocalSecurityPlugin {
   generateSecret(options?: GenerateSecretOptions): Promise<GenerateSecretResult>;
   setSecret(options: SetSecretOptions): Promise<SetSecretResult>;
@@ -79,4 +95,7 @@ export interface LjdLocalSecurityPlugin {
   resolveCandidatePaths(): Promise<CandidatePathsResult>;
   ensureProbeFile(options: PathOptions): Promise<PathAttributes>;
   deletePath(options: PathOptions): Promise<{ deleted: boolean; path: string }>;
+  inspectGenericPasswordAccessibility(
+    options: InspectGenericPasswordAccessibilityOptions,
+  ): Promise<InspectGenericPasswordAccessibilityResult>;
 }

@@ -24,6 +24,7 @@ public class LjdLocalSecurityPlugin: CAPPlugin, CAPBridgedPlugin {
         CAPPluginMethod(name: "resolveCandidatePaths", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "ensureProbeFile", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "deletePath", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "inspectGenericPasswordAccessibility", returnType: CAPPluginReturnPromise),
     ]
 
     private let keychainService = "app.bamboonook.ljd.securekeystore.poc"
@@ -269,6 +270,85 @@ public class LjdLocalSecurityPlugin: CAPPlugin, CAPBridgedPlugin {
         } catch {
             call.reject("deletePath failed: \(error.localizedDescription)")
         }
+    }
+
+    /**
+     * Development-only Keychain attribute probe.
+     * NEVER requests kSecReturnData — secret body is not retrieved.
+     */
+    @objc func inspectGenericPasswordAccessibility(_ call: CAPPluginCall) {
+        guard let service = call.getString("service"), !service.isEmpty else {
+            call.reject("service required")
+            return
+        }
+        guard let account = call.getString("account"), !account.isEmpty else {
+            call.reject("account required")
+            return
+        }
+
+        let query: [String: Any] = [
+            kSecClass as String: kSecClassGenericPassword,
+            kSecAttrService as String: service,
+            kSecAttrAccount as String: account,
+            kSecMatchLimit as String: kSecMatchLimitOne,
+            kSecReturnAttributes as String: true,
+            // Critical: do not return secret bytes
+            kSecReturnData as String: false,
+        ]
+
+        var item: CFTypeRef?
+        let status = SecItemCopyMatching(query as CFDictionary, &item)
+        if status == errSecItemNotFound {
+            call.resolve([
+                "found": false,
+                "service": service,
+                "account": account,
+                "accessibility": NSNull(),
+                "accessibilityRawPresent": false,
+                "verdictHint": "C",
+                "note": "item not found",
+            ])
+            return
+        }
+        guard status == errSecSuccess else {
+            call.reject("SecItemCopyMatching attrs failed: \(status)")
+            return
+        }
+        guard let attrs = item as? [String: Any] else {
+            call.resolve([
+                "found": true,
+                "service": service,
+                "account": account,
+                "accessibility": NSNull(),
+                "accessibilityRawPresent": false,
+                "verdictHint": "C",
+                "note": "attributes cast failed",
+            ])
+            return
+        }
+
+        let raw = attrs[kSecAttrAccessible as String]
+        let accessibility = accessibilityString(from: raw)
+        let present = raw != nil
+        var verdictHint = "C"
+        if accessibility == "kSecAttrAccessibleWhenUnlocked" {
+            verdictHint = "A"
+        } else if let accessibility, !accessibility.isEmpty {
+            verdictHint = "B"
+        } else if !present {
+            verdictHint = "C"
+        }
+
+        call.resolve([
+            "found": true,
+            "service": service,
+            "account": account,
+            "accessibility": accessibility as Any,
+            "accessibilityRawPresent": present,
+            "verdictHint": verdictHint,
+            "returnedSecretData": false,
+            "note": "kSecReturnData=false; secret body never read",
+        ])
     }
 
     // MARK: - Helpers

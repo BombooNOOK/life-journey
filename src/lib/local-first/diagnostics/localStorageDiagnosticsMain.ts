@@ -16,6 +16,10 @@ import {
   checkSecureKeyStorePersistence,
   runLocalDataProtectionPoc,
 } from "@/lib/local-first/security/runLocalDataProtectionPoc";
+import {
+  persistKeyIntegrationReport,
+  runKeyIntegrationPoc,
+} from "@/lib/local-first/security/runKeyIntegrationPoc";
 
 function $(id: string): HTMLElement {
   const el = document.getElementById(id);
@@ -141,64 +145,30 @@ async function boot(): Promise<void> {
     })().catch((e) => setStatus(String(e), true));
   });
 
+  $("btn-key-integration").addEventListener("click", () => {
+    void (async () => {
+      setStatus("Key integration PoC…（secret非表示・非取得）");
+      const report = await runKeyIntegrationPoc();
+      await persistKeyIntegrationReport(report);
+      $("security-report").textContent = JSON.stringify(report, null, 2);
+      setStatus(
+        `Key integration 完了 accessibility=${report.accessibilityVerdict} builtInAdopt=${report.summary.builtInAdoptForDbKey} fork=${String(report.summary.forkNeeded)}`,
+      );
+    })().catch((e) => setStatus(String(e), true));
+  });
+
   try {
     await openLocalJournalDatabase();
     await renderEntries();
     setStatus("Diagnostics準備完了（SQLite foundation）。");
 
     if (Capacitor.isNativePlatform()) {
-      // K4 probe: measure persistence from prior session BEFORE this run deletes/reseeds.
-      let k4Detail = "no prior item (first launch after install)";
-      try {
-        const prior = await checkSecureKeyStorePersistence();
-        k4Detail = `priorExists=${String(prior.exists)} accessibility=${prior.accessibility ?? "null"}`;
-        await Filesystem.mkdir({
-          path: "ljd/security-poc",
-          directory: Directory.Library,
-          recursive: true,
-        }).catch(() => undefined);
-        await Filesystem.writeFile({
-          path: "ljd/security-poc/k4-persistence.json",
-          directory: Directory.Library,
-          encoding: Encoding.UTF8,
-          data: JSON.stringify(
-            {
-              at: new Date().toISOString(),
-              exists: prior.exists,
-              accessibility: prior.accessibility,
-            },
-            null,
-            2,
-          ),
-        });
-      } catch (e) {
-        k4Detail = `probe error: ${String(e)}`;
-      }
-
-      setStatus("Security PoC autorun…");
-      const report = await runLocalDataProtectionPoc();
-      report.steps = report.steps.map((s) =>
-        s.id === "K4"
-          ? {
-              ...s,
-              status: k4Detail.includes("priorExists=true") ? "pass" : "info",
-              detail: `${s.detail} | measuredOnBoot: ${k4Detail}`,
-            }
-          : s,
-      );
-      await persistSecurityReport(report);
-      $("security-report").textContent = JSON.stringify(
-        {
-          ranAt: report.ranAt,
-          summary: report.summary,
-          steps: report.steps,
-        },
-        null,
-        2,
-      );
-      const fails = report.steps.filter((s) => s.status === "fail").length;
+      setStatus("Key integration PoC autorun…");
+      const report = await runKeyIntegrationPoc();
+      await persistKeyIntegrationReport(report);
+      $("security-report").textContent = JSON.stringify(report, null, 2);
       setStatus(
-        `Security PoC autorun 完了 fail=${fails} sqlcipherOk=${String(report.summary.sqlcipherOk)} keyStoreOk=${String(report.summary.secureKeyStoreOk)} k4=${k4Detail}`,
+        `Key integration autorun OK accessibility=${report.accessibilityVerdict} planA=${report.plans.planA_builtIn} documentsCandidate=${report.summary.documentsDbLocationCandidate}`,
       );
     }
   } catch (err) {

@@ -1634,6 +1634,9 @@
         async deletePath() {
           throw this.unimplemented("Not implemented on web.");
         }
+        async inspectGenericPasswordAccessibility() {
+          throw this.unimplemented("Not implemented on web.");
+        }
       };
     }
   });
@@ -3393,6 +3396,258 @@ CREATE INDEX IF NOT EXISTS idx_local_media_journal
     return { exists: meta.exists, accessibility: meta.accessibility };
   }
 
+  // src/lib/local-first/security/runKeyIntegrationPoc.ts
+  init_dist();
+  var KEY_INTEGRATION_POC_DB = "ljd_key_integration_poc";
+  var SQLITE_PLUGIN_KEYCHAIN = {
+    service: "unlockSecret",
+    accountWithPrefix: "ljd_CapacitorSQLitePlugin",
+    accountLegacyNoPrefix: "CapacitorSQLitePlugin",
+    iosKeychainPrefix: "ljd"
+  };
+  function assertNative4() {
+    if (!Capacitor.isNativePlatform()) {
+      throw new Error("Key integration PoC is native-only.");
+    }
+  }
+  function errMsg2(e) {
+    return e instanceof Error ? e.message : String(e);
+  }
+  function randomPassphrase2(bytes = 24) {
+    const arr = new Uint8Array(bytes);
+    crypto.getRandomValues(arr);
+    let out = "";
+    for (const b of arr) out += b.toString(16).padStart(2, "0");
+    return out;
+  }
+  async function closeIfOpen2(sqlite, name) {
+    try {
+      await sqlite.checkConnectionsConsistency();
+    } catch {
+    }
+    try {
+      const isConn = (await sqlite.isConnection(name, false)).result;
+      if (isConn) await sqlite.closeConnection(name, false);
+    } catch {
+      try {
+        await CapacitorSQLite.closeConnection({ database: name, readonly: false });
+      } catch {
+      }
+    }
+  }
+  async function runKeyIntegrationPoc() {
+    assertNative4();
+    const steps = [];
+    const push = (id, title, status, detail) => {
+      steps.push({ id, title, status, detail });
+    };
+    push(
+      "path-source",
+      "SQLCipher secret path (installed source)",
+      "info",
+      [
+        `service=${SQLITE_PLUGIN_KEYCHAIN.service}`,
+        `account=${SQLITE_PLUGIN_KEYCHAIN.accountWithPrefix}`,
+        "Database.open \u2190 UtilsSecret.getPassphrase(account) when encrypted && mode\u2208{secret,encryption,decryption}",
+        "createConnection: no passphrase field in TS/API",
+        "write path: setEncryptionSecret({passphrase}) \u2192 KeychainWrapper service unlockSecret"
+      ].join(" | ")
+    );
+    const sqlite = new SQLiteConnection(CapacitorSQLite);
+    let accessibilityVerdict = "C";
+    let builtInOpensDb = false;
+    let planBOpensDb = false;
+    try {
+      try {
+        await CapacitorSQLite.clearEncryptionSecret();
+      } catch {
+      }
+      await closeIfOpen2(sqlite, KEY_INTEGRATION_POC_DB);
+      const paths = await LjdLocalSecurity.resolveCandidatePaths();
+      await LjdLocalSecurity.deletePath({
+        path: `${paths.candidateA_libraryCapacitorDatabase}/${KEY_INTEGRATION_POC_DB}SQLite.db`
+      });
+      const passphraseA = randomPassphrase2();
+      await CapacitorSQLite.setEncryptionSecret({ passphrase: passphraseA });
+      void passphraseA;
+      const attrs = await LjdLocalSecurity.inspectGenericPasswordAccessibility({
+        service: SQLITE_PLUGIN_KEYCHAIN.service,
+        account: SQLITE_PLUGIN_KEYCHAIN.accountWithPrefix
+      });
+      accessibilityVerdict = attrs.verdictHint;
+      push(
+        "built-in-accessibility",
+        "plugin Keychain accessibility (no secret read)",
+        attrs.found ? "pass" : "fail",
+        `found=${String(attrs.found)} accessibility=${attrs.accessibility ?? "null"} rawPresent=${String(attrs.accessibilityRawPresent)} verdictHint=${attrs.verdictHint} returnedSecretData=${String(attrs.returnedSecretData ?? false)} note=${attrs.note ?? ""}`
+      );
+      const legacy = await LjdLocalSecurity.inspectGenericPasswordAccessibility({
+        service: SQLITE_PLUGIN_KEYCHAIN.service,
+        account: SQLITE_PLUGIN_KEYCHAIN.accountLegacyNoPrefix
+      });
+      push(
+        "built-in-legacy-account",
+        "legacy account without prefix",
+        "info",
+        `found=${String(legacy.found)} accessibility=${legacy.accessibility ?? "null"}`
+      );
+      {
+        const db2 = await sqlite.createConnection(
+          KEY_INTEGRATION_POC_DB,
+          true,
+          "secret",
+          1,
+          false
+        );
+        await db2.open();
+        await db2.execute(`
+        CREATE TABLE IF NOT EXISTS k_rows (id INTEGER PRIMARY KEY NOT NULL, body TEXT NOT NULL);
+        DELETE FROM k_rows;
+        INSERT INTO k_rows (id, body) VALUES (1, 'key-integration dummy');
+      `);
+        const q = await db2.query("SELECT body FROM k_rows LIMIT 1;");
+        const body = String(
+          q.values?.[0]?.body ?? ""
+        );
+        await sqlite.closeConnection(KEY_INTEGRATION_POC_DB, false);
+        builtInOpensDb = body === "key-integration dummy";
+        push(
+          "planA-open",
+          "SQLCipher open using plugin built-in Keychain secret",
+          builtInOpensDb ? "pass" : "fail",
+          `openedViaPluginKeychain=${String(builtInOpensDb)} (secret never reported)`
+        );
+      }
+      try {
+        await CapacitorSQLite.clearEncryptionSecret();
+      } catch {
+      }
+      await closeIfOpen2(sqlite, KEY_INTEGRATION_POC_DB);
+      await LjdLocalSecurity.deletePath({
+        path: `${paths.candidateA_libraryCapacitorDatabase}/${KEY_INTEGRATION_POC_DB}SQLite.db`
+      });
+      const gen = await SecureKeyStore.generateRandomSecret(32);
+      await SecureKeyStore.set(SecureKeyStore.POC_ACCOUNT, gen.secret);
+      await CapacitorSQLite.setEncryptionSecret({ passphrase: gen.secret });
+      gen.secret = void 0;
+      const afterB = await LjdLocalSecurity.inspectGenericPasswordAccessibility({
+        service: SQLITE_PLUGIN_KEYCHAIN.service,
+        account: SQLITE_PLUGIN_KEYCHAIN.accountWithPrefix
+      });
+      push(
+        "planB-plugin-item",
+        "after LJD\u2192setEncryptionSecret plugin item attrs",
+        afterB.found ? "pass" : "fail",
+        `found=${String(afterB.found)} accessibility=${afterB.accessibility ?? "null"} verdictHint=${afterB.verdictHint}`
+      );
+      {
+        const db2 = await sqlite.createConnection(
+          KEY_INTEGRATION_POC_DB,
+          true,
+          "secret",
+          1,
+          false
+        );
+        await db2.open();
+        await db2.execute(`
+        CREATE TABLE IF NOT EXISTS k_rows (id INTEGER PRIMARY KEY NOT NULL, body TEXT NOT NULL);
+        DELETE FROM k_rows;
+        INSERT INTO k_rows (id, body) VALUES (1, 'plan-b dummy');
+      `);
+        const q = await db2.query("SELECT body FROM k_rows LIMIT 1;");
+        const body = String(
+          q.values?.[0]?.body ?? ""
+        );
+        await sqlite.closeConnection(KEY_INTEGRATION_POC_DB, false);
+        planBOpensDb = body === "plan-b dummy";
+        push(
+          "planB-open",
+          "SQLCipher open after LJD\u2192plugin handoff",
+          planBOpensDb ? "pass" : "fail",
+          `opened=${String(planBOpensDb)} note=plugin opens via its own Keychain copy; LJD item is not read by community plugin`
+        );
+      }
+      push(
+        "planB-analysis",
+        "Plan B feasibility without fork",
+        "info",
+        "JS handoff required (setEncryptionSecret). createConnection cannot take passphrase. Dual Keychain if LJD also stores copy. Plugin always reads unlockSecret item \u2014 not LJD service."
+      );
+      push(
+        "planC",
+        "fork/patch necessity",
+        "info",
+        accessibilityVerdict === "A" && builtInOpensDb ? "not_needed for DB-open path if Plan A adopted; fork only if requiring LJD Keychain as sole storage without JS handoff" : "evaluate minimal native hook only if WhenUnlocked not confirmed or product requires sole LJD Keychain without bridge handoff"
+      );
+    } catch (e) {
+      push("error", "key integration suite", "fail", errMsg2(e));
+    }
+    try {
+      await CapacitorSQLite.clearEncryptionSecret();
+    } catch {
+    }
+    try {
+      await SecureKeyStore.delete(SecureKeyStore.POC_ACCOUNT);
+    } catch {
+    }
+    try {
+      const paths = await LjdLocalSecurity.resolveCandidatePaths();
+      await closeIfOpen2(sqlite, KEY_INTEGRATION_POC_DB);
+      await LjdLocalSecurity.deletePath({
+        path: `${paths.candidateA_libraryCapacitorDatabase}/${KEY_INTEGRATION_POC_DB}SQLite.db`
+      });
+    } catch {
+    }
+    push("cleanup", "clear plugin + LJD PoC secrets / delete dummy DB", "info", "done");
+    const planA = accessibilityVerdict === "A" && builtInOpensDb ? "recommended" : accessibilityVerdict === "A" ? "viable" : "reject";
+    const planB = planBOpensDb ? "viable_with_js_handoff" : "reject_no_api";
+    const planC = planA === "recommended" || planA === "viable" ? "not_needed" : "needed";
+    const builtInAdopt = accessibilityVerdict === "A" && builtInOpensDb ? "A" : "B";
+    const report = {
+      ranAt: (/* @__PURE__ */ new Date()).toISOString(),
+      platform: Capacitor.getPlatform(),
+      pathFacts: {
+        keychainService: SQLITE_PLUGIN_KEYCHAIN.service,
+        keychainAccount: SQLITE_PLUGIN_KEYCHAIN.accountWithPrefix,
+        jsDirectPassphraseToCreateConnection: false,
+        openUsesUtilsSecretGetPassphrase: true
+      },
+      plans: {
+        planA_builtIn: planA,
+        planB_ljdToPlugin: planB,
+        planC_fork: planC
+      },
+      accessibilityVerdict,
+      summary: {
+        actualSqlCipherSecretStore: `Keychain generic password service=${SQLITE_PLUGIN_KEYCHAIN.service} account=${SQLITE_PLUGIN_KEYCHAIN.accountWithPrefix} (plugin built-in)`,
+        builtInAdoptForDbKey: builtInAdopt,
+        ljdSecureKeyStoreNeededForDbOpen: builtInAdopt !== "A",
+        forkNeeded: planC === "needed",
+        recommendedArchitecture: builtInAdopt === "A" ? "Plan A: SQLCipher via plugin setEncryptionSecret/built-in Keychain (WhenUnlocked measured). Keep LJD SecureKeyStore for non-plugin secrets / future Android, not as SQLCipher open path. Avoid JS dual-store unless required." : "Plan C or constrained Plan B: built-in accessibility not A; do not treat plugin store as formal. Prefer minimal native supply path over dual Keychain+JS handoff.",
+        documentsDbLocationCandidate: "A",
+        readyForDeviceBackupRestore: builtInAdopt === "A" ? "A" : "B"
+      },
+      steps
+    };
+    return report;
+  }
+  async function persistKeyIntegrationReport(report) {
+    try {
+      await Filesystem.mkdir({
+        path: "ljd/security-poc",
+        directory: Directory.Library,
+        recursive: true
+      });
+    } catch {
+    }
+    await Filesystem.writeFile({
+      path: "ljd/security-poc/key-integration-report.json",
+      directory: Directory.Library,
+      encoding: Encoding.UTF8,
+      data: JSON.stringify(report, null, 2)
+    });
+  }
+
   // src/lib/local-first/diagnostics/localStorageDiagnosticsMain.ts
   function $(id) {
     const el = document.getElementById(id);
@@ -3501,59 +3756,28 @@ CREATE INDEX IF NOT EXISTS idx_local_media_journal
         );
       })().catch((e) => setStatus(String(e), true));
     });
+    $("btn-key-integration").addEventListener("click", () => {
+      void (async () => {
+        setStatus("Key integration PoC\u2026\uFF08secret\u975E\u8868\u793A\u30FB\u975E\u53D6\u5F97\uFF09");
+        const report = await runKeyIntegrationPoc();
+        await persistKeyIntegrationReport(report);
+        $("security-report").textContent = JSON.stringify(report, null, 2);
+        setStatus(
+          `Key integration \u5B8C\u4E86 accessibility=${report.accessibilityVerdict} builtInAdopt=${report.summary.builtInAdoptForDbKey} fork=${String(report.summary.forkNeeded)}`
+        );
+      })().catch((e) => setStatus(String(e), true));
+    });
     try {
       await openLocalJournalDatabase();
       await renderEntries();
       setStatus("Diagnostics\u6E96\u5099\u5B8C\u4E86\uFF08SQLite foundation\uFF09\u3002");
       if (Capacitor.isNativePlatform()) {
-        let k4Detail = "no prior item (first launch after install)";
-        try {
-          const prior = await checkSecureKeyStorePersistence();
-          k4Detail = `priorExists=${String(prior.exists)} accessibility=${prior.accessibility ?? "null"}`;
-          await Filesystem.mkdir({
-            path: "ljd/security-poc",
-            directory: Directory.Library,
-            recursive: true
-          }).catch(() => void 0);
-          await Filesystem.writeFile({
-            path: "ljd/security-poc/k4-persistence.json",
-            directory: Directory.Library,
-            encoding: Encoding.UTF8,
-            data: JSON.stringify(
-              {
-                at: (/* @__PURE__ */ new Date()).toISOString(),
-                exists: prior.exists,
-                accessibility: prior.accessibility
-              },
-              null,
-              2
-            )
-          });
-        } catch (e) {
-          k4Detail = `probe error: ${String(e)}`;
-        }
-        setStatus("Security PoC autorun\u2026");
-        const report = await runLocalDataProtectionPoc();
-        report.steps = report.steps.map(
-          (s2) => s2.id === "K4" ? {
-            ...s2,
-            status: k4Detail.includes("priorExists=true") ? "pass" : "info",
-            detail: `${s2.detail} | measuredOnBoot: ${k4Detail}`
-          } : s2
-        );
-        await persistSecurityReport(report);
-        $("security-report").textContent = JSON.stringify(
-          {
-            ranAt: report.ranAt,
-            summary: report.summary,
-            steps: report.steps
-          },
-          null,
-          2
-        );
-        const fails = report.steps.filter((s2) => s2.status === "fail").length;
+        setStatus("Key integration PoC autorun\u2026");
+        const report = await runKeyIntegrationPoc();
+        await persistKeyIntegrationReport(report);
+        $("security-report").textContent = JSON.stringify(report, null, 2);
         setStatus(
-          `Security PoC autorun \u5B8C\u4E86 fail=${fails} sqlcipherOk=${String(report.summary.sqlcipherOk)} keyStoreOk=${String(report.summary.secureKeyStoreOk)} k4=${k4Detail}`
+          `Key integration autorun OK accessibility=${report.accessibilityVerdict} planA=${report.plans.planA_builtIn} documentsCandidate=${report.summary.documentsDbLocationCandidate}`
         );
       }
     } catch (err) {
