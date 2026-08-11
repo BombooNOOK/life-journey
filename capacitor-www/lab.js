@@ -4301,6 +4301,98 @@ CREATE INDEX IF NOT EXISTS idx_local_media_journal
     });
   }
 
+  // src/lib/local-first/security/runGroupAPersistenceCheck.ts
+  init_dist();
+  async function runGroupAPersistenceCheck() {
+    if (!Capacitor.isNativePlatform()) {
+      throw new Error("persistence check is native-only");
+    }
+    const steps = [];
+    const push = (id, status, detail) => steps.push({ id, status, detail });
+    const sqlite = new SQLiteConnection(CapacitorSQLite);
+    let keychainExists = false;
+    let keychainWhenUnlocked = null;
+    let encryptedReopenOk = false;
+    let mediaReadOk = false;
+    try {
+      const kc = await LjdLocalSecurity.inspectGenericPasswordAccessibility({
+        service: "unlockSecret",
+        account: "ljd_CapacitorSQLitePlugin"
+      });
+      keychainExists = kc.found;
+      keychainWhenUnlocked = kc.found && kc.accessibility === "kSecAttrAccessibleWhenUnlocked";
+      push(
+        "kc",
+        keychainWhenUnlocked ? "pass" : "fail",
+        `found=${String(kc.found)} accessibility=${kc.accessibility ?? "null"} secretRead=false`
+      );
+      try {
+        const consistency = await sqlite.checkConnectionsConsistency();
+        void consistency;
+        const isConn = (await sqlite.isConnection(REAL_DEVICE_GROUP_A_DB, false)).result;
+        if (isConn) await sqlite.closeConnection(REAL_DEVICE_GROUP_A_DB, false);
+      } catch {
+      }
+      const db2 = await sqlite.createConnection(
+        REAL_DEVICE_GROUP_A_DB,
+        true,
+        "secret",
+        1,
+        false
+      );
+      await db2.open();
+      const q = await db2.query("SELECT body FROM g_rows LIMIT 1;");
+      const body = String(
+        q.values?.[0]?.body ?? ""
+      );
+      await sqlite.closeConnection(REAL_DEVICE_GROUP_A_DB, false);
+      encryptedReopenOk = body === REAL_DEVICE_GROUP_A_TEXT;
+      push(
+        "db-reopen",
+        encryptedReopenOk ? "pass" : "fail",
+        `contentMatch=${String(encryptedReopenOk)} (same dummy DB; no wipe)`
+      );
+    } catch (e) {
+      push("db-reopen", "fail", e instanceof Error ? e.message : String(e));
+    }
+    try {
+      const mediaRel = `${REAL_DEVICE_GROUP_A_MEDIA}/dummy.png`;
+      const readBack = await Filesystem.readFile({
+        path: mediaRel,
+        directory: Directory.Library
+      });
+      mediaReadOk = typeof readBack.data === "string" && readBack.data.length > 0;
+      push("media", mediaReadOk ? "pass" : "fail", `readOk=${String(mediaReadOk)}`);
+    } catch (e) {
+      push("media", "fail", e instanceof Error ? e.message : String(e));
+    }
+    return {
+      ranAt: (/* @__PURE__ */ new Date()).toISOString(),
+      platform: Capacitor.getPlatform(),
+      secretDisplayed: false,
+      steps,
+      summary: {
+        keychainExists,
+        keychainWhenUnlocked,
+        encryptedReopenOk,
+        mediaReadOk
+      }
+    };
+  }
+  async function persistGroupAPersistenceReport(report) {
+    await Filesystem.mkdir({
+      path: "ljd/security-poc",
+      directory: Directory.Library,
+      recursive: true
+    }).catch(() => void 0);
+    await Filesystem.writeFile({
+      path: "ljd/security-poc/real-device-group-a-persistence.json",
+      directory: Directory.Library,
+      encoding: Encoding.UTF8,
+      data: JSON.stringify(report, null, 2)
+    });
+  }
+
   // src/lib/local-first/diagnostics/localStorageDiagnosticsMain.ts
   function $(id) {
     const el = document.getElementById(id);
@@ -4445,10 +4537,27 @@ CREATE INDEX IF NOT EXISTS idx_local_media_journal
     try {
       $("platform").textContent = `platform=${Capacitor.getPlatform()} native=${String(
         Capacitor.isNativePlatform()
-      )} phase=4B-3D GroupA-ready autorun=off`;
-      setStatus(
-        "\u6E96\u5099\u5B8C\u4E86\u3002\u4F1A\u793E\u7528\u5B9F\u6A5F\u3067\u306F Group A \u30DC\u30BF\u30F3\u306E\u307F\u3002\u500B\u4EBA\u7AEF\u672B\u30FBerase/restore/uninstall/\u7AEF\u672B\u30AF\u30EA\u30A2\u306F\u7981\u6B62\u3002"
-      );
+      )} phase=4B-3D GroupA persistence-first`;
+      if (Capacitor.isNativePlatform()) {
+        setStatus("Group A persistence check\uFF08wipe\u306A\u3057\uFF09\u2026");
+        try {
+          const persist = await runGroupAPersistenceCheck();
+          await persistGroupAPersistenceReport(persist);
+          $("security-report").textContent = JSON.stringify(persist, null, 2);
+          setStatus(
+            `Persistence: kc=${String(persist.summary.keychainExists)} reopen=${String(persist.summary.encryptedReopenOk)} media=${String(persist.summary.mediaReadOk)} \u2014 \u521D\u56DE\u4F5C\u6210\u306F\u300CRun Group A\u300D\u30DC\u30BF\u30F3`
+          );
+        } catch (e) {
+          setStatus(
+            `Persistence\u672A\u6E96\u5099\uFF08\u5148\u306B Run Group A\uFF09: ${String(e)}`,
+            true
+          );
+        }
+      } else {
+        setStatus(
+          "\u6E96\u5099\u5B8C\u4E86\u3002\u4F1A\u793E\u7528\u5B9F\u6A5F\u3067\u306F Group A\u3002\u500B\u4EBA\u7AEF\u672B\u30FBerase/restore/uninstall/\u7AEF\u672B\u30AF\u30EA\u30A2\u306F\u7981\u6B62\u3002"
+        );
+      }
     } catch (err) {
       setStatus(`\u521D\u671F\u5316\u5931\u6557: ${String(err)}`, true);
     }

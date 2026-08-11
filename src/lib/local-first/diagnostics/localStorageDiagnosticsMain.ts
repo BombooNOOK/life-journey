@@ -28,6 +28,10 @@ import {
   persistGroupAReport,
   runRealDeviceGroupAPoc,
 } from "@/lib/local-first/security/runRealDeviceGroupAPoc";
+import {
+  persistGroupAPersistenceReport,
+  runGroupAPersistenceCheck,
+} from "@/lib/local-first/security/runGroupAPersistenceCheck";
 
 function $(id: string): HTMLElement {
   const el = document.getElementById(id);
@@ -190,13 +194,31 @@ async function boot(): Promise<void> {
   });
 
   try {
-    // No autorun of destructive or journal ops. Wait for explicit buttons.
+    // Prefer non-destructive persistence check when dummy already exists.
+    // Full Group A suite is button-only (avoids wiping secret/DB on every launch).
     $("platform").textContent = `platform=${Capacitor.getPlatform()} native=${String(
       Capacitor.isNativePlatform(),
-    )} phase=4B-3D GroupA-ready autorun=off`;
-    setStatus(
-      "準備完了。会社用実機では Group A ボタンのみ。個人端末・erase/restore/uninstall/端末クリアは禁止。",
-    );
+    )} phase=4B-3D GroupA persistence-first`;
+    if (Capacitor.isNativePlatform()) {
+      setStatus("Group A persistence check（wipeなし）…");
+      try {
+        const persist = await runGroupAPersistenceCheck();
+        await persistGroupAPersistenceReport(persist);
+        $("security-report").textContent = JSON.stringify(persist, null, 2);
+        setStatus(
+          `Persistence: kc=${String(persist.summary.keychainExists)} reopen=${String(persist.summary.encryptedReopenOk)} media=${String(persist.summary.mediaReadOk)} — 初回作成は「Run Group A」ボタン`,
+        );
+      } catch (e) {
+        setStatus(
+          `Persistence未準備（先に Run Group A）: ${String(e)}`,
+          true,
+        );
+      }
+    } else {
+      setStatus(
+        "準備完了。会社用実機では Group A。個人端末・erase/restore/uninstall/端末クリアは禁止。",
+      );
+    }
   } catch (err) {
     setStatus(`初期化失敗: ${String(err)}`, true);
   }
