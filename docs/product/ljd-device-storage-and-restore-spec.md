@@ -391,5 +391,6 @@ Web案内例（穏やか・実装は後日）:
 
 ## 21. 関連
 
-- 矛盾時優先: 世界観 → Local-first → 小包仕様 → **本端末保存・復元仕様** → 用語 → どんぐり → コードコメント  
+- 矛盾時優先: 世界観 → Local-first → 小包仕様 → **本端末保存・復元仕様** → Localデータ保護（`ljd-local-data-security-spec.md`） → 用語 → どんぐり → コードコメント  
 - Phase2小包の staging / guided merge / 暗号複合方針と整合  
+- Local-first foundation 実証メモ: `docs/hybrid/HYBRID_PHASE_4B2D_LOCAL_FIRST_FOUNDATION.md`
