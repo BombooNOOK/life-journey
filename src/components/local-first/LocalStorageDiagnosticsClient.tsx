@@ -16,12 +16,19 @@ import {
 import { migrateServerJournalEntryToDevice } from "@/lib/local-first/journal/migrateFromServer";
 import { JournalRepository } from "@/lib/local-first/journal/repository";
 import type { LocalJournalEntry } from "@/lib/local-first/journal/types";
+import {
+  checkSecureKeyStorePersistence,
+  runLocalDataProtectionPoc,
+  type SecurityPocReport,
+} from "@/lib/local-first/security/runLocalDataProtectionPoc";
 
 export function LocalStorageDiagnosticsClient() {
   const [entryId, setEntryId] = useState("");
   const [status, setStatus] = useState("準備中…");
   const [entries, setEntries] = useState<LocalJournalEntry[]>([]);
   const [previewUri, setPreviewUri] = useState<string | null>(null);
+  const [securityReport, setSecurityReport] = useState<SecurityPocReport | null>(null);
+  const [securityBusy, setSecurityBusy] = useState(false);
   const native = Capacitor.isNativePlatform();
 
   const refresh = useCallback(async () => {
@@ -63,6 +70,28 @@ export function LocalStorageDiagnosticsClient() {
     setPreviewUri(null);
     setEntries([]);
     setStatus("端末Local診断データを削除しました（サーバー未変更）。");
+  }, []);
+
+  const onSecurityPoc = useCallback(async () => {
+    setSecurityBusy(true);
+    setStatus("Security PoC 実行中…（secretは表示しません）");
+    try {
+      const report = await runLocalDataProtectionPoc();
+      setSecurityReport(report);
+      const fails = report.steps.filter((s) => s.status === "fail").length;
+      setStatus(
+        `Security PoC 完了 fail=${fails} sqlcipherOk=${String(report.summary.sqlcipherOk)} keyStoreOk=${String(report.summary.secureKeyStoreOk)} builtIn=${report.summary.builtInStoreVerdict}`,
+      );
+    } finally {
+      setSecurityBusy(false);
+    }
+  }, []);
+
+  const onKeyPersistence = useCallback(async () => {
+    const meta = await checkSecureKeyStorePersistence();
+    setStatus(
+      `SecureKeyStore after relaunch: exists=${String(meta.exists)} accessibility=${meta.accessibility ?? "null"}`,
+    );
   }, []);
 
   if (!native) {
@@ -114,6 +143,48 @@ export function LocalStorageDiagnosticsClient() {
       <pre className="whitespace-pre-wrap rounded-xl border border-stone-200 bg-white p-3 text-xs leading-relaxed text-stone-700">
         {status}
       </pre>
+
+      <section className="space-y-2 rounded-xl border border-stone-200 bg-white p-4">
+        <h2 className="text-sm font-semibold">Security diagnostics（4B-3B · dummy only）</h2>
+        <p className="text-xs text-stone-500">
+          SQLCipher / SecureKeyStore / backup・file protection 実測。secret全文は表示しません。本番DBは暗号化しません。
+        </p>
+        <div className="flex flex-col gap-2 sm:flex-row">
+          <button
+            type="button"
+            disabled={securityBusy}
+            className="rounded-lg bg-emerald-800 px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-60"
+            onClick={() => void onSecurityPoc().catch((e) => setStatus(String(e)))}
+          >
+            {securityBusy ? "実行中…" : "Run Local Data Protection PoC"}
+          </button>
+          <button
+            type="button"
+            className="rounded-lg border border-stone-300 bg-white px-4 py-2.5 text-sm"
+            onClick={() => void onKeyPersistence().catch((e) => setStatus(String(e)))}
+          >
+            Keychain persistence check
+          </button>
+        </div>
+        {securityReport ? (
+          <pre className="max-h-80 overflow-auto whitespace-pre-wrap text-xs leading-relaxed text-stone-700">
+            {JSON.stringify(
+              {
+                ranAt: securityReport.ranAt,
+                summary: securityReport.summary,
+                steps: securityReport.steps.map((s) => ({
+                  id: s.id,
+                  status: s.status,
+                  title: s.title,
+                  detail: s.detail,
+                })),
+              },
+              null,
+              2,
+            )}
+          </pre>
+        ) : null}
+      </section>
 
       <div className="space-y-3">
         {entries.map((entry) => (

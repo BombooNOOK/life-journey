@@ -1,0 +1,22 @@
+{
+  "name": "ljd-local-security",
+  "version": "0.0.1",
+  "private": true,
+  "description": "LJD SecureKeyStore + file attribute inspection PoC (Capacitor)",
+  "main": "dist/plugin.cjs.js",
+  "module": "dist/esm/index.js",
+  "types": "dist/esm/index.d.ts",
+  "files": [
+    "dist/",
+    "ios/Sources",
+    "Package.swift"
+  ],
+  "capacitor": {
+    "ios": {
+      "src": "ios"
+    }
+  },
+  "peerDependencies": {
+    "@capacitor/core": ">=8.0.0"
+  }
+}

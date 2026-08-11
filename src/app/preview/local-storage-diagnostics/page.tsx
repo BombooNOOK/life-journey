@@ -20,7 +20,7 @@ export default function LocalStorageDiagnosticsPage() {
         </p>
         <h1 className="text-xl font-semibold">開発者用 Local Storage Diagnostics</h1>
         <p className="text-sm leading-relaxed text-stone-600">
-          SQLite / Filesystem / 1件コピーヘルパーの確認用です。一般メニューには置かず、個人データの閲覧を前提にしません。
+          SQLite / Filesystem / 1件コピー / Security PoC（dummy）の確認用です。一般メニューには置かず、個人データの閲覧を前提にしません。secret全文は表示しません。
         </p>
         <Suspense fallback={<p className="text-sm text-stone-500">読み込み中…</p>}>
           <LocalStorageDiagnosticsClient />

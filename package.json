@@ -77,6 +77,7 @@
     "fflate": "^0.8.3",
     "firebase": "^11.10.0",
     "firebase-admin": "^13.10.0",
+    "ljd-local-security": "file:plugins/ljd-local-security",
     "mediabunny": "^1.52.2",
     "next": "^15.2.0",
     "pdf-lib": "^1.17.1",

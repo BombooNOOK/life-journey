@@ -63,8 +63,14 @@
       <div class="actions">
         <button type="button" id="btn-load">端末から読む</button>
         <button type="button" id="btn-clear">端末Localをクリア</button>
+        <button type="button" id="btn-security">Run Security PoC (dummy)</button>
+        <button type="button" id="btn-key-persist">Keychain persistence check</button>
       </div>
       <p id="status" class="status">起動中…</p>
+      <section>
+        <h2 style="font-size: 0.95rem; font-family: system-ui, sans-serif">Security report</h2>
+        <pre id="security-report" class="status" style="max-height: 18rem; overflow: auto">未実行</pre>
+      </section>
       <section>
         <h2 style="font-size: 0.95rem; font-family: system-ui, sans-serif">読込結果</h2>
         <div id="list"></div>

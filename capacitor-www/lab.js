@@ -519,484 +519,6 @@
     }
   });
 
-  // node_modules/@capacitor-community/sqlite/dist/esm/web.js
-  var web_exports = {};
-  __export(web_exports, {
-    CapacitorSQLiteWeb: () => CapacitorSQLiteWeb
-  });
-  var CapacitorSQLiteWeb;
-  var init_web = __esm({
-    "node_modules/@capacitor-community/sqlite/dist/esm/web.js"() {
-      init_dist();
-      CapacitorSQLiteWeb = class extends WebPlugin {
-        constructor() {
-          super(...arguments);
-          this.jeepSqliteElement = null;
-          this.isWebStoreOpen = false;
-        }
-        async initWebStore() {
-          await customElements.whenDefined("jeep-sqlite");
-          this.jeepSqliteElement = document.querySelector("jeep-sqlite");
-          this.ensureJeepSqliteIsAvailable();
-          this.jeepSqliteElement.addEventListener("jeepSqliteImportProgress", (event) => {
-            this.notifyListeners("sqliteImportProgressEvent", event.detail);
-          });
-          this.jeepSqliteElement.addEventListener("jeepSqliteExportProgress", (event) => {
-            this.notifyListeners("sqliteExportProgressEvent", event.detail);
-          });
-          this.jeepSqliteElement.addEventListener("jeepSqliteHTTPRequestEnded", (event) => {
-            this.notifyListeners("sqliteHTTPRequestEndedEvent", event.detail);
-          });
-          this.jeepSqliteElement.addEventListener("jeepSqlitePickDatabaseEnded", (event) => {
-            this.notifyListeners("sqlitePickDatabaseEndedEvent", event.detail);
-          });
-          this.jeepSqliteElement.addEventListener("jeepSqliteSaveDatabaseToDisk", (event) => {
-            this.notifyListeners("sqliteSaveDatabaseToDiskEvent", event.detail);
-          });
-          if (!this.isWebStoreOpen) {
-            this.isWebStoreOpen = await this.jeepSqliteElement.isStoreOpen();
-          }
-          return;
-        }
-        async saveToStore(options) {
-          this.ensureJeepSqliteIsAvailable();
-          this.ensureWebstoreIsOpen();
-          try {
-            await this.jeepSqliteElement.saveToStore(options);
-            return;
-          } catch (err) {
-            throw new Error(`${err}`);
-          }
-        }
-        async getFromLocalDiskToStore(options) {
-          this.ensureJeepSqliteIsAvailable();
-          this.ensureWebstoreIsOpen();
-          try {
-            await this.jeepSqliteElement.getFromLocalDiskToStore(options);
-            return;
-          } catch (err) {
-            throw new Error(`${err}`);
-          }
-        }
-        async saveToLocalDisk(options) {
-          this.ensureJeepSqliteIsAvailable();
-          this.ensureWebstoreIsOpen();
-          try {
-            await this.jeepSqliteElement.saveToLocalDisk(options);
-            return;
-          } catch (err) {
-            throw new Error(`${err}`);
-          }
-        }
-        async echo(options) {
-          this.ensureJeepSqliteIsAvailable();
-          const echoResult = await this.jeepSqliteElement.echo(options);
-          return echoResult;
-        }
-        async createConnection(options) {
-          this.ensureJeepSqliteIsAvailable();
-          this.ensureWebstoreIsOpen();
-          try {
-            await this.jeepSqliteElement.createConnection(options);
-            return;
-          } catch (err) {
-            throw new Error(`${err}`);
-          }
-        }
-        async open(options) {
-          this.ensureJeepSqliteIsAvailable();
-          this.ensureWebstoreIsOpen();
-          try {
-            await this.jeepSqliteElement.open(options);
-            return;
-          } catch (err) {
-            throw new Error(`${err}`);
-          }
-        }
-        async closeConnection(options) {
-          this.ensureJeepSqliteIsAvailable();
-          this.ensureWebstoreIsOpen();
-          try {
-            await this.jeepSqliteElement.closeConnection(options);
-            return;
-          } catch (err) {
-            throw new Error(`${err}`);
-          }
-        }
-        async getVersion(options) {
-          this.ensureJeepSqliteIsAvailable();
-          this.ensureWebstoreIsOpen();
-          try {
-            const versionResult = await this.jeepSqliteElement.getVersion(options);
-            return versionResult;
-          } catch (err) {
-            throw new Error(`${err}`);
-          }
-        }
-        async checkConnectionsConsistency(options) {
-          this.ensureJeepSqliteIsAvailable();
-          try {
-            const consistencyResult = await this.jeepSqliteElement.checkConnectionsConsistency(options);
-            return consistencyResult;
-          } catch (err) {
-            throw new Error(`${err}`);
-          }
-        }
-        async close(options) {
-          this.ensureJeepSqliteIsAvailable();
-          this.ensureWebstoreIsOpen();
-          try {
-            await this.jeepSqliteElement.close(options);
-            return;
-          } catch (err) {
-            throw new Error(`${err}`);
-          }
-        }
-        async beginTransaction(options) {
-          this.ensureJeepSqliteIsAvailable();
-          this.ensureWebstoreIsOpen();
-          try {
-            const changes = await this.jeepSqliteElement.beginTransaction(options);
-            return changes;
-          } catch (err) {
-            throw new Error(`${err}`);
-          }
-        }
-        async commitTransaction(options) {
-          this.ensureJeepSqliteIsAvailable();
-          this.ensureWebstoreIsOpen();
-          try {
-            const changes = await this.jeepSqliteElement.commitTransaction(options);
-            return changes;
-          } catch (err) {
-            throw new Error(`${err}`);
-          }
-        }
-        async rollbackTransaction(options) {
-          this.ensureJeepSqliteIsAvailable();
-          this.ensureWebstoreIsOpen();
-          try {
-            const changes = await this.jeepSqliteElement.rollbackTransaction(options);
-            return changes;
-          } catch (err) {
-            throw new Error(`${err}`);
-          }
-        }
-        async isTransactionActive(options) {
-          this.ensureJeepSqliteIsAvailable();
-          this.ensureWebstoreIsOpen();
-          try {
-            const result = await this.jeepSqliteElement.isTransactionActive(options);
-            return result;
-          } catch (err) {
-            throw new Error(`${err}`);
-          }
-        }
-        async getTableList(options) {
-          this.ensureJeepSqliteIsAvailable();
-          this.ensureWebstoreIsOpen();
-          try {
-            const tableListResult = await this.jeepSqliteElement.getTableList(options);
-            return tableListResult;
-          } catch (err) {
-            throw new Error(`${err}`);
-          }
-        }
-        async execute(options) {
-          this.ensureJeepSqliteIsAvailable();
-          this.ensureWebstoreIsOpen();
-          try {
-            const executeResult = await this.jeepSqliteElement.execute(options);
-            return executeResult;
-          } catch (err) {
-            throw new Error(`${err}`);
-          }
-        }
-        async executeSet(options) {
-          this.ensureJeepSqliteIsAvailable();
-          this.ensureWebstoreIsOpen();
-          try {
-            const executeResult = await this.jeepSqliteElement.executeSet(options);
-            return executeResult;
-          } catch (err) {
-            throw new Error(`${err}`);
-          }
-        }
-        async run(options) {
-          this.ensureJeepSqliteIsAvailable();
-          this.ensureWebstoreIsOpen();
-          try {
-            const runResult = await this.jeepSqliteElement.run(options);
-            return runResult;
-          } catch (err) {
-            throw new Error(`${err}`);
-          }
-        }
-        async query(options) {
-          this.ensureJeepSqliteIsAvailable();
-          this.ensureWebstoreIsOpen();
-          try {
-            const queryResult = await this.jeepSqliteElement.query(options);
-            return queryResult;
-          } catch (err) {
-            throw new Error(`${err}`);
-          }
-        }
-        async isDBExists(options) {
-          this.ensureJeepSqliteIsAvailable();
-          this.ensureWebstoreIsOpen();
-          try {
-            const dbExistsResult = await this.jeepSqliteElement.isDBExists(options);
-            return dbExistsResult;
-          } catch (err) {
-            throw new Error(`${err}`);
-          }
-        }
-        async isDBOpen(options) {
-          this.ensureJeepSqliteIsAvailable();
-          this.ensureWebstoreIsOpen();
-          try {
-            const isDBOpenResult = await this.jeepSqliteElement.isDBOpen(options);
-            return isDBOpenResult;
-          } catch (err) {
-            throw new Error(`${err}`);
-          }
-        }
-        async isDatabase(options) {
-          this.ensureJeepSqliteIsAvailable();
-          this.ensureWebstoreIsOpen();
-          try {
-            const isDatabaseResult = await this.jeepSqliteElement.isDatabase(options);
-            return isDatabaseResult;
-          } catch (err) {
-            throw new Error(`${err}`);
-          }
-        }
-        async isTableExists(options) {
-          this.ensureJeepSqliteIsAvailable();
-          this.ensureWebstoreIsOpen();
-          try {
-            const tableExistsResult = await this.jeepSqliteElement.isTableExists(options);
-            return tableExistsResult;
-          } catch (err) {
-            throw new Error(`${err}`);
-          }
-        }
-        async deleteDatabase(options) {
-          this.ensureJeepSqliteIsAvailable();
-          this.ensureWebstoreIsOpen();
-          try {
-            await this.jeepSqliteElement.deleteDatabase(options);
-            return;
-          } catch (err) {
-            throw new Error(`${err}`);
-          }
-        }
-        async isJsonValid(options) {
-          this.ensureJeepSqliteIsAvailable();
-          this.ensureWebstoreIsOpen();
-          try {
-            const isJsonValidResult = await this.jeepSqliteElement.isJsonValid(options);
-            return isJsonValidResult;
-          } catch (err) {
-            throw new Error(`${err}`);
-          }
-        }
-        async importFromJson(options) {
-          this.ensureJeepSqliteIsAvailable();
-          this.ensureWebstoreIsOpen();
-          try {
-            const importFromJsonResult = await this.jeepSqliteElement.importFromJson(options);
-            return importFromJsonResult;
-          } catch (err) {
-            throw new Error(`${err}`);
-          }
-        }
-        async exportToJson(options) {
-          this.ensureJeepSqliteIsAvailable();
-          this.ensureWebstoreIsOpen();
-          try {
-            const exportToJsonResult = await this.jeepSqliteElement.exportToJson(options);
-            return exportToJsonResult;
-          } catch (err) {
-            throw new Error(`${err}`);
-          }
-        }
-        async createSyncTable(options) {
-          this.ensureJeepSqliteIsAvailable();
-          this.ensureWebstoreIsOpen();
-          try {
-            const createSyncTableResult = await this.jeepSqliteElement.createSyncTable(options);
-            return createSyncTableResult;
-          } catch (err) {
-            throw new Error(`${err}`);
-          }
-        }
-        async setSyncDate(options) {
-          this.ensureJeepSqliteIsAvailable();
-          this.ensureWebstoreIsOpen();
-          try {
-            await this.jeepSqliteElement.setSyncDate(options);
-            return;
-          } catch (err) {
-            throw new Error(`${err}`);
-          }
-        }
-        async getSyncDate(options) {
-          this.ensureJeepSqliteIsAvailable();
-          this.ensureWebstoreIsOpen();
-          try {
-            const getSyncDateResult = await this.jeepSqliteElement.getSyncDate(options);
-            return getSyncDateResult;
-          } catch (err) {
-            throw new Error(`${err}`);
-          }
-        }
-        async deleteExportedRows(options) {
-          this.ensureJeepSqliteIsAvailable();
-          this.ensureWebstoreIsOpen();
-          try {
-            await this.jeepSqliteElement.deleteExportedRows(options);
-            return;
-          } catch (err) {
-            throw new Error(`${err}`);
-          }
-        }
-        async addUpgradeStatement(options) {
-          this.ensureJeepSqliteIsAvailable();
-          this.ensureWebstoreIsOpen();
-          try {
-            await this.jeepSqliteElement.addUpgradeStatement(options);
-            return;
-          } catch (err) {
-            throw new Error(`${err}`);
-          }
-        }
-        async copyFromAssets(options) {
-          this.ensureJeepSqliteIsAvailable();
-          this.ensureWebstoreIsOpen();
-          try {
-            await this.jeepSqliteElement.copyFromAssets(options);
-            return;
-          } catch (err) {
-            throw new Error(`${err}`);
-          }
-        }
-        async getFromHTTPRequest(options) {
-          this.ensureJeepSqliteIsAvailable();
-          this.ensureWebstoreIsOpen();
-          try {
-            await this.jeepSqliteElement.getFromHTTPRequest(options);
-            return;
-          } catch (err) {
-            throw new Error(`${err}`);
-          }
-        }
-        async getDatabaseList() {
-          this.ensureJeepSqliteIsAvailable();
-          this.ensureWebstoreIsOpen();
-          try {
-            const databaseListResult = await this.jeepSqliteElement.getDatabaseList();
-            return databaseListResult;
-          } catch (err) {
-            throw new Error(`${err}`);
-          }
-        }
-        /**
-         * Checks if the `jeep-sqlite` element is present in the DOM.
-         * If it's not in the DOM, this method throws an Error.
-         *
-         * Attention: This will always fail, if the `intWebStore()` method wasn't called before.
-         */
-        ensureJeepSqliteIsAvailable() {
-          if (this.jeepSqliteElement === null) {
-            throw new Error(`The jeep-sqlite element is not present in the DOM! Please check the @capacitor-community/sqlite documentation for instructions regarding the web platform.`);
-          }
-        }
-        ensureWebstoreIsOpen() {
-          if (!this.isWebStoreOpen) {
-            throw new Error('WebStore is not open yet. You have to call "initWebStore()" first.');
-          }
-        }
-        ////////////////////////////////////
-        ////// UNIMPLEMENTED METHODS
-        ////////////////////////////////////
-        async getUrl() {
-          throw this.unimplemented("Not implemented on web.");
-        }
-        async getMigratableDbList(options) {
-          console.log("getMigratableDbList", options);
-          throw this.unimplemented("Not implemented on web.");
-        }
-        async addSQLiteSuffix(options) {
-          console.log("addSQLiteSuffix", options);
-          throw this.unimplemented("Not implemented on web.");
-        }
-        async deleteOldDatabases(options) {
-          console.log("deleteOldDatabases", options);
-          throw this.unimplemented("Not implemented on web.");
-        }
-        async moveDatabasesAndAddSuffix(options) {
-          console.log("moveDatabasesAndAddSuffix", options);
-          throw this.unimplemented("Not implemented on web.");
-        }
-        async isSecretStored() {
-          throw this.unimplemented("Not implemented on web.");
-        }
-        async setEncryptionSecret(options) {
-          console.log("setEncryptionSecret", options);
-          throw this.unimplemented("Not implemented on web.");
-        }
-        async changeEncryptionSecret(options) {
-          console.log("changeEncryptionSecret", options);
-          throw this.unimplemented("Not implemented on web.");
-        }
-        async clearEncryptionSecret() {
-          console.log("clearEncryptionSecret");
-          throw this.unimplemented("Not implemented on web.");
-        }
-        async checkEncryptionSecret(options) {
-          console.log("checkEncryptionPassPhrase", options);
-          throw this.unimplemented("Not implemented on web.");
-        }
-        async getNCDatabasePath(options) {
-          console.log("getNCDatabasePath", options);
-          throw this.unimplemented("Not implemented on web.");
-        }
-        async createNCConnection(options) {
-          console.log("createNCConnection", options);
-          throw this.unimplemented("Not implemented on web.");
-        }
-        async closeNCConnection(options) {
-          console.log("closeNCConnection", options);
-          throw this.unimplemented("Not implemented on web.");
-        }
-        async isNCDatabase(options) {
-          console.log("isNCDatabase", options);
-          throw this.unimplemented("Not implemented on web.");
-        }
-        async isDatabaseEncrypted(options) {
-          console.log("isDatabaseEncrypted", options);
-          throw this.unimplemented("Not implemented on web.");
-        }
-        async isInConfigEncryption() {
-          throw this.unimplemented("Not implemented on web.");
-        }
-        async isInConfigBiometricAuth() {
-          throw this.unimplemented("Not implemented on web.");
-        }
-        async loadExtension(options) {
-          console.log("loadExtension", options);
-          throw this.unimplemented("Not implemented on web.");
-        }
-        async enableLoadExtension(options) {
-          console.log("enableLoadExtension", options);
-          throw this.unimplemented("Not implemented on web.");
-        }
-      };
-    }
-  });
-
   // node_modules/@capacitor/filesystem/dist/esm/definitions.js
   var Directory, Encoding;
   var init_definitions = __esm({
@@ -1021,8 +543,8 @@
   });
 
   // node_modules/@capacitor/filesystem/dist/esm/web.js
-  var web_exports2 = {};
-  __export(web_exports2, {
+  var web_exports = {};
+  __export(web_exports, {
     FilesystemWeb: () => FilesystemWeb
   });
   function resolve(path) {
@@ -1045,7 +567,7 @@
     return parent !== children && pathsA.every((value, index) => value === pathsB[index]);
   }
   var FilesystemWeb;
-  var init_web2 = __esm({
+  var init_web = __esm({
     "node_modules/@capacitor/filesystem/dist/esm/web.js"() {
       init_dist();
       init_definitions();
@@ -1593,8 +1115,588 @@
     }
   });
 
+  // node_modules/@capacitor-community/sqlite/dist/esm/web.js
+  var web_exports2 = {};
+  __export(web_exports2, {
+    CapacitorSQLiteWeb: () => CapacitorSQLiteWeb
+  });
+  var CapacitorSQLiteWeb;
+  var init_web2 = __esm({
+    "node_modules/@capacitor-community/sqlite/dist/esm/web.js"() {
+      init_dist();
+      CapacitorSQLiteWeb = class extends WebPlugin {
+        constructor() {
+          super(...arguments);
+          this.jeepSqliteElement = null;
+          this.isWebStoreOpen = false;
+        }
+        async initWebStore() {
+          await customElements.whenDefined("jeep-sqlite");
+          this.jeepSqliteElement = document.querySelector("jeep-sqlite");
+          this.ensureJeepSqliteIsAvailable();
+          this.jeepSqliteElement.addEventListener("jeepSqliteImportProgress", (event) => {
+            this.notifyListeners("sqliteImportProgressEvent", event.detail);
+          });
+          this.jeepSqliteElement.addEventListener("jeepSqliteExportProgress", (event) => {
+            this.notifyListeners("sqliteExportProgressEvent", event.detail);
+          });
+          this.jeepSqliteElement.addEventListener("jeepSqliteHTTPRequestEnded", (event) => {
+            this.notifyListeners("sqliteHTTPRequestEndedEvent", event.detail);
+          });
+          this.jeepSqliteElement.addEventListener("jeepSqlitePickDatabaseEnded", (event) => {
+            this.notifyListeners("sqlitePickDatabaseEndedEvent", event.detail);
+          });
+          this.jeepSqliteElement.addEventListener("jeepSqliteSaveDatabaseToDisk", (event) => {
+            this.notifyListeners("sqliteSaveDatabaseToDiskEvent", event.detail);
+          });
+          if (!this.isWebStoreOpen) {
+            this.isWebStoreOpen = await this.jeepSqliteElement.isStoreOpen();
+          }
+          return;
+        }
+        async saveToStore(options) {
+          this.ensureJeepSqliteIsAvailable();
+          this.ensureWebstoreIsOpen();
+          try {
+            await this.jeepSqliteElement.saveToStore(options);
+            return;
+          } catch (err) {
+            throw new Error(`${err}`);
+          }
+        }
+        async getFromLocalDiskToStore(options) {
+          this.ensureJeepSqliteIsAvailable();
+          this.ensureWebstoreIsOpen();
+          try {
+            await this.jeepSqliteElement.getFromLocalDiskToStore(options);
+            return;
+          } catch (err) {
+            throw new Error(`${err}`);
+          }
+        }
+        async saveToLocalDisk(options) {
+          this.ensureJeepSqliteIsAvailable();
+          this.ensureWebstoreIsOpen();
+          try {
+            await this.jeepSqliteElement.saveToLocalDisk(options);
+            return;
+          } catch (err) {
+            throw new Error(`${err}`);
+          }
+        }
+        async echo(options) {
+          this.ensureJeepSqliteIsAvailable();
+          const echoResult = await this.jeepSqliteElement.echo(options);
+          return echoResult;
+        }
+        async createConnection(options) {
+          this.ensureJeepSqliteIsAvailable();
+          this.ensureWebstoreIsOpen();
+          try {
+            await this.jeepSqliteElement.createConnection(options);
+            return;
+          } catch (err) {
+            throw new Error(`${err}`);
+          }
+        }
+        async open(options) {
+          this.ensureJeepSqliteIsAvailable();
+          this.ensureWebstoreIsOpen();
+          try {
+            await this.jeepSqliteElement.open(options);
+            return;
+          } catch (err) {
+            throw new Error(`${err}`);
+          }
+        }
+        async closeConnection(options) {
+          this.ensureJeepSqliteIsAvailable();
+          this.ensureWebstoreIsOpen();
+          try {
+            await this.jeepSqliteElement.closeConnection(options);
+            return;
+          } catch (err) {
+            throw new Error(`${err}`);
+          }
+        }
+        async getVersion(options) {
+          this.ensureJeepSqliteIsAvailable();
+          this.ensureWebstoreIsOpen();
+          try {
+            const versionResult = await this.jeepSqliteElement.getVersion(options);
+            return versionResult;
+          } catch (err) {
+            throw new Error(`${err}`);
+          }
+        }
+        async checkConnectionsConsistency(options) {
+          this.ensureJeepSqliteIsAvailable();
+          try {
+            const consistencyResult = await this.jeepSqliteElement.checkConnectionsConsistency(options);
+            return consistencyResult;
+          } catch (err) {
+            throw new Error(`${err}`);
+          }
+        }
+        async close(options) {
+          this.ensureJeepSqliteIsAvailable();
+          this.ensureWebstoreIsOpen();
+          try {
+            await this.jeepSqliteElement.close(options);
+            return;
+          } catch (err) {
+            throw new Error(`${err}`);
+          }
+        }
+        async beginTransaction(options) {
+          this.ensureJeepSqliteIsAvailable();
+          this.ensureWebstoreIsOpen();
+          try {
+            const changes = await this.jeepSqliteElement.beginTransaction(options);
+            return changes;
+          } catch (err) {
+            throw new Error(`${err}`);
+          }
+        }
+        async commitTransaction(options) {
+          this.ensureJeepSqliteIsAvailable();
+          this.ensureWebstoreIsOpen();
+          try {
+            const changes = await this.jeepSqliteElement.commitTransaction(options);
+            return changes;
+          } catch (err) {
+            throw new Error(`${err}`);
+          }
+        }
+        async rollbackTransaction(options) {
+          this.ensureJeepSqliteIsAvailable();
+          this.ensureWebstoreIsOpen();
+          try {
+            const changes = await this.jeepSqliteElement.rollbackTransaction(options);
+            return changes;
+          } catch (err) {
+            throw new Error(`${err}`);
+          }
+        }
+        async isTransactionActive(options) {
+          this.ensureJeepSqliteIsAvailable();
+          this.ensureWebstoreIsOpen();
+          try {
+            const result = await this.jeepSqliteElement.isTransactionActive(options);
+            return result;
+          } catch (err) {
+            throw new Error(`${err}`);
+          }
+        }
+        async getTableList(options) {
+          this.ensureJeepSqliteIsAvailable();
+          this.ensureWebstoreIsOpen();
+          try {
+            const tableListResult = await this.jeepSqliteElement.getTableList(options);
+            return tableListResult;
+          } catch (err) {
+            throw new Error(`${err}`);
+          }
+        }
+        async execute(options) {
+          this.ensureJeepSqliteIsAvailable();
+          this.ensureWebstoreIsOpen();
+          try {
+            const executeResult = await this.jeepSqliteElement.execute(options);
+            return executeResult;
+          } catch (err) {
+            throw new Error(`${err}`);
+          }
+        }
+        async executeSet(options) {
+          this.ensureJeepSqliteIsAvailable();
+          this.ensureWebstoreIsOpen();
+          try {
+            const executeResult = await this.jeepSqliteElement.executeSet(options);
+            return executeResult;
+          } catch (err) {
+            throw new Error(`${err}`);
+          }
+        }
+        async run(options) {
+          this.ensureJeepSqliteIsAvailable();
+          this.ensureWebstoreIsOpen();
+          try {
+            const runResult = await this.jeepSqliteElement.run(options);
+            return runResult;
+          } catch (err) {
+            throw new Error(`${err}`);
+          }
+        }
+        async query(options) {
+          this.ensureJeepSqliteIsAvailable();
+          this.ensureWebstoreIsOpen();
+          try {
+            const queryResult = await this.jeepSqliteElement.query(options);
+            return queryResult;
+          } catch (err) {
+            throw new Error(`${err}`);
+          }
+        }
+        async isDBExists(options) {
+          this.ensureJeepSqliteIsAvailable();
+          this.ensureWebstoreIsOpen();
+          try {
+            const dbExistsResult = await this.jeepSqliteElement.isDBExists(options);
+            return dbExistsResult;
+          } catch (err) {
+            throw new Error(`${err}`);
+          }
+        }
+        async isDBOpen(options) {
+          this.ensureJeepSqliteIsAvailable();
+          this.ensureWebstoreIsOpen();
+          try {
+            const isDBOpenResult = await this.jeepSqliteElement.isDBOpen(options);
+            return isDBOpenResult;
+          } catch (err) {
+            throw new Error(`${err}`);
+          }
+        }
+        async isDatabase(options) {
+          this.ensureJeepSqliteIsAvailable();
+          this.ensureWebstoreIsOpen();
+          try {
+            const isDatabaseResult = await this.jeepSqliteElement.isDatabase(options);
+            return isDatabaseResult;
+          } catch (err) {
+            throw new Error(`${err}`);
+          }
+        }
+        async isTableExists(options) {
+          this.ensureJeepSqliteIsAvailable();
+          this.ensureWebstoreIsOpen();
+          try {
+            const tableExistsResult = await this.jeepSqliteElement.isTableExists(options);
+            return tableExistsResult;
+          } catch (err) {
+            throw new Error(`${err}`);
+          }
+        }
+        async deleteDatabase(options) {
+          this.ensureJeepSqliteIsAvailable();
+          this.ensureWebstoreIsOpen();
+          try {
+            await this.jeepSqliteElement.deleteDatabase(options);
+            return;
+          } catch (err) {
+            throw new Error(`${err}`);
+          }
+        }
+        async isJsonValid(options) {
+          this.ensureJeepSqliteIsAvailable();
+          this.ensureWebstoreIsOpen();
+          try {
+            const isJsonValidResult = await this.jeepSqliteElement.isJsonValid(options);
+            return isJsonValidResult;
+          } catch (err) {
+            throw new Error(`${err}`);
+          }
+        }
+        async importFromJson(options) {
+          this.ensureJeepSqliteIsAvailable();
+          this.ensureWebstoreIsOpen();
+          try {
+            const importFromJsonResult = await this.jeepSqliteElement.importFromJson(options);
+            return importFromJsonResult;
+          } catch (err) {
+            throw new Error(`${err}`);
+          }
+        }
+        async exportToJson(options) {
+          this.ensureJeepSqliteIsAvailable();
+          this.ensureWebstoreIsOpen();
+          try {
+            const exportToJsonResult = await this.jeepSqliteElement.exportToJson(options);
+            return exportToJsonResult;
+          } catch (err) {
+            throw new Error(`${err}`);
+          }
+        }
+        async createSyncTable(options) {
+          this.ensureJeepSqliteIsAvailable();
+          this.ensureWebstoreIsOpen();
+          try {
+            const createSyncTableResult = await this.jeepSqliteElement.createSyncTable(options);
+            return createSyncTableResult;
+          } catch (err) {
+            throw new Error(`${err}`);
+          }
+        }
+        async setSyncDate(options) {
+          this.ensureJeepSqliteIsAvailable();
+          this.ensureWebstoreIsOpen();
+          try {
+            await this.jeepSqliteElement.setSyncDate(options);
+            return;
+          } catch (err) {
+            throw new Error(`${err}`);
+          }
+        }
+        async getSyncDate(options) {
+          this.ensureJeepSqliteIsAvailable();
+          this.ensureWebstoreIsOpen();
+          try {
+            const getSyncDateResult = await this.jeepSqliteElement.getSyncDate(options);
+            return getSyncDateResult;
+          } catch (err) {
+            throw new Error(`${err}`);
+          }
+        }
+        async deleteExportedRows(options) {
+          this.ensureJeepSqliteIsAvailable();
+          this.ensureWebstoreIsOpen();
+          try {
+            await this.jeepSqliteElement.deleteExportedRows(options);
+            return;
+          } catch (err) {
+            throw new Error(`${err}`);
+          }
+        }
+        async addUpgradeStatement(options) {
+          this.ensureJeepSqliteIsAvailable();
+          this.ensureWebstoreIsOpen();
+          try {
+            await this.jeepSqliteElement.addUpgradeStatement(options);
+            return;
+          } catch (err) {
+            throw new Error(`${err}`);
+          }
+        }
+        async copyFromAssets(options) {
+          this.ensureJeepSqliteIsAvailable();
+          this.ensureWebstoreIsOpen();
+          try {
+            await this.jeepSqliteElement.copyFromAssets(options);
+            return;
+          } catch (err) {
+            throw new Error(`${err}`);
+          }
+        }
+        async getFromHTTPRequest(options) {
+          this.ensureJeepSqliteIsAvailable();
+          this.ensureWebstoreIsOpen();
+          try {
+            await this.jeepSqliteElement.getFromHTTPRequest(options);
+            return;
+          } catch (err) {
+            throw new Error(`${err}`);
+          }
+        }
+        async getDatabaseList() {
+          this.ensureJeepSqliteIsAvailable();
+          this.ensureWebstoreIsOpen();
+          try {
+            const databaseListResult = await this.jeepSqliteElement.getDatabaseList();
+            return databaseListResult;
+          } catch (err) {
+            throw new Error(`${err}`);
+          }
+        }
+        /**
+         * Checks if the `jeep-sqlite` element is present in the DOM.
+         * If it's not in the DOM, this method throws an Error.
+         *
+         * Attention: This will always fail, if the `intWebStore()` method wasn't called before.
+         */
+        ensureJeepSqliteIsAvailable() {
+          if (this.jeepSqliteElement === null) {
+            throw new Error(`The jeep-sqlite element is not present in the DOM! Please check the @capacitor-community/sqlite documentation for instructions regarding the web platform.`);
+          }
+        }
+        ensureWebstoreIsOpen() {
+          if (!this.isWebStoreOpen) {
+            throw new Error('WebStore is not open yet. You have to call "initWebStore()" first.');
+          }
+        }
+        ////////////////////////////////////
+        ////// UNIMPLEMENTED METHODS
+        ////////////////////////////////////
+        async getUrl() {
+          throw this.unimplemented("Not implemented on web.");
+        }
+        async getMigratableDbList(options) {
+          console.log("getMigratableDbList", options);
+          throw this.unimplemented("Not implemented on web.");
+        }
+        async addSQLiteSuffix(options) {
+          console.log("addSQLiteSuffix", options);
+          throw this.unimplemented("Not implemented on web.");
+        }
+        async deleteOldDatabases(options) {
+          console.log("deleteOldDatabases", options);
+          throw this.unimplemented("Not implemented on web.");
+        }
+        async moveDatabasesAndAddSuffix(options) {
+          console.log("moveDatabasesAndAddSuffix", options);
+          throw this.unimplemented("Not implemented on web.");
+        }
+        async isSecretStored() {
+          throw this.unimplemented("Not implemented on web.");
+        }
+        async setEncryptionSecret(options) {
+          console.log("setEncryptionSecret", options);
+          throw this.unimplemented("Not implemented on web.");
+        }
+        async changeEncryptionSecret(options) {
+          console.log("changeEncryptionSecret", options);
+          throw this.unimplemented("Not implemented on web.");
+        }
+        async clearEncryptionSecret() {
+          console.log("clearEncryptionSecret");
+          throw this.unimplemented("Not implemented on web.");
+        }
+        async checkEncryptionSecret(options) {
+          console.log("checkEncryptionPassPhrase", options);
+          throw this.unimplemented("Not implemented on web.");
+        }
+        async getNCDatabasePath(options) {
+          console.log("getNCDatabasePath", options);
+          throw this.unimplemented("Not implemented on web.");
+        }
+        async createNCConnection(options) {
+          console.log("createNCConnection", options);
+          throw this.unimplemented("Not implemented on web.");
+        }
+        async closeNCConnection(options) {
+          console.log("closeNCConnection", options);
+          throw this.unimplemented("Not implemented on web.");
+        }
+        async isNCDatabase(options) {
+          console.log("isNCDatabase", options);
+          throw this.unimplemented("Not implemented on web.");
+        }
+        async isDatabaseEncrypted(options) {
+          console.log("isDatabaseEncrypted", options);
+          throw this.unimplemented("Not implemented on web.");
+        }
+        async isInConfigEncryption() {
+          throw this.unimplemented("Not implemented on web.");
+        }
+        async isInConfigBiometricAuth() {
+          throw this.unimplemented("Not implemented on web.");
+        }
+        async loadExtension(options) {
+          console.log("loadExtension", options);
+          throw this.unimplemented("Not implemented on web.");
+        }
+        async enableLoadExtension(options) {
+          console.log("enableLoadExtension", options);
+          throw this.unimplemented("Not implemented on web.");
+        }
+      };
+    }
+  });
+
+  // plugins/ljd-local-security/dist/esm/web.js
+  var web_exports3 = {};
+  __export(web_exports3, {
+    LjdLocalSecurityWeb: () => LjdLocalSecurityWeb
+  });
+  var LjdLocalSecurityWeb;
+  var init_web3 = __esm({
+    "plugins/ljd-local-security/dist/esm/web.js"() {
+      "use strict";
+      init_dist();
+      LjdLocalSecurityWeb = class extends WebPlugin {
+        async generateSecret() {
+          throw this.unimplemented("Not implemented on web.");
+        }
+        async setSecret() {
+          throw this.unimplemented("Not implemented on web.");
+        }
+        async getSecret() {
+          throw this.unimplemented("Not implemented on web.");
+        }
+        async existsSecret() {
+          throw this.unimplemented("Not implemented on web.");
+        }
+        async deleteSecret() {
+          throw this.unimplemented("Not implemented on web.");
+        }
+        async inspectPath() {
+          throw this.unimplemented("Not implemented on web.");
+        }
+        async setCompleteProtection() {
+          throw this.unimplemented("Not implemented on web.");
+        }
+        async resolveCandidatePaths() {
+          throw this.unimplemented("Not implemented on web.");
+        }
+        async ensureProbeFile() {
+          throw this.unimplemented("Not implemented on web.");
+        }
+        async deletePath() {
+          throw this.unimplemented("Not implemented on web.");
+        }
+      };
+    }
+  });
+
   // src/lib/local-first/diagnostics/localStorageDiagnosticsMain.ts
   init_dist();
+
+  // node_modules/@capacitor/filesystem/dist/esm/index.js
+  init_dist();
+
+  // node_modules/@capacitor/synapse/dist/synapse.mjs
+  function s(t) {
+    t.CapacitorUtils.Synapse = new Proxy(
+      {},
+      {
+        get(e, n) {
+          return new Proxy({}, {
+            get(w, o) {
+              return (c, p, r) => {
+                const i = t.Capacitor.Plugins[n];
+                if (i === void 0) {
+                  r(new Error(`Capacitor plugin ${n} not found`));
+                  return;
+                }
+                if (typeof i[o] != "function") {
+                  r(new Error(`Method ${o} not found in Capacitor plugin ${n}`));
+                  return;
+                }
+                (async () => {
+                  try {
+                    const a = await i[o](c);
+                    p(a);
+                  } catch (a) {
+                    r(a);
+                  }
+                })();
+              };
+            }
+          });
+        }
+      }
+    );
+  }
+  function u(t) {
+    t.CapacitorUtils.Synapse = new Proxy(
+      {},
+      {
+        get(e, n) {
+          return t.cordova.plugins[n];
+        }
+      }
+    );
+  }
+  function f(t = false) {
+    typeof window > "u" || (window.CapacitorUtils = window.CapacitorUtils || {}, window.Capacitor !== void 0 && !t ? s(window) : window.cordova !== void 0 && u(window));
+  }
+
+  // node_modules/@capacitor/filesystem/dist/esm/index.js
+  init_definitions();
+  var Filesystem = registerPlugin("Filesystem", {
+    web: () => Promise.resolve().then(() => (init_web(), web_exports)).then((m) => new m.FilesystemWeb())
+  });
+  f();
 
   // src/lib/local-first/journal/database.ts
   init_dist();
@@ -2429,7 +2531,7 @@
 
   // node_modules/@capacitor-community/sqlite/dist/esm/index.js
   var CapacitorSQLite = registerPlugin("CapacitorSQLite", {
-    web: () => Promise.resolve().then(() => (init_web(), web_exports)).then((m) => new m.CapacitorSQLiteWeb()),
+    web: () => Promise.resolve().then(() => (init_web2(), web_exports2)).then((m) => new m.CapacitorSQLiteWeb()),
     electron: () => window.CapacitorCustomPlatform.plugins.CapacitorSQLite
   });
 
@@ -2550,65 +2652,6 @@ CREATE INDEX IF NOT EXISTS idx_local_media_journal
 
   // src/lib/local-first/journal/mediaStore.ts
   init_dist();
-
-  // node_modules/@capacitor/filesystem/dist/esm/index.js
-  init_dist();
-
-  // node_modules/@capacitor/synapse/dist/synapse.mjs
-  function s(t) {
-    t.CapacitorUtils.Synapse = new Proxy(
-      {},
-      {
-        get(e, n) {
-          return new Proxy({}, {
-            get(w, o) {
-              return (c, p, r) => {
-                const i = t.Capacitor.Plugins[n];
-                if (i === void 0) {
-                  r(new Error(`Capacitor plugin ${n} not found`));
-                  return;
-                }
-                if (typeof i[o] != "function") {
-                  r(new Error(`Method ${o} not found in Capacitor plugin ${n}`));
-                  return;
-                }
-                (async () => {
-                  try {
-                    const a = await i[o](c);
-                    p(a);
-                  } catch (a) {
-                    r(a);
-                  }
-                })();
-              };
-            }
-          });
-        }
-      }
-    );
-  }
-  function u(t) {
-    t.CapacitorUtils.Synapse = new Proxy(
-      {},
-      {
-        get(e, n) {
-          return t.cordova.plugins[n];
-        }
-      }
-    );
-  }
-  function f(t = false) {
-    typeof window > "u" || (window.CapacitorUtils = window.CapacitorUtils || {}, window.Capacitor !== void 0 && !t ? s(window) : window.cordova !== void 0 && u(window));
-  }
-
-  // node_modules/@capacitor/filesystem/dist/esm/index.js
-  init_definitions();
-  var Filesystem = registerPlugin("Filesystem", {
-    web: () => Promise.resolve().then(() => (init_web2(), web_exports2)).then((m) => new m.FilesystemWeb())
-  });
-  f();
-
-  // src/lib/local-first/journal/mediaStore.ts
   function assertNative() {
     if (!Capacitor.isNativePlatform()) {
       throw new Error("Local Journal media store is native-only.");
@@ -2803,6 +2846,553 @@ CREATE INDEX IF NOT EXISTS idx_local_media_journal
     }
   };
 
+  // src/lib/local-first/security/runLocalDataProtectionPoc.ts
+  init_dist();
+
+  // plugins/ljd-local-security/dist/esm/index.js
+  init_dist();
+  var LjdLocalSecurity = registerPlugin("LjdLocalSecurity", {
+    web: () => Promise.resolve().then(() => (init_web3(), web_exports3)).then((m) => new m.LjdLocalSecurityWeb())
+  });
+
+  // src/lib/local-first/security/secureKeyStore.ts
+  init_dist();
+  var POC_ACCOUNT = "ljd.security.poc.db-key";
+  function assertNative2() {
+    if (!Capacitor.isNativePlatform()) {
+      throw new Error("SecureKeyStore PoC is native-only.");
+    }
+  }
+  async function generateRandomSecret(byteLength = 32) {
+    assertNative2();
+    const result = await LjdLocalSecurity.generateSecret({ byteLength });
+    return {
+      secret: result.secret,
+      byteLength: result.byteLength,
+      randomSource: result.randomSource
+    };
+  }
+  async function setSecret(account, secret) {
+    assertNative2();
+    const result = await LjdLocalSecurity.setSecret({ account, secret });
+    return {
+      stored: result.stored,
+      exists: true,
+      accessibility: result.accessibility,
+      byteLength: result.byteLength
+    };
+  }
+  async function getSecret(account) {
+    assertNative2();
+    const result = await LjdLocalSecurity.getSecret({ account });
+    return {
+      found: result.found,
+      secret: result.found ? result.secret ?? null : null,
+      accessibility: result.accessibility ?? null,
+      byteLength: result.byteLength ?? null
+    };
+  }
+  async function existsSecret(account) {
+    assertNative2();
+    const result = await LjdLocalSecurity.existsSecret({ account });
+    return {
+      stored: result.exists,
+      exists: result.exists,
+      accessibility: result.accessibility ?? null,
+      byteLength: null
+    };
+  }
+  async function deleteSecret(account) {
+    assertNative2();
+    const result = await LjdLocalSecurity.deleteSecret({ account });
+    return result.deleted;
+  }
+  var SecureKeyStore = {
+    POC_ACCOUNT,
+    generateRandomSecret,
+    set: setSecret,
+    get: getSecret,
+    exists: existsSecret,
+    delete: deleteSecret
+  };
+
+  // src/lib/local-first/security/runLocalDataProtectionPoc.ts
+  var SECURITY_POC_DB = "ljd_security_poc";
+  var SECURITY_POC_MEDIA_ROOT = "ljd/media/security-poc";
+  var SECURITY_POC_DUMMY_CONTENT = "This is encrypted LJD dummy data";
+  function assertNative3() {
+    if (!Capacitor.isNativePlatform()) {
+      throw new Error("Security PoC is native-only.");
+    }
+  }
+  function errMsg(e) {
+    if (e instanceof Error) return e.message;
+    return String(e);
+  }
+  function randomPassphrase(bytes = 24) {
+    const arr = new Uint8Array(bytes);
+    crypto.getRandomValues(arr);
+    let out = "";
+    for (const b of arr) out += b.toString(16).padStart(2, "0");
+    return out;
+  }
+  function redact(steps) {
+    return steps.map((s2) => ({
+      ...s2,
+      detail: s2.detail.replace(/(secret|passphrase)\s*[=:]\s*\S+/gi, "$1=<redacted>")
+    }));
+  }
+  async function closeIfOpen(sqlite, name) {
+    try {
+      await sqlite.checkConnectionsConsistency();
+    } catch {
+    }
+    try {
+      const isConn = (await sqlite.isConnection(name, false)).result;
+      if (isConn) await sqlite.closeConnection(name, false);
+    } catch {
+      try {
+        await CapacitorSQLite.closeConnection({ database: name, readonly: false });
+      } catch {
+      }
+    }
+  }
+  async function deleteDbIfExists(sqlite, name) {
+    await closeIfOpen(sqlite, name);
+    try {
+      const exists = (await sqlite.isDatabase(name)).result;
+      if (exists) await CapacitorSQLite.deleteDatabase({ database: name });
+    } catch {
+    }
+  }
+  async function openPlain(sqlite, name) {
+    await closeIfOpen(sqlite, name);
+    const db2 = await sqlite.createConnection(name, false, "no-encryption", 1, false);
+    await db2.open();
+    return db2;
+  }
+  async function queryCount(db2) {
+    const res = await db2.query("SELECT COUNT(*) AS c FROM poc_rows;");
+    const row = res.values?.[0];
+    const c = row?.c ?? Object.values(row ?? {})[0];
+    return typeof c === "number" ? c : Number(c ?? 0);
+  }
+  async function queryContent(db2) {
+    const res = await db2.query("SELECT body FROM poc_rows ORDER BY id LIMIT 1;");
+    const row = res.values?.[0];
+    const body = row?.body ?? Object.values(row ?? {})[0];
+    return typeof body === "string" ? body : body != null ? String(body) : null;
+  }
+  function fmtAttrs(a) {
+    const parent = a.parent ? ` parent[excl=${String(a.parent.isExcludedFromBackup)} prot=${a.parent.fileProtection}]` : "";
+    return `excl=${String(a.isExcludedFromBackup)} prot=${a.fileProtection} exists=${String(a.exists)}${parent}`;
+  }
+  async function runLocalDataProtectionPoc(options) {
+    assertNative3();
+    const steps = [];
+    const push = (id, title, status, detail) => {
+      steps.push({ id, title, status, detail });
+    };
+    push(
+      "audit",
+      "built-in secure store audit",
+      "info",
+      "KeychainWrapper.storeGenericPasswordFor does NOT set kSecAttrAccessible; no external accessibility API. Verdict B \u2014 not LJD formal SecureKeyStore."
+    );
+    try {
+      const gen = await SecureKeyStore.generateRandomSecret(32);
+      push(
+        "K1",
+        "generate random secret",
+        "pass",
+        `byteLength=${gen.byteLength} randomSource=${gen.randomSource} (value not logged)`
+      );
+      const set = await SecureKeyStore.set(SecureKeyStore.POC_ACCOUNT, gen.secret);
+      push(
+        "K2",
+        "Keychain set WhenUnlocked",
+        set.stored && set.accessibility === "kSecAttrAccessibleWhenUnlocked" ? "pass" : "fail",
+        `stored=${String(set.stored)} accessibility=${set.accessibility ?? "null"} byteLength=${String(set.byteLength)}`
+      );
+      const got = await SecureKeyStore.get(SecureKeyStore.POC_ACCOUNT);
+      push(
+        "K3",
+        "Keychain get",
+        got.found && got.secret === gen.secret && got.accessibility === "kSecAttrAccessibleWhenUnlocked" ? "pass" : "fail",
+        `found=${String(got.found)} match=${String(got.secret === gen.secret)} accessibility=${got.accessibility ?? "null"}`
+      );
+      push(
+        "K4",
+        "kill/relaunch get",
+        "info",
+        "Re-run PoC after app kill; K3/exists should remain true until K5. Simulator: use Home + swipe-up kill."
+      );
+      if (!options?.keystoreOnly) {
+        const del = await SecureKeyStore.delete(SecureKeyStore.POC_ACCOUNT);
+        const after = await SecureKeyStore.get(SecureKeyStore.POC_ACCOUNT);
+        push(
+          "K5",
+          "Keychain delete",
+          del && !after.found ? "pass" : "fail",
+          `deleted=${String(del)} foundAfter=${String(after.found)}`
+        );
+        push(
+          "K6",
+          "get after delete",
+          !after.found ? "pass" : "fail",
+          `found=${String(after.found)}`
+        );
+        const restored = await SecureKeyStore.generateRandomSecret(32);
+        await SecureKeyStore.set(SecureKeyStore.POC_ACCOUNT, restored.secret);
+        push(
+          "K-persist",
+          "reseed Keychain for relaunch check",
+          "info",
+          `stored yes accessibility=kSecAttrAccessibleWhenUnlocked byteLength=${restored.byteLength}`
+        );
+      }
+    } catch (e) {
+      push("K-error", "SecureKeyStore suite", "fail", errMsg(e));
+    }
+    if (options?.keystoreOnly) {
+      return {
+        ranAt: (/* @__PURE__ */ new Date()).toISOString(),
+        platform: Capacitor.getPlatform(),
+        steps: redact(steps),
+        summary: {
+          sqlcipherOk: false,
+          secureKeyStoreOk: steps.filter((s2) => s2.id.startsWith("K") && s2.status === "fail").length === 0,
+          builtInStoreVerdict: "B",
+          builtInStoreNote: "Plugin KeychainWrapper omits kSecAttrAccessible; cannot guarantee WhenUnlocked externally."
+        }
+      };
+    }
+    const sqlite = new SQLiteConnection(CapacitorSQLite);
+    const passphrase1 = randomPassphrase();
+    const passphrase2 = randomPassphrase();
+    let dbUrl = "";
+    try {
+      try {
+        await CapacitorSQLite.clearEncryptionSecret();
+      } catch {
+      }
+      await closeIfOpen(sqlite, SECURITY_POC_DB);
+      const pathsForCleanup = await LjdLocalSecurity.resolveCandidatePaths();
+      const pocDbPath = `${pathsForCleanup.candidateA_libraryCapacitorDatabase}/${SECURITY_POC_DB}SQLite.db`;
+      await LjdLocalSecurity.deletePath({ path: pocDbPath });
+      await deleteDbIfExists(sqlite, SECURITY_POC_DB);
+      {
+        const db2 = await openPlain(sqlite, SECURITY_POC_DB);
+        await db2.execute(`
+        CREATE TABLE IF NOT EXISTS poc_rows (
+          id INTEGER PRIMARY KEY NOT NULL,
+          body TEXT NOT NULL
+        );
+        DELETE FROM poc_rows;
+        INSERT INTO poc_rows (id, body) VALUES (1, '${SECURITY_POC_DUMMY_CONTENT}');
+      `);
+        const count = await queryCount(db2);
+        const body = await queryContent(db2);
+        await sqlite.closeConnection(SECURITY_POC_DB, false);
+        push(
+          "A",
+          "plaintext dummy DB",
+          count === 1 && body === SECURITY_POC_DUMMY_CONTENT ? "pass" : "fail",
+          `rows=${count} contentMatch=${String(body === SECURITY_POC_DUMMY_CONTENT)}`
+        );
+      }
+      await CapacitorSQLite.setEncryptionSecret({ passphrase: passphrase1 });
+      const stored = await CapacitorSQLite.isSecretStored();
+      push(
+        "A-secret",
+        "plugin setEncryptionSecret",
+        stored.result ? "pass" : "fail",
+        `isSecretStored=${String(stored.result)} (plugin Keychain; accessibility not LJD-guaranteed)`
+      );
+      {
+        const beforeCount = 1;
+        let migrationKeptPlain = false;
+        try {
+          const db2 = await sqlite.createConnection(
+            SECURITY_POC_DB,
+            true,
+            "encryption",
+            1,
+            false
+          );
+          await db2.open();
+          const afterCount = await queryCount(db2);
+          const body = await queryContent(db2);
+          const enc = await CapacitorSQLite.isDatabaseEncrypted({ database: SECURITY_POC_DB });
+          const urlRes = await db2.getUrl();
+          dbUrl = urlRes.url ?? "";
+          await sqlite.closeConnection(SECURITY_POC_DB, false);
+          push(
+            "B+mig",
+            "plaintext\u2192encrypted (mode=encryption)",
+            afterCount === beforeCount && body === SECURITY_POC_DUMMY_CONTENT && enc.result === true ? "pass" : "fail",
+            `rowsBefore=${beforeCount} rowsAfter=${afterCount} contentMatch=${String(
+              body === SECURITY_POC_DUMMY_CONTENT
+            )} encrypted=${String(enc.result)}`
+          );
+          push(
+            "C",
+            "isDatabaseEncrypted",
+            enc.result === true ? "pass" : "fail",
+            `encrypted=${String(enc.result)}`
+          );
+        } catch (e) {
+          try {
+            const plain = await openPlain(sqlite, SECURITY_POC_DB);
+            const body = await queryContent(plain);
+            migrationKeptPlain = body === SECURITY_POC_DUMMY_CONTENT;
+            await sqlite.closeConnection(SECURITY_POC_DB, false);
+          } catch {
+            migrationKeptPlain = false;
+          }
+          push(
+            "B+mig",
+            "plaintext\u2192encrypted (mode=encryption)",
+            "fail",
+            `${errMsg(e)}; plaintextRetained=${String(migrationKeptPlain)}`
+          );
+          throw e;
+        }
+      }
+      {
+        const db2 = await sqlite.createConnection(SECURITY_POC_DB, true, "secret", 1, false);
+        await db2.open();
+        const body = await queryContent(db2);
+        await sqlite.closeConnection(SECURITY_POC_DB, false);
+        push(
+          "E",
+          "reopen with correct secret",
+          body === SECURITY_POC_DUMMY_CONTENT ? "pass" : "fail",
+          `contentMatch=${String(body === SECURITY_POC_DUMMY_CONTENT)}`
+        );
+      }
+      push(
+        "D",
+        "app kill / relaunch",
+        "info",
+        "After kill, reopen with mode=secret should succeed while plugin secret remains. Verified in Simulator session when connection re-opened in this suite (E)."
+      );
+      {
+        await closeIfOpen(sqlite, SECURITY_POC_DB);
+        let failed = false;
+        try {
+          const db2 = await sqlite.createConnection(
+            SECURITY_POC_DB,
+            true,
+            "wrongsecret",
+            1,
+            false
+          );
+          await db2.open();
+          await sqlite.closeConnection(SECURITY_POC_DB, false);
+        } catch {
+          failed = true;
+          await closeIfOpen(sqlite, SECURITY_POC_DB);
+        }
+        push(
+          "F",
+          "wrong secret open fails",
+          failed ? "pass" : "fail",
+          `openFailedAsExpected=${String(failed)}`
+        );
+      }
+      {
+        await CapacitorSQLite.changeEncryptionSecret({
+          passphrase: passphrase2,
+          oldpassphrase: passphrase1
+        });
+        push("G", "changeEncryptionSecret", "pass", "plugin changeEncryptionSecret returned");
+        const oldCheck = await CapacitorSQLite.checkEncryptionSecret({
+          passphrase: passphrase1
+        });
+        const newCheck = await CapacitorSQLite.checkEncryptionSecret({
+          passphrase: passphrase2
+        });
+        await closeIfOpen(sqlite, SECURITY_POC_DB);
+        let wrongFails = false;
+        try {
+          const bad = await sqlite.createConnection(
+            SECURITY_POC_DB,
+            true,
+            "wrongsecret",
+            1,
+            false
+          );
+          await bad.open();
+          await sqlite.closeConnection(SECURITY_POC_DB, false);
+        } catch {
+          wrongFails = true;
+          await closeIfOpen(sqlite, SECURITY_POC_DB);
+        }
+        await closeIfOpen(sqlite, SECURITY_POC_DB);
+        const db2 = await sqlite.createConnection(SECURITY_POC_DB, true, "secret", 1, false);
+        await db2.open();
+        const body = await queryContent(db2);
+        const urlRes = await db2.getUrl();
+        dbUrl = urlRes.url ?? dbUrl;
+        await sqlite.closeConnection(SECURITY_POC_DB, false);
+        push(
+          "H",
+          "after change: new secret opens / old rejected",
+          wrongFails && oldCheck.result === false && newCheck.result === true && body === SECURITY_POC_DUMMY_CONTENT ? "pass" : "fail",
+          `oldCheck=${String(oldCheck.result)} newCheck=${String(newCheck.result)} wrongFails=${String(wrongFails)} contentMatch=${String(body === SECURITY_POC_DUMMY_CONTENT)}`
+        );
+      }
+    } catch (e) {
+      push("SQL-error", "SQLCipher suite", "fail", errMsg(e));
+    }
+    try {
+      const paths = await LjdLocalSecurity.resolveCandidatePaths();
+      push(
+        "loc-paths",
+        "candidate path resolve",
+        "info",
+        `A=${paths.candidateA_libraryCapacitorDatabase} B=${paths.candidateB_documents} C=${paths.candidateC_applicationSupportLjd}`
+      );
+      const candidateAFile = `${paths.candidateA_libraryCapacitorDatabase}/${SECURITY_POC_DB}SQLite.db`;
+      const dbPathToInspect = dbUrl || candidateAFile;
+      const dbAttrs = await LjdLocalSecurity.inspectPath({ path: dbPathToInspect });
+      push(
+        "backup-db-A",
+        "Candidate A DB file (Library/CapacitorDatabase)",
+        dbAttrs.exists ? "info" : "fail",
+        fmtAttrs(dbAttrs)
+      );
+      if (dbAttrs.parent) {
+        push(
+          "backup-db-A-parent",
+          "Candidate A DB parent",
+          "info",
+          `excl=${String(dbAttrs.parent.isExcludedFromBackup)} prot=${dbAttrs.parent.fileProtection}`
+        );
+      }
+      const docsProbe = `${paths.candidateB_documents}/ljd_security_poc_docs_probe.db`;
+      const docsAttrs = await LjdLocalSecurity.ensureProbeFile({ path: docsProbe });
+      push(
+        "backup-db-B",
+        "Candidate B Documents probe DB file",
+        "info",
+        `${fmtAttrs(docsAttrs)} (probe; plugin global location remains Library for live SQLite)`
+      );
+      const cProbe = `${paths.candidateC_applicationSupportLjd}/security-poc-probe.db`;
+      const cAttrs = await LjdLocalSecurity.ensureProbeFile({ path: cProbe });
+      push(
+        "backup-db-C",
+        "Candidate C Application Support design probe",
+        "info",
+        fmtAttrs(cAttrs)
+      );
+      await Filesystem.mkdir({
+        path: SECURITY_POC_MEDIA_ROOT,
+        directory: Directory.Library,
+        recursive: true
+      }).catch(() => void 0);
+      const tinyPngBase64 = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==";
+      const mediaRel = `${SECURITY_POC_MEDIA_ROOT}/dummy.png`;
+      await Filesystem.writeFile({
+        path: mediaRel,
+        data: tinyPngBase64,
+        directory: Directory.Library
+      });
+      const uri = await Filesystem.getUri({ path: mediaRel, directory: Directory.Library });
+      const mediaAttrs = await LjdLocalSecurity.inspectPath({ path: uri.uri });
+      const readBack = await Filesystem.readFile({
+        path: mediaRel,
+        directory: Directory.Library
+      });
+      push(
+        "media",
+        "dummy media write/read + attrs",
+        typeof readBack.data === "string" && readBack.data.length > 0 ? "pass" : "fail",
+        `${fmtAttrs(mediaAttrs)} readBytesApprox=${typeof readBack.data === "string" ? readBack.data.length : 0}`
+      );
+      if (dbAttrs.exists) {
+        const afterDb = await LjdLocalSecurity.setCompleteProtection({ path: dbPathToInspect });
+        const dbComplete = afterDb.fileProtection === "NSFileProtectionComplete";
+        push(
+          "fp-complete-db",
+          "set Complete on dummy DB",
+          dbComplete ? "pass" : "info",
+          `${fmtAttrs(afterDb)} setResourceValues(.complete) invoked; Simulator may still report UntilFirstUserAuthentication`
+        );
+      }
+      const afterMedia = await LjdLocalSecurity.setCompleteProtection({ path: uri.uri });
+      const mediaComplete = afterMedia.fileProtection === "NSFileProtectionComplete";
+      push(
+        "fp-complete-media",
+        "set Complete on dummy media",
+        mediaComplete ? "pass" : "info",
+        `${fmtAttrs(afterMedia)} setResourceValues(.complete) invoked; Simulator may still report UntilFirstUserAuthentication`
+      );
+      try {
+        const db2 = await sqlite.createConnection(SECURITY_POC_DB, true, "secret", 1, false);
+        await db2.open();
+        const body = await queryContent(db2);
+        await db2.run("INSERT INTO poc_rows (id, body) VALUES (?, ?);", [
+          2,
+          "unlock-write-ok"
+        ]);
+        await sqlite.closeConnection(SECURITY_POC_DB, false);
+        const readMedia = await Filesystem.readFile({
+          path: mediaRel,
+          directory: Directory.Library
+        });
+        push(
+          "fp-unlocked-rw",
+          "unlocked read/write after Complete",
+          body === SECURITY_POC_DUMMY_CONTENT && typeof readMedia.data === "string" && readMedia.data.length > 0 ? "pass" : "fail",
+          "Simulator cannot prove lock-state denial; attribute set + unlocked R/W verified only."
+        );
+      } catch (e) {
+        const readMedia = await Filesystem.readFile({
+          path: mediaRel,
+          directory: Directory.Library
+        });
+        push(
+          "fp-unlocked-rw",
+          "unlocked read/write after Complete",
+          typeof readMedia.data === "string" && readMedia.data.length > 0 ? "info" : "fail",
+          `DB reopen skipped (${errMsg(e)}); media read ok=${String(typeof readMedia.data === "string")}`
+        );
+      }
+    } catch (e) {
+      push("ATTR-error", "backup/file protection suite", "fail", errMsg(e));
+    }
+    try {
+      await CapacitorSQLite.clearEncryptionSecret();
+      push("cleanup-secret", "clearEncryptionSecret", "info", "plugin secret cleared after PoC");
+    } catch (e) {
+      push("cleanup-secret", "clearEncryptionSecret", "info", errMsg(e));
+    }
+    const sqlFail = steps.some(
+      (s2) => (["A", "B+mig", "C", "E", "F", "G", "H"].includes(s2.id) || s2.id === "SQL-error") && s2.status === "fail"
+    );
+    const keyFail = steps.some(
+      (s2) => ["K1", "K2", "K3", "K5", "K6"].includes(s2.id) && s2.status === "fail"
+    );
+    return {
+      ranAt: (/* @__PURE__ */ new Date()).toISOString(),
+      platform: Capacitor.getPlatform(),
+      steps: redact(steps),
+      summary: {
+        sqlcipherOk: !sqlFail,
+        secureKeyStoreOk: !keyFail,
+        builtInStoreVerdict: "B",
+        builtInStoreNote: "Installed KeychainServices.swift omits kSecAttrAccessible; accessibility not externally selectable."
+      }
+    };
+  }
+  async function checkSecureKeyStorePersistence() {
+    assertNative3();
+    const meta = await SecureKeyStore.exists(SecureKeyStore.POC_ACCOUNT);
+    return { exists: meta.exists, accessibility: meta.accessibility };
+  }
+
   // src/lib/local-first/diagnostics/localStorageDiagnosticsMain.ts
   function $(id) {
     const el = document.getElementById(id);
@@ -2877,13 +3467,123 @@ CREATE INDEX IF NOT EXISTS idx_local_media_journal
         setStatus("\u7AEF\u672BLocal\u8A3A\u65AD\u30C7\u30FC\u30BF\u3092\u524A\u9664\uFF08\u30B5\u30FC\u30D0\u30FC\u672A\u5909\u66F4\uFF09\u3002");
       })().catch((e) => setStatus(String(e), true));
     });
+    $("btn-security").addEventListener("click", () => {
+      void (async () => {
+        setStatus("Security PoC \u5B9F\u884C\u4E2D\u2026\uFF08secret\u975E\u8868\u793A\uFF09");
+        const report = await runLocalDataProtectionPoc();
+        await persistSecurityReport(report);
+        const reportEl = $("security-report");
+        reportEl.textContent = JSON.stringify(
+          {
+            ranAt: report.ranAt,
+            summary: report.summary,
+            steps: report.steps.map((s2) => ({
+              id: s2.id,
+              status: s2.status,
+              title: s2.title,
+              detail: s2.detail
+            }))
+          },
+          null,
+          2
+        );
+        const fails = report.steps.filter((s2) => s2.status === "fail").length;
+        setStatus(
+          `Security PoC \u5B8C\u4E86 fail=${fails} sqlcipherOk=${String(report.summary.sqlcipherOk)} keyStoreOk=${String(report.summary.secureKeyStoreOk)}`
+        );
+      })().catch((e) => setStatus(String(e), true));
+    });
+    $("btn-key-persist").addEventListener("click", () => {
+      void (async () => {
+        const meta = await checkSecureKeyStorePersistence();
+        setStatus(
+          `SecureKeyStore: exists=${String(meta.exists)} accessibility=${meta.accessibility ?? "null"}`
+        );
+      })().catch((e) => setStatus(String(e), true));
+    });
     try {
       await openLocalJournalDatabase();
       await renderEntries();
       setStatus("Diagnostics\u6E96\u5099\u5B8C\u4E86\uFF08SQLite foundation\uFF09\u3002");
+      if (Capacitor.isNativePlatform()) {
+        let k4Detail = "no prior item (first launch after install)";
+        try {
+          const prior = await checkSecureKeyStorePersistence();
+          k4Detail = `priorExists=${String(prior.exists)} accessibility=${prior.accessibility ?? "null"}`;
+          await Filesystem.mkdir({
+            path: "ljd/security-poc",
+            directory: Directory.Library,
+            recursive: true
+          }).catch(() => void 0);
+          await Filesystem.writeFile({
+            path: "ljd/security-poc/k4-persistence.json",
+            directory: Directory.Library,
+            encoding: Encoding.UTF8,
+            data: JSON.stringify(
+              {
+                at: (/* @__PURE__ */ new Date()).toISOString(),
+                exists: prior.exists,
+                accessibility: prior.accessibility
+              },
+              null,
+              2
+            )
+          });
+        } catch (e) {
+          k4Detail = `probe error: ${String(e)}`;
+        }
+        setStatus("Security PoC autorun\u2026");
+        const report = await runLocalDataProtectionPoc();
+        report.steps = report.steps.map(
+          (s2) => s2.id === "K4" ? {
+            ...s2,
+            status: k4Detail.includes("priorExists=true") ? "pass" : "info",
+            detail: `${s2.detail} | measuredOnBoot: ${k4Detail}`
+          } : s2
+        );
+        await persistSecurityReport(report);
+        $("security-report").textContent = JSON.stringify(
+          {
+            ranAt: report.ranAt,
+            summary: report.summary,
+            steps: report.steps
+          },
+          null,
+          2
+        );
+        const fails = report.steps.filter((s2) => s2.status === "fail").length;
+        setStatus(
+          `Security PoC autorun \u5B8C\u4E86 fail=${fails} sqlcipherOk=${String(report.summary.sqlcipherOk)} keyStoreOk=${String(report.summary.secureKeyStoreOk)} k4=${k4Detail}`
+        );
+      }
     } catch (err) {
       setStatus(`\u521D\u671F\u5316\u5931\u6557: ${String(err)}`, true);
     }
+  }
+  async function persistSecurityReport(report) {
+    try {
+      await Filesystem.mkdir({
+        path: "ljd/security-poc",
+        directory: Directory.Library,
+        recursive: true
+      });
+    } catch {
+    }
+    await Filesystem.writeFile({
+      path: "ljd/security-poc/last-report.json",
+      directory: Directory.Library,
+      encoding: Encoding.UTF8,
+      data: JSON.stringify(
+        {
+          ranAt: report.ranAt,
+          platform: report.platform,
+          summary: report.summary,
+          steps: report.steps
+        },
+        null,
+        2
+      )
+    });
   }
   void boot();
 })();

@@ -42,10 +42,22 @@ const config: CapacitorConfig = {
   },
   plugins: {
     CapacitorSQLite: {
-      /** Align with device-storage SoT: life-record DB under Library, not Cache. */
+      /**
+       * Provisional location (Security SoT: formal path undecided until 4B-3B measure).
+       * Candidate A for backup attribute PoC.
+       */
       iosDatabaseLocation: "Library/CapacitorDatabase",
-      /** Foundation: no encryption productization yet (plugin still links SQLCipher). */
-      iosIsEncryption: false,
+      /**
+       * Enables SQLCipher plugin APIs for Security PoC (4B-3B).
+       * Production journal connection remains mode "no-encryption".
+       * Not a production encryption rollout.
+       */
+      iosIsEncryption: true,
+      /**
+       * Required by plugin for setEncryptionSecret / changeEncryptionSecret.
+       * Plugin KeychainWrapper still omits kSecAttrAccessible (verdict B).
+       */
+      iosKeychainPrefix: "ljd",
     },
   },
 };
