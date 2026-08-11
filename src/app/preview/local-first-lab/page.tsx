@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { notFound } from "next/navigation";
 
 import { LocalFirstMigrationLabClient } from "@/components/local-first/LocalFirstMigrationLabClient";
@@ -21,7 +22,9 @@ export default function LocalFirstLabPreviewPage() {
         <p className="text-sm leading-relaxed text-stone-600">
           ログインした状態で、移行確認用にあしあと1件の ID を指定してください。正式な公開メニューではありません。
         </p>
-        <LocalFirstMigrationLabClient />
+        <Suspense fallback={<p className="text-sm text-stone-500">読み込み中…</p>}>
+          <LocalFirstMigrationLabClient />
+        </Suspense>
       </div>
     </div>
   );

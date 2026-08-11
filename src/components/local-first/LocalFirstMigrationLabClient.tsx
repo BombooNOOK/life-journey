@@ -6,7 +6,8 @@
  */
 
 import { Capacitor } from "@capacitor/core";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { useSearchParams } from "next/navigation";
 
 import { JournalRepository } from "@/lib/local-first/journal/repository";
 import { migrateServerJournalEntryToDevice } from "@/lib/local-first/journal/migrateFromServer";
@@ -14,12 +15,41 @@ import { resolveJournalMediaUri } from "@/lib/local-first/journal/mediaStore";
 import { deleteJournalMediaRelative } from "@/lib/local-first/journal/mediaStore";
 import type { LocalJournalEntry } from "@/lib/local-first/journal/types";
 
+function formatMigrationStatus(
+  result: Awaited<ReturnType<typeof migrateServerJournalEntryToDevice>>,
+): string {
+  if (!result.ok) {
+    return `失敗 [${result.code}]: ${result.message}`;
+  }
+  const s = result.sizes;
+  return [
+    result.status === "already_present"
+      ? "既に端末にあります（stableIdは増殖しません）"
+      : "端末へコピー完了（サーバーは変更していません）",
+    `stableId=${result.entry.stableId}`,
+    `legacyServerId=${result.entry.legacyServerId}`,
+    `serverUpdatedAt=${result.entry.serverUpdatedAt ?? "(none)"}`,
+    `importedAt=${result.entry.importedAt ?? "(none)"}`,
+    `source=${result.entry.source}`,
+    `contentChars=${s.contentChars}`,
+    `metaApproxBytes=${s.metaJsonBytesApprox}`,
+    `photoBytes=${s.photoBytes}`,
+    `relativePath=${s.relativePath ?? "(none)"}`,
+    `checksum=${s.checksum ? `${s.checksum.slice(0, 12)}…` : "(none)"}`,
+    `checksumFull=${s.checksum ?? "(none)"}`,
+    `localCountHint=see list below`,
+  ].join("\n");
+}
+
 export function LocalFirstMigrationLabClient() {
-  const [entryId, setEntryId] = useState("");
+  const searchParams = useSearchParams();
+  const initialId = searchParams.get("entryId")?.trim() ?? "";
+  const [entryId, setEntryId] = useState(initialId);
   const [status, setStatus] = useState("準備中…");
   const [entries, setEntries] = useState<LocalJournalEntry[]>([]);
   const [previewUri, setPreviewUri] = useState<string | null>(null);
   const native = Capacitor.isNativePlatform();
+  const autorunDone = useRef(false);
 
   const refresh = useCallback(async () => {
     if (!Capacitor.isNativePlatform()) {
@@ -28,7 +58,8 @@ export function LocalFirstMigrationLabClient() {
     }
     const list = await JournalRepository.list();
     setEntries(list);
-    const firstMedia = list[0]?.mediaRefs[0];
+    const migrated = list.find((e) => e.source === "migrated_server") ?? list[0];
+    const firstMedia = migrated?.mediaRefs[0] ?? list[0]?.mediaRefs[0];
     if (firstMedia) {
       setPreviewUri(await resolveJournalMediaUri(firstMedia.relativePath));
     } else {
@@ -40,28 +71,42 @@ export function LocalFirstMigrationLabClient() {
   const onMigrate = useCallback(async () => {
     setStatus("サーバーから1件受け取り中…（本文はログしません）");
     const result = await migrateServerJournalEntryToDevice(entryId);
-    if (!result.ok) {
-      setStatus(`失敗 [${result.code}]: ${result.message}`);
-      return;
-    }
-    const s = result.sizes;
-    setStatus(
-      [
-        result.status === "already_present"
-          ? "既に端末にあります（stableIdは増殖しません）"
-          : "端末へコピー完了（サーバーは変更していません）",
-        `stableId=${result.entry.stableId}`,
-        `legacyServerId=${result.entry.legacyServerId}`,
-        `serverUpdatedAt=${result.entry.serverUpdatedAt ?? "(none)"}`,
-        `contentChars=${s.contentChars}`,
-        `metaApproxBytes=${s.metaJsonBytesApprox}`,
-        `photoBytes=${s.photoBytes}`,
-        `relativePath=${s.relativePath ?? "(none)"}`,
-        `checksum=${s.checksum ? `${s.checksum.slice(0, 12)}…` : "(none)"}`,
-      ].join("\n"),
-    );
+    setStatus(formatMigrationStatus(result));
     await refresh();
+    return result;
   }, [entryId, refresh]);
+
+  // PoC helper: ?entryId=...&autorun=1 (and optional autorunTwice=1) for Simulator automation
+  useEffect(() => {
+    if (!native || autorunDone.current) return;
+    const autorun = searchParams.get("autorun") === "1";
+    const twice = searchParams.get("autorunTwice") === "1";
+    const clearFirst = searchParams.get("clearFirst") === "1";
+    const id = (searchParams.get("entryId") ?? entryId).trim();
+    if (!autorun || !id) return;
+    autorunDone.current = true;
+    void (async () => {
+      try {
+        if (clearFirst) {
+          const paths = await JournalRepository.deletePocData();
+          for (const p of paths) await deleteJournalMediaRelative(p);
+        }
+        setEntryId(id);
+        setStatus("autorun: 1回目受け取り中…");
+        const first = await migrateServerJournalEntryToDevice(id);
+        let text = `--- run1 ---\n${formatMigrationStatus(first)}`;
+        if (twice) {
+          setStatus("autorun: 2回目受け取り中（dedupe確認）…");
+          const second = await migrateServerJournalEntryToDevice(id);
+          text += `\n--- run2 ---\n${formatMigrationStatus(second)}`;
+        }
+        setStatus(text);
+        await refresh();
+      } catch (err) {
+        setStatus(`autorun失敗: ${String(err)}`);
+      }
+    })();
+  }, [native, searchParams, entryId, refresh]);
 
   const onClear = useCallback(async () => {
     const paths = await JournalRepository.deletePocData();
