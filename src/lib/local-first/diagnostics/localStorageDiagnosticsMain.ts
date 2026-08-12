@@ -13,6 +13,8 @@ import {
 import { JournalRepository } from "@/lib/local-first/journal/repository";
 import {
   inspectPluginDbKeyAccessibility,
+  listSqliteArtifactsReadOnly,
+  readAvailableBytesOrNull,
   resolveLjdApplicationSupportDir,
   safeErrorMessage,
 } from "@/lib/local-first/security";
@@ -104,6 +106,31 @@ async function boot(): Promise<void> {
       await renderEntries();
       setStatus("端末Local診断データを削除（サーバー未変更）。");
     })().catch((e) => setStatus(String(e), true));
+  });
+
+  $("btn-inspect-capacity").addEventListener("click", () => {
+    void (async () => {
+      const capacity = await readAvailableBytesOrNull();
+      let artifacts: Awaited<ReturnType<typeof listSqliteArtifactsReadOnly>> = [];
+      try {
+        artifacts = await listSqliteArtifactsReadOnly();
+      } catch {
+        artifacts = [];
+      }
+      const report = {
+        readOnly: true,
+        platform: capacity.platform,
+        availableBytes: capacity.availableBytes,
+        capacitySource: capacity.source,
+        api: capacity.decision.known ? "available" : "unavailable",
+        decision: capacity.decision.reason,
+        artifacts,
+      };
+      $("security-report").textContent = JSON.stringify(report, null, 2);
+      setStatus(
+        `capacity api=${report.api} available=${String(capacity.availableBytes)} (no secrets/paths)`,
+      );
+    })().catch((e) => setStatus(safeErrorMessage(e), true));
   });
 
   $("btn-inspect-attrs").addEventListener("click", () => {

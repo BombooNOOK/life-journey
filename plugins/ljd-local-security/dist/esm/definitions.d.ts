@@ -49,6 +49,25 @@ export interface InspectGenericPasswordAccessibilityResult {
   note?: string;
 }
 
+export interface VolumeAvailableCapacityResult {
+  ok: boolean;
+  availableBytes: number | null;
+  importantUsageBytes: number | null;
+  volumeAvailableCapacity: number | null;
+  opportunisticUsageBytes: number | null;
+  source: string;
+}
+
+export interface SqliteArtifactListing {
+  name: string;
+  bytes: number;
+  role: string;
+}
+
+export interface ListSqliteArtifactsResult {
+  artifacts: SqliteArtifactListing[];
+}
+
 export interface LjdLocalSecurityPlugin {
   inspectPath(options: PathOptions): Promise<PathAttributes>;
   setCompleteProtection(options: PathOptions): Promise<PathAttributes>;
@@ -57,4 +76,6 @@ export interface LjdLocalSecurityPlugin {
   inspectGenericPasswordAccessibility(
     options: InspectGenericPasswordAccessibilityOptions,
   ): Promise<InspectGenericPasswordAccessibilityResult>;
+  getVolumeAvailableCapacity(): Promise<VolumeAvailableCapacityResult>;
+  listSqliteArtifactsInLjdDir(): Promise<ListSqliteArtifactsResult>;
 }

@@ -29,6 +29,16 @@ export {
 export { inspectPluginDbKeyAccessibility } from "@/lib/local-first/security/pluginKeychain";
 export { mapSecurityError } from "@/lib/local-first/security/securityErrorMapping";
 export {
+  decideCapacityKnown,
+  pluginStorageCapacityProvider,
+  readAvailableBytesOrNull,
+  readStorageCapacity,
+} from "@/lib/local-first/security/storageCapacity";
+export {
+  classifySqliteArtifactRole,
+  listSqliteArtifactsReadOnly,
+} from "@/lib/local-first/security/storageInspection";
+export {
   isConfiguredRelativeLocation,
   pluginRelativeLocationForBundleId,
   resolveLjdApplicationSupportDir,

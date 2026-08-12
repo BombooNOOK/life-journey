@@ -28,4 +28,14 @@ describe("no-secret logging", () => {
       assertNoSecretInText("secret: abcdefghijklmnop"),
     ).toThrow(/refusing to log/);
   });
+
+  it("keeps API method names while redacting hex blobs", () => {
+    const msg = safeErrorMessage(
+      new Error("Query: Connection to ljd_enc_mig_fixture_plain not available"),
+    );
+    expect(msg).toContain("ljd_enc_mig_fixture_plain");
+    expect(
+      safeErrorMessage(new Error("key=abcdef0123456789abcdef0123456789")),
+    ).not.toContain("abcdef0123456789abcdef0123456789");
+  });
 });

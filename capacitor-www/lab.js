@@ -1619,6 +1619,12 @@
         async inspectGenericPasswordAccessibility() {
           throw this.unimplemented("Not implemented on web.");
         }
+        async getVolumeAvailableCapacity() {
+          throw this.unimplemented("Not implemented on web.");
+        }
+        async listSqliteArtifactsInLjdDir() {
+          throw this.unimplemented("Not implemented on web.");
+        }
       };
     }
   });
@@ -2877,8 +2883,9 @@ CREATE INDEX IF NOT EXISTS idx_local_media_journal
   function safeErrorMessage(error) {
     if (error instanceof Error) {
       const msg = error.message;
-      if (SECRET_KEY.test(msg)) return `${error.name}: [redacted security error]`;
-      return msg;
+      const hasSecretValue = SECRET_KEY.test(msg) && /:\s*['"]?[A-Za-z0-9+/=_-]{12,}/.test(msg);
+      if (hasSecretValue) return `${error.name}: [redacted security error]`;
+      return msg.replace(/\b[A-Fa-f0-9]{24,}\b/g, "[redacted]");
     }
     return String(redactSecretLike(error));
   }
@@ -2940,6 +2947,92 @@ CREATE INDEX IF NOT EXISTS idx_local_media_journal
         matchesWhenUnlocked: result.found && result.accessibility === LJD_PLUGIN_KEYCHAIN_ACCESSIBILITY_MEASURED,
         returnedSecretData: false
       };
+    } catch (error) {
+      throw mapSecurityError(error);
+    }
+  }
+
+  // src/lib/local-first/security/storageCapacity.ts
+  init_dist();
+  function mapVolumeResultToReading(result, platform = Capacitor.getPlatform()) {
+    const available = typeof result.availableBytes === "number" && Number.isFinite(result.availableBytes) ? result.availableBytes : null;
+    return {
+      ok: Boolean(result.ok) && available != null,
+      availableBytes: available,
+      importantUsageBytes: typeof result.importantUsageBytes === "number" ? result.importantUsageBytes : null,
+      volumeAvailableCapacity: typeof result.volumeAvailableCapacity === "number" ? result.volumeAvailableCapacity : null,
+      opportunisticUsageBytes: typeof result.opportunisticUsageBytes === "number" ? result.opportunisticUsageBytes : null,
+      source: result.source,
+      platform
+    };
+  }
+  function decideCapacityKnown(availableBytes) {
+    if (availableBytes == null) {
+      return {
+        known: false,
+        availableBytes: null,
+        reason: "capacity_unknown_fail_closed"
+      };
+    }
+    return { known: true, availableBytes, reason: "ok" };
+  }
+  async function readStorageCapacity() {
+    if (!Capacitor.isNativePlatform()) {
+      throw new LocalFirstSecurityError("native_only", "storage capacity is native-only");
+    }
+    try {
+      const result = await LjdLocalSecurity.getVolumeAvailableCapacity();
+      return mapVolumeResultToReading(result);
+    } catch (error) {
+      throw mapSecurityError(error);
+    }
+  }
+  var pluginStorageCapacityProvider = {
+    read: readStorageCapacity
+  };
+  async function readAvailableBytesOrNull() {
+    try {
+      const reading = await pluginStorageCapacityProvider.read();
+      const decision = decideCapacityKnown(reading.ok ? reading.availableBytes : null);
+      return {
+        availableBytes: decision.availableBytes,
+        source: reading.source,
+        platform: reading.platform,
+        decision
+      };
+    } catch {
+      return {
+        availableBytes: null,
+        source: "api_error",
+        platform: Capacitor.getPlatform(),
+        decision: decideCapacityKnown(null)
+      };
+    }
+  }
+
+  // src/lib/local-first/security/storageInspection.ts
+  init_dist();
+  function classifySqliteArtifactRole(fileName) {
+    if (fileName.endsWith("-wal") || fileName.includes(".db-wal")) return "sidecar_wal";
+    if (fileName.endsWith("-shm") || fileName.includes(".db-shm")) return "sidecar_shm";
+    if (fileName.includes("-journal")) return "sidecar_journal";
+    if (fileName.endsWith("SQLite.db") || fileName.endsWith(".db")) return "sqlite_db";
+    return "other";
+  }
+  async function listSqliteArtifactsReadOnly() {
+    if (!Capacitor.isNativePlatform()) {
+      throw new LocalFirstSecurityError(
+        "native_only",
+        "sqlite artifact inspection is native-only"
+      );
+    }
+    try {
+      const listing = await LjdLocalSecurity.listSqliteArtifactsInLjdDir();
+      return (listing.artifacts ?? []).map((item) => ({
+        name: item.name,
+        bytes: Number(item.bytes) || 0,
+        role: item.role || classifySqliteArtifactRole(item.name)
+      }));
     } catch (error) {
       throw mapSecurityError(error);
     }
@@ -3034,6 +3127,30 @@ CREATE INDEX IF NOT EXISTS idx_local_media_journal
         await renderEntries();
         setStatus("\u7AEF\u672BLocal\u8A3A\u65AD\u30C7\u30FC\u30BF\u3092\u524A\u9664\uFF08\u30B5\u30FC\u30D0\u30FC\u672A\u5909\u66F4\uFF09\u3002");
       })().catch((e) => setStatus(String(e), true));
+    });
+    $("btn-inspect-capacity").addEventListener("click", () => {
+      void (async () => {
+        const capacity = await readAvailableBytesOrNull();
+        let artifacts = [];
+        try {
+          artifacts = await listSqliteArtifactsReadOnly();
+        } catch {
+          artifacts = [];
+        }
+        const report = {
+          readOnly: true,
+          platform: capacity.platform,
+          availableBytes: capacity.availableBytes,
+          capacitySource: capacity.source,
+          api: capacity.decision.known ? "available" : "unavailable",
+          decision: capacity.decision.reason,
+          artifacts
+        };
+        $("security-report").textContent = JSON.stringify(report, null, 2);
+        setStatus(
+          `capacity api=${report.api} available=${String(capacity.availableBytes)} (no secrets/paths)`
+        );
+      })().catch((e) => setStatus(safeErrorMessage(e), true));
     });
     $("btn-inspect-attrs").addEventListener("click", () => {
       void (async () => {

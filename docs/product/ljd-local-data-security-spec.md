@@ -2,7 +2,7 @@
  * Life Journey Diary｜Local-first データ保護・暗号化方針
  *
  * Status: Current Local Data Security Architecture / Source of Truth
- * Updated: 2026-08-12（4B-3E: Security Foundation。自動暗号化・Local原本化は含まない）
+ * Updated: 2026-08-12（4B-3H: capacity Foundation候補。自動暗号化・Local原本化は含まない）
  * Baseline main: 1a8a8b1057bd98c0ceea6e64ec97f6d74e514c41
  * PoC evidence: 4B-3B〜3D on test/ios-local-first-backup-restore @ 2519e23
  * Scope: 設計＋明示呼び出し可能な Foundation。ljd_local_journal の自動暗号化、
@@ -137,6 +137,19 @@ plugin は SQLCipher を iOS/Android で使用。encrypted open 能力は `src/l
 **Release Gate:** OS backup 中身（RG-2）・restore 後 open（RG-3）は未実証。会社端末では restore 禁止のため未実施。
 
 比較済み（PoC）: Documents / CapacitorDatabase 既定は本番第一候補にしない。
+
+### 4.4 初回 production Local-first 化（設計候補・未確定）
+
+現状の actual `ljd_local_journal` は **schema version 1・entries/tags/media 0・実ユーザーデータなし**。
+
+**第一候補（Strategy B / 未確定）:** plaintext の空 DB を in-place / production migration するより、**encrypted Local Journal を fresh bootstrap** し、Server 原本を残したまま検証してから正式 Local DB へ切り替える。
+
+- 空 DB を migration する実益が小さい
+- 最初から encrypted 正式構成を作れる
+- plaintext→encrypted という余分な production step を減らせる
+- 4B-3F/3G の migration engine は **将来の schema / encryption / recovery 用 reference** として feature branch に残す（今回 main 化しない）
+
+**本 Phase では作成・切替しない。** RG-1〜4 は未完のまま。
 
 ---
 
