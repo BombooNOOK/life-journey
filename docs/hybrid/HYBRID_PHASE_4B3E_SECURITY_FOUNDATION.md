@@ -132,6 +132,8 @@ Apple 仕様上 Complete はロック後まもなく不可。LJD は実機で拒
 
 ## 10. main 統合判定（この branch）
 
-**B — PoC依存は除去したが、main へ入れる前にレビュー待ち。**  
-コード上 A 条件（一般動線不変・明示呼出まで人生記録へ触れない）は満たす設計。  
-本Phaseは **origin/main へ merge しない**。
+**A — Security Foundation は main へ統合可能な状態。**
+
+条件: 一般ユーザー動線は不変。encrypted helper は明示呼出まで人生記録へ触れない。`ljd_local_journal` は plaintext のまま。PoC dummy/lock/SecureKeyStore は入っていない。
+
+本Phaseでは指示どおり **origin/main へ merge しない**（push のみ）。
