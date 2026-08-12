@@ -389,6 +389,12 @@ export function CompanionWritingPage() {
         throw new Error("保存に失敗しました。あしあとIDを取得できませんでした。");
       }
 
+      void import("@/lib/local-first/journal/save/handleConfirmedServerJournalMirror")
+        .then(({ handleConfirmedServerJournalMirror }) =>
+          handleConfirmedServerJournalMirror({ serverEntryId: data.entry.id }),
+        )
+        .catch(() => undefined);
+
       if (typeof data.donguriBalance === "number") {
         writeDonguriBalanceHint(effectiveProfileId, data.donguriBalance);
         setAcornBalance(data.donguriBalance);

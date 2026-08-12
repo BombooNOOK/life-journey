@@ -919,6 +919,14 @@ function JournalPageContent() {
         return;
       }
 
+      if (isNewEntrySave) {
+        void import("@/lib/local-first/journal/save/handleConfirmedServerJournalMirror")
+          .then(({ handleConfirmedServerJournalMirror }) =>
+            handleConfirmedServerJournalMirror({ serverEntryId: savedId }),
+          )
+          .catch(() => undefined);
+      }
+
       if (
         isNewEntrySave &&
         effectiveProfileId &&

@@ -18,6 +18,7 @@ export const TEST_PURPOSE_TAGS = [
   "#お引越しテスト",
   "#LocalCopyTest",
   "#WriteThroughTest",
+  "#SaveWiringTest",
 ] as const;
 
 export const FAILURE_INJECTION_MISSING_ENTRY_ID = "ljd-poc-missing-entry-id" as const;

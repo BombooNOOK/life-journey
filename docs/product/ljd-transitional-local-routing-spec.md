@@ -322,6 +322,10 @@ production save 配線、pending queue 実装、background retry、Local read �
 **追記（4B-4I）:** 独立 outbox PoC は `docs/product/ljd-local-mirror-outbox-spec.md` ／  
 `docs/hybrid/HYBRID_PHASE_4B4I_LOCAL_MIRROR_OUTBOX_POC.md`。production save 配線は引き続き禁止。
 
+**追記（4B-4L）:** internal save mirror wiring PoC は `docs/hybrid/HYBRID_PHASE_4B4L_INTERNAL_SAVE_WIRING_POC.md`。  
+developer/internal gate 有効時のみ `handleConfirmedServerJournalMirror` を Server 成功後に fire-and-forget。  
+`SERVER_SUCCESS_TO_OUTBOX_GAP` は未解決（Release Blocker 候補）。
+
 ---
 
 ## 21. 矛盾時の優先
@@ -342,4 +346,10 @@ pending pin / retirement_blocked / independent registry は本 transitional rout
 ## 23. 4B-4K 追記
 
 registry validation 層 PoC: `docs/hybrid/HYBRID_PHASE_4B4K_GENERATION_REGISTRY_POC.md`。
+
+---
+
+## 24. 4B-4L 追記
+
+internal save mirror wiring PoC: `docs/hybrid/HYBRID_PHASE_4B4L_INTERNAL_SAVE_WIRING_POC.md`。
 

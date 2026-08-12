@@ -24,6 +24,7 @@ execSync(
     "--target=es2020",
     `--outfile=${path.join(outDir, "lab.js")}`,
     "--alias:@=./src",
+    `--define:process.env.NEXT_PUBLIC_INTERNAL_JOURNAL_SAVE_MIRROR=${JSON.stringify(process.env.NEXT_PUBLIC_INTERNAL_JOURNAL_SAVE_MIRROR ?? "1")}`,
   ].join(" "),
   { cwd: root, stdio: "inherit" },
 );

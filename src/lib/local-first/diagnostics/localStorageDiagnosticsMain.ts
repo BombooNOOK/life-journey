@@ -26,6 +26,7 @@ import { initializeCurrentCandidateRegistry } from "@/lib/local-first/journal/re
 import { openLocalGenerationRegistrySqliteStore } from "@/lib/local-first/journal/registry/LocalGenerationRegistrySqliteStore";
 import { resolveLocalJournalGenerationTargetWithRegistryValidation } from "@/lib/local-first/journal/registry/resolveWithRegistryValidation";
 import { runGenerationRegistryPoc } from "@/lib/local-first/journal/registry/runGenerationRegistryPoc";
+import { runInternalSaveMirrorWiringPoc } from "@/lib/local-first/journal/save/runInternalSaveMirrorWiringPoc";
 import { FAILURE_INJECTION_MISSING_ENTRY_ID } from "@/lib/local-first/journal/secureCopy/types";
 import {
   deleteJournalMediaRelative,
@@ -469,6 +470,16 @@ async function boot(): Promise<void> {
       $("security-report").textContent = JSON.stringify(report, null, 2);
       const fails = report.steps.filter((s) => s.status === "fail").length;
       setStatus(`registry-poc fail=${fails}`, fails > 0);
+    })().catch((e) => setStatus(safeErrorMessage(e), true));
+  });
+
+  $("btn-save-wiring-poc").addEventListener("click", () => {
+    void (async () => {
+      setStatus("internal save mirror wiring PoC L1–L13…");
+      const report = await runInternalSaveMirrorWiringPoc();
+      $("security-report").textContent = JSON.stringify(report, null, 2);
+      const fails = report.steps.filter((s) => s.status === "fail").length;
+      setStatus(`save-wiring-poc fail=${fails} gap=${report.residualGap}`, fails > 0);
     })().catch((e) => setStatus(safeErrorMessage(e), true));
   });
 

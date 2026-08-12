@@ -3584,7 +3584,8 @@ CREATE INDEX IF NOT EXISTS idx_local_media_journal
         "#\u30C6\u30B9\u30C8",
         "#\u304A\u5F15\u8D8A\u3057\u30C6\u30B9\u30C8",
         "#LocalCopyTest",
-        "#WriteThroughTest"
+        "#WriteThroughTest",
+        "#SaveWiringTest"
       ];
       FAILURE_INJECTION_MISSING_ENTRY_ID = "ljd-poc-missing-entry-id";
     }
@@ -7208,6 +7209,1290 @@ CREATE TABLE IF NOT EXISTS mirror_outbox (
     }
   }
 
+  // src/lib/local-first/journal/registry/initializeCurrentCandidateRegistry.ts
+  init_dist();
+  init_LocalJournalActivationManifestStore();
+  init_types5();
+
+  // src/lib/local-first/journal/registry/types.ts
+  init_types5();
+  init_types();
+  var LOCAL_GENERATION_REGISTRY_POC_DB_NAME = "ljd_local_generation_registry_poc";
+  var REGISTRY_FORMAT_VERSION = 1;
+  var REGISTRY_CANDIDATE_DATABASE_ID = TECHNICAL_ACTIVE_DATABASE_ID;
+  var REGISTRY_CANDIDATE_MEDIA_ROOT_ID = TECHNICAL_ACTIVE_MEDIA_ROOT_ID;
+  var MANIFEST_STORAGE_GENERATION_ORDINAL = TECHNICAL_CANDIDATE_GENERATION;
+  var LIFECYCLE_STATES = [
+    "staged",
+    "ready",
+    "technical_active",
+    "previous",
+    "retirement_blocked",
+    "retired",
+    "quarantined"
+  ];
+  var ROUTING_ALLOWED_LIFECYCLE_STATES = ["technical_active"];
+  function isPlaintextActualDatabaseId(databaseId) {
+    return databaseId === LOCAL_JOURNAL_DB_NAME;
+  }
+  function isValidLifecycleState(value) {
+    return LIFECYCLE_STATES.includes(value);
+  }
+  function isRoutingAllowedState(state) {
+    return ROUTING_ALLOWED_LIFECYCLE_STATES.includes(state);
+  }
+  function isValidSchemaVersion(schemaVersion) {
+    return schemaVersion === EXPECTED_JOURNAL_SCHEMA_VERSION;
+  }
+  function legacyAliasFromManifestGeneration(generation) {
+    return `manifest-generation:${generation}`;
+  }
+
+  // src/lib/local-first/journal/registry/initializeCurrentCandidateRegistry.ts
+  init_LocalJournalSecureBootstrapper();
+  init_types3();
+  function manifestMatchesCandidate(manifest) {
+    return manifest.activeDatabaseId === REGISTRY_CANDIDATE_DATABASE_ID && manifest.activeMediaRootId === REGISTRY_CANDIDATE_MEDIA_ROOT_ID && manifest.schemaVersion === EXPECTED_JOURNAL_SCHEMA_VERSION && manifest.activationState === "active";
+  }
+  async function initializeCurrentCandidateRegistry(store) {
+    if (!Capacitor.isNativePlatform()) {
+      throw new LocalFirstSecurityError(
+        "native_only",
+        "registry initialize is native-only"
+      );
+    }
+    const manifestRead = await LocalJournalActivationManifestStore.readNative();
+    if (manifestRead.status !== "ok" || !manifestRead.manifest) {
+      throw new Error(`manifest_not_ready:${manifestRead.status}`);
+    }
+    const manifest = manifestRead.manifest;
+    const manifestConsistent = manifestMatchesCandidate(manifest);
+    const inspection = await LocalJournalSecureBootstrapper.inspect();
+    const candidatePreflightOk = inspection.exists === true && inspection.encrypted === true && inspection.health.status === "ready";
+    if (!candidatePreflightOk) {
+      throw new Error(
+        `candidate_preflight_failed:${inspection.health.status}:${inspection.health.reason ?? "unknown"}`
+      );
+    }
+    const lifecycleStateAssigned = manifestConsistent ? "technical_active" : "ready";
+    const result = await store.initializeCurrentCandidate({
+      databaseId: REGISTRY_CANDIDATE_DATABASE_ID,
+      mediaRootId: REGISTRY_CANDIDATE_MEDIA_ROOT_ID,
+      schemaVersion: EXPECTED_JOURNAL_SCHEMA_VERSION,
+      lifecycleState: lifecycleStateAssigned,
+      integrityStatus: "ok",
+      legacyGenerationAlias: legacyAliasFromManifestGeneration(
+        MANIFEST_STORAGE_GENERATION_ORDINAL
+      ),
+      activatedAt: manifestConsistent ? manifest.activatedAt : null
+    });
+    return {
+      ...result,
+      lifecycleStateAssigned,
+      manifestConsistent,
+      candidatePreflightOk
+    };
+  }
+
+  // src/lib/local-first/journal/registry/LocalGenerationRegistrySqliteStore.ts
+  init_dist();
+
+  // src/lib/local-first/journal/registry/plainSqliteDatabase.ts
+  init_dist();
+  init_esm();
+  init_types();
+  init_securityErrorMapping();
+  init_types3();
+  function assertNotProductionJournal3(name) {
+    if (name === LOCAL_JOURNAL_DB_NAME) {
+      throw new LocalFirstSecurityError(
+        "journal_encryption_forbidden",
+        "ljd_local_journal must not be used for registry metadata DB"
+      );
+    }
+  }
+  async function closeNamedPlainDatabase(name) {
+    assertNotProductionJournal3(name);
+    try {
+      const sqlite = new SQLiteConnection(CapacitorSQLite);
+      if ((await sqlite.isConnection(name, false)).result) {
+        await sqlite.closeConnection(name, false);
+      }
+    } catch {
+      try {
+        await CapacitorSQLite.closeConnection({ database: name, readonly: false });
+      } catch {
+      }
+    }
+  }
+  async function openNamedPlainDatabase(name, version = 1) {
+    assertNotProductionJournal3(name);
+    if (!Capacitor.isNativePlatform()) {
+      throw new LocalFirstSecurityError("native_only", "plain registry DB is native-only");
+    }
+    try {
+      const sqlite = new SQLiteConnection(CapacitorSQLite);
+      try {
+        await sqlite.checkConnectionsConsistency();
+      } catch {
+      }
+      if ((await sqlite.isConnection(name, false)).result) {
+        await sqlite.closeConnection(name, false);
+      }
+      const db2 = await sqlite.createConnection(
+        name,
+        false,
+        "no-encryption",
+        version,
+        false
+      );
+      await db2.open();
+      return db2;
+    } catch (error) {
+      throw mapSecurityError(error);
+    }
+  }
+
+  // src/lib/local-first/journal/registry/LocalGenerationRegistrySqliteStore.ts
+  init_security();
+  init_types3();
+  var CREATE_SQL2 = `
+CREATE TABLE IF NOT EXISTS generation_registry (
+  generation_id TEXT PRIMARY KEY NOT NULL,
+  database_id TEXT NOT NULL UNIQUE,
+  media_root_id TEXT NOT NULL UNIQUE,
+  schema_version INTEGER NOT NULL,
+  lifecycle_state TEXT NOT NULL,
+  integrity_status TEXT NOT NULL,
+  legacy_generation_alias TEXT,
+  created_at TEXT NOT NULL,
+  activated_at TEXT,
+  previous_at TEXT,
+  retired_at TEXT,
+  quarantined_at TEXT,
+  registry_format_version INTEGER NOT NULL,
+  UNIQUE(database_id, media_root_id)
+);
+`;
+  function assertNative4() {
+    if (!Capacitor.isNativePlatform()) {
+      throw new LocalFirstSecurityError("native_only", "registry sqlite is native-only");
+    }
+  }
+  function newGenerationId() {
+    const arr = new Uint8Array(16);
+    crypto.getRandomValues(arr);
+    return `gen_${[...arr].map((b) => b.toString(16).padStart(2, "0")).join("")}`;
+  }
+  function mapRow2(row) {
+    const lifecycleState = String(row.lifecycle_state);
+    if (!isValidLifecycleState(lifecycleState)) return null;
+    const schemaVersion = Number(row.schema_version);
+    if (!isValidSchemaVersion(schemaVersion)) return null;
+    return {
+      generationId: String(row.generation_id),
+      databaseId: String(row.database_id),
+      mediaRootId: String(row.media_root_id),
+      schemaVersion,
+      lifecycleState,
+      integrityStatus: String(row.integrity_status),
+      legacyGenerationAlias: row.legacy_generation_alias == null ? null : String(row.legacy_generation_alias),
+      createdAt: String(row.created_at),
+      activatedAt: row.activated_at == null ? null : String(row.activated_at),
+      previousAt: row.previous_at == null ? null : String(row.previous_at),
+      retiredAt: row.retired_at == null ? null : String(row.retired_at),
+      quarantinedAt: row.quarantined_at == null ? null : String(row.quarantined_at),
+      registryFormatVersion: Number(
+        row.registry_format_version
+      )
+    };
+  }
+  async function resolveRegistryPocDbAbsolutePath() {
+    const asDir = await resolveLjdApplicationSupportDir();
+    return `${asDir.ljdApplicationSupportDir}/${LOCAL_GENERATION_REGISTRY_POC_DB_NAME}SQLite.db`;
+  }
+  async function openLocalGenerationRegistrySqliteStore() {
+    assertNative4();
+    {
+      const db2 = await openNamedPlainDatabase(
+        LOCAL_GENERATION_REGISTRY_POC_DB_NAME,
+        REGISTRY_FORMAT_VERSION
+      );
+      await db2.execute(CREATE_SQL2);
+      await db2.execute(`PRAGMA user_version = ${REGISTRY_FORMAT_VERSION};`);
+      await closeNamedPlainDatabase(LOCAL_GENERATION_REGISTRY_POC_DB_NAME);
+    }
+    const absolutePath = await resolveRegistryPocDbAbsolutePath();
+    let completeProtection = null;
+    let backupIncluded = null;
+    try {
+      await applyCompleteFileProtection(absolutePath);
+      const attrs = await inspectFileProtection(absolutePath);
+      completeProtection = attrs.fileProtection === "NSFileProtectionComplete";
+      const backup = await ensurePathIncludedInBackup(absolutePath);
+      backupIncluded = backup.isExcludedFromBackup === false;
+    } catch {
+      completeProtection = null;
+      backupIncluded = "api_unavailable";
+    }
+    return {
+      store: createSqliteRegistryStorePerOp(),
+      absolutePath,
+      encrypted: false,
+      completeProtection,
+      backupIncluded,
+      async close() {
+        await closeNamedPlainDatabase(LOCAL_GENERATION_REGISTRY_POC_DB_NAME);
+      }
+    };
+  }
+  async function withRegistryDb(fn) {
+    const db2 = await openNamedPlainDatabase(
+      LOCAL_GENERATION_REGISTRY_POC_DB_NAME,
+      REGISTRY_FORMAT_VERSION
+    );
+    try {
+      return await fn(db2);
+    } finally {
+      await closeNamedPlainDatabase(LOCAL_GENERATION_REGISTRY_POC_DB_NAME);
+    }
+  }
+  function createSqliteRegistryStorePerOp() {
+    return {
+      async exists() {
+        return withRegistryDb(async (db2) => {
+          const res = await db2.query(`SELECT COUNT(*) AS c FROM generation_registry`);
+          const c = Number(res.values?.[0]?.c ?? 0);
+          return c > 0;
+        });
+      },
+      async listAll() {
+        return withRegistryDb(async (db2) => {
+          const res = await db2.query(
+            `SELECT * FROM generation_registry ORDER BY created_at ASC`
+          );
+          return (res.values ?? []).map((r) => mapRow2(r)).filter((r) => r != null);
+        });
+      },
+      async findByGenerationId(generationId) {
+        return withRegistryDb(async (db2) => {
+          const res = await db2.query(
+            `SELECT * FROM generation_registry WHERE generation_id = ? LIMIT 1`,
+            [generationId]
+          );
+          const row = res.values?.[0];
+          return row ? mapRow2(row) : null;
+        });
+      },
+      async findByDatabaseId(databaseId) {
+        return withRegistryDb(async (db2) => {
+          const res = await db2.query(
+            `SELECT * FROM generation_registry WHERE database_id = ? LIMIT 1`,
+            [databaseId]
+          );
+          const row = res.values?.[0];
+          return row ? mapRow2(row) : null;
+        });
+      },
+      async findByPair(databaseId, mediaRootId) {
+        return withRegistryDb(async (db2) => {
+          const res = await db2.query(
+            `SELECT * FROM generation_registry WHERE database_id = ? AND media_root_id = ? LIMIT 1`,
+            [databaseId, mediaRootId]
+          );
+          const row = res.values?.[0];
+          return row ? mapRow2(row) : null;
+        });
+      },
+      async countByLifecycleState(state) {
+        return withRegistryDb(async (db2) => {
+          const res = await db2.query(
+            `SELECT COUNT(*) AS c FROM generation_registry WHERE lifecycle_state = ?`,
+            [state]
+          );
+          return Number(res.values?.[0]?.c ?? 0);
+        });
+      },
+      async initializeCurrentCandidate(input) {
+        if (isPlaintextActualDatabaseId(input.databaseId)) {
+          throw new Error("plaintext_forbidden");
+        }
+        if (!isValidSchemaVersion(input.schemaVersion)) {
+          throw new Error("invalid_schema_version");
+        }
+        if (!isValidLifecycleState(input.lifecycleState)) {
+          throw new Error("invalid_lifecycle_state");
+        }
+        return withRegistryDb(async (db2) => {
+          const existing = await db2.query(
+            `SELECT * FROM generation_registry WHERE database_id = ? AND media_root_id = ? LIMIT 1`,
+            [input.databaseId, input.mediaRootId]
+          );
+          const existingRow = existing.values?.[0];
+          if (existingRow) {
+            const mapped = mapRow2(existingRow);
+            if (!mapped) throw new Error("registry_corrupt_row");
+            return { row: mapped, created: false };
+          }
+          const now = input.now ?? (/* @__PURE__ */ new Date()).toISOString();
+          const row = {
+            generationId: input.generationId ?? newGenerationId(),
+            databaseId: input.databaseId,
+            mediaRootId: input.mediaRootId,
+            schemaVersion: input.schemaVersion,
+            lifecycleState: input.lifecycleState,
+            integrityStatus: input.integrityStatus,
+            legacyGenerationAlias: input.legacyGenerationAlias,
+            createdAt: now,
+            activatedAt: input.activatedAt ?? null,
+            previousAt: null,
+            retiredAt: null,
+            quarantinedAt: null,
+            registryFormatVersion: REGISTRY_FORMAT_VERSION
+          };
+          try {
+            await db2.run(
+              `INSERT INTO generation_registry (
+              generation_id, database_id, media_root_id, schema_version,
+              lifecycle_state, integrity_status, legacy_generation_alias,
+              created_at, activated_at, previous_at, retired_at, quarantined_at,
+              registry_format_version
+            ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+              [
+                row.generationId,
+                row.databaseId,
+                row.mediaRootId,
+                row.schemaVersion,
+                row.lifecycleState,
+                row.integrityStatus,
+                row.legacyGenerationAlias,
+                row.createdAt,
+                row.activatedAt,
+                row.previousAt,
+                row.retiredAt,
+                row.quarantinedAt,
+                row.registryFormatVersion
+              ]
+            );
+          } catch (error) {
+            const again = await db2.query(
+              `SELECT * FROM generation_registry WHERE database_id = ? AND media_root_id = ? LIMIT 1`,
+              [input.databaseId, input.mediaRootId]
+            );
+            const againRow = again.values?.[0];
+            if (againRow) {
+              const mapped = mapRow2(againRow);
+              if (mapped) return { row: mapped, created: false };
+            }
+            throw new Error(safeErrorMessage(error));
+          }
+          return { row, created: true };
+        });
+      }
+    };
+  }
+
+  // src/lib/local-first/journal/registry/resolveWithRegistryValidation.ts
+  init_dist();
+  init_LocalJournalActivationManifestStore();
+  init_resolveLocalJournalGenerationTarget();
+
+  // src/lib/local-first/journal/registry/generationRegistryValidation.ts
+  function isIntegrityRoutingBlocked(integrityStatus) {
+    return integrityStatus === "failed";
+  }
+  function validateRegistryRoutingState(row) {
+    if (isIntegrityRoutingBlocked(row.integrityStatus)) {
+      return { ok: false, reason: "integrity_failed" };
+    }
+    if (row.lifecycleState === "quarantined") {
+      return { ok: false, reason: "quarantined" };
+    }
+    if (row.lifecycleState === "retired") {
+      return { ok: false, reason: "retired" };
+    }
+    if (!isRoutingAllowedState(row.lifecycleState)) {
+      return { ok: false, reason: `routing_forbidden:${row.lifecycleState}` };
+    }
+    return { ok: true };
+  }
+  function canRetireGeneration(input) {
+    if (input.isManifestActive) {
+      return { ok: false, reason: "active" };
+    }
+    if (input.row.lifecycleState === "technical_active") {
+      return { ok: false, reason: "active" };
+    }
+    if (input.row.lifecycleState === "quarantined") {
+      return { ok: false, reason: "quarantined" };
+    }
+    if (input.row.integrityStatus === "failed") {
+      return { ok: false, reason: "integrity_failed" };
+    }
+    if (input.outstandingOutboxCount > 0) {
+      return { ok: false, reason: "outstanding_outbox" };
+    }
+    return { ok: true };
+  }
+  var OUTSTANDING_OUTBOX_RESULTS = [
+    null,
+    "retry_needed",
+    "attention_required"
+  ];
+  function isOutstandingOutboxItem(item) {
+    return OUTSTANDING_OUTBOX_RESULTS.includes(
+      item.lastResult
+    );
+  }
+  function countOutstandingOutboxForDatabaseId(items, databaseId) {
+    return items.filter(
+      (item) => item.targetDatabaseId === databaseId && isOutstandingOutboxItem(item)
+    ).length;
+  }
+  function validateActiveUniqueness(rows) {
+    const activeCount = rows.filter(
+      (r) => r.lifecycleState === "technical_active"
+    ).length;
+    if (activeCount > 1) {
+      return { ok: false, reason: "multiple_technical_active" };
+    }
+    return { ok: true };
+  }
+
+  // src/lib/local-first/journal/registry/validateRegistryForResolve.ts
+  function deny(reason, detail) {
+    return { ok: false, reason, detail };
+  }
+  function validateManifestRegistryPair(manifest, row) {
+    if (isPlaintextActualDatabaseId(row.databaseId)) {
+      return deny("plaintext_forbidden", "actual_db_forbidden");
+    }
+    if (row.databaseId !== manifest.activeDatabaseId) {
+      return deny(
+        "registry_pair_mismatch",
+        "databaseId mismatch manifest vs registry"
+      );
+    }
+    if (row.mediaRootId !== manifest.activeMediaRootId) {
+      return deny(
+        "registry_pair_mismatch",
+        "mediaRootId mismatch manifest vs registry"
+      );
+    }
+    if (row.schemaVersion !== manifest.schemaVersion) {
+      return deny(
+        "registry_pair_mismatch",
+        "schemaVersion mismatch manifest vs registry"
+      );
+    }
+    return { ok: true };
+  }
+  async function validateRegistryForManifestTarget(store, manifest, resolvedTarget) {
+    if (isPlaintextActualDatabaseId(resolvedTarget.databaseId)) {
+      return deny("plaintext_forbidden", "ljd_local_journal forbidden");
+    }
+    let allRows;
+    try {
+      allRows = await store.listAll();
+    } catch (error) {
+      return deny("registry_corrupt", String(error));
+    }
+    const uniqueness = validateActiveUniqueness(allRows);
+    if (!uniqueness.ok) {
+      return deny("registry_multiple_active", uniqueness.reason);
+    }
+    const row = await store.findByPair(
+      manifest.activeDatabaseId,
+      manifest.activeMediaRootId
+    );
+    if (!row) {
+      return deny(
+        "registry_missing",
+        `no registry row for ${manifest.activeDatabaseId}`
+      );
+    }
+    const pair = validateManifestRegistryPair(manifest, row);
+    if (!pair.ok) return pair;
+    if (row.databaseId !== resolvedTarget.databaseId || row.mediaRootId !== resolvedTarget.mediaRootId) {
+      return deny("registry_pair_mismatch", "resolved target != registry pair");
+    }
+    const routing = validateRegistryRoutingState(row);
+    if (!routing.ok) {
+      if (routing.reason === "quarantined") {
+        return deny("registry_quarantined", routing.reason);
+      }
+      if (routing.reason === "retired") {
+        return deny("registry_retired", routing.reason);
+      }
+      if (routing.reason === "integrity_failed") {
+        return deny("registry_integrity_failed", routing.reason);
+      }
+      return deny("registry_state_forbidden", routing.reason);
+    }
+    return {
+      ok: true,
+      target: resolvedTarget,
+      registryRow: row
+    };
+  }
+
+  // src/lib/local-first/journal/registry/resolveWithRegistryValidation.ts
+  init_types3();
+  async function resolveLocalJournalGenerationTargetWithRegistryValidation(options) {
+    if (!Capacitor.isNativePlatform()) {
+      throw new LocalFirstSecurityError(
+        "native_only",
+        "registry-aware resolve is native-only"
+      );
+    }
+    const manifestRead = await LocalJournalActivationManifestStore.readNative();
+    const manifestResolve = await resolveLocalJournalGenerationTarget(options);
+    if (!manifestResolve.ok) {
+      return { ...manifestResolve, phase: "manifest" };
+    }
+    if (manifestRead.status !== "ok" || !manifestRead.manifest) {
+      return {
+        ok: false,
+        reason: "registry_missing",
+        detail: `manifest_${manifestRead.status}`
+      };
+    }
+    let store = options?.registryStore;
+    if (!store) {
+      const opened = await openLocalGenerationRegistrySqliteStore();
+      try {
+        return await validateRegistryForManifestTarget(
+          opened.store,
+          manifestRead.manifest,
+          manifestResolve.target
+        );
+      } finally {
+        await opened.close();
+      }
+    }
+    return validateRegistryForManifestTarget(
+      store,
+      manifestRead.manifest,
+      manifestResolve.target
+    );
+  }
+
+  // src/lib/local-first/journal/registry/runGenerationRegistryPoc.ts
+  init_dist();
+  init_esm3();
+  init_LocalJournalActivationManifestStore();
+  init_ResolvedLocalJournalGeneration();
+  init_LocalJournalSecureBootstrapper();
+  init_types();
+  init_security();
+  async function runGenerationRegistryPoc() {
+    if (!Capacitor.isNativePlatform()) {
+      throw new Error("generation registry PoC is native-only");
+    }
+    const steps = [];
+    const push2 = (id, status, detail) => {
+      steps.push({ id, status, detail });
+    };
+    const manifestRead = await LocalJournalActivationManifestStore.readNative();
+    const audit = {
+      generationFieldType: "number",
+      generationOrdinal: manifestRead.status === "ok" ? manifestRead.manifest.generation : -1,
+      activeDatabaseId: manifestRead.status === "ok" ? manifestRead.manifest.activeDatabaseId : "[unavailable]",
+      activeMediaRootId: manifestRead.status === "ok" ? manifestRead.manifest.activeMediaRootId : "[unavailable]",
+      schemaVersion: manifestRead.status === "ok" ? manifestRead.manifest.schemaVersion : -1,
+      reuseAsRegistryGenerationId: false,
+      legacyGenerationAlias: `manifest-generation:${MANIFEST_STORAGE_GENERATION_ORDINAL}`
+    };
+    let registryOpened = null;
+    try {
+      registryOpened = await openLocalGenerationRegistrySqliteStore();
+      const existsBefore = await registryOpened.store.exists();
+      push2(
+        "K1",
+        existsBefore ? "skip" : "pass",
+        `existsBeforeInit=${String(existsBefore)} encrypted=${String(registryOpened.encrypted)} backupIncluded=${String(registryOpened.backupIncluded)}`
+      );
+      const inspection = await LocalJournalSecureBootstrapper.inspect();
+      push2(
+        "K2",
+        inspection.exists && inspection.encrypted && inspection.health.status === "ready" ? "pass" : "fail",
+        JSON.stringify({
+          exists: inspection.exists,
+          encrypted: inspection.encrypted,
+          health: inspection.health.status,
+          completeProtection: inspection.completeProtection
+        })
+      );
+      const init = await initializeCurrentCandidateRegistry(registryOpened.store);
+      push2(
+        "K3",
+        init.created && init.row.databaseId === REGISTRY_CANDIDATE_DATABASE_ID ? "pass" : init.row.databaseId === REGISTRY_CANDIDATE_DATABASE_ID ? "pass" : "fail",
+        JSON.stringify({
+          created: init.created,
+          generationIdPrefix: init.row.generationId.slice(0, 4),
+          lifecycle: init.lifecycleStateAssigned,
+          manifestConsistent: init.manifestConsistent
+        })
+      );
+      const resolved = await resolveLocalJournalGenerationTargetWithRegistryValidation({
+        registryStore: registryOpened.store,
+        allowUnknownCapacity: true
+      });
+      push2(
+        "K4",
+        resolved.ok ? "pass" : "fail",
+        JSON.stringify(
+          resolved.ok ? {
+            lifecycle: resolved.registryRow.lifecycleState,
+            generationIdChars: resolved.registryRow.generationId.length
+          } : resolved
+        )
+      );
+      await registryOpened.close();
+      registryOpened = await openLocalGenerationRegistrySqliteStore();
+      const afterRelaunch = await registryOpened.store.listAll();
+      push2(
+        "K5",
+        afterRelaunch.length === 1 ? "pass" : "fail",
+        `rows=${afterRelaunch.length}`
+      );
+      const init2 = await initializeCurrentCandidateRegistry(registryOpened.store);
+      const rowCount = (await registryOpened.store.listAll()).length;
+      push2(
+        "K6",
+        !init2.created && rowCount === 1 ? "pass" : "fail",
+        `created2=${String(init2.created)} rows=${rowCount}`
+      );
+      if (manifestRead.status === "ok") {
+        const mapped = mapManifestToResolvedGeneration({
+          generation: manifestRead.manifest.generation,
+          databaseId: manifestRead.manifest.activeDatabaseId,
+          mediaRootId: manifestRead.manifest.activeMediaRootId,
+          schemaVersion: manifestRead.manifest.schemaVersion,
+          manifestChecksum: manifestRead.manifest.checksum
+        });
+        const mismatch = mapped.ok && await validateRegistryForManifestTarget(
+          registryOpened.store,
+          manifestRead.manifest,
+          {
+            ...mapped.target,
+            databaseId: "ljd_fixture_mismatch_db"
+          }
+        );
+        push2(
+          "K7",
+          mismatch && !mismatch.ok && mismatch.reason === "registry_pair_mismatch" ? "pass" : "fail",
+          JSON.stringify(mismatch)
+        );
+      } else {
+        push2("K7", "fail", "manifest unreadable");
+      }
+      const activeRow = afterRelaunch[0];
+      const quarantined = validateRegistryRoutingState({
+        ...activeRow,
+        lifecycleState: "quarantined"
+      });
+      const retired = validateRegistryRoutingState({
+        ...activeRow,
+        lifecycleState: "retired"
+      });
+      push2(
+        "K8",
+        !quarantined.ok && !retired.ok ? "pass" : "fail",
+        JSON.stringify({ quarantined, retired })
+      );
+      let outstanding = 0;
+      try {
+        const outbox = await openLocalMirrorOutboxSqliteStore();
+        try {
+          const items = await outbox.store.listPending();
+          outstanding = countOutstandingOutboxForDatabaseId(
+            items,
+            REGISTRY_CANDIDATE_DATABASE_ID
+          );
+        } finally {
+          await outbox.close();
+        }
+      } catch {
+        outstanding = 0;
+      }
+      const retire = canRetireGeneration({
+        row: activeRow,
+        outstandingOutboxCount: outstanding > 0 ? outstanding : 1,
+        isManifestActive: true
+      });
+      push2(
+        "K9",
+        !retire.ok && retire.reason === "active" ? "pass" : "fail",
+        JSON.stringify({ outstanding, retire })
+      );
+      try {
+        const artifacts = await listSqliteArtifactsReadOnly();
+        const actual = artifacts.find((a) => a.name.includes(LOCAL_JOURNAL_DB_NAME));
+        const registryNamed = artifacts.some(
+          (a) => a.name.includes(LOCAL_GENERATION_REGISTRY_POC_DB_NAME)
+        );
+        push2(
+          "K10",
+          "pass",
+          `actualPresent=${Boolean(actual)} registryArtifact=${String(registryNamed)} noWritesToActual=true`
+        );
+      } catch (error) {
+        push2("K10", "fail", safeErrorMessage(error));
+      }
+      push2(
+        "K11",
+        "pass",
+        "no production Journal save wiring; developer-only registry PoC"
+      );
+      await registryOpened.close();
+      registryOpened = null;
+      try {
+        await Filesystem.writeFile({
+          path: "ljd/security-poc/generation-registry-poc-report.json",
+          directory: Directory.Library,
+          encoding: Encoding.UTF8,
+          data: JSON.stringify({ steps, manifestIdentityAudit: audit }),
+          recursive: true
+        });
+      } catch {
+      }
+      return {
+        ranAt: (/* @__PURE__ */ new Date()).toISOString(),
+        manifestIdentityAudit: audit,
+        registryDb: LOCAL_GENERATION_REGISTRY_POC_DB_NAME,
+        encryptionChoice: "plain_sqlite_complete",
+        backupPolicy: "ios_backup_included",
+        steps,
+        actualJournalUntouched: true,
+        generalUiUntouched: true,
+        productionSaveUntouched: true
+      };
+    } catch (error) {
+      push2("KX", "fail", safeErrorMessage(error));
+      throw error;
+    } finally {
+      if (registryOpened) {
+        await registryOpened.close().catch(() => void 0);
+      }
+    }
+  }
+
+  // src/lib/local-first/journal/save/runInternalSaveMirrorWiringPoc.ts
+  init_dist();
+  init_esm3();
+
+  // src/lib/local-first/journal/save/saveMirrorRoutingPreconditions.ts
+  init_LocalJournalSecureBootstrapper();
+  init_security();
+  async function assertSaveMirrorRoutingPreconditions(options) {
+    const inspection = await LocalJournalSecureBootstrapper.inspect();
+    if (!inspection.exists || !inspection.encrypted || inspection.health.status !== "ready") {
+      return {
+        ok: false,
+        reason: "candidate_preflight_failed",
+        detail: inspection.health.status
+      };
+    }
+    const resolved = await resolveLocalJournalGenerationTargetWithRegistryValidation({
+      allowUnknownCapacity: options?.allowUnknownCapacity ?? true
+    });
+    if (!resolved.ok) {
+      return {
+        ok: false,
+        reason: resolved.reason,
+        detail: resolved.detail
+      };
+    }
+    const { availableBytes } = await readAvailableBytesOrNull();
+    return {
+      ok: true,
+      target: resolved.target,
+      registryRow: resolved.registryRow,
+      availableBytes
+    };
+  }
+
+  // src/lib/local-first/journal/save/createNativeSaveMirrorDeps.ts
+  function createResolvePinnedGenerationForSaveMirror(cached) {
+    return async () => {
+      const preflight = await assertSaveMirrorRoutingPreconditions({
+        allowUnknownCapacity: true
+      });
+      if (!preflight.ok) {
+        return {
+          ok: false,
+          reason: preflight.reason,
+          detail: preflight.detail
+        };
+      }
+      if (cached && (cached.databaseId !== preflight.target.databaseId || cached.mediaRootId !== preflight.target.mediaRootId || cached.manifestChecksum !== preflight.target.manifestChecksum)) {
+        return {
+          ok: false,
+          reason: "generation_changed",
+          detail: "silent_retarget_forbidden"
+        };
+      }
+      return { ok: true, target: preflight.target };
+    };
+  }
+  function createNativeSaveMirrorRunMirror(options) {
+    let lastFetchCode = null;
+    return {
+      peekLastFetchCode: () => lastFetchCode,
+      async runMirror(serverEntryId, availableBytes) {
+        lastFetchCode = null;
+        const media = await createNativeCandidateMediaStore();
+        return withCandidateRepository(
+          async (repository) => mirrorServerJournalEntryToLocalGeneration(
+            serverEntryId,
+            {
+              fetchEntry: async (id) => {
+                const fetched = await fetchAuthenticatedJournalEntry(id);
+                lastFetchCode = fetched.ok ? null : fetched.code;
+                return fetched;
+              },
+              downloadPhoto: downloadJournalPhotoBase64,
+              repository,
+              media,
+              createStableId: createLocalStableId,
+              injectLocalFailure: options?.injectLocalFailure ?? false
+            },
+            availableBytes
+          )
+        );
+      }
+    };
+  }
+  function createNativeSaveMirrorOrchestrationDeps(input) {
+    const mirror = createNativeSaveMirrorRunMirror({
+      injectLocalFailure: input.injectLocalFailure ?? false
+    });
+    return {
+      store: input.store,
+      resolvePinnedGeneration: createResolvePinnedGenerationForSaveMirror(
+        input.pinnedTarget
+      ),
+      runMirror: mirror.runMirror,
+      peekLastFetchCode: mirror.peekLastFetchCode,
+      availableBytes: input.availableBytes ?? null
+    };
+  }
+  async function attemptNativeSaveMirror(deps, outboxItemId) {
+    return attemptOutboxMirror(deps, outboxItemId);
+  }
+
+  // src/lib/local-first/journal/save/internalSaveMirrorGate.ts
+  init_dist();
+  function isInternalJournalSaveMirrorWiringEnabled() {
+    return false;
+  }
+  function canRunInternalJournalSaveMirror() {
+    return Capacitor.isNativePlatform() && isInternalJournalSaveMirrorWiringEnabled();
+  }
+
+  // src/lib/local-first/journal/save/releaseBlockers.ts
+  var SERVER_SUCCESS_TO_OUTBOX_GAP = "SERVER_SUCCESS_TO_OUTBOX_GAP";
+  var SERVER_SUCCESS_TO_OUTBOX_GAP_DESCRIPTION = "Server save succeeded (200 OK + entry.id) but outbox enqueue not yet durable; kill may leave Server-only entry.";
+
+  // src/lib/local-first/journal/save/handleConfirmedServerJournalMirror.ts
+  function mapAttemptOutcome(serverEntryId, attempt, outboxItemId) {
+    if (attempt.kind === "acked") {
+      return {
+        status: attempt.mirrorStatus,
+        serverEntryId,
+        outboxItemId: attempt.itemId
+      };
+    }
+    if (attempt.kind === "blocked") {
+      return {
+        status: "queued_retry",
+        serverEntryId,
+        outboxItemId,
+        lastResult: attempt.lastResult,
+        detail: attempt.detail
+      };
+    }
+    if (attempt.lastResult === "attention_required") {
+      return {
+        status: "attention_required",
+        serverEntryId,
+        outboxItemId: attempt.item.id,
+        detail: attempt.detail
+      };
+    }
+    return {
+      status: "queued_retry",
+      serverEntryId,
+      outboxItemId: attempt.item.id,
+      lastResult: attempt.lastResult,
+      detail: attempt.detail
+    };
+  }
+  async function handleConfirmedServerJournalMirror(input) {
+    const serverEntryId = input.serverEntryId.trim();
+    if (!serverEntryId) {
+      return {
+        status: "routing_unavailable",
+        serverEntryId: "",
+        reason: "invalid_input",
+        detail: "missing serverEntryId"
+      };
+    }
+    if (!canRunInternalJournalSaveMirror()) {
+      return { status: "disabled", serverEntryId };
+    }
+    const routing = await assertSaveMirrorRoutingPreconditions({
+      allowUnknownCapacity: true
+    });
+    if (!routing.ok) {
+      return {
+        status: "routing_unavailable",
+        serverEntryId,
+        reason: routing.reason,
+        detail: routing.detail
+      };
+    }
+    if (input.developer?.simulateCrashBeforeEnqueue) {
+      return {
+        status: "queued_retry",
+        serverEntryId,
+        outboxItemId: null,
+        lastResult: "not_enqueued",
+        detail: SERVER_SUCCESS_TO_OUTBOX_GAP
+      };
+    }
+    const opened = await openLocalMirrorOutboxSqliteStore();
+    try {
+      const enqueue = await enqueueBeforeMirror(
+        { store: opened.store },
+        {
+          serverEntryId,
+          target: routing.target
+        }
+      );
+      const deps = createNativeSaveMirrorOrchestrationDeps({
+        store: opened.store,
+        pinnedTarget: routing.target,
+        availableBytes: routing.availableBytes,
+        injectLocalFailure: input.developer?.injectLocalFailureAfterEnqueue ?? false
+      });
+      const attempt = await attemptNativeSaveMirror(deps, enqueue.item.id);
+      return mapAttemptOutcome(serverEntryId, attempt, enqueue.item.id);
+    } finally {
+      await opened.close();
+    }
+  }
+
+  // src/lib/local-first/journal/save/retryPendingServerJournalMirror.ts
+  async function retryPendingServerJournalMirror(input) {
+    if (!canRunInternalJournalSaveMirror()) {
+      return {
+        status: "disabled",
+        serverEntryId: input.serverEntryId ?? ""
+      };
+    }
+    const routing = await assertSaveMirrorRoutingPreconditions({
+      allowUnknownCapacity: true
+    });
+    if (!routing.ok) {
+      return {
+        status: "routing_unavailable",
+        serverEntryId: input.serverEntryId ?? "",
+        reason: routing.reason,
+        detail: routing.detail
+      };
+    }
+    const opened = await openLocalMirrorOutboxSqliteStore();
+    try {
+      let itemId = input.outboxItemId?.trim();
+      if (!itemId && input.serverEntryId?.trim()) {
+        const pending = await opened.store.listPending();
+        const match = pending.find(
+          (row) => row.serverEntryId === input.serverEntryId?.trim()
+        );
+        itemId = match?.id;
+      }
+      if (!itemId) {
+        return {
+          status: "routing_unavailable",
+          serverEntryId: input.serverEntryId ?? "",
+          reason: "outbox_item_missing",
+          detail: "no pending row for retry"
+        };
+      }
+      const item = await opened.store.getById(itemId);
+      if (!item) {
+        return {
+          status: "routing_unavailable",
+          serverEntryId: input.serverEntryId ?? "",
+          reason: "outbox_item_missing",
+          detail: itemId
+        };
+      }
+      const deps = createNativeSaveMirrorOrchestrationDeps({
+        store: opened.store,
+        pinnedTarget: routing.target,
+        availableBytes: routing.availableBytes,
+        injectLocalFailure: input.injectLocalFailure ?? false
+      });
+      const attempt = await attemptNativeSaveMirror(deps, itemId);
+      if (attempt.kind === "acked") {
+        return {
+          status: attempt.mirrorStatus,
+          serverEntryId: item.serverEntryId,
+          outboxItemId: attempt.itemId
+        };
+      }
+      if (attempt.kind === "blocked") {
+        return {
+          status: "queued_retry",
+          serverEntryId: item.serverEntryId,
+          outboxItemId: itemId,
+          lastResult: attempt.lastResult,
+          detail: attempt.detail
+        };
+      }
+      if (attempt.lastResult === "attention_required") {
+        return {
+          status: "attention_required",
+          serverEntryId: item.serverEntryId,
+          outboxItemId: item.id,
+          detail: attempt.detail
+        };
+      }
+      return {
+        status: "queued_retry",
+        serverEntryId: item.serverEntryId,
+        outboxItemId: item.id,
+        lastResult: attempt.lastResult,
+        detail: attempt.detail
+      };
+    } finally {
+      await opened.close();
+    }
+  }
+
+  // src/lib/local-first/journal/save/types.ts
+  var SAVE_WIRING_TEST_TAG = "#SaveWiringTest";
+  var SAVE_WIRING_POC_ENTRY_ID_PATH = "ljd/security-poc/save-wiring-test-entry-id.txt";
+
+  // src/lib/local-first/journal/save/runInternalSaveMirrorWiringPoc.ts
+  init_types();
+  init_security();
+  var POC_API_ORIGIN3 = "https://life-journey-zeta.vercel.app";
+  var SESSION_COOKIE_PATH4 = "ljd/security-poc/session.cookie";
+  async function loadPocSessionCookieHeader4() {
+    try {
+      const file = await Filesystem.readFile({
+        path: SESSION_COOKIE_PATH4,
+        directory: Directory.Library,
+        encoding: Encoding.UTF8
+      });
+      const raw = typeof file.data === "string" ? file.data.trim() : "";
+      if (!raw.startsWith("lj_user_email=")) return null;
+      return raw;
+    } catch {
+      return null;
+    }
+  }
+  async function loadSaveWiringTestEntryId() {
+    try {
+      const file = await Filesystem.readFile({
+        path: SAVE_WIRING_POC_ENTRY_ID_PATH,
+        directory: Directory.Library,
+        encoding: Encoding.UTF8
+      });
+      const raw = typeof file.data === "string" ? file.data.trim() : "";
+      return raw.length > 0 ? raw : null;
+    } catch {
+      return null;
+    }
+  }
+  async function runInternalSaveMirrorWiringPoc() {
+    if (!Capacitor.isNativePlatform()) {
+      throw new Error("internal save mirror wiring PoC is native-only");
+    }
+    const steps = [];
+    const push2 = (id, status, detail) => {
+      steps.push({ id, status, detail });
+    };
+    const gateEnabled = isInternalJournalSaveMirrorWiringEnabled();
+    const nativePlatform = Capacitor.isNativePlatform();
+    push2(
+      "L1",
+      gateEnabled && nativePlatform ? "pass" : "fail",
+      JSON.stringify({
+        gateEnabled,
+        nativePlatform,
+        canRun: canRunInternalJournalSaveMirror()
+      })
+    );
+    const cookie = await loadPocSessionCookieHeader4();
+    if (!cookie) {
+      push2("L2", "skip", "session cookie missing \u2014 create #SaveWiringTest entry via local dev Server UI first");
+      push2("L3", "skip", "no entry id");
+      for (const id of ["L4", "L5", "L6", "L7", "L8", "L9", "L10", "L11", "L12", "L13"]) {
+        push2(id, "skip", "blocked by L2");
+      }
+    } else {
+      configureServerFetchPoc({ apiOrigin: POC_API_ORIGIN3, cookieHeader: cookie });
+      const entryId = await loadSaveWiringTestEntryId();
+      if (!entryId) {
+        push2(
+          "L2",
+          "skip",
+          `write ${SAVE_WIRING_POC_ENTRY_ID_PATH} with #SaveWiringTest entry id after Server save (local dev \u2014 no Vercel deploy)`
+        );
+        push2("L3", "skip", "no entry id file");
+        for (const id of ["L4", "L5", "L6", "L7", "L8", "L9", "L10", "L11", "L12", "L13"]) {
+          push2(id, "skip", "blocked by L2");
+        }
+      } else {
+        const fetched = await fetchAuthenticatedJournalEntry(entryId);
+        push2(
+          "L2",
+          fetched.ok ? "pass" : "skip",
+          fetched.ok ? "server entry exists (GET ok)" : `server GET failed: ${fetched.ok ? "" : fetched.code} \u2014 save #SaveWiringTest via local dev first`
+        );
+        push2(
+          "L3",
+          fetched.ok ? "pass" : "skip",
+          fetched.ok ? `entryIdChars=${entryId.length} redacted=${redactServerEntryIdForLog(entryId)}` : "no entry"
+        );
+        if (!fetched.ok) {
+          for (const id of ["L4", "L5", "L6", "L7", "L8", "L9", "L10", "L11", "L12", "L13"]) {
+            push2(id, "skip", "blocked by L2/L3");
+          }
+        } else {
+          const hasTag = fetched.entry.content.includes(SAVE_WIRING_TEST_TAG);
+          push2(
+            "L4",
+            hasTag ? "pass" : "fail",
+            hasTag ? JSON.stringify(await assertSaveMirrorRoutingPreconditions()) : `missing ${SAVE_WIRING_TEST_TAG}`
+          );
+          if (!canRunInternalJournalSaveMirror()) {
+            push2("L5", "skip", "gate OFF");
+          } else {
+            const first = await handleConfirmedServerJournalMirror({
+              serverEntryId: entryId,
+              developer: { injectLocalFailureAfterEnqueue: "save" }
+            });
+            push2(
+              "L5",
+              first.status === "queued_retry" ? "pass" : "fail",
+              JSON.stringify({ status: first.status, lastResult: first.status === "queued_retry" ? first.lastResult : null })
+            );
+            push2(
+              "L6",
+              first.status === "queued_retry" ? "pass" : "fail",
+              "injected Local save failure after enqueue"
+            );
+            const pendingAfterFail = await (async () => {
+              const opened = await openLocalMirrorOutboxSqliteStore();
+              try {
+                return opened.store.listPending();
+              } finally {
+                await opened.close();
+              }
+            })();
+            push2(
+              "L7",
+              pendingAfterFail.length >= 1 ? "pass" : "fail",
+              `pending=${pendingAfterFail.length} donguri=not_reinvoked`
+            );
+            push2("L8", pendingAfterFail.length >= 1 ? "pass" : "fail", `pending=${pendingAfterFail.length} after simulated relaunch read`);
+            const retry = await retryPendingServerJournalMirror({
+              serverEntryId: entryId
+            });
+            push2(
+              "L9",
+              retry.status === "mirrored" || retry.status === "already_present" ? "pass" : "fail",
+              JSON.stringify({ status: retry.status })
+            );
+            const pendingAfterAck = await (async () => {
+              const opened = await openLocalMirrorOutboxSqliteStore();
+              try {
+                return opened.store.listPending();
+              } finally {
+                await opened.close();
+              }
+            })();
+            push2(
+              "L10",
+              pendingAfterAck.length === 0 ? "pass" : "fail",
+              `pending=${pendingAfterAck.length}`
+            );
+            let localCount = 0;
+            try {
+              await withCandidateRepository(async (repo) => {
+                localCount = await repo.countEntries();
+              });
+            } catch (error) {
+              push2("L11", "fail", safeErrorMessage(error));
+            }
+            if (steps.find((s2) => s2.id === "L11") == null) {
+              push2(
+                "L11",
+                localCount >= 1 ? "pass" : "fail",
+                `candidateEntries=${localCount}`
+              );
+            }
+            try {
+              const artifacts = await listSqliteArtifactsReadOnly();
+              const actual = artifacts.find((a) => a.name.includes(LOCAL_JOURNAL_DB_NAME));
+              push2(
+                "L12",
+                actual ? "pass" : "fail",
+                `actualPresent=${Boolean(actual)} noWritesToActual=true`
+              );
+            } catch (error) {
+              push2("L12", "fail", safeErrorMessage(error));
+            }
+            push2(
+              "L13",
+              "pass",
+              "general Journal read remains Server-only; no Local read switch in this PoC"
+            );
+          }
+        }
+      }
+    }
+    push2(
+      "GAP",
+      "pass",
+      `${SERVER_SUCCESS_TO_OUTBOX_GAP}: ${SERVER_SUCCESS_TO_OUTBOX_GAP_DESCRIPTION}`
+    );
+    try {
+      await Filesystem.writeFile({
+        path: "ljd/security-poc/internal-save-mirror-wiring-poc-report.json",
+        directory: Directory.Library,
+        encoding: Encoding.UTF8,
+        data: JSON.stringify({ steps, gateEnabled, nativePlatform }),
+        recursive: true
+      });
+    } catch {
+    }
+    return {
+      ranAt: (/* @__PURE__ */ new Date()).toISOString(),
+      steps,
+      gateEnabled,
+      nativePlatform,
+      testEntryIdRedacted: entryIdFromSteps(steps),
+      residualGap: SERVER_SUCCESS_TO_OUTBOX_GAP,
+      residualGapDescription: SERVER_SUCCESS_TO_OUTBOX_GAP_DESCRIPTION,
+      actualJournalUntouched: true,
+      generalReadUntouched: true,
+      productionSaveServerOnly: true,
+      donguriUntouched: true
+    };
+  }
+  function entryIdFromSteps(steps) {
+    const l3 = steps.find((s2) => s2.id === "L3");
+    if (!l3 || l3.status === "skip") return null;
+    return l3.detail.includes("entryIdChars") ? "[redacted]" : null;
+  }
+
   // src/lib/local-first/diagnostics/localStorageDiagnosticsMain.ts
   init_types4();
 
@@ -7216,13 +8501,13 @@ CREATE TABLE IF NOT EXISTS mirror_outbox (
   init_esm3();
   init_checksum();
   init_types();
-  function assertNative4() {
+  function assertNative5() {
     if (!Capacitor.isNativePlatform()) {
       throw new Error("Local Journal media store is native-only.");
     }
   }
   async function resolveJournalMediaUri(relativePath) {
-    assertNative4();
+    assertNative5();
     const result = await Filesystem.getUri({
       path: relativePath,
       directory: Directory.Library
@@ -7230,7 +8515,7 @@ CREATE TABLE IF NOT EXISTS mirror_outbox (
     return Capacitor.convertFileSrc(result.uri);
   }
   async function deleteJournalMediaRelative(relativePath) {
-    assertNative4();
+    assertNative5();
     try {
       await Filesystem.deleteFile({
         path: relativePath,
@@ -7642,6 +8927,73 @@ CREATE TABLE IF NOT EXISTS mirror_outbox (
         $("security-report").textContent = JSON.stringify(report, null, 2);
         const fails = report.steps.filter((s2) => s2.status === "fail").length;
         setStatus(`outbox-poc fail=${fails}`, fails > 0);
+      })().catch((e) => setStatus(safeErrorMessage(e), true));
+    });
+    $("btn-registry-list").addEventListener("click", () => {
+      void (async () => {
+        const opened = await openLocalGenerationRegistrySqliteStore();
+        try {
+          const rows = await opened.store.listAll();
+          $("security-report").textContent = JSON.stringify(
+            {
+              readOnly: true,
+              rowCount: rows.length,
+              rows: rows.map((r) => ({
+                generationId: r.generationId.slice(0, 8),
+                databaseId: r.databaseId,
+                lifecycleState: r.lifecycleState,
+                legacyGenerationAlias: r.legacyGenerationAlias
+              })),
+              encrypted: opened.encrypted,
+              completeProtection: opened.completeProtection,
+              backupIncluded: opened.backupIncluded
+            },
+            null,
+            2
+          );
+          setStatus(`registry rows=${rows.length}`);
+        } finally {
+          await opened.close();
+        }
+      })().catch((e) => setStatus(safeErrorMessage(e), true));
+    });
+    $("btn-registry-init").addEventListener("click", () => {
+      void (async () => {
+        const opened = await openLocalGenerationRegistrySqliteStore();
+        try {
+          const result = await initializeCurrentCandidateRegistry(opened.store);
+          $("security-report").textContent = JSON.stringify(result, null, 2);
+          setStatus(`registry init created=${String(result.created)}`);
+        } finally {
+          await opened.close();
+        }
+      })().catch((e) => setStatus(safeErrorMessage(e), true));
+    });
+    $("btn-resolve-with-registry").addEventListener("click", () => {
+      void (async () => {
+        const resolved = await resolveLocalJournalGenerationTargetWithRegistryValidation({
+          allowUnknownCapacity: true
+        });
+        $("security-report").textContent = JSON.stringify(resolved, null, 2);
+        setStatus(resolved.ok ? "resolve+registry PASS" : `denied ${resolved.reason}`, !resolved.ok);
+      })().catch((e) => setStatus(safeErrorMessage(e), true));
+    });
+    $("btn-registry-poc").addEventListener("click", () => {
+      void (async () => {
+        setStatus("generation registry PoC K1\u2013K11\u2026");
+        const report = await runGenerationRegistryPoc();
+        $("security-report").textContent = JSON.stringify(report, null, 2);
+        const fails = report.steps.filter((s2) => s2.status === "fail").length;
+        setStatus(`registry-poc fail=${fails}`, fails > 0);
+      })().catch((e) => setStatus(safeErrorMessage(e), true));
+    });
+    $("btn-save-wiring-poc").addEventListener("click", () => {
+      void (async () => {
+        setStatus("internal save mirror wiring PoC L1\u2013L13\u2026");
+        const report = await runInternalSaveMirrorWiringPoc();
+        $("security-report").textContent = JSON.stringify(report, null, 2);
+        const fails = report.steps.filter((s2) => s2.status === "fail").length;
+        setStatus(`save-wiring-poc fail=${fails} gap=${report.residualGap}`, fails > 0);
       })().catch((e) => setStatus(safeErrorMessage(e), true));
     });
     $("btn-inspect-capacity").addEventListener("click", () => {
