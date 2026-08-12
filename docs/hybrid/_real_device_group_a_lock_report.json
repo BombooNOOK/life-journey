@@ -1,0 +1,23 @@
+{
+  "phase": "finish",
+  "ranAt": "2026-08-12T01:28:12.022Z",
+  "platform": "ios",
+  "device": "company iPhone SE 3rd / iOS 18.5 (iPhone (2))",
+  "source": "on-device Diagnostics UI screenshot + status text (USB pull failed: device disconnected after lock)",
+  "method": "UIApplication.protectedDataWillBecomeUnavailableNotification + delayed Data(contentsOf:)",
+  "verdict": "inconclusive_not_demonstrated",
+  "verdictNote": "実機でも未実証 — 通知は来たが isProtectedDataAvailableAtProbe≠false。Debugger接続や不完全なロックの可能性。PASSにしない。",
+  "summary": {
+    "probeFired": true,
+    "protectedDataUnavailableAtProbe": false,
+    "lockedReadsDenied": null,
+    "passInvented": false
+  },
+  "constraintsHonored": {
+    "erase": false,
+    "restore": false,
+    "uninstall": false,
+    "existingDataWipe": false,
+    "realJournal": false
+  }
+}

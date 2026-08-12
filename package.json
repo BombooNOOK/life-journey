@@ -67,6 +67,7 @@
     "@capacitor/filesystem": "^8.1.2",
     "@capacitor/keyboard": "^8.0.5",
     "@capacitor/status-bar": "^8.0.3",
+    "ljd-local-security": "file:plugins/ljd-local-security",
     "@fontsource/klee-one": "^5.2.8",
     "@fontsource/noto-sans-jp": "^5.2.5",
     "@prisma/client": "^6.6.0",

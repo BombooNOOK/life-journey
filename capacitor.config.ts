@@ -15,7 +15,9 @@
  *
  * SQLite plugin (@capacitor-community/sqlite) is community-maintained and uses
  * SQLCipher even for no-encryption opens — production export-compliance follow-up.
- * At-rest encryption productization is intentionally NOT enabled yet.
+ *
+ * 4B-3E: iosIsEncryption enables plugin secret APIs. ljd_local_journal still
+ * opens with no-encryption — do not auto-migrate existing plaintext DBs.
  */
 
 import type { CapacitorConfig } from "@capacitor/cli";
@@ -42,10 +44,14 @@ const config: CapacitorConfig = {
   },
   plugins: {
     CapacitorSQLite: {
-      /** Align with device-storage SoT: life-record DB under Library, not Cache. */
-      iosDatabaseLocation: "Library/CapacitorDatabase",
-      /** Foundation: no encryption productization yet (plugin still links SQLCipher). */
-      iosIsEncryption: false,
+      /**
+       * Relative container path. Absolute path is resolved at runtime via
+       * FileManager (LjdLocalSecurity.resolveApplicationSupportLjdDir).
+       */
+      iosDatabaseLocation: "Library/Application Support/app.bamboonook.ljd",
+      /** Enables setEncryptionSecret / SQLCipher APIs. Journal remains no-encryption. */
+      iosIsEncryption: true,
+      iosKeychainPrefix: "ljd",
     },
   },
 };

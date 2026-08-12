@@ -1593,6 +1593,36 @@
     }
   });
 
+  // plugins/ljd-local-security/dist/esm/web.js
+  var web_exports3 = {};
+  __export(web_exports3, {
+    LjdLocalSecurityWeb: () => LjdLocalSecurityWeb
+  });
+  var LjdLocalSecurityWeb;
+  var init_web3 = __esm({
+    "plugins/ljd-local-security/dist/esm/web.js"() {
+      "use strict";
+      init_dist();
+      LjdLocalSecurityWeb = class extends WebPlugin {
+        async inspectPath() {
+          throw this.unimplemented("Not implemented on web.");
+        }
+        async setCompleteProtection() {
+          throw this.unimplemented("Not implemented on web.");
+        }
+        async setExcludedFromBackup() {
+          throw this.unimplemented("Not implemented on web.");
+        }
+        async resolveApplicationSupportLjdDir() {
+          throw this.unimplemented("Not implemented on web.");
+        }
+        async inspectGenericPasswordAccessibility() {
+          throw this.unimplemented("Not implemented on web.");
+        }
+      };
+    }
+  });
+
   // src/lib/local-first/diagnostics/localStorageDiagnosticsMain.ts
   init_dist();
 
@@ -2803,6 +2833,134 @@ CREATE INDEX IF NOT EXISTS idx_local_media_journal
     }
   };
 
+  // src/lib/local-first/security/backupInclusion.ts
+  init_dist();
+
+  // plugins/ljd-local-security/dist/esm/index.js
+  init_dist();
+  var LjdLocalSecurity = registerPlugin("LjdLocalSecurity", {
+    web: () => Promise.resolve().then(() => (init_web3(), web_exports3)).then((m) => new m.LjdLocalSecurityWeb())
+  });
+
+  // src/lib/local-first/security/types.ts
+  var LocalFirstSecurityError = class extends Error {
+    constructor(code, message) {
+      super(message);
+      this.name = "LocalFirstSecurityError";
+      this.code = code;
+    }
+  };
+  var LJD_PLUGIN_KEYCHAIN_SERVICE = "unlockSecret";
+  var LJD_PLUGIN_KEYCHAIN_ACCOUNT = "ljd_CapacitorSQLitePlugin";
+  var LJD_PLUGIN_KEYCHAIN_ACCESSIBILITY_MEASURED = "kSecAttrAccessibleWhenUnlocked";
+
+  // src/lib/local-first/security/noSecretLog.ts
+  var SECRET_KEY = /passphrase|password|secret|encryptionkey|encryption_secret|unlocksecret/i;
+  function redactSecretLike(value) {
+    if (value == null) return value;
+    if (typeof value === "string") {
+      if (value.length > 8 && /^[A-Za-z0-9+/=_-]{16,}$/.test(value)) {
+        return "[redacted]";
+      }
+      return value;
+    }
+    if (Array.isArray(value)) return value.map(redactSecretLike);
+    if (typeof value === "object") {
+      const out = {};
+      for (const [key, v] of Object.entries(value)) {
+        out[key] = SECRET_KEY.test(key) ? "[redacted]" : redactSecretLike(v);
+      }
+      return out;
+    }
+    return value;
+  }
+  function safeErrorMessage(error) {
+    if (error instanceof Error) {
+      const msg = error.message;
+      if (SECRET_KEY.test(msg)) return `${error.name}: [redacted security error]`;
+      return msg;
+    }
+    return String(redactSecretLike(error));
+  }
+
+  // src/lib/local-first/security/securityErrorMapping.ts
+  function mapSecurityError(error) {
+    if (error instanceof LocalFirstSecurityError) return error;
+    const message = safeErrorMessage(error);
+    let code = "unknown";
+    if (/native-only|native only/i.test(message)) code = "native_only";
+    else if (/path required/i.test(message)) code = "path_required";
+    else if (/journal_encryption_forbidden|must not be opened encrypted/i.test(message)) {
+      code = "journal_encryption_forbidden";
+    } else if (/not implemented on web|unimplemented/i.test(message)) {
+      code = "bridge_unimplemented";
+    }
+    return new LocalFirstSecurityError(code, message);
+  }
+
+  // src/lib/local-first/security/encryptedDatabase.ts
+  init_dist();
+
+  // src/lib/local-first/security/fileProtection.ts
+  init_dist();
+  async function inspectFileProtection(path) {
+    if (!Capacitor.isNativePlatform()) {
+      throw new LocalFirstSecurityError(
+        "native_only",
+        "file protection inspect is native-only"
+      );
+    }
+    try {
+      return await LjdLocalSecurity.inspectPath({ path });
+    } catch (error) {
+      throw mapSecurityError(error);
+    }
+  }
+
+  // src/lib/local-first/security/mediaProtection.ts
+  init_dist();
+
+  // src/lib/local-first/security/pluginKeychain.ts
+  init_dist();
+  async function inspectPluginDbKeyAccessibility() {
+    if (!Capacitor.isNativePlatform()) {
+      throw new LocalFirstSecurityError(
+        "native_only",
+        "plugin Keychain inspect is native-only"
+      );
+    }
+    try {
+      const result = await LjdLocalSecurity.inspectGenericPasswordAccessibility({
+        service: LJD_PLUGIN_KEYCHAIN_SERVICE,
+        account: LJD_PLUGIN_KEYCHAIN_ACCOUNT
+      });
+      return {
+        found: result.found,
+        accessibility: result.accessibility,
+        matchesWhenUnlocked: result.found && result.accessibility === LJD_PLUGIN_KEYCHAIN_ACCESSIBILITY_MEASURED,
+        returnedSecretData: false
+      };
+    } catch (error) {
+      throw mapSecurityError(error);
+    }
+  }
+
+  // src/lib/local-first/security/storageLocation.ts
+  init_dist();
+  async function resolveLjdApplicationSupportDir() {
+    if (!Capacitor.isNativePlatform()) {
+      throw new LocalFirstSecurityError(
+        "native_only",
+        "Application Support resolve is native-only"
+      );
+    }
+    try {
+      return await LjdLocalSecurity.resolveApplicationSupportLjdDir();
+    } catch (error) {
+      throw mapSecurityError(error);
+    }
+  }
+
   // src/lib/local-first/diagnostics/localStorageDiagnosticsMain.ts
   function $(id) {
     const el = document.getElementById(id);
@@ -2876,6 +3034,31 @@ CREATE INDEX IF NOT EXISTS idx_local_media_journal
         await renderEntries();
         setStatus("\u7AEF\u672BLocal\u8A3A\u65AD\u30C7\u30FC\u30BF\u3092\u524A\u9664\uFF08\u30B5\u30FC\u30D0\u30FC\u672A\u5909\u66F4\uFF09\u3002");
       })().catch((e) => setStatus(String(e), true));
+    });
+    $("btn-inspect-attrs").addEventListener("click", () => {
+      void (async () => {
+        const asDir = await resolveLjdApplicationSupportDir();
+        const dirAttrs = await inspectFileProtection(asDir.ljdApplicationSupportDir);
+        let kc = null;
+        try {
+          kc = await inspectPluginDbKeyAccessibility();
+        } catch {
+          kc = null;
+        }
+        const report = {
+          readOnly: true,
+          dummyCreated: false,
+          applicationSupport: asDir,
+          dirAttrs: {
+            exists: dirAttrs.exists,
+            isExcludedFromBackup: dirAttrs.isExcludedFromBackup,
+            fileProtection: dirAttrs.fileProtection
+          },
+          pluginKeychain: kc
+        };
+        $("security-report").textContent = JSON.stringify(report, null, 2);
+        setStatus("read-only storage attrs\uFF08secret\u975E\u53D6\u5F97\u30FBdummy\u975E\u751F\u6210\uFF09");
+      })().catch((e) => setStatus(safeErrorMessage(e), true));
     });
     try {
       await openLocalJournalDatabase();

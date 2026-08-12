@@ -16,6 +16,12 @@ import {
 import { migrateServerJournalEntryToDevice } from "@/lib/local-first/journal/migrateFromServer";
 import { JournalRepository } from "@/lib/local-first/journal/repository";
 import type { LocalJournalEntry } from "@/lib/local-first/journal/types";
+import {
+  inspectPluginDbKeyAccessibility,
+  resolveLjdApplicationSupportDir,
+  safeErrorMessage,
+} from "@/lib/local-first/security";
+import { inspectFileProtection } from "@/lib/local-first/security/fileProtection";
 
 export function LocalStorageDiagnosticsClient() {
   const [entryId, setEntryId] = useState("");
@@ -65,6 +71,38 @@ export function LocalStorageDiagnosticsClient() {
     setStatus("端末Local診断データを削除しました（サーバー未変更）。");
   }, []);
 
+  const onInspectAttrs = useCallback(async () => {
+    setStatus("read-only attrs…（secret非取得・dummy非生成）");
+    try {
+      const asDir = await resolveLjdApplicationSupportDir();
+      const dirAttrs = await inspectFileProtection(asDir.ljdApplicationSupportDir);
+      let kc = null;
+      try {
+        kc = await inspectPluginDbKeyAccessibility();
+      } catch {
+        kc = null;
+      }
+      setStatus(
+        JSON.stringify(
+          {
+            readOnly: true,
+            dummyCreated: false,
+            relative: asDir.pluginRelativeLocation,
+            exists: dirAttrs.exists,
+            isExcludedFromBackup: dirAttrs.isExcludedFromBackup,
+            fileProtection: dirAttrs.fileProtection,
+            pluginKeychainFound: kc?.found ?? false,
+            pluginKeychainAccessibility: kc?.accessibility ?? null,
+          },
+          null,
+          2,
+        ),
+      );
+    } catch (e) {
+      setStatus(safeErrorMessage(e));
+    }
+  }, []);
+
   if (!native) {
     return (
       <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-950">
@@ -108,6 +146,13 @@ export function LocalStorageDiagnosticsClient() {
           onClick={() => void onClear().catch((e) => setStatus(String(e)))}
         >
           端末Localをクリア
+        </button>
+        <button
+          type="button"
+          className="rounded-lg border border-stone-300 bg-white px-4 py-2.5 text-sm"
+          onClick={() => void onInspectAttrs()}
+        >
+          Inspect storage attrs（read-only）
         </button>
       </div>
 

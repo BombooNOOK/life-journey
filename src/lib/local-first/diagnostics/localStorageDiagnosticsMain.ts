@@ -11,6 +11,12 @@ import {
   resolveJournalMediaUri,
 } from "@/lib/local-first/journal/mediaStore";
 import { JournalRepository } from "@/lib/local-first/journal/repository";
+import {
+  inspectPluginDbKeyAccessibility,
+  resolveLjdApplicationSupportDir,
+  safeErrorMessage,
+} from "@/lib/local-first/security";
+import { inspectFileProtection } from "@/lib/local-first/security/fileProtection";
 
 function $(id: string): HTMLElement {
   const el = document.getElementById(id);
@@ -98,6 +104,33 @@ async function boot(): Promise<void> {
       await renderEntries();
       setStatus("端末Local診断データを削除（サーバー未変更）。");
     })().catch((e) => setStatus(String(e), true));
+  });
+
+  $("btn-inspect-attrs").addEventListener("click", () => {
+    void (async () => {
+      const asDir = await resolveLjdApplicationSupportDir();
+      const dirAttrs = await inspectFileProtection(asDir.ljdApplicationSupportDir);
+      let kc: Awaited<ReturnType<typeof inspectPluginDbKeyAccessibility>> | null =
+        null;
+      try {
+        kc = await inspectPluginDbKeyAccessibility();
+      } catch {
+        kc = null;
+      }
+      const report = {
+        readOnly: true,
+        dummyCreated: false,
+        applicationSupport: asDir,
+        dirAttrs: {
+          exists: dirAttrs.exists,
+          isExcludedFromBackup: dirAttrs.isExcludedFromBackup,
+          fileProtection: dirAttrs.fileProtection,
+        },
+        pluginKeychain: kc,
+      };
+      $("security-report").textContent = JSON.stringify(report, null, 2);
+      setStatus("read-only storage attrs（secret非取得・dummy非生成）");
+    })().catch((e) => setStatus(safeErrorMessage(e), true));
   });
 
   try {

@@ -1,13 +1,13 @@
 /**
  * Life Journey Diary｜Local-first データ保護・暗号化方針
  *
- * Status: Pre-Implementation Local Data Security Architecture / Source of Truth
- * Updated: 2026-08-11（4B-3A.1: Keychain WhenUnlocked第一候補／DB保存場所未確定／backup実測必須）
- * Baseline main: 50d5efb9c9c67ad479e8142d031aa675e510a10d
- * Tag: baseline/local-first-foundation-2026-08-11
- * Scope: 設計のみ。SQLCipher有効化・Keychain導入・media暗号化・DB migration・
- *        bulk migration・Local原本化・お引越し便実装・Firebase変更・Android実装・
- *        App Store設定変更・保存場所のコード確定は含まない。
+ * Status: Current Local Data Security Architecture / Source of Truth
+ * Updated: 2026-08-12（4B-3E: Security Foundation。自動暗号化・Local原本化は含まない）
+ * Baseline main: 1a8a8b1057bd98c0ceea6e64ec97f6d74e514c41
+ * PoC evidence: 4B-3B〜3D on test/ios-local-first-backup-restore @ 2519e23
+ * Scope: 設計＋明示呼び出し可能な Foundation。ljd_local_journal の自動暗号化、
+ *        bulk migration、Local原本化、お引越し便実装、Firebase変更、Android実装、
+ *        App Store提出、Release Gate未了項目のPASS扱いは含まない。
  *
  * 親方針:
  * - docs/product/ljd-product-worldview-source-of-truth.md
@@ -19,8 +19,8 @@
 
 # Life Journey Diary｜Local-first データ保護・暗号化方針
 
-**Status:** Pre-Implementation Local Data Security Architecture / Source of Truth  
-**ラベル:** **FACT**＝現行コード／**OS仕様**＝Apple・Google等一次資料／**製品判断**＝本仕様の採用案／**未決**＝後続
+**Status:** Current Local Data Security Architecture / Source of Truth  
+**ラベル:** **Verified**＝実測済／**Designed**＝採用仕様／**Release Gate**＝未実証（PASS禁止）／**FACT**＝現行コード／**OS仕様**＝一次資料
 
 ---
 
@@ -50,9 +50,10 @@
 | Device key material | Local DB 暗号鍵・将来の media 鍵候補・device trust | Keychain（**ThisDeviceOnlyに復旧を賭けない**） | お引越し便側ラップ／復元コード |
 | お引越し便鍵 | 小包ペイロード対称鍵 | **復元コード等・別系統**（`ljd-moving-package-spec.md`） | （本人保管） |
 
-**FACT（現状 foundation）:**  
-`ljd_local_journal` は `no-encryption` 接続。media は Library 平文相対 path。一般ユーザー動線からは未実行。  
-`capacitor.config` の `iosDatabaseLocation: Library/CapacitorDatabase` は **現状コードの配置メモ**にすぎず、**正式保存場所としては未確定**（§4.3）。
+**FACT（4B-3E Foundation）:**  
+`ljd_local_journal` は **引き続き `no-encryption`**。media は Library 平文相対 path。一般ユーザー動線からは未実行。  
+`capacitor.config` の相対場所は **`Library/Application Support/app.bamboonook.ljd`**（FileManager 実行時解決と一致。絶対pathはhardcodeしない）。  
+`iosIsEncryption: true` は plugin secret API を有効化するだけで、既存 journal を自動暗号化しない。
 
 ---
 
@@ -101,7 +102,8 @@
 
 ## 4. SQLite / SQLCipher / `@capacitor-community/sqlite`
 
-**FACT:** foundation は `@capacitor-community/sqlite` ^8.1.1、接続 `"no-encryption"`。プラグインは SQLCipher をリンクする一方、製品暗号化は未有効（4B-2D）。
+**FACT:** `@capacitor-community/sqlite` ^8.1.1。`ljd_local_journal` は `"no-encryption"`。  
+plugin は SQLCipher を iOS/Android で使用。encrypted open 能力は `src/lib/local-first/security/encryptedDatabase.ts` に隔離（明示呼出のみ）。
 
 ### 4.1 調査メモ（プラグイン能力）
 
@@ -109,7 +111,7 @@
 | --- | --- |
 | 暗号実装 | Native: SQLCipher（iOS/Android）。Web: 暗号化非対応 |
 | API例 | `setEncryptionSecret` / `changeEncryptionSecret` / `clearEncryptionSecret` / `isDatabaseEncrypted`、接続時 `encrypted: true` と mode |
-| 鍵保管 | プラグインは passphrase を secure store（iOS Keychain / Android Keystore系）へ置く経路を提供 |
+| 鍵保管 | **Designed 第一候補:** `setEncryptionSecret` → plugin built-in Keychain。**Verified:** `kSecAttrAccessibleWhenUnlocked`（secret本文未取得）。**plugin version 変更時は accessibility を再監査** |
 | plaintext → encrypted | **その場で上書き変換は不可／非推奨**。新規暗号化DBを作り copy（SQLCipher `sqlcipher_export` 相当）。完了後に平文を安全削除 |
 | key変更 | `changeEncryptionSecret` 系（実装Phaseで検証必須） |
 | key紛失 | DBは開けない。**お引越し便で別途復旧**が前提 |
@@ -126,37 +128,23 @@
 - 鍵を ThisDeviceOnly だけで持つと Quick Start／水没と衝突しうる → §5・§12
 - **iOS上の正式DBパス／バックアップ属性は未確定** → §4.3・Phase 4B-3Bで実測決定
 
-### 4.3 正式DB保存場所（製品判断: 未確定）
+### 4.3 正式DB保存場所（Designed: Application Support）
 
-親SoTは **OS標準移行（Quick Start / バックアップ）を第一防衛線**とする。  
-したがって、foundation の暫定設定だけでは正式採用できない。
+**Designed:** `Library/Application Support/<bundleId>`。絶対pathは FileManager から取得する。
 
-**FACT（現状コード）:** `@capacitor-community/sqlite` 向けに  
-`plugins.CapacitorSQLite.iosDatabaseLocation = "Library/CapacitorDatabase"`  
-を指定している。現行ハイブリッド docs／プラグイン説明上、この指定は **バックアップ非対象として扱われ得る配置**であり、  
-「Library＝バックアップされるはず」という推測で確定してはならない。
+**Verified（dummy / 会社用 SE）:** 配置、encrypted open、backup exclusion=false（LJD include後）、relaunch 維持、Complete 属性維持。
 
-**製品判断:**  
-**正式DB保存場所は Phase 4B-3B でバックアップ属性を実測して決定する。** 本SoTでは確定しない。コード変更も本修正では行わない。
+**Release Gate:** OS backup 中身（RG-2）・restore 後 open（RG-3）は未実証。会社端末では restore 禁止のため未実施。
 
-比較候補（実測後に採否）:
-
-| 候補 | 内容 |
-| --- | --- |
-| A | pluginデフォルト Documents 配置 |
-| B | Library 配置＋ backup exclusion の解除／非除外を実測で証明できる場合のみ |
-| C | LJD独自 native storage bridge（path・protection・backupフラグを明示制御） |
-| D | その他、親SoTの「永続・backup対象」と矛盾しない安全な方式 |
-
-推測禁止。`NSURLIsExcludedFromBackupKey` 等の **実測値** を正とする（§15）。
+比較済み（PoC）: Documents / CapacitorDatabase 既定は本番第一候補にしない。
 
 ---
 
 ## 5. Keychain 設計（製品判断・第一候補）
 
-端末内 **Local DB 暗号鍵（および将来の media 鍵候補）** を、抽象化した **SecureKeyStore port** 経由で Keychain に置く。
+端末内 **Local DB 暗号鍵** の第一候補は **Capacitor SQLite built-in encryption secret store**（独自 LJD SecureKeyStore は 4B-3E で削除）。
 
-**Domain層へ iOS Keychain API を直接散らさない。** Android Keystore への置換を前提に adapter 化。
+**Domain層へ iOS Keychain API を直接散らさない。** storage 属性は `ljd-local-security` slim bridge。Android は将来 adapter。
 
 ### 5.1 Accessibility 比較
 
@@ -169,13 +157,12 @@
 
 **製品判断（第一候補）:**
 
-1. **端末DB鍵:** `kSecAttrAccessibleWhenUnlocked` を **iOS第一候補**とする。  
-   - 人生記録DBは通常バックグラウンドアクセスを必要としない  
-   - 端末ロック中の鍵アクセスを許さない  
-   - Apple仕様上、暗号化バックアップ経由の新端末移行対象  
-2. **`AfterFirstUnlock` は比較候補として残す**（将来、正当なBG読込が製品要件になった場合のみ再評価）。  
-3. **ThisDeviceOnly 系を「森を守る唯一の鍵」にしない。** device-trust 補助や明示ロック用途に限定し得るが、人生復旧の単一鍵にしない。  
-4. **お引越し便の鍵材料は Keychain に閉じない**（復元コード wrap。親 moving-package SoT）。
+1. **端末DB鍵:** plugin built-in Keychain の **WhenUnlocked（Verified 実測）** を iOS第一候補とする。  
+2. **`AfterFirstUnlock` は比較候補として残す**（正当なBG読込が製品要件になった場合のみ）。  
+3. **ThisDeviceOnly 系を「森を守る唯一の鍵」にしない。**  
+4. **お引越し便の鍵材料は Keychain に閉じない**（復元コード wrap）。  
+5. **plugin version 変更時は accessibility 実装を再監査する。**  
+6. Apple 仕様上 WhenUnlocked item は暗号化 backup の移行対象になり得るが、**LJD の restore 成功は RG-3 で別途実測**（未了）。
 
 ### 5.2 シナリオ
 
@@ -202,25 +189,19 @@
 **製品判断（初期）: D（実質 A＋SQLite Layer2、media全面Bは急がない）。**  
 動画streaming・森ログMP4を最初から全暗号化すると、読返体験と電池を壊しやすい。写真もまず **適切な NSFileProtection** を保証し、必要なら後続で静止画からアプリ層暗号を足す。
 
-### 6.1 File Protection 第一候補（製品判断・未確定）
+### 6.1 File Protection（Designed: Complete / lock拒否は Release Gate）
 
-人生記録ファイルについて、iOS **第一比較候補**は:
+**Designed:** `NSFileProtectionComplete` を DB / life-record media の候補とする。
 
-**`NSFileProtectionComplete` / `.complete`**
+**Verified:** 属性設定と reopen 後の維持（Simulator + 会社用 SE dummy）。
 
-対象（比較対象に含める）:
-
-- SQLite DBファイル  
-- あしあと写真  
-- 将来の森ログ media（画像／動画）
+**Release Gate RG-1:** ロック中の実アクセス拒否は **実機でも未実証**（通知は来たが protected data が available のまま）。属性PASS ≠ lock拒否PASS。
 
 | 候補 | 位置づけ |
 | --- | --- |
-| `NSFileProtectionComplete` | **第一候補**（ロック中アクセス不可を強める） |
-| `NSFileProtectionCompleteUntilFirstUserAuthentication` | **OS既定・比較対象**として記録。reboot〜初回unlock保護は得やすいが、初回unlock後はロック中も読める |
+| `NSFileProtectionComplete` | **Designed 第一候補** |
+| `NSFileProtectionCompleteUntilFirstUserAuthentication` | OS既定・比較対象。初回unlock後はロック中も読める |
 | UnlessOpen / None | 人生原本の既定にはしない |
-
-**未確定:** 動画再生・アプリ background 等との相性は Phase 4B-3B PoCで確認する。本修正では確定しない。
 
 ### 6.2 Capacitor Filesystem と file protection（調査結論）
 
@@ -230,7 +211,7 @@
 - Xcode Data Protection capability / デフォルト entitlement、および／または  
 - **native bridge（FileManager attributes）でディレクトリ／ファイルに protectionKey を設定**
 
-が後続実装候補。**本Phaseでは実装しない。** 未保証のまま「完全保護済み」と断定しない。
+が必要。**4B-3E:** slim `ljd-local-security` が `setCompleteProtection` / `inspectPath` を提供。一般起動では自動適用しない。lock中拒否は未実証のため「完全保護済み」と断定しない。
 
 ---
 
@@ -347,22 +328,36 @@ iOS固有型を Domain に持ち込まない。
 Layer 1  OS sandbox + Data Protection（Completeを第一候補に実測） …必須
 Layer 2  SQLite SQLCipher（Local journal DB）                …推奨・次PoC中心
 Layer 3  Media アプリ層暗号                                  …段階的・初期は見送り寄り（A/C）
-Layer 4  SecureKeyStore（WhenUnlocked第一候補）             …Layer2の鍵置き場
+Layer 4  plugin built-in Keychain（WhenUnlocked 実測）      …Layer2の鍵置き場
 Layer 5  森のお引越し便（復元コード系・別鍵）                   …必須第二防衛・別SoT
 ```
 
 **Face ID** は Layer4/5 の外の UX ゲート（将来）。
 
 過剰設計を避けるため、初期 Hybrid では **1+2+4+5** を本線とし、**3は静止画ニーズが出てから**。  
-**DBパスは Layer1 の backup 実測が終わるまで正式確定しない（§4.3）。**
+**DBパスは Application Support を Designed 候補とする。backup/restore 実体は Release Gate（§4.3）。**
 
 ---
 
-## 15. Phase 4B-3B 最小 PoC 案（実装は次Phase）
+## 15. Security Release Gates（4B-3E）
+
+Local-first を「正式 production 原本」と宣言する前:
+
+| ID | Gate | 状態 |
+| --- | --- | --- |
+| RG-1 | 実機 lock 中アクセス拒否 | 未実証（inconclusive） |
+| RG-2 | encrypted OS backup に DB＋media が含まれる | 未実施 |
+| RG-3 | restore 後に DB＋media＋Keychain が揃い SQLCipher open | 未実施 |
+| RG-4 | 可能なら Quick Start | 未実施 |
+
+証拠メモ: `docs/hybrid/HYBRID_PHASE_4B3B*.md` / `4B3C1` / `4B3D` / `_real_device_group_a_*.json`。  
+詳細: `docs/hybrid/HYBRID_PHASE_4B3E_SECURITY_FOUNDATION.md`。
+
+## 15.1 旧 4B-3B PoC 案（実施済み・参照）
 
 目的: 鍵事故を起こさず SQLCipher＋Keychain の輪を実証し、**OS第一防衛線と矛盾しない保存属性を実測で決める**。
 
-### 15.1 暗号・鍵
+### 15.1.a 暗号・鍵
 
 1. **dummy** SQLite DB のみ（本物あしあと・本番DB名の破壊を避ける）  
 2. SecureKeyStore経由で dummy passphrase（accessibility **WhenUnlocked** 第一候補）  
@@ -397,15 +392,15 @@ Layer 5  森のお引越し便（復元コード系・別鍵）                 
 
 ## 16. Unresolved issues
 
-- **正式DB保存場所**（Documents vs Library vs native bridge）— 4B-3Bで exclusion 実測後に決定  
-- Cap SQLite `changeEncryptionSecret` の実機検証  
-- `NSFileProtectionComplete` と動画再生／background の相性  
-- media 全面暗号の電池・4K動画コスト  
-- logout「ロック」UXコピー  
-- 共有iPad / 家族端末  
-- フランス含む各国の宣言要否の法務確定  
-- plugin 代替候補の短期評価  
-- Android backup rules 初版  
+- Release Gates RG-1〜RG-4（lock / backup中身 / restore / Quick Start）
+- Cap SQLite `changeEncryptionSecret` の実機再確認（dummy では実施済）
+- `NSFileProtectionComplete` と動画再生／background の相性
+- media 全面暗号の電池・4K動画コスト
+- logout「ロック」UXコピー
+- 共有iPad / 家族端末
+- フランス含む各国の宣言要否の法務確定
+- plugin version 変更時の Keychain accessibility 再監査
+- Android backup rules 初版
 
 ---
 
@@ -413,4 +408,4 @@ Layer 5  森のお引越し便（復元コード系・別鍵）                 
 
 矛盾時: 世界観 → Local-first方針 → お引越し便仕様 → 端末保存・復元仕様 → **本セキュリティ仕様** → Hybrid作業メモ → コード。
 
-実証メモ: `docs/hybrid/HYBRID_PHASE_4B2D_LOCAL_FIRST_FOUNDATION.md`（暗号化は未完と既記）。
+実証メモ: `docs/hybrid/HYBRID_PHASE_4B3E_SECURITY_FOUNDATION.md` および 4B-3B〜3D。

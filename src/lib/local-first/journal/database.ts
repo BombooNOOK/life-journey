@@ -1,6 +1,10 @@
 /**
  * Local Journal SQLite foundation — open / migrate / transaction helpers.
  * Native-only. Not invoked by Web journal save paths.
+ *
+ * 4B-3E: still plaintext (`no-encryption`). Encrypted open lives in
+ * `src/lib/local-first/security/encryptedDatabase.ts` and must not be used
+ * for `ljd_local_journal` until an explicit migration phase.
  */
 
 import { Capacitor } from "@capacitor/core";
