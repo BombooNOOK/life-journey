@@ -39,4 +39,13 @@ export class LjdLocalSecurityWeb extends WebPlugin {
     async resolveApplicationSupportLjdDir() {
         throw this.unimplemented('Not implemented on web.');
     }
+    async armLockAccessProbe() {
+        throw this.unimplemented('Not implemented on web.');
+    }
+    async readLockAccessProbeResult() {
+        throw this.unimplemented('Not implemented on web.');
+    }
+    async disarmLockAccessProbe() {
+        throw this.unimplemented('Not implemented on web.');
+    }
 }

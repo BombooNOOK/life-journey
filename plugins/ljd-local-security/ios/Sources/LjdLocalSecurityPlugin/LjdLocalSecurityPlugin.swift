@@ -1,11 +1,14 @@
 import Foundation
 import Capacitor
 import Security
+import UIKit
 
 /**
  * Phase 4B-3B PoC bridge:
  * - SecureKeyStore with explicit kSecAttrAccessibleWhenUnlocked
  * - File backup exclusion + file protection inspection / Complete setting
+ * - Lock-state file access probe via protectedDataWillBecomeUnavailable
+ *   (+ short delay until isProtectedDataAvailable == false)
  *
  * Dummy / diagnostics only. Domain layer must not import Security framework.
  */
@@ -27,11 +30,22 @@ public class LjdLocalSecurityPlugin: CAPPlugin, CAPBridgedPlugin {
         CAPPluginMethod(name: "inspectGenericPasswordAccessibility", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "setExcludedFromBackup", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "resolveApplicationSupportLjdDir", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "armLockAccessProbe", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "readLockAccessProbeResult", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "disarmLockAccessProbe", returnType: CAPPluginReturnPromise),
     ]
 
     private let keychainService = "app.bamboonook.ljd.securekeystore.poc"
     /// Reported Keychain accessibility constant (PoC; never log secret values).
     private let keychainAccessibilityName = "kSecAttrAccessibleWhenUnlocked"
+
+    private var lockProbeObserver: NSObjectProtocol?
+    private var lockProbeWillObserver: NSObjectProtocol?
+    private var lockProbeBgObserver: NSObjectProtocol?
+    private var lockProbePaths: [(id: String, path: String)] = []
+    private var lockProbeArmedAt: String?
+    private var lockProbeDidRun = false
+    private var lockProbeRetryWork: DispatchWorkItem?
 
     // MARK: - SecureKeyStore
 
@@ -401,7 +415,248 @@ public class LjdLocalSecurityPlugin: CAPPlugin, CAPBridgedPlugin {
         ])
     }
 
+    /**
+     * Arm a one-shot file-read probe that runs when protected data becomes unavailable
+     * (typical side-effect of locking the device after first unlock).
+     * Results are written to a UntilFirstAuth file so they remain writable while locked.
+     * Does not erase / uninstall / touch production journal paths (caller chooses paths).
+     */
+    @objc func armLockAccessProbe(_ call: CAPPluginCall) {
+        guard let rawPaths = call.getArray("paths"), !rawPaths.isEmpty else {
+            call.reject("paths required (array of {id, path})")
+            return
+        }
+        var parsed: [(id: String, path: String)] = []
+        for item in rawPaths {
+            guard let dict = item as? JSObject,
+                  let id = dict["id"] as? String, !id.isEmpty,
+                  let path = dict["path"] as? String, !path.isEmpty
+            else {
+                call.reject("each path entry needs non-empty id and path")
+                return
+            }
+            parsed.append((id: id, path: normalizePath(path)))
+        }
+
+        disarmLockObservers()
+        lockProbeDidRun = false
+        lockProbePaths = parsed
+        lockProbeArmedAt = ISO8601DateFormatter().string(from: Date())
+
+        let method =
+            "UIApplication.protectedDataWillBecomeUnavailableNotification + delayed Data(contentsOf:) while isProtectedDataAvailable==false"
+        let pending: [String: Any] = [
+            "armed": true,
+            "probeFired": false,
+            "armedAt": lockProbeArmedAt as Any,
+            "paths": parsed.map { ["id": $0.id, "path": $0.path] },
+            "method": method,
+            "note": "Await device lock. Debugger may keep protected data available → inconclusive.",
+        ]
+        do {
+            try writeLockProbeResult(pending)
+        } catch {
+            call.reject("armLockAccessProbe write failed: \(error.localizedDescription)")
+            return
+        }
+
+        // Public UIKit has willBecomeUnavailable + didBecomeAvailable only.
+        lockProbeWillObserver = NotificationCenter.default.addObserver(
+            forName: UIApplication.protectedDataWillBecomeUnavailableNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            self?.appendLockProbeTimeline("willBecomeUnavailable")
+            self?.scheduleLockAccessProbe(reason: "willBecomeUnavailable")
+        }
+
+        lockProbeBgObserver = NotificationCenter.default.addObserver(
+            forName: UIApplication.didEnterBackgroundNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            self?.appendLockProbeTimeline("didEnterBackground")
+            self?.scheduleLockAccessProbe(reason: "didEnterBackground")
+        }
+
+        call.resolve([
+            "armed": true,
+            "armedAt": lockProbeArmedAt as Any,
+            "pathCount": parsed.count,
+            "resultPath": lockProbeResultURL().path,
+            "isProtectedDataAvailableNow": UIApplication.shared.isProtectedDataAvailable,
+        ])
+    }
+
+    @objc func readLockAccessProbeResult(_ call: CAPPluginCall) {
+        let url = lockProbeResultURL()
+        guard FileManager.default.fileExists(atPath: url.path),
+              let data = try? Data(contentsOf: url),
+              let obj = try? JSONSerialization.jsonObject(with: data) as? [String: Any]
+        else {
+            call.resolve([
+                "armed": false,
+                "probeFired": false,
+                "found": false,
+                "isProtectedDataAvailableNow": UIApplication.shared.isProtectedDataAvailable,
+            ])
+            return
+        }
+        var out = obj
+        out["found"] = true
+        out["isProtectedDataAvailableNow"] = UIApplication.shared.isProtectedDataAvailable
+        call.resolve(out)
+    }
+
+    @objc func disarmLockAccessProbe(_ call: CAPPluginCall) {
+        disarmLockObservers()
+        lockProbePaths = []
+        lockProbeArmedAt = nil
+        call.resolve(["disarmed": true])
+    }
+
     // MARK: - Helpers
+
+    private func disarmLockObservers() {
+        lockProbeRetryWork?.cancel()
+        lockProbeRetryWork = nil
+        if let o = lockProbeObserver {
+            NotificationCenter.default.removeObserver(o)
+            lockProbeObserver = nil
+        }
+        if let o = lockProbeWillObserver {
+            NotificationCenter.default.removeObserver(o)
+            lockProbeWillObserver = nil
+        }
+        if let o = lockProbeBgObserver {
+            NotificationCenter.default.removeObserver(o)
+            lockProbeBgObserver = nil
+        }
+    }
+
+    /// Wait until protected data is actually unavailable, then raw-read dummy files.
+    private func scheduleLockAccessProbe(reason: String, attempt: Int = 0) {
+        if lockProbeDidRun { return }
+        if !UIApplication.shared.isProtectedDataAvailable {
+            runLockAccessProbe(trigger: reason)
+            return
+        }
+        if attempt >= 8 {
+            // Still available after ~4s → record as-is (likely debugger / incomplete lock).
+            runLockAccessProbe(trigger: "\(reason)_timeout_still_available")
+            return
+        }
+        let work = DispatchWorkItem { [weak self] in
+            self?.scheduleLockAccessProbe(reason: reason, attempt: attempt + 1)
+        }
+        lockProbeRetryWork?.cancel()
+        lockProbeRetryWork = work
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5, execute: work)
+    }
+
+    private func lockProbeResultURL() -> URL {
+        let fm = FileManager.default
+        let lib = fm.urls(for: .libraryDirectory, in: .userDomainMask).first!
+        let dir = lib.appendingPathComponent("ljd/security-poc", isDirectory: true)
+        try? fm.createDirectory(at: dir, withIntermediateDirectories: true)
+        return dir.appendingPathComponent("lock-probe-result.json")
+    }
+
+    private func writeLockProbeResult(_ object: [String: Any]) throws {
+        let url = lockProbeResultURL()
+        let data = try JSONSerialization.data(withJSONObject: object, options: [.prettyPrinted, .sortedKeys])
+        try data.write(to: url, options: [.atomic])
+        try FileManager.default.setAttributes(
+            [.protectionKey: FileProtectionType.completeUntilFirstUserAuthentication],
+            ofItemAtPath: url.path
+        )
+    }
+
+    private func appendLockProbeTimeline(_ event: String) {
+        let url = lockProbeResultURL()
+        var obj: [String: Any] = [:]
+        if let data = try? Data(contentsOf: url),
+           let existing = try? JSONSerialization.jsonObject(with: data) as? [String: Any] {
+            obj = existing
+        }
+        var timeline = obj["timeline"] as? [[String: Any]] ?? []
+        timeline.append([
+            "event": event,
+            "at": ISO8601DateFormatter().string(from: Date()),
+            "isProtectedDataAvailable": UIApplication.shared.isProtectedDataAvailable,
+        ])
+        obj["timeline"] = timeline
+        try? writeLockProbeResult(obj)
+    }
+
+    private func runLockAccessProbe(trigger: String) {
+        if lockProbeDidRun { return }
+        lockProbeDidRun = true
+        let firedAt = ISO8601DateFormatter().string(from: Date())
+        let available = UIApplication.shared.isProtectedDataAvailable
+        var pathResults: [[String: Any]] = []
+
+        for entry in lockProbePaths {
+            let url = URL(fileURLWithPath: entry.path)
+            var row: [String: Any] = [
+                "id": entry.id,
+                "path": entry.path,
+                "exists": FileManager.default.fileExists(atPath: url.path),
+            ]
+            if let attrs = try? url.resourceValues(forKeys: [.fileProtectionKey]),
+               let protection = attrs.fileProtection {
+                row["fileProtection"] = fileProtectionLabel(protection)
+            } else {
+                row["fileProtection"] = "unknown"
+            }
+            do {
+                let data = try Data(contentsOf: url, options: [.uncached])
+                row["readSucceeded"] = true
+                row["byteCount"] = data.count
+                row["error"] = NSNull()
+            } catch {
+                row["readSucceeded"] = false
+                row["byteCount"] = 0
+                row["error"] = error.localizedDescription
+            }
+            pathResults.append(row)
+        }
+
+        var timeline: [[String: Any]] = []
+        if let data = try? Data(contentsOf: lockProbeResultURL()),
+           let existing = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+           let t = existing["timeline"] as? [[String: Any]] {
+            timeline = t
+        }
+        timeline.append([
+            "event": "lock_probe",
+            "trigger": trigger,
+            "at": firedAt,
+            "isProtectedDataAvailable": available,
+        ])
+
+        let allDenied = pathResults.allSatisfy { ($0["readSucceeded"] as? Bool) == false }
+        let anySucceeded = pathResults.contains { ($0["readSucceeded"] as? Bool) == true }
+
+        let payload: [String: Any] = [
+            "armed": true,
+            "probeFired": true,
+            "armedAt": lockProbeArmedAt as Any,
+            "firedAt": firedAt,
+            "isProtectedDataAvailableAtProbe": available,
+            "allReadsDenied": allDenied,
+            "anyReadSucceeded": anySucceeded,
+            "paths": pathResults,
+            "timeline": timeline,
+            "method": "UIApplication.protectedDataWillBecomeUnavailableNotification + delayed Data(contentsOf:)",
+            "note": available
+                ? "Notification fired but isProtectedDataAvailable=true — treat as inconclusive (debugger / incomplete lock)."
+                : "Protected data unavailable; OS-level Complete enforcement measured via raw file read (not SQLCipher JS).",
+        ]
+        try? writeLockProbeResult(payload)
+        // One-shot: stop listening after first fire.
+        disarmLockObservers()
+    }
 
     private func normalizePath(_ path: String) -> String {
         if path.hasPrefix("file://") {

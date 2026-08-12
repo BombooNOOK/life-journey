@@ -98,6 +98,50 @@ export interface ApplicationSupportLjdDirResult {
   note?: string;
 }
 
+export interface LockProbePathEntry {
+  id: string;
+  path: string;
+}
+
+export interface ArmLockAccessProbeOptions {
+  paths: LockProbePathEntry[];
+}
+
+export interface ArmLockAccessProbeResult {
+  armed: boolean;
+  armedAt?: string;
+  pathCount: number;
+  resultPath: string;
+  isProtectedDataAvailableNow: boolean;
+}
+
+export interface LockProbePathResult {
+  id: string;
+  path: string;
+  exists?: boolean;
+  fileProtection?: string;
+  readSucceeded?: boolean;
+  byteCount?: number;
+  error?: string | null;
+}
+
+export interface LockAccessProbeResult {
+  found?: boolean;
+  armed?: boolean;
+  probeFired?: boolean;
+  armedAt?: string;
+  firedAt?: string;
+  isProtectedDataAvailableAtProbe?: boolean;
+  isProtectedDataAvailableNow?: boolean;
+  allReadsDenied?: boolean;
+  anyReadSucceeded?: boolean;
+  paths?: LockProbePathResult[] | LockProbePathEntry[];
+  timeline?: Array<Record<string, unknown>>;
+  method?: string;
+  note?: string;
+  resultPath?: string;
+}
+
 export interface LjdLocalSecurityPlugin {
   generateSecret(options?: GenerateSecretOptions): Promise<GenerateSecretResult>;
   setSecret(options: SetSecretOptions): Promise<SetSecretResult>;
@@ -114,4 +158,7 @@ export interface LjdLocalSecurityPlugin {
   ): Promise<InspectGenericPasswordAccessibilityResult>;
   setExcludedFromBackup(options: SetExcludedFromBackupOptions): Promise<PathAttributes>;
   resolveApplicationSupportLjdDir(): Promise<ApplicationSupportLjdDirResult>;
+  armLockAccessProbe(options: ArmLockAccessProbeOptions): Promise<ArmLockAccessProbeResult>;
+  readLockAccessProbeResult(): Promise<LockAccessProbeResult>;
+  disarmLockAccessProbe(): Promise<{ disarmed: boolean }>;
 }

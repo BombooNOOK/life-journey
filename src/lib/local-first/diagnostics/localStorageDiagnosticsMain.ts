@@ -32,6 +32,11 @@ import {
   persistGroupAPersistenceReport,
   runGroupAPersistenceCheck,
 } from "@/lib/local-first/security/runGroupAPersistenceCheck";
+import {
+  finishGroupALockTest,
+  persistGroupALockReport,
+  prepareGroupALockTest,
+} from "@/lib/local-first/security/runGroupALockTest";
 
 function $(id: string): HTMLElement {
   const el = document.getElementById(id);
@@ -189,6 +194,31 @@ async function boot(): Promise<void> {
       $("security-report").textContent = JSON.stringify(report, null, 2);
       setStatus(
         `Group A 完了 db=${String(report.summary.dbLocationOk)} reopen=${String(report.summary.encryptedReopenOk)} kc=${String(report.summary.keychainWhenUnlocked)}`,
+      );
+    })().catch((e) => setStatus(String(e), true));
+  });
+
+  $("btn-lock-prepare").addEventListener("click", () => {
+    void (async () => {
+      setStatus("Lock prepare… unlock読込→close→Complete→arm（wipeなし）");
+      const report = await prepareGroupALockTest();
+      await persistGroupALockReport(report);
+      $("security-report").textContent = JSON.stringify(report, null, 2);
+      setStatus(
+        `PREPARED — ${report.nextUserAction}`,
+      );
+    })().catch((e) => setStatus(String(e), true));
+  });
+
+  $("btn-lock-finish").addEventListener("click", () => {
+    void (async () => {
+      setStatus("Lock finish… native probe読取＋unlock後 reopen");
+      const report = await finishGroupALockTest();
+      await persistGroupALockReport(report);
+      $("security-report").textContent = JSON.stringify(report, null, 2);
+      setStatus(
+        `Lock verdict=${report.verdict} — ${report.verdictNote}`,
+        report.verdict === "fail",
       );
     })().catch((e) => setStatus(String(e), true));
   });

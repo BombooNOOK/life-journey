@@ -1643,6 +1643,15 @@
         async resolveApplicationSupportLjdDir() {
           throw this.unimplemented("Not implemented on web.");
         }
+        async armLockAccessProbe() {
+          throw this.unimplemented("Not implemented on web.");
+        }
+        async readLockAccessProbeResult() {
+          throw this.unimplemented("Not implemented on web.");
+        }
+        async disarmLockAccessProbe() {
+          throw this.unimplemented("Not implemented on web.");
+        }
       };
     }
   });
@@ -4393,6 +4402,201 @@ CREATE INDEX IF NOT EXISTS idx_local_media_journal
     });
   }
 
+  // src/lib/local-first/security/runGroupALockTest.ts
+  init_dist();
+  async function closeIfOpen5(sqlite, name) {
+    try {
+      await sqlite.checkConnectionsConsistency();
+    } catch {
+    }
+    try {
+      if ((await sqlite.isConnection(name, false)).result) {
+        await sqlite.closeConnection(name, false);
+      }
+    } catch {
+      try {
+        await CapacitorSQLite.closeConnection({ database: name, readonly: false });
+      } catch {
+      }
+    }
+  }
+  async function resolveDummyPaths() {
+    const asMeta = await LjdLocalSecurity.resolveApplicationSupportLjdDir();
+    const dbPath = `${asMeta.ljdApplicationSupportDir}/${REAL_DEVICE_GROUP_A_DB}SQLite.db`;
+    const mediaRel = `${REAL_DEVICE_GROUP_A_MEDIA}/dummy.png`;
+    const uri = await Filesystem.getUri({
+      path: mediaRel,
+      directory: Directory.Library
+    });
+    return { dbPath, mediaPath: uri.uri };
+  }
+  async function prepareGroupALockTest() {
+    if (!Capacitor.isNativePlatform()) {
+      throw new Error("lock test is native-only");
+    }
+    const sqlite = new SQLiteConnection(CapacitorSQLite);
+    await closeIfOpen5(sqlite, REAL_DEVICE_GROUP_A_DB);
+    const db2 = await sqlite.createConnection(
+      REAL_DEVICE_GROUP_A_DB,
+      true,
+      "secret",
+      1,
+      false
+    );
+    await db2.open();
+    const q = await db2.query("SELECT body FROM g_rows LIMIT 1;");
+    const body = String(
+      q.values?.[0]?.body ?? ""
+    );
+    const dbUrl = (await db2.getUrl()).url ?? "";
+    await sqlite.closeConnection(REAL_DEVICE_GROUP_A_DB, false);
+    await closeIfOpen5(sqlite, REAL_DEVICE_GROUP_A_DB);
+    if (body !== REAL_DEVICE_GROUP_A_TEXT) {
+      throw new Error(
+        "unlock DB read mismatch \u2014 run Group A once first (dummy only); no wipe attempted here"
+      );
+    }
+    const mediaRel = `${REAL_DEVICE_GROUP_A_MEDIA}/dummy.png`;
+    const mediaRead = await Filesystem.readFile({
+      path: mediaRel,
+      directory: Directory.Library
+    });
+    if (!(typeof mediaRead.data === "string" && mediaRead.data.length > 0)) {
+      throw new Error("unlock media read failed");
+    }
+    const { dbPath, mediaPath } = await resolveDummyPaths();
+    const pathForDb = dbUrl || dbPath;
+    const afterDb = await LjdLocalSecurity.setCompleteProtection({ path: pathForDb });
+    const afterMedia = await LjdLocalSecurity.setCompleteProtection({ path: mediaPath });
+    await closeIfOpen5(sqlite, REAL_DEVICE_GROUP_A_DB);
+    const arm = await LjdLocalSecurity.armLockAccessProbe({
+      paths: [
+        { id: "dummy-db", path: pathForDb },
+        { id: "dummy-media", path: mediaPath }
+      ]
+    });
+    return {
+      phase: "prepare",
+      ranAt: (/* @__PURE__ */ new Date()).toISOString(),
+      platform: Capacitor.getPlatform(),
+      unlockReadOk: true,
+      connectionsClosed: true,
+      dbPath: pathForDb,
+      mediaPath,
+      dbProtection: afterDb.fileProtection,
+      mediaProtection: afterMedia.fileProtection,
+      arm: {
+        armed: arm.armed,
+        armedAt: arm.armedAt,
+        isProtectedDataAvailableNow: arm.isProtectedDataAvailableNow,
+        resultPath: arm.resultPath
+      },
+      nextUserAction: "\u4ECA\u3059\u3050\u4F1A\u793E\u7528iPhone\u3092\u30ED\u30C3\u30AF\u3057\u3066\u304F\u3060\u3055\u3044\uFF08\u30B5\u30A4\u30C9\u30DC\u30BF\u30F3\uFF09\u3002\u30ED\u30C3\u30AF\u5F8C10\u79D2\u5F85\u3061\u2192\u89E3\u9664\u2192\u300CLock finish\u300D\u3092\u62BC\u3059\u3002Xcode\u63A5\u7D9A\u4E2D\u306F\u6E2C\u5B9A\u304C inconclusive \u306B\u306A\u308A\u3084\u3059\u3044\u306E\u3067\u3001\u53EF\u80FD\u306A\u3089\u5B9F\u884C\u5F8C\u306B\u30B1\u30FC\u30D6\u30EB\u3092\u5916\u3059\u304B\u3001\u30ED\u30C3\u30AF\u4E2D\u306BDebugger\u304C\u63B4\u3093\u3067\u3044\u306A\u3044\u72B6\u614B\u3067\u8A66\u3059\u3002",
+      verdict: "prepared"
+    };
+  }
+  async function finishGroupALockTest() {
+    if (!Capacitor.isNativePlatform()) {
+      throw new Error("lock test is native-only");
+    }
+    const nativeProbe = await LjdLocalSecurity.readLockAccessProbeResult();
+    await LjdLocalSecurity.disarmLockAccessProbe().catch(() => void 0);
+    const sqlite = new SQLiteConnection(CapacitorSQLite);
+    let encryptedReopenOk = false;
+    let dbBodyMatch = false;
+    let mediaReadOk = false;
+    try {
+      await closeIfOpen5(sqlite, REAL_DEVICE_GROUP_A_DB);
+      const db2 = await sqlite.createConnection(
+        REAL_DEVICE_GROUP_A_DB,
+        true,
+        "secret",
+        1,
+        false
+      );
+      await db2.open();
+      const q = await db2.query("SELECT body FROM g_rows LIMIT 1;");
+      const body = String(
+        q.values?.[0]?.body ?? ""
+      );
+      await sqlite.closeConnection(REAL_DEVICE_GROUP_A_DB, false);
+      dbBodyMatch = body === REAL_DEVICE_GROUP_A_TEXT;
+      encryptedReopenOk = dbBodyMatch;
+    } catch {
+      encryptedReopenOk = false;
+      dbBodyMatch = false;
+    }
+    try {
+      const mediaRel = `${REAL_DEVICE_GROUP_A_MEDIA}/dummy.png`;
+      const readBack = await Filesystem.readFile({
+        path: mediaRel,
+        directory: Directory.Library
+      });
+      mediaReadOk = typeof readBack.data === "string" && readBack.data.length > 0;
+    } catch {
+      mediaReadOk = false;
+    }
+    const probeFired = nativeProbe.probeFired === true;
+    const unavailable = nativeProbe.isProtectedDataAvailableAtProbe === false ? true : nativeProbe.isProtectedDataAvailableAtProbe === true ? false : null;
+    const lockedReadsDenied = probeFired && typeof nativeProbe.allReadsDenied === "boolean" ? nativeProbe.allReadsDenied : null;
+    const unlockReopenOk = encryptedReopenOk && mediaReadOk;
+    const dataPreserved = unlockReopenOk;
+    let verdict = "inconclusive_not_demonstrated";
+    let verdictNote = "\u5B9F\u6A5F\u3067\u3082\u672A\u5B9F\u8A3C \u2014 native probe \u304C\u4FE1\u983C\u3067\u304D\u308B\u5F62\u3067\u767A\u706B\u3057\u306A\u304B\u3063\u305F\uFF08\u307E\u305F\u306F protected data \u304C\u30ED\u30C3\u30AF\u4E2D\u3082 available\uFF09\u3002PASS\u306B\u3057\u306A\u3044\u3002";
+    if (!probeFired) {
+      verdict = "inconclusive_not_demonstrated";
+      verdictNote = "\u5B9F\u6A5F\u3067\u3082\u672A\u5B9F\u8A3C \u2014 lock\u901A\u77E5\u5F8C\u3082 probe \u304C\u767A\u706B\u305B\u305A\u3001lock\u4E2D\u306E\u65B0\u898Fread\u3092\u8A18\u9332\u3067\u304D\u306A\u304B\u3063\u305F\uFF08Xcode/debugger\u3084\u77ED\u6642\u9593\u30ED\u30C3\u30AF\u7B49\u304C\u539F\u56E0\u306B\u306A\u308A\u5F97\u308B\uFF09\u3002";
+    } else if (unavailable !== true) {
+      verdict = "inconclusive_not_demonstrated";
+      verdictNote = "\u5B9F\u6A5F\u3067\u3082\u672A\u5B9F\u8A3C \u2014 \u901A\u77E5\u306F\u6765\u305F\u304C isProtectedDataAvailableAtProbe\u2260false\u3002Debugger\u63A5\u7D9A\u3084\u4E0D\u5B8C\u5168\u306A\u30ED\u30C3\u30AF\u306E\u53EF\u80FD\u6027\u3002PASS\u306B\u3057\u306A\u3044\u3002";
+    } else if (lockedReadsDenied === true && unlockReopenOk) {
+      verdict = "pass";
+      verdictNote = "lock\u4E2D Data(contentsOf:) \u304C dummy DB/media \u3068\u3082\u62D2\u5426\u3055\u308C\u3001unlock\u5F8C reopen/read \u6210\u529F\u30FB\u5185\u5BB9\u4FDD\u6301\u3002SQLCipher JS open-while-locked \u81EA\u4F53\u306F WebView\u4E0A\u3067\u306F\u6E2C\u3089\u305A\u3001OS Complete \u5B9F\u52B9\u3092 native file read \u3067\u6E2C\u3063\u305F\u3002";
+    } else if (lockedReadsDenied === false) {
+      verdict = "fail";
+      verdictNote = "protected data unavailable \u306A\u306E\u306B Complete \u4ED8\u304D\u30D5\u30A1\u30A4\u30EB\u306E raw read \u304C\u6210\u529F\u3057\u305F \u2014 Complete \u5B9F\u52B9\u306E\u671F\u5F85\u3068\u4E0D\u4E00\u81F4\u3002";
+    } else if (!unlockReopenOk) {
+      verdict = "fail";
+      verdictNote = "unlock\u5F8C\u306E reopen/read \u304C\u5931\u6557\u3001\u307E\u305F\u306F dummy \u5185\u5BB9\u4E0D\u4E00\u81F4\u3002";
+    }
+    return {
+      phase: "finish",
+      ranAt: (/* @__PURE__ */ new Date()).toISOString(),
+      platform: Capacitor.getPlatform(),
+      method: nativeProbe.method ?? "UIApplication.protectedDataWillBecomeUnavailableNotification + delayed Data(contentsOf:)",
+      unlockBefore: {},
+      nativeProbe,
+      postUnlock: {
+        encryptedReopenOk,
+        mediaReadOk,
+        dbBodyMatch
+      },
+      summary: {
+        probeFired,
+        protectedDataUnavailableAtProbe: unavailable,
+        lockedReadsDenied,
+        unlockReopenOk,
+        dataPreserved
+      },
+      verdict,
+      verdictNote
+    };
+  }
+  async function persistGroupALockReport(report) {
+    await Filesystem.mkdir({
+      path: "ljd/security-poc",
+      directory: Directory.Library,
+      recursive: true
+    }).catch(() => void 0);
+    const name = report.phase === "prepare" ? "real-device-group-a-lock-prepare.json" : "real-device-group-a-lock-report.json";
+    await Filesystem.writeFile({
+      path: `ljd/security-poc/${name}`,
+      directory: Directory.Library,
+      encoding: Encoding.UTF8,
+      data: JSON.stringify(report, null, 2)
+    });
+  }
+
   // src/lib/local-first/diagnostics/localStorageDiagnosticsMain.ts
   function $(id) {
     const el = document.getElementById(id);
@@ -4531,6 +4735,29 @@ CREATE INDEX IF NOT EXISTS idx_local_media_journal
         $("security-report").textContent = JSON.stringify(report, null, 2);
         setStatus(
           `Group A \u5B8C\u4E86 db=${String(report.summary.dbLocationOk)} reopen=${String(report.summary.encryptedReopenOk)} kc=${String(report.summary.keychainWhenUnlocked)}`
+        );
+      })().catch((e) => setStatus(String(e), true));
+    });
+    $("btn-lock-prepare").addEventListener("click", () => {
+      void (async () => {
+        setStatus("Lock prepare\u2026 unlock\u8AAD\u8FBC\u2192close\u2192Complete\u2192arm\uFF08wipe\u306A\u3057\uFF09");
+        const report = await prepareGroupALockTest();
+        await persistGroupALockReport(report);
+        $("security-report").textContent = JSON.stringify(report, null, 2);
+        setStatus(
+          `PREPARED \u2014 ${report.nextUserAction}`
+        );
+      })().catch((e) => setStatus(String(e), true));
+    });
+    $("btn-lock-finish").addEventListener("click", () => {
+      void (async () => {
+        setStatus("Lock finish\u2026 native probe\u8AAD\u53D6\uFF0Bunlock\u5F8C reopen");
+        const report = await finishGroupALockTest();
+        await persistGroupALockReport(report);
+        $("security-report").textContent = JSON.stringify(report, null, 2);
+        setStatus(
+          `Lock verdict=${report.verdict} \u2014 ${report.verdictNote}`,
+          report.verdict === "fail"
         );
       })().catch((e) => setStatus(String(e), true));
     });
