@@ -152,3 +152,10 @@ Server 200 OK + `entry.id` 確定後、**durable outbox enqueue 前**に process
 | 次に reconciliation / gap closure 設計へ | **A（推奨）** — `SERVER_SUCCESS_TO_OUTBOX_GAP` 残存 |
 | 一般 production rollout | **B** — RG-1〜4 未完・gap 未閉 |
 | main 統合 | **B** |
+
+## Follow-up（4B-4M docs）
+
+gap closure 設計比較:  
+`docs/product/ljd-save-operation-reconciliation-spec.md` ／  
+`docs/hybrid/HYBRID_PHASE_4B4M_SERVER_SUCCESS_OUTBOX_GAP_ARCHITECTURE.md`。  
+有力候補: **B+C+lightweight A**（未実装）。

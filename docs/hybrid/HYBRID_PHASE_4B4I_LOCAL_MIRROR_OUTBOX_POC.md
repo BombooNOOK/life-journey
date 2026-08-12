@@ -86,3 +86,5 @@ Server 保存後の Local mirror pending を、**独立 outbox** に安全に保
 - 本ファイル
 - cross-link: transitional routing / write-routing / activation
 - 後続: `docs/hybrid/HYBRID_PHASE_4B4L_INTERNAL_SAVE_WIRING_POC.md`（internal save wiring）
+- 後続: `docs/hybrid/HYBRID_PHASE_4B4M_SERVER_SUCCESS_OUTBOX_GAP_ARCHITECTURE.md`（gap closure 設計）
+- 後続: `docs/product/ljd-save-operation-reconciliation-spec.md`

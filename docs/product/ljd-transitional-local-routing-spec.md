@@ -355,3 +355,11 @@ registry validation 層 PoC: `docs/hybrid/HYBRID_PHASE_4B4K_GENERATION_REGISTRY_
 internal save mirror wiring PoC: `docs/hybrid/HYBRID_PHASE_4B4L_INTERNAL_SAVE_WIRING_POC.md`。  
 **Status: 正式 PASS**（native/live L1–L13）。`SERVER_SUCCESS_TO_OUTBOX_GAP` 未解決。main 統合不可。
 
+---
+
+## 25. 4B-4M 追記
+
+gap closure 設計: `docs/product/ljd-save-operation-reconciliation-spec.md` ／  
+`docs/hybrid/HYBRID_PHASE_4B4M_SERVER_SUCCESS_OUTBOX_GAP_ARCHITECTURE.md`。  
+Window B（response lost）と Window C（200→enqueue）を分離。有力候補 **B+C+lightweight A**（docs only）。
+
