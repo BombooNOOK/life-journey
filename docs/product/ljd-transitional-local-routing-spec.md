@@ -335,4 +335,11 @@ production save 配線、pending queue 実装、background retry、Local read �
 
 generation lifecycle 設計: `docs/product/ljd-local-generation-lifecycle-spec.md` ／  
 `docs/hybrid/HYBRID_PHASE_4B4J_GENERATION_LIFECYCLE_ARCHITECTURE.md`。  
-pending pin / retirement_blocked / independent registry は本 transitional routing と整合。
+pending pin / retirement_blocked / independent registry は本 transitional routing と整合。pending pin / retirement_blocked / independent registry は本 transitional routing と整合。
+
+---
+
+## 23. 4B-4K 追記
+
+registry validation 層 PoC: `docs/hybrid/HYBRID_PHASE_4B4K_GENERATION_REGISTRY_POC.md`。
+

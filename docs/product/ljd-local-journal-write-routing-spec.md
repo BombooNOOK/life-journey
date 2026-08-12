@@ -316,4 +316,15 @@ Strategy D への切替は **Source-of-Truth switch の一部**であり、techn
 | independent generation registry | 設計候補 |
 | outstanding outbox → retirement_blocked | 設計 |
 | production save 配線 | **未接続** |
-| 証拠 | `docs/product/ljd-local-generation-lifecycle-spec.md` |
+| 証拠 | `docs/product/ljd-local-generation-lifecycle-spec.md` || 証拠 | `docs/product/ljd-local-generation-lifecycle-spec.md` |
+
+---
+
+## 14. 4B-4K generation registry PoC（追記）
+
+| 項目 | 状態 |
+| --- | --- |
+| independent registry | PoC PASS（unit） |
+| manifest+registry resolve | developer-only |
+| 証拠 | `docs/hybrid/HYBRID_PHASE_4B4K_GENERATION_REGISTRY_POC.md` |
+

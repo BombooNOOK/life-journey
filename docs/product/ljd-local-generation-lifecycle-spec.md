@@ -419,3 +419,21 @@ generation registry 実装、candidate rename、generation delete、production s
 ## 23. 矛盾時の優先
 
 世界観 → Local-first / お引越し便 → activation SoT → write-routing / transitional routing → outbox SoT → **本 lifecycle SoT（候補）** → Hybrid メモ → コード。
+
+---
+
+## 24. 4B-4K Generation Registry PoC（追記）
+
+| 項目 | 結果 |
+| --- | --- |
+| Registry DB | `ljd_local_generation_registry_poc`（plain SQLite + Complete） |
+| Backup | **included**（life-record / manifest と同復元） |
+| manifest `generation` | number ordinal — **registry generationId に再利用しない** |
+| compatibility | `legacyGenerationAlias: manifest-generation:2` |
+| Initialize | developer explicit / idempotent / 1 candidate row |
+| Resolver | `resolveLocalJournalGenerationTargetWithRegistryValidation` |
+| Routing | **technical_active のみ** |
+| outstanding | outbox derived |
+| 証拠 | `docs/hybrid/HYBRID_PHASE_4B4K_GENERATION_REGISTRY_POC.md` |
+
+registry 未実装期間の注記（§20）は **PoC 完了**により解消。save 配線は未接続。

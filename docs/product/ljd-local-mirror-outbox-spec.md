@@ -159,4 +159,5 @@ serverEntryId はログで redact（先頭・末尾のみ）。本文・写真�
 - `docs/product/ljd-transitional-local-routing-spec.md`  
 - `docs/product/ljd-local-journal-write-routing-spec.md`  
 - `docs/product/ljd-local-journal-activation-spec.md`  
-- `docs/product/ljd-local-generation-lifecycle-spec.md`（4B-4J lifecycle）
+- `docs/product/ljd-local-generation-lifecycle-spec.md`（4B-4J lifecycle）- `docs/product/ljd-local-generation-lifecycle-spec.md`（4B-4J lifecycle）  
+- `docs/hybrid/HYBRID_PHASE_4B4K_GENERATION_REGISTRY_POC.md`（4B-4K registry PoC）

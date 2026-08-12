@@ -22,6 +22,10 @@ import {
   enqueueBeforeMirror,
 } from "@/lib/local-first/journal/outbox/LocalMirrorOutboxService";
 import { openLocalMirrorOutboxSqliteStore } from "@/lib/local-first/journal/outbox/LocalMirrorOutboxSqliteStore";
+import { initializeCurrentCandidateRegistry } from "@/lib/local-first/journal/registry/initializeCurrentCandidateRegistry";
+import { openLocalGenerationRegistrySqliteStore } from "@/lib/local-first/journal/registry/LocalGenerationRegistrySqliteStore";
+import { resolveLocalJournalGenerationTargetWithRegistryValidation } from "@/lib/local-first/journal/registry/resolveWithRegistryValidation";
+import { runGenerationRegistryPoc } from "@/lib/local-first/journal/registry/runGenerationRegistryPoc";
 import { FAILURE_INJECTION_MISSING_ENTRY_ID } from "@/lib/local-first/journal/secureCopy/types";
 import {
   deleteJournalMediaRelative,
@@ -403,6 +407,68 @@ async function boot(): Promise<void> {
       $("security-report").textContent = JSON.stringify(report, null, 2);
       const fails = report.steps.filter((s) => s.status === "fail").length;
       setStatus(`outbox-poc fail=${fails}`, fails > 0);
+    })().catch((e) => setStatus(safeErrorMessage(e), true));
+  });
+
+  $("btn-registry-list").addEventListener("click", () => {
+    void (async () => {
+      const opened = await openLocalGenerationRegistrySqliteStore();
+      try {
+        const rows = await opened.store.listAll();
+        $("security-report").textContent = JSON.stringify(
+          {
+            readOnly: true,
+            rowCount: rows.length,
+            rows: rows.map((r) => ({
+              generationId: r.generationId.slice(0, 8),
+              databaseId: r.databaseId,
+              lifecycleState: r.lifecycleState,
+              legacyGenerationAlias: r.legacyGenerationAlias,
+            })),
+            encrypted: opened.encrypted,
+            completeProtection: opened.completeProtection,
+            backupIncluded: opened.backupIncluded,
+          },
+          null,
+          2,
+        );
+        setStatus(`registry rows=${rows.length}`);
+      } finally {
+        await opened.close();
+      }
+    })().catch((e) => setStatus(safeErrorMessage(e), true));
+  });
+
+  $("btn-registry-init").addEventListener("click", () => {
+    void (async () => {
+      const opened = await openLocalGenerationRegistrySqliteStore();
+      try {
+        const result = await initializeCurrentCandidateRegistry(opened.store);
+        $("security-report").textContent = JSON.stringify(result, null, 2);
+        setStatus(`registry init created=${String(result.created)}`);
+      } finally {
+        await opened.close();
+      }
+    })().catch((e) => setStatus(safeErrorMessage(e), true));
+  });
+
+  $("btn-resolve-with-registry").addEventListener("click", () => {
+    void (async () => {
+      const resolved = await resolveLocalJournalGenerationTargetWithRegistryValidation({
+        allowUnknownCapacity: true,
+      });
+      $("security-report").textContent = JSON.stringify(resolved, null, 2);
+      setStatus(resolved.ok ? "resolve+registry PASS" : `denied ${resolved.reason}`, !resolved.ok);
+    })().catch((e) => setStatus(safeErrorMessage(e), true));
+  });
+
+  $("btn-registry-poc").addEventListener("click", () => {
+    void (async () => {
+      setStatus("generation registry PoC K1–K11…");
+      const report = await runGenerationRegistryPoc();
+      $("security-report").textContent = JSON.stringify(report, null, 2);
+      const fails = report.steps.filter((s) => s.status === "fail").length;
+      setStatus(`registry-poc fail=${fails}`, fails > 0);
     })().catch((e) => setStatus(safeErrorMessage(e), true));
   });
 

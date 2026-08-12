@@ -355,6 +355,13 @@ production transitional write routing の設計候補:
 
 ## 17. 4B-4J 追記
 
+---
+
+## 18. 4B-4K 追記
+
+generation registry PoC: `docs/hybrid/HYBRID_PHASE_4B4K_GENERATION_REGISTRY_POC.md`。manifest generation ordinal は registry generationId にしない。
+
+
 generation lifecycle（active/previous/retire/quarantine / independent registry）設計候補:  
 `docs/product/ljd-local-generation-lifecycle-spec.md` ／  
 `docs/hybrid/HYBRID_PHASE_4B4J_GENERATION_LIFECYCLE_ARCHITECTURE.md`。  
