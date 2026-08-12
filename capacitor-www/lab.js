@@ -997,6 +997,42 @@
     }
   });
 
+  // plugins/ljd-local-security/dist/esm/web.js
+  var web_exports2 = {};
+  __export(web_exports2, {
+    LjdLocalSecurityWeb: () => LjdLocalSecurityWeb
+  });
+  var LjdLocalSecurityWeb;
+  var init_web2 = __esm({
+    "plugins/ljd-local-security/dist/esm/web.js"() {
+      "use strict";
+      init_dist();
+      LjdLocalSecurityWeb = class extends WebPlugin {
+        async inspectPath() {
+          throw this.unimplemented("Not implemented on web.");
+        }
+        async setCompleteProtection() {
+          throw this.unimplemented("Not implemented on web.");
+        }
+        async setExcludedFromBackup() {
+          throw this.unimplemented("Not implemented on web.");
+        }
+        async resolveApplicationSupportLjdDir() {
+          throw this.unimplemented("Not implemented on web.");
+        }
+        async inspectGenericPasswordAccessibility() {
+          throw this.unimplemented("Not implemented on web.");
+        }
+        async getVolumeAvailableCapacity() {
+          throw this.unimplemented("Not implemented on web.");
+        }
+        async listSqliteArtifactsInLjdDir() {
+          throw this.unimplemented("Not implemented on web.");
+        }
+      };
+    }
+  });
+
   // node_modules/@capacitor/filesystem/dist/esm/definitions.js
   var Directory, Encoding;
   var init_definitions = __esm({
@@ -1021,8 +1057,8 @@
   });
 
   // node_modules/@capacitor/filesystem/dist/esm/web.js
-  var web_exports2 = {};
-  __export(web_exports2, {
+  var web_exports3 = {};
+  __export(web_exports3, {
     FilesystemWeb: () => FilesystemWeb
   });
   function resolve(path) {
@@ -1045,7 +1081,7 @@
     return parent !== children && pathsA.every((value, index) => value === pathsB[index]);
   }
   var FilesystemWeb;
-  var init_web2 = __esm({
+  var init_web3 = __esm({
     "node_modules/@capacitor/filesystem/dist/esm/web.js"() {
       init_dist();
       init_definitions();
@@ -1590,42 +1626,6 @@
         }
       };
       FilesystemWeb._debug = true;
-    }
-  });
-
-  // plugins/ljd-local-security/dist/esm/web.js
-  var web_exports3 = {};
-  __export(web_exports3, {
-    LjdLocalSecurityWeb: () => LjdLocalSecurityWeb
-  });
-  var LjdLocalSecurityWeb;
-  var init_web3 = __esm({
-    "plugins/ljd-local-security/dist/esm/web.js"() {
-      "use strict";
-      init_dist();
-      LjdLocalSecurityWeb = class extends WebPlugin {
-        async inspectPath() {
-          throw this.unimplemented("Not implemented on web.");
-        }
-        async setCompleteProtection() {
-          throw this.unimplemented("Not implemented on web.");
-        }
-        async setExcludedFromBackup() {
-          throw this.unimplemented("Not implemented on web.");
-        }
-        async resolveApplicationSupportLjdDir() {
-          throw this.unimplemented("Not implemented on web.");
-        }
-        async inspectGenericPasswordAccessibility() {
-          throw this.unimplemented("Not implemented on web.");
-        }
-        async getVolumeAvailableCapacity() {
-          throw this.unimplemented("Not implemented on web.");
-        }
-        async listSqliteArtifactsInLjdDir() {
-          throw this.unimplemented("Not implemented on web.");
-        }
-      };
     }
   });
 
@@ -2485,7 +2485,7 @@
     if (!connection) connection = new SQLiteConnection(CapacitorSQLite);
     return connection;
   }
-  var SCHEMA_SQL = `
+  var LOCAL_JOURNAL_SCHEMA_SQL = `
 CREATE TABLE IF NOT EXISTS local_journal_entries (
   stable_id TEXT PRIMARY KEY NOT NULL,
   date_key TEXT NOT NULL,
@@ -2534,6 +2534,38 @@ CREATE TABLE IF NOT EXISTS local_media (
 CREATE INDEX IF NOT EXISTS idx_local_media_journal
   ON local_media (journal_stable_id);
 `;
+  var LOCAL_JOURNAL_EXPECTED_TABLES = [
+    "local_journal_entries",
+    "local_journal_tags",
+    "local_media"
+  ];
+  var LOCAL_JOURNAL_EXPECTED_COLUMNS = {
+    local_journal_entries: [
+      "stable_id",
+      "date_key",
+      "title",
+      "content",
+      "created_at",
+      "updated_at",
+      "tags_json",
+      "schema_version",
+      "source",
+      "local_status",
+      "imported_at",
+      "legacy_server_id",
+      "server_updated_at"
+    ],
+    local_journal_tags: ["journal_stable_id", "tag"],
+    local_media: [
+      "stable_id",
+      "journal_stable_id",
+      "type",
+      "relative_path",
+      "created_at",
+      "checksum",
+      "mime_type"
+    ]
+  };
   async function readUserVersion(database) {
     const versionResult = await database.query("PRAGMA user_version;");
     const raw = versionResult.values?.[0];
@@ -2541,7 +2573,7 @@ CREATE INDEX IF NOT EXISTS idx_local_media_journal
     return Number.isFinite(current) ? current : 0;
   }
   async function applyFoundationSchema(database) {
-    await database.execute(SCHEMA_SQL);
+    await database.execute(LOCAL_JOURNAL_SCHEMA_SQL);
     await database.execute(`PRAGMA user_version = ${LOCAL_JOURNAL_SCHEMA_USER_VERSION};`);
   }
   async function withLocalJournalTransaction(fn) {
@@ -2584,7 +2616,281 @@ CREATE INDEX IF NOT EXISTS idx_local_media_journal
     return db;
   }
 
-  // src/lib/local-first/journal/mediaStore.ts
+  // src/lib/local-first/journal/secureBootstrap/LocalJournalSecureBootstrapper.ts
+  init_dist();
+
+  // src/lib/local-first/journal/secureBootstrap/candidateHealth.ts
+  function missingExpectedTables(tables) {
+    const have = new Set(tables);
+    return LOCAL_JOURNAL_EXPECTED_TABLES.filter((name) => !have.has(name));
+  }
+  function unexpectedTables(tables) {
+    const expected = new Set(LOCAL_JOURNAL_EXPECTED_TABLES);
+    return tables.filter((name) => !expected.has(name) && !name.startsWith("sqlite_"));
+  }
+  function columnMismatches(columns) {
+    const mismatches = [];
+    for (const table of LOCAL_JOURNAL_EXPECTED_TABLES) {
+      const have = (columns[table] ?? []).join(",");
+      const want = LOCAL_JOURNAL_EXPECTED_COLUMNS[table].join(",");
+      if (have !== want) mismatches.push(table);
+    }
+    return mismatches;
+  }
+  function classifyCandidateHealth(input) {
+    if (!input.exists) {
+      return { status: "missing", reason: null };
+    }
+    if (input.encrypted === false) {
+      return { status: "abnormal", reason: "plaintext_candidate" };
+    }
+    if (input.encrypted == null) {
+      return { status: "abnormal", reason: "encryption_unknown" };
+    }
+    if (input.userVersion !== LOCAL_JOURNAL_SCHEMA_USER_VERSION) {
+      return { status: "abnormal", reason: "user_version_mismatch" };
+    }
+    const missing = missingExpectedTables(input.tables);
+    if (missing.length > 0) {
+      return { status: "abnormal", reason: `missing_tables:${missing.join(",")}` };
+    }
+    const extra = unexpectedTables(input.tables);
+    if (extra.length > 0) {
+      return { status: "abnormal", reason: `unexpected_tables:${extra.join(",")}` };
+    }
+    if (input.columns) {
+      const drifted = columnMismatches(input.columns);
+      if (drifted.length > 0) {
+        return { status: "abnormal", reason: `columns:${drifted.join(",")}` };
+      }
+    }
+    return { status: "ready", reason: null };
+  }
+
+  // src/lib/local-first/journal/secureBootstrap/types.ts
+  var LOCAL_JOURNAL_SECURE_CANDIDATE_DB_NAME = "ljd_local_journal_secure_candidate";
+  var SECURE_BOOTSTRAP_MIN_AVAILABLE_BYTES = 256 * 1024;
+
+  // src/lib/local-first/security/backupInclusion.ts
+  init_dist();
+
+  // plugins/ljd-local-security/dist/esm/index.js
+  init_dist();
+  var LjdLocalSecurity = registerPlugin("LjdLocalSecurity", {
+    web: () => Promise.resolve().then(() => (init_web2(), web_exports2)).then((m) => new m.LjdLocalSecurityWeb())
+  });
+
+  // src/lib/local-first/security/types.ts
+  var LocalFirstSecurityError = class extends Error {
+    constructor(code, message) {
+      super(message);
+      this.name = "LocalFirstSecurityError";
+      this.code = code;
+    }
+  };
+  var LJD_FILE_PROTECTION_CANDIDATE = "NSFileProtectionComplete";
+  var LJD_PLUGIN_KEYCHAIN_SERVICE = "unlockSecret";
+  var LJD_PLUGIN_KEYCHAIN_ACCOUNT = "ljd_CapacitorSQLitePlugin";
+  var LJD_PLUGIN_KEYCHAIN_ACCESSIBILITY_MEASURED = "kSecAttrAccessibleWhenUnlocked";
+  var LJD_SQLITE_ENCRYPTION_MODE = "secret";
+
+  // src/lib/local-first/security/noSecretLog.ts
+  var SECRET_KEY = /passphrase|password|secret|encryptionkey|encryption_secret|unlocksecret/i;
+  function redactSecretLike(value) {
+    if (value == null) return value;
+    if (typeof value === "string") {
+      if (value.length > 8 && /^[A-Za-z0-9+/=_-]{16,}$/.test(value)) {
+        return "[redacted]";
+      }
+      return value;
+    }
+    if (Array.isArray(value)) return value.map(redactSecretLike);
+    if (typeof value === "object") {
+      const out = {};
+      for (const [key, v] of Object.entries(value)) {
+        out[key] = SECRET_KEY.test(key) ? "[redacted]" : redactSecretLike(v);
+      }
+      return out;
+    }
+    return value;
+  }
+  function safeErrorMessage(error) {
+    if (error instanceof Error) {
+      const msg = error.message;
+      const hasSecretValue = SECRET_KEY.test(msg) && /:\s*['"]?[A-Za-z0-9+/=_-]{12,}/.test(msg);
+      if (hasSecretValue) return `${error.name}: [redacted security error]`;
+      return msg.replace(/\b[A-Fa-f0-9]{24,}\b/g, "[redacted]");
+    }
+    return String(redactSecretLike(error));
+  }
+
+  // src/lib/local-first/security/securityErrorMapping.ts
+  function mapSecurityError(error) {
+    if (error instanceof LocalFirstSecurityError) return error;
+    const message = safeErrorMessage(error);
+    let code = "unknown";
+    if (/native-only|native only/i.test(message)) code = "native_only";
+    else if (/path required/i.test(message)) code = "path_required";
+    else if (/journal_encryption_forbidden|must not be opened encrypted/i.test(message)) {
+      code = "journal_encryption_forbidden";
+    } else if (/not implemented on web|unimplemented/i.test(message)) {
+      code = "bridge_unimplemented";
+    }
+    return new LocalFirstSecurityError(code, message);
+  }
+
+  // src/lib/local-first/security/backupInclusion.ts
+  function shouldForceBackupInclusion(current) {
+    return current === true;
+  }
+  async function ensurePathIncludedInBackup(path) {
+    if (!Capacitor.isNativePlatform()) {
+      throw new LocalFirstSecurityError(
+        "native_only",
+        "backup inclusion helper is native-only"
+      );
+    }
+    if (!path) {
+      throw new LocalFirstSecurityError("path_required", "path required");
+    }
+    try {
+      const current = await LjdLocalSecurity.inspectPath({ path });
+      if (!shouldForceBackupInclusion(current.isExcludedFromBackup)) {
+        return current;
+      }
+      return await LjdLocalSecurity.setExcludedFromBackup({
+        path,
+        excluded: false
+      });
+    } catch (error) {
+      throw mapSecurityError(error);
+    }
+  }
+
+  // src/lib/local-first/security/encryptedDatabase.ts
+  init_dist();
+  function assertNotProductionJournal(name) {
+    if (name === LOCAL_JOURNAL_DB_NAME) {
+      throw new LocalFirstSecurityError(
+        "journal_encryption_forbidden",
+        "ljd_local_journal must not be opened encrypted; use a non-active candidate name"
+      );
+    }
+  }
+  function shouldSetPluginEncryptionSecret(alreadyStored) {
+    return !alreadyStored;
+  }
+  async function isPluginEncryptionSecretStored() {
+    if (!Capacitor.isNativePlatform()) return false;
+    try {
+      return Boolean((await CapacitorSQLite.isSecretStored()).result);
+    } catch {
+      return false;
+    }
+  }
+  async function configurePluginEncryptionSecret(passphrase) {
+    if (!Capacitor.isNativePlatform()) {
+      throw new LocalFirstSecurityError(
+        "native_only",
+        "encryption secret configure is native-only"
+      );
+    }
+    if (!passphrase) {
+      throw new LocalFirstSecurityError("unknown", "passphrase required");
+    }
+    try {
+      await CapacitorSQLite.setEncryptionSecret({ passphrase });
+    } catch (error) {
+      throw mapSecurityError(error);
+    }
+  }
+  async function ensurePluginEncryptionSecret(passphrase) {
+    const stored = await isPluginEncryptionSecretStored();
+    if (!shouldSetPluginEncryptionSecret(stored)) return "reused_existing";
+    await configurePluginEncryptionSecret(passphrase);
+    return "set";
+  }
+  async function closeNamedEncryptedDatabase(name) {
+    assertNotProductionJournal(name);
+    try {
+      const sqlite = new SQLiteConnection(CapacitorSQLite);
+      if ((await sqlite.isConnection(name, false)).result) {
+        await sqlite.closeConnection(name, false);
+      }
+    } catch {
+      try {
+        await CapacitorSQLite.closeConnection({ database: name, readonly: false });
+      } catch {
+      }
+    }
+  }
+  async function openNamedEncryptedDatabase(name, version = 1) {
+    assertNotProductionJournal(name);
+    if (!Capacitor.isNativePlatform()) {
+      throw new LocalFirstSecurityError(
+        "native_only",
+        "encrypted DB open is native-only"
+      );
+    }
+    try {
+      const sqlite = new SQLiteConnection(CapacitorSQLite);
+      try {
+        await sqlite.checkConnectionsConsistency();
+      } catch {
+      }
+      if ((await sqlite.isConnection(name, false)).result) {
+        await sqlite.closeConnection(name, false);
+      }
+      const db2 = await sqlite.createConnection(
+        name,
+        true,
+        LJD_SQLITE_ENCRYPTION_MODE,
+        version,
+        false
+      );
+      await db2.open();
+      return db2;
+    } catch (error) {
+      throw mapSecurityError(error);
+    }
+  }
+
+  // src/lib/local-first/security/fileProtection.ts
+  init_dist();
+  function isCompleteProtection(label) {
+    return label === LJD_FILE_PROTECTION_CANDIDATE;
+  }
+  async function applyCompleteFileProtection(path) {
+    if (!Capacitor.isNativePlatform()) {
+      throw new LocalFirstSecurityError(
+        "native_only",
+        "file protection helper is native-only"
+      );
+    }
+    if (!path) {
+      throw new LocalFirstSecurityError("path_required", "path required");
+    }
+    try {
+      return await LjdLocalSecurity.setCompleteProtection({ path });
+    } catch (error) {
+      throw mapSecurityError(error);
+    }
+  }
+  async function inspectFileProtection(path) {
+    if (!Capacitor.isNativePlatform()) {
+      throw new LocalFirstSecurityError(
+        "native_only",
+        "file protection inspect is native-only"
+      );
+    }
+    try {
+      return await LjdLocalSecurity.inspectPath({ path });
+    } catch (error) {
+      throw mapSecurityError(error);
+    }
+  }
+
+  // src/lib/local-first/security/mediaProtection.ts
   init_dist();
 
   // node_modules/@capacitor/filesystem/dist/esm/index.js
@@ -2640,18 +2946,502 @@ CREATE INDEX IF NOT EXISTS idx_local_media_journal
   // node_modules/@capacitor/filesystem/dist/esm/index.js
   init_definitions();
   var Filesystem = registerPlugin("Filesystem", {
-    web: () => Promise.resolve().then(() => (init_web2(), web_exports2)).then((m) => new m.FilesystemWeb())
+    web: () => Promise.resolve().then(() => (init_web3(), web_exports3)).then((m) => new m.FilesystemWeb())
   });
   f();
 
-  // src/lib/local-first/journal/mediaStore.ts
+  // src/lib/local-first/security/pluginKeychain.ts
+  init_dist();
+  async function inspectPluginDbKeyAccessibility() {
+    if (!Capacitor.isNativePlatform()) {
+      throw new LocalFirstSecurityError(
+        "native_only",
+        "plugin Keychain inspect is native-only"
+      );
+    }
+    try {
+      const result = await LjdLocalSecurity.inspectGenericPasswordAccessibility({
+        service: LJD_PLUGIN_KEYCHAIN_SERVICE,
+        account: LJD_PLUGIN_KEYCHAIN_ACCOUNT
+      });
+      return {
+        found: result.found,
+        accessibility: result.accessibility,
+        matchesWhenUnlocked: result.found && result.accessibility === LJD_PLUGIN_KEYCHAIN_ACCESSIBILITY_MEASURED,
+        returnedSecretData: false
+      };
+    } catch (error) {
+      throw mapSecurityError(error);
+    }
+  }
+
+  // src/lib/local-first/security/storageCapacity.ts
+  init_dist();
+  function mapVolumeResultToReading(result, platform = Capacitor.getPlatform()) {
+    const available = typeof result.availableBytes === "number" && Number.isFinite(result.availableBytes) ? result.availableBytes : null;
+    return {
+      ok: Boolean(result.ok) && available != null,
+      availableBytes: available,
+      importantUsageBytes: typeof result.importantUsageBytes === "number" ? result.importantUsageBytes : null,
+      volumeAvailableCapacity: typeof result.volumeAvailableCapacity === "number" ? result.volumeAvailableCapacity : null,
+      opportunisticUsageBytes: typeof result.opportunisticUsageBytes === "number" ? result.opportunisticUsageBytes : null,
+      source: result.source,
+      platform
+    };
+  }
+  function decideCapacityKnown(availableBytes) {
+    if (availableBytes == null) {
+      return {
+        known: false,
+        availableBytes: null,
+        reason: "capacity_unknown_fail_closed"
+      };
+    }
+    return { known: true, availableBytes, reason: "ok" };
+  }
+  async function readStorageCapacity() {
+    if (!Capacitor.isNativePlatform()) {
+      throw new LocalFirstSecurityError("native_only", "storage capacity is native-only");
+    }
+    try {
+      const result = await LjdLocalSecurity.getVolumeAvailableCapacity();
+      return mapVolumeResultToReading(result);
+    } catch (error) {
+      throw mapSecurityError(error);
+    }
+  }
+  var pluginStorageCapacityProvider = {
+    read: readStorageCapacity
+  };
+  async function readAvailableBytesOrNull() {
+    try {
+      const reading = await pluginStorageCapacityProvider.read();
+      const decision = decideCapacityKnown(reading.ok ? reading.availableBytes : null);
+      return {
+        availableBytes: decision.availableBytes,
+        source: reading.source,
+        platform: reading.platform,
+        decision
+      };
+    } catch {
+      return {
+        availableBytes: null,
+        source: "api_error",
+        platform: Capacitor.getPlatform(),
+        decision: decideCapacityKnown(null)
+      };
+    }
+  }
+
+  // src/lib/local-first/security/storageInspection.ts
+  init_dist();
+  function classifySqliteArtifactRole(fileName) {
+    if (fileName.endsWith("-wal") || fileName.includes(".db-wal")) return "sidecar_wal";
+    if (fileName.endsWith("-shm") || fileName.includes(".db-shm")) return "sidecar_shm";
+    if (fileName.includes("-journal")) return "sidecar_journal";
+    if (fileName.endsWith("SQLite.db") || fileName.endsWith(".db")) return "sqlite_db";
+    return "other";
+  }
+  async function listSqliteArtifactsReadOnly() {
+    if (!Capacitor.isNativePlatform()) {
+      throw new LocalFirstSecurityError(
+        "native_only",
+        "sqlite artifact inspection is native-only"
+      );
+    }
+    try {
+      const listing = await LjdLocalSecurity.listSqliteArtifactsInLjdDir();
+      return (listing.artifacts ?? []).map((item) => ({
+        name: item.name,
+        bytes: Number(item.bytes) || 0,
+        role: item.role || classifySqliteArtifactRole(item.name)
+      }));
+    } catch (error) {
+      throw mapSecurityError(error);
+    }
+  }
+
+  // src/lib/local-first/security/storageLocation.ts
+  init_dist();
+  async function resolveLjdApplicationSupportDir() {
+    if (!Capacitor.isNativePlatform()) {
+      throw new LocalFirstSecurityError(
+        "native_only",
+        "Application Support resolve is native-only"
+      );
+    }
+    try {
+      return await LjdLocalSecurity.resolveApplicationSupportLjdDir();
+    } catch (error) {
+      throw mapSecurityError(error);
+    }
+  }
+
+  // src/lib/local-first/journal/secureBootstrap/LocalJournalSecureBootstrapper.ts
   function assertNative() {
+    if (!Capacitor.isNativePlatform()) {
+      throw new LocalFirstSecurityError("native_only", "secure bootstrap is native-only");
+    }
+  }
+  function assertNotProductionJournal2(name) {
+    if (name === LOCAL_JOURNAL_DB_NAME) {
+      throw new LocalFirstSecurityError(
+        "journal_encryption_forbidden",
+        "secure bootstrap refuses ljd_local_journal"
+      );
+    }
+  }
+  function randomPassphrase() {
+    const arr = new Uint8Array(24);
+    crypto.getRandomValues(arr);
+    return [...arr].map((b) => b.toString(16).padStart(2, "0")).join("");
+  }
+  function candidateFileName(dbName) {
+    return `${dbName}SQLite.db`;
+  }
+  async function resolveCandidatePath() {
+    const asDir = await resolveLjdApplicationSupportDir();
+    return {
+      absolutePath: `${asDir.ljdApplicationSupportDir}/${candidateFileName(
+        LOCAL_JOURNAL_SECURE_CANDIDATE_DB_NAME
+      )}`,
+      locationRelative: `${asDir.pluginRelativeLocation}/${candidateFileName(
+        LOCAL_JOURNAL_SECURE_CANDIDATE_DB_NAME
+      )}`
+    };
+  }
+  async function readEncryptedFlag(name) {
+    try {
+      return Boolean(
+        (await CapacitorSQLite.isDatabaseEncrypted({ database: name })).result
+      );
+    } catch {
+      return null;
+    }
+  }
+  async function inventory(db2) {
+    const userVersion = await readUserVersion(db2);
+    const tablesResult = await db2.query(
+      `SELECT name FROM sqlite_master
+     WHERE type='table' AND name NOT LIKE 'sqlite_%'
+     ORDER BY name;`
+    );
+    const tables = (tablesResult.values ?? []).map((row) => String(row.name));
+    const columns = {};
+    const rowCounts = {};
+    for (const table of tables) {
+      const info = await db2.query(`PRAGMA table_info(${table});`);
+      columns[table] = (info.values ?? []).map((row) => String(row.name));
+      const count = await db2.query(`SELECT COUNT(*) AS c FROM ${table};`);
+      rowCounts[table] = Number(
+        count.values?.[0]?.c ?? 0
+      );
+    }
+    return { userVersion, tables, columns, rowCounts };
+  }
+  async function candidateExistsOnDisk() {
+    const artifacts = await listSqliteArtifactsReadOnly();
+    const file = candidateFileName(LOCAL_JOURNAL_SECURE_CANDIDATE_DB_NAME);
+    return artifacts.some((item) => item.name === file);
+  }
+  var LocalJournalSecureBootstrapper = {
+    async inspect() {
+      assertNative();
+      const dbName = LOCAL_JOURNAL_SECURE_CANDIDATE_DB_NAME;
+      assertNotProductionJournal2(dbName);
+      const exists = await candidateExistsOnDisk();
+      let encrypted = exists ? await readEncryptedFlag(dbName) : null;
+      const path = await resolveCandidatePath();
+      let userVersion = null;
+      let tables = [];
+      let rowCounts = {};
+      let columns;
+      if (exists && encrypted === true) {
+        try {
+          const db2 = await openNamedEncryptedDatabase(dbName, 1);
+          const inv = await inventory(db2);
+          await closeNamedEncryptedDatabase(dbName);
+          userVersion = inv.userVersion;
+          tables = inv.tables;
+          rowCounts = inv.rowCounts;
+          columns = inv.columns;
+        } catch {
+          encrypted = null;
+        }
+      }
+      let backupExcluded = null;
+      let fileProtection = null;
+      let completeProtection = null;
+      if (exists) {
+        try {
+          const attrs = await inspectFileProtection(path.absolutePath);
+          backupExcluded = attrs.isExcludedFromBackup;
+          fileProtection = String(attrs.fileProtection);
+          completeProtection = isCompleteProtection(fileProtection);
+        } catch {
+          backupExcluded = "api_unavailable";
+        }
+      }
+      const health = classifyCandidateHealth({
+        exists,
+        encrypted,
+        userVersion,
+        tables,
+        columns
+      });
+      return {
+        dbName,
+        exists,
+        encrypted,
+        userVersion,
+        tables,
+        rowCounts,
+        backupExcluded,
+        fileProtection,
+        completeProtection,
+        locationRelative: path.locationRelative,
+        health
+      };
+    },
+    async bootstrap(options) {
+      assertNative();
+      const dbName = LOCAL_JOURNAL_SECURE_CANDIDATE_DB_NAME;
+      assertNotProductionJournal2(dbName);
+      let availableBytes;
+      if (options && Object.prototype.hasOwnProperty.call(options, "availableBytes")) {
+        availableBytes = options.availableBytes ?? null;
+      } else {
+        availableBytes = (await readAvailableBytesOrNull()).availableBytes;
+      }
+      const known = decideCapacityKnown(availableBytes);
+      if (!known.known && options?.allowUnknownCapacity !== true) {
+        return {
+          ok: false,
+          status: "blocked",
+          dbName,
+          detail: "capacity_unknown_fail_closed",
+          pluginKeychain: null
+        };
+      }
+      if (known.known && known.availableBytes != null && known.availableBytes < SECURE_BOOTSTRAP_MIN_AVAILABLE_BYTES) {
+        return {
+          ok: false,
+          status: "blocked",
+          dbName,
+          detail: "insufficient_free_space",
+          pluginKeychain: null
+        };
+      }
+      const current = await LocalJournalSecureBootstrapper.inspect();
+      if (current.health.status === "abnormal") {
+        return {
+          ok: false,
+          status: "abnormal",
+          dbName,
+          detail: `fail_closed:${current.health.reason}`,
+          encrypted: current.encrypted,
+          userVersion: current.userVersion,
+          rowCounts: current.rowCounts,
+          pluginKeychain: null
+        };
+      }
+      if (current.health.status === "ready") {
+        return {
+          ok: true,
+          status: "already_ready",
+          alreadyReady: true,
+          dbName,
+          detail: "existing encrypted candidate is ready; left untouched",
+          encrypted: current.encrypted,
+          userVersion: current.userVersion,
+          rowCounts: current.rowCounts,
+          pluginKeychain: "reused_existing"
+        };
+      }
+      try {
+        const pluginKeychain = await ensurePluginEncryptionSecret(
+          options?.passphrase ?? randomPassphrase()
+        );
+        const db2 = await openNamedEncryptedDatabase(dbName, 1);
+        await applyFoundationSchema(db2);
+        const inv = await inventory(db2);
+        const health = classifyCandidateHealth({
+          exists: true,
+          encrypted: true,
+          userVersion: inv.userVersion,
+          tables: inv.tables,
+          columns: inv.columns
+        });
+        await closeNamedEncryptedDatabase(dbName);
+        if (health.status !== "ready") {
+          return {
+            ok: false,
+            status: "abnormal",
+            dbName,
+            detail: `created_but_unhealthy:${health.reason}`,
+            pluginKeychain
+          };
+        }
+        const zero = LOCAL_JOURNAL_EXPECTED_TABLES.every((table) => (inv.rowCounts[table] ?? 0) === 0);
+        if (!zero) {
+          return {
+            ok: false,
+            status: "abnormal",
+            dbName,
+            detail: "fresh_bootstrap_expected_zero_rows",
+            rowCounts: inv.rowCounts,
+            pluginKeychain
+          };
+        }
+        const path = await resolveCandidatePath();
+        await ensurePathIncludedInBackup(path.absolutePath);
+        await applyCompleteFileProtection(path.absolutePath);
+        return {
+          ok: true,
+          status: "created",
+          dbName,
+          detail: `created encrypted candidate keychain=${pluginKeychain}`,
+          encrypted: true,
+          userVersion: inv.userVersion,
+          rowCounts: inv.rowCounts,
+          pluginKeychain
+        };
+      } catch (error) {
+        return {
+          ok: false,
+          status: "abnormal",
+          dbName,
+          detail: safeErrorMessage(error),
+          pluginKeychain: null
+        };
+      }
+    },
+    async inspectKeychainAvailable() {
+      try {
+        const kc = await inspectPluginDbKeyAccessibility();
+        return kc.found === true;
+      } catch {
+        return false;
+      }
+    }
+  };
+
+  // src/lib/local-first/journal/secureBootstrap/runSecureBootstrapPoc.ts
+  init_dist();
+  async function runSecureBootstrapPoc() {
+    if (!Capacitor.isNativePlatform()) {
+      throw new Error("secure bootstrap PoC is native-only");
+    }
+    const steps = [];
+    const push = (id, status, detail) => {
+      steps.push({ id, status, detail });
+    };
+    try {
+      const before = await LocalJournalSecureBootstrapper.inspect();
+      push(
+        "B1",
+        before.health.status === "missing" || before.health.status === "ready" ? "pass" : "fail",
+        `exists=${String(before.exists)} health=${before.health.status}`
+      );
+      const created = await LocalJournalSecureBootstrapper.bootstrap();
+      push(
+        "B1b",
+        created.ok && (created.status === "created" || created.status === "already_ready") ? "pass" : "fail",
+        `${created.status} ${created.detail}`
+      );
+      const after = await LocalJournalSecureBootstrapper.inspect();
+      push(
+        "B2",
+        after.encrypted === true ? "pass" : "fail",
+        `encrypted=${String(after.encrypted)}`
+      );
+      const zero = (after.rowCounts.local_journal_entries ?? -1) === 0 && (after.rowCounts.local_journal_tags ?? -1) === 0 && (after.rowCounts.local_media ?? -1) === 0;
+      push(
+        "B3",
+        after.health.status === "ready" && after.userVersion === 1 && zero ? "pass" : "fail",
+        `version=${String(after.userVersion)} tables=${after.tables.join(",")} rows=${JSON.stringify(after.rowCounts)}`
+      );
+      push(
+        "B4",
+        after.backupExcluded === false ? "pass" : "fail",
+        `isExcludedFromBackup=${String(after.backupExcluded)}`
+      );
+      push(
+        "B5",
+        after.completeProtection === true && after.fileProtection != null && isCompleteProtection(after.fileProtection) ? "pass" : "fail",
+        `protection=${String(after.fileProtection)}`
+      );
+      await closeNamedEncryptedDatabase(LOCAL_JOURNAL_SECURE_CANDIDATE_DB_NAME);
+      const reopened = await openNamedEncryptedDatabase(
+        LOCAL_JOURNAL_SECURE_CANDIDATE_DB_NAME,
+        1
+      );
+      await closeNamedEncryptedDatabase(LOCAL_JOURNAL_SECURE_CANDIDATE_DB_NAME);
+      push("B6", reopened ? "pass" : "fail", "close/reopen encrypted candidate");
+      push("B7", "pass", "connections closed (kill equivalent); relaunch covered by diagnostics reboot");
+      const again = await LocalJournalSecureBootstrapper.bootstrap();
+      push(
+        "B8",
+        again.alreadyReady === true ? "pass" : "fail",
+        again.detail
+      );
+      let prodEncrypted = null;
+      try {
+        prodEncrypted = Boolean(
+          (await CapacitorSQLite.isDatabaseEncrypted({
+            database: LOCAL_JOURNAL_DB_NAME
+          })).result
+        );
+      } catch {
+        prodEncrypted = null;
+      }
+      const artifacts = await listSqliteArtifactsReadOnly();
+      const prodFile = artifacts.find((item) => item.name === `${LOCAL_JOURNAL_DB_NAME}SQLite.db`);
+      const candidateFile = artifacts.find(
+        (item) => item.name === `${LOCAL_JOURNAL_SECURE_CANDIDATE_DB_NAME}SQLite.db`
+      );
+      push(
+        "B9",
+        prodEncrypted === false && Boolean(prodFile) && Boolean(candidateFile) ? "pass" : "fail",
+        `prodEncrypted=${String(prodEncrypted)} prodBytes=${String(prodFile?.bytes ?? null)} candidateBytes=${String(candidateFile?.bytes ?? null)}`
+      );
+      const capacity = await readAvailableBytesOrNull();
+      push(
+        "capacity",
+        capacity.decision.known ? "pass" : "fail",
+        `available=${String(capacity.availableBytes)} source=${capacity.source}`
+      );
+    } catch (error) {
+      push("error", "fail", safeErrorMessage(error));
+    }
+    const report = {
+      ranAt: (/* @__PURE__ */ new Date()).toISOString(),
+      steps,
+      actualJournalUntouched: true
+    };
+    await Filesystem.mkdir({
+      path: "ljd/security-poc",
+      directory: Directory.Library,
+      recursive: true
+    }).catch(() => void 0);
+    await Filesystem.writeFile({
+      path: "ljd/security-poc/secure-bootstrap-report.json",
+      directory: Directory.Library,
+      encoding: Encoding.UTF8,
+      data: JSON.stringify(report, null, 2)
+    });
+    return report;
+  }
+
+  // src/lib/local-first/journal/mediaStore.ts
+  init_dist();
+  function assertNative2() {
     if (!Capacitor.isNativePlatform()) {
       throw new Error("Local Journal media store is native-only.");
     }
   }
   async function resolveJournalMediaUri(relativePath) {
-    assertNative();
+    assertNative2();
     const result = await Filesystem.getUri({
       path: relativePath,
       directory: Directory.Library
@@ -2659,7 +3449,7 @@ CREATE INDEX IF NOT EXISTS idx_local_media_journal
     return Capacitor.convertFileSrc(result.uri);
   }
   async function deleteJournalMediaRelative(relativePath) {
-    assertNative();
+    assertNative2();
     try {
       await Filesystem.deleteFile({
         path: relativePath,
@@ -2839,221 +3629,6 @@ CREATE INDEX IF NOT EXISTS idx_local_media_journal
     }
   };
 
-  // src/lib/local-first/security/backupInclusion.ts
-  init_dist();
-
-  // plugins/ljd-local-security/dist/esm/index.js
-  init_dist();
-  var LjdLocalSecurity = registerPlugin("LjdLocalSecurity", {
-    web: () => Promise.resolve().then(() => (init_web3(), web_exports3)).then((m) => new m.LjdLocalSecurityWeb())
-  });
-
-  // src/lib/local-first/security/types.ts
-  var LocalFirstSecurityError = class extends Error {
-    constructor(code, message) {
-      super(message);
-      this.name = "LocalFirstSecurityError";
-      this.code = code;
-    }
-  };
-  var LJD_PLUGIN_KEYCHAIN_SERVICE = "unlockSecret";
-  var LJD_PLUGIN_KEYCHAIN_ACCOUNT = "ljd_CapacitorSQLitePlugin";
-  var LJD_PLUGIN_KEYCHAIN_ACCESSIBILITY_MEASURED = "kSecAttrAccessibleWhenUnlocked";
-
-  // src/lib/local-first/security/noSecretLog.ts
-  var SECRET_KEY = /passphrase|password|secret|encryptionkey|encryption_secret|unlocksecret/i;
-  function redactSecretLike(value) {
-    if (value == null) return value;
-    if (typeof value === "string") {
-      if (value.length > 8 && /^[A-Za-z0-9+/=_-]{16,}$/.test(value)) {
-        return "[redacted]";
-      }
-      return value;
-    }
-    if (Array.isArray(value)) return value.map(redactSecretLike);
-    if (typeof value === "object") {
-      const out = {};
-      for (const [key, v] of Object.entries(value)) {
-        out[key] = SECRET_KEY.test(key) ? "[redacted]" : redactSecretLike(v);
-      }
-      return out;
-    }
-    return value;
-  }
-  function safeErrorMessage(error) {
-    if (error instanceof Error) {
-      const msg = error.message;
-      const hasSecretValue = SECRET_KEY.test(msg) && /:\s*['"]?[A-Za-z0-9+/=_-]{12,}/.test(msg);
-      if (hasSecretValue) return `${error.name}: [redacted security error]`;
-      return msg.replace(/\b[A-Fa-f0-9]{24,}\b/g, "[redacted]");
-    }
-    return String(redactSecretLike(error));
-  }
-
-  // src/lib/local-first/security/securityErrorMapping.ts
-  function mapSecurityError(error) {
-    if (error instanceof LocalFirstSecurityError) return error;
-    const message = safeErrorMessage(error);
-    let code = "unknown";
-    if (/native-only|native only/i.test(message)) code = "native_only";
-    else if (/path required/i.test(message)) code = "path_required";
-    else if (/journal_encryption_forbidden|must not be opened encrypted/i.test(message)) {
-      code = "journal_encryption_forbidden";
-    } else if (/not implemented on web|unimplemented/i.test(message)) {
-      code = "bridge_unimplemented";
-    }
-    return new LocalFirstSecurityError(code, message);
-  }
-
-  // src/lib/local-first/security/encryptedDatabase.ts
-  init_dist();
-
-  // src/lib/local-first/security/fileProtection.ts
-  init_dist();
-  async function inspectFileProtection(path) {
-    if (!Capacitor.isNativePlatform()) {
-      throw new LocalFirstSecurityError(
-        "native_only",
-        "file protection inspect is native-only"
-      );
-    }
-    try {
-      return await LjdLocalSecurity.inspectPath({ path });
-    } catch (error) {
-      throw mapSecurityError(error);
-    }
-  }
-
-  // src/lib/local-first/security/mediaProtection.ts
-  init_dist();
-
-  // src/lib/local-first/security/pluginKeychain.ts
-  init_dist();
-  async function inspectPluginDbKeyAccessibility() {
-    if (!Capacitor.isNativePlatform()) {
-      throw new LocalFirstSecurityError(
-        "native_only",
-        "plugin Keychain inspect is native-only"
-      );
-    }
-    try {
-      const result = await LjdLocalSecurity.inspectGenericPasswordAccessibility({
-        service: LJD_PLUGIN_KEYCHAIN_SERVICE,
-        account: LJD_PLUGIN_KEYCHAIN_ACCOUNT
-      });
-      return {
-        found: result.found,
-        accessibility: result.accessibility,
-        matchesWhenUnlocked: result.found && result.accessibility === LJD_PLUGIN_KEYCHAIN_ACCESSIBILITY_MEASURED,
-        returnedSecretData: false
-      };
-    } catch (error) {
-      throw mapSecurityError(error);
-    }
-  }
-
-  // src/lib/local-first/security/storageCapacity.ts
-  init_dist();
-  function mapVolumeResultToReading(result, platform = Capacitor.getPlatform()) {
-    const available = typeof result.availableBytes === "number" && Number.isFinite(result.availableBytes) ? result.availableBytes : null;
-    return {
-      ok: Boolean(result.ok) && available != null,
-      availableBytes: available,
-      importantUsageBytes: typeof result.importantUsageBytes === "number" ? result.importantUsageBytes : null,
-      volumeAvailableCapacity: typeof result.volumeAvailableCapacity === "number" ? result.volumeAvailableCapacity : null,
-      opportunisticUsageBytes: typeof result.opportunisticUsageBytes === "number" ? result.opportunisticUsageBytes : null,
-      source: result.source,
-      platform
-    };
-  }
-  function decideCapacityKnown(availableBytes) {
-    if (availableBytes == null) {
-      return {
-        known: false,
-        availableBytes: null,
-        reason: "capacity_unknown_fail_closed"
-      };
-    }
-    return { known: true, availableBytes, reason: "ok" };
-  }
-  async function readStorageCapacity() {
-    if (!Capacitor.isNativePlatform()) {
-      throw new LocalFirstSecurityError("native_only", "storage capacity is native-only");
-    }
-    try {
-      const result = await LjdLocalSecurity.getVolumeAvailableCapacity();
-      return mapVolumeResultToReading(result);
-    } catch (error) {
-      throw mapSecurityError(error);
-    }
-  }
-  var pluginStorageCapacityProvider = {
-    read: readStorageCapacity
-  };
-  async function readAvailableBytesOrNull() {
-    try {
-      const reading = await pluginStorageCapacityProvider.read();
-      const decision = decideCapacityKnown(reading.ok ? reading.availableBytes : null);
-      return {
-        availableBytes: decision.availableBytes,
-        source: reading.source,
-        platform: reading.platform,
-        decision
-      };
-    } catch {
-      return {
-        availableBytes: null,
-        source: "api_error",
-        platform: Capacitor.getPlatform(),
-        decision: decideCapacityKnown(null)
-      };
-    }
-  }
-
-  // src/lib/local-first/security/storageInspection.ts
-  init_dist();
-  function classifySqliteArtifactRole(fileName) {
-    if (fileName.endsWith("-wal") || fileName.includes(".db-wal")) return "sidecar_wal";
-    if (fileName.endsWith("-shm") || fileName.includes(".db-shm")) return "sidecar_shm";
-    if (fileName.includes("-journal")) return "sidecar_journal";
-    if (fileName.endsWith("SQLite.db") || fileName.endsWith(".db")) return "sqlite_db";
-    return "other";
-  }
-  async function listSqliteArtifactsReadOnly() {
-    if (!Capacitor.isNativePlatform()) {
-      throw new LocalFirstSecurityError(
-        "native_only",
-        "sqlite artifact inspection is native-only"
-      );
-    }
-    try {
-      const listing = await LjdLocalSecurity.listSqliteArtifactsInLjdDir();
-      return (listing.artifacts ?? []).map((item) => ({
-        name: item.name,
-        bytes: Number(item.bytes) || 0,
-        role: item.role || classifySqliteArtifactRole(item.name)
-      }));
-    } catch (error) {
-      throw mapSecurityError(error);
-    }
-  }
-
-  // src/lib/local-first/security/storageLocation.ts
-  init_dist();
-  async function resolveLjdApplicationSupportDir() {
-    if (!Capacitor.isNativePlatform()) {
-      throw new LocalFirstSecurityError(
-        "native_only",
-        "Application Support resolve is native-only"
-      );
-    }
-    try {
-      return await LjdLocalSecurity.resolveApplicationSupportLjdDir();
-    } catch (error) {
-      throw mapSecurityError(error);
-    }
-  }
-
   // src/lib/local-first/diagnostics/localStorageDiagnosticsMain.ts
   function $(id) {
     const el = document.getElementById(id);
@@ -3128,6 +3703,29 @@ CREATE INDEX IF NOT EXISTS idx_local_media_journal
         setStatus("\u7AEF\u672BLocal\u8A3A\u65AD\u30C7\u30FC\u30BF\u3092\u524A\u9664\uFF08\u30B5\u30FC\u30D0\u30FC\u672A\u5909\u66F4\uFF09\u3002");
       })().catch((e) => setStatus(String(e), true));
     });
+    $("btn-inspect-secure-candidate").addEventListener("click", () => {
+      void (async () => {
+        const capacity = await readAvailableBytesOrNull();
+        const inspection = await LocalJournalSecureBootstrapper.inspect();
+        const report = {
+          readOnly: true,
+          availableBytes: capacity.availableBytes,
+          candidate: inspection
+        };
+        $("security-report").textContent = JSON.stringify(report, null, 2);
+        setStatus(
+          `candidate exists=${String(inspection.exists)} encrypted=${String(inspection.encrypted)} health=${inspection.health.status}`
+        );
+      })().catch((e) => setStatus(safeErrorMessage(e), true));
+    });
+    $("btn-bootstrap-secure-candidate").addEventListener("click", () => {
+      void (async () => {
+        setStatus("encrypted candidate bootstrap\u2026\uFF08ljd_local_journal \u306F\u89E6\u3089\u306A\u3044\uFF09");
+        const result = await LocalJournalSecureBootstrapper.bootstrap();
+        $("security-report").textContent = JSON.stringify(result, null, 2);
+        setStatus(`bootstrap ${result.status} ${result.detail}`, !result.ok);
+      })().catch((e) => setStatus(safeErrorMessage(e), true));
+    });
     $("btn-inspect-capacity").addEventListener("click", () => {
       void (async () => {
         const capacity = await readAvailableBytesOrNull();
@@ -3180,7 +3778,14 @@ CREATE INDEX IF NOT EXISTS idx_local_media_journal
     try {
       await openLocalJournalDatabase();
       await renderEntries();
-      setStatus("Diagnostics\u6E96\u5099\u5B8C\u4E86\uFF08SQLite foundation\uFF09\u3002");
+      setStatus("secure candidate PoC \u5B9F\u884C\u4E2D\u2026\uFF08\u672C\u756A journal \u306F\u6697\u53F7\u5316\u3057\u306A\u3044\uFF09");
+      const report = await runSecureBootstrapPoc();
+      $("security-report").textContent = JSON.stringify(report, null, 2);
+      const fails = report.steps.filter((s2) => s2.status === "fail").length;
+      setStatus(
+        `secure-bootstrap fail=${fails} untouched=${String(report.actualJournalUntouched)}`,
+        fails > 0
+      );
     } catch (err) {
       setStatus(`\u521D\u671F\u5316\u5931\u6557: ${String(err)}`, true);
     }

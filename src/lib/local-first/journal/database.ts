@@ -33,7 +33,7 @@ function getConnection(): SQLiteConnection {
   return connection;
 }
 
-const SCHEMA_SQL = `
+export const LOCAL_JOURNAL_SCHEMA_SQL = `
 CREATE TABLE IF NOT EXISTS local_journal_entries (
   stable_id TEXT PRIMARY KEY NOT NULL,
   date_key TEXT NOT NULL,
@@ -83,7 +83,44 @@ CREATE INDEX IF NOT EXISTS idx_local_media_journal
   ON local_media (journal_stable_id);
 `;
 
-async function readUserVersion(database: SQLiteDBConnection): Promise<number> {
+export const LOCAL_JOURNAL_EXPECTED_TABLES = [
+  "local_journal_entries",
+  "local_journal_tags",
+  "local_media",
+] as const;
+
+export const LOCAL_JOURNAL_EXPECTED_COLUMNS: Record<
+  (typeof LOCAL_JOURNAL_EXPECTED_TABLES)[number],
+  readonly string[]
+> = {
+  local_journal_entries: [
+    "stable_id",
+    "date_key",
+    "title",
+    "content",
+    "created_at",
+    "updated_at",
+    "tags_json",
+    "schema_version",
+    "source",
+    "local_status",
+    "imported_at",
+    "legacy_server_id",
+    "server_updated_at",
+  ],
+  local_journal_tags: ["journal_stable_id", "tag"],
+  local_media: [
+    "stable_id",
+    "journal_stable_id",
+    "type",
+    "relative_path",
+    "created_at",
+    "checksum",
+    "mime_type",
+  ],
+};
+
+export async function readUserVersion(database: SQLiteDBConnection): Promise<number> {
   const versionResult = await database.query("PRAGMA user_version;");
   const raw = versionResult.values?.[0] as Record<string, unknown> | undefined;
   const current =
@@ -95,8 +132,8 @@ async function readUserVersion(database: SQLiteDBConnection): Promise<number> {
   return Number.isFinite(current) ? current : 0;
 }
 
-async function applyFoundationSchema(database: SQLiteDBConnection): Promise<void> {
-  await database.execute(SCHEMA_SQL);
+export async function applyFoundationSchema(database: SQLiteDBConnection): Promise<void> {
+  await database.execute(LOCAL_JOURNAL_SCHEMA_SQL);
   await database.execute(`PRAGMA user_version = ${LOCAL_JOURNAL_SCHEMA_USER_VERSION};`);
 }
 

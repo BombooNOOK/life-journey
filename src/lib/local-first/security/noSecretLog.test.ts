@@ -29,6 +29,17 @@ describe("no-secret logging", () => {
     ).toThrow(/refusing to log/);
   });
 
+  it("keeps bootstrap report JSON free of passphrase fields", () => {
+    const report = {
+      status: "already_ready",
+      pluginKeychain: "reused_existing",
+      dbName: "ljd_local_journal_secure_candidate",
+    };
+    const text = JSON.stringify(report);
+    expect(text.toLowerCase()).not.toContain("passphrase");
+    expect(() => assertNoSecretInText(text)).not.toThrow();
+  });
+
   it("keeps API method names while redacting hex blobs", () => {
     const msg = safeErrorMessage(
       new Error("Query: Connection to ljd_enc_mig_fixture_plain not available"),

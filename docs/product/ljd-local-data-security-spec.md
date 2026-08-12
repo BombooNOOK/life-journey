@@ -142,14 +142,14 @@ plugin は SQLCipher を iOS/Android で使用。encrypted open 能力は `src/l
 
 現状の actual `ljd_local_journal` は **schema version 1・entries/tags/media 0・実ユーザーデータなし**。
 
-**第一候補（Strategy B / 未確定）:** plaintext の空 DB を in-place / production migration するより、**encrypted Local Journal を fresh bootstrap** し、Server 原本を残したまま検証してから正式 Local DB へ切り替える。
+**第一候補（Strategy B / 4B-4A 実証済み候補・active 未切替）:** plaintext の空 DB を in-place / production migration するより、**encrypted Local Journal candidate を fresh bootstrap** し、Server 原本を残したまま検証してから正式 Local DB へ切り替える。
 
 - 空 DB を migration する実益が小さい
 - 最初から encrypted 正式構成を作れる
 - plaintext→encrypted という余分な production step を減らせる
 - 4B-3F/3G の migration engine は **将来の schema / encryption / recovery 用 reference** として feature branch に残す（今回 main 化しない）
 
-**本 Phase では作成・切替しない。** RG-1〜4 は未完のまま。
+**4B-4A:** `ljd_local_journal_secure_candidate` の fresh encrypted bootstrap を feature branch で実証。active 切替・Server copy・Local原本化は未実施。RG-1〜4 は未完のまま。
 
 ---
 

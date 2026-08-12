@@ -9,8 +9,11 @@ export {
   shouldForceBackupInclusion,
 } from "@/lib/local-first/security/backupInclusion";
 export {
+  closeNamedEncryptedDatabase,
   configurePluginEncryptionSecret,
+  ensurePluginEncryptionSecret,
   openNamedEncryptedDatabase,
+  shouldSetPluginEncryptionSecret,
 } from "@/lib/local-first/security/encryptedDatabase";
 export {
   applyCompleteFileProtection,

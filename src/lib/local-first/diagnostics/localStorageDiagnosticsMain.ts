@@ -6,6 +6,8 @@
 import { Capacitor } from "@capacitor/core";
 
 import { openLocalJournalDatabase } from "@/lib/local-first/journal/database";
+import { LocalJournalSecureBootstrapper } from "@/lib/local-first/journal/secureBootstrap/LocalJournalSecureBootstrapper";
+import { runSecureBootstrapPoc } from "@/lib/local-first/journal/secureBootstrap/runSecureBootstrapPoc";
 import {
   deleteJournalMediaRelative,
   resolveJournalMediaUri,
@@ -108,6 +110,31 @@ async function boot(): Promise<void> {
     })().catch((e) => setStatus(String(e), true));
   });
 
+  $("btn-inspect-secure-candidate").addEventListener("click", () => {
+    void (async () => {
+      const capacity = await readAvailableBytesOrNull();
+      const inspection = await LocalJournalSecureBootstrapper.inspect();
+      const report = {
+        readOnly: true,
+        availableBytes: capacity.availableBytes,
+        candidate: inspection,
+      };
+      $("security-report").textContent = JSON.stringify(report, null, 2);
+      setStatus(
+        `candidate exists=${String(inspection.exists)} encrypted=${String(inspection.encrypted)} health=${inspection.health.status}`,
+      );
+    })().catch((e) => setStatus(safeErrorMessage(e), true));
+  });
+
+  $("btn-bootstrap-secure-candidate").addEventListener("click", () => {
+    void (async () => {
+      setStatus("encrypted candidate bootstrap…（ljd_local_journal は触らない）");
+      const result = await LocalJournalSecureBootstrapper.bootstrap();
+      $("security-report").textContent = JSON.stringify(result, null, 2);
+      setStatus(`bootstrap ${result.status} ${result.detail}`, !result.ok);
+    })().catch((e) => setStatus(safeErrorMessage(e), true));
+  });
+
   $("btn-inspect-capacity").addEventListener("click", () => {
     void (async () => {
       const capacity = await readAvailableBytesOrNull();
@@ -163,7 +190,14 @@ async function boot(): Promise<void> {
   try {
     await openLocalJournalDatabase();
     await renderEntries();
-    setStatus("Diagnostics準備完了（SQLite foundation）。");
+    setStatus("secure candidate PoC 実行中…（本番 journal は暗号化しない）");
+    const report = await runSecureBootstrapPoc();
+    $("security-report").textContent = JSON.stringify(report, null, 2);
+    const fails = report.steps.filter((s) => s.status === "fail").length;
+    setStatus(
+      `secure-bootstrap fail=${fails} untouched=${String(report.actualJournalUntouched)}`,
+      fails > 0,
+    );
   } catch (err) {
     setStatus(`初期化失敗: ${String(err)}`, true);
   }

@@ -4,10 +4,10 @@
  * Designed path: setEncryptionSecret → plugin Keychain (WhenUnlocked measured)
  * → createConnection(encrypted, mode "secret").
  *
- * 4B-3E does NOT:
+ * Must not:
  * - call this from app boot
- * - encrypt ljd_local_journal
- * - auto-migrate plaintext → encrypted
+ * - encrypt ljd_local_journal (active production name)
+ * - auto-migrate plaintext production journal
  */
 
 import { Capacitor } from "@capacitor/core";
@@ -28,14 +28,27 @@ function assertNotProductionJournal(name: string): void {
   if (name === LOCAL_JOURNAL_DB_NAME) {
     throw new LocalFirstSecurityError(
       "journal_encryption_forbidden",
-      "ljd_local_journal must not be opened encrypted in 4B-3E; plaintext→encrypted migration is a later phase",
+      "ljd_local_journal must not be opened encrypted; use a non-active candidate name",
     );
+  }
+}
+
+export function shouldSetPluginEncryptionSecret(alreadyStored: boolean): boolean {
+  return !alreadyStored;
+}
+
+export async function isPluginEncryptionSecretStored(): Promise<boolean> {
+  if (!Capacitor.isNativePlatform()) return false;
+  try {
+    return Boolean((await CapacitorSQLite.isSecretStored()).result);
+  } catch {
+    return false;
   }
 }
 
 /**
  * Explicit opt-in. Never call from general user / Web paths.
- * Passphrase is not logged.
+ * Passphrase is not logged. Does not create a second Keychain secret.
  */
 export async function configurePluginEncryptionSecret(
   passphrase: string,
@@ -53,6 +66,31 @@ export async function configurePluginEncryptionSecret(
     await CapacitorSQLite.setEncryptionSecret({ passphrase });
   } catch (error) {
     throw mapSecurityError(error);
+  }
+}
+
+export async function ensurePluginEncryptionSecret(
+  passphrase: string,
+): Promise<"set" | "reused_existing"> {
+  const stored = await isPluginEncryptionSecretStored();
+  if (!shouldSetPluginEncryptionSecret(stored)) return "reused_existing";
+  await configurePluginEncryptionSecret(passphrase);
+  return "set";
+}
+
+export async function closeNamedEncryptedDatabase(name: string): Promise<void> {
+  assertNotProductionJournal(name);
+  try {
+    const sqlite = new SQLiteConnection(CapacitorSQLite);
+    if ((await sqlite.isConnection(name, false)).result) {
+      await sqlite.closeConnection(name, false);
+    }
+  } catch {
+    try {
+      await CapacitorSQLite.closeConnection({ database: name, readonly: false });
+    } catch {
+      /* */
+    }
   }
 }
 
