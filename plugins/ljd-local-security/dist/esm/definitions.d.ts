@@ -68,6 +68,26 @@ export interface ListSqliteArtifactsResult {
   artifacts: SqliteArtifactListing[];
 }
 
+export interface AtomicReplaceTextFileOptions {
+  path: string;
+  contents: string;
+}
+
+export interface AtomicReplaceTextFileResult {
+  ok: boolean;
+  path: string;
+  bytes: number;
+}
+
+export interface ReadTextFileOptions {
+  path: string;
+}
+
+export interface ReadTextFileResult {
+  exists: boolean;
+  contents: string | null;
+}
+
 export interface LjdLocalSecurityPlugin {
   inspectPath(options: PathOptions): Promise<PathAttributes>;
   setCompleteProtection(options: PathOptions): Promise<PathAttributes>;
@@ -78,4 +98,8 @@ export interface LjdLocalSecurityPlugin {
   ): Promise<InspectGenericPasswordAccessibilityResult>;
   getVolumeAvailableCapacity(): Promise<VolumeAvailableCapacityResult>;
   listSqliteArtifactsInLjdDir(): Promise<ListSqliteArtifactsResult>;
+  atomicReplaceTextFile(
+    options: AtomicReplaceTextFileOptions,
+  ): Promise<AtomicReplaceTextFileResult>;
+  readTextFile(options: ReadTextFileOptions): Promise<ReadTextFileResult>;
 }

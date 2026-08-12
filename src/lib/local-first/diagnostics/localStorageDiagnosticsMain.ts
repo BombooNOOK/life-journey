@@ -9,7 +9,11 @@ import { openLocalJournalDatabase } from "@/lib/local-first/journal/database";
 import { LocalJournalSecureBootstrapper } from "@/lib/local-first/journal/secureBootstrap/LocalJournalSecureBootstrapper";
 import { ServerToLocalCandidateCopyService } from "@/lib/local-first/journal/secureCopy/ServerToLocalCandidateCopyService";
 import { ServerAuthoritativeWriteThroughMirrorService } from "@/lib/local-first/journal/secureCopy/ServerAuthoritativeWriteThroughMirrorService";
-import { runWriteThroughMirrorPoc, WRITE_THROUGH_POC_ENTRY_ID } from "@/lib/local-first/journal/secureCopy/runWriteThroughMirrorPoc";
+import { runWriteThroughMirrorPoc } from "@/lib/local-first/journal/secureCopy/runWriteThroughMirrorPoc";
+import { runActivationPointerPoc } from "@/lib/local-first/journal/activation/runActivationPointerPoc";
+import { LocalJournalTechnicalActivation } from "@/lib/local-first/journal/activation/LocalJournalTechnicalActivation";
+import { LocalJournalActivationManifestStore } from "@/lib/local-first/journal/activation/LocalJournalActivationManifestStore";
+import { runTechnicalActivationPreflight } from "@/lib/local-first/journal/activation/activationPreflight";
 import { FAILURE_INJECTION_MISSING_ENTRY_ID } from "@/lib/local-first/journal/secureCopy/types";
 import {
   deleteJournalMediaRelative,
@@ -223,6 +227,54 @@ async function boot(): Promise<void> {
     })().catch((e) => setStatus(safeErrorMessage(e), true));
   });
 
+  $("btn-read-activation-manifest").addEventListener("click", () => {
+    void (async () => {
+      const read = await LocalJournalActivationManifestStore.readNative();
+      const resolve = await LocalJournalTechnicalActivation.resolve().catch((e) => ({
+        status: "error",
+        detail: safeErrorMessage(e),
+      }));
+      const preflight = await runTechnicalActivationPreflight();
+      $("security-report").textContent = JSON.stringify(
+        {
+          readOnly: true,
+          manifest: read,
+          resolve,
+          preflight: {
+            ok: preflight.ok,
+            failed: preflight.checks.filter((c) => !c.ok).map((c) => c.id),
+            activeMediaRootId: preflight.targetMediaRootId,
+          },
+        },
+        null,
+        2,
+      );
+      setStatus(`manifest ${read.status} resolve=${"status" in resolve ? resolve.status : "?"}`);
+    })().catch((e) => setStatus(safeErrorMessage(e), true));
+  });
+
+  $("btn-technical-activation").addEventListener("click", () => {
+    void (async () => {
+      setStatus("technical activation…（Repository 切替なし / candidate 固定）");
+      const result = await LocalJournalTechnicalActivation.activateCandidate();
+      $("security-report").textContent = JSON.stringify(result, null, 2);
+      setStatus(`activation code=${result.code}`, !result.ok);
+    })().catch((e) => setStatus(safeErrorMessage(e), true));
+  });
+
+  $("btn-activation-pointer-poc").addEventListener("click", () => {
+    void (async () => {
+      setStatus("activation pointer PoC P1–P12…");
+      const report = await runActivationPointerPoc();
+      $("security-report").textContent = JSON.stringify(report, null, 2);
+      const fails = report.steps.filter((s) => s.status === "fail").length;
+      setStatus(
+        `activation-pointer fail=${fails} repoSwitched=${String(!report.repositoryNotSwitched)}`,
+        fails > 0,
+      );
+    })().catch((e) => setStatus(safeErrorMessage(e), true));
+  });
+
   $("btn-inspect-capacity").addEventListener("click", () => {
     void (async () => {
       const capacity = await readAvailableBytesOrNull();
@@ -278,15 +330,13 @@ async function boot(): Promise<void> {
   try {
     await openLocalJournalDatabase();
     await renderEntries();
-    setStatus("write-through PoC W1–W10 実行中…（明示1件のみ / candidate 固定）");
+    setStatus("activation pointer PoC P1–P12 実行中…（Repository 切替なし）");
     await LocalJournalSecureBootstrapper.bootstrap();
-    const report = await runWriteThroughMirrorPoc({
-      entryId: WRITE_THROUGH_POC_ENTRY_ID,
-    });
+    const report = await runActivationPointerPoc();
     $("security-report").textContent = JSON.stringify(report, null, 2);
     const fails = report.steps.filter((s) => s.status === "fail").length;
     setStatus(
-      `write-through fail=${fails} id=${WRITE_THROUGH_POC_ENTRY_ID} untouched=${String(report.actualJournalUntouched)}`,
+      `activation-pointer fail=${fails} untouched=${String(report.actualJournalUntouched)}`,
       fails > 0,
     );
   } catch (err) {

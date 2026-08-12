@@ -24,6 +24,8 @@ public class LjdLocalSecurityPlugin: CAPPlugin, CAPBridgedPlugin {
         CAPPluginMethod(name: "inspectGenericPasswordAccessibility", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "getVolumeAvailableCapacity", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "listSqliteArtifactsInLjdDir", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "atomicReplaceTextFile", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "readTextFile", returnType: CAPPluginReturnPromise),
     ]
 
     @objc func inspectPath(_ call: CAPPluginCall) {
@@ -171,6 +173,90 @@ public class LjdLocalSecurityPlugin: CAPPlugin, CAPBridgedPlugin {
             call.resolve(["artifacts": artifacts])
         } catch {
             call.reject("listSqliteArtifactsInLjdDir failed: \(error.localizedDescription)")
+        }
+    }
+
+    /// Atomic text replace under LJD Application Support only.
+    /// temp write → FileHandle.synchronize (fsync) → replaceItemAt / moveItem.
+    @objc func atomicReplaceTextFile(_ call: CAPPluginCall) {
+        guard let path = call.getString("path"), !path.isEmpty else {
+            call.reject("path required")
+            return
+        }
+        guard let contents = call.getString("contents") else {
+            call.reject("contents required")
+            return
+        }
+        guard let ljdDir = ljdApplicationSupportDir() else {
+            call.reject("applicationSupportDirectory unavailable")
+            return
+        }
+        let dest = URL(fileURLWithPath: normalizePath(path))
+        guard dest.path.hasPrefix(ljdDir.path + "/") || dest.path == ljdDir.path else {
+            call.reject("path must be under LJD Application Support")
+            return
+        }
+        let fm = FileManager.default
+        do {
+            try fm.createDirectory(at: dest.deletingLastPathComponent(), withIntermediateDirectories: true)
+            let temp = dest.deletingLastPathComponent()
+                .appendingPathComponent(".\(dest.lastPathComponent).tmp-\(UUID().uuidString)")
+            if fm.fileExists(atPath: temp.path) {
+                try fm.removeItem(at: temp)
+            }
+            try contents.write(to: temp, atomically: false, encoding: .utf8)
+            let handle = try FileHandle(forWritingTo: temp)
+            try handle.synchronize()
+            try handle.close()
+            if fm.fileExists(atPath: dest.path) {
+                _ = try fm.replaceItemAt(dest, withItemAt: temp)
+            } else {
+                try fm.moveItem(at: temp, to: dest)
+            }
+            if fm.fileExists(atPath: temp.path) {
+                try? fm.removeItem(at: temp)
+            }
+            call.resolve([
+                "ok": true,
+                "path": dest.path,
+                "bytes": NSNumber(value: contents.utf8.count),
+            ])
+        } catch {
+            call.reject("atomicReplaceTextFile failed: \(error.localizedDescription)")
+        }
+    }
+
+    /// Read UTF-8 text under LJD Application Support only. Never logs contents.
+    @objc func readTextFile(_ call: CAPPluginCall) {
+        guard let path = call.getString("path"), !path.isEmpty else {
+            call.reject("path required")
+            return
+        }
+        guard let ljdDir = ljdApplicationSupportDir() else {
+            call.reject("applicationSupportDirectory unavailable")
+            return
+        }
+        let url = URL(fileURLWithPath: normalizePath(path))
+        guard url.path.hasPrefix(ljdDir.path + "/") || url.path == ljdDir.path else {
+            call.reject("path must be under LJD Application Support")
+            return
+        }
+        let fm = FileManager.default
+        guard fm.fileExists(atPath: url.path) else {
+            call.resolve([
+                "exists": false,
+                "contents": NSNull(),
+            ])
+            return
+        }
+        do {
+            let contents = try String(contentsOf: url, encoding: .utf8)
+            call.resolve([
+                "exists": true,
+                "contents": contents,
+            ])
+        } catch {
+            call.reject("readTextFile failed: \(error.localizedDescription)")
         }
     }
 

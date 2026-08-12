@@ -8,4 +8,6 @@ export declare class LjdLocalSecurityWeb extends WebPlugin implements LjdLocalSe
     inspectGenericPasswordAccessibility(): Promise<import('./definitions').InspectGenericPasswordAccessibilityResult>;
     getVolumeAvailableCapacity(): Promise<import('./definitions').VolumeAvailableCapacityResult>;
     listSqliteArtifactsInLjdDir(): Promise<import('./definitions').ListSqliteArtifactsResult>;
+    atomicReplaceTextFile(): Promise<import('./definitions').AtomicReplaceTextFileResult>;
+    readTextFile(): Promise<import('./definitions').ReadTextFileResult>;
 }

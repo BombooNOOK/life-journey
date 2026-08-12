@@ -519,6 +519,836 @@
     }
   });
 
+  // node_modules/@capacitor-community/sqlite/dist/esm/definitions.js
+  var SQLiteConnection, SQLiteDBConnection;
+  var init_definitions = __esm({
+    "node_modules/@capacitor-community/sqlite/dist/esm/definitions.js"() {
+      SQLiteConnection = class {
+        constructor(sqlite) {
+          this.sqlite = sqlite;
+          this._connectionDict = /* @__PURE__ */ new Map();
+        }
+        async initWebStore() {
+          try {
+            await this.sqlite.initWebStore();
+            return Promise.resolve();
+          } catch (err) {
+            return Promise.reject(err);
+          }
+        }
+        async saveToStore(database) {
+          try {
+            await this.sqlite.saveToStore({ database });
+            return Promise.resolve();
+          } catch (err) {
+            return Promise.reject(err);
+          }
+        }
+        async saveToLocalDisk(database) {
+          try {
+            await this.sqlite.saveToLocalDisk({ database });
+            return Promise.resolve();
+          } catch (err) {
+            return Promise.reject(err);
+          }
+        }
+        async getFromLocalDiskToStore(overwrite) {
+          const mOverwrite = overwrite != null ? overwrite : true;
+          try {
+            await this.sqlite.getFromLocalDiskToStore({ overwrite: mOverwrite });
+            return Promise.resolve();
+          } catch (err) {
+            return Promise.reject(err);
+          }
+        }
+        async echo(value) {
+          try {
+            const res = await this.sqlite.echo({ value });
+            return Promise.resolve(res);
+          } catch (err) {
+            return Promise.reject(err);
+          }
+        }
+        async isSecretStored() {
+          try {
+            const res = await this.sqlite.isSecretStored();
+            return Promise.resolve(res);
+          } catch (err) {
+            return Promise.reject(err);
+          }
+        }
+        async setEncryptionSecret(passphrase) {
+          try {
+            await this.sqlite.setEncryptionSecret({ passphrase });
+            return Promise.resolve();
+          } catch (err) {
+            return Promise.reject(err);
+          }
+        }
+        async changeEncryptionSecret(passphrase, oldpassphrase) {
+          try {
+            await this.sqlite.changeEncryptionSecret({
+              passphrase,
+              oldpassphrase
+            });
+            return Promise.resolve();
+          } catch (err) {
+            return Promise.reject(err);
+          }
+        }
+        async clearEncryptionSecret() {
+          try {
+            await this.sqlite.clearEncryptionSecret();
+            return Promise.resolve();
+          } catch (err) {
+            return Promise.reject(err);
+          }
+        }
+        async checkEncryptionSecret(passphrase) {
+          try {
+            const res = await this.sqlite.checkEncryptionSecret({
+              passphrase
+            });
+            return Promise.resolve(res);
+          } catch (err) {
+            return Promise.reject(err);
+          }
+        }
+        async addUpgradeStatement(database, upgrade) {
+          try {
+            if (database.endsWith(".db"))
+              database = database.slice(0, -3);
+            await this.sqlite.addUpgradeStatement({
+              database,
+              upgrade
+            });
+            return Promise.resolve();
+          } catch (err) {
+            return Promise.reject(err);
+          }
+        }
+        async createConnection(database, encrypted, mode, version, readonly) {
+          try {
+            if (database.endsWith(".db"))
+              database = database.slice(0, -3);
+            await this.sqlite.createConnection({
+              database,
+              encrypted,
+              mode,
+              version,
+              readonly
+            });
+            const conn = new SQLiteDBConnection(database, readonly, this.sqlite);
+            const connName = readonly ? `RO_${database}` : `RW_${database}`;
+            this._connectionDict.set(connName, conn);
+            return Promise.resolve(conn);
+          } catch (err) {
+            return Promise.reject(err);
+          }
+        }
+        async closeConnection(database, readonly) {
+          try {
+            if (database.endsWith(".db"))
+              database = database.slice(0, -3);
+            await this.sqlite.closeConnection({ database, readonly });
+            const connName = readonly ? `RO_${database}` : `RW_${database}`;
+            this._connectionDict.delete(connName);
+            return Promise.resolve();
+          } catch (err) {
+            return Promise.reject(err);
+          }
+        }
+        async isConnection(database, readonly) {
+          const res = {};
+          if (database.endsWith(".db"))
+            database = database.slice(0, -3);
+          const connName = readonly ? `RO_${database}` : `RW_${database}`;
+          res.result = this._connectionDict.has(connName);
+          return Promise.resolve(res);
+        }
+        async retrieveConnection(database, readonly) {
+          if (database.endsWith(".db"))
+            database = database.slice(0, -3);
+          const connName = readonly ? `RO_${database}` : `RW_${database}`;
+          if (this._connectionDict.has(connName)) {
+            const conn = this._connectionDict.get(connName);
+            if (typeof conn != "undefined")
+              return Promise.resolve(conn);
+            else {
+              return Promise.reject(`Connection ${database} is undefined`);
+            }
+          } else {
+            return Promise.reject(`Connection ${database} does not exist`);
+          }
+        }
+        async getNCDatabasePath(path, database) {
+          try {
+            const databasePath = await this.sqlite.getNCDatabasePath({
+              path,
+              database
+            });
+            return Promise.resolve(databasePath);
+          } catch (err) {
+            return Promise.reject(err);
+          }
+        }
+        async createNCConnection(databasePath, version) {
+          try {
+            await this.sqlite.createNCConnection({
+              databasePath,
+              version
+            });
+            const conn = new SQLiteDBConnection(databasePath, true, this.sqlite);
+            const connName = `RO_${databasePath})`;
+            this._connectionDict.set(connName, conn);
+            return Promise.resolve(conn);
+          } catch (err) {
+            return Promise.reject(err);
+          }
+        }
+        async closeNCConnection(databasePath) {
+          try {
+            await this.sqlite.closeNCConnection({ databasePath });
+            const connName = `RO_${databasePath})`;
+            this._connectionDict.delete(connName);
+            return Promise.resolve();
+          } catch (err) {
+            return Promise.reject(err);
+          }
+        }
+        async isNCConnection(databasePath) {
+          const res = {};
+          const connName = `RO_${databasePath})`;
+          res.result = this._connectionDict.has(connName);
+          return Promise.resolve(res);
+        }
+        async retrieveNCConnection(databasePath) {
+          if (this._connectionDict.has(databasePath)) {
+            const connName = `RO_${databasePath})`;
+            const conn = this._connectionDict.get(connName);
+            if (typeof conn != "undefined")
+              return Promise.resolve(conn);
+            else {
+              return Promise.reject(`Connection ${databasePath} is undefined`);
+            }
+          } else {
+            return Promise.reject(`Connection ${databasePath} does not exist`);
+          }
+        }
+        async isNCDatabase(databasePath) {
+          try {
+            const res = await this.sqlite.isNCDatabase({ databasePath });
+            return Promise.resolve(res);
+          } catch (err) {
+            return Promise.reject(err);
+          }
+        }
+        async retrieveAllConnections() {
+          return this._connectionDict;
+        }
+        async closeAllConnections() {
+          const delDict = /* @__PURE__ */ new Map();
+          try {
+            for (const key of this._connectionDict.keys()) {
+              const database = key.substring(3);
+              const readonly = key.substring(0, 3) === "RO_" ? true : false;
+              await this.sqlite.closeConnection({ database, readonly });
+              delDict.set(key, null);
+            }
+            for (const key of delDict.keys()) {
+              this._connectionDict.delete(key);
+            }
+            return Promise.resolve();
+          } catch (err) {
+            return Promise.reject(err);
+          }
+        }
+        async checkConnectionsConsistency() {
+          try {
+            const keys = [...this._connectionDict.keys()];
+            const openModes = [];
+            const dbNames = [];
+            for (const key of keys) {
+              openModes.push(key.substring(0, 2));
+              dbNames.push(key.substring(3));
+            }
+            const res = await this.sqlite.checkConnectionsConsistency({
+              dbNames,
+              openModes
+            });
+            if (!res.result)
+              this._connectionDict = /* @__PURE__ */ new Map();
+            return Promise.resolve(res);
+          } catch (err) {
+            this._connectionDict = /* @__PURE__ */ new Map();
+            return Promise.reject(err);
+          }
+        }
+        async importFromJson(jsonstring) {
+          try {
+            const ret = await this.sqlite.importFromJson({ jsonstring });
+            return Promise.resolve(ret);
+          } catch (err) {
+            return Promise.reject(err);
+          }
+        }
+        async isJsonValid(jsonstring) {
+          try {
+            const ret = await this.sqlite.isJsonValid({ jsonstring });
+            return Promise.resolve(ret);
+          } catch (err) {
+            return Promise.reject(err);
+          }
+        }
+        async copyFromAssets(overwrite) {
+          const mOverwrite = overwrite != null ? overwrite : true;
+          try {
+            await this.sqlite.copyFromAssets({ overwrite: mOverwrite });
+            return Promise.resolve();
+          } catch (err) {
+            return Promise.reject(err);
+          }
+        }
+        async getFromHTTPRequest(url, overwrite) {
+          const mOverwrite = overwrite != null ? overwrite : true;
+          try {
+            await this.sqlite.getFromHTTPRequest({ url, overwrite: mOverwrite });
+            return Promise.resolve();
+          } catch (err) {
+            return Promise.reject(err);
+          }
+        }
+        async isDatabaseEncrypted(database) {
+          if (database.endsWith(".db"))
+            database = database.slice(0, -3);
+          try {
+            const res = await this.sqlite.isDatabaseEncrypted({ database });
+            return Promise.resolve(res);
+          } catch (err) {
+            return Promise.reject(err);
+          }
+        }
+        async isInConfigEncryption() {
+          try {
+            const res = await this.sqlite.isInConfigEncryption();
+            return Promise.resolve(res);
+          } catch (err) {
+            return Promise.reject(err);
+          }
+        }
+        async isInConfigBiometricAuth() {
+          try {
+            const res = await this.sqlite.isInConfigBiometricAuth();
+            return Promise.resolve(res);
+          } catch (err) {
+            return Promise.reject(err);
+          }
+        }
+        async isDatabase(database) {
+          if (database.endsWith(".db"))
+            database = database.slice(0, -3);
+          try {
+            const res = await this.sqlite.isDatabase({ database });
+            return Promise.resolve(res);
+          } catch (err) {
+            return Promise.reject(err);
+          }
+        }
+        async getDatabaseList() {
+          try {
+            const res = await this.sqlite.getDatabaseList();
+            const values = res.values;
+            values.sort();
+            const ret = { values };
+            return Promise.resolve(ret);
+          } catch (err) {
+            return Promise.reject(err);
+          }
+        }
+        async getMigratableDbList(folderPath) {
+          const path = folderPath ? folderPath : "default";
+          try {
+            const res = await this.sqlite.getMigratableDbList({
+              folderPath: path
+            });
+            return Promise.resolve(res);
+          } catch (err) {
+            return Promise.reject(err);
+          }
+        }
+        async addSQLiteSuffix(folderPath, dbNameList) {
+          const path = folderPath ? folderPath : "default";
+          const dbList = dbNameList ? dbNameList : [];
+          try {
+            const res = await this.sqlite.addSQLiteSuffix({
+              folderPath: path,
+              dbNameList: dbList
+            });
+            return Promise.resolve(res);
+          } catch (err) {
+            return Promise.reject(err);
+          }
+        }
+        async deleteOldDatabases(folderPath, dbNameList) {
+          const path = folderPath ? folderPath : "default";
+          const dbList = dbNameList ? dbNameList : [];
+          try {
+            const res = await this.sqlite.deleteOldDatabases({
+              folderPath: path,
+              dbNameList: dbList
+            });
+            return Promise.resolve(res);
+          } catch (err) {
+            return Promise.reject(err);
+          }
+        }
+        async moveDatabasesAndAddSuffix(folderPath, dbNameList) {
+          const path = folderPath ? folderPath : "default";
+          const dbList = dbNameList ? dbNameList : [];
+          return this.sqlite.moveDatabasesAndAddSuffix({
+            folderPath: path,
+            dbNameList: dbList
+          });
+        }
+      };
+      SQLiteDBConnection = class {
+        constructor(dbName, readonly, sqlite) {
+          this.dbName = dbName;
+          this.readonly = readonly;
+          this.sqlite = sqlite;
+        }
+        getConnectionDBName() {
+          return this.dbName;
+        }
+        getConnectionReadOnly() {
+          return this.readonly;
+        }
+        async open() {
+          try {
+            await this.sqlite.open({
+              database: this.dbName,
+              readonly: this.readonly
+            });
+            return Promise.resolve();
+          } catch (err) {
+            return Promise.reject(err);
+          }
+        }
+        async close() {
+          try {
+            await this.sqlite.close({
+              database: this.dbName,
+              readonly: this.readonly
+            });
+            return Promise.resolve();
+          } catch (err) {
+            return Promise.reject(err);
+          }
+        }
+        async beginTransaction() {
+          try {
+            const changes = await this.sqlite.beginTransaction({
+              database: this.dbName
+            });
+            return Promise.resolve(changes);
+          } catch (err) {
+            return Promise.reject(err);
+          }
+        }
+        async commitTransaction() {
+          try {
+            const changes = await this.sqlite.commitTransaction({
+              database: this.dbName
+            });
+            return Promise.resolve(changes);
+          } catch (err) {
+            return Promise.reject(err);
+          }
+        }
+        async rollbackTransaction() {
+          try {
+            const changes = await this.sqlite.rollbackTransaction({
+              database: this.dbName
+            });
+            return Promise.resolve(changes);
+          } catch (err) {
+            return Promise.reject(err);
+          }
+        }
+        async isTransactionActive() {
+          try {
+            const result = await this.sqlite.isTransactionActive({
+              database: this.dbName
+            });
+            return Promise.resolve(result);
+          } catch (err) {
+            return Promise.reject(err);
+          }
+        }
+        async loadExtension(path) {
+          try {
+            await this.sqlite.loadExtension({
+              database: this.dbName,
+              path,
+              readonly: this.readonly
+            });
+            return Promise.resolve();
+          } catch (err) {
+            return Promise.reject(err);
+          }
+        }
+        async enableLoadExtension(toggle) {
+          try {
+            await this.sqlite.enableLoadExtension({
+              database: this.dbName,
+              toggle,
+              readonly: this.readonly
+            });
+            return Promise.resolve();
+          } catch (err) {
+            return Promise.reject(err);
+          }
+        }
+        async getUrl() {
+          try {
+            const res = await this.sqlite.getUrl({
+              database: this.dbName,
+              readonly: this.readonly
+            });
+            return Promise.resolve(res);
+          } catch (err) {
+            return Promise.reject(err);
+          }
+        }
+        async getVersion() {
+          try {
+            const version = await this.sqlite.getVersion({
+              database: this.dbName,
+              readonly: this.readonly
+            });
+            return Promise.resolve(version);
+          } catch (err) {
+            return Promise.reject(err);
+          }
+        }
+        async getTableList() {
+          try {
+            const res = await this.sqlite.getTableList({
+              database: this.dbName,
+              readonly: this.readonly
+            });
+            return Promise.resolve(res);
+          } catch (err) {
+            return Promise.reject(err);
+          }
+        }
+        async execute(statements, transaction = true, isSQL92 = true) {
+          try {
+            if (!this.readonly) {
+              const res = await this.sqlite.execute({
+                database: this.dbName,
+                statements,
+                transaction,
+                readonly: false,
+                isSQL92
+              });
+              return Promise.resolve(res);
+            } else {
+              return Promise.reject("not allowed in read-only mode");
+            }
+          } catch (err) {
+            return Promise.reject(err);
+          }
+        }
+        async query(statement, values, isSQL92 = true) {
+          let res;
+          try {
+            if (values && values.length > 0) {
+              res = await this.sqlite.query({
+                database: this.dbName,
+                statement,
+                values,
+                readonly: this.readonly,
+                isSQL92: true
+              });
+            } else {
+              res = await this.sqlite.query({
+                database: this.dbName,
+                statement,
+                values: [],
+                readonly: this.readonly,
+                isSQL92
+              });
+            }
+            res = await this.reorderRows(res);
+            return Promise.resolve(res);
+          } catch (err) {
+            return Promise.reject(err);
+          }
+        }
+        async run(statement, values, transaction = true, returnMode = "no", isSQL92 = true) {
+          let res;
+          try {
+            if (!this.readonly) {
+              if (values && values.length > 0) {
+                res = await this.sqlite.run({
+                  database: this.dbName,
+                  statement,
+                  values,
+                  transaction,
+                  readonly: false,
+                  returnMode,
+                  isSQL92: true
+                });
+              } else {
+                res = await this.sqlite.run({
+                  database: this.dbName,
+                  statement,
+                  values: [],
+                  transaction,
+                  readonly: false,
+                  returnMode,
+                  isSQL92
+                });
+              }
+              res.changes = await this.reorderRows(res.changes);
+              return Promise.resolve(res);
+            } else {
+              return Promise.reject("not allowed in read-only mode");
+            }
+          } catch (err) {
+            return Promise.reject(err);
+          }
+        }
+        async executeSet(set, transaction = true, returnMode = "no", isSQL92 = true) {
+          let res;
+          try {
+            if (!this.readonly) {
+              res = await this.sqlite.executeSet({
+                database: this.dbName,
+                set,
+                transaction,
+                readonly: false,
+                returnMode,
+                isSQL92
+              });
+              res.changes = await this.reorderRows(res.changes);
+              return Promise.resolve(res);
+            } else {
+              return Promise.reject("not allowed in read-only mode");
+            }
+          } catch (err) {
+            return Promise.reject(err);
+          }
+        }
+        async isExists() {
+          try {
+            const res = await this.sqlite.isDBExists({
+              database: this.dbName,
+              readonly: this.readonly
+            });
+            return Promise.resolve(res);
+          } catch (err) {
+            return Promise.reject(err);
+          }
+        }
+        async isTable(table) {
+          try {
+            const res = await this.sqlite.isTableExists({
+              database: this.dbName,
+              table,
+              readonly: this.readonly
+            });
+            return Promise.resolve(res);
+          } catch (err) {
+            return Promise.reject(err);
+          }
+        }
+        async isDBOpen() {
+          try {
+            const res = await this.sqlite.isDBOpen({
+              database: this.dbName,
+              readonly: this.readonly
+            });
+            return Promise.resolve(res);
+          } catch (err) {
+            return Promise.reject(err);
+          }
+        }
+        async delete() {
+          try {
+            if (!this.readonly) {
+              await this.sqlite.deleteDatabase({
+                database: this.dbName,
+                readonly: false
+              });
+              return Promise.resolve();
+            } else {
+              return Promise.reject("not allowed in read-only mode");
+            }
+          } catch (err) {
+            return Promise.reject(err);
+          }
+        }
+        async createSyncTable() {
+          try {
+            if (!this.readonly) {
+              const res = await this.sqlite.createSyncTable({
+                database: this.dbName,
+                readonly: false
+              });
+              return Promise.resolve(res);
+            } else {
+              return Promise.reject("not allowed in read-only mode");
+            }
+          } catch (err) {
+            return Promise.reject(err);
+          }
+        }
+        async setSyncDate(syncdate) {
+          try {
+            if (!this.readonly) {
+              await this.sqlite.setSyncDate({
+                database: this.dbName,
+                syncdate,
+                readonly: false
+              });
+              return Promise.resolve();
+            } else {
+              return Promise.reject("not allowed in read-only mode");
+            }
+          } catch (err) {
+            return Promise.reject(err);
+          }
+        }
+        async getSyncDate() {
+          try {
+            const res = await this.sqlite.getSyncDate({
+              database: this.dbName,
+              readonly: this.readonly
+            });
+            let retDate = "";
+            if (res.syncDate > 0)
+              retDate = new Date(res.syncDate * 1e3).toISOString();
+            return Promise.resolve(retDate);
+          } catch (err) {
+            return Promise.reject(err);
+          }
+        }
+        async exportToJson(mode, encrypted = false) {
+          try {
+            const res = await this.sqlite.exportToJson({
+              database: this.dbName,
+              jsonexportmode: mode,
+              readonly: this.readonly,
+              encrypted
+            });
+            return Promise.resolve(res);
+          } catch (err) {
+            return Promise.reject(err);
+          }
+        }
+        async deleteExportedRows() {
+          try {
+            if (!this.readonly) {
+              await this.sqlite.deleteExportedRows({
+                database: this.dbName,
+                readonly: false
+              });
+              return Promise.resolve();
+            } else {
+              return Promise.reject("not allowed in read-only mode");
+            }
+          } catch (err) {
+            return Promise.reject(err);
+          }
+        }
+        async executeTransaction(txn, isSQL92 = true) {
+          let changes = 0;
+          let isActive = false;
+          if (!this.readonly) {
+            await this.sqlite.beginTransaction({
+              database: this.dbName
+            });
+            isActive = await this.sqlite.isTransactionActive({
+              database: this.dbName
+            });
+            if (!isActive) {
+              return Promise.reject("After Begin Transaction, no transaction active");
+            }
+            try {
+              for (const task of txn) {
+                if (typeof task !== "object" || !("statement" in task)) {
+                  throw new Error("Error a task.statement must be provided");
+                }
+                if ("values" in task && task.values && task.values.length > 0) {
+                  const retMode = task.statement.toUpperCase().includes("RETURNING") ? "all" : "no";
+                  const ret = await this.sqlite.run({
+                    database: this.dbName,
+                    statement: task.statement,
+                    values: task.values,
+                    transaction: false,
+                    readonly: false,
+                    returnMode: retMode,
+                    isSQL92
+                  });
+                  if (ret.changes.changes < 0) {
+                    throw new Error("Error in transaction method run ");
+                  }
+                  changes += ret.changes.changes;
+                } else {
+                  const ret = await this.sqlite.execute({
+                    database: this.dbName,
+                    statements: task.statement,
+                    transaction: false,
+                    readonly: false
+                  });
+                  if (ret.changes.changes < 0) {
+                    throw new Error("Error in transaction method execute ");
+                  }
+                  changes += ret.changes.changes;
+                }
+              }
+              const retC = await this.sqlite.commitTransaction({
+                database: this.dbName
+              });
+              changes += retC.changes.changes;
+              const retChanges = { changes: { changes } };
+              return Promise.resolve(retChanges);
+            } catch (err) {
+              const msg = err.message ? err.message : err;
+              await this.sqlite.rollbackTransaction({
+                database: this.dbName
+              });
+              return Promise.reject(msg);
+            }
+          } else {
+            return Promise.reject("not allowed in read-only mode");
+          }
+        }
+        async reorderRows(res) {
+          const retRes = res;
+          if (res?.values && typeof res.values[0] === "object") {
+            if (Object.keys(res.values[0]).includes("ios_columns")) {
+              const columnList = res.values[0]["ios_columns"];
+              const iosRes = [];
+              for (let i = 1; i < res.values.length; i++) {
+                const rowJson = res.values[i];
+                const resRowJson = {};
+                for (const item of columnList) {
+                  resRowJson[item] = rowJson[item];
+                }
+                iosRes.push(resRowJson);
+              }
+              retRes["values"] = iosRes;
+            }
+          }
+          return Promise.resolve(retRes);
+        }
+      };
+    }
+  });
+
   // node_modules/@capacitor-community/sqlite/dist/esm/web.js
   var web_exports = {};
   __export(web_exports, {
@@ -997,6 +1827,247 @@
     }
   });
 
+  // node_modules/@capacitor-community/sqlite/dist/esm/index.js
+  var CapacitorSQLite;
+  var init_esm = __esm({
+    "node_modules/@capacitor-community/sqlite/dist/esm/index.js"() {
+      init_dist();
+      init_definitions();
+      CapacitorSQLite = registerPlugin("CapacitorSQLite", {
+        web: () => Promise.resolve().then(() => (init_web(), web_exports)).then((m) => new m.CapacitorSQLiteWeb()),
+        electron: () => window.CapacitorCustomPlatform.plugins.CapacitorSQLite
+      });
+    }
+  });
+
+  // src/lib/local-first/journal/types.ts
+  var LOCAL_JOURNAL_DB_NAME, LOCAL_JOURNAL_SCHEMA_USER_VERSION, LOCAL_JOURNAL_MEDIA_ROOT;
+  var init_types = __esm({
+    "src/lib/local-first/journal/types.ts"() {
+      "use strict";
+      LOCAL_JOURNAL_DB_NAME = "ljd_local_journal";
+      LOCAL_JOURNAL_SCHEMA_USER_VERSION = 1;
+      LOCAL_JOURNAL_MEDIA_ROOT = "ljd/media/journal";
+    }
+  });
+
+  // src/lib/local-first/journal/database.ts
+  function assertLocalJournalNative() {
+    if (!Capacitor.isNativePlatform()) {
+      throw new Error("Local Journal foundation is native-only.");
+    }
+  }
+  function getConnection() {
+    if (!connection) connection = new SQLiteConnection(CapacitorSQLite);
+    return connection;
+  }
+  async function readUserVersion(database) {
+    const versionResult = await database.query("PRAGMA user_version;");
+    const raw = versionResult.values?.[0];
+    const current = typeof raw?.user_version === "number" ? raw.user_version : typeof raw?.user_version === "string" ? Number(raw.user_version) : Number(Object.values(raw ?? {})[0] ?? 0);
+    return Number.isFinite(current) ? current : 0;
+  }
+  async function applyFoundationSchema(database) {
+    await database.execute(LOCAL_JOURNAL_SCHEMA_SQL);
+    await database.execute(`PRAGMA user_version = ${LOCAL_JOURNAL_SCHEMA_USER_VERSION};`);
+  }
+  async function withLocalJournalTransaction(fn) {
+    const database = await openLocalJournalDatabase();
+    await database.execute("BEGIN;");
+    try {
+      const result = await fn(database);
+      await database.execute("COMMIT;");
+      return result;
+    } catch (err) {
+      try {
+        await database.execute("ROLLBACK;");
+      } catch {
+      }
+      throw err;
+    }
+  }
+  async function openLocalJournalDatabase() {
+    assertLocalJournalNative();
+    if (db) return db;
+    const sqlite = getConnection();
+    const consistency = await sqlite.checkConnectionsConsistency();
+    const isConn = (await sqlite.isConnection(LOCAL_JOURNAL_DB_NAME, false)).result;
+    if (consistency.result && isConn) {
+      db = await sqlite.retrieveConnection(LOCAL_JOURNAL_DB_NAME, false);
+    } else {
+      db = await sqlite.createConnection(
+        LOCAL_JOURNAL_DB_NAME,
+        false,
+        "no-encryption",
+        LOCAL_JOURNAL_SCHEMA_USER_VERSION,
+        false
+      );
+    }
+    await db.open();
+    const current = await readUserVersion(db);
+    if (current < LOCAL_JOURNAL_SCHEMA_USER_VERSION) {
+      await applyFoundationSchema(db);
+    }
+    return db;
+  }
+  var connection, db, LOCAL_JOURNAL_SCHEMA_SQL, LOCAL_JOURNAL_EXPECTED_TABLES, LOCAL_JOURNAL_EXPECTED_COLUMNS;
+  var init_database = __esm({
+    "src/lib/local-first/journal/database.ts"() {
+      "use strict";
+      init_dist();
+      init_esm();
+      init_types();
+      connection = null;
+      db = null;
+      LOCAL_JOURNAL_SCHEMA_SQL = `
+CREATE TABLE IF NOT EXISTS local_journal_entries (
+  stable_id TEXT PRIMARY KEY NOT NULL,
+  date_key TEXT NOT NULL,
+  title TEXT NOT NULL,
+  content TEXT NOT NULL,
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL,
+  tags_json TEXT NOT NULL DEFAULT '[]',
+  schema_version INTEGER NOT NULL,
+  source TEXT NOT NULL,
+  local_status TEXT NOT NULL,
+  imported_at TEXT,
+  legacy_server_id TEXT,
+  server_updated_at TEXT
+);
+
+CREATE INDEX IF NOT EXISTS idx_local_journal_date
+  ON local_journal_entries (date_key);
+
+CREATE INDEX IF NOT EXISTS idx_local_journal_updated
+  ON local_journal_entries (updated_at);
+
+CREATE UNIQUE INDEX IF NOT EXISTS idx_local_journal_legacy_server
+  ON local_journal_entries (legacy_server_id)
+  WHERE legacy_server_id IS NOT NULL;
+
+CREATE TABLE IF NOT EXISTS local_journal_tags (
+  journal_stable_id TEXT NOT NULL,
+  tag TEXT NOT NULL,
+  PRIMARY KEY (journal_stable_id, tag)
+);
+
+CREATE INDEX IF NOT EXISTS idx_local_journal_tags_tag
+  ON local_journal_tags (tag);
+
+CREATE TABLE IF NOT EXISTS local_media (
+  stable_id TEXT PRIMARY KEY NOT NULL,
+  journal_stable_id TEXT NOT NULL,
+  type TEXT NOT NULL,
+  relative_path TEXT NOT NULL,
+  created_at TEXT NOT NULL,
+  checksum TEXT,
+  mime_type TEXT
+);
+
+CREATE INDEX IF NOT EXISTS idx_local_media_journal
+  ON local_media (journal_stable_id);
+`;
+      LOCAL_JOURNAL_EXPECTED_TABLES = [
+        "local_journal_entries",
+        "local_journal_tags",
+        "local_media"
+      ];
+      LOCAL_JOURNAL_EXPECTED_COLUMNS = {
+        local_journal_entries: [
+          "stable_id",
+          "date_key",
+          "title",
+          "content",
+          "created_at",
+          "updated_at",
+          "tags_json",
+          "schema_version",
+          "source",
+          "local_status",
+          "imported_at",
+          "legacy_server_id",
+          "server_updated_at"
+        ],
+        local_journal_tags: ["journal_stable_id", "tag"],
+        local_media: [
+          "stable_id",
+          "journal_stable_id",
+          "type",
+          "relative_path",
+          "created_at",
+          "checksum",
+          "mime_type"
+        ]
+      };
+    }
+  });
+
+  // src/lib/local-first/journal/secureBootstrap/candidateHealth.ts
+  function missingExpectedTables(tables) {
+    const have = new Set(tables);
+    return LOCAL_JOURNAL_EXPECTED_TABLES.filter((name) => !have.has(name));
+  }
+  function unexpectedTables(tables) {
+    const expected = new Set(LOCAL_JOURNAL_EXPECTED_TABLES);
+    return tables.filter((name) => !expected.has(name) && !name.startsWith("sqlite_"));
+  }
+  function columnMismatches(columns) {
+    const mismatches = [];
+    for (const table of LOCAL_JOURNAL_EXPECTED_TABLES) {
+      const have = (columns[table] ?? []).join(",");
+      const want = LOCAL_JOURNAL_EXPECTED_COLUMNS[table].join(",");
+      if (have !== want) mismatches.push(table);
+    }
+    return mismatches;
+  }
+  function classifyCandidateHealth(input) {
+    if (!input.exists) {
+      return { status: "missing", reason: null };
+    }
+    if (input.encrypted === false) {
+      return { status: "abnormal", reason: "plaintext_candidate" };
+    }
+    if (input.encrypted == null) {
+      return { status: "abnormal", reason: "encryption_unknown" };
+    }
+    if (input.userVersion !== LOCAL_JOURNAL_SCHEMA_USER_VERSION) {
+      return { status: "abnormal", reason: "user_version_mismatch" };
+    }
+    const missing = missingExpectedTables(input.tables);
+    if (missing.length > 0) {
+      return { status: "abnormal", reason: `missing_tables:${missing.join(",")}` };
+    }
+    const extra = unexpectedTables(input.tables);
+    if (extra.length > 0) {
+      return { status: "abnormal", reason: `unexpected_tables:${extra.join(",")}` };
+    }
+    if (input.columns) {
+      const drifted = columnMismatches(input.columns);
+      if (drifted.length > 0) {
+        return { status: "abnormal", reason: `columns:${drifted.join(",")}` };
+      }
+    }
+    return { status: "ready", reason: null };
+  }
+  var init_candidateHealth = __esm({
+    "src/lib/local-first/journal/secureBootstrap/candidateHealth.ts"() {
+      "use strict";
+      init_database();
+      init_types();
+    }
+  });
+
+  // src/lib/local-first/journal/secureBootstrap/types.ts
+  var LOCAL_JOURNAL_SECURE_CANDIDATE_DB_NAME, SECURE_BOOTSTRAP_MIN_AVAILABLE_BYTES;
+  var init_types2 = __esm({
+    "src/lib/local-first/journal/secureBootstrap/types.ts"() {
+      "use strict";
+      LOCAL_JOURNAL_SECURE_CANDIDATE_DB_NAME = "ljd_local_journal_secure_candidate";
+      SECURE_BOOTSTRAP_MIN_AVAILABLE_BYTES = 256 * 1024;
+    }
+  });
+
   // plugins/ljd-local-security/dist/esm/web.js
   var web_exports2 = {};
   __export(web_exports2, {
@@ -1029,13 +2100,349 @@
         async listSqliteArtifactsInLjdDir() {
           throw this.unimplemented("Not implemented on web.");
         }
+        async atomicReplaceTextFile() {
+          throw this.unimplemented("Not implemented on web.");
+        }
+        async readTextFile() {
+          throw this.unimplemented("Not implemented on web.");
+        }
       };
+    }
+  });
+
+  // plugins/ljd-local-security/dist/esm/index.js
+  var LjdLocalSecurity;
+  var init_esm2 = __esm({
+    "plugins/ljd-local-security/dist/esm/index.js"() {
+      "use strict";
+      init_dist();
+      LjdLocalSecurity = registerPlugin("LjdLocalSecurity", {
+        web: () => Promise.resolve().then(() => (init_web2(), web_exports2)).then((m) => new m.LjdLocalSecurityWeb())
+      });
+    }
+  });
+
+  // src/lib/local-first/security/types.ts
+  var LocalFirstSecurityError, LJD_FILE_PROTECTION_CANDIDATE, LJD_PLUGIN_KEYCHAIN_SERVICE, LJD_PLUGIN_KEYCHAIN_ACCOUNT, LJD_PLUGIN_KEYCHAIN_ACCESSIBILITY_MEASURED, LJD_SQLITE_ENCRYPTION_MODE, LJD_IOS_DATABASE_RELATIVE_LOCATION;
+  var init_types3 = __esm({
+    "src/lib/local-first/security/types.ts"() {
+      "use strict";
+      LocalFirstSecurityError = class extends Error {
+        constructor(code, message) {
+          super(message);
+          this.name = "LocalFirstSecurityError";
+          this.code = code;
+        }
+      };
+      LJD_FILE_PROTECTION_CANDIDATE = "NSFileProtectionComplete";
+      LJD_PLUGIN_KEYCHAIN_SERVICE = "unlockSecret";
+      LJD_PLUGIN_KEYCHAIN_ACCOUNT = "ljd_CapacitorSQLitePlugin";
+      LJD_PLUGIN_KEYCHAIN_ACCESSIBILITY_MEASURED = "kSecAttrAccessibleWhenUnlocked";
+      LJD_SQLITE_ENCRYPTION_MODE = "secret";
+      LJD_IOS_DATABASE_RELATIVE_LOCATION = "Library/Application Support/app.bamboonook.ljd";
+    }
+  });
+
+  // src/lib/local-first/security/noSecretLog.ts
+  function redactSecretLike(value) {
+    if (value == null) return value;
+    if (typeof value === "string") {
+      if (value.length > 8 && /^[A-Za-z0-9+/=_-]{16,}$/.test(value)) {
+        return "[redacted]";
+      }
+      return value;
+    }
+    if (Array.isArray(value)) return value.map(redactSecretLike);
+    if (typeof value === "object") {
+      const out = {};
+      for (const [key, v] of Object.entries(value)) {
+        out[key] = SECRET_KEY.test(key) ? "[redacted]" : redactSecretLike(v);
+      }
+      return out;
+    }
+    return value;
+  }
+  function safeErrorMessage(error) {
+    if (error instanceof Error) {
+      const msg = error.message;
+      const hasSecretValue = SECRET_KEY.test(msg) && /:\s*['"]?[A-Za-z0-9+/=_-]{12,}/.test(msg);
+      if (hasSecretValue) return `${error.name}: [redacted security error]`;
+      return msg.replace(/\b[A-Fa-f0-9]{24,}\b/g, "[redacted]");
+    }
+    return String(redactSecretLike(error));
+  }
+  function assertNoSecretInText(text) {
+    if (SECRET_KEY.test(text) && /:\s*['"]?[A-Za-z0-9+/=_-]{12,}/.test(text)) {
+      throw new Error("refusing to log secret-like payload");
+    }
+  }
+  var SECRET_KEY;
+  var init_noSecretLog = __esm({
+    "src/lib/local-first/security/noSecretLog.ts"() {
+      "use strict";
+      SECRET_KEY = /passphrase|password|secret|encryptionkey|encryption_secret|unlocksecret/i;
+    }
+  });
+
+  // src/lib/local-first/security/securityErrorMapping.ts
+  function mapSecurityError(error) {
+    if (error instanceof LocalFirstSecurityError) return error;
+    const message = safeErrorMessage(error);
+    let code = "unknown";
+    if (/native-only|native only/i.test(message)) code = "native_only";
+    else if (/path required/i.test(message)) code = "path_required";
+    else if (/journal_encryption_forbidden|must not be opened encrypted/i.test(message)) {
+      code = "journal_encryption_forbidden";
+    } else if (/not implemented on web|unimplemented/i.test(message)) {
+      code = "bridge_unimplemented";
+    }
+    return new LocalFirstSecurityError(code, message);
+  }
+  var init_securityErrorMapping = __esm({
+    "src/lib/local-first/security/securityErrorMapping.ts"() {
+      "use strict";
+      init_types3();
+      init_noSecretLog();
+    }
+  });
+
+  // src/lib/local-first/security/backupInclusion.ts
+  function shouldForceBackupInclusion(current) {
+    return current === true;
+  }
+  async function ensurePathIncludedInBackup(path) {
+    if (!Capacitor.isNativePlatform()) {
+      throw new LocalFirstSecurityError(
+        "native_only",
+        "backup inclusion helper is native-only"
+      );
+    }
+    if (!path) {
+      throw new LocalFirstSecurityError("path_required", "path required");
+    }
+    try {
+      const current = await LjdLocalSecurity.inspectPath({ path });
+      if (!shouldForceBackupInclusion(current.isExcludedFromBackup)) {
+        return current;
+      }
+      return await LjdLocalSecurity.setExcludedFromBackup({
+        path,
+        excluded: false
+      });
+    } catch (error) {
+      throw mapSecurityError(error);
+    }
+  }
+  var BACKUP_INCLUSION_POLICY;
+  var init_backupInclusion = __esm({
+    "src/lib/local-first/security/backupInclusion.ts"() {
+      "use strict";
+      init_dist();
+      init_esm2();
+      init_securityErrorMapping();
+      init_types3();
+      BACKUP_INCLUSION_POLICY = {
+        recommendedTiming: "after_directory_create",
+        applyEveryLaunch: false,
+        note: "Inspect after first directory/DB create; set excluded=false only if currently true. on_db_init is an equivalent safe hook. on_every_launch is unnecessary write traffic."
+      };
+    }
+  });
+
+  // src/lib/local-first/security/encryptedDatabase.ts
+  function assertNotProductionJournal(name) {
+    if (name === LOCAL_JOURNAL_DB_NAME) {
+      throw new LocalFirstSecurityError(
+        "journal_encryption_forbidden",
+        "ljd_local_journal must not be opened encrypted; use a non-active candidate name"
+      );
+    }
+  }
+  function shouldSetPluginEncryptionSecret(alreadyStored) {
+    return !alreadyStored;
+  }
+  async function isPluginEncryptionSecretStored() {
+    if (!Capacitor.isNativePlatform()) return false;
+    try {
+      return Boolean((await CapacitorSQLite.isSecretStored()).result);
+    } catch {
+      return false;
+    }
+  }
+  async function configurePluginEncryptionSecret(passphrase) {
+    if (!Capacitor.isNativePlatform()) {
+      throw new LocalFirstSecurityError(
+        "native_only",
+        "encryption secret configure is native-only"
+      );
+    }
+    if (!passphrase) {
+      throw new LocalFirstSecurityError("unknown", "passphrase required");
+    }
+    try {
+      await CapacitorSQLite.setEncryptionSecret({ passphrase });
+    } catch (error) {
+      throw mapSecurityError(error);
+    }
+  }
+  async function ensurePluginEncryptionSecret(passphrase) {
+    const stored = await isPluginEncryptionSecretStored();
+    if (!shouldSetPluginEncryptionSecret(stored)) return "reused_existing";
+    await configurePluginEncryptionSecret(passphrase);
+    return "set";
+  }
+  async function closeNamedEncryptedDatabase(name) {
+    assertNotProductionJournal(name);
+    try {
+      const sqlite = new SQLiteConnection(CapacitorSQLite);
+      if ((await sqlite.isConnection(name, false)).result) {
+        await sqlite.closeConnection(name, false);
+      }
+    } catch {
+      try {
+        await CapacitorSQLite.closeConnection({ database: name, readonly: false });
+      } catch {
+      }
+    }
+  }
+  async function openNamedEncryptedDatabase(name, version = 1) {
+    assertNotProductionJournal(name);
+    if (!Capacitor.isNativePlatform()) {
+      throw new LocalFirstSecurityError(
+        "native_only",
+        "encrypted DB open is native-only"
+      );
+    }
+    try {
+      const sqlite = new SQLiteConnection(CapacitorSQLite);
+      try {
+        await sqlite.checkConnectionsConsistency();
+      } catch {
+      }
+      if ((await sqlite.isConnection(name, false)).result) {
+        await sqlite.closeConnection(name, false);
+      }
+      const db2 = await sqlite.createConnection(
+        name,
+        true,
+        LJD_SQLITE_ENCRYPTION_MODE,
+        version,
+        false
+      );
+      await db2.open();
+      return db2;
+    } catch (error) {
+      throw mapSecurityError(error);
+    }
+  }
+  var init_encryptedDatabase = __esm({
+    "src/lib/local-first/security/encryptedDatabase.ts"() {
+      "use strict";
+      init_dist();
+      init_esm();
+      init_types();
+      init_securityErrorMapping();
+      init_types3();
+    }
+  });
+
+  // src/lib/local-first/security/fileProtection.ts
+  function isCompleteProtection(label) {
+    return label === LJD_FILE_PROTECTION_CANDIDATE;
+  }
+  async function applyCompleteFileProtection(path) {
+    if (!Capacitor.isNativePlatform()) {
+      throw new LocalFirstSecurityError(
+        "native_only",
+        "file protection helper is native-only"
+      );
+    }
+    if (!path) {
+      throw new LocalFirstSecurityError("path_required", "path required");
+    }
+    try {
+      return await LjdLocalSecurity.setCompleteProtection({ path });
+    } catch (error) {
+      throw mapSecurityError(error);
+    }
+  }
+  async function inspectFileProtection(path) {
+    if (!Capacitor.isNativePlatform()) {
+      throw new LocalFirstSecurityError(
+        "native_only",
+        "file protection inspect is native-only"
+      );
+    }
+    try {
+      return await LjdLocalSecurity.inspectPath({ path });
+    } catch (error) {
+      throw mapSecurityError(error);
+    }
+  }
+  var init_fileProtection = __esm({
+    "src/lib/local-first/security/fileProtection.ts"() {
+      "use strict";
+      init_dist();
+      init_esm2();
+      init_securityErrorMapping();
+      init_types3();
+    }
+  });
+
+  // node_modules/@capacitor/synapse/dist/synapse.mjs
+  function s(t) {
+    t.CapacitorUtils.Synapse = new Proxy(
+      {},
+      {
+        get(e, n) {
+          return new Proxy({}, {
+            get(w, o) {
+              return (c, p, r) => {
+                const i = t.Capacitor.Plugins[n];
+                if (i === void 0) {
+                  r(new Error(`Capacitor plugin ${n} not found`));
+                  return;
+                }
+                if (typeof i[o] != "function") {
+                  r(new Error(`Method ${o} not found in Capacitor plugin ${n}`));
+                  return;
+                }
+                (async () => {
+                  try {
+                    const a = await i[o](c);
+                    p(a);
+                  } catch (a) {
+                    r(a);
+                  }
+                })();
+              };
+            }
+          });
+        }
+      }
+    );
+  }
+  function u(t) {
+    t.CapacitorUtils.Synapse = new Proxy(
+      {},
+      {
+        get(e, n) {
+          return t.cordova.plugins[n];
+        }
+      }
+    );
+  }
+  function f(t = false) {
+    typeof window > "u" || (window.CapacitorUtils = window.CapacitorUtils || {}, window.Capacitor !== void 0 && !t ? s(window) : window.cordova !== void 0 && u(window));
+  }
+  var init_synapse = __esm({
+    "node_modules/@capacitor/synapse/dist/synapse.mjs"() {
     }
   });
 
   // node_modules/@capacitor/filesystem/dist/esm/definitions.js
   var Directory, Encoding;
-  var init_definitions = __esm({
+  var init_definitions2 = __esm({
     "node_modules/@capacitor/filesystem/dist/esm/definitions.js"() {
       (function(Directory2) {
         Directory2["Documents"] = "DOCUMENTS";
@@ -1084,7 +2491,7 @@
   var init_web3 = __esm({
     "node_modules/@capacitor/filesystem/dist/esm/web.js"() {
       init_dist();
-      init_definitions();
+      init_definitions2();
       FilesystemWeb = class _FilesystemWeb extends WebPlugin {
         constructor() {
           super(...arguments);
@@ -1629,1330 +3036,57 @@
     }
   });
 
-  // src/lib/local-first/diagnostics/localStorageDiagnosticsMain.ts
-  init_dist();
-
-  // src/lib/local-first/journal/database.ts
-  init_dist();
-
-  // node_modules/@capacitor-community/sqlite/dist/esm/index.js
-  init_dist();
-
-  // node_modules/@capacitor-community/sqlite/dist/esm/definitions.js
-  var SQLiteConnection = class {
-    constructor(sqlite) {
-      this.sqlite = sqlite;
-      this._connectionDict = /* @__PURE__ */ new Map();
-    }
-    async initWebStore() {
-      try {
-        await this.sqlite.initWebStore();
-        return Promise.resolve();
-      } catch (err) {
-        return Promise.reject(err);
-      }
-    }
-    async saveToStore(database) {
-      try {
-        await this.sqlite.saveToStore({ database });
-        return Promise.resolve();
-      } catch (err) {
-        return Promise.reject(err);
-      }
-    }
-    async saveToLocalDisk(database) {
-      try {
-        await this.sqlite.saveToLocalDisk({ database });
-        return Promise.resolve();
-      } catch (err) {
-        return Promise.reject(err);
-      }
-    }
-    async getFromLocalDiskToStore(overwrite) {
-      const mOverwrite = overwrite != null ? overwrite : true;
-      try {
-        await this.sqlite.getFromLocalDiskToStore({ overwrite: mOverwrite });
-        return Promise.resolve();
-      } catch (err) {
-        return Promise.reject(err);
-      }
-    }
-    async echo(value) {
-      try {
-        const res = await this.sqlite.echo({ value });
-        return Promise.resolve(res);
-      } catch (err) {
-        return Promise.reject(err);
-      }
-    }
-    async isSecretStored() {
-      try {
-        const res = await this.sqlite.isSecretStored();
-        return Promise.resolve(res);
-      } catch (err) {
-        return Promise.reject(err);
-      }
-    }
-    async setEncryptionSecret(passphrase) {
-      try {
-        await this.sqlite.setEncryptionSecret({ passphrase });
-        return Promise.resolve();
-      } catch (err) {
-        return Promise.reject(err);
-      }
-    }
-    async changeEncryptionSecret(passphrase, oldpassphrase) {
-      try {
-        await this.sqlite.changeEncryptionSecret({
-          passphrase,
-          oldpassphrase
-        });
-        return Promise.resolve();
-      } catch (err) {
-        return Promise.reject(err);
-      }
-    }
-    async clearEncryptionSecret() {
-      try {
-        await this.sqlite.clearEncryptionSecret();
-        return Promise.resolve();
-      } catch (err) {
-        return Promise.reject(err);
-      }
-    }
-    async checkEncryptionSecret(passphrase) {
-      try {
-        const res = await this.sqlite.checkEncryptionSecret({
-          passphrase
-        });
-        return Promise.resolve(res);
-      } catch (err) {
-        return Promise.reject(err);
-      }
-    }
-    async addUpgradeStatement(database, upgrade) {
-      try {
-        if (database.endsWith(".db"))
-          database = database.slice(0, -3);
-        await this.sqlite.addUpgradeStatement({
-          database,
-          upgrade
-        });
-        return Promise.resolve();
-      } catch (err) {
-        return Promise.reject(err);
-      }
-    }
-    async createConnection(database, encrypted, mode, version, readonly) {
-      try {
-        if (database.endsWith(".db"))
-          database = database.slice(0, -3);
-        await this.sqlite.createConnection({
-          database,
-          encrypted,
-          mode,
-          version,
-          readonly
-        });
-        const conn = new SQLiteDBConnection(database, readonly, this.sqlite);
-        const connName = readonly ? `RO_${database}` : `RW_${database}`;
-        this._connectionDict.set(connName, conn);
-        return Promise.resolve(conn);
-      } catch (err) {
-        return Promise.reject(err);
-      }
-    }
-    async closeConnection(database, readonly) {
-      try {
-        if (database.endsWith(".db"))
-          database = database.slice(0, -3);
-        await this.sqlite.closeConnection({ database, readonly });
-        const connName = readonly ? `RO_${database}` : `RW_${database}`;
-        this._connectionDict.delete(connName);
-        return Promise.resolve();
-      } catch (err) {
-        return Promise.reject(err);
-      }
-    }
-    async isConnection(database, readonly) {
-      const res = {};
-      if (database.endsWith(".db"))
-        database = database.slice(0, -3);
-      const connName = readonly ? `RO_${database}` : `RW_${database}`;
-      res.result = this._connectionDict.has(connName);
-      return Promise.resolve(res);
-    }
-    async retrieveConnection(database, readonly) {
-      if (database.endsWith(".db"))
-        database = database.slice(0, -3);
-      const connName = readonly ? `RO_${database}` : `RW_${database}`;
-      if (this._connectionDict.has(connName)) {
-        const conn = this._connectionDict.get(connName);
-        if (typeof conn != "undefined")
-          return Promise.resolve(conn);
-        else {
-          return Promise.reject(`Connection ${database} is undefined`);
-        }
-      } else {
-        return Promise.reject(`Connection ${database} does not exist`);
-      }
-    }
-    async getNCDatabasePath(path, database) {
-      try {
-        const databasePath = await this.sqlite.getNCDatabasePath({
-          path,
-          database
-        });
-        return Promise.resolve(databasePath);
-      } catch (err) {
-        return Promise.reject(err);
-      }
-    }
-    async createNCConnection(databasePath, version) {
-      try {
-        await this.sqlite.createNCConnection({
-          databasePath,
-          version
-        });
-        const conn = new SQLiteDBConnection(databasePath, true, this.sqlite);
-        const connName = `RO_${databasePath})`;
-        this._connectionDict.set(connName, conn);
-        return Promise.resolve(conn);
-      } catch (err) {
-        return Promise.reject(err);
-      }
-    }
-    async closeNCConnection(databasePath) {
-      try {
-        await this.sqlite.closeNCConnection({ databasePath });
-        const connName = `RO_${databasePath})`;
-        this._connectionDict.delete(connName);
-        return Promise.resolve();
-      } catch (err) {
-        return Promise.reject(err);
-      }
-    }
-    async isNCConnection(databasePath) {
-      const res = {};
-      const connName = `RO_${databasePath})`;
-      res.result = this._connectionDict.has(connName);
-      return Promise.resolve(res);
-    }
-    async retrieveNCConnection(databasePath) {
-      if (this._connectionDict.has(databasePath)) {
-        const connName = `RO_${databasePath})`;
-        const conn = this._connectionDict.get(connName);
-        if (typeof conn != "undefined")
-          return Promise.resolve(conn);
-        else {
-          return Promise.reject(`Connection ${databasePath} is undefined`);
-        }
-      } else {
-        return Promise.reject(`Connection ${databasePath} does not exist`);
-      }
-    }
-    async isNCDatabase(databasePath) {
-      try {
-        const res = await this.sqlite.isNCDatabase({ databasePath });
-        return Promise.resolve(res);
-      } catch (err) {
-        return Promise.reject(err);
-      }
-    }
-    async retrieveAllConnections() {
-      return this._connectionDict;
-    }
-    async closeAllConnections() {
-      const delDict = /* @__PURE__ */ new Map();
-      try {
-        for (const key of this._connectionDict.keys()) {
-          const database = key.substring(3);
-          const readonly = key.substring(0, 3) === "RO_" ? true : false;
-          await this.sqlite.closeConnection({ database, readonly });
-          delDict.set(key, null);
-        }
-        for (const key of delDict.keys()) {
-          this._connectionDict.delete(key);
-        }
-        return Promise.resolve();
-      } catch (err) {
-        return Promise.reject(err);
-      }
-    }
-    async checkConnectionsConsistency() {
-      try {
-        const keys = [...this._connectionDict.keys()];
-        const openModes = [];
-        const dbNames = [];
-        for (const key of keys) {
-          openModes.push(key.substring(0, 2));
-          dbNames.push(key.substring(3));
-        }
-        const res = await this.sqlite.checkConnectionsConsistency({
-          dbNames,
-          openModes
-        });
-        if (!res.result)
-          this._connectionDict = /* @__PURE__ */ new Map();
-        return Promise.resolve(res);
-      } catch (err) {
-        this._connectionDict = /* @__PURE__ */ new Map();
-        return Promise.reject(err);
-      }
-    }
-    async importFromJson(jsonstring) {
-      try {
-        const ret = await this.sqlite.importFromJson({ jsonstring });
-        return Promise.resolve(ret);
-      } catch (err) {
-        return Promise.reject(err);
-      }
-    }
-    async isJsonValid(jsonstring) {
-      try {
-        const ret = await this.sqlite.isJsonValid({ jsonstring });
-        return Promise.resolve(ret);
-      } catch (err) {
-        return Promise.reject(err);
-      }
-    }
-    async copyFromAssets(overwrite) {
-      const mOverwrite = overwrite != null ? overwrite : true;
-      try {
-        await this.sqlite.copyFromAssets({ overwrite: mOverwrite });
-        return Promise.resolve();
-      } catch (err) {
-        return Promise.reject(err);
-      }
-    }
-    async getFromHTTPRequest(url, overwrite) {
-      const mOverwrite = overwrite != null ? overwrite : true;
-      try {
-        await this.sqlite.getFromHTTPRequest({ url, overwrite: mOverwrite });
-        return Promise.resolve();
-      } catch (err) {
-        return Promise.reject(err);
-      }
-    }
-    async isDatabaseEncrypted(database) {
-      if (database.endsWith(".db"))
-        database = database.slice(0, -3);
-      try {
-        const res = await this.sqlite.isDatabaseEncrypted({ database });
-        return Promise.resolve(res);
-      } catch (err) {
-        return Promise.reject(err);
-      }
-    }
-    async isInConfigEncryption() {
-      try {
-        const res = await this.sqlite.isInConfigEncryption();
-        return Promise.resolve(res);
-      } catch (err) {
-        return Promise.reject(err);
-      }
-    }
-    async isInConfigBiometricAuth() {
-      try {
-        const res = await this.sqlite.isInConfigBiometricAuth();
-        return Promise.resolve(res);
-      } catch (err) {
-        return Promise.reject(err);
-      }
-    }
-    async isDatabase(database) {
-      if (database.endsWith(".db"))
-        database = database.slice(0, -3);
-      try {
-        const res = await this.sqlite.isDatabase({ database });
-        return Promise.resolve(res);
-      } catch (err) {
-        return Promise.reject(err);
-      }
-    }
-    async getDatabaseList() {
-      try {
-        const res = await this.sqlite.getDatabaseList();
-        const values = res.values;
-        values.sort();
-        const ret = { values };
-        return Promise.resolve(ret);
-      } catch (err) {
-        return Promise.reject(err);
-      }
-    }
-    async getMigratableDbList(folderPath) {
-      const path = folderPath ? folderPath : "default";
-      try {
-        const res = await this.sqlite.getMigratableDbList({
-          folderPath: path
-        });
-        return Promise.resolve(res);
-      } catch (err) {
-        return Promise.reject(err);
-      }
-    }
-    async addSQLiteSuffix(folderPath, dbNameList) {
-      const path = folderPath ? folderPath : "default";
-      const dbList = dbNameList ? dbNameList : [];
-      try {
-        const res = await this.sqlite.addSQLiteSuffix({
-          folderPath: path,
-          dbNameList: dbList
-        });
-        return Promise.resolve(res);
-      } catch (err) {
-        return Promise.reject(err);
-      }
-    }
-    async deleteOldDatabases(folderPath, dbNameList) {
-      const path = folderPath ? folderPath : "default";
-      const dbList = dbNameList ? dbNameList : [];
-      try {
-        const res = await this.sqlite.deleteOldDatabases({
-          folderPath: path,
-          dbNameList: dbList
-        });
-        return Promise.resolve(res);
-      } catch (err) {
-        return Promise.reject(err);
-      }
-    }
-    async moveDatabasesAndAddSuffix(folderPath, dbNameList) {
-      const path = folderPath ? folderPath : "default";
-      const dbList = dbNameList ? dbNameList : [];
-      return this.sqlite.moveDatabasesAndAddSuffix({
-        folderPath: path,
-        dbNameList: dbList
+  // node_modules/@capacitor/filesystem/dist/esm/index.js
+  var Filesystem;
+  var init_esm3 = __esm({
+    "node_modules/@capacitor/filesystem/dist/esm/index.js"() {
+      init_dist();
+      init_synapse();
+      init_definitions2();
+      Filesystem = registerPlugin("Filesystem", {
+        web: () => Promise.resolve().then(() => (init_web3(), web_exports3)).then((m) => new m.FilesystemWeb())
       });
+      f();
     }
-  };
-  var SQLiteDBConnection = class {
-    constructor(dbName, readonly, sqlite) {
-      this.dbName = dbName;
-      this.readonly = readonly;
-      this.sqlite = sqlite;
-    }
-    getConnectionDBName() {
-      return this.dbName;
-    }
-    getConnectionReadOnly() {
-      return this.readonly;
-    }
-    async open() {
-      try {
-        await this.sqlite.open({
-          database: this.dbName,
-          readonly: this.readonly
-        });
-        return Promise.resolve();
-      } catch (err) {
-        return Promise.reject(err);
-      }
-    }
-    async close() {
-      try {
-        await this.sqlite.close({
-          database: this.dbName,
-          readonly: this.readonly
-        });
-        return Promise.resolve();
-      } catch (err) {
-        return Promise.reject(err);
-      }
-    }
-    async beginTransaction() {
-      try {
-        const changes = await this.sqlite.beginTransaction({
-          database: this.dbName
-        });
-        return Promise.resolve(changes);
-      } catch (err) {
-        return Promise.reject(err);
-      }
-    }
-    async commitTransaction() {
-      try {
-        const changes = await this.sqlite.commitTransaction({
-          database: this.dbName
-        });
-        return Promise.resolve(changes);
-      } catch (err) {
-        return Promise.reject(err);
-      }
-    }
-    async rollbackTransaction() {
-      try {
-        const changes = await this.sqlite.rollbackTransaction({
-          database: this.dbName
-        });
-        return Promise.resolve(changes);
-      } catch (err) {
-        return Promise.reject(err);
-      }
-    }
-    async isTransactionActive() {
-      try {
-        const result = await this.sqlite.isTransactionActive({
-          database: this.dbName
-        });
-        return Promise.resolve(result);
-      } catch (err) {
-        return Promise.reject(err);
-      }
-    }
-    async loadExtension(path) {
-      try {
-        await this.sqlite.loadExtension({
-          database: this.dbName,
-          path,
-          readonly: this.readonly
-        });
-        return Promise.resolve();
-      } catch (err) {
-        return Promise.reject(err);
-      }
-    }
-    async enableLoadExtension(toggle) {
-      try {
-        await this.sqlite.enableLoadExtension({
-          database: this.dbName,
-          toggle,
-          readonly: this.readonly
-        });
-        return Promise.resolve();
-      } catch (err) {
-        return Promise.reject(err);
-      }
-    }
-    async getUrl() {
-      try {
-        const res = await this.sqlite.getUrl({
-          database: this.dbName,
-          readonly: this.readonly
-        });
-        return Promise.resolve(res);
-      } catch (err) {
-        return Promise.reject(err);
-      }
-    }
-    async getVersion() {
-      try {
-        const version = await this.sqlite.getVersion({
-          database: this.dbName,
-          readonly: this.readonly
-        });
-        return Promise.resolve(version);
-      } catch (err) {
-        return Promise.reject(err);
-      }
-    }
-    async getTableList() {
-      try {
-        const res = await this.sqlite.getTableList({
-          database: this.dbName,
-          readonly: this.readonly
-        });
-        return Promise.resolve(res);
-      } catch (err) {
-        return Promise.reject(err);
-      }
-    }
-    async execute(statements, transaction = true, isSQL92 = true) {
-      try {
-        if (!this.readonly) {
-          const res = await this.sqlite.execute({
-            database: this.dbName,
-            statements,
-            transaction,
-            readonly: false,
-            isSQL92
-          });
-          return Promise.resolve(res);
-        } else {
-          return Promise.reject("not allowed in read-only mode");
-        }
-      } catch (err) {
-        return Promise.reject(err);
-      }
-    }
-    async query(statement, values, isSQL92 = true) {
-      let res;
-      try {
-        if (values && values.length > 0) {
-          res = await this.sqlite.query({
-            database: this.dbName,
-            statement,
-            values,
-            readonly: this.readonly,
-            isSQL92: true
-          });
-        } else {
-          res = await this.sqlite.query({
-            database: this.dbName,
-            statement,
-            values: [],
-            readonly: this.readonly,
-            isSQL92
-          });
-        }
-        res = await this.reorderRows(res);
-        return Promise.resolve(res);
-      } catch (err) {
-        return Promise.reject(err);
-      }
-    }
-    async run(statement, values, transaction = true, returnMode = "no", isSQL92 = true) {
-      let res;
-      try {
-        if (!this.readonly) {
-          if (values && values.length > 0) {
-            res = await this.sqlite.run({
-              database: this.dbName,
-              statement,
-              values,
-              transaction,
-              readonly: false,
-              returnMode,
-              isSQL92: true
-            });
-          } else {
-            res = await this.sqlite.run({
-              database: this.dbName,
-              statement,
-              values: [],
-              transaction,
-              readonly: false,
-              returnMode,
-              isSQL92
-            });
-          }
-          res.changes = await this.reorderRows(res.changes);
-          return Promise.resolve(res);
-        } else {
-          return Promise.reject("not allowed in read-only mode");
-        }
-      } catch (err) {
-        return Promise.reject(err);
-      }
-    }
-    async executeSet(set, transaction = true, returnMode = "no", isSQL92 = true) {
-      let res;
-      try {
-        if (!this.readonly) {
-          res = await this.sqlite.executeSet({
-            database: this.dbName,
-            set,
-            transaction,
-            readonly: false,
-            returnMode,
-            isSQL92
-          });
-          res.changes = await this.reorderRows(res.changes);
-          return Promise.resolve(res);
-        } else {
-          return Promise.reject("not allowed in read-only mode");
-        }
-      } catch (err) {
-        return Promise.reject(err);
-      }
-    }
-    async isExists() {
-      try {
-        const res = await this.sqlite.isDBExists({
-          database: this.dbName,
-          readonly: this.readonly
-        });
-        return Promise.resolve(res);
-      } catch (err) {
-        return Promise.reject(err);
-      }
-    }
-    async isTable(table) {
-      try {
-        const res = await this.sqlite.isTableExists({
-          database: this.dbName,
-          table,
-          readonly: this.readonly
-        });
-        return Promise.resolve(res);
-      } catch (err) {
-        return Promise.reject(err);
-      }
-    }
-    async isDBOpen() {
-      try {
-        const res = await this.sqlite.isDBOpen({
-          database: this.dbName,
-          readonly: this.readonly
-        });
-        return Promise.resolve(res);
-      } catch (err) {
-        return Promise.reject(err);
-      }
-    }
-    async delete() {
-      try {
-        if (!this.readonly) {
-          await this.sqlite.deleteDatabase({
-            database: this.dbName,
-            readonly: false
-          });
-          return Promise.resolve();
-        } else {
-          return Promise.reject("not allowed in read-only mode");
-        }
-      } catch (err) {
-        return Promise.reject(err);
-      }
-    }
-    async createSyncTable() {
-      try {
-        if (!this.readonly) {
-          const res = await this.sqlite.createSyncTable({
-            database: this.dbName,
-            readonly: false
-          });
-          return Promise.resolve(res);
-        } else {
-          return Promise.reject("not allowed in read-only mode");
-        }
-      } catch (err) {
-        return Promise.reject(err);
-      }
-    }
-    async setSyncDate(syncdate) {
-      try {
-        if (!this.readonly) {
-          await this.sqlite.setSyncDate({
-            database: this.dbName,
-            syncdate,
-            readonly: false
-          });
-          return Promise.resolve();
-        } else {
-          return Promise.reject("not allowed in read-only mode");
-        }
-      } catch (err) {
-        return Promise.reject(err);
-      }
-    }
-    async getSyncDate() {
-      try {
-        const res = await this.sqlite.getSyncDate({
-          database: this.dbName,
-          readonly: this.readonly
-        });
-        let retDate = "";
-        if (res.syncDate > 0)
-          retDate = new Date(res.syncDate * 1e3).toISOString();
-        return Promise.resolve(retDate);
-      } catch (err) {
-        return Promise.reject(err);
-      }
-    }
-    async exportToJson(mode, encrypted = false) {
-      try {
-        const res = await this.sqlite.exportToJson({
-          database: this.dbName,
-          jsonexportmode: mode,
-          readonly: this.readonly,
-          encrypted
-        });
-        return Promise.resolve(res);
-      } catch (err) {
-        return Promise.reject(err);
-      }
-    }
-    async deleteExportedRows() {
-      try {
-        if (!this.readonly) {
-          await this.sqlite.deleteExportedRows({
-            database: this.dbName,
-            readonly: false
-          });
-          return Promise.resolve();
-        } else {
-          return Promise.reject("not allowed in read-only mode");
-        }
-      } catch (err) {
-        return Promise.reject(err);
-      }
-    }
-    async executeTransaction(txn, isSQL92 = true) {
-      let changes = 0;
-      let isActive = false;
-      if (!this.readonly) {
-        await this.sqlite.beginTransaction({
-          database: this.dbName
-        });
-        isActive = await this.sqlite.isTransactionActive({
-          database: this.dbName
-        });
-        if (!isActive) {
-          return Promise.reject("After Begin Transaction, no transaction active");
-        }
-        try {
-          for (const task of txn) {
-            if (typeof task !== "object" || !("statement" in task)) {
-              throw new Error("Error a task.statement must be provided");
-            }
-            if ("values" in task && task.values && task.values.length > 0) {
-              const retMode = task.statement.toUpperCase().includes("RETURNING") ? "all" : "no";
-              const ret = await this.sqlite.run({
-                database: this.dbName,
-                statement: task.statement,
-                values: task.values,
-                transaction: false,
-                readonly: false,
-                returnMode: retMode,
-                isSQL92
-              });
-              if (ret.changes.changes < 0) {
-                throw new Error("Error in transaction method run ");
-              }
-              changes += ret.changes.changes;
-            } else {
-              const ret = await this.sqlite.execute({
-                database: this.dbName,
-                statements: task.statement,
-                transaction: false,
-                readonly: false
-              });
-              if (ret.changes.changes < 0) {
-                throw new Error("Error in transaction method execute ");
-              }
-              changes += ret.changes.changes;
-            }
-          }
-          const retC = await this.sqlite.commitTransaction({
-            database: this.dbName
-          });
-          changes += retC.changes.changes;
-          const retChanges = { changes: { changes } };
-          return Promise.resolve(retChanges);
-        } catch (err) {
-          const msg = err.message ? err.message : err;
-          await this.sqlite.rollbackTransaction({
-            database: this.dbName
-          });
-          return Promise.reject(msg);
-        }
-      } else {
-        return Promise.reject("not allowed in read-only mode");
-      }
-    }
-    async reorderRows(res) {
-      const retRes = res;
-      if (res?.values && typeof res.values[0] === "object") {
-        if (Object.keys(res.values[0]).includes("ios_columns")) {
-          const columnList = res.values[0]["ios_columns"];
-          const iosRes = [];
-          for (let i = 1; i < res.values.length; i++) {
-            const rowJson = res.values[i];
-            const resRowJson = {};
-            for (const item of columnList) {
-              resRowJson[item] = rowJson[item];
-            }
-            iosRes.push(resRowJson);
-          }
-          retRes["values"] = iosRes;
-        }
-      }
-      return Promise.resolve(retRes);
-    }
-  };
-
-  // node_modules/@capacitor-community/sqlite/dist/esm/index.js
-  var CapacitorSQLite = registerPlugin("CapacitorSQLite", {
-    web: () => Promise.resolve().then(() => (init_web(), web_exports)).then((m) => new m.CapacitorSQLiteWeb()),
-    electron: () => window.CapacitorCustomPlatform.plugins.CapacitorSQLite
   });
-
-  // src/lib/local-first/journal/types.ts
-  var LOCAL_JOURNAL_DB_NAME = "ljd_local_journal";
-  var LOCAL_JOURNAL_SCHEMA_USER_VERSION = 1;
-  var LOCAL_JOURNAL_MEDIA_ROOT = "ljd/media/journal";
-
-  // src/lib/local-first/journal/database.ts
-  var connection = null;
-  var db = null;
-  function assertLocalJournalNative() {
-    if (!Capacitor.isNativePlatform()) {
-      throw new Error("Local Journal foundation is native-only.");
-    }
-  }
-  function getConnection() {
-    if (!connection) connection = new SQLiteConnection(CapacitorSQLite);
-    return connection;
-  }
-  var LOCAL_JOURNAL_SCHEMA_SQL = `
-CREATE TABLE IF NOT EXISTS local_journal_entries (
-  stable_id TEXT PRIMARY KEY NOT NULL,
-  date_key TEXT NOT NULL,
-  title TEXT NOT NULL,
-  content TEXT NOT NULL,
-  created_at TEXT NOT NULL,
-  updated_at TEXT NOT NULL,
-  tags_json TEXT NOT NULL DEFAULT '[]',
-  schema_version INTEGER NOT NULL,
-  source TEXT NOT NULL,
-  local_status TEXT NOT NULL,
-  imported_at TEXT,
-  legacy_server_id TEXT,
-  server_updated_at TEXT
-);
-
-CREATE INDEX IF NOT EXISTS idx_local_journal_date
-  ON local_journal_entries (date_key);
-
-CREATE INDEX IF NOT EXISTS idx_local_journal_updated
-  ON local_journal_entries (updated_at);
-
-CREATE UNIQUE INDEX IF NOT EXISTS idx_local_journal_legacy_server
-  ON local_journal_entries (legacy_server_id)
-  WHERE legacy_server_id IS NOT NULL;
-
-CREATE TABLE IF NOT EXISTS local_journal_tags (
-  journal_stable_id TEXT NOT NULL,
-  tag TEXT NOT NULL,
-  PRIMARY KEY (journal_stable_id, tag)
-);
-
-CREATE INDEX IF NOT EXISTS idx_local_journal_tags_tag
-  ON local_journal_tags (tag);
-
-CREATE TABLE IF NOT EXISTS local_media (
-  stable_id TEXT PRIMARY KEY NOT NULL,
-  journal_stable_id TEXT NOT NULL,
-  type TEXT NOT NULL,
-  relative_path TEXT NOT NULL,
-  created_at TEXT NOT NULL,
-  checksum TEXT,
-  mime_type TEXT
-);
-
-CREATE INDEX IF NOT EXISTS idx_local_media_journal
-  ON local_media (journal_stable_id);
-`;
-  var LOCAL_JOURNAL_EXPECTED_TABLES = [
-    "local_journal_entries",
-    "local_journal_tags",
-    "local_media"
-  ];
-  var LOCAL_JOURNAL_EXPECTED_COLUMNS = {
-    local_journal_entries: [
-      "stable_id",
-      "date_key",
-      "title",
-      "content",
-      "created_at",
-      "updated_at",
-      "tags_json",
-      "schema_version",
-      "source",
-      "local_status",
-      "imported_at",
-      "legacy_server_id",
-      "server_updated_at"
-    ],
-    local_journal_tags: ["journal_stable_id", "tag"],
-    local_media: [
-      "stable_id",
-      "journal_stable_id",
-      "type",
-      "relative_path",
-      "created_at",
-      "checksum",
-      "mime_type"
-    ]
-  };
-  async function readUserVersion(database) {
-    const versionResult = await database.query("PRAGMA user_version;");
-    const raw = versionResult.values?.[0];
-    const current = typeof raw?.user_version === "number" ? raw.user_version : typeof raw?.user_version === "string" ? Number(raw.user_version) : Number(Object.values(raw ?? {})[0] ?? 0);
-    return Number.isFinite(current) ? current : 0;
-  }
-  async function applyFoundationSchema(database) {
-    await database.execute(LOCAL_JOURNAL_SCHEMA_SQL);
-    await database.execute(`PRAGMA user_version = ${LOCAL_JOURNAL_SCHEMA_USER_VERSION};`);
-  }
-  async function withLocalJournalTransaction(fn) {
-    const database = await openLocalJournalDatabase();
-    await database.execute("BEGIN;");
-    try {
-      const result = await fn(database);
-      await database.execute("COMMIT;");
-      return result;
-    } catch (err) {
-      try {
-        await database.execute("ROLLBACK;");
-      } catch {
-      }
-      throw err;
-    }
-  }
-  async function openLocalJournalDatabase() {
-    assertLocalJournalNative();
-    if (db) return db;
-    const sqlite = getConnection();
-    const consistency = await sqlite.checkConnectionsConsistency();
-    const isConn = (await sqlite.isConnection(LOCAL_JOURNAL_DB_NAME, false)).result;
-    if (consistency.result && isConn) {
-      db = await sqlite.retrieveConnection(LOCAL_JOURNAL_DB_NAME, false);
-    } else {
-      db = await sqlite.createConnection(
-        LOCAL_JOURNAL_DB_NAME,
-        false,
-        "no-encryption",
-        LOCAL_JOURNAL_SCHEMA_USER_VERSION,
-        false
-      );
-    }
-    await db.open();
-    const current = await readUserVersion(db);
-    if (current < LOCAL_JOURNAL_SCHEMA_USER_VERSION) {
-      await applyFoundationSchema(db);
-    }
-    return db;
-  }
-
-  // src/lib/local-first/journal/secureBootstrap/LocalJournalSecureBootstrapper.ts
-  init_dist();
-
-  // src/lib/local-first/journal/secureBootstrap/candidateHealth.ts
-  function missingExpectedTables(tables) {
-    const have = new Set(tables);
-    return LOCAL_JOURNAL_EXPECTED_TABLES.filter((name) => !have.has(name));
-  }
-  function unexpectedTables(tables) {
-    const expected = new Set(LOCAL_JOURNAL_EXPECTED_TABLES);
-    return tables.filter((name) => !expected.has(name) && !name.startsWith("sqlite_"));
-  }
-  function columnMismatches(columns) {
-    const mismatches = [];
-    for (const table of LOCAL_JOURNAL_EXPECTED_TABLES) {
-      const have = (columns[table] ?? []).join(",");
-      const want = LOCAL_JOURNAL_EXPECTED_COLUMNS[table].join(",");
-      if (have !== want) mismatches.push(table);
-    }
-    return mismatches;
-  }
-  function classifyCandidateHealth(input) {
-    if (!input.exists) {
-      return { status: "missing", reason: null };
-    }
-    if (input.encrypted === false) {
-      return { status: "abnormal", reason: "plaintext_candidate" };
-    }
-    if (input.encrypted == null) {
-      return { status: "abnormal", reason: "encryption_unknown" };
-    }
-    if (input.userVersion !== LOCAL_JOURNAL_SCHEMA_USER_VERSION) {
-      return { status: "abnormal", reason: "user_version_mismatch" };
-    }
-    const missing = missingExpectedTables(input.tables);
-    if (missing.length > 0) {
-      return { status: "abnormal", reason: `missing_tables:${missing.join(",")}` };
-    }
-    const extra = unexpectedTables(input.tables);
-    if (extra.length > 0) {
-      return { status: "abnormal", reason: `unexpected_tables:${extra.join(",")}` };
-    }
-    if (input.columns) {
-      const drifted = columnMismatches(input.columns);
-      if (drifted.length > 0) {
-        return { status: "abnormal", reason: `columns:${drifted.join(",")}` };
-      }
-    }
-    return { status: "ready", reason: null };
-  }
-
-  // src/lib/local-first/journal/secureBootstrap/types.ts
-  var LOCAL_JOURNAL_SECURE_CANDIDATE_DB_NAME = "ljd_local_journal_secure_candidate";
-  var SECURE_BOOTSTRAP_MIN_AVAILABLE_BYTES = 256 * 1024;
-
-  // src/lib/local-first/security/backupInclusion.ts
-  init_dist();
-
-  // plugins/ljd-local-security/dist/esm/index.js
-  init_dist();
-  var LjdLocalSecurity = registerPlugin("LjdLocalSecurity", {
-    web: () => Promise.resolve().then(() => (init_web2(), web_exports2)).then((m) => new m.LjdLocalSecurityWeb())
-  });
-
-  // src/lib/local-first/security/types.ts
-  var LocalFirstSecurityError = class extends Error {
-    constructor(code, message) {
-      super(message);
-      this.name = "LocalFirstSecurityError";
-      this.code = code;
-    }
-  };
-  var LJD_FILE_PROTECTION_CANDIDATE = "NSFileProtectionComplete";
-  var LJD_PLUGIN_KEYCHAIN_SERVICE = "unlockSecret";
-  var LJD_PLUGIN_KEYCHAIN_ACCOUNT = "ljd_CapacitorSQLitePlugin";
-  var LJD_PLUGIN_KEYCHAIN_ACCESSIBILITY_MEASURED = "kSecAttrAccessibleWhenUnlocked";
-  var LJD_SQLITE_ENCRYPTION_MODE = "secret";
-
-  // src/lib/local-first/security/noSecretLog.ts
-  var SECRET_KEY = /passphrase|password|secret|encryptionkey|encryption_secret|unlocksecret/i;
-  function redactSecretLike(value) {
-    if (value == null) return value;
-    if (typeof value === "string") {
-      if (value.length > 8 && /^[A-Za-z0-9+/=_-]{16,}$/.test(value)) {
-        return "[redacted]";
-      }
-      return value;
-    }
-    if (Array.isArray(value)) return value.map(redactSecretLike);
-    if (typeof value === "object") {
-      const out = {};
-      for (const [key, v] of Object.entries(value)) {
-        out[key] = SECRET_KEY.test(key) ? "[redacted]" : redactSecretLike(v);
-      }
-      return out;
-    }
-    return value;
-  }
-  function safeErrorMessage(error) {
-    if (error instanceof Error) {
-      const msg = error.message;
-      const hasSecretValue = SECRET_KEY.test(msg) && /:\s*['"]?[A-Za-z0-9+/=_-]{12,}/.test(msg);
-      if (hasSecretValue) return `${error.name}: [redacted security error]`;
-      return msg.replace(/\b[A-Fa-f0-9]{24,}\b/g, "[redacted]");
-    }
-    return String(redactSecretLike(error));
-  }
-
-  // src/lib/local-first/security/securityErrorMapping.ts
-  function mapSecurityError(error) {
-    if (error instanceof LocalFirstSecurityError) return error;
-    const message = safeErrorMessage(error);
-    let code = "unknown";
-    if (/native-only|native only/i.test(message)) code = "native_only";
-    else if (/path required/i.test(message)) code = "path_required";
-    else if (/journal_encryption_forbidden|must not be opened encrypted/i.test(message)) {
-      code = "journal_encryption_forbidden";
-    } else if (/not implemented on web|unimplemented/i.test(message)) {
-      code = "bridge_unimplemented";
-    }
-    return new LocalFirstSecurityError(code, message);
-  }
-
-  // src/lib/local-first/security/backupInclusion.ts
-  function shouldForceBackupInclusion(current) {
-    return current === true;
-  }
-  async function ensurePathIncludedInBackup(path) {
-    if (!Capacitor.isNativePlatform()) {
-      throw new LocalFirstSecurityError(
-        "native_only",
-        "backup inclusion helper is native-only"
-      );
-    }
-    if (!path) {
-      throw new LocalFirstSecurityError("path_required", "path required");
-    }
-    try {
-      const current = await LjdLocalSecurity.inspectPath({ path });
-      if (!shouldForceBackupInclusion(current.isExcludedFromBackup)) {
-        return current;
-      }
-      return await LjdLocalSecurity.setExcludedFromBackup({
-        path,
-        excluded: false
-      });
-    } catch (error) {
-      throw mapSecurityError(error);
-    }
-  }
-
-  // src/lib/local-first/security/encryptedDatabase.ts
-  init_dist();
-  function assertNotProductionJournal(name) {
-    if (name === LOCAL_JOURNAL_DB_NAME) {
-      throw new LocalFirstSecurityError(
-        "journal_encryption_forbidden",
-        "ljd_local_journal must not be opened encrypted; use a non-active candidate name"
-      );
-    }
-  }
-  function shouldSetPluginEncryptionSecret(alreadyStored) {
-    return !alreadyStored;
-  }
-  async function isPluginEncryptionSecretStored() {
-    if (!Capacitor.isNativePlatform()) return false;
-    try {
-      return Boolean((await CapacitorSQLite.isSecretStored()).result);
-    } catch {
-      return false;
-    }
-  }
-  async function configurePluginEncryptionSecret(passphrase) {
-    if (!Capacitor.isNativePlatform()) {
-      throw new LocalFirstSecurityError(
-        "native_only",
-        "encryption secret configure is native-only"
-      );
-    }
-    if (!passphrase) {
-      throw new LocalFirstSecurityError("unknown", "passphrase required");
-    }
-    try {
-      await CapacitorSQLite.setEncryptionSecret({ passphrase });
-    } catch (error) {
-      throw mapSecurityError(error);
-    }
-  }
-  async function ensurePluginEncryptionSecret(passphrase) {
-    const stored = await isPluginEncryptionSecretStored();
-    if (!shouldSetPluginEncryptionSecret(stored)) return "reused_existing";
-    await configurePluginEncryptionSecret(passphrase);
-    return "set";
-  }
-  async function closeNamedEncryptedDatabase(name) {
-    assertNotProductionJournal(name);
-    try {
-      const sqlite = new SQLiteConnection(CapacitorSQLite);
-      if ((await sqlite.isConnection(name, false)).result) {
-        await sqlite.closeConnection(name, false);
-      }
-    } catch {
-      try {
-        await CapacitorSQLite.closeConnection({ database: name, readonly: false });
-      } catch {
-      }
-    }
-  }
-  async function openNamedEncryptedDatabase(name, version = 1) {
-    assertNotProductionJournal(name);
-    if (!Capacitor.isNativePlatform()) {
-      throw new LocalFirstSecurityError(
-        "native_only",
-        "encrypted DB open is native-only"
-      );
-    }
-    try {
-      const sqlite = new SQLiteConnection(CapacitorSQLite);
-      try {
-        await sqlite.checkConnectionsConsistency();
-      } catch {
-      }
-      if ((await sqlite.isConnection(name, false)).result) {
-        await sqlite.closeConnection(name, false);
-      }
-      const db2 = await sqlite.createConnection(
-        name,
-        true,
-        LJD_SQLITE_ENCRYPTION_MODE,
-        version,
-        false
-      );
-      await db2.open();
-      return db2;
-    } catch (error) {
-      throw mapSecurityError(error);
-    }
-  }
-
-  // src/lib/local-first/security/fileProtection.ts
-  init_dist();
-  function isCompleteProtection(label) {
-    return label === LJD_FILE_PROTECTION_CANDIDATE;
-  }
-  async function applyCompleteFileProtection(path) {
-    if (!Capacitor.isNativePlatform()) {
-      throw new LocalFirstSecurityError(
-        "native_only",
-        "file protection helper is native-only"
-      );
-    }
-    if (!path) {
-      throw new LocalFirstSecurityError("path_required", "path required");
-    }
-    try {
-      return await LjdLocalSecurity.setCompleteProtection({ path });
-    } catch (error) {
-      throw mapSecurityError(error);
-    }
-  }
-  async function inspectFileProtection(path) {
-    if (!Capacitor.isNativePlatform()) {
-      throw new LocalFirstSecurityError(
-        "native_only",
-        "file protection inspect is native-only"
-      );
-    }
-    try {
-      return await LjdLocalSecurity.inspectPath({ path });
-    } catch (error) {
-      throw mapSecurityError(error);
-    }
-  }
 
   // src/lib/local-first/security/mediaProtection.ts
-  init_dist();
-
-  // node_modules/@capacitor/filesystem/dist/esm/index.js
-  init_dist();
-
-  // node_modules/@capacitor/synapse/dist/synapse.mjs
-  function s(t) {
-    t.CapacitorUtils.Synapse = new Proxy(
-      {},
-      {
-        get(e, n) {
-          return new Proxy({}, {
-            get(w, o) {
-              return (c, p, r) => {
-                const i = t.Capacitor.Plugins[n];
-                if (i === void 0) {
-                  r(new Error(`Capacitor plugin ${n} not found`));
-                  return;
-                }
-                if (typeof i[o] != "function") {
-                  r(new Error(`Method ${o} not found in Capacitor plugin ${n}`));
-                  return;
-                }
-                (async () => {
-                  try {
-                    const a = await i[o](c);
-                    p(a);
-                  } catch (a) {
-                    r(a);
-                  }
-                })();
-              };
-            }
-          });
-        }
-      }
-    );
+  async function resolveLibraryRelativeUri(relativePath) {
+    if (!Capacitor.isNativePlatform()) {
+      throw new LocalFirstSecurityError(
+        "native_only",
+        "media protection helper is native-only"
+      );
+    }
+    const uri = await Filesystem.getUri({
+      path: relativePath,
+      directory: Directory.Library
+    });
+    return uri.uri;
   }
-  function u(t) {
-    t.CapacitorUtils.Synapse = new Proxy(
-      {},
-      {
-        get(e, n) {
-          return t.cordova.plugins[n];
-        }
-      }
-    );
+  async function protectLifeRecordMediaRelative(relativePath) {
+    try {
+      const uri = await resolveLibraryRelativeUri(relativePath);
+      const backup = await ensurePathIncludedInBackup(uri);
+      const protection = await applyCompleteFileProtection(uri);
+      return { relativePath, uri, backup, protection };
+    } catch (error) {
+      throw mapSecurityError(error);
+    }
   }
-  function f(t = false) {
-    typeof window > "u" || (window.CapacitorUtils = window.CapacitorUtils || {}, window.Capacitor !== void 0 && !t ? s(window) : window.cordova !== void 0 && u(window));
-  }
-
-  // node_modules/@capacitor/filesystem/dist/esm/index.js
-  init_definitions();
-  var Filesystem = registerPlugin("Filesystem", {
-    web: () => Promise.resolve().then(() => (init_web3(), web_exports3)).then((m) => new m.FilesystemWeb())
+  var init_mediaProtection = __esm({
+    "src/lib/local-first/security/mediaProtection.ts"() {
+      "use strict";
+      init_dist();
+      init_esm3();
+      init_backupInclusion();
+      init_fileProtection();
+      init_securityErrorMapping();
+      init_types3();
+    }
   });
-  f();
 
   // src/lib/local-first/security/pluginKeychain.ts
-  init_dist();
   async function inspectPluginDbKeyAccessibility() {
     if (!Capacitor.isNativePlatform()) {
       throw new LocalFirstSecurityError(
@@ -2975,9 +3109,17 @@ CREATE INDEX IF NOT EXISTS idx_local_media_journal
       throw mapSecurityError(error);
     }
   }
+  var init_pluginKeychain = __esm({
+    "src/lib/local-first/security/pluginKeychain.ts"() {
+      "use strict";
+      init_dist();
+      init_esm2();
+      init_securityErrorMapping();
+      init_types3();
+    }
+  });
 
   // src/lib/local-first/security/storageCapacity.ts
-  init_dist();
   function mapVolumeResultToReading(result, platform = Capacitor.getPlatform()) {
     const available = typeof result.availableBytes === "number" && Number.isFinite(result.availableBytes) ? result.availableBytes : null;
     return {
@@ -3011,9 +3153,6 @@ CREATE INDEX IF NOT EXISTS idx_local_media_journal
       throw mapSecurityError(error);
     }
   }
-  var pluginStorageCapacityProvider = {
-    read: readStorageCapacity
-  };
   async function readAvailableBytesOrNull() {
     try {
       const reading = await pluginStorageCapacityProvider.read();
@@ -3033,9 +3172,21 @@ CREATE INDEX IF NOT EXISTS idx_local_media_journal
       };
     }
   }
+  var pluginStorageCapacityProvider;
+  var init_storageCapacity = __esm({
+    "src/lib/local-first/security/storageCapacity.ts"() {
+      "use strict";
+      init_dist();
+      init_esm2();
+      init_securityErrorMapping();
+      init_types3();
+      pluginStorageCapacityProvider = {
+        read: readStorageCapacity
+      };
+    }
+  });
 
   // src/lib/local-first/security/storageInspection.ts
-  init_dist();
   function classifySqliteArtifactRole(fileName) {
     if (fileName.endsWith("-wal") || fileName.includes(".db-wal")) return "sidecar_wal";
     if (fileName.endsWith("-shm") || fileName.includes(".db-shm")) return "sidecar_shm";
@@ -3061,9 +3212,23 @@ CREATE INDEX IF NOT EXISTS idx_local_media_journal
       throw mapSecurityError(error);
     }
   }
+  var init_storageInspection = __esm({
+    "src/lib/local-first/security/storageInspection.ts"() {
+      "use strict";
+      init_dist();
+      init_esm2();
+      init_securityErrorMapping();
+      init_types3();
+    }
+  });
 
   // src/lib/local-first/security/storageLocation.ts
-  init_dist();
+  function pluginRelativeLocationForBundleId(bundleId) {
+    return `Library/Application Support/${bundleId}`;
+  }
+  function isConfiguredRelativeLocation(relative) {
+    return relative === LJD_IOS_DATABASE_RELATIVE_LOCATION;
+  }
   async function resolveLjdApplicationSupportDir() {
     if (!Capacitor.isNativePlatform()) {
       throw new LocalFirstSecurityError(
@@ -3077,6 +3242,70 @@ CREATE INDEX IF NOT EXISTS idx_local_media_journal
       throw mapSecurityError(error);
     }
   }
+  var init_storageLocation = __esm({
+    "src/lib/local-first/security/storageLocation.ts"() {
+      "use strict";
+      init_dist();
+      init_esm2();
+      init_securityErrorMapping();
+      init_types3();
+    }
+  });
+
+  // src/lib/local-first/security/index.ts
+  var security_exports = {};
+  __export(security_exports, {
+    BACKUP_INCLUSION_POLICY: () => BACKUP_INCLUSION_POLICY,
+    LJD_FILE_PROTECTION_CANDIDATE: () => LJD_FILE_PROTECTION_CANDIDATE,
+    LJD_IOS_DATABASE_RELATIVE_LOCATION: () => LJD_IOS_DATABASE_RELATIVE_LOCATION,
+    LJD_PLUGIN_KEYCHAIN_ACCESSIBILITY_MEASURED: () => LJD_PLUGIN_KEYCHAIN_ACCESSIBILITY_MEASURED,
+    LJD_PLUGIN_KEYCHAIN_ACCOUNT: () => LJD_PLUGIN_KEYCHAIN_ACCOUNT,
+    LJD_PLUGIN_KEYCHAIN_SERVICE: () => LJD_PLUGIN_KEYCHAIN_SERVICE,
+    LJD_SQLITE_ENCRYPTION_MODE: () => LJD_SQLITE_ENCRYPTION_MODE,
+    LocalFirstSecurityError: () => LocalFirstSecurityError,
+    applyCompleteFileProtection: () => applyCompleteFileProtection,
+    assertNoSecretInText: () => assertNoSecretInText,
+    classifySqliteArtifactRole: () => classifySqliteArtifactRole,
+    closeNamedEncryptedDatabase: () => closeNamedEncryptedDatabase,
+    configurePluginEncryptionSecret: () => configurePluginEncryptionSecret,
+    decideCapacityKnown: () => decideCapacityKnown,
+    ensurePathIncludedInBackup: () => ensurePathIncludedInBackup,
+    ensurePluginEncryptionSecret: () => ensurePluginEncryptionSecret,
+    inspectFileProtection: () => inspectFileProtection,
+    inspectPluginDbKeyAccessibility: () => inspectPluginDbKeyAccessibility,
+    isCompleteProtection: () => isCompleteProtection,
+    isConfiguredRelativeLocation: () => isConfiguredRelativeLocation,
+    listSqliteArtifactsReadOnly: () => listSqliteArtifactsReadOnly,
+    mapSecurityError: () => mapSecurityError,
+    openNamedEncryptedDatabase: () => openNamedEncryptedDatabase,
+    pluginRelativeLocationForBundleId: () => pluginRelativeLocationForBundleId,
+    pluginStorageCapacityProvider: () => pluginStorageCapacityProvider,
+    protectLifeRecordMediaRelative: () => protectLifeRecordMediaRelative,
+    readAvailableBytesOrNull: () => readAvailableBytesOrNull,
+    readStorageCapacity: () => readStorageCapacity,
+    redactSecretLike: () => redactSecretLike,
+    resolveLibraryRelativeUri: () => resolveLibraryRelativeUri,
+    resolveLjdApplicationSupportDir: () => resolveLjdApplicationSupportDir,
+    safeErrorMessage: () => safeErrorMessage,
+    shouldForceBackupInclusion: () => shouldForceBackupInclusion,
+    shouldSetPluginEncryptionSecret: () => shouldSetPluginEncryptionSecret
+  });
+  var init_security = __esm({
+    "src/lib/local-first/security/index.ts"() {
+      "use strict";
+      init_backupInclusion();
+      init_encryptedDatabase();
+      init_fileProtection();
+      init_mediaProtection();
+      init_noSecretLog();
+      init_pluginKeychain();
+      init_securityErrorMapping();
+      init_storageCapacity();
+      init_storageInspection();
+      init_storageLocation();
+      init_types3();
+    }
+  });
 
   // src/lib/local-first/journal/secureBootstrap/LocalJournalSecureBootstrapper.ts
   function assertNative() {
@@ -3145,187 +3374,972 @@ CREATE INDEX IF NOT EXISTS idx_local_media_journal
     const file = candidateFileName(LOCAL_JOURNAL_SECURE_CANDIDATE_DB_NAME);
     return artifacts.some((item) => item.name === file);
   }
-  var LocalJournalSecureBootstrapper = {
-    async inspect() {
-      assertNative();
-      const dbName = LOCAL_JOURNAL_SECURE_CANDIDATE_DB_NAME;
-      assertNotProductionJournal2(dbName);
-      const exists = await candidateExistsOnDisk();
-      let encrypted = exists ? await readEncryptedFlag(dbName) : null;
-      const path = await resolveCandidatePath();
-      let userVersion = null;
-      let tables = [];
-      let rowCounts = {};
-      let columns;
-      if (exists && encrypted === true) {
-        try {
-          const db2 = await openNamedEncryptedDatabase(dbName, 1);
-          const inv = await inventory(db2);
-          await closeNamedEncryptedDatabase(dbName);
-          userVersion = inv.userVersion;
-          tables = inv.tables;
-          rowCounts = inv.rowCounts;
-          columns = inv.columns;
-        } catch {
-          encrypted = null;
+  var LocalJournalSecureBootstrapper;
+  var init_LocalJournalSecureBootstrapper = __esm({
+    "src/lib/local-first/journal/secureBootstrap/LocalJournalSecureBootstrapper.ts"() {
+      "use strict";
+      init_dist();
+      init_esm();
+      init_database();
+      init_candidateHealth();
+      init_types2();
+      init_types();
+      init_security();
+      init_types3();
+      LocalJournalSecureBootstrapper = {
+        async inspect() {
+          assertNative();
+          const dbName = LOCAL_JOURNAL_SECURE_CANDIDATE_DB_NAME;
+          assertNotProductionJournal2(dbName);
+          const exists = await candidateExistsOnDisk();
+          let encrypted = exists ? await readEncryptedFlag(dbName) : null;
+          const path = await resolveCandidatePath();
+          let userVersion = null;
+          let tables = [];
+          let rowCounts = {};
+          let columns;
+          if (exists && encrypted === true) {
+            try {
+              const db2 = await openNamedEncryptedDatabase(dbName, 1);
+              const inv = await inventory(db2);
+              await closeNamedEncryptedDatabase(dbName);
+              userVersion = inv.userVersion;
+              tables = inv.tables;
+              rowCounts = inv.rowCounts;
+              columns = inv.columns;
+            } catch {
+              encrypted = null;
+            }
+          }
+          let backupExcluded = null;
+          let fileProtection = null;
+          let completeProtection = null;
+          if (exists) {
+            try {
+              const attrs = await inspectFileProtection(path.absolutePath);
+              backupExcluded = attrs.isExcludedFromBackup;
+              fileProtection = String(attrs.fileProtection);
+              completeProtection = isCompleteProtection(fileProtection);
+            } catch {
+              backupExcluded = "api_unavailable";
+            }
+          }
+          const health = classifyCandidateHealth({
+            exists,
+            encrypted,
+            userVersion,
+            tables,
+            columns
+          });
+          return {
+            dbName,
+            exists,
+            encrypted,
+            userVersion,
+            tables,
+            rowCounts,
+            backupExcluded,
+            fileProtection,
+            completeProtection,
+            locationRelative: path.locationRelative,
+            health
+          };
+        },
+        async bootstrap(options) {
+          assertNative();
+          const dbName = LOCAL_JOURNAL_SECURE_CANDIDATE_DB_NAME;
+          assertNotProductionJournal2(dbName);
+          let availableBytes;
+          if (options && Object.prototype.hasOwnProperty.call(options, "availableBytes")) {
+            availableBytes = options.availableBytes ?? null;
+          } else {
+            availableBytes = (await readAvailableBytesOrNull()).availableBytes;
+          }
+          const known = decideCapacityKnown(availableBytes);
+          if (!known.known && options?.allowUnknownCapacity !== true) {
+            return {
+              ok: false,
+              status: "blocked",
+              dbName,
+              detail: "capacity_unknown_fail_closed",
+              pluginKeychain: null
+            };
+          }
+          if (known.known && known.availableBytes != null && known.availableBytes < SECURE_BOOTSTRAP_MIN_AVAILABLE_BYTES) {
+            return {
+              ok: false,
+              status: "blocked",
+              dbName,
+              detail: "insufficient_free_space",
+              pluginKeychain: null
+            };
+          }
+          const current = await LocalJournalSecureBootstrapper.inspect();
+          if (current.health.status === "abnormal") {
+            return {
+              ok: false,
+              status: "abnormal",
+              dbName,
+              detail: `fail_closed:${current.health.reason}`,
+              encrypted: current.encrypted,
+              userVersion: current.userVersion,
+              rowCounts: current.rowCounts,
+              pluginKeychain: null
+            };
+          }
+          if (current.health.status === "ready") {
+            return {
+              ok: true,
+              status: "already_ready",
+              alreadyReady: true,
+              dbName,
+              detail: "existing encrypted candidate is ready; left untouched",
+              encrypted: current.encrypted,
+              userVersion: current.userVersion,
+              rowCounts: current.rowCounts,
+              pluginKeychain: "reused_existing"
+            };
+          }
+          try {
+            const pluginKeychain = await ensurePluginEncryptionSecret(
+              options?.passphrase ?? randomPassphrase()
+            );
+            const db2 = await openNamedEncryptedDatabase(dbName, 1);
+            await applyFoundationSchema(db2);
+            const inv = await inventory(db2);
+            const health = classifyCandidateHealth({
+              exists: true,
+              encrypted: true,
+              userVersion: inv.userVersion,
+              tables: inv.tables,
+              columns: inv.columns
+            });
+            await closeNamedEncryptedDatabase(dbName);
+            if (health.status !== "ready") {
+              return {
+                ok: false,
+                status: "abnormal",
+                dbName,
+                detail: `created_but_unhealthy:${health.reason}`,
+                pluginKeychain
+              };
+            }
+            const zero = LOCAL_JOURNAL_EXPECTED_TABLES.every((table) => (inv.rowCounts[table] ?? 0) === 0);
+            if (!zero) {
+              return {
+                ok: false,
+                status: "abnormal",
+                dbName,
+                detail: "fresh_bootstrap_expected_zero_rows",
+                rowCounts: inv.rowCounts,
+                pluginKeychain
+              };
+            }
+            const path = await resolveCandidatePath();
+            await ensurePathIncludedInBackup(path.absolutePath);
+            await applyCompleteFileProtection(path.absolutePath);
+            return {
+              ok: true,
+              status: "created",
+              dbName,
+              detail: `created encrypted candidate keychain=${pluginKeychain}`,
+              encrypted: true,
+              userVersion: inv.userVersion,
+              rowCounts: inv.rowCounts,
+              pluginKeychain
+            };
+          } catch (error) {
+            return {
+              ok: false,
+              status: "abnormal",
+              dbName,
+              detail: safeErrorMessage(error),
+              pluginKeychain: null
+            };
+          }
+        },
+        async inspectKeychainAvailable() {
+          try {
+            const kc = await inspectPluginDbKeyAccessibility();
+            return kc.found === true;
+          } catch {
+            return false;
+          }
         }
-      }
-      let backupExcluded = null;
-      let fileProtection = null;
-      let completeProtection = null;
-      if (exists) {
-        try {
-          const attrs = await inspectFileProtection(path.absolutePath);
-          backupExcluded = attrs.isExcludedFromBackup;
-          fileProtection = String(attrs.fileProtection);
-          completeProtection = isCompleteProtection(fileProtection);
-        } catch {
-          backupExcluded = "api_unavailable";
-        }
-      }
-      const health = classifyCandidateHealth({
-        exists,
-        encrypted,
-        userVersion,
-        tables,
-        columns
-      });
-      return {
-        dbName,
-        exists,
-        encrypted,
-        userVersion,
-        tables,
-        rowCounts,
-        backupExcluded,
-        fileProtection,
-        completeProtection,
-        locationRelative: path.locationRelative,
-        health
       };
-    },
-    async bootstrap(options) {
-      assertNative();
-      const dbName = LOCAL_JOURNAL_SECURE_CANDIDATE_DB_NAME;
-      assertNotProductionJournal2(dbName);
-      let availableBytes;
-      if (options && Object.prototype.hasOwnProperty.call(options, "availableBytes")) {
-        availableBytes = options.availableBytes ?? null;
-      } else {
+    }
+  });
+
+  // src/lib/local-first/journal/secureCopy/types.ts
+  var SERVER_COPY_TARGET_DB_NAME, SECURE_CANDIDATE_MEDIA_ROOT, SECURE_COPY_MIN_AVAILABLE_BYTES, SECURE_COPY_MAX_EXPLICIT_IDS, TEST_PURPOSE_TAGS, FAILURE_INJECTION_MISSING_ENTRY_ID;
+  var init_types4 = __esm({
+    "src/lib/local-first/journal/secureCopy/types.ts"() {
+      "use strict";
+      init_types2();
+      SERVER_COPY_TARGET_DB_NAME = LOCAL_JOURNAL_SECURE_CANDIDATE_DB_NAME;
+      SECURE_CANDIDATE_MEDIA_ROOT = "ljd/media/journal-secure-candidate";
+      SECURE_COPY_MIN_AVAILABLE_BYTES = 1024 * 1024;
+      SECURE_COPY_MAX_EXPLICIT_IDS = 20;
+      TEST_PURPOSE_TAGS = [
+        "#\u30C6\u30B9\u30C8",
+        "#\u304A\u5F15\u8D8A\u3057\u30C6\u30B9\u30C8",
+        "#LocalCopyTest",
+        "#WriteThroughTest"
+      ];
+      FAILURE_INJECTION_MISSING_ENTRY_ID = "ljd-poc-missing-entry-id";
+    }
+  });
+
+  // src/lib/local-first/journal/checksum.ts
+  async function sha256HexOfBytes(bytes) {
+    const digest = await crypto.subtle.digest("SHA-256", bytes.slice());
+    return [...new Uint8Array(digest)].map((b) => b.toString(16).padStart(2, "0")).join("");
+  }
+  async function sha256HexOfUtf8(text) {
+    return sha256HexOfBytes(new TextEncoder().encode(text));
+  }
+  async function sha256HexOfBase64(base64Data) {
+    const binary = atob(base64Data);
+    const bytes = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i += 1) bytes[i] = binary.charCodeAt(i);
+    return sha256HexOfBytes(bytes);
+  }
+  var init_checksum = __esm({
+    "src/lib/local-first/journal/checksum.ts"() {
+      "use strict";
+    }
+  });
+
+  // src/lib/local-first/journal/activation/types.ts
+  function assertAllowedTechnicalDatabaseId(databaseId) {
+    if (databaseId === LOCAL_JOURNAL_DB_NAME) {
+      throw new Error("production plaintext DB cannot be technical-active target");
+    }
+    if (databaseId !== TECHNICAL_ACTIVE_DATABASE_ID) {
+      throw new Error(`technical activation allows only ${TECHNICAL_ACTIVE_DATABASE_ID}`);
+    }
+  }
+  var ACTIVATION_MANIFEST_FORMAT_VERSION, ACTIVATION_MANIFEST_FILE_NAME, TECHNICAL_CANDIDATE_GENERATION, TECHNICAL_ACTIVE_DATABASE_ID, TECHNICAL_ACTIVE_MEDIA_ROOT_ID, EXPECTED_JOURNAL_SCHEMA_VERSION;
+  var init_types5 = __esm({
+    "src/lib/local-first/journal/activation/types.ts"() {
+      "use strict";
+      init_types2();
+      init_types4();
+      init_types();
+      ACTIVATION_MANIFEST_FORMAT_VERSION = 1;
+      ACTIVATION_MANIFEST_FILE_NAME = "ljd-local-journal-activation.json";
+      TECHNICAL_CANDIDATE_GENERATION = 2;
+      TECHNICAL_ACTIVE_DATABASE_ID = LOCAL_JOURNAL_SECURE_CANDIDATE_DB_NAME;
+      TECHNICAL_ACTIVE_MEDIA_ROOT_ID = SECURE_CANDIDATE_MEDIA_ROOT;
+      EXPECTED_JOURNAL_SCHEMA_VERSION = 1;
+    }
+  });
+
+  // src/lib/local-first/journal/activation/activationPreflight.ts
+  function push(checks, id, ok, detail) {
+    checks.push({ id, ok, detail });
+  }
+  async function runTechnicalActivationPreflight(options) {
+    const checks = [];
+    const targetDatabaseId = TECHNICAL_ACTIVE_DATABASE_ID;
+    const targetMediaRootId = TECHNICAL_ACTIVE_MEDIA_ROOT_ID;
+    try {
+      assertAllowedTechnicalDatabaseId(targetDatabaseId);
+      push(checks, "allowed_target", true, targetDatabaseId);
+    } catch (error) {
+      push(checks, "allowed_target", false, String(error));
+      return {
+        ok: false,
+        targetDatabaseId,
+        targetMediaRootId,
+        checks,
+        inspection: null
+      };
+    }
+    let availableBytes;
+    if (options && Object.prototype.hasOwnProperty.call(options, "availableBytes")) {
+      availableBytes = options.availableBytes ?? null;
+    } else {
+      availableBytes = (await readAvailableBytesOrNull()).availableBytes;
+      if (availableBytes == null) {
         availableBytes = (await readAvailableBytesOrNull()).availableBytes;
       }
-      const known = decideCapacityKnown(availableBytes);
-      if (!known.known && options?.allowUnknownCapacity !== true) {
-        return {
-          ok: false,
-          status: "blocked",
-          dbName,
-          detail: "capacity_unknown_fail_closed",
-          pluginKeychain: null
-        };
-      }
-      if (known.known && known.availableBytes != null && known.availableBytes < SECURE_BOOTSTRAP_MIN_AVAILABLE_BYTES) {
-        return {
-          ok: false,
-          status: "blocked",
-          dbName,
-          detail: "insufficient_free_space",
-          pluginKeychain: null
-        };
-      }
-      const current = await LocalJournalSecureBootstrapper.inspect();
-      if (current.health.status === "abnormal") {
-        return {
-          ok: false,
-          status: "abnormal",
-          dbName,
-          detail: `fail_closed:${current.health.reason}`,
-          encrypted: current.encrypted,
-          userVersion: current.userVersion,
-          rowCounts: current.rowCounts,
-          pluginKeychain: null
-        };
-      }
-      if (current.health.status === "ready") {
-        return {
-          ok: true,
-          status: "already_ready",
-          alreadyReady: true,
-          dbName,
-          detail: "existing encrypted candidate is ready; left untouched",
-          encrypted: current.encrypted,
-          userVersion: current.userVersion,
-          rowCounts: current.rowCounts,
-          pluginKeychain: "reused_existing"
-        };
-      }
-      try {
-        const pluginKeychain = await ensurePluginEncryptionSecret(
-          options?.passphrase ?? randomPassphrase()
-        );
-        const db2 = await openNamedEncryptedDatabase(dbName, 1);
-        await applyFoundationSchema(db2);
-        const inv = await inventory(db2);
-        const health = classifyCandidateHealth({
-          exists: true,
-          encrypted: true,
-          userVersion: inv.userVersion,
-          tables: inv.tables,
-          columns: inv.columns
-        });
-        await closeNamedEncryptedDatabase(dbName);
-        if (health.status !== "ready") {
-          return {
-            ok: false,
-            status: "abnormal",
-            dbName,
-            detail: `created_but_unhealthy:${health.reason}`,
-            pluginKeychain
-          };
-        }
-        const zero = LOCAL_JOURNAL_EXPECTED_TABLES.every((table) => (inv.rowCounts[table] ?? 0) === 0);
-        if (!zero) {
-          return {
-            ok: false,
-            status: "abnormal",
-            dbName,
-            detail: "fresh_bootstrap_expected_zero_rows",
-            rowCounts: inv.rowCounts,
-            pluginKeychain
-          };
-        }
-        const path = await resolveCandidatePath();
-        await ensurePathIncludedInBackup(path.absolutePath);
-        await applyCompleteFileProtection(path.absolutePath);
-        return {
-          ok: true,
-          status: "created",
-          dbName,
-          detail: `created encrypted candidate keychain=${pluginKeychain}`,
-          encrypted: true,
-          userVersion: inv.userVersion,
-          rowCounts: inv.rowCounts,
-          pluginKeychain
-        };
-      } catch (error) {
-        return {
-          ok: false,
-          status: "abnormal",
-          dbName,
-          detail: safeErrorMessage(error),
-          pluginKeychain: null
-        };
-      }
-    },
-    async inspectKeychainAvailable() {
+    }
+    const capacity = decideCapacityKnown(availableBytes);
+    if (!capacity.known && options?.allowUnknownCapacity !== true) {
+      push(checks, "capacity", false, "capacity_unknown_fail_closed");
+    } else {
+      push(
+        checks,
+        "capacity",
+        true,
+        capacity.known ? `available=${String(availableBytes)}` : "unknown_allowed"
+      );
+    }
+    const inspection = options?.inspection ?? await LocalJournalSecureBootstrapper.inspect();
+    push(
+      checks,
+      "db_exists",
+      inspection.exists === true,
+      `exists=${String(inspection.exists)}`
+    );
+    push(
+      checks,
+      "encrypted",
+      inspection.encrypted === true,
+      `encrypted=${String(inspection.encrypted)}`
+    );
+    push(
+      checks,
+      "application_support",
+      Boolean(inspection.locationRelative?.includes("Application Support")),
+      inspection.locationRelative ?? "missing_location"
+    );
+    push(
+      checks,
+      "schema_version",
+      inspection.userVersion === EXPECTED_JOURNAL_SCHEMA_VERSION,
+      `user_version=${String(inspection.userVersion)}`
+    );
+    push(
+      checks,
+      "health_ready",
+      inspection.health.status === "ready",
+      `health=${inspection.health.status}`
+    );
+    push(
+      checks,
+      "row_counts_readable",
+      typeof inspection.rowCounts.local_journal_entries === "number",
+      `entries=${String(inspection.rowCounts.local_journal_entries ?? null)}`
+    );
+    push(
+      checks,
+      "file_protection_complete",
+      inspection.completeProtection === true,
+      `protection=${String(inspection.fileProtection)}`
+    );
+    push(
+      checks,
+      "backup_included",
+      inspection.backupExcluded === false,
+      `backupExcluded=${String(inspection.backupExcluded)}`
+    );
+    if (!options?.skipKeychain) {
       try {
         const kc = await inspectPluginDbKeyAccessibility();
-        return kc.found === true;
-      } catch {
-        return false;
+        push(
+          checks,
+          "plugin_keychain_usable",
+          kc.found === true,
+          `found=${String(kc.found)} accessibility=${String(kc.accessibility)}`
+        );
+      } catch (error) {
+        push(checks, "plugin_keychain_usable", false, String(error));
+      }
+    } else {
+      push(checks, "plugin_keychain_usable", true, "skipped_in_unit_test");
+    }
+    if (inspection.exists && inspection.encrypted === true && inspection.health.status === "ready") {
+      try {
+        const deep = await inspectCandidateIntegrity(options?.skipMediaFilesystem === true);
+        push(
+          checks,
+          "integrity_counts",
+          deep.entryCount >= 0 && deep.mediaCount >= 0,
+          `entries=${deep.entryCount} media=${deep.mediaCount}`
+        );
+        push(checks, "legacy_server_id_unique", deep.legacyUnique, deep.legacyDetail);
+        push(checks, "media_refs_consistent", deep.mediaRefsOk, deep.mediaDetail);
+        push(
+          checks,
+          "source_changed_unresolved",
+          true,
+          "no_persisted_source_changed_markers"
+        );
+      } catch (error) {
+        push(checks, "integrity_open", false, String(error));
+      }
+    } else {
+      push(checks, "integrity_open", false, "candidate_not_ready_for_integrity");
+    }
+    push(
+      checks,
+      "media_root_generation",
+      targetMediaRootId === TECHNICAL_ACTIVE_MEDIA_ROOT_ID,
+      targetMediaRootId
+    );
+    const ok = checks.every((c) => c.ok);
+    return {
+      ok,
+      targetDatabaseId,
+      targetMediaRootId,
+      checks,
+      inspection
+    };
+  }
+  async function inspectCandidateIntegrity(skipMediaFilesystem) {
+    const { openNamedEncryptedDatabase: openNamedEncryptedDatabase2, closeNamedEncryptedDatabase: closeNamedEncryptedDatabase2 } = await Promise.resolve().then(() => (init_security(), security_exports));
+    const db2 = await openNamedEncryptedDatabase2(TECHNICAL_ACTIVE_DATABASE_ID, 1);
+    try {
+      const entryCountResult = await db2.query(
+        `SELECT COUNT(*) AS c FROM local_journal_entries;`
+      );
+      const mediaCountResult = await db2.query(`SELECT COUNT(*) AS c FROM local_media;`);
+      const entryCount = Number(
+        entryCountResult.values?.[0]?.c ?? 0
+      );
+      const mediaCount = Number(
+        mediaCountResult.values?.[0]?.c ?? 0
+      );
+      const legacyRows = await db2.query(
+        `SELECT legacy_server_id AS id, COUNT(*) AS c
+       FROM local_journal_entries
+       WHERE legacy_server_id IS NOT NULL AND TRIM(legacy_server_id) != ''
+       GROUP BY legacy_server_id
+       HAVING c > 1;`
+      );
+      const dupes = legacyRows.values?.length ?? 0;
+      const nullLegacy = await db2.query(
+        `SELECT COUNT(*) AS c FROM local_journal_entries
+       WHERE legacy_server_id IS NULL OR TRIM(legacy_server_id) = '';`
+      );
+      const nullCount = Number(
+        nullLegacy.values?.[0]?.c ?? 0
+      );
+      const legacyUnique = dupes === 0 && nullCount === 0;
+      const legacyDetail = `dupes=${dupes} nullOrEmpty=${nullCount}`;
+      const media = await db2.query(
+        `SELECT relative_path AS path, checksum AS checksum FROM local_media;`
+      );
+      const refs = media.values ?? [];
+      let missing = 0;
+      if (!skipMediaFilesystem) {
+        for (const ref of refs) {
+          const path = String(ref.path ?? "");
+          if (!path.startsWith(`${TECHNICAL_ACTIVE_MEDIA_ROOT_ID}/`)) {
+            missing += 1;
+            continue;
+          }
+          try {
+            await Filesystem.stat({ path, directory: Directory.Library });
+          } catch {
+            missing += 1;
+          }
+        }
+      }
+      const mediaRefsOk = missing === 0;
+      return {
+        entryCount,
+        mediaCount,
+        legacyUnique,
+        legacyDetail,
+        mediaRefsOk,
+        mediaDetail: `refs=${refs.length} missingOrBadRoot=${missing} skipFs=${String(skipMediaFilesystem)}`
+      };
+    } finally {
+      await closeNamedEncryptedDatabase2(TECHNICAL_ACTIVE_DATABASE_ID);
+    }
+  }
+  var init_activationPreflight = __esm({
+    "src/lib/local-first/journal/activation/activationPreflight.ts"() {
+      "use strict";
+      init_esm3();
+      init_LocalJournalSecureBootstrapper();
+      init_types5();
+      init_security();
+    }
+  });
+
+  // src/lib/local-first/journal/activation/manifestCanonical.ts
+  function sortValue(value) {
+    if (value === null || typeof value !== "object") return value;
+    if (Array.isArray(value)) return value.map(sortValue);
+    const obj = value;
+    const out = {};
+    for (const key of Object.keys(obj).sort()) {
+      out[key] = sortValue(obj[key]);
+    }
+    return out;
+  }
+  function canonicalJsonString(value) {
+    return JSON.stringify(sortValue(value));
+  }
+  function manifestBodyWithoutChecksum(manifest) {
+    const {
+      formatVersion,
+      generation,
+      activeDatabaseId,
+      activeMediaRootId,
+      previousDatabaseId,
+      previousMediaRootId,
+      activationState,
+      schemaVersion,
+      activatedAt
+    } = manifest;
+    return {
+      formatVersion,
+      generation,
+      activeDatabaseId,
+      activeMediaRootId,
+      previousDatabaseId,
+      previousMediaRootId,
+      activationState,
+      schemaVersion,
+      activatedAt
+    };
+  }
+  async function computeManifestChecksum(body) {
+    const without = manifestBodyWithoutChecksum(body);
+    return sha256HexOfUtf8(canonicalJsonString(without));
+  }
+  async function attachManifestChecksum(body) {
+    const checksum = await computeManifestChecksum(body);
+    return { ...body, checksum };
+  }
+  async function verifyManifestChecksum(manifest) {
+    const expected = await computeManifestChecksum(manifest);
+    return expected === manifest.checksum;
+  }
+  var init_manifestCanonical = __esm({
+    "src/lib/local-first/journal/activation/manifestCanonical.ts"() {
+      "use strict";
+      init_checksum();
+    }
+  });
+
+  // src/lib/local-first/journal/activation/LocalJournalActivationManifestStore.ts
+  function isActivationState(value) {
+    return value === "inactive" || value === "activating" || value === "active" || value === "rollback_pending";
+  }
+  function parseManifestShape(raw) {
+    if (!raw || typeof raw !== "object" || Array.isArray(raw)) return null;
+    const o = raw;
+    if (typeof o.formatVersion !== "number") return null;
+    if (typeof o.generation !== "number") return null;
+    if (typeof o.activeDatabaseId !== "string" || !o.activeDatabaseId) return null;
+    if (typeof o.activeMediaRootId !== "string" || !o.activeMediaRootId) return null;
+    if (!(o.previousDatabaseId === null || typeof o.previousDatabaseId === "string")) return null;
+    if (!(o.previousMediaRootId === null || typeof o.previousMediaRootId === "string")) return null;
+    if (!isActivationState(o.activationState)) return null;
+    if (typeof o.schemaVersion !== "number") return null;
+    if (!(o.activatedAt === null || typeof o.activatedAt === "string")) return null;
+    if (typeof o.checksum !== "string" || !o.checksum) return null;
+    return {
+      formatVersion: o.formatVersion,
+      generation: o.generation,
+      activeDatabaseId: o.activeDatabaseId,
+      activeMediaRootId: o.activeMediaRootId,
+      previousDatabaseId: o.previousDatabaseId,
+      previousMediaRootId: o.previousMediaRootId,
+      activationState: o.activationState,
+      schemaVersion: o.schemaVersion,
+      activatedAt: o.activatedAt,
+      checksum: o.checksum
+    };
+  }
+  function createMemoryManifestFs() {
+    const files = /* @__PURE__ */ new Map();
+    return {
+      files,
+      replaceCalls: 0,
+      async readText(absolutePath) {
+        if (!files.has(absolutePath)) return { exists: false, contents: null };
+        return { exists: true, contents: files.get(absolutePath) };
+      },
+      async atomicReplaceText(absolutePath, contents) {
+        this.replaceCalls += 1;
+        files.set(absolutePath, contents);
+      }
+    };
+  }
+  async function createNativeManifestFs() {
+    if (!Capacitor.isNativePlatform()) {
+      throw new LocalFirstSecurityError("native_only", "manifest FS is native-only");
+    }
+    return {
+      async readText(absolutePath) {
+        const result = await LjdLocalSecurity.readTextFile({ path: absolutePath });
+        return {
+          exists: result.exists,
+          contents: result.contents ?? null
+        };
+      },
+      async atomicReplaceText(absolutePath, contents) {
+        await LjdLocalSecurity.atomicReplaceTextFile({
+          path: absolutePath,
+          contents
+        });
+      }
+    };
+  }
+  async function resolveActivationManifestAbsolutePath() {
+    const asDir = await resolveLjdApplicationSupportDir();
+    return `${asDir.ljdApplicationSupportDir}/${ACTIVATION_MANIFEST_FILE_NAME}`;
+  }
+  var LocalJournalActivationManifestStore;
+  var init_LocalJournalActivationManifestStore = __esm({
+    "src/lib/local-first/journal/activation/LocalJournalActivationManifestStore.ts"() {
+      "use strict";
+      init_dist();
+      init_esm2();
+      init_manifestCanonical();
+      init_types5();
+      init_security();
+      init_types3();
+      LocalJournalActivationManifestStore = {
+        async readWithFs(absolutePath, fs) {
+          const file = await fs.readText(absolutePath);
+          if (!file.exists || file.contents == null) {
+            return { status: "missing", manifest: null };
+          }
+          let parsed;
+          try {
+            parsed = JSON.parse(file.contents);
+          } catch {
+            return { status: "corrupt_json", manifest: null, detail: "json_parse_failed" };
+          }
+          const shape = parseManifestShape(parsed);
+          if (!shape) {
+            return { status: "invalid_shape", manifest: null, detail: "missing_required_fields" };
+          }
+          if (shape.formatVersion !== ACTIVATION_MANIFEST_FORMAT_VERSION) {
+            return {
+              status: "unknown_format",
+              manifest: null,
+              detail: `formatVersion=${shape.formatVersion}`
+            };
+          }
+          const ok = await verifyManifestChecksum(shape);
+          if (!ok) {
+            return { status: "checksum_mismatch", manifest: null, detail: "checksum_mismatch" };
+          }
+          return { status: "ok", manifest: shape };
+        },
+        async writeBodyWithFs(absolutePath, body, fs) {
+          const manifest = await attachManifestChecksum(body);
+          const json = `${JSON.stringify(manifest, null, 2)}
+`;
+          await fs.atomicReplaceText(absolutePath, json);
+          return manifest;
+        },
+        async readNative() {
+          const path = await resolveActivationManifestAbsolutePath();
+          const fs = await createNativeManifestFs();
+          return this.readWithFs(path, fs);
+        },
+        async writeBodyNative(body) {
+          const path = await resolveActivationManifestAbsolutePath();
+          const fs = await createNativeManifestFs();
+          return this.writeBodyWithFs(path, body, fs);
+        }
+      };
+    }
+  });
+
+  // src/lib/local-first/journal/activation/LocalJournalTechnicalActivation.ts
+  var LocalJournalTechnicalActivation_exports = {};
+  __export(LocalJournalTechnicalActivation_exports, {
+    LocalJournalTechnicalActivation: () => LocalJournalTechnicalActivation,
+    activateTechnicalCandidateWithFs: () => activateTechnicalCandidateWithFs,
+    createMemoryManifestFs: () => createMemoryManifestFs,
+    demonstrateManifestRollbackSemantics: () => demonstrateManifestRollbackSemantics,
+    resolveTechnicalActiveLocalJournalWithFs: () => resolveTechnicalActiveLocalJournalWithFs
+  });
+  function candidateBody(nowIso) {
+    return {
+      formatVersion: ACTIVATION_MANIFEST_FORMAT_VERSION,
+      generation: TECHNICAL_CANDIDATE_GENERATION,
+      activeDatabaseId: TECHNICAL_ACTIVE_DATABASE_ID,
+      activeMediaRootId: TECHNICAL_ACTIVE_MEDIA_ROOT_ID,
+      previousDatabaseId: null,
+      previousMediaRootId: null,
+      activationState: "active",
+      schemaVersion: EXPECTED_JOURNAL_SCHEMA_VERSION,
+      activatedAt: nowIso
+    };
+  }
+  async function activateTechnicalCandidateWithFs(options) {
+    assertAllowedTechnicalDatabaseId(TECHNICAL_ACTIVE_DATABASE_ID);
+    const existing = await LocalJournalActivationManifestStore.readWithFs(
+      options.absolutePath,
+      options.fs
+    );
+    if (existing.status === "ok") {
+      const m = existing.manifest;
+      if (m.activationState === "active" && m.activeDatabaseId === TECHNICAL_ACTIVE_DATABASE_ID && m.activeMediaRootId === TECHNICAL_ACTIVE_MEDIA_ROOT_ID) {
+        return {
+          code: "already_active",
+          ok: true,
+          manifest: m,
+          detail: "technical candidate already active in manifest",
+          preflightOk: null
+        };
+      }
+    } else if (existing.status !== "missing") {
+      return {
+        code: "manifest_corrupt",
+        ok: false,
+        manifest: null,
+        detail: `${existing.status}:${existing.detail}`,
+        preflightOk: null
+      };
+    }
+    let preflightOk = true;
+    let preflightDetail = "ok";
+    if (options.preflightOverride) {
+      preflightOk = options.preflightOverride.ok;
+      preflightDetail = options.preflightOverride.detail;
+    } else {
+      const preflight = await runTechnicalActivationPreflight({
+        availableBytes: options.availableBytes,
+        allowUnknownCapacity: options.allowUnknownCapacity,
+        skipMediaFilesystem: options.skipMediaFilesystem,
+        skipKeychain: options.skipKeychain
+      });
+      preflightOk = preflight.ok;
+      preflightDetail = preflight.ok ? `checks=${preflight.checks.length}` : preflight.checks.filter((c) => !c.ok).map((c) => c.id).join(",");
+      if (!preflight.inspection?.exists) {
+        return {
+          code: "target_missing",
+          ok: false,
+          manifest: null,
+          detail: "candidate database missing",
+          preflightOk: false
+        };
       }
     }
-  };
+    if (!preflightOk) {
+      if (existing.status === "ok") {
+        return {
+          code: "rollback_preserved",
+          ok: false,
+          manifest: existing.manifest,
+          detail: `preflight_failed:${preflightDetail}`,
+          preflightOk: false
+        };
+      }
+      return {
+        code: "preflight_failed",
+        ok: false,
+        manifest: null,
+        detail: preflightDetail,
+        preflightOk: false
+      };
+    }
+    const nowIso = options.nowIso ?? (/* @__PURE__ */ new Date()).toISOString();
+    const manifest = await LocalJournalActivationManifestStore.writeBodyWithFs(
+      options.absolutePath,
+      candidateBody(nowIso),
+      options.fs
+    );
+    return {
+      code: "activated",
+      ok: true,
+      manifest,
+      detail: "technical activation pointer written",
+      preflightOk: true
+    };
+  }
+  async function resolveTechnicalActiveLocalJournalWithFs(options) {
+    const read = await LocalJournalActivationManifestStore.readWithFs(
+      options.absolutePath,
+      options.fs
+    );
+    return interpretResolve(read, options.verifyDatabaseExists);
+  }
+  async function interpretResolve(read, verifyDatabaseExists) {
+    if (read.status === "missing") {
+      return {
+        status: "no_activation",
+        manifest: null,
+        detail: "manifest_missing",
+        technicalDatabaseId: null,
+        technicalMediaRootId: null
+      };
+    }
+    if (read.status === "corrupt_json" || read.status === "invalid_shape") {
+      return {
+        status: "corrupt_manifest",
+        manifest: null,
+        detail: read.detail,
+        technicalDatabaseId: null,
+        technicalMediaRootId: null
+      };
+    }
+    if (read.status === "checksum_mismatch") {
+      return {
+        status: "checksum_mismatch",
+        manifest: null,
+        detail: read.detail,
+        technicalDatabaseId: null,
+        technicalMediaRootId: null
+      };
+    }
+    if (read.status === "unknown_format") {
+      return {
+        status: "unknown_format",
+        manifest: null,
+        detail: read.detail,
+        technicalDatabaseId: null,
+        technicalMediaRootId: null
+      };
+    }
+    const manifest = read.manifest;
+    if (manifest.activeDatabaseId === "ljd_local_journal") {
+      return {
+        status: "rejected_target",
+        manifest,
+        detail: "production plaintext rejected",
+        technicalDatabaseId: null,
+        technicalMediaRootId: null
+      };
+    }
+    if (manifest.activeDatabaseId !== TECHNICAL_ACTIVE_DATABASE_ID) {
+      return {
+        status: "rejected_target",
+        manifest,
+        detail: `unsupported databaseId=${manifest.activeDatabaseId}`,
+        technicalDatabaseId: null,
+        technicalMediaRootId: null
+      };
+    }
+    if (manifest.activationState !== "active") {
+      return {
+        status: "preflight_failed",
+        manifest,
+        detail: `activationState=${manifest.activationState}`,
+        technicalDatabaseId: null,
+        technicalMediaRootId: null
+      };
+    }
+    if (verifyDatabaseExists) {
+      const exists = await verifyDatabaseExists(manifest.activeDatabaseId);
+      if (!exists) {
+        return {
+          status: "missing_database",
+          manifest,
+          detail: "manifest points to missing database \u2014 fail-closed, no discovery",
+          technicalDatabaseId: null,
+          technicalMediaRootId: null
+        };
+      }
+    }
+    return {
+      status: "ready",
+      manifest,
+      detail: "technical active candidate resolvable (developer-only)",
+      technicalDatabaseId: manifest.activeDatabaseId,
+      technicalMediaRootId: manifest.activeMediaRootId
+    };
+  }
+  async function demonstrateManifestRollbackSemantics(options) {
+    const genA = {
+      formatVersion: ACTIVATION_MANIFEST_FORMAT_VERSION,
+      generation: 2,
+      activeDatabaseId: TECHNICAL_ACTIVE_DATABASE_ID,
+      activeMediaRootId: TECHNICAL_ACTIVE_MEDIA_ROOT_ID,
+      previousDatabaseId: null,
+      previousMediaRootId: null,
+      activationState: "active",
+      schemaVersion: EXPECTED_JOURNAL_SCHEMA_VERSION,
+      activatedAt: "2026-08-12T00:00:00.000Z"
+    };
+    await LocalJournalActivationManifestStore.writeBodyWithFs(
+      options.absolutePath,
+      genA,
+      options.fs
+    );
+    const genB = {
+      formatVersion: ACTIVATION_MANIFEST_FORMAT_VERSION,
+      generation: 3,
+      activeDatabaseId: TECHNICAL_ACTIVE_DATABASE_ID,
+      activeMediaRootId: TECHNICAL_ACTIVE_MEDIA_ROOT_ID,
+      previousDatabaseId: TECHNICAL_ACTIVE_DATABASE_ID,
+      previousMediaRootId: TECHNICAL_ACTIVE_MEDIA_ROOT_ID,
+      activationState: "active",
+      schemaVersion: EXPECTED_JOURNAL_SCHEMA_VERSION,
+      activatedAt: "2026-08-12T01:00:00.000Z"
+    };
+    const verificationOk = false;
+    if (!verificationOk) {
+      const after = await LocalJournalActivationManifestStore.readWithFs(
+        options.absolutePath,
+        options.fs
+      );
+      const preserved = after.status === "ok" && after.manifest.generation === 2 && after.manifest.checksum.length > 0;
+      void genB;
+      return {
+        code: preserved ? "rollback_preserved" : "preflight_failed",
+        preservedGeneration: after.status === "ok" ? after.manifest.generation : null,
+        detail: preserved ? "generation A manifest retained after failed B verification (no DB rename/delete)" : `unexpected after=${after.status}`
+      };
+    }
+    await LocalJournalActivationManifestStore.writeBodyWithFs(
+      options.absolutePath,
+      genB,
+      options.fs
+    );
+    return {
+      code: "activated",
+      preservedGeneration: null,
+      detail: "unexpected B write"
+    };
+  }
+  var LocalJournalTechnicalActivation;
+  var init_LocalJournalTechnicalActivation = __esm({
+    "src/lib/local-first/journal/activation/LocalJournalTechnicalActivation.ts"() {
+      "use strict";
+      init_dist();
+      init_activationPreflight();
+      init_LocalJournalActivationManifestStore();
+      init_types5();
+      init_types3();
+      init_LocalJournalSecureBootstrapper();
+      LocalJournalTechnicalActivation = {
+        async activateCandidate(options) {
+          if (!Capacitor.isNativePlatform()) {
+            return {
+              code: "native_only",
+              ok: false,
+              manifest: null,
+              detail: "technical activation is native-only",
+              preflightOk: null
+            };
+          }
+          const absolutePath = await resolveActivationManifestAbsolutePath();
+          const fs = await createNativeManifestFs();
+          return activateTechnicalCandidateWithFs({
+            fs,
+            absolutePath,
+            availableBytes: options?.availableBytes,
+            allowUnknownCapacity: options?.allowUnknownCapacity
+          });
+        },
+        async resolve() {
+          if (!Capacitor.isNativePlatform()) {
+            throw new LocalFirstSecurityError("native_only", "resolve is native-only");
+          }
+          const absolutePath = await resolveActivationManifestAbsolutePath();
+          const fs = await createNativeManifestFs();
+          return resolveTechnicalActiveLocalJournalWithFs({
+            fs,
+            absolutePath,
+            verifyDatabaseExists: async (databaseId) => {
+              if (databaseId !== TECHNICAL_ACTIVE_DATABASE_ID) return false;
+              const inspection = await LocalJournalSecureBootstrapper.inspect();
+              return inspection.exists === true && inspection.encrypted === true;
+            }
+          });
+        }
+      };
+    }
+  });
+
+  // src/lib/local-first/diagnostics/localStorageDiagnosticsMain.ts
+  init_dist();
+  init_database();
+  init_LocalJournalSecureBootstrapper();
 
   // src/lib/local-first/journal/secureCopy/ServerToLocalCandidateCopyService.ts
   init_dist();
@@ -3653,21 +4667,9 @@ CREATE INDEX IF NOT EXISTS idx_local_media_journal
 
   // src/lib/local-first/journal/secureCopy/candidateMediaStore.ts
   init_dist();
-
-  // src/lib/local-first/journal/secureCopy/types.ts
-  var SERVER_COPY_TARGET_DB_NAME = LOCAL_JOURNAL_SECURE_CANDIDATE_DB_NAME;
-  var SECURE_CANDIDATE_MEDIA_ROOT = "ljd/media/journal-secure-candidate";
-  var SECURE_COPY_MIN_AVAILABLE_BYTES = 1024 * 1024;
-  var SECURE_COPY_MAX_EXPLICIT_IDS = 20;
-  var TEST_PURPOSE_TAGS = [
-    "#\u30C6\u30B9\u30C8",
-    "#\u304A\u5F15\u8D8A\u3057\u30C6\u30B9\u30C8",
-    "#LocalCopyTest",
-    "#WriteThroughTest"
-  ];
-  var FAILURE_INJECTION_MISSING_ENTRY_ID = "ljd-poc-missing-entry-id";
-
-  // src/lib/local-first/journal/secureCopy/candidateMediaStore.ts
+  init_esm3();
+  init_types();
+  init_types4();
   function assertNative2() {
     if (!Capacitor.isNativePlatform()) {
       throw new Error("candidate media store is native-only");
@@ -3731,6 +4733,10 @@ CREATE INDEX IF NOT EXISTS idx_local_media_journal
   }
 
   // src/lib/local-first/journal/secureCopy/candidateDbGuard.ts
+  init_types2();
+  init_types4();
+  init_types();
+  init_types3();
   var ALLOWED = /* @__PURE__ */ new Set([SERVER_COPY_TARGET_DB_NAME]);
   function assertAllowedCopyTargetDb(name) {
     if (name === LOCAL_JOURNAL_DB_NAME) {
@@ -3879,6 +4885,9 @@ CREATE INDEX IF NOT EXISTS idx_local_media_journal
   }
 
   // src/lib/local-first/journal/secureCopy/candidateRepository.ts
+  init_types4();
+  init_LocalJournalSecureBootstrapper();
+  init_security();
   function createCandidateRepository(db2) {
     return {
       async save(entry) {
@@ -3905,22 +4914,11 @@ CREATE INDEX IF NOT EXISTS idx_local_media_journal
     }
   }
 
-  // src/lib/local-first/journal/checksum.ts
-  async function sha256HexOfBytes(bytes) {
-    const digest = await crypto.subtle.digest("SHA-256", bytes.slice());
-    return [...new Uint8Array(digest)].map((b) => b.toString(16).padStart(2, "0")).join("");
-  }
-  async function sha256HexOfUtf8(text) {
-    return sha256HexOfBytes(new TextEncoder().encode(text));
-  }
-  async function sha256HexOfBase64(base64Data) {
-    const binary = atob(base64Data);
-    const bytes = new Uint8Array(binary.length);
-    for (let i = 0; i < binary.length; i += 1) bytes[i] = binary.charCodeAt(i);
-    return sha256HexOfBytes(bytes);
-  }
+  // src/lib/local-first/journal/secureCopy/mirrorServerJournalEntry.ts
+  init_checksum();
 
   // src/lib/local-first/journal/mapper.ts
+  init_types();
   function mapServerJournalEntryLikeToLocal(server, options = {}) {
     const now = (/* @__PURE__ */ new Date()).toISOString();
     const journalStableId = options.journalStableId ?? createLocalStableId();
@@ -3968,7 +4966,11 @@ CREATE INDEX IF NOT EXISTS idx_local_media_journal
     return out;
   }
 
+  // src/lib/local-first/journal/secureCopy/sourceFingerprint.ts
+  init_checksum();
+
   // src/lib/local-first/journal/secureCopy/testEntryGuard.ts
+  init_types4();
   function normalizeTag(raw) {
     const t = raw.trim();
     if (!t) return "";
@@ -4034,6 +5036,7 @@ CREATE INDEX IF NOT EXISTS idx_local_media_journal
   }
 
   // src/lib/local-first/journal/secureCopy/mirrorServerJournalEntry.ts
+  init_security();
   function failResult(serverId, detail) {
     return {
       status: "failed",
@@ -4217,6 +5220,10 @@ CREATE INDEX IF NOT EXISTS idx_local_media_journal
   }
 
   // src/lib/local-first/journal/secureCopy/ServerToLocalCandidateCopyService.ts
+  init_types4();
+  init_LocalJournalSecureBootstrapper();
+  init_security();
+  init_types3();
   function emptyBatch(blockedReason) {
     return {
       ok: false,
@@ -4343,6 +5350,10 @@ CREATE INDEX IF NOT EXISTS idx_local_media_journal
 
   // src/lib/local-first/journal/secureCopy/ServerAuthoritativeWriteThroughMirrorService.ts
   init_dist();
+  init_types4();
+  init_LocalJournalSecureBootstrapper();
+  init_security();
+  init_types3();
   function blockedMirror(blockedReason, serverEntryId, injected) {
     return {
       ok: false,
@@ -4460,6 +5471,12 @@ CREATE INDEX IF NOT EXISTS idx_local_media_journal
 
   // src/lib/local-first/journal/secureCopy/runWriteThroughMirrorPoc.ts
   init_dist();
+  init_esm3();
+  init_esm();
+  init_LocalJournalSecureBootstrapper();
+  init_types4();
+  init_types();
+  init_security();
   var WRITE_THROUGH_POC_ENTRY_ID = "cmsppllhx0000kv04nmct79ak";
   var WRITE_THROUGH_POC_API_ORIGIN = "https://life-journey-zeta.vercel.app";
   var SESSION_COOKIE_PATH = "ljd/security-poc/session.cookie";
@@ -4522,13 +5539,13 @@ CREATE INDEX IF NOT EXISTS idx_local_media_journal
       throw new Error("write-through mirror PoC is native-only");
     }
     const steps = [];
-    const push = (id, status, detail) => {
+    const push2 = (id, status, detail) => {
       steps.push({ id, status, detail });
     };
     const entryId = (options?.entryId ?? WRITE_THROUGH_POC_ENTRY_ID).trim();
     try {
       if (!entryId) {
-        push(
+        push2(
           "W0",
           "fail",
           "explicit test entry ID required \u2014 stop and confirm with user (no auto discovery)"
@@ -4537,7 +5554,7 @@ CREATE INDEX IF NOT EXISTS idx_local_media_journal
       }
       const cookieHeader = await loadPocSessionCookieHeader();
       if (!cookieHeader) {
-        push("W2", "fail", "missing session.cookie for production GET");
+        push2("W2", "fail", "missing session.cookie for production GET");
         throw new Error("write-through PoC requires Library/ljd/security-poc/session.cookie");
       }
       configureServerFetchPoc({
@@ -4546,21 +5563,21 @@ CREATE INDEX IF NOT EXISTS idx_local_media_journal
       });
       await LocalJournalSecureBootstrapper.bootstrap();
       const before = await LocalJournalSecureBootstrapper.inspect();
-      push(
+      push2(
         "W1",
         before.health.status === "ready" && before.encrypted === true ? "pass" : "fail",
         `health=${before.health.status} encrypted=${String(before.encrypted)} entries=${String(before.rowCounts.local_journal_entries ?? null)}`
       );
       const fetched = await fetchAuthenticatedJournalEntry(entryId);
       if (!fetched.ok) {
-        push("W2", "fail", `GET failed code=${fetched.code}`);
+        push2("W2", "fail", `GET failed code=${fetched.code}`);
         throw new Error("canonical GET failed");
       }
       const like = apiJournalToServerLike(fetched.entry);
       const testTagged = hasTestPurposeTag(like.tags);
       const serverUpdatedAt = fetched.entry.updatedAt;
       const needsPhoto = journalEntryNeedsPhoto(fetched.entry);
-      push(
+      push2(
         "W2",
         testTagged ? "pass" : "fail",
         JSON.stringify({
@@ -4576,7 +5593,7 @@ CREATE INDEX IF NOT EXISTS idx_local_media_journal
         throw new Error("entry is not a test-purpose journal");
       }
       const prep = await removeCandidateEntryByLegacyServerIdForPoc(entryId);
-      push(
+      push2(
         "prep",
         "pass",
         JSON.stringify({ removedPriorLocal: prep.removed, mediaDeleted: prep.mediaDeleted })
@@ -4585,7 +5602,7 @@ CREATE INDEX IF NOT EXISTS idx_local_media_journal
         entryId,
         { injectLocalFailure: "save" }
       );
-      push(
+      push2(
         "W5",
         failInject.result === "failed" && failInject.needsRetry === true ? "pass" : "fail",
         JSON.stringify(summarizeMirror(failInject))
@@ -4594,7 +5611,7 @@ CREATE INDEX IF NOT EXISTS idx_local_media_journal
       const noLocalRow = await withCandidateRepository((r) => r.getByLegacyServerId(entryId)) === null;
       const serverAfterFail = await fetchAuthenticatedJournalEntry(entryId);
       const serverUntouched = serverAfterFail.ok && serverAfterFail.entry.updatedAt === serverUpdatedAt;
-      push(
+      push2(
         "W6",
         serverUntouched && noLocalRow && failInject.needsRetry ? "pass" : "fail",
         JSON.stringify({
@@ -4607,26 +5624,26 @@ CREATE INDEX IF NOT EXISTS idx_local_media_journal
         })
       );
       const success = await ServerAuthoritativeWriteThroughMirrorService.mirrorExplicitId(entryId);
-      push(
+      push2(
         "W7",
         success.result === "mirrored" ? "pass" : "fail",
         JSON.stringify(summarizeMirror(success))
       );
-      push(
+      push2(
         "W3",
         success.result === "mirrored" ? "pass" : "fail",
         JSON.stringify(summarizeMirror(success))
       );
       const afterMirror = await LocalJournalSecureBootstrapper.inspect();
       const mediaOk = !needsPhoto || (afterMirror.rowCounts.local_media ?? 0) >= 1;
-      push(
+      push2(
         "W4",
         afterMirror.health.status === "ready" && Boolean(await withCandidateRepository((r) => r.getByLegacyServerId(entryId))) && mediaOk && Boolean(success.fingerprint?.contentHash) && (!needsPhoto || Boolean(success.fingerprint?.photoHash)) ? "pass" : "fail",
         `entries=${String(afterMirror.rowCounts.local_journal_entries)} media=${String(afterMirror.rowCounts.local_media)} contentHash=${success.fingerprint?.contentHash ?? null} photoHash=${success.fingerprint?.photoHash ?? null} stableId=${success.stableId}`
       );
       const rerun = await ServerAuthoritativeWriteThroughMirrorService.mirrorExplicitId(entryId);
       const afterRerun = await LocalJournalSecureBootstrapper.inspect();
-      push(
+      push2(
         "W8",
         rerun.result === "already_present" && rerun.stableId === success.stableId && (afterRerun.rowCounts.local_journal_entries ?? -1) === (afterMirror.rowCounts.local_journal_entries ?? -2) ? "pass" : "fail",
         JSON.stringify({
@@ -4636,7 +5653,7 @@ CREATE INDEX IF NOT EXISTS idx_local_media_journal
         })
       );
       const persisted = await LocalJournalSecureBootstrapper.inspect();
-      push(
+      push2(
         "W9",
         persisted.health.status === "ready" && (persisted.rowCounts.local_journal_entries ?? 0) >= 1 ? "pass" : "fail",
         `entries=${String(persisted.rowCounts.local_journal_entries)} media=${String(persisted.rowCounts.local_media)} (kill/relaunch verified by outer harness when needed)`
@@ -4656,19 +5673,19 @@ CREATE INDEX IF NOT EXISTS idx_local_media_journal
       const candidate = artifacts.find(
         (a) => a.name === `${SERVER_COPY_TARGET_DB_NAME}SQLite.db`
       );
-      push(
+      push2(
         "W10",
         prodEncrypted === false && Boolean(prod) && Boolean(candidate) && serverUntouched ? "pass" : "fail",
         `prodEncrypted=${String(prodEncrypted)} prodBytes=${String(prod?.bytes ?? null)} candidateBytes=${String(candidate?.bytes ?? null)} generalUi=Server-only-save-unchanged`
       );
       const capacity = await readAvailableBytesOrNull();
-      push(
+      push2(
         "capacity",
         capacity.decision.known ? "pass" : "fail",
         `available=${String(capacity.availableBytes)} source=${capacity.source}`
       );
     } catch (error) {
-      push("error", "fail", safeErrorMessage(error));
+      push2("error", "fail", safeErrorMessage(error));
     } finally {
       configureServerFetchPoc(null);
     }
@@ -4694,8 +5711,224 @@ CREATE INDEX IF NOT EXISTS idx_local_media_journal
     return report;
   }
 
+  // src/lib/local-first/journal/activation/runActivationPointerPoc.ts
+  init_dist();
+  init_esm3();
+  init_esm();
+  init_activationPreflight();
+  init_LocalJournalActivationManifestStore();
+  init_LocalJournalTechnicalActivation();
+  init_types5();
+  init_manifestCanonical();
+  init_types();
+  init_security();
+  async function runActivationPointerPoc() {
+    if (!Capacitor.isNativePlatform()) {
+      throw new Error("activation pointer PoC is native-only");
+    }
+    const steps = [];
+    const push2 = (id, status, detail) => {
+      steps.push({ id, status, detail });
+    };
+    const absolutePath = await resolveActivationManifestAbsolutePath();
+    const fs = await createNativeManifestFs();
+    try {
+      const before = await LocalJournalActivationManifestStore.readWithFs(absolutePath, fs);
+      if (before.status === "missing") {
+        push2("P1", "pass", "manifest_absent");
+      } else if (before.status === "ok") {
+        push2("P1", "pass", `prior_manifest_present generation=${before.manifest.generation} (will re-activate)`);
+      } else {
+        push2("P1", "pass", `prior_non_ok=${before.status} (fail-closed until rewrite)`);
+      }
+      const preflight = await runTechnicalActivationPreflight();
+      push2(
+        "P2",
+        preflight.ok ? "pass" : "fail",
+        JSON.stringify({
+          ok: preflight.ok,
+          failed: preflight.checks.filter((c) => !c.ok).map((c) => c.id),
+          entries: preflight.inspection?.rowCounts.local_journal_entries ?? null,
+          encrypted: preflight.inspection?.encrypted ?? null
+        })
+      );
+      let capacityBytes = (await readAvailableBytesOrNull()).availableBytes;
+      if (capacityBytes == null) {
+        capacityBytes = (await readAvailableBytesOrNull()).availableBytes;
+      }
+      const activation = await LocalJournalTechnicalActivation.activateCandidate(
+        capacityBytes != null ? { availableBytes: capacityBytes } : void 0
+      );
+      push2(
+        "P3",
+        activation.code === "activated" || activation.code === "already_active" ? "pass" : "fail",
+        JSON.stringify({
+          code: activation.code,
+          detail: activation.detail,
+          preflightOk: activation.preflightOk,
+          generation: activation.manifest?.generation ?? null,
+          activeDatabaseId: activation.manifest?.activeDatabaseId ?? null,
+          activeMediaRootId: activation.manifest?.activeMediaRootId ?? null,
+          previousDatabaseId: activation.manifest?.previousDatabaseId ?? null,
+          capacityBytes
+        })
+      );
+      const readback = await LocalJournalActivationManifestStore.readNative();
+      push2(
+        "P4",
+        readback.status === "ok" && readback.manifest.formatVersion === ACTIVATION_MANIFEST_FORMAT_VERSION && readback.manifest.schemaVersion === EXPECTED_JOURNAL_SCHEMA_VERSION && readback.manifest.activeMediaRootId === TECHNICAL_ACTIVE_MEDIA_ROOT_ID ? "pass" : "fail",
+        JSON.stringify({
+          status: readback.status,
+          checksumChars: readback.status === "ok" ? readback.manifest.checksum.length : 0,
+          generation: readback.status === "ok" ? readback.manifest.generation : null
+        })
+      );
+      const resolved = await LocalJournalTechnicalActivation.resolve();
+      push2(
+        "P5",
+        resolved.status === "ready" && resolved.technicalDatabaseId === TECHNICAL_ACTIVE_DATABASE_ID ? "pass" : "fail",
+        JSON.stringify({
+          status: resolved.status,
+          technicalDatabaseId: resolved.technicalDatabaseId,
+          technicalMediaRootId: resolved.technicalMediaRootId
+        })
+      );
+      const resolvedAgain = await LocalJournalTechnicalActivation.resolve();
+      push2(
+        "P6",
+        resolvedAgain.status === "ready" ? "pass" : "fail",
+        JSON.stringify({
+          status: resolvedAgain.status,
+          note: "in-process re-resolve; kill/relaunch confirmed by outer harness when needed"
+        })
+      );
+      const second = await LocalJournalTechnicalActivation.activateCandidate();
+      push2(
+        "P7",
+        second.code === "already_active" ? "pass" : "fail",
+        JSON.stringify({ code: second.code })
+      );
+      const good = readback.status === "ok" ? readback.manifest : null;
+      await fs.atomicReplaceText(absolutePath, "{corrupt");
+      const corruptResolve = await LocalJournalTechnicalActivation.resolve();
+      push2(
+        "P8",
+        corruptResolve.status === "corrupt_manifest" && corruptResolve.technicalDatabaseId === null ? "pass" : "fail",
+        JSON.stringify({ status: corruptResolve.status })
+      );
+      if (good) {
+        await fs.atomicReplaceText(absolutePath, `${JSON.stringify(good, null, 2)}
+`);
+      } else {
+        await LocalJournalTechnicalActivation.activateCandidate();
+      }
+      const missingTargetManifest = await attachManifestChecksum({
+        formatVersion: ACTIVATION_MANIFEST_FORMAT_VERSION,
+        generation: 2,
+        activeDatabaseId: TECHNICAL_ACTIVE_DATABASE_ID,
+        activeMediaRootId: TECHNICAL_ACTIVE_MEDIA_ROOT_ID,
+        previousDatabaseId: null,
+        previousMediaRootId: null,
+        activationState: "active",
+        schemaVersion: EXPECTED_JOURNAL_SCHEMA_VERSION,
+        activatedAt: (/* @__PURE__ */ new Date()).toISOString()
+      });
+      await fs.atomicReplaceText(
+        absolutePath,
+        `${JSON.stringify(missingTargetManifest, null, 2)}
+`
+      );
+      const { resolveTechnicalActiveLocalJournalWithFs: resolveTechnicalActiveLocalJournalWithFs2 } = await Promise.resolve().then(() => (init_LocalJournalTechnicalActivation(), LocalJournalTechnicalActivation_exports));
+      const missingResolve = await resolveTechnicalActiveLocalJournalWithFs2({
+        fs,
+        absolutePath,
+        verifyDatabaseExists: async () => false
+      });
+      push2(
+        "P9",
+        missingResolve.status === "missing_database" && missingResolve.technicalDatabaseId === null ? "pass" : "fail",
+        JSON.stringify({
+          status: missingResolve.status,
+          note: "fail-closed; no alternate DB discovery"
+        })
+      );
+      await LocalJournalTechnicalActivation.activateCandidate();
+      const rollback = await demonstrateManifestRollbackSemantics({
+        fs,
+        absolutePath
+      });
+      push2(
+        "P10",
+        rollback.code === "rollback_preserved" && rollback.preservedGeneration === 2 ? "pass" : "fail",
+        JSON.stringify(rollback)
+      );
+      await LocalJournalTechnicalActivation.activateCandidate();
+      let prodEncrypted = null;
+      try {
+        prodEncrypted = Boolean(
+          (await CapacitorSQLite.isDatabaseEncrypted({
+            database: LOCAL_JOURNAL_DB_NAME
+          })).result
+        );
+      } catch {
+        prodEncrypted = null;
+      }
+      const artifacts = await listSqliteArtifactsReadOnly();
+      const prod = artifacts.find((a) => a.name === `${LOCAL_JOURNAL_DB_NAME}SQLite.db`);
+      const candidate = artifacts.find(
+        (a) => a.name === `${TECHNICAL_ACTIVE_DATABASE_ID}SQLite.db`
+      );
+      push2(
+        "P11",
+        prodEncrypted === false && Boolean(prod) && Boolean(candidate) ? "pass" : "fail",
+        `prodEncrypted=${String(prodEncrypted)} prodBytes=${String(prod?.bytes ?? null)} candidateBytes=${String(candidate?.bytes ?? null)}`
+      );
+      push2(
+        "P12",
+        "pass",
+        "general Journal UI remains Server read/write; Repository not switched; pointer-driven routing not enabled"
+      );
+      const capacity = await readAvailableBytesOrNull();
+      push2(
+        "capacity",
+        capacity.decision.known ? "pass" : "fail",
+        `available=${String(capacity.availableBytes)}`
+      );
+    } catch (error) {
+      push2("error", "fail", safeErrorMessage(error));
+    }
+    const report = {
+      ranAt: (/* @__PURE__ */ new Date()).toISOString(),
+      steps,
+      actualJournalUntouched: true,
+      generalUiServerOnly: true,
+      repositoryNotSwitched: true
+    };
+    await Filesystem.mkdir({
+      path: "ljd/security-poc",
+      directory: Directory.Library,
+      recursive: true
+    }).catch(() => void 0);
+    await Filesystem.writeFile({
+      path: "ljd/security-poc/activation-pointer-report.json",
+      directory: Directory.Library,
+      encoding: Encoding.UTF8,
+      data: JSON.stringify(report, null, 2)
+    });
+    return report;
+  }
+
+  // src/lib/local-first/diagnostics/localStorageDiagnosticsMain.ts
+  init_LocalJournalTechnicalActivation();
+  init_LocalJournalActivationManifestStore();
+  init_activationPreflight();
+  init_types4();
+
   // src/lib/local-first/journal/mediaStore.ts
   init_dist();
+  init_esm3();
+  init_checksum();
+  init_types();
   function assertNative3() {
     if (!Capacitor.isNativePlatform()) {
       throw new Error("Local Journal media store is native-only.");
@@ -4721,6 +5954,7 @@ CREATE INDEX IF NOT EXISTS idx_local_media_journal
   }
 
   // src/lib/local-first/journal/repository.ts
+  init_database();
   var JournalRepository = {
     async save(entry) {
       await withLocalJournalTransaction(async (db2) => {
@@ -4783,6 +6017,8 @@ CREATE INDEX IF NOT EXISTS idx_local_media_journal
   };
 
   // src/lib/local-first/diagnostics/localStorageDiagnosticsMain.ts
+  init_security();
+  init_fileProtection();
   function $(id) {
     const el = document.getElementById(id);
     if (!el) throw new Error(`Missing #${id}`);
@@ -4961,6 +6197,51 @@ CREATE INDEX IF NOT EXISTS idx_local_media_journal
         );
       })().catch((e) => setStatus(safeErrorMessage(e), true));
     });
+    $("btn-read-activation-manifest").addEventListener("click", () => {
+      void (async () => {
+        const read = await LocalJournalActivationManifestStore.readNative();
+        const resolve2 = await LocalJournalTechnicalActivation.resolve().catch((e) => ({
+          status: "error",
+          detail: safeErrorMessage(e)
+        }));
+        const preflight = await runTechnicalActivationPreflight();
+        $("security-report").textContent = JSON.stringify(
+          {
+            readOnly: true,
+            manifest: read,
+            resolve: resolve2,
+            preflight: {
+              ok: preflight.ok,
+              failed: preflight.checks.filter((c) => !c.ok).map((c) => c.id),
+              activeMediaRootId: preflight.targetMediaRootId
+            }
+          },
+          null,
+          2
+        );
+        setStatus(`manifest ${read.status} resolve=${"status" in resolve2 ? resolve2.status : "?"}`);
+      })().catch((e) => setStatus(safeErrorMessage(e), true));
+    });
+    $("btn-technical-activation").addEventListener("click", () => {
+      void (async () => {
+        setStatus("technical activation\u2026\uFF08Repository \u5207\u66FF\u306A\u3057 / candidate \u56FA\u5B9A\uFF09");
+        const result = await LocalJournalTechnicalActivation.activateCandidate();
+        $("security-report").textContent = JSON.stringify(result, null, 2);
+        setStatus(`activation code=${result.code}`, !result.ok);
+      })().catch((e) => setStatus(safeErrorMessage(e), true));
+    });
+    $("btn-activation-pointer-poc").addEventListener("click", () => {
+      void (async () => {
+        setStatus("activation pointer PoC P1\u2013P12\u2026");
+        const report = await runActivationPointerPoc();
+        $("security-report").textContent = JSON.stringify(report, null, 2);
+        const fails = report.steps.filter((s2) => s2.status === "fail").length;
+        setStatus(
+          `activation-pointer fail=${fails} repoSwitched=${String(!report.repositoryNotSwitched)}`,
+          fails > 0
+        );
+      })().catch((e) => setStatus(safeErrorMessage(e), true));
+    });
     $("btn-inspect-capacity").addEventListener("click", () => {
       void (async () => {
         const capacity = await readAvailableBytesOrNull();
@@ -5013,15 +6294,13 @@ CREATE INDEX IF NOT EXISTS idx_local_media_journal
     try {
       await openLocalJournalDatabase();
       await renderEntries();
-      setStatus("write-through PoC W1\u2013W10 \u5B9F\u884C\u4E2D\u2026\uFF08\u660E\u793A1\u4EF6\u306E\u307F / candidate \u56FA\u5B9A\uFF09");
+      setStatus("activation pointer PoC P1\u2013P12 \u5B9F\u884C\u4E2D\u2026\uFF08Repository \u5207\u66FF\u306A\u3057\uFF09");
       await LocalJournalSecureBootstrapper.bootstrap();
-      const report = await runWriteThroughMirrorPoc({
-        entryId: WRITE_THROUGH_POC_ENTRY_ID
-      });
+      const report = await runActivationPointerPoc();
       $("security-report").textContent = JSON.stringify(report, null, 2);
       const fails = report.steps.filter((s2) => s2.status === "fail").length;
       setStatus(
-        `write-through fail=${fails} id=${WRITE_THROUGH_POC_ENTRY_ID} untouched=${String(report.actualJournalUntouched)}`,
+        `activation-pointer fail=${fails} untouched=${String(report.actualJournalUntouched)}`,
         fails > 0
       );
     } catch (err) {

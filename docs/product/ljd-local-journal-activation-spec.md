@@ -21,42 +21,38 @@
 # Life Journey Diary｜Local Journal Activation Architecture
 
 **Status:** Pre-Implementation Activation Architecture / Source of Truth Candidate  
-**ラベル:** **Designed candidate**＝比較後の第一候補／**Open**＝未確定／**Forbidden now**＝本Phase実装禁止／**Release Gate**＝未実証（PASS禁止）
+**PoC (4B-4F):** developer-only technical activation pointer **PASS**（一般 UI / Repository / SoT 未接続）。  
+証拠: `docs/hybrid/HYBRID_PHASE_4B4F_ACTIVATION_POINTER_POC.md`
+
+**ラベル:** **Designed candidate**＝比較後の第一候補／**Open**＝未確定／**Forbidden now**＝製品接続禁止／**Release Gate**＝未実証（PASS禁止）
 
 ---
 
 ## 0. 定義：activation とは何か（分離必須）
 
-### 0.1 Technical activation（本SoTの主対象）
+### 0.1 Technical activation（本SoTの主対象 / 4B-4F で developer PoC）
 
-> Repository（および将来の正式 Local Journal 読取経路）が、  
-> **encrypted Local Journal generation** を「いま読む DB／media」として選択すること。
+> **Activation manifest** が、encrypted Local Journal generation を  
+> 「technical active 候補」として指すこと。
 
-例：`ljd_local_journal_secure_candidate`（および対応 media generation）を  
-一般の Local Journal Repository が読む対象にする。
+4B-4F: Application Support manifest + preflight + developer resolver を実証。  
+**一般 Journal Repository はまだ接続しない**（UI activation ではない）。
 
-これはまだ：
+### 0.1b UI activation（別・未実施）
 
-- Server を削除する  
-- Server を人生記録の正式原本から外す  
-
-を意味しない。
+> 一般 Journal UI / production Repository が Local technical-active generation を読むこと。
 
 ### 0.2 Source-of-truth switch（別Phase / Release Gate）
 
 > 人生記録の正式原本を Server → Device へ変更すること（Local原本化）。
 
-Technical activation の後にも、**Server 原本を保持する parallel verification 期間**を置く。  
-本SoTは主に 0.1。0.2 はゲートと別設計が必要。
-
-| | Technical activation | Source-of-truth switch |
-| --- | --- | --- |
-| Repository が encrypted Local を読む | 含む | 前提 |
-| Server データ保持 | 必須（当面） | 移行完了判定まで保持 |
-| Server への新規 write 停止 | まだ決めない | この切替の中核 |
-| Local への新規 write | 次Phase課題 | 原本側へ |
-| RG-2/3（backup中身・restore） | 推奨完了前 | **必須ゲート** |
-| 本Phaseで実装 | **禁止** | **禁止** |
+| | Technical activation | UI activation | Source-of-truth switch |
+| --- | --- | --- | --- |
+| manifest が candidate を指す | 含む（4B-4F） | 前提 | 前提 |
+| 一般 Repository が Local を読む | **しない（4B-4F）** | 含む | 前提 |
+| Server データ保持 | 必須 | 必須 | 移行完了まで |
+| RG-2/3 | 推奨 | 推奨 | **必須ゲート** |
+| 本Phase製品接続 | developer-only | **禁止** | **禁止** |
 
 ---
 
@@ -319,12 +315,26 @@ Technical activation PoC は Group A / dummy に限定。原本切替は RG-2/3 
 
 ---
 
-## 13. 禁止（本Phase）
+## 13. 禁止（製品接続）
 
-active pointer 実装、candidate rename、Repository 切替、actual DB 変更、media 移動、Local/Server write 切替、Local原本化、Server 削除、RG 変更、main merge。
+一般 Journal Repository 切替、Local-only read、production Journal save 変更、pointer による write routing、candidate rename、actual DB 変更、media 移動、Local原本化、Server 原本解除、RG PASS 化、main merge。
+
+**4B-4F:** developer-only technical activation pointer PoC は許可（上記製品接続は禁止のまま）。
 
 ---
 
 ## 14. 矛盾時の優先
 
 世界観 → Local-first 方針 → お引越し便 → 端末保存・復元 → **データ保護 SoT** → **本 activation SoT（候補）** → Hybrid 作業メモ → コード。
+
+---
+
+## 15. 4B-4F 実証メモ
+
+| 項目 | 結果 |
+| --- | --- |
+| Application Support manifest | PASS |
+| atomic write + checksum | PASS |
+| preflight / resolve / corrupt / missing / rollback | PASS |
+| P1–P12 Simulator | PASS |
+| Repository / SoT | 未接続 |

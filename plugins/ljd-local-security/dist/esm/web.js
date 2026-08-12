@@ -21,4 +21,10 @@ export class LjdLocalSecurityWeb extends WebPlugin {
     async listSqliteArtifactsInLjdDir() {
         throw this.unimplemented('Not implemented on web.');
     }
+    async atomicReplaceTextFile() {
+        throw this.unimplemented('Not implemented on web.');
+    }
+    async readTextFile() {
+        throw this.unimplemented('Not implemented on web.');
+    }
 }
