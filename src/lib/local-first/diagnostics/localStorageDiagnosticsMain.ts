@@ -8,6 +8,8 @@ import { Capacitor } from "@capacitor/core";
 import { openLocalJournalDatabase } from "@/lib/local-first/journal/database";
 import { LocalJournalSecureBootstrapper } from "@/lib/local-first/journal/secureBootstrap/LocalJournalSecureBootstrapper";
 import { runSecureBootstrapPoc } from "@/lib/local-first/journal/secureBootstrap/runSecureBootstrapPoc";
+import { ServerToLocalCandidateCopyService } from "@/lib/local-first/journal/secureCopy/ServerToLocalCandidateCopyService";
+import { FAILURE_INJECTION_MISSING_ENTRY_ID } from "@/lib/local-first/journal/secureCopy/types";
 import {
   deleteJournalMediaRelative,
   resolveJournalMediaUri,
@@ -132,6 +134,41 @@ async function boot(): Promise<void> {
       const result = await LocalJournalSecureBootstrapper.bootstrap();
       $("security-report").textContent = JSON.stringify(result, null, 2);
       setStatus(`bootstrap ${result.status} ${result.detail}`, !result.ok);
+    })().catch((e) => setStatus(safeErrorMessage(e), true));
+  });
+
+  $("btn-copy-to-secure-candidate").addEventListener("click", () => {
+    void (async () => {
+      const raw = ($("copy-entry-ids") as HTMLTextAreaElement).value;
+      setStatus("explicit IDs → encrypted candidate（本番 journal / 自動検索なし）");
+      const result = await ServerToLocalCandidateCopyService.copyExplicitIds(raw);
+      const report = {
+        targetDb: result.targetDb,
+        copied: result.copied,
+        alreadyPresent: result.alreadyPresent,
+        sourceChanged: result.sourceChanged,
+        failed: result.failed,
+        blockedReason: result.blockedReason,
+        candidateEncrypted: result.candidateEncrypted,
+        completeProtection: result.completeProtection,
+        backupExcluded: result.backupExcluded,
+        rowCounts: result.rowCounts,
+        results: result.results.map((item) => ({
+          status: item.status,
+          serverId: item.serverId,
+          stableId: item.stableId,
+          legacyServerId: item.legacyServerId,
+          detail: item.detail,
+          contentHash: item.fingerprint?.contentHash ?? null,
+          photoHash: item.fingerprint?.photoHash ?? null,
+        })),
+        failureInjectionId: FAILURE_INJECTION_MISSING_ENTRY_ID,
+      };
+      $("security-report").textContent = JSON.stringify(report, null, 2);
+      setStatus(
+        `copy copied=${result.copied} present=${result.alreadyPresent} changed=${result.sourceChanged} failed=${result.failed} blocked=${String(result.blockedReason)}`,
+        !result.ok || Boolean(result.blockedReason),
+      );
     })().catch((e) => setStatus(safeErrorMessage(e), true));
   });
 

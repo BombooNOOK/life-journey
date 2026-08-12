@@ -68,6 +68,18 @@
         <button type="button" id="btn-inspect-secure-candidate">Inspect secure candidate (read-only)</button>
         <button type="button" id="btn-bootstrap-secure-candidate">Bootstrap encrypted journal candidate</button>
       </div>
+      <label class="note" for="copy-entry-ids">
+        4B-4B explicit Server entry IDs（candidate のみ・本番 DB 不可）
+        <textarea
+          id="copy-entry-ids"
+          rows="3"
+          style="display:block;width:100%;margin-top:0.35rem;font:inherit"
+          placeholder="cuid を改行またはカンマ区切りで明示指定。自動検索しません。"
+        ></textarea>
+      </label>
+      <div class="actions">
+        <button type="button" id="btn-copy-to-secure-candidate">Copy explicit IDs to encrypted candidate</button>
+      </div>
       <p id="status" class="status">起動中…</p>
       <section>
         <h2 style="font-size: 0.95rem; font-family: system-ui, sans-serif">Security attrs</h2>

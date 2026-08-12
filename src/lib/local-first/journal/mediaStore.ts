@@ -5,7 +5,10 @@
 import { Capacitor } from "@capacitor/core";
 import { Directory, Filesystem } from "@capacitor/filesystem";
 
+import { sha256HexOfBase64 } from "@/lib/local-first/journal/checksum";
 import { LOCAL_JOURNAL_MEDIA_ROOT } from "@/lib/local-first/journal/types";
+
+export { sha256HexOfBase64 };
 
 function assertNative(): void {
   if (!Capacitor.isNativePlatform()) {
@@ -75,11 +78,3 @@ export async function deleteJournalMediaRelative(relativePath: string): Promise<
   }
 }
 
-/** Simple checksum for PoC (not cryptographic authenticity) */
-export async function sha256HexOfBase64(base64Data: string): Promise<string> {
-  const binary = atob(base64Data);
-  const bytes = new Uint8Array(binary.length);
-  for (let i = 0; i < binary.length; i += 1) bytes[i] = binary.charCodeAt(i);
-  const digest = await crypto.subtle.digest("SHA-256", bytes);
-  return [...new Uint8Array(digest)].map((b) => b.toString(16).padStart(2, "0")).join("");
-}

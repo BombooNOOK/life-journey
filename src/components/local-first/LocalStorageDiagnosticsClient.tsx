@@ -15,6 +15,8 @@ import {
 } from "@/lib/local-first/journal/mediaStore";
 import { migrateServerJournalEntryToDevice } from "@/lib/local-first/journal/migrateFromServer";
 import { JournalRepository } from "@/lib/local-first/journal/repository";
+import { ServerToLocalCandidateCopyService } from "@/lib/local-first/journal/secureCopy/ServerToLocalCandidateCopyService";
+import { FAILURE_INJECTION_MISSING_ENTRY_ID } from "@/lib/local-first/journal/secureCopy/types";
 import type { LocalJournalEntry } from "@/lib/local-first/journal/types";
 import {
   inspectPluginDbKeyAccessibility,
@@ -25,6 +27,7 @@ import { inspectFileProtection } from "@/lib/local-first/security/fileProtection
 
 export function LocalStorageDiagnosticsClient() {
   const [entryId, setEntryId] = useState("");
+  const [candidateIds, setCandidateIds] = useState("");
   const [status, setStatus] = useState("準備中…");
   const [entries, setEntries] = useState<LocalJournalEntry[]>([]);
   const [previewUri, setPreviewUri] = useState<string | null>(null);
@@ -62,6 +65,36 @@ export function LocalStorageDiagnosticsClient() {
     );
     await refresh();
   }, [entryId, refresh]);
+
+  const onCopyToCandidate = useCallback(async () => {
+    setStatus("explicit IDs → encrypted candidate（本番 journal は書かない）");
+    const result = await ServerToLocalCandidateCopyService.copyExplicitIds(candidateIds);
+    setStatus(
+      JSON.stringify(
+        {
+          targetDb: result.targetDb,
+          copied: result.copied,
+          alreadyPresent: result.alreadyPresent,
+          sourceChanged: result.sourceChanged,
+          failed: result.failed,
+          blockedReason: result.blockedReason,
+          candidateEncrypted: result.candidateEncrypted,
+          completeProtection: result.completeProtection,
+          rowCounts: result.rowCounts,
+          results: result.results.map((item) => ({
+            status: item.status,
+            serverId: item.serverId,
+            stableId: item.stableId,
+            detail: item.detail,
+            contentHash: item.fingerprint?.contentHash ?? null,
+          })),
+          failureInjectionId: FAILURE_INJECTION_MISSING_ENTRY_ID,
+        },
+        null,
+        2,
+      ),
+    );
+  }, [candidateIds]);
 
   const onClear = useCallback(async () => {
     const paths = await JournalRepository.deleteAll();
@@ -114,12 +147,25 @@ export function LocalStorageDiagnosticsClient() {
   return (
     <div className="space-y-4 text-stone-900">
       <label className="block text-sm">
-        <span className="font-medium">server entry id（任意・診断用1件コピー）</span>
+        <span className="font-medium">4B-2C: server entry id（active DB 1件コピー・本Phaseでは使わない）</span>
         <input
           className="mt-1 w-full rounded-lg border border-stone-300 bg-white px-3 py-2 text-sm"
           value={entryId}
           onChange={(e) => setEntryId(e.target.value)}
           placeholder="cuid..."
+          autoCapitalize="off"
+          autoCorrect="off"
+        />
+      </label>
+
+      <label className="block text-sm">
+        <span className="font-medium">4B-4B: explicit IDs → encrypted candidate only</span>
+        <textarea
+          className="mt-1 w-full rounded-lg border border-stone-300 bg-white px-3 py-2 text-sm"
+          rows={3}
+          value={candidateIds}
+          onChange={(e) => setCandidateIds(e.target.value)}
+          placeholder="テスト用 cuid を改行またはカンマで明示指定。自動検索しません。"
           autoCapitalize="off"
           autoCorrect="off"
         />
@@ -131,7 +177,14 @@ export function LocalStorageDiagnosticsClient() {
           className="rounded-lg bg-stone-800 px-4 py-2.5 text-sm font-semibold text-white"
           onClick={() => void onCopyOne().catch((e) => setStatus(String(e)))}
         >
-          1件コピー（診断）
+          1件コピー（active DB・4B-2C）
+        </button>
+        <button
+          type="button"
+          className="rounded-lg bg-emerald-800 px-4 py-2.5 text-sm font-semibold text-white"
+          onClick={() => void onCopyToCandidate().catch((e) => setStatus(String(e)))}
+        >
+          Copy explicit IDs to encrypted candidate
         </button>
         <button
           type="button"

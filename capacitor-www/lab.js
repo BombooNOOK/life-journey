@@ -2472,6 +2472,7 @@
   // src/lib/local-first/journal/types.ts
   var LOCAL_JOURNAL_DB_NAME = "ljd_local_journal";
   var LOCAL_JOURNAL_SCHEMA_USER_VERSION = 1;
+  var LOCAL_JOURNAL_MEDIA_ROOT = "ljd/media/journal";
 
   // src/lib/local-first/journal/database.ts
   var connection = null;
@@ -3433,33 +3434,379 @@ CREATE INDEX IF NOT EXISTS idx_local_media_journal
     return report;
   }
 
-  // src/lib/local-first/journal/mediaStore.ts
+  // src/lib/local-first/journal/secureCopy/ServerToLocalCandidateCopyService.ts
   init_dist();
+
+  // src/lib/local-first/journal/checksum.ts
+  async function sha256HexOfBytes(bytes) {
+    const digest = await crypto.subtle.digest("SHA-256", bytes.slice());
+    return [...new Uint8Array(digest)].map((b) => b.toString(16).padStart(2, "0")).join("");
+  }
+  async function sha256HexOfUtf8(text) {
+    return sha256HexOfBytes(new TextEncoder().encode(text));
+  }
+  async function sha256HexOfBase64(base64Data) {
+    const binary = atob(base64Data);
+    const bytes = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i += 1) bytes[i] = binary.charCodeAt(i);
+    return sha256HexOfBytes(bytes);
+  }
+
+  // src/lib/local-first/journal/stableId.ts
+  var CROCKFORD = "0123456789ABCDEFGHJKMNPQRSTVWXYZ";
+  function encodeTime(ms, length) {
+    let value = ms;
+    let out = "";
+    for (let i = 0; i < length; i += 1) {
+      const mod = value % 32;
+      out = CROCKFORD[mod] + out;
+      value = Math.floor(value / 32);
+    }
+    return out;
+  }
+  function encodeRandom(length) {
+    const bytes = new Uint8Array(length);
+    crypto.getRandomValues(bytes);
+    let out = "";
+    for (let i = 0; i < length; i += 1) {
+      out += CROCKFORD[bytes[i] % 32];
+    }
+    return out;
+  }
+  function createLocalStableId() {
+    return `${encodeTime(Date.now(), 10)}${encodeRandom(16)}`;
+  }
+
+  // src/lib/local-first/journal/mapper.ts
+  function mapServerJournalEntryLikeToLocal(server, options = {}) {
+    const now = (/* @__PURE__ */ new Date()).toISOString();
+    const journalStableId = options.journalStableId ?? createLocalStableId();
+    const mediaRefs = [];
+    const hasPhotoHint = Boolean(server.photoBlobUrl) || Boolean(server.photoBlobPathname) || Boolean(server.photoDataUrl) || Boolean(options.mediaRelativePath);
+    if (hasPhotoHint && options.mediaRelativePath) {
+      mediaRefs.push({
+        stableId: options.mediaStableId ?? createLocalStableId(),
+        journalStableId,
+        type: "image",
+        relativePath: options.mediaRelativePath,
+        createdAt: server.createdAt,
+        checksum: options.mediaChecksum ?? null,
+        mimeType: server.photoMimeType
+      });
+    }
+    return {
+      stableId: journalStableId,
+      dateKey: server.dateKey,
+      title: server.title.trim() || "\u7121\u984C\u306E\u3042\u3057\u3042\u3068",
+      content: server.content,
+      createdAt: server.createdAt,
+      updatedAt: server.updatedAt,
+      tags: normalizeTags(server.tags),
+      mediaRefs,
+      schemaVersion: LOCAL_JOURNAL_SCHEMA_USER_VERSION,
+      source: options.source ?? "mapped_server_shape",
+      localStatus: "active",
+      importedAt: options.importedAt ?? now,
+      legacyServerId: server.id,
+      serverUpdatedAt: server.updatedAt
+    };
+  }
+  function normalizeTags(tags) {
+    const out = [];
+    const seen = /* @__PURE__ */ new Set();
+    for (const raw of tags) {
+      const t = raw.trim();
+      if (!t) continue;
+      const withHash = t.startsWith("#") ? t : `#${t}`;
+      if (seen.has(withHash)) continue;
+      seen.add(withHash);
+      out.push(withHash);
+    }
+    return out;
+  }
+
+  // src/lib/date/japanCalendarDate.ts
+  var TZ_JAPAN = "Asia/Tokyo";
+  function calendarDayKeyInJapanFromDate(date) {
+    return date.toLocaleDateString("en-CA", { timeZone: TZ_JAPAN });
+  }
+
+  // src/lib/journal/diaryTags.ts
+  var FULLWIDTH_HASH = "\uFF03";
+  var DIARY_TAG_FORBIDDEN_CHARS = /[\s#。、！？!?,，．.]/;
+  function isDiaryTagToken(token) {
+    if (!token.startsWith("#")) return false;
+    const name = token.slice(1);
+    if (!name || DIARY_TAG_FORBIDDEN_CHARS.test(name)) return false;
+    return true;
+  }
+  function isTagOnlyLine(line) {
+    const trimmed = normalizeDiaryHashChars(line.trim());
+    if (!trimmed) return false;
+    const tokens = trimmed.split(/\s+/).filter(Boolean);
+    if (tokens.length === 0) return false;
+    return tokens.every(isDiaryTagToken);
+  }
+  function parseDiaryTagInput(input) {
+    const normalized = normalizeDiaryHashChars(input.trim());
+    if (!normalized) return [];
+    const tags = [];
+    const seen = /* @__PURE__ */ new Set();
+    for (const token of normalized.split(/\s+/)) {
+      if (!token) continue;
+      const name = (token.startsWith("#") ? token.slice(1) : token).trim();
+      if (!name) continue;
+      const key = name.toLowerCase();
+      if (seen.has(key)) continue;
+      seen.add(key);
+      tags.push(name);
+    }
+    return tags;
+  }
+  function normalizeDiaryHashChars(input) {
+    return input.replaceAll(FULLWIDTH_HASH, "#");
+  }
+  function extractTagsFromContent(content) {
+    const normalized = normalizeDiaryHashChars(content).replace(/\r\n/g, "\n").replace(/\r/g, "\n");
+    const lines = normalized.split("\n");
+    while (lines.length > 0 && lines[lines.length - 1].trim() === "") {
+      lines.pop();
+    }
+    if (lines.length === 0) {
+      return { body: "", tags: [] };
+    }
+    const lastLine = lines[lines.length - 1];
+    if (!isTagOnlyLine(lastLine)) {
+      return { body: normalized.trimEnd(), tags: [] };
+    }
+    lines.pop();
+    while (lines.length > 0 && lines[lines.length - 1].trim() === "") {
+      lines.pop();
+    }
+    return {
+      body: lines.join("\n").trimEnd(),
+      tags: parseDiaryTagInput(lastLine)
+    };
+  }
+
+  // src/lib/journal/journalEntryPhotoPath.ts
+  function journalEntryPhotoApiPath(entryId) {
+    return `/api/journal/entries/${encodeURIComponent(entryId)}/photo`;
+  }
+
+  // src/lib/local-first/journal/serverFetch.ts
+  function arrayBufferToBase64(buffer) {
+    const bytes = new Uint8Array(buffer);
+    let binary = "";
+    const chunk = 32768;
+    for (let i = 0; i < bytes.length; i += chunk) {
+      binary += String.fromCharCode(...bytes.subarray(i, i + chunk));
+    }
+    return btoa(binary);
+  }
+  function titleFromContent(content) {
+    const body = extractTagsFromContent(content).body.trim();
+    const first = body.split(/\n/)[0]?.trim() ?? "";
+    if (!first) return "\u7121\u984C\u306E\u3042\u3057\u3042\u3068";
+    return first.length > 40 ? `${first.slice(0, 40)}\u2026` : first;
+  }
+  function apiJournalToServerLike(entry) {
+    const extracted = extractTagsFromContent(entry.content);
+    const tags = extracted.tags.map((t) => t.startsWith("#") ? t : `#${t}`);
+    const created = new Date(entry.createdAt);
+    return {
+      id: entry.id,
+      createdAt: entry.createdAt,
+      updatedAt: entry.updatedAt,
+      email: "",
+      profileId: entry.profileId ?? "",
+      content: entry.content,
+      mood: entry.mood ?? "calm",
+      activity: entry.activity ?? "record_anyway",
+      companionType: entry.companionType ?? "owl",
+      designTheme: entry.designTheme ?? "simple",
+      contentFontMode: entry.contentFontMode ?? "standard",
+      photoDataUrl: entry.photoDataUrl ?? null,
+      photoBlobUrl: null,
+      photoBlobPathname: null,
+      photoMimeType: null,
+      photoSizeBytes: null,
+      photoStorageProvider: null,
+      generatedComment: entry.generatedComment ?? null,
+      includeInBook: entry.includeInBook ?? true,
+      dateKey: Number.isFinite(created.getTime()) ? calendarDayKeyInJapanFromDate(created) : calendarDayKeyInJapanFromDate(/* @__PURE__ */ new Date()),
+      title: titleFromContent(entry.content),
+      tags
+    };
+  }
+  function journalEntryNeedsPhoto(entry) {
+    return entry.hasPhoto === true || Boolean(entry.photoSrc);
+  }
+  async function fetchAuthenticatedJournalEntry(entryId) {
+    const res = await fetch(`/api/journal/${encodeURIComponent(entryId)}`, {
+      credentials: "same-origin",
+      headers: { Accept: "application/json" }
+    });
+    if (res.status === 401) {
+      return { ok: false, code: "AUTH_REQUIRED", message: "\u30ED\u30B0\u30A4\u30F3\u304C\u5FC5\u8981\u3067\u3059\u3002" };
+    }
+    if (res.status === 404) {
+      return { ok: false, code: "NOT_FOUND", message: "\u5BFE\u8C61\u306E\u8A18\u9332\u304C\u898B\u3064\u304B\u308A\u307E\u305B\u3093\u3002" };
+    }
+    if (!res.ok) {
+      return {
+        ok: false,
+        code: "FORBIDDEN_OR_MISSING",
+        message: `\u53D6\u5F97\u306B\u5931\u6557\u3057\u307E\u3057\u305F (${res.status})\u3002`
+      };
+    }
+    const json = await res.json();
+    if (!json.entry?.id) {
+      return { ok: false, code: "VALIDATION", message: "\u30EC\u30B9\u30DD\u30F3\u30B9\u306B entry \u304C\u3042\u308A\u307E\u305B\u3093\u3002" };
+    }
+    return { ok: true, entry: json.entry };
+  }
+  function fromDataUrl(dataUrl) {
+    const m = /^data:([^;,]+)?;base64,(.+)$/i.exec(dataUrl.trim());
+    if (!m?.[2]) return null;
+    const base64 = m[2];
+    const mimeType = m[1] || "image/jpeg";
+    const padding = base64.match(/=+$/)?.[0].length ?? 0;
+    const byteLength = Math.floor(base64.length * 3 / 4) - padding;
+    return { ok: true, base64, byteLength, mimeType };
+  }
+  async function downloadJournalPhotoBase64(entryId, fallbackDataUrl) {
+    const res = await fetch(journalEntryPhotoApiPath(entryId), {
+      credentials: "same-origin"
+    });
+    if (!res.ok) {
+      if (fallbackDataUrl) {
+        const parsed = fromDataUrl(fallbackDataUrl);
+        if (parsed) return parsed;
+      }
+      return { ok: false, message: `\u5199\u771F\u53D6\u5F97\u5931\u6557 (${res.status})` };
+    }
+    const contentType = res.headers.get("Content-Type") ?? "";
+    if (contentType.includes("application/json")) {
+      const json = await res.json();
+      if (json.photoDataUrl) {
+        const parsed = fromDataUrl(json.photoDataUrl);
+        if (parsed) return parsed;
+      }
+      if (fallbackDataUrl) {
+        const parsed = fromDataUrl(fallbackDataUrl);
+        if (parsed) return parsed;
+      }
+      return { ok: false, message: "\u5199\u771FJSON\u306B data URL \u304C\u3042\u308A\u307E\u305B\u3093\u3002" };
+    }
+    const buf = await res.arrayBuffer();
+    if (buf.byteLength === 0) {
+      return { ok: false, message: "\u5199\u771F\u304C\u7A7A\u3067\u3059\u3002" };
+    }
+    return {
+      ok: true,
+      base64: arrayBufferToBase64(buf),
+      byteLength: buf.byteLength,
+      mimeType: contentType || "application/octet-stream"
+    };
+  }
+
+  // src/lib/local-first/journal/secureCopy/candidateMediaStore.ts
+  init_dist();
+
+  // src/lib/local-first/journal/secureCopy/types.ts
+  var SERVER_COPY_TARGET_DB_NAME = LOCAL_JOURNAL_SECURE_CANDIDATE_DB_NAME;
+  var SECURE_CANDIDATE_MEDIA_ROOT = "ljd/media/journal-secure-candidate";
+  var SECURE_COPY_MIN_AVAILABLE_BYTES = 1024 * 1024;
+  var SECURE_COPY_MAX_EXPLICIT_IDS = 20;
+  var TEST_PURPOSE_TAGS = [
+    "#\u30C6\u30B9\u30C8",
+    "#\u304A\u5F15\u8D8A\u3057\u30C6\u30B9\u30C8",
+    "#LocalCopyTest"
+  ];
+  var FAILURE_INJECTION_MISSING_ENTRY_ID = "ljd-poc-missing-entry-id";
+
+  // src/lib/local-first/journal/secureCopy/candidateMediaStore.ts
   function assertNative2() {
     if (!Capacitor.isNativePlatform()) {
-      throw new Error("Local Journal media store is native-only.");
+      throw new Error("candidate media store is native-only");
     }
   }
-  async function resolveJournalMediaUri(relativePath) {
-    assertNative2();
-    const result = await Filesystem.getUri({
-      path: relativePath,
-      directory: Directory.Library
-    });
-    return Capacitor.convertFileSrc(result.uri);
+  function assertCandidateRelativePath(relativePath) {
+    if (!relativePath.startsWith(`${SECURE_CANDIDATE_MEDIA_ROOT}/`)) {
+      throw new Error("candidate media path must stay in journal-secure-candidate namespace");
+    }
+    if (relativePath.startsWith(`${LOCAL_JOURNAL_MEDIA_ROOT}/`)) {
+      throw new Error("candidate media store refuses active journal media root");
+    }
+    if (relativePath.startsWith("/") || relativePath.includes("..")) {
+      throw new Error("absolute or parent media paths are forbidden");
+    }
   }
-  async function deleteJournalMediaRelative(relativePath) {
+  async function createNativeCandidateMediaStore() {
     assertNative2();
     try {
-      await Filesystem.deleteFile({
-        path: relativePath,
-        directory: Directory.Library
+      await Filesystem.mkdir({
+        path: SECURE_CANDIDATE_MEDIA_ROOT,
+        directory: Directory.Library,
+        recursive: true
       });
     } catch {
     }
+    return {
+      root: SECURE_CANDIDATE_MEDIA_ROOT,
+      async write(fileName, base64) {
+        const relativePath = `${SECURE_CANDIDATE_MEDIA_ROOT}/${fileName}`;
+        assertCandidateRelativePath(relativePath);
+        await Filesystem.writeFile({
+          path: relativePath,
+          data: base64,
+          directory: Directory.Library
+        });
+        return relativePath;
+      },
+      async readBase64(relativePath) {
+        assertCandidateRelativePath(relativePath);
+        const result = await Filesystem.readFile({
+          path: relativePath,
+          directory: Directory.Library
+        });
+        if (typeof result.data !== "string" || !result.data) {
+          throw new Error("candidate media read returned empty data");
+        }
+        return result.data;
+      },
+      async delete(relativePath) {
+        assertCandidateRelativePath(relativePath);
+        try {
+          await Filesystem.deleteFile({
+            path: relativePath,
+            directory: Directory.Library
+          });
+        } catch {
+        }
+      }
+    };
   }
 
-  // src/lib/local-first/journal/repository.ts
+  // src/lib/local-first/journal/secureCopy/candidateDbGuard.ts
+  var ALLOWED = /* @__PURE__ */ new Set([SERVER_COPY_TARGET_DB_NAME]);
+  function assertAllowedCopyTargetDb(name) {
+    if (name === LOCAL_JOURNAL_DB_NAME) {
+      throw new LocalFirstSecurityError(
+        "journal_encryption_forbidden",
+        "server copy refuses ljd_local_journal"
+      );
+    }
+    if (!ALLOWED.has(name) || name !== LOCAL_JOURNAL_SECURE_CANDIDATE_DB_NAME) {
+      throw new LocalFirstSecurityError(
+        "unknown",
+        "server copy target is not the encrypted candidate allowlist"
+      );
+    }
+  }
+
+  // src/lib/local-first/journal/journalRepositorySql.ts
   function parseTagsJson(raw) {
     try {
       const parsed = JSON.parse(raw);
@@ -3469,8 +3816,7 @@ CREATE INDEX IF NOT EXISTS idx_local_media_journal
       return [];
     }
   }
-  async function loadMediaForJournal(journalStableId) {
-    const db2 = await openLocalJournalDatabase();
+  async function loadMediaForJournal(db2, journalStableId) {
     const result = await db2.query(
       `SELECT stable_id, journal_stable_id, type, relative_path, created_at, checksum, mime_type
      FROM local_media WHERE journal_stable_id = ?;`,
@@ -3504,79 +3850,465 @@ CREATE INDEX IF NOT EXISTS idx_local_media_journal
       serverUpdatedAt: r.server_updated_at == null ? null : String(r.server_updated_at)
     };
   }
+  async function saveJournalEntrySql(db2, entry) {
+    await db2.run(
+      `INSERT OR REPLACE INTO local_journal_entries (
+      stable_id, date_key, title, content, created_at, updated_at,
+      tags_json, schema_version, source, local_status, imported_at, legacy_server_id,
+      server_updated_at
+    ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?);`,
+      [
+        entry.stableId,
+        entry.dateKey,
+        entry.title,
+        entry.content,
+        entry.createdAt,
+        entry.updatedAt,
+        JSON.stringify(entry.tags),
+        entry.schemaVersion,
+        entry.source,
+        entry.localStatus,
+        entry.importedAt,
+        entry.legacyServerId,
+        entry.serverUpdatedAt
+      ]
+    );
+    await db2.run(`DELETE FROM local_journal_tags WHERE journal_stable_id = ?;`, [
+      entry.stableId
+    ]);
+    for (const tag of entry.tags) {
+      await db2.run(
+        `INSERT OR REPLACE INTO local_journal_tags (journal_stable_id, tag) VALUES (?, ?);`,
+        [entry.stableId, tag]
+      );
+    }
+    await db2.run(`DELETE FROM local_media WHERE journal_stable_id = ?;`, [entry.stableId]);
+    for (const media of entry.mediaRefs) {
+      await db2.run(
+        `INSERT OR REPLACE INTO local_media (
+        stable_id, journal_stable_id, type, relative_path, created_at, checksum, mime_type
+      ) VALUES (?,?,?,?,?,?,?);`,
+        [
+          media.stableId,
+          media.journalStableId,
+          media.type,
+          media.relativePath,
+          media.createdAt,
+          media.checksum,
+          media.mimeType
+        ]
+      );
+    }
+  }
+  async function getJournalByIdSql(db2, stableId) {
+    const result = await db2.query(
+      `SELECT * FROM local_journal_entries WHERE stable_id = ? AND local_status = 'active' LIMIT 1;`,
+      [stableId]
+    );
+    const row = result.values?.[0];
+    if (!row) return null;
+    return mapEntryRow(row, await loadMediaForJournal(db2, stableId));
+  }
+  async function getJournalByLegacyServerIdSql(db2, legacyServerId) {
+    const result = await db2.query(
+      `SELECT * FROM local_journal_entries
+     WHERE legacy_server_id = ? AND local_status = 'active' LIMIT 1;`,
+      [legacyServerId]
+    );
+    const row = result.values?.[0];
+    if (!row) return null;
+    return mapEntryRow(row, await loadMediaForJournal(db2, String(row.stable_id)));
+  }
+  async function countActiveEntriesSql(db2) {
+    const result = await db2.query(
+      `SELECT COUNT(*) AS c FROM local_journal_entries WHERE local_status = 'active';`
+    );
+    const row = result.values?.[0];
+    return Number(row?.c ?? 0);
+  }
+  async function countTagsSql(db2) {
+    const result = await db2.query(`SELECT COUNT(*) AS c FROM local_journal_tags;`);
+    const row = result.values?.[0];
+    return Number(row?.c ?? 0);
+  }
+  async function countMediaSql(db2) {
+    const result = await db2.query(`SELECT COUNT(*) AS c FROM local_media;`);
+    const row = result.values?.[0];
+    return Number(row?.c ?? 0);
+  }
+
+  // src/lib/local-first/journal/secureCopy/candidateRepository.ts
+  function createCandidateRepository(db2) {
+    return {
+      async save(entry) {
+        await db2.execute("BEGIN;");
+        try {
+          await saveJournalEntrySql(db2, entry);
+          await db2.execute("COMMIT;");
+        } catch (error) {
+          try {
+            await db2.execute("ROLLBACK;");
+          } catch {
+          }
+          throw error;
+        }
+      },
+      getById: (stableId) => getJournalByIdSql(db2, stableId),
+      getByLegacyServerId: (legacyServerId) => getJournalByLegacyServerIdSql(db2, legacyServerId),
+      countEntries: () => countActiveEntriesSql(db2),
+      countTags: () => countTagsSql(db2),
+      countMedia: () => countMediaSql(db2)
+    };
+  }
+  async function withCandidateRepository(fn) {
+    assertAllowedCopyTargetDb(SERVER_COPY_TARGET_DB_NAME);
+    const health = await LocalJournalSecureBootstrapper.inspect();
+    if (health.health.status !== "ready") {
+      throw new Error(`candidate not ready: ${health.health.reason ?? health.health.status}`);
+    }
+    const db2 = await openNamedEncryptedDatabase(SERVER_COPY_TARGET_DB_NAME, 1);
+    try {
+      return await fn(createCandidateRepository(db2));
+    } finally {
+      await closeNamedEncryptedDatabase(SERVER_COPY_TARGET_DB_NAME);
+    }
+  }
+
+  // src/lib/local-first/journal/secureCopy/testEntryGuard.ts
+  function normalizeTag(raw) {
+    const t = raw.trim();
+    if (!t) return "";
+    return t.startsWith("#") ? t : `#${t}`;
+  }
+  function hasTestPurposeTag(tags) {
+    const set = new Set(tags.map(normalizeTag).filter(Boolean));
+    return TEST_PURPOSE_TAGS.some((marker) => set.has(marker));
+  }
+  function parseExplicitEntryIds(raw) {
+    const parts = Array.isArray(raw) ? raw : raw.split(/[\s,;]+/g);
+    const seen = /* @__PURE__ */ new Set();
+    const out = [];
+    for (const part of parts) {
+      const id = part.trim();
+      if (!id) continue;
+      if (seen.has(id)) continue;
+      seen.add(id);
+      out.push(id);
+    }
+    return out;
+  }
+
+  // src/lib/local-first/journal/secureCopy/sourceFingerprint.ts
+  async function buildSourceFingerprint(input) {
+    return {
+      legacyServerId: input.legacyServerId,
+      serverUpdatedAt: input.serverUpdatedAt,
+      contentHash: await sha256HexOfUtf8(input.content),
+      tags: input.tags.map(normalizeTag).filter(Boolean),
+      photoHash: input.photoHash,
+      mediaCount: input.mediaCount
+    };
+  }
+  async function fingerprintFromLocalEntry(entry) {
+    return buildSourceFingerprint({
+      legacyServerId: entry.legacyServerId ?? "",
+      serverUpdatedAt: entry.serverUpdatedAt ?? "",
+      content: entry.content,
+      tags: entry.tags,
+      photoHash: entry.mediaRefs[0]?.checksum ?? null,
+      mediaCount: entry.mediaRefs.length
+    });
+  }
+  function sameTagSet(a, b) {
+    if (a.length !== b.length) return false;
+    const left = [...a].sort();
+    const right = [...b].sort();
+    return left.every((tag, i) => tag === right[i]);
+  }
+  function sourceFingerprintChanged(existing, incoming) {
+    if (existing.legacyServerId !== incoming.legacyServerId) return true;
+    if (existing.serverUpdatedAt !== incoming.serverUpdatedAt) return true;
+    if (existing.contentHash !== incoming.contentHash) return true;
+    if (!sameTagSet(existing.tags, incoming.tags)) return true;
+    if (existing.photoHash && incoming.photoHash && existing.photoHash !== incoming.photoHash) {
+      return true;
+    }
+    if (incoming.photoHash != null && existing.mediaCount !== incoming.mediaCount) {
+      return true;
+    }
+    return false;
+  }
+
+  // src/lib/local-first/journal/secureCopy/ServerToLocalCandidateCopyService.ts
+  function emptyBatch(blockedReason) {
+    return {
+      ok: false,
+      targetDb: SERVER_COPY_TARGET_DB_NAME,
+      copied: 0,
+      alreadyPresent: 0,
+      sourceChanged: 0,
+      failed: 0,
+      results: [],
+      blockedReason,
+      candidateEncrypted: null,
+      completeProtection: null,
+      backupExcluded: null,
+      rowCounts: null
+    };
+  }
+  function summarize(results) {
+    const copied = results.filter((r) => r.status === "copied").length;
+    const alreadyPresent = results.filter((r) => r.status === "already_present").length;
+    const sourceChanged = results.filter((r) => r.status === "source_changed").length;
+    const failed = results.filter((r) => r.status === "failed").length;
+    return {
+      copied,
+      alreadyPresent,
+      sourceChanged,
+      failed,
+      ok: failed === 0 && sourceChanged === 0
+    };
+  }
+  function failResult(serverId, detail) {
+    return {
+      status: "failed",
+      serverId,
+      stableId: null,
+      legacyServerId: null,
+      detail,
+      fingerprint: null
+    };
+  }
+  async function copyOne(serverId, deps, availableBytes) {
+    const fetched = await deps.fetchEntry(serverId);
+    if (!fetched.ok) {
+      return failResult(serverId, fetched.message);
+    }
+    const apiEntry = fetched.entry;
+    const serverLike = apiJournalToServerLike(apiEntry);
+    if (!hasTestPurposeTag(serverLike.tags)) {
+      return failResult(serverId, "not_test_entry");
+    }
+    const existing = await deps.repository.getByLegacyServerId(apiEntry.id);
+    const incomingMeta = await buildSourceFingerprint({
+      legacyServerId: apiEntry.id,
+      serverUpdatedAt: apiEntry.updatedAt,
+      content: apiEntry.content,
+      tags: serverLike.tags,
+      photoHash: existing?.mediaRefs[0]?.checksum ?? null,
+      mediaCount: journalEntryNeedsPhoto(apiEntry) ? 1 : 0
+    });
+    if (existing) {
+      const existingFp = await fingerprintFromLocalEntry(existing);
+      if (sourceFingerprintChanged(existingFp, incomingMeta)) {
+        return {
+          status: "source_changed",
+          serverId,
+          stableId: existing.stableId,
+          legacyServerId: existing.legacyServerId,
+          detail: "source_changed_no_overwrite",
+          fingerprint: incomingMeta
+        };
+      }
+      return {
+        status: "already_present",
+        serverId,
+        stableId: existing.stableId,
+        legacyServerId: existing.legacyServerId,
+        detail: "legacyServerId already present; left untouched",
+        fingerprint: existingFp
+      };
+    }
+    let photoBase64 = null;
+    let photoBytes = 0;
+    let photoMime = null;
+    let photoHash = null;
+    if (journalEntryNeedsPhoto(apiEntry)) {
+      const photo = await deps.downloadPhoto(apiEntry.id, apiEntry.photoDataUrl);
+      if (!photo.ok) {
+        return failResult(serverId, photo.message);
+      }
+      if (availableBytes != null && photo.byteLength > 0 && photo.byteLength > availableBytes) {
+        return failResult(serverId, "insufficient_free_space");
+      }
+      photoBase64 = photo.base64;
+      photoBytes = photo.byteLength;
+      photoMime = photo.mimeType;
+      photoHash = await sha256HexOfBase64(photo.base64);
+    }
+    const journalStableId = deps.createStableId();
+    const mediaStableId = deps.createStableId();
+    let relativePath = null;
+    try {
+      if (photoBase64 && photoHash) {
+        const ext = photoMime?.includes("png") ? "png" : photoMime?.includes("webp") ? "webp" : "jpg";
+        relativePath = await deps.media.write(
+          `${journalStableId}-${mediaStableId}.${ext}`,
+          photoBase64
+        );
+        const written = await deps.media.readBase64(relativePath);
+        const verify = await sha256HexOfBase64(written);
+        if (verify !== photoHash) {
+          await deps.media.delete(relativePath);
+          return failResult(serverId, "photo_checksum_mismatch");
+        }
+      }
+      if (photoMime) serverLike.photoMimeType = photoMime;
+      if (photoBytes) serverLike.photoSizeBytes = photoBytes;
+      const local = mapServerJournalEntryLikeToLocal(serverLike, {
+        journalStableId,
+        mediaStableId: relativePath ? mediaStableId : void 0,
+        mediaRelativePath: relativePath,
+        mediaChecksum: photoHash,
+        source: "migrated_server"
+      });
+      await deps.repository.save(local);
+      const stored = await deps.repository.getById(local.stableId);
+      if (!stored) {
+        throw new Error("save confirmed missing");
+      }
+      const fingerprint = await buildSourceFingerprint({
+        legacyServerId: stored.legacyServerId ?? apiEntry.id,
+        serverUpdatedAt: stored.serverUpdatedAt ?? apiEntry.updatedAt,
+        content: stored.content,
+        tags: stored.tags,
+        photoHash,
+        mediaCount: stored.mediaRefs.length
+      });
+      return {
+        status: "copied",
+        serverId,
+        stableId: stored.stableId,
+        legacyServerId: stored.legacyServerId,
+        detail: "copied to encrypted candidate",
+        fingerprint
+      };
+    } catch (error) {
+      if (relativePath) {
+        await deps.media.delete(relativePath).catch(() => void 0);
+      }
+      return failResult(serverId, safeErrorMessage(error));
+    }
+  }
+  function prepareCopyBatch(rawIds, options) {
+    assertAllowedCopyTargetDb(SERVER_COPY_TARGET_DB_NAME);
+    const entryIds = parseExplicitEntryIds(rawIds);
+    if (entryIds.length === 0) {
+      return { ok: false, batch: emptyBatch("explicit_ids_required") };
+    }
+    if (entryIds.length > SECURE_COPY_MAX_EXPLICIT_IDS) {
+      return { ok: false, batch: emptyBatch("too_many_explicit_ids") };
+    }
+    const availableBytes = options && Object.prototype.hasOwnProperty.call(options, "availableBytes") ? options.availableBytes ?? null : null;
+    const known = decideCapacityKnown(availableBytes);
+    if (!known.known && options?.allowUnknownCapacity !== true) {
+      return { ok: false, batch: emptyBatch("capacity_unknown_fail_closed") };
+    }
+    if (known.known && known.availableBytes != null && known.availableBytes < SECURE_COPY_MIN_AVAILABLE_BYTES) {
+      return { ok: false, batch: emptyBatch("insufficient_free_space") };
+    }
+    return { ok: true, entryIds, availableBytes };
+  }
+  async function copyExplicitIdsWithDeps(rawIds, deps, options) {
+    const prepared = prepareCopyBatch(rawIds, options);
+    if (!prepared.ok) return prepared.batch;
+    const results = [];
+    for (const id of prepared.entryIds) {
+      results.push(await copyOne(id, deps, prepared.availableBytes));
+    }
+    const summary = summarize(results);
+    const rowCounts = {
+      entries: await deps.repository.countEntries(),
+      tags: await deps.repository.countTags(),
+      media: await deps.repository.countMedia()
+    };
+    return {
+      ...summary,
+      targetDb: SERVER_COPY_TARGET_DB_NAME,
+      results,
+      blockedReason: null,
+      candidateEncrypted: true,
+      completeProtection: null,
+      backupExcluded: null,
+      rowCounts
+    };
+  }
+  var ServerToLocalCandidateCopyService = {
+    async copyExplicitIds(rawIds, options) {
+      if (!Capacitor.isNativePlatform()) {
+        throw new LocalFirstSecurityError("native_only", "candidate copy is native-only");
+      }
+      assertAllowedCopyTargetDb(SERVER_COPY_TARGET_DB_NAME);
+      const availableBytes = options && Object.prototype.hasOwnProperty.call(options, "availableBytes") ? options.availableBytes ?? null : (await readAvailableBytesOrNull()).availableBytes;
+      const prepared = prepareCopyBatch(rawIds, {
+        availableBytes,
+        allowUnknownCapacity: options?.allowUnknownCapacity
+      });
+      if (!prepared.ok) return prepared.batch;
+      const media = await createNativeCandidateMediaStore();
+      const result = await withCandidateRepository(
+        async (repository) => copyExplicitIdsWithDeps(
+          rawIds,
+          {
+            fetchEntry: fetchAuthenticatedJournalEntry,
+            downloadPhoto: downloadJournalPhotoBase64,
+            repository,
+            media,
+            createStableId: createLocalStableId
+          },
+          { availableBytes, allowUnknownCapacity: true }
+        )
+      );
+      const inspection = await LocalJournalSecureBootstrapper.inspect();
+      return {
+        ...result,
+        candidateEncrypted: inspection.encrypted,
+        completeProtection: inspection.completeProtection,
+        backupExcluded: inspection.backupExcluded
+      };
+    }
+  };
+
+  // src/lib/local-first/journal/mediaStore.ts
+  init_dist();
+  function assertNative3() {
+    if (!Capacitor.isNativePlatform()) {
+      throw new Error("Local Journal media store is native-only.");
+    }
+  }
+  async function resolveJournalMediaUri(relativePath) {
+    assertNative3();
+    const result = await Filesystem.getUri({
+      path: relativePath,
+      directory: Directory.Library
+    });
+    return Capacitor.convertFileSrc(result.uri);
+  }
+  async function deleteJournalMediaRelative(relativePath) {
+    assertNative3();
+    try {
+      await Filesystem.deleteFile({
+        path: relativePath,
+        directory: Directory.Library
+      });
+    } catch {
+    }
+  }
+
+  // src/lib/local-first/journal/repository.ts
   var JournalRepository = {
     async save(entry) {
       await withLocalJournalTransaction(async (db2) => {
-        await db2.run(
-          `INSERT OR REPLACE INTO local_journal_entries (
-          stable_id, date_key, title, content, created_at, updated_at,
-          tags_json, schema_version, source, local_status, imported_at, legacy_server_id,
-          server_updated_at
-        ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?);`,
-          [
-            entry.stableId,
-            entry.dateKey,
-            entry.title,
-            entry.content,
-            entry.createdAt,
-            entry.updatedAt,
-            JSON.stringify(entry.tags),
-            entry.schemaVersion,
-            entry.source,
-            entry.localStatus,
-            entry.importedAt,
-            entry.legacyServerId,
-            entry.serverUpdatedAt
-          ]
-        );
-        await db2.run(`DELETE FROM local_journal_tags WHERE journal_stable_id = ?;`, [
-          entry.stableId
-        ]);
-        for (const tag of entry.tags) {
-          await db2.run(
-            `INSERT OR REPLACE INTO local_journal_tags (journal_stable_id, tag) VALUES (?, ?);`,
-            [entry.stableId, tag]
-          );
-        }
-        await db2.run(`DELETE FROM local_media WHERE journal_stable_id = ?;`, [entry.stableId]);
-        for (const media of entry.mediaRefs) {
-          await db2.run(
-            `INSERT OR REPLACE INTO local_media (
-            stable_id, journal_stable_id, type, relative_path, created_at, checksum, mime_type
-          ) VALUES (?,?,?,?,?,?,?);`,
-            [
-              media.stableId,
-              media.journalStableId,
-              media.type,
-              media.relativePath,
-              media.createdAt,
-              media.checksum,
-              media.mimeType
-            ]
-          );
-        }
+        await saveJournalEntrySql(db2, entry);
       });
     },
     async getById(stableId) {
       const db2 = await openLocalJournalDatabase();
-      const result = await db2.query(
-        `SELECT * FROM local_journal_entries WHERE stable_id = ? AND local_status = 'active' LIMIT 1;`,
-        [stableId]
-      );
-      const row = result.values?.[0];
-      if (!row) return null;
-      return mapEntryRow(row, await loadMediaForJournal(stableId));
+      return getJournalByIdSql(db2, stableId);
     },
     async getByLegacyServerId(legacyServerId) {
       const db2 = await openLocalJournalDatabase();
-      const result = await db2.query(
-        `SELECT * FROM local_journal_entries
-       WHERE legacy_server_id = ? AND local_status = 'active' LIMIT 1;`,
-        [legacyServerId]
-      );
-      const row = result.values?.[0];
-      if (!row) return null;
-      return mapEntryRow(row, await loadMediaForJournal(String(row.stable_id)));
+      return getJournalByLegacyServerIdSql(db2, legacyServerId);
     },
     /** @deprecated Prefer getByLegacyServerId */
     async findByLegacyServerId(legacyServerId) {
@@ -3592,17 +4324,13 @@ CREATE INDEX IF NOT EXISTS idx_local_media_journal
       const out = [];
       for (const row of result.values ?? []) {
         const r = row;
-        out.push(mapEntryRow(r, await loadMediaForJournal(String(r.stable_id))));
+        out.push(mapEntryRow(r, await loadMediaForJournal(db2, String(r.stable_id))));
       }
       return out;
     },
     async count() {
       const db2 = await openLocalJournalDatabase();
-      const result = await db2.query(
-        `SELECT COUNT(*) AS c FROM local_journal_entries WHERE local_status = 'active';`
-      );
-      const row = result.values?.[0];
-      return Number(row?.c ?? 0);
+      return countActiveEntriesSql(db2);
     },
     /**
      * Diagnostics / test cleanup only — deletes all local journal rows + returns media paths.
@@ -3724,6 +4452,40 @@ CREATE INDEX IF NOT EXISTS idx_local_media_journal
         const result = await LocalJournalSecureBootstrapper.bootstrap();
         $("security-report").textContent = JSON.stringify(result, null, 2);
         setStatus(`bootstrap ${result.status} ${result.detail}`, !result.ok);
+      })().catch((e) => setStatus(safeErrorMessage(e), true));
+    });
+    $("btn-copy-to-secure-candidate").addEventListener("click", () => {
+      void (async () => {
+        const raw = $("copy-entry-ids").value;
+        setStatus("explicit IDs \u2192 encrypted candidate\uFF08\u672C\u756A journal / \u81EA\u52D5\u691C\u7D22\u306A\u3057\uFF09");
+        const result = await ServerToLocalCandidateCopyService.copyExplicitIds(raw);
+        const report = {
+          targetDb: result.targetDb,
+          copied: result.copied,
+          alreadyPresent: result.alreadyPresent,
+          sourceChanged: result.sourceChanged,
+          failed: result.failed,
+          blockedReason: result.blockedReason,
+          candidateEncrypted: result.candidateEncrypted,
+          completeProtection: result.completeProtection,
+          backupExcluded: result.backupExcluded,
+          rowCounts: result.rowCounts,
+          results: result.results.map((item) => ({
+            status: item.status,
+            serverId: item.serverId,
+            stableId: item.stableId,
+            legacyServerId: item.legacyServerId,
+            detail: item.detail,
+            contentHash: item.fingerprint?.contentHash ?? null,
+            photoHash: item.fingerprint?.photoHash ?? null
+          })),
+          failureInjectionId: FAILURE_INJECTION_MISSING_ENTRY_ID
+        };
+        $("security-report").textContent = JSON.stringify(report, null, 2);
+        setStatus(
+          `copy copied=${result.copied} present=${result.alreadyPresent} changed=${result.sourceChanged} failed=${result.failed} blocked=${String(result.blockedReason)}`,
+          !result.ok || Boolean(result.blockedReason)
+        );
       })().catch((e) => setStatus(safeErrorMessage(e), true));
     });
     $("btn-inspect-capacity").addEventListener("click", () => {
