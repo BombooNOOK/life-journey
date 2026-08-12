@@ -30,7 +30,9 @@
 - Activation（technical vs SoT）: `docs/product/ljd-local-journal-activation-spec.md`  
 - Hybrid メモ: `docs/hybrid/HYBRID_PHASE_4B4D_WRITE_ROUTING_ARCHITECTURE.md`  
 - Write-through PoC: `docs/hybrid/HYBRID_PHASE_4B4E_WRITE_THROUGH_MIRROR_POC.md`  
-- Generation resolver integration: `docs/hybrid/HYBRID_PHASE_4B4G_GENERATION_RESOLVER_INTEGRATION_POC.md`
+- Generation resolver integration: `docs/hybrid/HYBRID_PHASE_4B4G_GENERATION_RESOLVER_INTEGRATION_POC.md`  
+- **Production transitional routing（4B-4H 設計）:** `docs/product/ljd-transitional-local-routing-spec.md`  
+  ／ `docs/hybrid/HYBRID_PHASE_4B4H_PRODUCTION_ROUTING_ARCHITECTURE.md`
 
 ---
 
