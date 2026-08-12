@@ -4,10 +4,10 @@
  * Designed path: setEncryptionSecret → plugin Keychain (WhenUnlocked measured)
  * → createConnection(encrypted, mode "secret").
  *
- * 4B-3E does NOT:
+ * Must not:
  * - call this from app boot
- * - encrypt ljd_local_journal
- * - auto-migrate plaintext → encrypted
+ * - encrypt ljd_local_journal (4B-3F fixture names only)
+ * - auto-migrate plaintext production journal
  */
 
 import { Capacitor } from "@capacitor/core";
@@ -28,14 +28,27 @@ function assertNotProductionJournal(name: string): void {
   if (name === LOCAL_JOURNAL_DB_NAME) {
     throw new LocalFirstSecurityError(
       "journal_encryption_forbidden",
-      "ljd_local_journal must not be opened encrypted in 4B-3E; plaintext→encrypted migration is a later phase",
+      "ljd_local_journal must not be opened encrypted; 4B-3F fixture names only",
     );
+  }
+}
+
+export function shouldSetPluginEncryptionSecret(alreadyStored: boolean): boolean {
+  return !alreadyStored;
+}
+
+export async function isPluginEncryptionSecretStored(): Promise<boolean> {
+  if (!Capacitor.isNativePlatform()) return false;
+  try {
+    return Boolean((await CapacitorSQLite.isSecretStored()).result);
+  } catch {
+    return false;
   }
 }
 
 /**
  * Explicit opt-in. Never call from general user / Web paths.
- * Passphrase is not logged.
+ * Passphrase is not logged. Does not create a second Keychain secret.
  */
 export async function configurePluginEncryptionSecret(
   passphrase: string,
@@ -53,6 +66,47 @@ export async function configurePluginEncryptionSecret(
     await CapacitorSQLite.setEncryptionSecret({ passphrase });
   } catch (error) {
     throw mapSecurityError(error);
+  }
+}
+
+/** Reuse plugin Keychain secret when already present (no secret proliferation). */
+export async function ensurePluginEncryptionSecret(
+  passphrase: string,
+): Promise<"set" | "reused_existing"> {
+  const stored = await isPluginEncryptionSecretStored();
+  if (!shouldSetPluginEncryptionSecret(stored)) return "reused_existing";
+  await configurePluginEncryptionSecret(passphrase);
+  return "set";
+}
+
+/**
+ * Wrong-key / wrong-mode probe: plaintext open of an encrypted DB must fail.
+ * Does not log body or passphrase.
+ */
+export async function plaintextOpenMustFail(name: string): Promise<boolean> {
+  assertNotProductionJournal(name);
+  try {
+    const sqlite = new SQLiteConnection(CapacitorSQLite);
+    try {
+      await sqlite.checkConnectionsConsistency();
+    } catch {
+      /* */
+    }
+    if ((await sqlite.isConnection(name, false)).result) {
+      await sqlite.closeConnection(name, false);
+    }
+    const db = await sqlite.createConnection(
+      name,
+      false,
+      "no-encryption",
+      1,
+      false,
+    );
+    await db.open();
+    await sqlite.closeConnection(name, false);
+    return false;
+  } catch {
+    return true;
   }
 }
 

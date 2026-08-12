@@ -10,6 +10,7 @@ export {
 } from "@/lib/local-first/security/backupInclusion";
 export {
   configurePluginEncryptionSecret,
+  ensurePluginEncryptionSecret,
   openNamedEncryptedDatabase,
 } from "@/lib/local-first/security/encryptedDatabase";
 export {

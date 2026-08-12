@@ -33,7 +33,7 @@ function getConnection(): SQLiteConnection {
   return connection;
 }
 
-const SCHEMA_SQL = `
+export const LOCAL_JOURNAL_SCHEMA_SQL = `
 CREATE TABLE IF NOT EXISTS local_journal_entries (
   stable_id TEXT PRIMARY KEY NOT NULL,
   date_key TEXT NOT NULL,
@@ -83,7 +83,13 @@ CREATE INDEX IF NOT EXISTS idx_local_media_journal
   ON local_media (journal_stable_id);
 `;
 
-async function readUserVersion(database: SQLiteDBConnection): Promise<number> {
+export const LOCAL_JOURNAL_EXPECTED_TABLES = [
+  "local_journal_entries",
+  "local_journal_tags",
+  "local_media",
+] as const;
+
+export async function readUserVersion(database: SQLiteDBConnection): Promise<number> {
   const versionResult = await database.query("PRAGMA user_version;");
   const raw = versionResult.values?.[0] as Record<string, unknown> | undefined;
   const current =
@@ -95,8 +101,8 @@ async function readUserVersion(database: SQLiteDBConnection): Promise<number> {
   return Number.isFinite(current) ? current : 0;
 }
 
-async function applyFoundationSchema(database: SQLiteDBConnection): Promise<void> {
-  await database.execute(SCHEMA_SQL);
+export async function applyFoundationSchema(database: SQLiteDBConnection): Promise<void> {
+  await database.execute(LOCAL_JOURNAL_SCHEMA_SQL);
   await database.execute(`PRAGMA user_version = ${LOCAL_JOURNAL_SCHEMA_USER_VERSION};`);
 }
 
@@ -158,4 +164,59 @@ export async function closeLocalJournalDatabase(): Promise<void> {
   const sqlite = getConnection();
   await sqlite.closeConnection(LOCAL_JOURNAL_DB_NAME, false);
   db = null;
+}
+
+async function closeNamedIfOpen(
+  sqlite: SQLiteConnection,
+  name: string,
+): Promise<void> {
+  try {
+    await sqlite.checkConnectionsConsistency();
+  } catch {
+    /* */
+  }
+  try {
+    if ((await sqlite.isConnection(name, false)).result) {
+      await sqlite.closeConnection(name, false);
+    }
+  } catch {
+    try {
+      await CapacitorSQLite.closeConnection({ database: name, readonly: false });
+    } catch {
+      /* */
+    }
+  }
+}
+
+/**
+ * Open a named plaintext journal-schema DB. Used by audit + fixture migration.
+ * Does not change encryption of the caller-supplied name.
+ */
+export async function openNamedPlaintextJournalDatabase(
+  name: string,
+): Promise<SQLiteDBConnection> {
+  assertLocalJournalNative();
+  const sqlite = getConnection();
+  await closeNamedIfOpen(sqlite, name);
+  const named = await sqlite.createConnection(
+    name,
+    false,
+    "no-encryption",
+    LOCAL_JOURNAL_SCHEMA_USER_VERSION,
+    false,
+  );
+  await named.open();
+  const current = await readUserVersion(named);
+  if (current < LOCAL_JOURNAL_SCHEMA_USER_VERSION) {
+    await applyFoundationSchema(named);
+  }
+  return named;
+}
+
+export async function closeNamedJournalDatabase(name: string): Promise<void> {
+  if (name === LOCAL_JOURNAL_DB_NAME) {
+    await closeLocalJournalDatabase();
+    return;
+  }
+  await closeNamedIfOpen(getConnection(), name);
 }

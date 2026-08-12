@@ -28,8 +28,10 @@ export function redactSecretLike(value: unknown): unknown {
 export function safeErrorMessage(error: unknown): string {
   if (error instanceof Error) {
     const msg = error.message;
-    if (SECRET_KEY.test(msg)) return `${error.name}: [redacted security error]`;
-    return msg;
+    const hasSecretValue =
+      SECRET_KEY.test(msg) && /:\s*['"]?[A-Za-z0-9+/=_-]{12,}/.test(msg);
+    if (hasSecretValue) return `${error.name}: [redacted security error]`;
+    return msg.replace(/\b[A-Fa-f0-9]{24,}\b/g, "[redacted]");
   }
   return String(redactSecretLike(error));
 }

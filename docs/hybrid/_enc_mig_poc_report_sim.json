@@ -1,0 +1,24 @@
+{
+  "simulator": "iPhone 17",
+  "firstPass": {
+    "ranAt": "2026-08-12T02:08:09.557Z",
+    "steps": [
+      { "id": "audit", "status": "pass", "detail": "exists=true encrypted=false entries=0 realData=false" },
+      { "id": "M1", "status": "pass", "detail": "plain=ljd_enc_mig_fixture_plain entries=3 tags=5 media=2" },
+      { "id": "secret", "status": "pass", "detail": "pluginKeychain=reused_existing" },
+      { "id": "M2-M5", "status": "pass", "detail": "verified+promoted fixture entries=3 diskNeed=262144 mediaRefsPresent" },
+      { "id": "M6", "status": "pass", "detail": "connections closed (kill equivalent)" },
+      { "id": "M7", "status": "pass", "detail": "reopen entries=3 encryptedFlag=true tags=5 media=2" },
+      { "id": "M8", "status": "pass", "detail": "plaintextOpenRejected=true passphraseCheckRejected=true" },
+      { "id": "M9", "status": "pass", "detail": "already migrated (promoted); no-op" },
+      { "id": "untouched", "status": "pass", "detail": "didNotMigrate=ljd_local_journal" }
+    ]
+  },
+  "afterKillRelaunch": {
+    "ranAt": "2026-08-12T02:08:51.430Z",
+    "M2-M5": "already migrated (promoted); no-op",
+    "M7": "reopen entries=3 encryptedFlag=true tags=5 media=2",
+    "M9": "already migrated (promoted); no-op"
+  },
+  "actualJournalUntouched": true
+}

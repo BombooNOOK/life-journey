@@ -28,4 +28,14 @@ describe("no-secret logging", () => {
       assertNoSecretInText("secret: abcdefghijklmnop"),
     ).toThrow(/refusing to log/);
   });
+
+  it("keeps migration report-shaped JSON free of passphrase fields", () => {
+    const report = {
+      steps: [{ id: "M8", status: "pass", detail: "wrongKeyRejected=true" }],
+      actualJournalUntouched: true,
+    };
+    const text = JSON.stringify(report);
+    expect(text.toLowerCase()).not.toContain("passphrase");
+    expect(() => assertNoSecretInText(text)).not.toThrow();
+  });
 });

@@ -17,6 +17,9 @@ import {
   safeErrorMessage,
 } from "@/lib/local-first/security";
 import { inspectFileProtection } from "@/lib/local-first/security/fileProtection";
+import { auditActualLocalJournal } from "@/lib/local-first/journal/encryptionMigration/audit";
+import { LocalJournalEncryptionMigrator } from "@/lib/local-first/journal/encryptionMigration/LocalJournalEncryptionMigrator";
+import { runEncryptionMigrationPoc } from "@/lib/local-first/journal/encryptionMigration/runEncryptionMigrationPoc";
 
 function $(id: string): HTMLElement {
   const el = document.getElementById(id);
@@ -106,6 +109,35 @@ async function boot(): Promise<void> {
     })().catch((e) => setStatus(String(e), true));
   });
 
+  $("btn-audit-journal").addEventListener("click", () => {
+    void (async () => {
+      const audit = await auditActualLocalJournal();
+      $("security-report").textContent = JSON.stringify(audit, null, 2);
+      setStatus(
+        `audit entries=${audit.rowCounts.local_journal_entries ?? 0} realData=${String(audit.looksLikeRealUserData)} (no content logged)`,
+        audit.looksLikeRealUserData,
+      );
+    })().catch((e) => setStatus(safeErrorMessage(e), true));
+  });
+
+  $("btn-enc-mig-status").addEventListener("click", () => {
+    void (async () => {
+      const status = await LocalJournalEncryptionMigrator.status();
+      $("security-report").textContent = JSON.stringify(status, null, 2);
+      setStatus(`enc-mig phase=${status.phase}`);
+    })().catch((e) => setStatus(safeErrorMessage(e), true));
+  });
+
+  $("btn-enc-mig-fixture").addEventListener("click", () => {
+    void (async () => {
+      setStatus("fixture encryption migration PoC…（本番DBは触らない）");
+      const report = await runEncryptionMigrationPoc();
+      $("security-report").textContent = JSON.stringify(report, null, 2);
+      const fails = report.steps.filter((s) => s.status === "fail").length;
+      setStatus(`fixture enc-mig fail=${fails} untouched=${String(report.actualJournalUntouched)}`, fails > 0);
+    })().catch((e) => setStatus(safeErrorMessage(e), true));
+  });
+
   $("btn-inspect-attrs").addEventListener("click", () => {
     void (async () => {
       const asDir = await resolveLjdApplicationSupportDir();
@@ -136,7 +168,14 @@ async function boot(): Promise<void> {
   try {
     await openLocalJournalDatabase();
     await renderEntries();
-    setStatus("Diagnostics準備完了（SQLite foundation）。");
+    setStatus("fixture enc-mig PoC 実行中…（ljd_local_journal は暗号化しない）");
+    const report = await runEncryptionMigrationPoc();
+    $("security-report").textContent = JSON.stringify(report, null, 2);
+    const fails = report.steps.filter((s) => s.status === "fail").length;
+    setStatus(
+      `fixture enc-mig fail=${fails} phase-report written（本番DB未切替）`,
+      fails > 0,
+    );
   } catch (err) {
     setStatus(`初期化失敗: ${String(err)}`, true);
   }
