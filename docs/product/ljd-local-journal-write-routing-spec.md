@@ -22,12 +22,15 @@
 
 **Status:** Pre-Implementation Transitional Write Routing / Source of Truth Candidate  
 **ラベル:** **Designed candidate**＝移行期間の第一候補／**Future**＝Local-first 最終形／**Open**＝未確定／**Forbidden now**＝本Phase実装禁止／**Release Gate**＝未実証（PASS禁止）  
-**PoC (4B-4E):** developer-only write-through mirror 実装中。一般 Journal save 未接続。Simulator W1–W10 は明示 test entry ID 待ち。
+**PoC (4B-4E):** developer-only write-through mirror **PASS**（一般 Journal save 未接続）。  
+**PoC (4B-4G):** developer-only resolve → mirror target integration **PASS**（production routing 未接続）。  
+証拠: `docs/hybrid/HYBRID_PHASE_4B4G_GENERATION_RESOLVER_INTEGRATION_POC.md`
 
 **関連:**  
 - Activation（technical vs SoT）: `docs/product/ljd-local-journal-activation-spec.md`  
 - Hybrid メモ: `docs/hybrid/HYBRID_PHASE_4B4D_WRITE_ROUTING_ARCHITECTURE.md`  
-- Write-through PoC: `docs/hybrid/HYBRID_PHASE_4B4E_WRITE_THROUGH_MIRROR_POC.md`
+- Write-through PoC: `docs/hybrid/HYBRID_PHASE_4B4E_WRITE_THROUGH_MIRROR_POC.md`  
+- Generation resolver integration: `docs/hybrid/HYBRID_PHASE_4B4G_GENERATION_RESOLVER_INTEGRATION_POC.md`
 
 ---
 
@@ -276,3 +279,15 @@ Strategy D への切替は **Source-of-Truth switch の一部**であり、techn
 | 一般 UI 接続 | なし |
 | Simulator W1–W10 | **PASS**（entry `cmsppllhx0000kv04nmct79ak`） |
 | 証拠メモ | `docs/hybrid/HYBRID_PHASE_4B4E_WRITE_THROUGH_MIRROR_POC.md` |
+
+---
+
+## 11. 4B-4G developer-only resolver → mirror（追記）
+
+| 項目 | 状態 |
+| --- | --- |
+| `ResolvedLocalJournalGeneration` | 実装 |
+| resolve → fixed target → mirror | developer-only PASS |
+| production Journal save / Repository | **未接続** |
+| R1–R10 Simulator | **PASS** |
+| 証拠 | `docs/hybrid/HYBRID_PHASE_4B4G_GENERATION_RESOLVER_INTEGRATION_POC.md` |

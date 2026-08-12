@@ -14,6 +14,9 @@ import { runActivationPointerPoc } from "@/lib/local-first/journal/activation/ru
 import { LocalJournalTechnicalActivation } from "@/lib/local-first/journal/activation/LocalJournalTechnicalActivation";
 import { LocalJournalActivationManifestStore } from "@/lib/local-first/journal/activation/LocalJournalActivationManifestStore";
 import { runTechnicalActivationPreflight } from "@/lib/local-first/journal/activation/activationPreflight";
+import { runGenerationResolverIntegrationPoc } from "@/lib/local-first/journal/generation/runGenerationResolverIntegrationPoc";
+import { DeveloperResolvedGenerationMirror } from "@/lib/local-first/journal/generation/DeveloperResolvedGenerationMirror";
+import { resolveLocalJournalGenerationTarget } from "@/lib/local-first/journal/generation/resolveLocalJournalGenerationTarget";
 import { FAILURE_INJECTION_MISSING_ENTRY_ID } from "@/lib/local-first/journal/secureCopy/types";
 import {
   deleteJournalMediaRelative,
@@ -275,6 +278,54 @@ async function boot(): Promise<void> {
     })().catch((e) => setStatus(safeErrorMessage(e), true));
   });
 
+  $("btn-resolve-generation").addEventListener("click", () => {
+    void (async () => {
+      const resolved = await resolveLocalJournalGenerationTarget();
+      $("security-report").textContent = JSON.stringify(resolved, null, 2);
+      setStatus(
+        resolved.ok
+          ? `resolved generation=${resolved.target.generation} db=${resolved.target.databaseId}`
+          : `resolve denied ${resolved.reason}`,
+        !resolved.ok,
+      );
+    })().catch((e) => setStatus(safeErrorMessage(e), true));
+  });
+
+  $("btn-mirror-via-resolved").addEventListener("click", () => {
+    void (async () => {
+      const id = ($("write-through-entry-id") as HTMLInputElement).value.trim();
+      if (!id) {
+        setStatus("明示 Server entry ID が必要です。", true);
+        return;
+      }
+      setStatus("resolve → mirror（developer-only / production save 未接続）");
+      const result = await DeveloperResolvedGenerationMirror.mirrorExplicitId(id);
+      $("security-report").textContent = JSON.stringify(
+        {
+          result: result.result,
+          resolveDeniedReason: result.resolveDeniedReason,
+          resolvedTarget: result.resolvedTarget,
+          manifestChangedDuringOperation: result.manifestChangedDuringOperation,
+          stableId: result.stableId,
+          needsRetry: result.needsRetry,
+        },
+        null,
+        2,
+      );
+      setStatus(`mirrorViaResolved result=${result.result}`, !result.ok);
+    })().catch((e) => setStatus(safeErrorMessage(e), true));
+  });
+
+  $("btn-generation-resolver-poc").addEventListener("click", () => {
+    void (async () => {
+      setStatus("generation resolver integration PoC R1–R10…");
+      const report = await runGenerationResolverIntegrationPoc();
+      $("security-report").textContent = JSON.stringify(report, null, 2);
+      const fails = report.steps.filter((s) => s.status === "fail").length;
+      setStatus(`generation-resolver fail=${fails}`, fails > 0);
+    })().catch((e) => setStatus(safeErrorMessage(e), true));
+  });
+
   $("btn-inspect-capacity").addEventListener("click", () => {
     void (async () => {
       const capacity = await readAvailableBytesOrNull();
@@ -330,13 +381,13 @@ async function boot(): Promise<void> {
   try {
     await openLocalJournalDatabase();
     await renderEntries();
-    setStatus("activation pointer PoC P1–P12 実行中…（Repository 切替なし）");
+    setStatus("generation resolver integration PoC R1–R10 実行中…");
     await LocalJournalSecureBootstrapper.bootstrap();
-    const report = await runActivationPointerPoc();
+    const report = await runGenerationResolverIntegrationPoc();
     $("security-report").textContent = JSON.stringify(report, null, 2);
     const fails = report.steps.filter((s) => s.status === "fail").length;
     setStatus(
-      `activation-pointer fail=${fails} untouched=${String(report.actualJournalUntouched)}`,
+      `generation-resolver fail=${fails} entry=${report.entryId}`,
       fails > 0,
     );
   } catch (err) {

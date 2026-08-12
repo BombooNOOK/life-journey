@@ -22,7 +22,9 @@
 
 **Status:** Pre-Implementation Activation Architecture / Source of Truth Candidate  
 **PoC (4B-4F):** developer-only technical activation pointer **PASS**（一般 UI / Repository / SoT 未接続）。  
-証拠: `docs/hybrid/HYBRID_PHASE_4B4F_ACTIVATION_POINTER_POC.md`
+証拠: `docs/hybrid/HYBRID_PHASE_4B4F_ACTIVATION_POINTER_POC.md`  
+**PoC (4B-4G):** developer-only resolve → mirror target integration **PASS**。  
+証拠: `docs/hybrid/HYBRID_PHASE_4B4G_GENERATION_RESOLVER_INTEGRATION_POC.md`
 
 **ラベル:** **Designed candidate**＝比較後の第一候補／**Open**＝未確定／**Forbidden now**＝製品接続禁止／**Release Gate**＝未実証（PASS禁止）
 

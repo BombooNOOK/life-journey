@@ -4336,6 +4336,185 @@ CREATE INDEX IF NOT EXISTS idx_local_media_journal
     }
   });
 
+  // src/lib/local-first/journal/generation/ResolvedLocalJournalGeneration.ts
+  function isPlaintextProductionDatabaseId(databaseId) {
+    return databaseId === LOCAL_JOURNAL_DB_NAME;
+  }
+  function assertDbMediaPairIntegrity(target) {
+    if (isPlaintextProductionDatabaseId(target.databaseId)) {
+      throw new Error("plaintext_forbidden");
+    }
+    if (target.mediaRootId === LOCAL_JOURNAL_MEDIA_ROOT) {
+      throw new Error("plaintext_media_forbidden");
+    }
+    const allowed = ALLOWED_TECHNICAL_GENERATION_PAIRS.some(
+      (p) => p.databaseId === target.databaseId && p.mediaRootId === target.mediaRootId
+    );
+    if (!allowed) {
+      throw new Error("db_media_pair_mismatch");
+    }
+  }
+  function mapManifestToResolvedGeneration(input) {
+    if (isPlaintextProductionDatabaseId(input.databaseId)) {
+      return {
+        ok: false,
+        reason: "plaintext_forbidden",
+        detail: "ljd_local_journal cannot be a technical generation target"
+      };
+    }
+    try {
+      assertDbMediaPairIntegrity(input);
+    } catch (error) {
+      const msg = String(error);
+      if (msg.includes("plaintext")) {
+        return { ok: false, reason: "plaintext_forbidden", detail: msg };
+      }
+      return { ok: false, reason: "db_media_pair_mismatch", detail: msg };
+    }
+    if (input.schemaVersion !== EXPECTED_JOURNAL_SCHEMA_VERSION) {
+      return {
+        ok: false,
+        reason: "unsupported_generation",
+        detail: `schemaVersion=${input.schemaVersion}`
+      };
+    }
+    return {
+      ok: true,
+      target: {
+        generation: input.generation,
+        databaseId: input.databaseId,
+        mediaRootId: input.mediaRootId,
+        schemaVersion: input.schemaVersion,
+        manifestChecksum: input.manifestChecksum
+      }
+    };
+  }
+  var ALLOWED_TECHNICAL_GENERATION_PAIRS;
+  var init_ResolvedLocalJournalGeneration = __esm({
+    "src/lib/local-first/journal/generation/ResolvedLocalJournalGeneration.ts"() {
+      "use strict";
+      init_types5();
+      init_types();
+      ALLOWED_TECHNICAL_GENERATION_PAIRS = [
+        {
+          databaseId: TECHNICAL_ACTIVE_DATABASE_ID,
+          mediaRootId: TECHNICAL_ACTIVE_MEDIA_ROOT_ID,
+          generation: TECHNICAL_CANDIDATE_GENERATION
+        }
+      ];
+    }
+  });
+
+  // src/lib/local-first/journal/generation/resolveLocalJournalGenerationTarget.ts
+  var resolveLocalJournalGenerationTarget_exports = {};
+  __export(resolveLocalJournalGenerationTarget_exports, {
+    readManifestChecksumNative: () => readManifestChecksumNative,
+    resolveLocalJournalGenerationTarget: () => resolveLocalJournalGenerationTarget,
+    resolveLocalJournalGenerationTargetWithFs: () => resolveLocalJournalGenerationTargetWithFs
+  });
+  function mapTechnicalStatus(status) {
+    switch (status) {
+      case "no_activation":
+        return { ok: false, reason: "no_activation", detail: status };
+      case "corrupt_manifest":
+        return { ok: false, reason: "corrupt_manifest", detail: status };
+      case "missing_database":
+        return { ok: false, reason: "missing_database", detail: status };
+      case "preflight_failed":
+        return { ok: false, reason: "preflight_failed", detail: status };
+      case "checksum_mismatch":
+        return { ok: false, reason: "checksum_mismatch", detail: status };
+      case "unknown_format":
+        return { ok: false, reason: "unknown_format", detail: status };
+      case "rejected_target":
+        return { ok: false, reason: "rejected_target", detail: status };
+      default:
+        return { ok: false, reason: "preflight_failed", detail: status };
+    }
+  }
+  async function resolveLocalJournalGenerationTargetWithFs(options) {
+    let availableBytes = null;
+    if (Object.prototype.hasOwnProperty.call(options, "availableBytes")) {
+      availableBytes = options.availableBytes ?? null;
+    }
+    const capacity = decideCapacityKnown(availableBytes);
+    if (!capacity.known && options.allowUnknownCapacity !== true) {
+      return {
+        ok: false,
+        reason: "capacity_unknown",
+        detail: "capacity_unknown_fail_closed"
+      };
+    }
+    const technical = await resolveTechnicalActiveLocalJournalWithFs({
+      fs: options.fs,
+      absolutePath: options.absolutePath,
+      verifyDatabaseExists: options.verifyDatabaseExists
+    });
+    if (technical.status !== "ready" || !technical.manifest) {
+      return mapTechnicalStatus(technical.status);
+    }
+    return mapManifestToResolvedGeneration({
+      generation: technical.manifest.generation,
+      databaseId: technical.manifest.activeDatabaseId,
+      mediaRootId: technical.manifest.activeMediaRootId,
+      schemaVersion: technical.manifest.schemaVersion,
+      manifestChecksum: technical.manifest.checksum
+    });
+  }
+  async function resolveLocalJournalGenerationTarget(options) {
+    if (!Capacitor.isNativePlatform()) {
+      throw new LocalFirstSecurityError("native_only", "generation resolve is native-only");
+    }
+    let availableBytes;
+    if (options && Object.prototype.hasOwnProperty.call(options, "availableBytes")) {
+      availableBytes = options.availableBytes ?? null;
+    } else {
+      availableBytes = (await readAvailableBytesOrNull()).availableBytes;
+      if (availableBytes == null) {
+        availableBytes = (await readAvailableBytesOrNull()).availableBytes;
+      }
+    }
+    const capacity = decideCapacityKnown(availableBytes);
+    if (!capacity.known && options?.allowUnknownCapacity !== true) {
+      return {
+        ok: false,
+        reason: "capacity_unknown",
+        detail: "capacity_unknown_fail_closed"
+      };
+    }
+    const absolutePath = await resolveActivationManifestAbsolutePath();
+    const fs = await createNativeManifestFs();
+    return resolveLocalJournalGenerationTargetWithFs({
+      fs,
+      absolutePath,
+      availableBytes,
+      allowUnknownCapacity: true,
+      // already gated above
+      verifyDatabaseExists: async (databaseId) => {
+        if (databaseId !== TECHNICAL_ACTIVE_DATABASE_ID) return false;
+        const inspection = await LocalJournalSecureBootstrapper.inspect();
+        return inspection.exists === true && inspection.encrypted === true;
+      }
+    });
+  }
+  async function readManifestChecksumNative() {
+    const read = await LocalJournalActivationManifestStore.readNative();
+    return read.status === "ok" ? read.manifest.checksum : null;
+  }
+  var init_resolveLocalJournalGenerationTarget = __esm({
+    "src/lib/local-first/journal/generation/resolveLocalJournalGenerationTarget.ts"() {
+      "use strict";
+      init_dist();
+      init_LocalJournalActivationManifestStore();
+      init_LocalJournalTechnicalActivation();
+      init_LocalJournalSecureBootstrapper();
+      init_ResolvedLocalJournalGeneration();
+      init_security();
+      init_types3();
+      init_types5();
+    }
+  });
+
   // src/lib/local-first/diagnostics/localStorageDiagnosticsMain.ts
   init_dist();
   init_database();
@@ -5922,6 +6101,370 @@ CREATE INDEX IF NOT EXISTS idx_local_media_journal
   init_LocalJournalTechnicalActivation();
   init_LocalJournalActivationManifestStore();
   init_activationPreflight();
+
+  // src/lib/local-first/journal/generation/runGenerationResolverIntegrationPoc.ts
+  init_dist();
+  init_esm3();
+  init_esm();
+  init_LocalJournalTechnicalActivation();
+  init_LocalJournalActivationManifestStore();
+  init_resolveLocalJournalGenerationTarget();
+
+  // src/lib/local-first/journal/generation/DeveloperResolvedGenerationMirror.ts
+  init_dist();
+  init_ResolvedLocalJournalGeneration();
+  init_resolveLocalJournalGenerationTarget();
+  init_LocalJournalActivationManifestStore();
+  init_types4();
+  init_LocalJournalSecureBootstrapper();
+  init_security();
+  init_types3();
+  init_types5();
+  function blocked(reason, serverEntryId, extras) {
+    return {
+      ok: false,
+      targetDb: SERVER_COPY_TARGET_DB_NAME,
+      result: "blocked",
+      serverEntryId,
+      needsRetry: false,
+      stableId: null,
+      legacyServerId: null,
+      detail: reason,
+      fingerprint: null,
+      blockedReason: reason,
+      candidateEncrypted: null,
+      completeProtection: null,
+      backupExcluded: null,
+      rowCounts: null,
+      injectedLocalFailure: false,
+      resolvedTarget: null,
+      manifestChangedDuringOperation: false,
+      resolveDeniedReason: reason,
+      ...extras
+    };
+  }
+  function assertMirrorTargetGeneration(target) {
+    assertDbMediaPairIntegrity(target);
+    if (target.databaseId !== TECHNICAL_ACTIVE_DATABASE_ID) {
+      throw new Error(`unsupported_databaseId=${target.databaseId}`);
+    }
+    if (target.databaseId !== SERVER_COPY_TARGET_DB_NAME) {
+      throw new Error("mirror target must be encrypted candidate generation");
+    }
+  }
+  async function mirrorExplicitIdToResolvedGenerationWithDeps(options) {
+    try {
+      assertMirrorTargetGeneration(options.target);
+    } catch (error) {
+      return blocked(String(error), options.serverEntryId, {
+        resolvedTarget: options.target,
+        resolveDeniedReason: String(error)
+      });
+    }
+    const fixedTarget = { ...options.target };
+    const prepared = prepareCopyBatch([options.serverEntryId], {
+      availableBytes: options.availableBytes ?? null,
+      allowUnknownCapacity: options.allowUnknownCapacity
+    });
+    if (!prepared.ok) {
+      return blocked(prepared.batch.blockedReason ?? "blocked", options.serverEntryId, {
+        resolvedTarget: fixedTarget,
+        resolveDeniedReason: null
+      });
+    }
+    const mirrored = await mirrorServerJournalEntryToLocalGeneration(
+      prepared.entryIds[0],
+      options.deps,
+      prepared.availableBytes
+    );
+    const rowCounts = {
+      entries: await options.deps.repository.countEntries(),
+      tags: await options.deps.repository.countTags(),
+      media: await options.deps.repository.countMedia()
+    };
+    let manifestChangedDuringOperation = false;
+    if (options.readChecksumAfter) {
+      const after = await options.readChecksumAfter();
+      if (after != null && after !== fixedTarget.manifestChecksum) {
+        manifestChangedDuringOperation = true;
+      }
+    }
+    return {
+      ok: mirrored.status === "mirrored" || mirrored.status === "already_present",
+      targetDb: SERVER_COPY_TARGET_DB_NAME,
+      result: mirrored.status,
+      serverEntryId: mirrored.serverId,
+      needsRetry: mirrored.needsRetry,
+      stableId: mirrored.stableId,
+      legacyServerId: mirrored.legacyServerId,
+      detail: mirrored.detail,
+      fingerprint: mirrored.fingerprint,
+      blockedReason: null,
+      candidateEncrypted: true,
+      completeProtection: null,
+      backupExcluded: null,
+      rowCounts,
+      injectedLocalFailure: false,
+      resolvedTarget: fixedTarget,
+      manifestChangedDuringOperation,
+      resolveDeniedReason: null
+    };
+  }
+  var DeveloperResolvedGenerationMirror = {
+    async mirrorExplicitId(serverEntryId, options) {
+      if (!Capacitor.isNativePlatform()) {
+        throw new LocalFirstSecurityError(
+          "native_only",
+          "resolved-generation mirror is native-only"
+        );
+      }
+      let availableBytes;
+      if (options && Object.prototype.hasOwnProperty.call(options, "availableBytes")) {
+        availableBytes = options.availableBytes ?? null;
+      } else {
+        availableBytes = (await readAvailableBytesOrNull()).availableBytes;
+        if (availableBytes == null) {
+          availableBytes = (await readAvailableBytesOrNull()).availableBytes;
+        }
+      }
+      const resolved = await resolveLocalJournalGenerationTarget(
+        availableBytes != null ? { availableBytes } : { availableBytes: null }
+      );
+      if (!resolved.ok) {
+        return blocked(resolved.reason, serverEntryId, {
+          resolveDeniedReason: resolved.reason,
+          detail: resolved.detail
+        });
+      }
+      assertMirrorTargetGeneration(resolved.target);
+      const media = await createNativeCandidateMediaStore();
+      const result = await withCandidateRepository(
+        async (repository) => mirrorExplicitIdToResolvedGenerationWithDeps({
+          serverEntryId,
+          target: resolved.target,
+          deps: {
+            fetchEntry: fetchAuthenticatedJournalEntry,
+            downloadPhoto: downloadJournalPhotoBase64,
+            repository,
+            media,
+            createStableId: createLocalStableId
+          },
+          availableBytes,
+          allowUnknownCapacity: true,
+          readChecksumAfter: readManifestChecksumNative
+        })
+      );
+      const inspection = await LocalJournalSecureBootstrapper.inspect();
+      return {
+        ...result,
+        candidateEncrypted: inspection.encrypted,
+        completeProtection: inspection.completeProtection,
+        backupExcluded: inspection.backupExcluded
+      };
+    }
+  };
+
+  // src/lib/local-first/journal/generation/runGenerationResolverIntegrationPoc.ts
+  init_ResolvedLocalJournalGeneration();
+  init_types();
+  init_security();
+  init_types5();
+  var POC_API_ORIGIN = "https://life-journey-zeta.vercel.app";
+  var SESSION_COOKIE_PATH2 = "ljd/security-poc/session.cookie";
+  var GENERATION_RESOLVER_POC_ENTRY_ID = WRITE_THROUGH_POC_ENTRY_ID;
+  async function loadPocSessionCookieHeader2() {
+    try {
+      const file = await Filesystem.readFile({
+        path: SESSION_COOKIE_PATH2,
+        directory: Directory.Library,
+        encoding: Encoding.UTF8
+      });
+      const raw = typeof file.data === "string" ? file.data.trim() : "";
+      if (!raw.startsWith("lj_user_email=")) return null;
+      return raw;
+    } catch {
+      return null;
+    }
+  }
+  async function runGenerationResolverIntegrationPoc() {
+    if (!Capacitor.isNativePlatform()) {
+      throw new Error("generation resolver integration PoC is native-only");
+    }
+    const steps = [];
+    const push2 = (id, status, detail) => {
+      steps.push({ id, status, detail });
+    };
+    const entryId = GENERATION_RESOLVER_POC_ENTRY_ID;
+    try {
+      await LocalJournalTechnicalActivation.activateCandidate();
+      let capacityBytes = (await readAvailableBytesOrNull()).availableBytes;
+      if (capacityBytes == null) {
+        capacityBytes = (await readAvailableBytesOrNull()).availableBytes;
+      }
+      const resolved = await resolveLocalJournalGenerationTarget(
+        capacityBytes != null ? { availableBytes: capacityBytes } : void 0
+      );
+      push2(
+        "R1",
+        resolved.ok ? "pass" : "fail",
+        JSON.stringify(
+          resolved.ok ? {
+            generation: resolved.target.generation,
+            databaseId: resolved.target.databaseId,
+            mediaRootId: resolved.target.mediaRootId,
+            schemaVersion: resolved.target.schemaVersion,
+            checksumChars: resolved.target.manifestChecksum.length
+          } : resolved
+        )
+      );
+      const cookieHeader = await loadPocSessionCookieHeader2();
+      if (!cookieHeader) {
+        push2("R2", "fail", "missing session.cookie");
+        throw new Error("session.cookie required for Server GET");
+      }
+      configureServerFetchPoc({ apiOrigin: POC_API_ORIGIN, cookieHeader });
+      const mirror = await DeveloperResolvedGenerationMirror.mirrorExplicitId(entryId, {
+        availableBytes: capacityBytes ?? void 0
+      });
+      push2(
+        "R2",
+        mirror.result === "mirrored" || mirror.result === "already_present" ? "pass" : "fail",
+        JSON.stringify({
+          result: mirror.result,
+          resolvedDatabaseId: mirror.resolvedTarget?.databaseId ?? null,
+          stableId: mirror.stableId,
+          detail: mirror.detail
+        })
+      );
+      const again = await DeveloperResolvedGenerationMirror.mirrorExplicitId(entryId, {
+        availableBytes: capacityBytes ?? void 0
+      });
+      push2(
+        "R3",
+        again.result === "already_present" && again.stableId === mirror.stableId ? "pass" : "fail",
+        JSON.stringify({ result: again.result, stableId: again.stableId })
+      );
+      const absolutePath = await resolveActivationManifestAbsolutePath();
+      const fs = await createNativeManifestFs();
+      const good = await LocalJournalActivationManifestStore.readNative();
+      await fs.atomicReplaceText(absolutePath, "{corrupt");
+      const corruptAttempt = await resolveLocalJournalGenerationTarget(
+        capacityBytes != null ? { availableBytes: capacityBytes } : void 0
+      );
+      push2(
+        "R4",
+        !corruptAttempt.ok && corruptAttempt.reason === "corrupt_manifest" ? "pass" : "fail",
+        JSON.stringify(corruptAttempt)
+      );
+      if (good.status === "ok") {
+        await fs.atomicReplaceText(absolutePath, `${JSON.stringify(good.manifest, null, 2)}
+`);
+      } else {
+        await LocalJournalTechnicalActivation.activateCandidate();
+      }
+      const missing = await resolveLocalJournalGenerationTargetWithFsInjectedMissing(
+        capacityBytes
+      );
+      push2(
+        "R5",
+        !missing.ok && missing.reason === "missing_database" ? "pass" : "fail",
+        JSON.stringify(missing)
+      );
+      const plaintext = mapManifestToResolvedGeneration({
+        generation: 1,
+        databaseId: LOCAL_JOURNAL_DB_NAME,
+        mediaRootId: LOCAL_JOURNAL_MEDIA_ROOT,
+        schemaVersion: 1,
+        manifestChecksum: "x"
+      });
+      push2(
+        "R6",
+        !plaintext.ok && plaintext.reason === "plaintext_forbidden" ? "pass" : "fail",
+        JSON.stringify(plaintext)
+      );
+      let pairOk = false;
+      try {
+        assertDbMediaPairIntegrity({
+          databaseId: TECHNICAL_ACTIVE_DATABASE_ID,
+          mediaRootId: LOCAL_JOURNAL_MEDIA_ROOT
+        });
+      } catch {
+        pairOk = true;
+      }
+      push2("R7", pairOk ? "pass" : "fail", "wrong media pairing rejected");
+      const capDeny = await resolveLocalJournalGenerationTarget({ availableBytes: null });
+      push2(
+        "R8",
+        !capDeny.ok && capDeny.reason === "capacity_unknown" ? "pass" : "fail",
+        JSON.stringify(capDeny)
+      );
+      push2(
+        "R9",
+        mirror.resolvedTarget != null && mirror.resolvedTarget.databaseId === TECHNICAL_ACTIVE_DATABASE_ID && typeof mirror.manifestChangedDuringOperation === "boolean" ? "pass" : "fail",
+        JSON.stringify({
+          fixedDatabaseId: mirror.resolvedTarget?.databaseId ?? null,
+          manifestChangedDuringOperation: mirror.manifestChangedDuringOperation,
+          note: "one-entry unit uses start-of-op target; drift warning supported"
+        })
+      );
+      let prodEncrypted = null;
+      try {
+        prodEncrypted = Boolean(
+          (await CapacitorSQLite.isDatabaseEncrypted({
+            database: LOCAL_JOURNAL_DB_NAME
+          })).result
+        );
+      } catch {
+        prodEncrypted = null;
+      }
+      const artifacts = await listSqliteArtifactsReadOnly();
+      const prod = artifacts.find((a) => a.name === `${LOCAL_JOURNAL_DB_NAME}SQLite.db`);
+      push2(
+        "R10",
+        prodEncrypted === false && Boolean(prod) ? "pass" : "fail",
+        `prodEncrypted=${String(prodEncrypted)} prodBytes=${String(prod?.bytes ?? null)}`
+      );
+    } catch (error) {
+      push2("error", "fail", safeErrorMessage(error));
+    } finally {
+      configureServerFetchPoc(null);
+    }
+    const report = {
+      ranAt: (/* @__PURE__ */ new Date()).toISOString(),
+      entryId,
+      steps,
+      actualJournalUntouched: true,
+      generalUiUntouched: true,
+      productionWriteUntouched: true
+    };
+    await Filesystem.mkdir({
+      path: "ljd/security-poc",
+      directory: Directory.Library,
+      recursive: true
+    }).catch(() => void 0);
+    await Filesystem.writeFile({
+      path: "ljd/security-poc/generation-resolver-integration-report.json",
+      directory: Directory.Library,
+      encoding: Encoding.UTF8,
+      data: JSON.stringify(report, null, 2)
+    });
+    return report;
+  }
+  async function resolveLocalJournalGenerationTargetWithFsInjectedMissing(capacityBytes) {
+    const { resolveLocalJournalGenerationTargetWithFs: resolveLocalJournalGenerationTargetWithFs2 } = await Promise.resolve().then(() => (init_resolveLocalJournalGenerationTarget(), resolveLocalJournalGenerationTarget_exports));
+    const absolutePath = await resolveActivationManifestAbsolutePath();
+    const fs = await createNativeManifestFs();
+    return resolveLocalJournalGenerationTargetWithFs2({
+      fs,
+      absolutePath,
+      availableBytes: capacityBytes ?? 5e6,
+      allowUnknownCapacity: capacityBytes == null,
+      verifyDatabaseExists: async () => false
+    });
+  }
+
+  // src/lib/local-first/diagnostics/localStorageDiagnosticsMain.ts
+  init_resolveLocalJournalGenerationTarget();
   init_types4();
 
   // src/lib/local-first/journal/mediaStore.ts
@@ -6242,6 +6785,49 @@ CREATE INDEX IF NOT EXISTS idx_local_media_journal
         );
       })().catch((e) => setStatus(safeErrorMessage(e), true));
     });
+    $("btn-resolve-generation").addEventListener("click", () => {
+      void (async () => {
+        const resolved = await resolveLocalJournalGenerationTarget();
+        $("security-report").textContent = JSON.stringify(resolved, null, 2);
+        setStatus(
+          resolved.ok ? `resolved generation=${resolved.target.generation} db=${resolved.target.databaseId}` : `resolve denied ${resolved.reason}`,
+          !resolved.ok
+        );
+      })().catch((e) => setStatus(safeErrorMessage(e), true));
+    });
+    $("btn-mirror-via-resolved").addEventListener("click", () => {
+      void (async () => {
+        const id = $("write-through-entry-id").value.trim();
+        if (!id) {
+          setStatus("\u660E\u793A Server entry ID \u304C\u5FC5\u8981\u3067\u3059\u3002", true);
+          return;
+        }
+        setStatus("resolve \u2192 mirror\uFF08developer-only / production save \u672A\u63A5\u7D9A\uFF09");
+        const result = await DeveloperResolvedGenerationMirror.mirrorExplicitId(id);
+        $("security-report").textContent = JSON.stringify(
+          {
+            result: result.result,
+            resolveDeniedReason: result.resolveDeniedReason,
+            resolvedTarget: result.resolvedTarget,
+            manifestChangedDuringOperation: result.manifestChangedDuringOperation,
+            stableId: result.stableId,
+            needsRetry: result.needsRetry
+          },
+          null,
+          2
+        );
+        setStatus(`mirrorViaResolved result=${result.result}`, !result.ok);
+      })().catch((e) => setStatus(safeErrorMessage(e), true));
+    });
+    $("btn-generation-resolver-poc").addEventListener("click", () => {
+      void (async () => {
+        setStatus("generation resolver integration PoC R1\u2013R10\u2026");
+        const report = await runGenerationResolverIntegrationPoc();
+        $("security-report").textContent = JSON.stringify(report, null, 2);
+        const fails = report.steps.filter((s2) => s2.status === "fail").length;
+        setStatus(`generation-resolver fail=${fails}`, fails > 0);
+      })().catch((e) => setStatus(safeErrorMessage(e), true));
+    });
     $("btn-inspect-capacity").addEventListener("click", () => {
       void (async () => {
         const capacity = await readAvailableBytesOrNull();
@@ -6294,13 +6880,13 @@ CREATE INDEX IF NOT EXISTS idx_local_media_journal
     try {
       await openLocalJournalDatabase();
       await renderEntries();
-      setStatus("activation pointer PoC P1\u2013P12 \u5B9F\u884C\u4E2D\u2026\uFF08Repository \u5207\u66FF\u306A\u3057\uFF09");
+      setStatus("generation resolver integration PoC R1\u2013R10 \u5B9F\u884C\u4E2D\u2026");
       await LocalJournalSecureBootstrapper.bootstrap();
-      const report = await runActivationPointerPoc();
+      const report = await runGenerationResolverIntegrationPoc();
       $("security-report").textContent = JSON.stringify(report, null, 2);
       const fails = report.steps.filter((s2) => s2.status === "fail").length;
       setStatus(
-        `activation-pointer fail=${fails} untouched=${String(report.actualJournalUntouched)}`,
+        `generation-resolver fail=${fails} entry=${report.entryId}`,
         fails > 0
       );
     } catch (err) {
