@@ -16,6 +16,7 @@
  *
  * Companion:
  * - docs/hybrid/HYBRID_PHASE_4B4H_PRODUCTION_ROUTING_ARCHITECTURE.md
+ * - docs/product/ljd-local-mirror-outbox-spec.md（4B-4I outbox PoC）
  */
 
 # Life Journey Diary｜Server-authoritative Transitional Local Routing
@@ -313,9 +314,12 @@ secret・本文・email をログしない。
 
 ---
 
-## 20. 禁止（本Phase）
+## 20. 禁止（本Phase＝4B-4H 設計時）
 
 production save 配線、pending queue 実装、background retry、Local read 切替、Local update/delete、feature flag 実装、build / Simulator、main merge。
+
+**追記（4B-4I）:** 独立 outbox PoC は `docs/product/ljd-local-mirror-outbox-spec.md` ／  
+`docs/hybrid/HYBRID_PHASE_4B4I_LOCAL_MIRROR_OUTBOX_POC.md`。production save 配線は引き続き禁止。
 
 ---
 

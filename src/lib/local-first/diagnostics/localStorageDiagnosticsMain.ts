@@ -17,6 +17,11 @@ import { runTechnicalActivationPreflight } from "@/lib/local-first/journal/activ
 import { runGenerationResolverIntegrationPoc } from "@/lib/local-first/journal/generation/runGenerationResolverIntegrationPoc";
 import { DeveloperResolvedGenerationMirror } from "@/lib/local-first/journal/generation/DeveloperResolvedGenerationMirror";
 import { resolveLocalJournalGenerationTarget } from "@/lib/local-first/journal/generation/resolveLocalJournalGenerationTarget";
+import { runLocalMirrorOutboxPoc } from "@/lib/local-first/journal/outbox/runLocalMirrorOutboxPoc";
+import {
+  enqueueBeforeMirror,
+} from "@/lib/local-first/journal/outbox/LocalMirrorOutboxService";
+import { openLocalMirrorOutboxSqliteStore } from "@/lib/local-first/journal/outbox/LocalMirrorOutboxSqliteStore";
 import { FAILURE_INJECTION_MISSING_ENTRY_ID } from "@/lib/local-first/journal/secureCopy/types";
 import {
   deleteJournalMediaRelative,
@@ -326,6 +331,81 @@ async function boot(): Promise<void> {
     })().catch((e) => setStatus(safeErrorMessage(e), true));
   });
 
+  $("btn-outbox-list").addEventListener("click", () => {
+    void (async () => {
+      const opened = await openLocalMirrorOutboxSqliteStore();
+      try {
+        const pending = await opened.store.listPending();
+        $("security-report").textContent = JSON.stringify(
+          {
+            readOnly: true,
+            pendingCount: pending.length,
+            pending: pending.map((p) => ({
+              id: p.id.slice(0, 8),
+              serverEntryIdRedacted: `${p.serverEntryId.slice(0, 4)}…`,
+              targetGenerationId: p.targetGenerationId,
+              retryCount: p.retryCount,
+              lastResult: p.lastResult,
+            })),
+            encrypted: opened.encrypted,
+            completeProtection: opened.completeProtection,
+            backupExcluded: opened.backupExcluded,
+          },
+          null,
+          2,
+        );
+        setStatus(`outbox pending=${pending.length}`);
+      } finally {
+        await opened.close();
+      }
+    })().catch((e) => setStatus(safeErrorMessage(e), true));
+  });
+
+  $("btn-outbox-enqueue-fixture").addEventListener("click", () => {
+    void (async () => {
+      const id = ($("write-through-entry-id") as HTMLInputElement).value.trim();
+      if (!id) {
+        setStatus("明示 Server entry ID が必要です。", true);
+        return;
+      }
+      const resolved = await resolveLocalJournalGenerationTarget();
+      if (!resolved.ok) {
+        setStatus(`resolve denied ${resolved.reason}`, true);
+        return;
+      }
+      const opened = await openLocalMirrorOutboxSqliteStore();
+      try {
+        const enq = await enqueueBeforeMirror(
+          { store: opened.store },
+          { serverEntryId: id, target: resolved.target },
+        );
+        $("security-report").textContent = JSON.stringify(
+          {
+            created: enq.created,
+            targetGenerationId: enq.item.targetGenerationId,
+            lastResult: enq.item.lastResult,
+            note: "enqueue-before-mirror; production save 未接続",
+          },
+          null,
+          2,
+        );
+        setStatus(`outbox enqueue created=${String(enq.created)}`);
+      } finally {
+        await opened.close();
+      }
+    })().catch((e) => setStatus(safeErrorMessage(e), true));
+  });
+
+  $("btn-outbox-poc").addEventListener("click", () => {
+    void (async () => {
+      setStatus("local mirror outbox PoC Q1–Q12…");
+      const report = await runLocalMirrorOutboxPoc();
+      $("security-report").textContent = JSON.stringify(report, null, 2);
+      const fails = report.steps.filter((s) => s.status === "fail").length;
+      setStatus(`outbox-poc fail=${fails}`, fails > 0);
+    })().catch((e) => setStatus(safeErrorMessage(e), true));
+  });
+
   $("btn-inspect-capacity").addEventListener("click", () => {
     void (async () => {
       const capacity = await readAvailableBytesOrNull();
@@ -381,13 +461,13 @@ async function boot(): Promise<void> {
   try {
     await openLocalJournalDatabase();
     await renderEntries();
-    setStatus("generation resolver integration PoC R1–R10 実行中…");
+    setStatus("local mirror outbox PoC Q1–Q12 実行中…");
     await LocalJournalSecureBootstrapper.bootstrap();
-    const report = await runGenerationResolverIntegrationPoc();
+    const report = await runLocalMirrorOutboxPoc();
     $("security-report").textContent = JSON.stringify(report, null, 2);
     const fails = report.steps.filter((s) => s.status === "fail").length;
     setStatus(
-      `generation-resolver fail=${fails} entry=${report.entryId}`,
+      `outbox-poc fail=${fails} entry=${report.entryIdRedacted}`,
       fails > 0,
     );
   } catch (err) {

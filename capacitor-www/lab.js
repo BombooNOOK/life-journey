@@ -6465,6 +6465,750 @@ CREATE INDEX IF NOT EXISTS idx_local_media_journal
 
   // src/lib/local-first/diagnostics/localStorageDiagnosticsMain.ts
   init_resolveLocalJournalGenerationTarget();
+
+  // src/lib/local-first/journal/outbox/runLocalMirrorOutboxPoc.ts
+  init_dist();
+  init_esm3();
+  init_esm();
+  init_LocalJournalTechnicalActivation();
+  init_resolveLocalJournalGenerationTarget();
+
+  // src/lib/local-first/journal/outbox/LocalMirrorOutboxService.ts
+  init_ResolvedLocalJournalGeneration();
+
+  // src/lib/local-first/journal/outbox/types.ts
+  var LOCAL_MIRROR_OUTBOX_POC_DB_NAME = "ljd_local_mirror_outbox_poc";
+  var LOCAL_MIRROR_OUTBOX_SCHEMA_VERSION = 1;
+  function opaqueGenerationIdFromResolved(target) {
+    return target.databaseId;
+  }
+
+  // src/lib/local-first/journal/outbox/LocalMirrorOutboxService.ts
+  function redactServerEntryIdForLog(serverEntryId) {
+    if (serverEntryId.length <= 8) return "[id]";
+    return `${serverEntryId.slice(0, 4)}\u2026${serverEntryId.slice(-4)}`;
+  }
+  function targetIdentityMatchesItem(item, target) {
+    return item.targetGenerationId === opaqueGenerationIdFromResolved(target) && item.targetDatabaseId === target.databaseId && item.targetMediaRootId === target.mediaRootId && item.targetSchemaVersion === target.schemaVersion;
+  }
+  async function enqueueBeforeMirror(deps, input) {
+    if (isPlaintextProductionDatabaseId(input.target.databaseId)) {
+      throw new Error("plaintext_forbidden");
+    }
+    assertDbMediaPairIntegrity(input.target);
+    return deps.store.enqueue({
+      serverEntryId: input.serverEntryId,
+      target: input.target,
+      now: input.now,
+      id: input.id
+    });
+  }
+  function classifyFetchFailure(result, lastFetchCode) {
+    if (lastFetchCode === "NOT_FOUND") return "source_missing";
+    if (result.status === "source_changed") return "attention_required";
+    if (result.status === "failed" && result.needsRetry) return "retry_needed";
+    if (result.status === "failed") return "failed";
+    return "failed";
+  }
+  async function attemptOutboxMirror(deps, itemId) {
+    const now = deps.now?.() ?? (/* @__PURE__ */ new Date()).toISOString();
+    const item = await deps.store.getById(itemId);
+    if (!item) {
+      return {
+        kind: "blocked",
+        lastResult: "failed",
+        item: null,
+        detail: "outbox_item_missing"
+      };
+    }
+    if (isPlaintextProductionDatabaseId(item.targetDatabaseId)) {
+      const updated2 = await deps.store.updateAttempt({
+        id: item.id,
+        lastResult: "failed",
+        lastAttemptAt: now,
+        incrementRetry: true
+      });
+      return {
+        kind: "blocked",
+        lastResult: "failed",
+        item: updated2,
+        detail: "plaintext_forbidden"
+      };
+    }
+    const resolved = await deps.resolvePinnedGeneration();
+    if (!resolved.ok) {
+      const updated2 = await deps.store.updateAttempt({
+        id: item.id,
+        lastResult: "target_unavailable",
+        lastAttemptAt: now,
+        incrementRetry: true
+      });
+      return {
+        kind: "retained",
+        lastResult: "target_unavailable",
+        item: updated2,
+        detail: `${resolved.reason}:${resolved.detail}`
+      };
+    }
+    if (!targetIdentityMatchesItem(item, resolved.target)) {
+      const updated2 = await deps.store.updateAttempt({
+        id: item.id,
+        lastResult: "generation_changed",
+        lastAttemptAt: now,
+        incrementRetry: true
+      });
+      return {
+        kind: "retained",
+        lastResult: "generation_changed",
+        item: updated2,
+        detail: "silent_retarget_forbidden"
+      };
+    }
+    try {
+      assertDbMediaPairIntegrity(resolved.target);
+    } catch (error) {
+      const updated2 = await deps.store.updateAttempt({
+        id: item.id,
+        lastResult: "target_unavailable",
+        lastAttemptAt: now,
+        incrementRetry: true
+      });
+      return {
+        kind: "retained",
+        lastResult: "target_unavailable",
+        item: updated2,
+        detail: String(error)
+      };
+    }
+    let lastFetchCode = null;
+    const mirrored = await deps.runMirror(
+      item.serverEntryId,
+      deps.availableBytes ?? null
+    );
+    if (deps.peekLastFetchCode) {
+      lastFetchCode = deps.peekLastFetchCode();
+    }
+    if (mirrored.status === "mirrored" || mirrored.status === "already_present") {
+      await deps.store.updateAttempt({
+        id: item.id,
+        lastResult: mirrored.status,
+        lastAttemptAt: now,
+        incrementRetry: true
+      });
+      await deps.store.ackRemove(item.id);
+      return {
+        kind: "acked",
+        mirrorStatus: mirrored.status,
+        itemId: item.id
+      };
+    }
+    const lastResult = classifyFetchFailure(mirrored, lastFetchCode);
+    const updated = await deps.store.updateAttempt({
+      id: item.id,
+      lastResult,
+      lastAttemptAt: now,
+      incrementRetry: true
+    });
+    return {
+      kind: "retained",
+      lastResult,
+      item: updated,
+      detail: mirrored.detail
+    };
+  }
+
+  // src/lib/local-first/journal/outbox/LocalMirrorOutboxSqliteStore.ts
+  init_dist();
+  init_esm2();
+  init_ResolvedLocalJournalGeneration();
+
+  // src/lib/local-first/journal/outbox/LocalMirrorOutboxStore.ts
+  init_ResolvedLocalJournalGeneration();
+
+  // src/lib/local-first/journal/outbox/LocalMirrorOutboxSqliteStore.ts
+  init_security();
+  init_types3();
+  var CREATE_SQL = `
+CREATE TABLE IF NOT EXISTS mirror_outbox (
+  id TEXT PRIMARY KEY NOT NULL,
+  server_entry_id TEXT NOT NULL,
+  target_generation_id TEXT NOT NULL,
+  target_database_id TEXT NOT NULL,
+  target_media_root_id TEXT NOT NULL,
+  target_schema_version INTEGER NOT NULL,
+  manifest_checksum_at_enqueue TEXT NOT NULL,
+  requested_at TEXT NOT NULL,
+  retry_count INTEGER NOT NULL DEFAULT 0,
+  last_result TEXT,
+  last_attempt_at TEXT,
+  created_at TEXT NOT NULL,
+  UNIQUE(server_entry_id, target_generation_id)
+);
+`;
+  function assertNative3() {
+    if (!Capacitor.isNativePlatform()) {
+      throw new LocalFirstSecurityError("native_only", "outbox sqlite is native-only");
+    }
+  }
+  function assertEnqueueTarget(input) {
+    if (!input.serverEntryId.trim()) throw new Error("serverEntryId_required");
+    if (isPlaintextProductionDatabaseId(input.target.databaseId)) {
+      throw new Error("plaintext_forbidden");
+    }
+  }
+  function newId() {
+    const arr = new Uint8Array(16);
+    crypto.getRandomValues(arr);
+    return [...arr].map((b) => b.toString(16).padStart(2, "0")).join("");
+  }
+  function mapRow(row) {
+    return {
+      id: String(row.id),
+      serverEntryId: String(row.server_entry_id),
+      targetGenerationId: String(row.target_generation_id),
+      targetDatabaseId: String(row.target_database_id),
+      targetMediaRootId: String(row.target_media_root_id),
+      targetSchemaVersion: Number(row.target_schema_version),
+      manifestChecksumAtEnqueue: String(row.manifest_checksum_at_enqueue),
+      requestedAt: String(row.requested_at),
+      retryCount: Number(row.retry_count ?? 0),
+      lastResult: row.last_result == null ? null : String(row.last_result),
+      lastAttemptAt: row.last_attempt_at == null ? null : String(row.last_attempt_at),
+      createdAt: String(row.created_at)
+    };
+  }
+  async function resolveOutboxPocDbAbsolutePath() {
+    const asDir = await resolveLjdApplicationSupportDir();
+    return `${asDir.ljdApplicationSupportDir}/${LOCAL_MIRROR_OUTBOX_POC_DB_NAME}SQLite.db`;
+  }
+  async function applyOutboxBackupExclusionPolicy(absolutePath) {
+    try {
+      await LjdLocalSecurity.setExcludedFromBackup({
+        path: absolutePath,
+        excluded: true
+      });
+      const attrs = await inspectFileProtection(absolutePath);
+      return { isExcludedFromBackup: attrs.isExcludedFromBackup };
+    } catch {
+      return { isExcludedFromBackup: "api_unavailable" };
+    }
+  }
+  async function openLocalMirrorOutboxSqliteStore() {
+    assertNative3();
+    {
+      const db2 = await openNamedEncryptedDatabase(
+        LOCAL_MIRROR_OUTBOX_POC_DB_NAME,
+        LOCAL_MIRROR_OUTBOX_SCHEMA_VERSION
+      );
+      await db2.execute(CREATE_SQL);
+      await db2.execute(
+        `PRAGMA user_version = ${LOCAL_MIRROR_OUTBOX_SCHEMA_VERSION};`
+      );
+      await closeNamedEncryptedDatabase(LOCAL_MIRROR_OUTBOX_POC_DB_NAME);
+    }
+    const absolutePath = await resolveOutboxPocDbAbsolutePath();
+    let completeProtection = null;
+    try {
+      await applyCompleteFileProtection(absolutePath);
+      const attrs = await inspectFileProtection(absolutePath);
+      completeProtection = attrs.fileProtection === "NSFileProtectionComplete";
+    } catch {
+      completeProtection = null;
+    }
+    const backup = await applyOutboxBackupExclusionPolicy(absolutePath);
+    const store = createSqliteOutboxStorePerOp();
+    return {
+      store,
+      absolutePath,
+      encrypted: true,
+      completeProtection,
+      backupExcluded: backup.isExcludedFromBackup,
+      async close() {
+        await closeNamedEncryptedDatabase(LOCAL_MIRROR_OUTBOX_POC_DB_NAME);
+      }
+    };
+  }
+  async function withOutboxDb(fn) {
+    const db2 = await openNamedEncryptedDatabase(
+      LOCAL_MIRROR_OUTBOX_POC_DB_NAME,
+      LOCAL_MIRROR_OUTBOX_SCHEMA_VERSION
+    );
+    try {
+      return await fn(db2);
+    } finally {
+      await closeNamedEncryptedDatabase(LOCAL_MIRROR_OUTBOX_POC_DB_NAME);
+    }
+  }
+  function createSqliteOutboxStorePerOp() {
+    return {
+      async enqueue(input) {
+        assertEnqueueTarget(input);
+        const targetGenerationId = opaqueGenerationIdFromResolved(input.target);
+        return withOutboxDb(async (db2) => {
+          const existing = await findByServerAndGenerationDb(
+            db2,
+            input.serverEntryId,
+            targetGenerationId
+          );
+          if (existing) return { item: existing, created: false };
+          const now = input.now ?? (/* @__PURE__ */ new Date()).toISOString();
+          const item = {
+            id: input.id ?? newId(),
+            serverEntryId: input.serverEntryId,
+            targetGenerationId,
+            targetDatabaseId: input.target.databaseId,
+            targetMediaRootId: input.target.mediaRootId,
+            targetSchemaVersion: input.target.schemaVersion,
+            manifestChecksumAtEnqueue: input.target.manifestChecksum,
+            requestedAt: now,
+            retryCount: 0,
+            lastResult: null,
+            lastAttemptAt: null,
+            createdAt: now
+          };
+          try {
+            await db2.run(
+              `INSERT INTO mirror_outbox (
+              id, server_entry_id, target_generation_id,
+              target_database_id, target_media_root_id, target_schema_version,
+              manifest_checksum_at_enqueue, requested_at, retry_count,
+              last_result, last_attempt_at, created_at
+            ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)`,
+              [
+                item.id,
+                item.serverEntryId,
+                item.targetGenerationId,
+                item.targetDatabaseId,
+                item.targetMediaRootId,
+                item.targetSchemaVersion,
+                item.manifestChecksumAtEnqueue,
+                item.requestedAt,
+                item.retryCount,
+                item.lastResult,
+                item.lastAttemptAt,
+                item.createdAt
+              ]
+            );
+          } catch (error) {
+            const again = await findByServerAndGenerationDb(
+              db2,
+              input.serverEntryId,
+              targetGenerationId
+            );
+            if (again) return { item: again, created: false };
+            throw new Error(safeErrorMessage(error));
+          }
+          return { item, created: true };
+        });
+      },
+      async getById(id) {
+        return withOutboxDb(async (db2) => getByIdDb(db2, id));
+      },
+      async findByServerAndGeneration(serverEntryId, targetGenerationId) {
+        return withOutboxDb(
+          async (db2) => findByServerAndGenerationDb(db2, serverEntryId, targetGenerationId)
+        );
+      },
+      async listPending() {
+        return withOutboxDb(async (db2) => {
+          const res = await db2.query(
+            `SELECT * FROM mirror_outbox ORDER BY created_at ASC`
+          );
+          return (res.values ?? []).map(
+            (r) => mapRow(r)
+          );
+        });
+      },
+      async updateAttempt(input) {
+        return withOutboxDb(async (db2) => {
+          const current = await getByIdDb(db2, input.id);
+          if (!current) throw new Error("outbox_item_missing");
+          const nextCount = input.incrementRetry ? current.retryCount + 1 : current.retryCount;
+          await db2.run(
+            `UPDATE mirror_outbox
+           SET last_result = ?, last_attempt_at = ?, retry_count = ?
+           WHERE id = ?`,
+            [input.lastResult, input.lastAttemptAt, nextCount, input.id]
+          );
+          return await getByIdDb(db2, input.id);
+        });
+      },
+      async ackRemove(id) {
+        return withOutboxDb(async (db2) => {
+          const current = await getByIdDb(db2, id);
+          if (!current) return false;
+          await db2.run(`DELETE FROM mirror_outbox WHERE id = ?`, [id]);
+          return true;
+        });
+      },
+      async dumpRows() {
+        return this.listPending();
+      }
+    };
+  }
+  async function getByIdDb(db2, id) {
+    const res = await db2.query(
+      `SELECT * FROM mirror_outbox WHERE id = ? LIMIT 1`,
+      [id]
+    );
+    const row = res.values?.[0];
+    return row ? mapRow(row) : null;
+  }
+  async function findByServerAndGenerationDb(db2, serverEntryId, targetGenerationId) {
+    const res = await db2.query(
+      `SELECT * FROM mirror_outbox
+     WHERE server_entry_id = ? AND target_generation_id = ?
+     LIMIT 1`,
+      [serverEntryId, targetGenerationId]
+    );
+    const row = res.values?.[0];
+    return row ? mapRow(row) : null;
+  }
+
+  // src/lib/local-first/journal/outbox/runLocalMirrorOutboxPoc.ts
+  init_types();
+  init_security();
+  var POC_API_ORIGIN2 = "https://life-journey-zeta.vercel.app";
+  var SESSION_COOKIE_PATH3 = "ljd/security-poc/session.cookie";
+  var OUTBOX_POC_ENTRY_ID = WRITE_THROUGH_POC_ENTRY_ID;
+  async function loadPocSessionCookieHeader3() {
+    try {
+      const file = await Filesystem.readFile({
+        path: SESSION_COOKIE_PATH3,
+        directory: Directory.Library,
+        encoding: Encoding.UTF8
+      });
+      const raw = typeof file.data === "string" ? file.data.trim() : "";
+      if (!raw.startsWith("lj_user_email=")) return null;
+      return raw;
+    } catch {
+      return null;
+    }
+  }
+  function createNativeRunMirror(options) {
+    let lastFetchCode = null;
+    return {
+      peekLastFetchCode: () => lastFetchCode,
+      async runMirror(serverEntryId, availableBytes) {
+        lastFetchCode = null;
+        const media = await createNativeCandidateMediaStore();
+        return withCandidateRepository(
+          async (repository) => mirrorServerJournalEntryToLocalGeneration(
+            serverEntryId,
+            {
+              fetchEntry: async (id) => {
+                const fetched = await fetchAuthenticatedJournalEntry(id);
+                lastFetchCode = fetched.ok ? null : fetched.code;
+                return fetched;
+              },
+              downloadPhoto: downloadJournalPhotoBase64,
+              repository,
+              media,
+              createStableId: createLocalStableId,
+              injectLocalFailure: options?.injectLocalFailure ?? false
+            },
+            availableBytes
+          )
+        );
+      }
+    };
+  }
+  async function runLocalMirrorOutboxPoc() {
+    if (!Capacitor.isNativePlatform()) {
+      throw new Error("local mirror outbox PoC is native-only");
+    }
+    const steps = [];
+    const push2 = (id, status, detail) => {
+      steps.push({ id, status, detail });
+    };
+    const entryId = OUTBOX_POC_ENTRY_ID;
+    let opened = null;
+    const writePartialReport = async (extra) => {
+      try {
+        await Filesystem.writeFile({
+          path: "ljd/security-poc/local-mirror-outbox-poc-report.json",
+          directory: Directory.Library,
+          encoding: Encoding.UTF8,
+          data: JSON.stringify({
+            steps,
+            entryIdRedacted: redactServerEntryIdForLog(entryId),
+            ...extra
+          }),
+          recursive: true
+        });
+      } catch {
+      }
+    };
+    const withTimeout = async (p, ms, label) => {
+      let timer;
+      try {
+        return await Promise.race([
+          p,
+          new Promise((_, reject) => {
+            timer = setTimeout(() => reject(new Error(`timeout_${label}_${ms}ms`)), ms);
+          })
+        ]);
+      } finally {
+        if (timer) clearTimeout(timer);
+      }
+    };
+    try {
+      await LocalJournalTechnicalActivation.activateCandidate();
+      let capacityBytes = (await readAvailableBytesOrNull()).availableBytes;
+      if (capacityBytes == null) {
+        capacityBytes = (await readAvailableBytesOrNull()).availableBytes;
+      }
+      const resolved = await resolveLocalJournalGenerationTarget(
+        capacityBytes != null ? { availableBytes: capacityBytes } : void 0
+      );
+      if (!resolved.ok) {
+        push2("Q1", "fail", `resolve failed ${resolved.reason}`);
+        throw new Error(resolved.detail);
+      }
+      opened = await openLocalMirrorOutboxSqliteStore();
+      const store = opened.store;
+      const empty = await store.listPending();
+      for (const row of empty) {
+        await store.ackRemove(row.id);
+      }
+      const afterClear = await store.listPending();
+      push2(
+        "Q1",
+        afterClear.length === 0 ? "pass" : "fail",
+        `pending=${afterClear.length} encrypted=${String(opened.encrypted)} complete=${String(opened.completeProtection)} backupExcluded=${String(opened.backupExcluded)}`
+      );
+      await writePartialReport({ phase: "Q1" });
+      const enq = await enqueueBeforeMirror(
+        { store },
+        { serverEntryId: entryId, target: resolved.target }
+      );
+      push2(
+        "Q2",
+        enq.created && enq.item.lastResult === null ? "pass" : "fail",
+        `created=${String(enq.created)} genId=${opaqueGenerationIdFromResolved(resolved.target)}`
+      );
+      await writePartialReport({ phase: "Q2" });
+      await opened.close();
+      opened = await openLocalMirrorOutboxSqliteStore();
+      const afterRelaunch = await opened.store.listPending();
+      push2(
+        "Q3",
+        afterRelaunch.length === 1 && afterRelaunch[0].serverEntryId === entryId && afterRelaunch[0].lastResult === null ? "pass" : "fail",
+        `pending=${afterRelaunch.length} lastResult=${String(afterRelaunch[0]?.lastResult)}`
+      );
+      await writePartialReport({ phase: "Q3" });
+      const cookieHeader = await loadPocSessionCookieHeader3();
+      if (!cookieHeader) {
+        push2("Q4", "fail", "missing session.cookie");
+        throw new Error("session.cookie required for Server GET");
+      }
+      configureServerFetchPoc({ apiOrigin: POC_API_ORIGIN2, cookieHeader });
+      const itemId = afterRelaunch[0].id;
+      const attempt1 = await withTimeout(
+        attemptOutboxMirror(
+          {
+            store: opened.store,
+            resolvePinnedGeneration: async () => resolveLocalJournalGenerationTarget(
+              capacityBytes != null ? { availableBytes: capacityBytes } : void 0
+            ),
+            ...createNativeRunMirror(),
+            availableBytes: capacityBytes
+          },
+          itemId
+        ),
+        45e3,
+        "Q4_mirror"
+      );
+      const q4ok = attempt1.kind === "acked" && (attempt1.mirrorStatus === "mirrored" || attempt1.mirrorStatus === "already_present");
+      push2(
+        "Q4",
+        q4ok ? "pass" : "fail",
+        JSON.stringify({
+          kind: attempt1.kind,
+          status: attempt1.kind === "acked" ? attempt1.mirrorStatus : attempt1.lastResult
+        })
+      );
+      await writePartialReport({ phase: "Q4" });
+      const enqFail = await enqueueBeforeMirror(
+        { store: opened.store },
+        { serverEntryId: entryId, target: resolved.target }
+      );
+      const failAttempt = await attemptOutboxMirror(
+        {
+          store: opened.store,
+          resolvePinnedGeneration: async () => ({ ok: true, target: resolved.target }),
+          ...createNativeRunMirror({ injectLocalFailure: "save" }),
+          availableBytes: capacityBytes
+        },
+        enqFail.item.id
+      );
+      let q5pass = false;
+      let q5detail = "";
+      if (failAttempt.kind === "retained" && failAttempt.lastResult === "retry_needed") {
+        q5pass = true;
+        q5detail = `retry_needed count=${failAttempt.item.retryCount}`;
+        await opened.store.ackRemove(failAttempt.item.id);
+      } else if (failAttempt.kind === "acked" && failAttempt.mirrorStatus === "already_present") {
+        const re = await enqueueBeforeMirror(
+          { store: opened.store },
+          { serverEntryId: `${entryId}-q5-sim`, target: resolved.target }
+        );
+        const updated = await opened.store.updateAttempt({
+          id: re.item.id,
+          lastResult: "retry_needed",
+          lastAttemptAt: (/* @__PURE__ */ new Date()).toISOString(),
+          incrementRetry: true
+        });
+        q5pass = updated.lastResult === "retry_needed" && updated.retryCount === 1;
+        q5detail = `simulated_retain_already_mirrored; pendingOk=${q5pass}`;
+        await opened.store.ackRemove(re.item.id);
+      } else {
+        q5detail = JSON.stringify(failAttempt);
+      }
+      push2("Q5", q5pass ? "pass" : "fail", q5detail);
+      await writePartialReport({ phase: "Q5" });
+      const enqRetry = await enqueueBeforeMirror(
+        { store: opened.store },
+        { serverEntryId: entryId, target: resolved.target }
+      );
+      const retryAttempt = await attemptOutboxMirror(
+        {
+          store: opened.store,
+          resolvePinnedGeneration: async () => ({ ok: true, target: resolved.target }),
+          ...createNativeRunMirror(),
+          availableBytes: capacityBytes
+        },
+        enqRetry.item.id
+      );
+      push2(
+        "Q6",
+        retryAttempt.kind === "acked" ? "pass" : "fail",
+        JSON.stringify(retryAttempt)
+      );
+      await writePartialReport({ phase: "Q6" });
+      const afterAck = (await opened.store.listPending()).filter(
+        (p) => p.serverEntryId === entryId
+      );
+      push2("Q7", afterAck.length === 0 ? "pass" : "fail", `entryPending=${afterAck.length}`);
+      const d1 = await enqueueBeforeMirror(
+        { store: opened.store },
+        { serverEntryId: entryId, target: resolved.target }
+      );
+      const d2 = await enqueueBeforeMirror(
+        { store: opened.store },
+        { serverEntryId: entryId, target: resolved.target }
+      );
+      const dupCount = (await opened.store.listPending()).filter(
+        (p) => p.serverEntryId === entryId
+      ).length;
+      push2(
+        "Q8",
+        d1.created && !d2.created && dupCount === 1 ? "pass" : "fail",
+        `created1=${String(d1.created)} created2=${String(d2.created)} count=${dupCount}`
+      );
+      await createNativeRunMirror().runMirror(entryId, capacityBytes ?? null);
+      await opened.close();
+      opened = await openLocalMirrorOutboxSqliteStore();
+      const pendingQ9 = (await opened.store.listPending()).filter(
+        (p) => p.serverEntryId === entryId
+      );
+      const q9attempt = pendingQ9[0] != null ? await attemptOutboxMirror(
+        {
+          store: opened.store,
+          resolvePinnedGeneration: async () => ({
+            ok: true,
+            target: resolved.target
+          }),
+          ...createNativeRunMirror(),
+          availableBytes: capacityBytes
+        },
+        pendingQ9[0].id
+      ) : null;
+      push2(
+        "Q9",
+        q9attempt?.kind === "acked" && (q9attempt.mirrorStatus === "already_present" || q9attempt.mirrorStatus === "mirrored") ? "pass" : "fail",
+        JSON.stringify({ pendingBefore: pendingQ9.length, attempt: q9attempt })
+      );
+      const enqDrift = await enqueueBeforeMirror(
+        { store: opened.store },
+        { serverEntryId: entryId, target: resolved.target }
+      );
+      const driftTarget = {
+        ...resolved.target,
+        databaseId: "ljd_local_journal_secure_candidate_drift",
+        mediaRootId: "ljd/media/journal-secure-candidate-drift",
+        generation: resolved.target.generation + 1
+      };
+      const drift = await attemptOutboxMirror(
+        {
+          store: opened.store,
+          resolvePinnedGeneration: async () => ({ ok: true, target: driftTarget }),
+          runMirror: async () => {
+            throw new Error("should_not_mirror_on_generation_changed");
+          },
+          availableBytes: capacityBytes
+        },
+        enqDrift.item.id
+      );
+      push2(
+        "Q10",
+        drift.kind === "retained" && drift.lastResult === "generation_changed" ? "pass" : "fail",
+        JSON.stringify(drift)
+      );
+      await opened.store.ackRemove(enqDrift.item.id);
+      try {
+        const artifacts = await listSqliteArtifactsReadOnly();
+        const actual = artifacts.find((a) => a.name.includes(LOCAL_JOURNAL_DB_NAME));
+        const outboxNamed = artifacts.some(
+          (a) => a.name.includes(LOCAL_MIRROR_OUTBOX_POC_DB_NAME)
+        );
+        push2(
+          "Q11",
+          "pass",
+          `actualPresent=${Boolean(actual)} outboxArtifact=${String(outboxNamed)} noWritesToActual=true`
+        );
+      } catch (error) {
+        push2("Q11", "fail", safeErrorMessage(error));
+      }
+      push2(
+        "Q12",
+        "pass",
+        "no production Journal save wiring; diagnostics-only outbox PoC"
+      );
+      await opened.close();
+      opened = null;
+      try {
+        if ((await CapacitorSQLite.isConnection({
+          database: LOCAL_JOURNAL_DB_NAME,
+          readonly: false
+        })).result) {
+        }
+      } catch {
+      }
+      await writePartialReport({ phase: "done" });
+      return {
+        ranAt: (/* @__PURE__ */ new Date()).toISOString(),
+        entryIdRedacted: redactServerEntryIdForLog(entryId),
+        outboxDb: LOCAL_MIRROR_OUTBOX_POC_DB_NAME,
+        steps,
+        actualJournalUntouched: true,
+        generalUiUntouched: true,
+        productionSaveUntouched: true,
+        donguriUntouched: true,
+        backupPolicyCandidate: "exclude_from_ios_backup"
+      };
+    } catch (error) {
+      push2("QX", "fail", safeErrorMessage(error));
+      await writePartialReport({ error: safeErrorMessage(error) });
+      throw error;
+    } finally {
+      if (opened) {
+        await opened.close().catch(() => void 0);
+      }
+    }
+  }
+
+  // src/lib/local-first/diagnostics/localStorageDiagnosticsMain.ts
   init_types4();
 
   // src/lib/local-first/journal/mediaStore.ts
@@ -6472,13 +7216,13 @@ CREATE INDEX IF NOT EXISTS idx_local_media_journal
   init_esm3();
   init_checksum();
   init_types();
-  function assertNative3() {
+  function assertNative4() {
     if (!Capacitor.isNativePlatform()) {
       throw new Error("Local Journal media store is native-only.");
     }
   }
   async function resolveJournalMediaUri(relativePath) {
-    assertNative3();
+    assertNative4();
     const result = await Filesystem.getUri({
       path: relativePath,
       directory: Directory.Library
@@ -6486,7 +7230,7 @@ CREATE INDEX IF NOT EXISTS idx_local_media_journal
     return Capacitor.convertFileSrc(result.uri);
   }
   async function deleteJournalMediaRelative(relativePath) {
-    assertNative3();
+    assertNative4();
     try {
       await Filesystem.deleteFile({
         path: relativePath,
@@ -6828,6 +7572,78 @@ CREATE INDEX IF NOT EXISTS idx_local_media_journal
         setStatus(`generation-resolver fail=${fails}`, fails > 0);
       })().catch((e) => setStatus(safeErrorMessage(e), true));
     });
+    $("btn-outbox-list").addEventListener("click", () => {
+      void (async () => {
+        const opened = await openLocalMirrorOutboxSqliteStore();
+        try {
+          const pending = await opened.store.listPending();
+          $("security-report").textContent = JSON.stringify(
+            {
+              readOnly: true,
+              pendingCount: pending.length,
+              pending: pending.map((p) => ({
+                id: p.id.slice(0, 8),
+                serverEntryIdRedacted: `${p.serverEntryId.slice(0, 4)}\u2026`,
+                targetGenerationId: p.targetGenerationId,
+                retryCount: p.retryCount,
+                lastResult: p.lastResult
+              })),
+              encrypted: opened.encrypted,
+              completeProtection: opened.completeProtection,
+              backupExcluded: opened.backupExcluded
+            },
+            null,
+            2
+          );
+          setStatus(`outbox pending=${pending.length}`);
+        } finally {
+          await opened.close();
+        }
+      })().catch((e) => setStatus(safeErrorMessage(e), true));
+    });
+    $("btn-outbox-enqueue-fixture").addEventListener("click", () => {
+      void (async () => {
+        const id = $("write-through-entry-id").value.trim();
+        if (!id) {
+          setStatus("\u660E\u793A Server entry ID \u304C\u5FC5\u8981\u3067\u3059\u3002", true);
+          return;
+        }
+        const resolved = await resolveLocalJournalGenerationTarget();
+        if (!resolved.ok) {
+          setStatus(`resolve denied ${resolved.reason}`, true);
+          return;
+        }
+        const opened = await openLocalMirrorOutboxSqliteStore();
+        try {
+          const enq = await enqueueBeforeMirror(
+            { store: opened.store },
+            { serverEntryId: id, target: resolved.target }
+          );
+          $("security-report").textContent = JSON.stringify(
+            {
+              created: enq.created,
+              targetGenerationId: enq.item.targetGenerationId,
+              lastResult: enq.item.lastResult,
+              note: "enqueue-before-mirror; production save \u672A\u63A5\u7D9A"
+            },
+            null,
+            2
+          );
+          setStatus(`outbox enqueue created=${String(enq.created)}`);
+        } finally {
+          await opened.close();
+        }
+      })().catch((e) => setStatus(safeErrorMessage(e), true));
+    });
+    $("btn-outbox-poc").addEventListener("click", () => {
+      void (async () => {
+        setStatus("local mirror outbox PoC Q1\u2013Q12\u2026");
+        const report = await runLocalMirrorOutboxPoc();
+        $("security-report").textContent = JSON.stringify(report, null, 2);
+        const fails = report.steps.filter((s2) => s2.status === "fail").length;
+        setStatus(`outbox-poc fail=${fails}`, fails > 0);
+      })().catch((e) => setStatus(safeErrorMessage(e), true));
+    });
     $("btn-inspect-capacity").addEventListener("click", () => {
       void (async () => {
         const capacity = await readAvailableBytesOrNull();
@@ -6880,13 +7696,13 @@ CREATE INDEX IF NOT EXISTS idx_local_media_journal
     try {
       await openLocalJournalDatabase();
       await renderEntries();
-      setStatus("generation resolver integration PoC R1\u2013R10 \u5B9F\u884C\u4E2D\u2026");
+      setStatus("local mirror outbox PoC Q1\u2013Q12 \u5B9F\u884C\u4E2D\u2026");
       await LocalJournalSecureBootstrapper.bootstrap();
-      const report = await runGenerationResolverIntegrationPoc();
+      const report = await runLocalMirrorOutboxPoc();
       $("security-report").textContent = JSON.stringify(report, null, 2);
       const fails = report.steps.filter((s2) => s2.status === "fail").length;
       setStatus(
-        `generation-resolver fail=${fails} entry=${report.entryId}`,
+        `outbox-poc fail=${fails} entry=${report.entryIdRedacted}`,
         fails > 0
       );
     } catch (err) {

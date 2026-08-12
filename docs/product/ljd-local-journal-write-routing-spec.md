@@ -293,3 +293,13 @@ Strategy D への切替は **Source-of-Truth switch の一部**であり、techn
 | production Journal save / Repository | **未接続** |
 | R1–R10 Simulator | **PASS** |
 | 証拠 | `docs/hybrid/HYBRID_PHASE_4B4G_GENERATION_RESOLVER_INTEGRATION_POC.md` |
+---
+
+## 12. 4B-4I Local mirror outbox（追記）
+
+| 項目 | 状態 |
+| --- | --- |
+| 独立 SQLCipher outbox | PoC `ljd_local_mirror_outbox_poc` |
+| enqueue-before-mirror | 方針実証 |
+| production Journal save | **未接続** |
+| 証拠 | `docs/product/ljd-local-mirror-outbox-spec.md` ／ `docs/hybrid/HYBRID_PHASE_4B4I_LOCAL_MIRROR_OUTBOX_POC.md` |
