@@ -15,4 +15,13 @@ export class LjdLocalSecurityWeb extends WebPlugin {
     async inspectGenericPasswordAccessibility() {
         throw this.unimplemented('Not implemented on web.');
     }
+    async getVolumeAvailableCapacity() {
+        throw this.unimplemented('Not implemented on web.');
+    }
+    async listSqliteArtifactsInLjdDir() {
+        throw this.unimplemented('Not implemented on web.');
+    }
+    async deleteAllowlistedSqliteArtifacts() {
+        throw this.unimplemented('Not implemented on web.');
+    }
 }

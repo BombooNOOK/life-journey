@@ -13,3 +13,14 @@ describe("migrator production-journal guard", () => {
     expect(LOCAL_JOURNAL_DB_NAME).toBe("ljd_local_journal");
   });
 });
+
+describe("cleanup helper production protection", () => {
+  it("uses the same forbidden production name as the migrator", async () => {
+    const { cleanupAllowlistedDatabase } = await import(
+      "@/lib/local-first/journal/encryptionMigration/artifactCleanup"
+    );
+    await expect(cleanupAllowlistedDatabase(LOCAL_JOURNAL_DB_NAME)).rejects.toMatchObject({
+      code: "journal_encryption_forbidden",
+    });
+  });
+});

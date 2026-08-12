@@ -32,8 +32,25 @@ export function canExplicitResume(phase: EncryptionMigrationPhase): boolean {
   return phase === "staging" || phase === "verified" || phase === "failed";
 }
 
+export function canExplicitRollback(phase: EncryptionMigrationPhase): boolean {
+  return phase === "staging" || phase === "verified" || phase === "failed" || phase === "promoted";
+}
+
 export function shouldNoOp(phase: EncryptionMigrationPhase): boolean {
   return phase === "promoted";
+}
+
+/** Kill/resume: never auto-run. Diagnostics decide resume vs rollback. */
+export function describeKillResume(phase: EncryptionMigrationPhase): {
+  canResume: boolean;
+  canRollback: boolean;
+  autoRun: false;
+} {
+  return {
+    canResume: canExplicitResume(phase),
+    canRollback: canExplicitRollback(phase),
+    autoRun: false,
+  };
 }
 
 export async function readMigrationState(): Promise<EncryptionMigrationState> {

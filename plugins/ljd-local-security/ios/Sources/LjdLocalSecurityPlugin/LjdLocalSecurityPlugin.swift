@@ -21,6 +21,15 @@ public class LjdLocalSecurityPlugin: CAPPlugin, CAPBridgedPlugin {
         CAPPluginMethod(name: "setExcludedFromBackup", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "resolveApplicationSupportLjdDir", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "inspectGenericPasswordAccessibility", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "getVolumeAvailableCapacity", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "listSqliteArtifactsInLjdDir", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "deleteAllowlistedSqliteArtifacts", returnType: CAPPluginReturnPromise),
+    ]
+
+    /// Fixture temporary DBs only. Production journal and plaintext source are never listed as deletable.
+    private let deletableLogicalNames: Set<String> = [
+        "ljd_enc_mig_fixture_staging",
+        "ljd_enc_mig_fixture_promoted",
     ]
 
     @objc func inspectPath(_ call: CAPPluginCall) {
@@ -96,6 +105,124 @@ public class LjdLocalSecurityPlugin: CAPPlugin, CAPBridgedPlugin {
         ])
     }
 
+    /// Volume capacity for the app container. Prefers important-usage (user data).
+    @objc func getVolumeAvailableCapacity(_ call: CAPPluginCall) {
+        let fm = FileManager.default
+        guard let appSupport = fm.urls(for: .applicationSupportDirectory, in: .userDomainMask).first else {
+            call.reject("applicationSupportDirectory unavailable")
+            return
+        }
+        do {
+            let values = try appSupport.resourceValues(forKeys: [
+                .volumeAvailableCapacityForImportantUsageKey,
+                .volumeAvailableCapacityKey,
+                .volumeAvailableCapacityForOpportunisticUsageKey,
+            ])
+            let important = values.volumeAvailableCapacityForImportantUsage
+            let volume = values.volumeAvailableCapacity.map { Int64($0) }
+            let opportunistic = values.volumeAvailableCapacityForOpportunisticUsage
+
+            var available: Int64?
+            var source = "unavailable"
+            if let important {
+                available = important
+                source = "volumeAvailableCapacityForImportantUsage"
+            } else if let volume {
+                available = volume
+                source = "volumeAvailableCapacity"
+            }
+
+            call.resolve([
+                "ok": available != nil,
+                "availableBytes": jsonInt64(available),
+                "importantUsageBytes": jsonInt64(important),
+                "volumeAvailableCapacity": jsonInt64(volume),
+                "opportunisticUsageBytes": jsonInt64(opportunistic),
+                "source": source,
+                "note": "Domain must not treat this as a secret. Fail closed when ok=false.",
+            ])
+        } catch {
+            call.reject("capacity lookup failed: \(error.localizedDescription)")
+        }
+    }
+
+    /// Names + sizes only. Never reads SQLite pages / journal body.
+    @objc func listSqliteArtifactsInLjdDir(_ call: CAPPluginCall) {
+        guard let dir = ljdApplicationSupportDir() else {
+            call.reject("applicationSupportDirectory unavailable")
+            return
+        }
+        let fm = FileManager.default
+        guard fm.fileExists(atPath: dir.path) else {
+            call.resolve(["directory": dir.path, "artifacts": []])
+            return
+        }
+        do {
+            let items = try fm.contentsOfDirectory(at: dir, includingPropertiesForKeys: [.fileSizeKey, .isRegularFileKey])
+            var artifacts: [[String: Any]] = []
+            for url in items {
+                let values = try url.resourceValues(forKeys: [.fileSizeKey, .isRegularFileKey])
+                guard values.isRegularFile == true else { continue }
+                let name = url.lastPathComponent
+                guard isSqliteArtifactName(name) else { continue }
+                artifacts.append([
+                    "name": name,
+                    "bytes": NSNumber(value: Int64(values.fileSize ?? 0)),
+                    "role": artifactRole(name),
+                ])
+            }
+            artifacts.sort { ($0["name"] as? String ?? "") < ($1["name"] as? String ?? "") }
+            call.resolve(["directory": dir.path, "artifacts": artifacts])
+        } catch {
+            call.reject("listSqliteArtifactsInLjdDir failed: \(error.localizedDescription)")
+        }
+    }
+
+    @objc func deleteAllowlistedSqliteArtifacts(_ call: CAPPluginCall) {
+        guard let logicalName = call.getString("logicalName"), !logicalName.isEmpty else {
+            call.reject("logicalName required")
+            return
+        }
+        if logicalName == "ljd_local_journal" || logicalName.contains("ljd_local_journal") {
+            call.reject("production journal artifacts are protected")
+            return
+        }
+        if logicalName == "ljd_enc_mig_fixture_plain" {
+            call.reject("source plaintext fixture is protected")
+            return
+        }
+        guard deletableLogicalNames.contains(logicalName) else {
+            call.reject("logicalName not on deletion allowlist")
+            return
+        }
+        guard let dir = ljdApplicationSupportDir() else {
+            call.reject("applicationSupportDirectory unavailable")
+            return
+        }
+        let fm = FileManager.default
+        guard fm.fileExists(atPath: dir.path) else {
+            call.resolve(["logicalName": logicalName, "deleted": [], "missing": true])
+            return
+        }
+        do {
+            let items = try fm.contentsOfDirectory(at: dir, includingPropertiesForKeys: [.isRegularFileKey])
+            var deleted: [String] = []
+            for url in items {
+                let name = url.lastPathComponent
+                guard belongsToLogicalDatabase(fileName: name, logicalName: logicalName) else { continue }
+                try fm.removeItem(at: url)
+                deleted.append(name)
+            }
+            call.resolve([
+                "logicalName": logicalName,
+                "deleted": deleted.sorted(),
+                "missing": deleted.isEmpty,
+            ])
+        } catch {
+            call.reject("deleteAllowlistedSqliteArtifacts failed: \(error.localizedDescription)")
+        }
+    }
+
     /// Attributes-only Keychain probe. NEVER requests kSecReturnData.
     @objc func inspectGenericPasswordAccessibility(_ call: CAPPluginCall) {
         guard let service = call.getString("service"), !service.isEmpty else {
@@ -169,6 +296,53 @@ public class LjdLocalSecurityPlugin: CAPPlugin, CAPBridgedPlugin {
             "returnedSecretData": false,
             "note": "kSecReturnData=false; secret body never read",
         ])
+    }
+
+    private func ljdApplicationSupportDir() -> URL? {
+        let fm = FileManager.default
+        guard let appSupport = fm.urls(for: .applicationSupportDirectory, in: .userDomainMask).first else {
+            return nil
+        }
+        let bundleId = Bundle.main.bundleIdentifier ?? "app.bamboonook.ljd"
+        return appSupport.appendingPathComponent(bundleId, isDirectory: true)
+    }
+
+    private func jsonInt64(_ value: Int64?) -> Any {
+        guard let value else { return NSNull() }
+        return NSNumber(value: value)
+    }
+
+    private func isSqliteArtifactName(_ name: String) -> Bool {
+        name.hasSuffix("SQLite.db")
+            || name.contains("SQLite.db-")
+            || name.hasSuffix(".db")
+            || name.hasSuffix("-wal")
+            || name.hasSuffix("-shm")
+            || name.hasSuffix("-journal")
+    }
+
+    private func artifactRole(_ name: String) -> String {
+        if name.contains("ljd_local_journal") { return "production_journal" }
+        if name.contains("ljd_enc_mig_fixture_plain") { return "fixture_source" }
+        if name.contains("ljd_enc_mig_fixture_staging") { return "fixture_staging" }
+        if name.contains("ljd_enc_mig_fixture_promoted") { return "fixture_promoted" }
+        if name.hasSuffix("-wal") || name.contains(".db-wal") { return "sidecar_wal" }
+        if name.hasSuffix("-shm") || name.contains(".db-shm") { return "sidecar_shm" }
+        if name.contains("-journal") { return "sidecar_journal" }
+        return "other_sqlite"
+    }
+
+    private func belongsToLogicalDatabase(fileName: String, logicalName: String) -> Bool {
+        let prefixes = [
+            "\(logicalName)SQLite.db",
+            "\(logicalName).db",
+            logicalName,
+        ]
+        return prefixes.contains { prefix in
+            fileName == prefix
+                || fileName.hasPrefix("\(prefix)-")
+                || fileName.hasPrefix("\(prefix).")
+        }
     }
 
     private func normalizePath(_ path: String) -> String {

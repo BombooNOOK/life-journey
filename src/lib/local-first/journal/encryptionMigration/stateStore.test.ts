@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   canExplicitResume,
   createInitialState,
+  describeKillResume,
   shouldNoOp,
 } from "@/lib/local-first/journal/encryptionMigration/stateStore";
 
@@ -24,6 +25,16 @@ describe("encryption migration state machine", () => {
     expect(canExplicitResume("failed")).toBe(true);
     expect(canExplicitResume("not_started")).toBe(false);
     expect(canExplicitResume("promoted")).toBe(false);
+  });
+
+  it("detects kill/resume without autorun", () => {
+    expect(describeKillResume("staging")).toEqual({
+      canResume: true,
+      canRollback: true,
+      autoRun: false,
+    });
+    expect(describeKillResume("not_started").autoRun).toBe(false);
+    expect(describeKillResume("promoted").canResume).toBe(false);
   });
 
   it("serializes state without secret-like keys", () => {

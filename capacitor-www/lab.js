@@ -1619,6 +1619,15 @@
         async inspectGenericPasswordAccessibility() {
           throw this.unimplemented("Not implemented on web.");
         }
+        async getVolumeAvailableCapacity() {
+          throw this.unimplemented("Not implemented on web.");
+        }
+        async listSqliteArtifactsInLjdDir() {
+          throw this.unimplemented("Not implemented on web.");
+        }
+        async deleteAllowlistedSqliteArtifacts() {
+          throw this.unimplemented("Not implemented on web.");
+        }
       };
     }
   });
@@ -3112,6 +3121,39 @@ CREATE INDEX IF NOT EXISTS idx_local_media_journal
     }
   }
 
+  // src/lib/local-first/security/volumeCapacity.ts
+  init_dist();
+  async function getVolumeAvailableCapacity() {
+    if (!Capacitor.isNativePlatform()) {
+      throw new LocalFirstSecurityError(
+        "native_only",
+        "volume capacity is native-only"
+      );
+    }
+    try {
+      const result = await LjdLocalSecurity.getVolumeAvailableCapacity();
+      const available = typeof result.availableBytes === "number" && Number.isFinite(result.availableBytes) ? result.availableBytes : null;
+      return {
+        ...result,
+        ok: Boolean(result.ok) && available != null,
+        availableBytes: available
+      };
+    } catch (error) {
+      throw mapSecurityError(error);
+    }
+  }
+  async function readAvailableBytesOrNull() {
+    try {
+      const result = await getVolumeAvailableCapacity();
+      return {
+        availableBytes: result.ok ? result.availableBytes : null,
+        source: result.source
+      };
+    } catch {
+      return { availableBytes: null, source: "api_error" };
+    }
+  }
+
   // src/lib/local-first/journal/encryptionMigration/audit.ts
   init_dist();
 
@@ -3346,12 +3388,103 @@ CREATE INDEX IF NOT EXISTS idx_local_media_journal
     return out;
   }
 
-  // src/lib/local-first/journal/encryptionMigration/LocalJournalEncryptionMigrator.ts
+  // src/lib/local-first/journal/encryptionMigration/artifactCleanup.ts
   init_dist();
+  var ENC_MIG_DELETABLE_LOGICAL_NAMES = [
+    ENC_MIG_FIXTURE_STAGING_DB,
+    ENC_MIG_FIXTURE_PROMOTED_DB
+  ];
+  function isProductionJournalName(name) {
+    return name === LOCAL_JOURNAL_DB_NAME || name.includes(LOCAL_JOURNAL_DB_NAME);
+  }
+  function isProtectedSourceName(name) {
+    return name === ENC_MIG_FIXTURE_PLAIN_DB || name.includes(ENC_MIG_FIXTURE_PLAIN_DB);
+  }
+  function isAllowlistedDeletableName(name) {
+    return ENC_MIG_DELETABLE_LOGICAL_NAMES.includes(name);
+  }
+  function classifyArtifactRole(fileName) {
+    if (fileName.includes(LOCAL_JOURNAL_DB_NAME)) return "production_journal";
+    if (fileName.includes(ENC_MIG_FIXTURE_PLAIN_DB)) return "fixture_source";
+    if (fileName.includes(ENC_MIG_FIXTURE_STAGING_DB)) return "fixture_staging";
+    if (fileName.includes(ENC_MIG_FIXTURE_PROMOTED_DB)) return "fixture_promoted";
+    if (fileName.endsWith("-wal") || fileName.includes(".db-wal")) return "sidecar_wal";
+    if (fileName.endsWith("-shm") || fileName.includes(".db-shm")) return "sidecar_shm";
+    if (fileName.includes("-journal")) return "sidecar_journal";
+    return "other_sqlite";
+  }
+  function namesForCleanupIntent(intent, phase) {
+    if (intent === "success") return [ENC_MIG_FIXTURE_STAGING_DB];
+    if (intent === "rollback" && phase === "promoted") {
+      return [ENC_MIG_FIXTURE_STAGING_DB];
+    }
+    return [ENC_MIG_FIXTURE_STAGING_DB, ENC_MIG_FIXTURE_PROMOTED_DB];
+  }
+  function assertDeletable(name) {
+    if (isProductionJournalName(name)) {
+      throw new LocalFirstSecurityError(
+        "journal_encryption_forbidden",
+        "cleanup refuses ljd_local_journal"
+      );
+    }
+    if (isProtectedSourceName(name)) {
+      throw new LocalFirstSecurityError(
+        "journal_encryption_forbidden",
+        "cleanup refuses plaintext fixture source"
+      );
+    }
+    if (!isAllowlistedDeletableName(name)) {
+      throw new LocalFirstSecurityError(
+        "journal_encryption_forbidden",
+        "cleanup refuses names outside the fixture allowlist"
+      );
+    }
+  }
+  async function listEncryptionMigrationArtifacts() {
+    if (!Capacitor.isNativePlatform()) {
+      throw new LocalFirstSecurityError("native_only", "artifact inventory is native-only");
+    }
+    const listing = await LjdLocalSecurity.listSqliteArtifactsInLjdDir();
+    return listing.artifacts.map((item) => ({
+      name: item.name,
+      bytes: Number(item.bytes) || 0,
+      role: item.role || classifyArtifactRole(item.name)
+    }));
+  }
+  async function cleanupAllowlistedDatabase(logicalName) {
+    assertDeletable(logicalName);
+    await closeNamedJournalDatabase(logicalName);
+    try {
+      await CapacitorSQLite.closeConnection({ database: logicalName, readonly: false });
+    } catch {
+    }
+    try {
+      await CapacitorSQLite.deleteDatabase({ database: logicalName });
+    } catch {
+    }
+    const native = await LjdLocalSecurity.deleteAllowlistedSqliteArtifacts({
+      logicalName
+    });
+    return { logicalName, deleted: native.deleted ?? [] };
+  }
+  async function cleanupTemporaryMigrationArtifacts(intent, phase) {
+    const targets = namesForCleanupIntent(intent, phase);
+    const deleted = [];
+    for (const name of targets) {
+      const result = await cleanupAllowlistedDatabase(name);
+      deleted.push(...result.deleted);
+    }
+    return { deleted, targets };
+  }
+  function countArtifactsByRole(artifacts, role) {
+    return artifacts.filter((item) => item.role === role || classifyArtifactRole(item.name) === role).length;
+  }
 
   // src/lib/local-first/journal/encryptionMigration/diskGuard.ts
   var ENC_MIG_DISK_MULTIPLIER = 3;
   var ENC_MIG_DISK_MIN_BYTES = 256 * 1024;
+  var ENC_MIG_POC_RESERVE_BYTES = 1 * 1024 * 1024;
+  var ENC_MIG_PRODUCTION_RESERVE_BYTES_RECOMMENDED = 64 * 1024 * 1024;
   function estimateMigrationDiskNeed(sourceBytes) {
     const recommendedFreeBytes = Math.max(
       ENC_MIG_DISK_MIN_BYTES,
@@ -3363,16 +3496,50 @@ CREATE INDEX IF NOT EXISTS idx_local_media_journal
       multiplier: ENC_MIG_DISK_MULTIPLIER
     };
   }
-  function hasEnoughDiskForMigration(sourceBytes, availableBytes) {
-    const estimate = estimateMigrationDiskNeed(sourceBytes);
-    if (availableBytes == null) {
-      return { ok: true, estimate, reason: "available_bytes_unknown_continue_with_estimate" };
-    }
-    if (availableBytes < estimate.recommendedFreeBytes) {
-      return { ok: false, estimate, reason: "insufficient_free_space" };
-    }
-    return { ok: true, estimate };
+  function reserveBytesForMode(mode) {
+    return mode === "production" ? ENC_MIG_PRODUCTION_RESERVE_BYTES_RECOMMENDED : ENC_MIG_POC_RESERVE_BYTES;
   }
+  function computeRequiredBytes(sourceBytes, reserveBytes) {
+    return estimateMigrationDiskNeed(sourceBytes).recommendedFreeBytes + Math.max(0, reserveBytes);
+  }
+  function hasEnoughDiskForMigration(sourceBytes, availableBytes, options) {
+    const mode = options?.mode ?? "production";
+    const reserveBytes = options?.reserveBytes ?? reserveBytesForMode(mode);
+    const estimate = estimateMigrationDiskNeed(sourceBytes);
+    const requiredBytes = computeRequiredBytes(sourceBytes, reserveBytes);
+    if (availableBytes == null) {
+      const allowUnknown = options?.allowUnknownCapacity === true && mode === "fixture_poc";
+      if (allowUnknown) {
+        return {
+          ok: true,
+          estimate,
+          requiredBytes,
+          reserveBytes,
+          reason: "available_bytes_unknown_fixture_override"
+        };
+      }
+      return {
+        ok: false,
+        estimate,
+        requiredBytes,
+        reserveBytes,
+        reason: "capacity_unknown_fail_closed"
+      };
+    }
+    if (availableBytes < requiredBytes) {
+      return {
+        ok: false,
+        estimate,
+        requiredBytes,
+        reserveBytes,
+        reason: "insufficient_free_space"
+      };
+    }
+    return { ok: true, estimate, requiredBytes, reserveBytes };
+  }
+
+  // src/lib/local-first/journal/encryptionMigration/LocalJournalEncryptionMigrator.ts
+  init_dist();
 
   // src/lib/local-first/journal/encryptionMigration/stateStore.ts
   var ENC_MIG_STATE_RELATIVE = "ljd/security-poc/enc-mig-state.json";
@@ -3392,8 +3559,18 @@ CREATE INDEX IF NOT EXISTS idx_local_media_journal
   function canExplicitResume(phase) {
     return phase === "staging" || phase === "verified" || phase === "failed";
   }
+  function canExplicitRollback(phase) {
+    return phase === "staging" || phase === "verified" || phase === "failed" || phase === "promoted";
+  }
   function shouldNoOp(phase) {
     return phase === "promoted";
+  }
+  function describeKillResume(phase) {
+    return {
+      canResume: canExplicitResume(phase),
+      canRollback: canExplicitRollback(phase),
+      autoRun: false
+    };
   }
   async function readMigrationState() {
     try {
@@ -3437,10 +3614,10 @@ CREATE INDEX IF NOT EXISTS idx_local_media_journal
     }
   }
   function assertNotProductionJournal2(name) {
-    if (name === LOCAL_JOURNAL_DB_NAME) {
+    if (name === LOCAL_JOURNAL_DB_NAME || name.includes(LOCAL_JOURNAL_DB_NAME)) {
       throw new LocalFirstSecurityError(
         "journal_encryption_forbidden",
-        "4B-3F refuses to migrate ljd_local_journal; fixture DBs only"
+        "encryption migrator refuses ljd_local_journal; fixture DBs only"
       );
     }
   }
@@ -3448,14 +3625,6 @@ CREATE INDEX IF NOT EXISTS idx_local_media_journal
     const arr = new Uint8Array(24);
     crypto.getRandomValues(arr);
     return [...arr].map((b) => b.toString(16).padStart(2, "0")).join("");
-  }
-  async function deleteNamedDatabase(name) {
-    assertNotProductionJournal2(name);
-    await closeNamedJournalDatabase(name);
-    try {
-      await CapacitorSQLite.deleteDatabase({ database: name });
-    } catch {
-    }
   }
   async function readJournalRows(source) {
     const entries = await source.query(`SELECT * FROM local_journal_entries;`);
@@ -3525,12 +3694,35 @@ CREATE INDEX IF NOT EXISTS idx_local_media_journal
     async status() {
       return readMigrationState();
     },
+    async killResume() {
+      const state = await readMigrationState();
+      return { phase: state.phase, ...describeKillResume(state.phase) };
+    },
+    /** Developer test reset: drop fixture temps only. Never touches production or source. */
+    async resetFixtureTempsForDeveloperTest() {
+      assertNative2();
+      await cleanupTemporaryMigrationArtifacts("failure");
+      await writeMigrationState(createInitialState({ phase: "not_started", lastError: null }));
+      return {
+        ok: true,
+        phase: "not_started",
+        detail: "fixture temps reset; source plaintext kept"
+      };
+    },
     async rollbackStaging(reason = "explicit_rollback") {
       assertNative2();
       const state = await readMigrationState();
       assertNotProductionJournal2(state.sourceDb);
-      await deleteNamedDatabase(state.stagingDb);
-      await deleteNamedDatabase(state.promotedDb);
+      assertNotProductionJournal2(state.stagingDb);
+      assertNotProductionJournal2(state.promotedDb);
+      const cleaned = await cleanupTemporaryMigrationArtifacts("rollback", state.phase);
+      if (state.phase === "promoted") {
+        return {
+          ok: true,
+          phase: "promoted",
+          detail: `rollback leftover staging only; promoted kept deleted=${cleaned.deleted.length}`
+        };
+      }
       const next = createInitialState({
         ...state,
         phase: "failed",
@@ -3541,11 +3733,11 @@ CREATE INDEX IF NOT EXISTS idx_local_media_journal
       return {
         ok: true,
         phase: "failed",
-        detail: `rollback complete; source ${state.sourceDb} preserved`
+        detail: `rollback complete; source ${state.sourceDb} preserved deleted=${cleaned.deleted.length}`
       };
     },
     /**
-     * Explicit developer/resume entry. Never called from app boot.
+     * Explicit developer/resume entry. Never called from product app boot.
      * Source plaintext is never deleted or overwritten.
      */
     async migrateFixture(options) {
@@ -3582,7 +3774,16 @@ CREATE INDEX IF NOT EXISTS idx_local_media_journal
           32768,
           (inventory.rowCounts.local_journal_entries ?? 0) * 2048
         );
-        const disk = hasEnoughDiskForMigration(sourceBytes, options?.availableBytes ?? null);
+        let availableBytes;
+        if (options && Object.prototype.hasOwnProperty.call(options, "availableBytes")) {
+          availableBytes = options.availableBytes ?? null;
+        } else {
+          availableBytes = (await readAvailableBytesOrNull()).availableBytes;
+        }
+        const disk = hasEnoughDiskForMigration(sourceBytes, availableBytes, {
+          mode: options?.diskMode ?? "fixture_poc",
+          allowUnknownCapacity: options?.allowUnknownCapacity === true
+        });
         if (!disk.ok) {
           throw new Error(`disk_guard:${disk.reason}`);
         }
@@ -3594,11 +3795,16 @@ CREATE INDEX IF NOT EXISTS idx_local_media_journal
           lastError: null
         });
         await writeMigrationState(state);
-        await deleteNamedDatabase(stagingDb);
+        await cleanupTemporaryMigrationArtifacts("failure");
         await ensurePluginEncryptionSecret(options?.passphrase ?? randomPassphrase());
         const staging = await openNamedEncryptedDatabase(stagingDb, 1);
         await writeJournalRows(staging, rows);
-        const stagingFp = await fingerprintJournal(staging);
+        await closeNamedJournalDatabase(stagingDb);
+        if (options?.injectFailure === "after_staging") {
+          throw new Error("injected_failure:after_staging");
+        }
+        const stagingReopen = await openNamedEncryptedDatabase(stagingDb, 1);
+        const stagingFp = await fingerprintJournal(stagingReopen);
         const compared = compareFingerprints(sourceFp, stagingFp);
         await closeNamedJournalDatabase(stagingDb);
         if (!compared.ok) {
@@ -3611,7 +3817,9 @@ CREATE INDEX IF NOT EXISTS idx_local_media_journal
         const missingMedia = mediaPresence.filter((m) => !m.exists).map((m) => m.path);
         state = { ...state, phase: "verified", lastError: null };
         await writeMigrationState(state);
-        await deleteNamedDatabase(promotedDb);
+        if (options?.injectFailure === "after_verify") {
+          throw new Error("injected_failure:after_verify");
+        }
         const promoted = await openNamedEncryptedDatabase(promotedDb, 1);
         await writeJournalRows(promoted, rows);
         const promotedFp = await fingerprintJournal(promoted);
@@ -3620,7 +3828,7 @@ CREATE INDEX IF NOT EXISTS idx_local_media_journal
         if (!promotedCmp.ok) {
           throw new Error(`promote_mismatch:${promotedCmp.mismatches.join(",")}`);
         }
-        await deleteNamedDatabase(stagingDb);
+        await cleanupTemporaryMigrationArtifacts("success");
         state = { ...state, phase: "promoted", lastError: null };
         await writeMigrationState(state);
         return {
@@ -3629,12 +3837,16 @@ CREATE INDEX IF NOT EXISTS idx_local_media_journal
           detail: [
             `verified+promoted fixture`,
             `entries=${sourceFp.entries.length}`,
+            `required=${disk.requiredBytes}`,
             `diskNeed=${estimateMigrationDiskNeed(sourceBytes).recommendedFreeBytes}`,
             missingMedia.length ? `mediaMissing=${missingMedia.length}` : "mediaRefsPresent"
           ].join(" ")
         };
       } catch (error) {
         const message = safeErrorMessage(error);
+        if (!options?.skipFailureCleanup) {
+          await cleanupTemporaryMigrationArtifacts("failure").catch(() => void 0);
+        }
         await writeMigrationState(
           createInitialState({
             sourceDb,
@@ -3649,7 +3861,7 @@ CREATE INDEX IF NOT EXISTS idx_local_media_journal
     }
   };
 
-  // src/lib/local-first/journal/encryptionMigration/runEncryptionMigrationPoc.ts
+  // src/lib/local-first/journal/encryptionMigration/runEncryptionMigrationHardeningPoc.ts
   init_dist();
 
   // src/lib/local-first/journal/encryptionMigration/fixture.ts
@@ -3765,7 +3977,158 @@ CREATE INDEX IF NOT EXISTS idx_local_media_journal
     };
   }
 
+  // src/lib/local-first/journal/encryptionMigration/runEncryptionMigrationHardeningPoc.ts
+  function summarize(artifacts) {
+    return artifacts.map((item) => `${item.name}:${item.bytes}:${item.role}`).join(",") || "(none)";
+  }
+  async function runEncryptionMigrationHardeningPoc() {
+    if (!Capacitor.isNativePlatform()) {
+      throw new Error("hardening PoC is native-only");
+    }
+    const steps = [];
+    const push = (id, status, detail, inventory) => {
+      steps.push({ id, status, detail, inventory });
+    };
+    const capacity = await readAvailableBytesOrNull();
+    const sampleSourceBytes = 32768;
+    const enough = hasEnoughDiskForMigration(sampleSourceBytes, capacity.availableBytes, {
+      mode: "fixture_poc"
+    });
+    try {
+      const audit = await auditActualLocalJournal();
+      push(
+        "audit",
+        audit.safeForMigrationTest && audit.rowCounts.local_journal_entries === 0 ? "pass" : "fail",
+        `prodEncrypted=${String(audit.encryptedPluginFlag)} entries=${audit.rowCounts.local_journal_entries ?? 0} realData=${String(audit.looksLikeRealUserData)}`
+      );
+      if (!audit.safeForMigrationTest) {
+        throw new Error("actual journal looks like real data; hardening aborted");
+      }
+      push(
+        "H1",
+        enough.ok ? "pass" : "fail",
+        `available=${String(capacity.availableBytes)} source=${capacity.source} required=${enough.requiredBytes} reserve=${ENC_MIG_POC_RESERVE_BYTES}`
+      );
+      const low = hasEnoughDiskForMigration(sampleSourceBytes, 1, { mode: "fixture_poc" });
+      push(
+        "H2",
+        !low.ok && low.reason === "insufficient_free_space" ? "pass" : "fail",
+        `reason=${low.reason ?? "none"} required=${low.requiredBytes}`
+      );
+      const unknown = hasEnoughDiskForMigration(sampleSourceBytes, null, {
+        mode: "production"
+      });
+      push(
+        "H3",
+        !unknown.ok && unknown.reason === "capacity_unknown_fail_closed" ? "pass" : "fail",
+        `reason=${unknown.reason ?? "none"}`
+      );
+      await LocalJournalEncryptionMigrator.resetFixtureTempsForDeveloperTest();
+      await createPlaintextEncryptionMigrationFixture();
+      const failed = await LocalJournalEncryptionMigrator.migrateFixture({
+        resume: true,
+        injectFailure: "after_staging"
+      });
+      const afterFail = await listEncryptionMigrationArtifacts();
+      const stagingAfterFail = countArtifactsByRole(afterFail, "fixture_staging");
+      push(
+        "H5",
+        failed.phase === "failed" && stagingAfterFail === 0 ? "pass" : "fail",
+        `phase=${failed.phase} stagingArtifacts=${stagingAfterFail} ${failed.detail}`,
+        afterFail
+      );
+      await LocalJournalEncryptionMigrator.resetFixtureTempsForDeveloperTest();
+      await createPlaintextEncryptionMigrationFixture();
+      await LocalJournalEncryptionMigrator.migrateFixture({
+        resume: true,
+        injectFailure: "after_staging",
+        skipFailureCleanup: true
+      });
+      const beforeRollback = await listEncryptionMigrationArtifacts();
+      const rollback = await LocalJournalEncryptionMigrator.rollbackStaging("h6");
+      const afterRollback = await listEncryptionMigrationArtifacts();
+      push(
+        "H6",
+        rollback.ok && countArtifactsByRole(afterRollback, "fixture_staging") === 0 && countArtifactsByRole(afterRollback, "fixture_promoted") === 0 ? "pass" : "fail",
+        `before=${summarize(beforeRollback)} after=${summarize(afterRollback)} ${rollback.detail}`,
+        afterRollback
+      );
+      const first = await cleanupTemporaryMigrationArtifacts("failure");
+      const second = await cleanupTemporaryMigrationArtifacts("failure");
+      push(
+        "H7",
+        true ? "pass" : "fail",
+        `firstDeleted=${first.deleted.length} secondDeleted=${second.deleted.length}`
+      );
+      const sourceAfter = await listEncryptionMigrationArtifacts();
+      const sourceCount = countArtifactsByRole(sourceAfter, "fixture_source");
+      push(
+        "H8",
+        sourceCount > 0 ? "pass" : "fail",
+        `sourceArtifacts=${sourceCount} inventory=${summarize(sourceAfter)}`,
+        sourceAfter
+      );
+      await LocalJournalEncryptionMigrator.resetFixtureTempsForDeveloperTest();
+      await createPlaintextEncryptionMigrationFixture();
+      const migrated = await LocalJournalEncryptionMigrator.migrateFixture({
+        resume: true
+      });
+      const afterSuccess = await listEncryptionMigrationArtifacts();
+      const stagingAfterSuccess = countArtifactsByRole(afterSuccess, "fixture_staging");
+      push(
+        "H4",
+        migrated.ok && stagingAfterSuccess === 0 ? "pass" : "fail",
+        `${migrated.detail} stagingArtifacts=${stagingAfterSuccess} inventory=${summarize(afterSuccess)}`,
+        afterSuccess
+      );
+      await closeNamedJournalDatabase(ENC_MIG_FIXTURE_PROMOTED_DB);
+      await ensurePluginEncryptionSecret("unused-if-already-stored");
+      const promoted = await openNamedEncryptedDatabase(ENC_MIG_FIXTURE_PROMOTED_DB, 1);
+      let encryptedFlag = null;
+      try {
+        encryptedFlag = Boolean(
+          (await CapacitorSQLite.isDatabaseEncrypted({
+            database: ENC_MIG_FIXTURE_PROMOTED_DB
+          })).result
+        );
+      } catch {
+        encryptedFlag = null;
+      }
+      const fp = await fingerprintJournal(promoted);
+      await closeNamedJournalDatabase(ENC_MIG_FIXTURE_PROMOTED_DB);
+      push(
+        "H9",
+        fp.entries.length === 3 && encryptedFlag === true ? "pass" : "fail",
+        `reopen entries=${fp.entries.length} encryptedFlag=${String(encryptedFlag)} tags=${fp.rowCounts.local_journal_tags ?? 0}`
+      );
+      push("untouched", "pass", `didNotMigrate=${LOCAL_JOURNAL_DB_NAME}`);
+    } catch (error) {
+      push("error", "fail", safeErrorMessage(error));
+    }
+    const report = {
+      ranAt: (/* @__PURE__ */ new Date()).toISOString(),
+      availableBytes: capacity.availableBytes,
+      capacitySource: capacity.source,
+      requiredBytesSample: enough.requiredBytes,
+      steps,
+      actualJournalUntouched: true
+    };
+    await Filesystem.mkdir({
+      path: "ljd/security-poc",
+      directory: Directory.Library,
+      recursive: true
+    }).catch(() => void 0);
+    await Filesystem.writeFile({
+      path: "ljd/security-poc/enc-mig-hardening-report.json",
+      directory: Directory.Library,
+      encoding: Encoding.UTF8,
+      data: JSON.stringify(report, null, 2)
+    });
+    return report;
+  }
+
   // src/lib/local-first/journal/encryptionMigration/runEncryptionMigrationPoc.ts
+  init_dist();
   function randomPassphrase2() {
     const arr = new Uint8Array(24);
     crypto.getRandomValues(arr);
@@ -3968,6 +4331,49 @@ CREATE INDEX IF NOT EXISTS idx_local_media_journal
         setStatus(`enc-mig phase=${status.phase}`);
       })().catch((e) => setStatus(safeErrorMessage(e), true));
     });
+    $("btn-enc-mig-inventory").addEventListener("click", () => {
+      void (async () => {
+        const state = await LocalJournalEncryptionMigrator.status();
+        const kill = describeKillResume(state.phase);
+        const capacity = await readAvailableBytesOrNull();
+        const artifacts = await listEncryptionMigrationArtifacts();
+        const report = {
+          readOnly: true,
+          phase: state.phase,
+          kill,
+          sourceSizeHint: 32768,
+          requiredBytes: computeRequiredBytes(32768, ENC_MIG_POC_RESERVE_BYTES),
+          availableBytes: capacity.availableBytes,
+          capacitySource: capacity.source,
+          artifacts
+        };
+        $("security-report").textContent = JSON.stringify(report, null, 2);
+        setStatus(`inventory phase=${state.phase} artifacts=${artifacts.length} (no content/keys)`);
+      })().catch((e) => setStatus(safeErrorMessage(e), true));
+    });
+    $("btn-enc-mig-hardening").addEventListener("click", () => {
+      void (async () => {
+        setStatus("hardening H1\u2013H9\u2026\uFF08\u672C\u756ADB\u306F\u89E6\u3089\u306A\u3044\uFF09");
+        const report = await runEncryptionMigrationHardeningPoc();
+        $("security-report").textContent = JSON.stringify(report, null, 2);
+        const fails = report.steps.filter((s2) => s2.status === "fail").length;
+        setStatus(`hardening fail=${fails} available=${String(report.availableBytes)}`, fails > 0);
+      })().catch((e) => setStatus(safeErrorMessage(e), true));
+    });
+    $("btn-enc-mig-resume").addEventListener("click", () => {
+      void (async () => {
+        const result = await LocalJournalEncryptionMigrator.migrateFixture({ resume: true });
+        $("security-report").textContent = JSON.stringify(result, null, 2);
+        setStatus(`resume phase=${result.phase} ${result.detail}`, !result.ok);
+      })().catch((e) => setStatus(safeErrorMessage(e), true));
+    });
+    $("btn-enc-mig-rollback").addEventListener("click", () => {
+      void (async () => {
+        const result = await LocalJournalEncryptionMigrator.rollbackStaging("diagnostics_rollback");
+        $("security-report").textContent = JSON.stringify(result, null, 2);
+        setStatus(`rollback phase=${result.phase} ${result.detail}`, !result.ok);
+      })().catch((e) => setStatus(safeErrorMessage(e), true));
+    });
     $("btn-enc-mig-fixture").addEventListener("click", () => {
       void (async () => {
         setStatus("fixture encryption migration PoC\u2026\uFF08\u672C\u756ADB\u306F\u89E6\u3089\u306A\u3044\uFF09");
@@ -4005,12 +4411,12 @@ CREATE INDEX IF NOT EXISTS idx_local_media_journal
     try {
       await openLocalJournalDatabase();
       await renderEntries();
-      setStatus("fixture enc-mig PoC \u5B9F\u884C\u4E2D\u2026\uFF08ljd_local_journal \u306F\u6697\u53F7\u5316\u3057\u306A\u3044\uFF09");
-      const report = await runEncryptionMigrationPoc();
+      setStatus("hardening H1\u2013H9 \u5B9F\u884C\u4E2D\u2026\uFF08ljd_local_journal \u306F\u89E6\u3089\u306A\u3044\uFF09");
+      const report = await runEncryptionMigrationHardeningPoc();
       $("security-report").textContent = JSON.stringify(report, null, 2);
       const fails = report.steps.filter((s2) => s2.status === "fail").length;
       setStatus(
-        `fixture enc-mig fail=${fails} phase-report written\uFF08\u672C\u756ADB\u672A\u5207\u66FF\uFF09`,
+        `hardening fail=${fails} available=${String(report.availableBytes)}\uFF08\u672C\u756ADB\u672A\u5207\u66FF\uFF09`,
         fails > 0
       );
     } catch (err) {

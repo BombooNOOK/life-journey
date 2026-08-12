@@ -146,7 +146,8 @@ iPhone 17 Simulator / developer diagnostics（本番 journal 未切替）
 
 既存 plugin Keychain secret を再利用（secret 増殖なし）。
 
-既知の隙間: 失敗後に残った `ljd_enc_mig_fixture_staging` ファイルが promote 後もディスクに残ることがある（増殖はしない）。production では FileManager unlink を追加する。
+既知の隙間（4B-3F）: 失敗後に残った `ljd_enc_mig_fixture_staging` が promote 後も残ることがあった。  
+**4B-3G で FileManager sidecar cleanup + 失敗時 cleanup + fail-closed capacity を追加。** 詳細は `HYBRID_PHASE_4B3G_MIGRATION_HARDENING.md`。
 
 ## 11. Web / Server
 
@@ -158,7 +159,7 @@ RG-1 lock / RG-2 backup中身 / RG-3 restore / RG-4 Quick Start は **未完の�
 
 ## 13. 判定
 
-- migration engine を正式基盤候補にするか: **A（fixture 成立。staging 残骸削除と実機 free-space は次）**
+- migration engine を正式基盤候補にするか: **A（fixture 成立。残骸/capacity は 4B-3G）**
 - actual `ljd_local_journal` 明示 migration へ進めるか: **B（まだ禁止）**
 
-次Phase候補: staging file 確実削除 + iOS 空き容量 API + なお本番 journal は触らない。RG-1 は別線。
+次Phase: 4B-3G hardening。本番 journal 切替はまだ禁止。

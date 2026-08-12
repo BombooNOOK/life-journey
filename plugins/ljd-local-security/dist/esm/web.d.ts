@@ -6,4 +6,7 @@ export declare class LjdLocalSecurityWeb extends WebPlugin implements LjdLocalSe
     setExcludedFromBackup(): Promise<import('./definitions').PathAttributes>;
     resolveApplicationSupportLjdDir(): Promise<import('./definitions').ApplicationSupportLjdDirResult>;
     inspectGenericPasswordAccessibility(): Promise<import('./definitions').InspectGenericPasswordAccessibilityResult>;
+    getVolumeAvailableCapacity(): Promise<import('./definitions').VolumeAvailableCapacityResult>;
+    listSqliteArtifactsInLjdDir(): Promise<import('./definitions').ListSqliteArtifactsResult>;
+    deleteAllowlistedSqliteArtifacts(options: import('./definitions').DeleteAllowlistedSqliteArtifactsOptions): Promise<import('./definitions').DeleteAllowlistedSqliteArtifactsResult>;
 }

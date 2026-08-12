@@ -31,7 +31,7 @@ describe("no-secret logging", () => {
 
   it("keeps migration report-shaped JSON free of passphrase fields", () => {
     const report = {
-      steps: [{ id: "M8", status: "pass", detail: "wrongKeyRejected=true" }],
+      steps: [{ id: "H4", status: "pass", detail: "stagingArtifacts=0" }],
       actualJournalUntouched: true,
     };
     const text = JSON.stringify(report);

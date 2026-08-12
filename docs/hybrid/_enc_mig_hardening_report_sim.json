@@ -1,0 +1,27 @@
+{
+  "simulator": "iPhone 17",
+  "ranAt": "2026-08-12T02:15:42.726Z",
+  "availableBytes": 6780035072,
+  "capacitySource": "volumeAvailableCapacityForImportantUsage",
+  "requiredBytesSample": 1310720,
+  "reserveBytesPoc": 1048576,
+  "steps": {
+    "H1": "pass",
+    "H2": "pass",
+    "H3": "pass",
+    "H4": "pass stagingArtifacts=0",
+    "H5": "pass stagingArtifacts=0 after injected failure",
+    "H6": "pass rollback removed staging; source kept",
+    "H7": "pass cleanup twice deleted=0/0",
+    "H8": "pass source plaintext remains",
+    "H9": "pass promoted reopen encryptedFlag=true entries=3"
+  },
+  "afterH4Files": [
+    "ljd_enc_mig_fixture_plainSQLite.db",
+    "ljd_enc_mig_fixture_promotedSQLite.db",
+    "ljd_local_journalSQLite.db",
+    "ljd_storage_location_pocSQLite.db"
+  ],
+  "stagingPresentAfterSuccess": false,
+  "actualJournalUntouched": true
+}

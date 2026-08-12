@@ -1,11 +1,11 @@
 /**
  * Explicit Local Journal encryption migration service.
  * Not imported from app startup / Web / Neon / 森ログ.
- * 4B-3F: fixture DBs only — refuses ljd_local_journal.
+ * Fixture DBs only — refuses ljd_local_journal.
  */
 
 import { Capacitor } from "@capacitor/core";
-import { CapacitorSQLite, type SQLiteDBConnection } from "@capacitor-community/sqlite";
+import type { SQLiteDBConnection } from "@capacitor-community/sqlite";
 
 import {
   applyFoundationSchema,
@@ -14,8 +14,12 @@ import {
 } from "@/lib/local-first/journal/database";
 import { mediaRefsExist } from "@/lib/local-first/journal/encryptionMigration/audit";
 import {
+  cleanupTemporaryMigrationArtifacts,
+} from "@/lib/local-first/journal/encryptionMigration/artifactCleanup";
+import {
   estimateMigrationDiskNeed,
   hasEnoughDiskForMigration,
+  type DiskGuardMode,
 } from "@/lib/local-first/journal/encryptionMigration/diskGuard";
 import {
   compareFingerprints,
@@ -25,6 +29,7 @@ import {
 import {
   canExplicitResume,
   createInitialState,
+  describeKillResume,
   readMigrationState,
   shouldNoOp,
   writeMigrationState,
@@ -45,6 +50,7 @@ import {
 } from "@/lib/local-first/security/encryptedDatabase";
 import { safeErrorMessage } from "@/lib/local-first/security/noSecretLog";
 import { LocalFirstSecurityError } from "@/lib/local-first/security/types";
+import { readAvailableBytesOrNull } from "@/lib/local-first/security/volumeCapacity";
 
 function assertNative(): void {
   if (!Capacitor.isNativePlatform()) {
@@ -53,10 +59,10 @@ function assertNative(): void {
 }
 
 function assertNotProductionJournal(name: string): void {
-  if (name === LOCAL_JOURNAL_DB_NAME) {
+  if (name === LOCAL_JOURNAL_DB_NAME || name.includes(LOCAL_JOURNAL_DB_NAME)) {
     throw new LocalFirstSecurityError(
       "journal_encryption_forbidden",
-      "4B-3F refuses to migrate ljd_local_journal; fixture DBs only",
+      "encryption migrator refuses ljd_local_journal; fixture DBs only",
     );
   }
 }
@@ -65,16 +71,6 @@ function randomPassphrase(): string {
   const arr = new Uint8Array(24);
   crypto.getRandomValues(arr);
   return [...arr].map((b) => b.toString(16).padStart(2, "0")).join("");
-}
-
-async function deleteNamedDatabase(name: string): Promise<void> {
-  assertNotProductionJournal(name);
-  await closeNamedJournalDatabase(name);
-  try {
-    await CapacitorSQLite.deleteDatabase({ database: name });
-  } catch {
-    /* missing */
-  }
 }
 
 type JournalRowSnapshot = {
@@ -155,17 +151,53 @@ async function writeJournalRows(
   }
 }
 
+export type MigrateFixtureOptions = {
+  availableBytes?: number | null;
+  resume?: boolean;
+  passphrase?: string;
+  diskMode?: DiskGuardMode;
+  allowUnknownCapacity?: boolean;
+  injectFailure?: "after_staging" | "after_verify";
+  /** Hardening H6 only. Production catch always cleans. */
+  skipFailureCleanup?: boolean;
+};
+
 export const LocalJournalEncryptionMigrator = {
   async status(): Promise<EncryptionMigrationState> {
     return readMigrationState();
+  },
+
+  async killResume(): Promise<ReturnType<typeof describeKillResume> & { phase: EncryptionMigrationState["phase"] }> {
+    const state = await readMigrationState();
+    return { phase: state.phase, ...describeKillResume(state.phase) };
+  },
+
+  /** Developer test reset: drop fixture temps only. Never touches production or source. */
+  async resetFixtureTempsForDeveloperTest(): Promise<MigrationStepResult> {
+    assertNative();
+    await cleanupTemporaryMigrationArtifacts("failure");
+    await writeMigrationState(createInitialState({ phase: "not_started", lastError: null }));
+    return {
+      ok: true,
+      phase: "not_started",
+      detail: "fixture temps reset; source plaintext kept",
+    };
   },
 
   async rollbackStaging(reason = "explicit_rollback"): Promise<MigrationStepResult> {
     assertNative();
     const state = await readMigrationState();
     assertNotProductionJournal(state.sourceDb);
-    await deleteNamedDatabase(state.stagingDb);
-    await deleteNamedDatabase(state.promotedDb);
+    assertNotProductionJournal(state.stagingDb);
+    assertNotProductionJournal(state.promotedDb);
+    const cleaned = await cleanupTemporaryMigrationArtifacts("rollback", state.phase);
+    if (state.phase === "promoted") {
+      return {
+        ok: true,
+        phase: "promoted",
+        detail: `rollback leftover staging only; promoted kept deleted=${cleaned.deleted.length}`,
+      };
+    }
     const next = createInitialState({
       ...state,
       phase: "failed",
@@ -176,20 +208,15 @@ export const LocalJournalEncryptionMigrator = {
     return {
       ok: true,
       phase: "failed",
-      detail: `rollback complete; source ${state.sourceDb} preserved`,
+      detail: `rollback complete; source ${state.sourceDb} preserved deleted=${cleaned.deleted.length}`,
     };
   },
 
   /**
-   * Explicit developer/resume entry. Never called from app boot.
+   * Explicit developer/resume entry. Never called from product app boot.
    * Source plaintext is never deleted or overwritten.
    */
-  async migrateFixture(options?: {
-    availableBytes?: number | null;
-    resume?: boolean;
-    /** In-memory only. Never written to state/logs. */
-    passphrase?: string;
-  }): Promise<MigrationStepResult> {
+  async migrateFixture(options?: MigrateFixtureOptions): Promise<MigrationStepResult> {
     assertNative();
     const sourceDb = ENC_MIG_FIXTURE_PLAIN_DB;
     const stagingDb = ENC_MIG_FIXTURE_STAGING_DB;
@@ -226,7 +253,16 @@ export const LocalJournalEncryptionMigrator = {
         32_768,
         (inventory.rowCounts.local_journal_entries ?? 0) * 2048,
       );
-      const disk = hasEnoughDiskForMigration(sourceBytes, options?.availableBytes ?? null);
+      let availableBytes: number | null;
+      if (options && Object.prototype.hasOwnProperty.call(options, "availableBytes")) {
+        availableBytes = options.availableBytes ?? null;
+      } else {
+        availableBytes = (await readAvailableBytesOrNull()).availableBytes;
+      }
+      const disk = hasEnoughDiskForMigration(sourceBytes, availableBytes, {
+        mode: options?.diskMode ?? "fixture_poc",
+        allowUnknownCapacity: options?.allowUnknownCapacity === true,
+      });
       if (!disk.ok) {
         throw new Error(`disk_guard:${disk.reason}`);
       }
@@ -240,12 +276,17 @@ export const LocalJournalEncryptionMigrator = {
       });
       await writeMigrationState(state);
 
-      await deleteNamedDatabase(stagingDb);
+      await cleanupTemporaryMigrationArtifacts("failure");
       await ensurePluginEncryptionSecret(options?.passphrase ?? randomPassphrase());
       const staging = await openNamedEncryptedDatabase(stagingDb, 1);
       await writeJournalRows(staging, rows);
+      await closeNamedJournalDatabase(stagingDb);
+      if (options?.injectFailure === "after_staging") {
+        throw new Error("injected_failure:after_staging");
+      }
 
-      const stagingFp = await fingerprintJournal(staging);
+      const stagingReopen = await openNamedEncryptedDatabase(stagingDb, 1);
+      const stagingFp = await fingerprintJournal(stagingReopen);
       const compared = compareFingerprints(sourceFp, stagingFp);
       await closeNamedJournalDatabase(stagingDb);
       if (!compared.ok) {
@@ -260,8 +301,10 @@ export const LocalJournalEncryptionMigrator = {
 
       state = { ...state, phase: "verified", lastError: null };
       await writeMigrationState(state);
+      if (options?.injectFailure === "after_verify") {
+        throw new Error("injected_failure:after_verify");
+      }
 
-      await deleteNamedDatabase(promotedDb);
       const promoted = await openNamedEncryptedDatabase(promotedDb, 1);
       await writeJournalRows(promoted, rows);
 
@@ -272,7 +315,7 @@ export const LocalJournalEncryptionMigrator = {
         throw new Error(`promote_mismatch:${promotedCmp.mismatches.join(",")}`);
       }
 
-      await deleteNamedDatabase(stagingDb);
+      await cleanupTemporaryMigrationArtifacts("success");
 
       state = { ...state, phase: "promoted", lastError: null };
       await writeMigrationState(state);
@@ -283,12 +326,16 @@ export const LocalJournalEncryptionMigrator = {
         detail: [
           `verified+promoted fixture`,
           `entries=${sourceFp.entries.length}`,
+          `required=${disk.requiredBytes}`,
           `diskNeed=${estimateMigrationDiskNeed(sourceBytes).recommendedFreeBytes}`,
           missingMedia.length ? `mediaMissing=${missingMedia.length}` : "mediaRefsPresent",
         ].join(" "),
       };
     } catch (error) {
       const message = safeErrorMessage(error);
+      if (!options?.skipFailureCleanup) {
+        await cleanupTemporaryMigrationArtifacts("failure").catch(() => undefined);
+      }
       await writeMigrationState(
         createInitialState({
           sourceDb,

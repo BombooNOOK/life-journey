@@ -35,6 +35,10 @@ export {
   resolveLjdApplicationSupportDir,
 } from "@/lib/local-first/security/storageLocation";
 export {
+  getVolumeAvailableCapacity,
+  readAvailableBytesOrNull,
+} from "@/lib/local-first/security/volumeCapacity";
+export {
   LJD_FILE_PROTECTION_CANDIDATE,
   LJD_IOS_DATABASE_RELATIVE_LOCATION,
   LJD_PLUGIN_KEYCHAIN_ACCESSIBILITY_MEASURED,

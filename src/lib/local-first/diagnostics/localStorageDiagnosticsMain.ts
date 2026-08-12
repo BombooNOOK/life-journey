@@ -18,8 +18,16 @@ import {
 } from "@/lib/local-first/security";
 import { inspectFileProtection } from "@/lib/local-first/security/fileProtection";
 import { auditActualLocalJournal } from "@/lib/local-first/journal/encryptionMigration/audit";
+import { listEncryptionMigrationArtifacts } from "@/lib/local-first/journal/encryptionMigration/artifactCleanup";
+import {
+  computeRequiredBytes,
+  ENC_MIG_POC_RESERVE_BYTES,
+} from "@/lib/local-first/journal/encryptionMigration/diskGuard";
 import { LocalJournalEncryptionMigrator } from "@/lib/local-first/journal/encryptionMigration/LocalJournalEncryptionMigrator";
+import { runEncryptionMigrationHardeningPoc } from "@/lib/local-first/journal/encryptionMigration/runEncryptionMigrationHardeningPoc";
 import { runEncryptionMigrationPoc } from "@/lib/local-first/journal/encryptionMigration/runEncryptionMigrationPoc";
+import { describeKillResume } from "@/lib/local-first/journal/encryptionMigration/stateStore";
+import { readAvailableBytesOrNull } from "@/lib/local-first/security/volumeCapacity";
 
 function $(id: string): HTMLElement {
   const el = document.getElementById(id);
@@ -128,6 +136,53 @@ async function boot(): Promise<void> {
     })().catch((e) => setStatus(safeErrorMessage(e), true));
   });
 
+  $("btn-enc-mig-inventory").addEventListener("click", () => {
+    void (async () => {
+      const state = await LocalJournalEncryptionMigrator.status();
+      const kill = describeKillResume(state.phase);
+      const capacity = await readAvailableBytesOrNull();
+      const artifacts = await listEncryptionMigrationArtifacts();
+      const report = {
+        readOnly: true,
+        phase: state.phase,
+        kill,
+        sourceSizeHint: 32_768,
+        requiredBytes: computeRequiredBytes(32_768, ENC_MIG_POC_RESERVE_BYTES),
+        availableBytes: capacity.availableBytes,
+        capacitySource: capacity.source,
+        artifacts,
+      };
+      $("security-report").textContent = JSON.stringify(report, null, 2);
+      setStatus(`inventory phase=${state.phase} artifacts=${artifacts.length} (no content/keys)`);
+    })().catch((e) => setStatus(safeErrorMessage(e), true));
+  });
+
+  $("btn-enc-mig-hardening").addEventListener("click", () => {
+    void (async () => {
+      setStatus("hardening H1–H9…（本番DBは触らない）");
+      const report = await runEncryptionMigrationHardeningPoc();
+      $("security-report").textContent = JSON.stringify(report, null, 2);
+      const fails = report.steps.filter((s) => s.status === "fail").length;
+      setStatus(`hardening fail=${fails} available=${String(report.availableBytes)}`, fails > 0);
+    })().catch((e) => setStatus(safeErrorMessage(e), true));
+  });
+
+  $("btn-enc-mig-resume").addEventListener("click", () => {
+    void (async () => {
+      const result = await LocalJournalEncryptionMigrator.migrateFixture({ resume: true });
+      $("security-report").textContent = JSON.stringify(result, null, 2);
+      setStatus(`resume phase=${result.phase} ${result.detail}`, !result.ok);
+    })().catch((e) => setStatus(safeErrorMessage(e), true));
+  });
+
+  $("btn-enc-mig-rollback").addEventListener("click", () => {
+    void (async () => {
+      const result = await LocalJournalEncryptionMigrator.rollbackStaging("diagnostics_rollback");
+      $("security-report").textContent = JSON.stringify(result, null, 2);
+      setStatus(`rollback phase=${result.phase} ${result.detail}`, !result.ok);
+    })().catch((e) => setStatus(safeErrorMessage(e), true));
+  });
+
   $("btn-enc-mig-fixture").addEventListener("click", () => {
     void (async () => {
       setStatus("fixture encryption migration PoC…（本番DBは触らない）");
@@ -168,12 +223,12 @@ async function boot(): Promise<void> {
   try {
     await openLocalJournalDatabase();
     await renderEntries();
-    setStatus("fixture enc-mig PoC 実行中…（ljd_local_journal は暗号化しない）");
-    const report = await runEncryptionMigrationPoc();
+    setStatus("hardening H1–H9 実行中…（ljd_local_journal は触らない）");
+    const report = await runEncryptionMigrationHardeningPoc();
     $("security-report").textContent = JSON.stringify(report, null, 2);
     const fails = report.steps.filter((s) => s.status === "fail").length;
     setStatus(
-      `fixture enc-mig fail=${fails} phase-report written（本番DB未切替）`,
+      `hardening fail=${fails} available=${String(report.availableBytes)}（本番DB未切替）`,
       fails > 0,
     );
   } catch (err) {
