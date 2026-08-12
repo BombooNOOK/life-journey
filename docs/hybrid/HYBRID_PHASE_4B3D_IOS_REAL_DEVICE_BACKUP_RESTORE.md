@@ -53,7 +53,7 @@
 | media File Protection | 初期 UntilFirstAuth（Complete設定APIは媒体にも実施） |
 | Keychain accessibility | **kSecAttrAccessibleWhenUnlocked**（secret本文未取得） |
 | encrypted reopen（同一セッション） | **pass**（dummy text一致） |
-| lock中アクセス | **未実施**（推測でPASSにしない） |
+| lock中アクセス | **実機でも未実証**（`inconclusive_not_demonstrated`。通知は来たが `isProtectedDataAvailableAtProbe≠false`。PASSにしない） |
 | app kill → reopen（同一鍵・同一DB） | **pass**（kill後も kc/reopen/media すべて true） |
 | reboot → unlock → reopen | **pass**（ユーザー確認: reboot後も全部 true） |
 | OS backup作成・中身確認 | **未実施**（合意後） |
@@ -78,8 +78,8 @@
 | Application Support 正式採用 | **A（Group A属性は実機一致）** ※backup/restore実体は未 |
 | SQLCipher 正式採用 | **A（実機 encrypt/reopen PASS）** ※restore後openは未 |
 | built-in Keychain 正式採用 | **A（WhenUnlocked + kill/reboot後 persistence）** |
-| media OS Data Protection | **A寄り（実機 read/excl + kill/reboot後read）** ※lock・restore未 |
-| production Local-first 基盤昇格 | **まだ保留寄り**（OS backup中身・restore・lock未了。会社端末では restore 禁止） |
+| media OS Data Protection | **A寄り（実機 read/excl + kill/reboot後read）** ※lock中拒否は未実証・restore未 |
+| production Local-first 基盤昇格 | **まだ保留寄り**（OS backup中身・restore未了。lockは実機試行したが未実証。会社端末では restore 禁止） |
 
 ---
 
@@ -89,18 +89,20 @@
 | --- | --- |
 | Finder/iCloud backup中身 | 会社データ取り扱い合意が必要 |
 | restore / Quick Start / uninstall | **禁止** |
-| lock test | ロック中native probeは別手順。未実施＝未実証 |
+| lock test | **実施済・未実証**（2026-08-12T01:28:12Z）。`protectedDataWillBecomeUnavailable` は来たが probe時点で protected data がまだ available。Xcode debugger 接続または不完全ロックの可能性。PASSにしない |
 
 ---
 
 ## 5. Group A 終了（この端末で可能な範囲）
 
 **完了:** 属性再測 + app kill persistence + reboot→unlock persistence  
+**lock:** 非破壊で実施。verdict = **`inconclusive_not_demonstrated`（実機でも未実証。PASSにしない）**  
 **端末:** 会社用 iPhone SE (3rd) / iOS 18.5（`iPhone (2)`）  
 **禁止を守った:** erase / restore / uninstall / 既存データ削除は未実施  
-**Artifact:** `docs/hybrid/_real_device_group_a_report.json`／`_real_device_group_a_persistence.json`  
-（persistence最終: `2026-08-11T23:23:23.606Z` — reboot後 kc/reopen/media すべて pass）
+**Artifact:** `docs/hybrid/_real_device_group_a_report.json`／`_real_device_group_a_persistence.json`／`_real_device_group_a_lock_report.json`  
+（persistence最終: `2026-08-11T23:23:23.606Z` — reboot後 kc/reopen/media すべて pass）  
+（lock finish: `2026-08-12T01:28:12.022Z`）
 
 **main merge: forbidden**
 
-残り（任意・別合意）: lock 厳密計測 / backup中身確認。restore 系はこの端末では行わない。
+残り（任意）: debugger非接続でもう一度 lock を試す／backup中身確認（合意後）。restore 系はこの端末では行わない。
