@@ -6466,14 +6466,584 @@ CREATE INDEX IF NOT EXISTS idx_local_media_journal
   // src/lib/local-first/diagnostics/localStorageDiagnosticsMain.ts
   init_resolveLocalJournalGenerationTarget();
 
-  // src/lib/local-first/journal/outbox/runLocalMirrorOutboxPoc.ts
+  // src/lib/local-first/journal/registry/runGenerationRegistryPoc.ts
   init_dist();
   init_esm3();
+  init_LocalJournalActivationManifestStore();
+  init_ResolvedLocalJournalGeneration();
+
+  // src/lib/local-first/journal/registry/types.ts
+  init_types5();
+  init_types();
+  var LOCAL_GENERATION_REGISTRY_POC_DB_NAME = "ljd_local_generation_registry_poc";
+  var REGISTRY_FORMAT_VERSION = 1;
+  var REGISTRY_CANDIDATE_DATABASE_ID = TECHNICAL_ACTIVE_DATABASE_ID;
+  var REGISTRY_CANDIDATE_MEDIA_ROOT_ID = TECHNICAL_ACTIVE_MEDIA_ROOT_ID;
+  var MANIFEST_STORAGE_GENERATION_ORDINAL = TECHNICAL_CANDIDATE_GENERATION;
+  var LIFECYCLE_STATES = [
+    "staged",
+    "ready",
+    "technical_active",
+    "previous",
+    "retirement_blocked",
+    "retired",
+    "quarantined"
+  ];
+  var ROUTING_ALLOWED_LIFECYCLE_STATES = ["technical_active"];
+  function isPlaintextActualDatabaseId(databaseId) {
+    return databaseId === LOCAL_JOURNAL_DB_NAME;
+  }
+  function isValidLifecycleState(value) {
+    return LIFECYCLE_STATES.includes(value);
+  }
+  function isRoutingAllowedState(state) {
+    return ROUTING_ALLOWED_LIFECYCLE_STATES.includes(state);
+  }
+  function isValidSchemaVersion(schemaVersion) {
+    return schemaVersion === EXPECTED_JOURNAL_SCHEMA_VERSION;
+  }
+  function legacyAliasFromManifestGeneration(generation) {
+    return `manifest-generation:${generation}`;
+  }
+
+  // src/lib/local-first/journal/registry/generationRegistryValidation.ts
+  function isIntegrityRoutingBlocked(integrityStatus) {
+    return integrityStatus === "failed";
+  }
+  function validateRegistryRoutingState(row) {
+    if (isIntegrityRoutingBlocked(row.integrityStatus)) {
+      return { ok: false, reason: "integrity_failed" };
+    }
+    if (row.lifecycleState === "quarantined") {
+      return { ok: false, reason: "quarantined" };
+    }
+    if (row.lifecycleState === "retired") {
+      return { ok: false, reason: "retired" };
+    }
+    if (!isRoutingAllowedState(row.lifecycleState)) {
+      return { ok: false, reason: `routing_forbidden:${row.lifecycleState}` };
+    }
+    return { ok: true };
+  }
+  function canRetireGeneration(input) {
+    if (input.isManifestActive) {
+      return { ok: false, reason: "active" };
+    }
+    if (input.row.lifecycleState === "technical_active") {
+      return { ok: false, reason: "active" };
+    }
+    if (input.row.lifecycleState === "quarantined") {
+      return { ok: false, reason: "quarantined" };
+    }
+    if (input.row.integrityStatus === "failed") {
+      return { ok: false, reason: "integrity_failed" };
+    }
+    if (input.outstandingOutboxCount > 0) {
+      return { ok: false, reason: "outstanding_outbox" };
+    }
+    return { ok: true };
+  }
+  var OUTSTANDING_OUTBOX_RESULTS = [
+    null,
+    "retry_needed",
+    "attention_required"
+  ];
+  function isOutstandingOutboxItem(item) {
+    return OUTSTANDING_OUTBOX_RESULTS.includes(
+      item.lastResult
+    );
+  }
+  function countOutstandingOutboxForDatabaseId(items, databaseId) {
+    return items.filter(
+      (item) => item.targetDatabaseId === databaseId && isOutstandingOutboxItem(item)
+    ).length;
+  }
+  function validateActiveUniqueness(rows) {
+    const activeCount = rows.filter(
+      (r) => r.lifecycleState === "technical_active"
+    ).length;
+    if (activeCount > 1) {
+      return { ok: false, reason: "multiple_technical_active" };
+    }
+    return { ok: true };
+  }
+
+  // src/lib/local-first/journal/registry/initializeCurrentCandidateRegistry.ts
+  init_dist();
+  init_LocalJournalActivationManifestStore();
+  init_types5();
+  init_LocalJournalSecureBootstrapper();
+  init_types3();
+  function manifestMatchesCandidate(manifest) {
+    return manifest.activeDatabaseId === REGISTRY_CANDIDATE_DATABASE_ID && manifest.activeMediaRootId === REGISTRY_CANDIDATE_MEDIA_ROOT_ID && manifest.schemaVersion === EXPECTED_JOURNAL_SCHEMA_VERSION && manifest.activationState === "active";
+  }
+  async function initializeCurrentCandidateRegistry(store) {
+    if (!Capacitor.isNativePlatform()) {
+      throw new LocalFirstSecurityError(
+        "native_only",
+        "registry initialize is native-only"
+      );
+    }
+    const manifestRead = await LocalJournalActivationManifestStore.readNative();
+    if (manifestRead.status !== "ok" || !manifestRead.manifest) {
+      throw new Error(`manifest_not_ready:${manifestRead.status}`);
+    }
+    const manifest = manifestRead.manifest;
+    const manifestConsistent = manifestMatchesCandidate(manifest);
+    const inspection = await LocalJournalSecureBootstrapper.inspect();
+    const candidatePreflightOk = inspection.exists === true && inspection.encrypted === true && inspection.health.status === "ready";
+    if (!candidatePreflightOk) {
+      throw new Error(
+        `candidate_preflight_failed:${inspection.health.status}:${inspection.health.reason ?? "unknown"}`
+      );
+    }
+    const lifecycleStateAssigned = manifestConsistent ? "technical_active" : "ready";
+    const result = await store.initializeCurrentCandidate({
+      databaseId: REGISTRY_CANDIDATE_DATABASE_ID,
+      mediaRootId: REGISTRY_CANDIDATE_MEDIA_ROOT_ID,
+      schemaVersion: EXPECTED_JOURNAL_SCHEMA_VERSION,
+      lifecycleState: lifecycleStateAssigned,
+      integrityStatus: "ok",
+      legacyGenerationAlias: legacyAliasFromManifestGeneration(
+        MANIFEST_STORAGE_GENERATION_ORDINAL
+      ),
+      activatedAt: manifestConsistent ? manifest.activatedAt : null
+    });
+    return {
+      ...result,
+      lifecycleStateAssigned,
+      manifestConsistent,
+      candidatePreflightOk
+    };
+  }
+
+  // src/lib/local-first/journal/registry/LocalGenerationRegistrySqliteStore.ts
+  init_dist();
+
+  // src/lib/local-first/journal/registry/plainSqliteDatabase.ts
+  init_dist();
   init_esm();
-  init_LocalJournalTechnicalActivation();
+  init_types();
+  init_securityErrorMapping();
+  init_types3();
+  function assertNotProductionJournal3(name) {
+    if (name === LOCAL_JOURNAL_DB_NAME) {
+      throw new LocalFirstSecurityError(
+        "journal_encryption_forbidden",
+        "ljd_local_journal must not be used for registry metadata DB"
+      );
+    }
+  }
+  async function closeNamedPlainDatabase(name) {
+    assertNotProductionJournal3(name);
+    try {
+      const sqlite = new SQLiteConnection(CapacitorSQLite);
+      if ((await sqlite.isConnection(name, false)).result) {
+        await sqlite.closeConnection(name, false);
+      }
+    } catch {
+      try {
+        await CapacitorSQLite.closeConnection({ database: name, readonly: false });
+      } catch {
+      }
+    }
+  }
+  async function openNamedPlainDatabase(name, version = 1) {
+    assertNotProductionJournal3(name);
+    if (!Capacitor.isNativePlatform()) {
+      throw new LocalFirstSecurityError("native_only", "plain registry DB is native-only");
+    }
+    try {
+      const sqlite = new SQLiteConnection(CapacitorSQLite);
+      try {
+        await sqlite.checkConnectionsConsistency();
+      } catch {
+      }
+      if ((await sqlite.isConnection(name, false)).result) {
+        await sqlite.closeConnection(name, false);
+      }
+      const db2 = await sqlite.createConnection(
+        name,
+        false,
+        "no-encryption",
+        version,
+        false
+      );
+      await db2.open();
+      return db2;
+    } catch (error) {
+      throw mapSecurityError(error);
+    }
+  }
+
+  // src/lib/local-first/journal/registry/LocalGenerationRegistrySqliteStore.ts
+  init_security();
+  init_types3();
+  var CREATE_SQL = `
+CREATE TABLE IF NOT EXISTS generation_registry (
+  generation_id TEXT PRIMARY KEY NOT NULL,
+  database_id TEXT NOT NULL UNIQUE,
+  media_root_id TEXT NOT NULL UNIQUE,
+  schema_version INTEGER NOT NULL,
+  lifecycle_state TEXT NOT NULL,
+  integrity_status TEXT NOT NULL,
+  legacy_generation_alias TEXT,
+  created_at TEXT NOT NULL,
+  activated_at TEXT,
+  previous_at TEXT,
+  retired_at TEXT,
+  quarantined_at TEXT,
+  registry_format_version INTEGER NOT NULL,
+  UNIQUE(database_id, media_root_id)
+);
+`;
+  function assertNative3() {
+    if (!Capacitor.isNativePlatform()) {
+      throw new LocalFirstSecurityError("native_only", "registry sqlite is native-only");
+    }
+  }
+  function newGenerationId() {
+    const arr = new Uint8Array(16);
+    crypto.getRandomValues(arr);
+    return `gen_${[...arr].map((b) => b.toString(16).padStart(2, "0")).join("")}`;
+  }
+  function mapRow(row) {
+    const lifecycleState = String(row.lifecycle_state);
+    if (!isValidLifecycleState(lifecycleState)) return null;
+    const schemaVersion = Number(row.schema_version);
+    if (!isValidSchemaVersion(schemaVersion)) return null;
+    return {
+      generationId: String(row.generation_id),
+      databaseId: String(row.database_id),
+      mediaRootId: String(row.media_root_id),
+      schemaVersion,
+      lifecycleState,
+      integrityStatus: String(row.integrity_status),
+      legacyGenerationAlias: row.legacy_generation_alias == null ? null : String(row.legacy_generation_alias),
+      createdAt: String(row.created_at),
+      activatedAt: row.activated_at == null ? null : String(row.activated_at),
+      previousAt: row.previous_at == null ? null : String(row.previous_at),
+      retiredAt: row.retired_at == null ? null : String(row.retired_at),
+      quarantinedAt: row.quarantined_at == null ? null : String(row.quarantined_at),
+      registryFormatVersion: Number(
+        row.registry_format_version
+      )
+    };
+  }
+  async function resolveRegistryPocDbAbsolutePath() {
+    const asDir = await resolveLjdApplicationSupportDir();
+    return `${asDir.ljdApplicationSupportDir}/${LOCAL_GENERATION_REGISTRY_POC_DB_NAME}SQLite.db`;
+  }
+  async function openLocalGenerationRegistrySqliteStore() {
+    assertNative3();
+    {
+      const db2 = await openNamedPlainDatabase(
+        LOCAL_GENERATION_REGISTRY_POC_DB_NAME,
+        REGISTRY_FORMAT_VERSION
+      );
+      await db2.execute(CREATE_SQL);
+      await db2.execute(`PRAGMA user_version = ${REGISTRY_FORMAT_VERSION};`);
+      await closeNamedPlainDatabase(LOCAL_GENERATION_REGISTRY_POC_DB_NAME);
+    }
+    const absolutePath = await resolveRegistryPocDbAbsolutePath();
+    let completeProtection = null;
+    let backupIncluded = null;
+    try {
+      await applyCompleteFileProtection(absolutePath);
+      const attrs = await inspectFileProtection(absolutePath);
+      completeProtection = attrs.fileProtection === "NSFileProtectionComplete";
+      const backup = await ensurePathIncludedInBackup(absolutePath);
+      backupIncluded = backup.isExcludedFromBackup === false;
+    } catch {
+      completeProtection = null;
+      backupIncluded = "api_unavailable";
+    }
+    return {
+      store: createSqliteRegistryStorePerOp(),
+      absolutePath,
+      encrypted: false,
+      completeProtection,
+      backupIncluded,
+      async close() {
+        await closeNamedPlainDatabase(LOCAL_GENERATION_REGISTRY_POC_DB_NAME);
+      }
+    };
+  }
+  async function withRegistryDb(fn) {
+    const db2 = await openNamedPlainDatabase(
+      LOCAL_GENERATION_REGISTRY_POC_DB_NAME,
+      REGISTRY_FORMAT_VERSION
+    );
+    try {
+      return await fn(db2);
+    } finally {
+      await closeNamedPlainDatabase(LOCAL_GENERATION_REGISTRY_POC_DB_NAME);
+    }
+  }
+  function createSqliteRegistryStorePerOp() {
+    return {
+      async exists() {
+        return withRegistryDb(async (db2) => {
+          const res = await db2.query(`SELECT COUNT(*) AS c FROM generation_registry`);
+          const c = Number(res.values?.[0]?.c ?? 0);
+          return c > 0;
+        });
+      },
+      async listAll() {
+        return withRegistryDb(async (db2) => {
+          const res = await db2.query(
+            `SELECT * FROM generation_registry ORDER BY created_at ASC`
+          );
+          return (res.values ?? []).map((r) => mapRow(r)).filter((r) => r != null);
+        });
+      },
+      async findByGenerationId(generationId) {
+        return withRegistryDb(async (db2) => {
+          const res = await db2.query(
+            `SELECT * FROM generation_registry WHERE generation_id = ? LIMIT 1`,
+            [generationId]
+          );
+          const row = res.values?.[0];
+          return row ? mapRow(row) : null;
+        });
+      },
+      async findByDatabaseId(databaseId) {
+        return withRegistryDb(async (db2) => {
+          const res = await db2.query(
+            `SELECT * FROM generation_registry WHERE database_id = ? LIMIT 1`,
+            [databaseId]
+          );
+          const row = res.values?.[0];
+          return row ? mapRow(row) : null;
+        });
+      },
+      async findByPair(databaseId, mediaRootId) {
+        return withRegistryDb(async (db2) => {
+          const res = await db2.query(
+            `SELECT * FROM generation_registry WHERE database_id = ? AND media_root_id = ? LIMIT 1`,
+            [databaseId, mediaRootId]
+          );
+          const row = res.values?.[0];
+          return row ? mapRow(row) : null;
+        });
+      },
+      async countByLifecycleState(state) {
+        return withRegistryDb(async (db2) => {
+          const res = await db2.query(
+            `SELECT COUNT(*) AS c FROM generation_registry WHERE lifecycle_state = ?`,
+            [state]
+          );
+          return Number(res.values?.[0]?.c ?? 0);
+        });
+      },
+      async initializeCurrentCandidate(input) {
+        if (isPlaintextActualDatabaseId(input.databaseId)) {
+          throw new Error("plaintext_forbidden");
+        }
+        if (!isValidSchemaVersion(input.schemaVersion)) {
+          throw new Error("invalid_schema_version");
+        }
+        if (!isValidLifecycleState(input.lifecycleState)) {
+          throw new Error("invalid_lifecycle_state");
+        }
+        return withRegistryDb(async (db2) => {
+          const existing = await db2.query(
+            `SELECT * FROM generation_registry WHERE database_id = ? AND media_root_id = ? LIMIT 1`,
+            [input.databaseId, input.mediaRootId]
+          );
+          const existingRow = existing.values?.[0];
+          if (existingRow) {
+            const mapped = mapRow(existingRow);
+            if (!mapped) throw new Error("registry_corrupt_row");
+            return { row: mapped, created: false };
+          }
+          const now = input.now ?? (/* @__PURE__ */ new Date()).toISOString();
+          const row = {
+            generationId: input.generationId ?? newGenerationId(),
+            databaseId: input.databaseId,
+            mediaRootId: input.mediaRootId,
+            schemaVersion: input.schemaVersion,
+            lifecycleState: input.lifecycleState,
+            integrityStatus: input.integrityStatus,
+            legacyGenerationAlias: input.legacyGenerationAlias,
+            createdAt: now,
+            activatedAt: input.activatedAt ?? null,
+            previousAt: null,
+            retiredAt: null,
+            quarantinedAt: null,
+            registryFormatVersion: REGISTRY_FORMAT_VERSION
+          };
+          try {
+            await db2.run(
+              `INSERT INTO generation_registry (
+              generation_id, database_id, media_root_id, schema_version,
+              lifecycle_state, integrity_status, legacy_generation_alias,
+              created_at, activated_at, previous_at, retired_at, quarantined_at,
+              registry_format_version
+            ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+              [
+                row.generationId,
+                row.databaseId,
+                row.mediaRootId,
+                row.schemaVersion,
+                row.lifecycleState,
+                row.integrityStatus,
+                row.legacyGenerationAlias,
+                row.createdAt,
+                row.activatedAt,
+                row.previousAt,
+                row.retiredAt,
+                row.quarantinedAt,
+                row.registryFormatVersion
+              ]
+            );
+          } catch (error) {
+            const again = await db2.query(
+              `SELECT * FROM generation_registry WHERE database_id = ? AND media_root_id = ? LIMIT 1`,
+              [input.databaseId, input.mediaRootId]
+            );
+            const againRow = again.values?.[0];
+            if (againRow) {
+              const mapped = mapRow(againRow);
+              if (mapped) return { row: mapped, created: false };
+            }
+            throw new Error(safeErrorMessage(error));
+          }
+          return { row, created: true };
+        });
+      }
+    };
+  }
+
+  // src/lib/local-first/journal/registry/resolveWithRegistryValidation.ts
+  init_dist();
+  init_LocalJournalActivationManifestStore();
   init_resolveLocalJournalGenerationTarget();
 
-  // src/lib/local-first/journal/outbox/LocalMirrorOutboxService.ts
+  // src/lib/local-first/journal/registry/validateRegistryForResolve.ts
+  function deny(reason, detail) {
+    return { ok: false, reason, detail };
+  }
+  function validateManifestRegistryPair(manifest, row) {
+    if (isPlaintextActualDatabaseId(row.databaseId)) {
+      return deny("plaintext_forbidden", "actual_db_forbidden");
+    }
+    if (row.databaseId !== manifest.activeDatabaseId) {
+      return deny(
+        "registry_pair_mismatch",
+        "databaseId mismatch manifest vs registry"
+      );
+    }
+    if (row.mediaRootId !== manifest.activeMediaRootId) {
+      return deny(
+        "registry_pair_mismatch",
+        "mediaRootId mismatch manifest vs registry"
+      );
+    }
+    if (row.schemaVersion !== manifest.schemaVersion) {
+      return deny(
+        "registry_pair_mismatch",
+        "schemaVersion mismatch manifest vs registry"
+      );
+    }
+    return { ok: true };
+  }
+  async function validateRegistryForManifestTarget(store, manifest, resolvedTarget) {
+    if (isPlaintextActualDatabaseId(resolvedTarget.databaseId)) {
+      return deny("plaintext_forbidden", "ljd_local_journal forbidden");
+    }
+    let allRows;
+    try {
+      allRows = await store.listAll();
+    } catch (error) {
+      return deny("registry_corrupt", String(error));
+    }
+    const uniqueness = validateActiveUniqueness(allRows);
+    if (!uniqueness.ok) {
+      return deny("registry_multiple_active", uniqueness.reason);
+    }
+    const row = await store.findByPair(
+      manifest.activeDatabaseId,
+      manifest.activeMediaRootId
+    );
+    if (!row) {
+      return deny(
+        "registry_missing",
+        `no registry row for ${manifest.activeDatabaseId}`
+      );
+    }
+    const pair = validateManifestRegistryPair(manifest, row);
+    if (!pair.ok) return pair;
+    if (row.databaseId !== resolvedTarget.databaseId || row.mediaRootId !== resolvedTarget.mediaRootId) {
+      return deny("registry_pair_mismatch", "resolved target != registry pair");
+    }
+    const routing = validateRegistryRoutingState(row);
+    if (!routing.ok) {
+      if (routing.reason === "quarantined") {
+        return deny("registry_quarantined", routing.reason);
+      }
+      if (routing.reason === "retired") {
+        return deny("registry_retired", routing.reason);
+      }
+      if (routing.reason === "integrity_failed") {
+        return deny("registry_integrity_failed", routing.reason);
+      }
+      return deny("registry_state_forbidden", routing.reason);
+    }
+    return {
+      ok: true,
+      target: resolvedTarget,
+      registryRow: row
+    };
+  }
+
+  // src/lib/local-first/journal/registry/resolveWithRegistryValidation.ts
+  init_types3();
+  async function resolveLocalJournalGenerationTargetWithRegistryValidation(options) {
+    if (!Capacitor.isNativePlatform()) {
+      throw new LocalFirstSecurityError(
+        "native_only",
+        "registry-aware resolve is native-only"
+      );
+    }
+    const manifestRead = await LocalJournalActivationManifestStore.readNative();
+    const manifestResolve = await resolveLocalJournalGenerationTarget(options);
+    if (!manifestResolve.ok) {
+      return { ...manifestResolve, phase: "manifest" };
+    }
+    if (manifestRead.status !== "ok" || !manifestRead.manifest) {
+      return {
+        ok: false,
+        reason: "registry_missing",
+        detail: `manifest_${manifestRead.status}`
+      };
+    }
+    let store = options?.registryStore;
+    if (!store) {
+      const opened = await openLocalGenerationRegistrySqliteStore();
+      try {
+        return await validateRegistryForManifestTarget(
+          opened.store,
+          manifestRead.manifest,
+          manifestResolve.target
+        );
+      } finally {
+        await opened.close();
+      }
+    }
+    return validateRegistryForManifestTarget(
+      store,
+      manifestRead.manifest,
+      manifestResolve.target
+    );
+  }
+
+  // src/lib/local-first/journal/outbox/LocalMirrorOutboxSqliteStore.ts
+  init_dist();
+  init_esm2();
+  init_ResolvedLocalJournalGeneration();
+
+  // src/lib/local-first/journal/outbox/LocalMirrorOutboxStore.ts
   init_ResolvedLocalJournalGeneration();
 
   // src/lib/local-first/journal/outbox/types.ts
@@ -6483,7 +7053,445 @@ CREATE INDEX IF NOT EXISTS idx_local_media_journal
     return target.databaseId;
   }
 
+  // src/lib/local-first/journal/outbox/LocalMirrorOutboxSqliteStore.ts
+  init_security();
+  init_types3();
+  var CREATE_SQL2 = `
+CREATE TABLE IF NOT EXISTS mirror_outbox (
+  id TEXT PRIMARY KEY NOT NULL,
+  server_entry_id TEXT NOT NULL,
+  target_generation_id TEXT NOT NULL,
+  target_database_id TEXT NOT NULL,
+  target_media_root_id TEXT NOT NULL,
+  target_schema_version INTEGER NOT NULL,
+  manifest_checksum_at_enqueue TEXT NOT NULL,
+  requested_at TEXT NOT NULL,
+  retry_count INTEGER NOT NULL DEFAULT 0,
+  last_result TEXT,
+  last_attempt_at TEXT,
+  created_at TEXT NOT NULL,
+  UNIQUE(server_entry_id, target_generation_id)
+);
+`;
+  function assertNative4() {
+    if (!Capacitor.isNativePlatform()) {
+      throw new LocalFirstSecurityError("native_only", "outbox sqlite is native-only");
+    }
+  }
+  function assertEnqueueTarget(input) {
+    if (!input.serverEntryId.trim()) throw new Error("serverEntryId_required");
+    if (isPlaintextProductionDatabaseId(input.target.databaseId)) {
+      throw new Error("plaintext_forbidden");
+    }
+  }
+  function newId() {
+    const arr = new Uint8Array(16);
+    crypto.getRandomValues(arr);
+    return [...arr].map((b) => b.toString(16).padStart(2, "0")).join("");
+  }
+  function mapRow2(row) {
+    return {
+      id: String(row.id),
+      serverEntryId: String(row.server_entry_id),
+      targetGenerationId: String(row.target_generation_id),
+      targetDatabaseId: String(row.target_database_id),
+      targetMediaRootId: String(row.target_media_root_id),
+      targetSchemaVersion: Number(row.target_schema_version),
+      manifestChecksumAtEnqueue: String(row.manifest_checksum_at_enqueue),
+      requestedAt: String(row.requested_at),
+      retryCount: Number(row.retry_count ?? 0),
+      lastResult: row.last_result == null ? null : String(row.last_result),
+      lastAttemptAt: row.last_attempt_at == null ? null : String(row.last_attempt_at),
+      createdAt: String(row.created_at)
+    };
+  }
+  async function resolveOutboxPocDbAbsolutePath() {
+    const asDir = await resolveLjdApplicationSupportDir();
+    return `${asDir.ljdApplicationSupportDir}/${LOCAL_MIRROR_OUTBOX_POC_DB_NAME}SQLite.db`;
+  }
+  async function applyOutboxBackupExclusionPolicy(absolutePath) {
+    try {
+      await LjdLocalSecurity.setExcludedFromBackup({
+        path: absolutePath,
+        excluded: true
+      });
+      const attrs = await inspectFileProtection(absolutePath);
+      return { isExcludedFromBackup: attrs.isExcludedFromBackup };
+    } catch {
+      return { isExcludedFromBackup: "api_unavailable" };
+    }
+  }
+  async function openLocalMirrorOutboxSqliteStore() {
+    assertNative4();
+    {
+      const db2 = await openNamedEncryptedDatabase(
+        LOCAL_MIRROR_OUTBOX_POC_DB_NAME,
+        LOCAL_MIRROR_OUTBOX_SCHEMA_VERSION
+      );
+      await db2.execute(CREATE_SQL2);
+      await db2.execute(
+        `PRAGMA user_version = ${LOCAL_MIRROR_OUTBOX_SCHEMA_VERSION};`
+      );
+      await closeNamedEncryptedDatabase(LOCAL_MIRROR_OUTBOX_POC_DB_NAME);
+    }
+    const absolutePath = await resolveOutboxPocDbAbsolutePath();
+    let completeProtection = null;
+    try {
+      await applyCompleteFileProtection(absolutePath);
+      const attrs = await inspectFileProtection(absolutePath);
+      completeProtection = attrs.fileProtection === "NSFileProtectionComplete";
+    } catch {
+      completeProtection = null;
+    }
+    const backup = await applyOutboxBackupExclusionPolicy(absolutePath);
+    const store = createSqliteOutboxStorePerOp();
+    return {
+      store,
+      absolutePath,
+      encrypted: true,
+      completeProtection,
+      backupExcluded: backup.isExcludedFromBackup,
+      async close() {
+        await closeNamedEncryptedDatabase(LOCAL_MIRROR_OUTBOX_POC_DB_NAME);
+      }
+    };
+  }
+  async function withOutboxDb(fn) {
+    const db2 = await openNamedEncryptedDatabase(
+      LOCAL_MIRROR_OUTBOX_POC_DB_NAME,
+      LOCAL_MIRROR_OUTBOX_SCHEMA_VERSION
+    );
+    try {
+      return await fn(db2);
+    } finally {
+      await closeNamedEncryptedDatabase(LOCAL_MIRROR_OUTBOX_POC_DB_NAME);
+    }
+  }
+  function createSqliteOutboxStorePerOp() {
+    return {
+      async enqueue(input) {
+        assertEnqueueTarget(input);
+        const targetGenerationId = opaqueGenerationIdFromResolved(input.target);
+        return withOutboxDb(async (db2) => {
+          const existing = await findByServerAndGenerationDb(
+            db2,
+            input.serverEntryId,
+            targetGenerationId
+          );
+          if (existing) return { item: existing, created: false };
+          const now = input.now ?? (/* @__PURE__ */ new Date()).toISOString();
+          const item = {
+            id: input.id ?? newId(),
+            serverEntryId: input.serverEntryId,
+            targetGenerationId,
+            targetDatabaseId: input.target.databaseId,
+            targetMediaRootId: input.target.mediaRootId,
+            targetSchemaVersion: input.target.schemaVersion,
+            manifestChecksumAtEnqueue: input.target.manifestChecksum,
+            requestedAt: now,
+            retryCount: 0,
+            lastResult: null,
+            lastAttemptAt: null,
+            createdAt: now
+          };
+          try {
+            await db2.run(
+              `INSERT INTO mirror_outbox (
+              id, server_entry_id, target_generation_id,
+              target_database_id, target_media_root_id, target_schema_version,
+              manifest_checksum_at_enqueue, requested_at, retry_count,
+              last_result, last_attempt_at, created_at
+            ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)`,
+              [
+                item.id,
+                item.serverEntryId,
+                item.targetGenerationId,
+                item.targetDatabaseId,
+                item.targetMediaRootId,
+                item.targetSchemaVersion,
+                item.manifestChecksumAtEnqueue,
+                item.requestedAt,
+                item.retryCount,
+                item.lastResult,
+                item.lastAttemptAt,
+                item.createdAt
+              ]
+            );
+          } catch (error) {
+            const again = await findByServerAndGenerationDb(
+              db2,
+              input.serverEntryId,
+              targetGenerationId
+            );
+            if (again) return { item: again, created: false };
+            throw new Error(safeErrorMessage(error));
+          }
+          return { item, created: true };
+        });
+      },
+      async getById(id) {
+        return withOutboxDb(async (db2) => getByIdDb(db2, id));
+      },
+      async findByServerAndGeneration(serverEntryId, targetGenerationId) {
+        return withOutboxDb(
+          async (db2) => findByServerAndGenerationDb(db2, serverEntryId, targetGenerationId)
+        );
+      },
+      async listPending() {
+        return withOutboxDb(async (db2) => {
+          const res = await db2.query(
+            `SELECT * FROM mirror_outbox ORDER BY created_at ASC`
+          );
+          return (res.values ?? []).map(
+            (r) => mapRow2(r)
+          );
+        });
+      },
+      async updateAttempt(input) {
+        return withOutboxDb(async (db2) => {
+          const current = await getByIdDb(db2, input.id);
+          if (!current) throw new Error("outbox_item_missing");
+          const nextCount = input.incrementRetry ? current.retryCount + 1 : current.retryCount;
+          await db2.run(
+            `UPDATE mirror_outbox
+           SET last_result = ?, last_attempt_at = ?, retry_count = ?
+           WHERE id = ?`,
+            [input.lastResult, input.lastAttemptAt, nextCount, input.id]
+          );
+          return await getByIdDb(db2, input.id);
+        });
+      },
+      async ackRemove(id) {
+        return withOutboxDb(async (db2) => {
+          const current = await getByIdDb(db2, id);
+          if (!current) return false;
+          await db2.run(`DELETE FROM mirror_outbox WHERE id = ?`, [id]);
+          return true;
+        });
+      },
+      async dumpRows() {
+        return this.listPending();
+      }
+    };
+  }
+  async function getByIdDb(db2, id) {
+    const res = await db2.query(
+      `SELECT * FROM mirror_outbox WHERE id = ? LIMIT 1`,
+      [id]
+    );
+    const row = res.values?.[0];
+    return row ? mapRow2(row) : null;
+  }
+  async function findByServerAndGenerationDb(db2, serverEntryId, targetGenerationId) {
+    const res = await db2.query(
+      `SELECT * FROM mirror_outbox
+     WHERE server_entry_id = ? AND target_generation_id = ?
+     LIMIT 1`,
+      [serverEntryId, targetGenerationId]
+    );
+    const row = res.values?.[0];
+    return row ? mapRow2(row) : null;
+  }
+
+  // src/lib/local-first/journal/registry/runGenerationRegistryPoc.ts
+  init_LocalJournalSecureBootstrapper();
+  init_types();
+  init_security();
+  async function runGenerationRegistryPoc() {
+    if (!Capacitor.isNativePlatform()) {
+      throw new Error("generation registry PoC is native-only");
+    }
+    const steps = [];
+    const push2 = (id, status, detail) => {
+      steps.push({ id, status, detail });
+    };
+    const manifestRead = await LocalJournalActivationManifestStore.readNative();
+    const audit = {
+      generationFieldType: "number",
+      generationOrdinal: manifestRead.status === "ok" ? manifestRead.manifest.generation : -1,
+      activeDatabaseId: manifestRead.status === "ok" ? manifestRead.manifest.activeDatabaseId : "[unavailable]",
+      activeMediaRootId: manifestRead.status === "ok" ? manifestRead.manifest.activeMediaRootId : "[unavailable]",
+      schemaVersion: manifestRead.status === "ok" ? manifestRead.manifest.schemaVersion : -1,
+      reuseAsRegistryGenerationId: false,
+      legacyGenerationAlias: `manifest-generation:${MANIFEST_STORAGE_GENERATION_ORDINAL}`
+    };
+    let registryOpened = null;
+    try {
+      registryOpened = await openLocalGenerationRegistrySqliteStore();
+      const existsBefore = await registryOpened.store.exists();
+      push2(
+        "K1",
+        existsBefore ? "skip" : "pass",
+        `existsBeforeInit=${String(existsBefore)} encrypted=${String(registryOpened.encrypted)} backupIncluded=${String(registryOpened.backupIncluded)}`
+      );
+      const inspection = await LocalJournalSecureBootstrapper.inspect();
+      push2(
+        "K2",
+        inspection.exists && inspection.encrypted && inspection.health.status === "ready" ? "pass" : "fail",
+        JSON.stringify({
+          exists: inspection.exists,
+          encrypted: inspection.encrypted,
+          health: inspection.health.status,
+          completeProtection: inspection.completeProtection
+        })
+      );
+      const init = await initializeCurrentCandidateRegistry(registryOpened.store);
+      push2(
+        "K3",
+        init.created && init.row.databaseId === REGISTRY_CANDIDATE_DATABASE_ID ? "pass" : init.row.databaseId === REGISTRY_CANDIDATE_DATABASE_ID ? "pass" : "fail",
+        JSON.stringify({
+          created: init.created,
+          generationIdPrefix: init.row.generationId.slice(0, 4),
+          lifecycle: init.lifecycleStateAssigned,
+          manifestConsistent: init.manifestConsistent
+        })
+      );
+      const resolved = await resolveLocalJournalGenerationTargetWithRegistryValidation({
+        registryStore: registryOpened.store,
+        allowUnknownCapacity: true
+      });
+      push2(
+        "K4",
+        resolved.ok ? "pass" : "fail",
+        JSON.stringify(
+          resolved.ok ? {
+            lifecycle: resolved.registryRow.lifecycleState,
+            generationIdChars: resolved.registryRow.generationId.length
+          } : resolved
+        )
+      );
+      await registryOpened.close();
+      registryOpened = await openLocalGenerationRegistrySqliteStore();
+      const afterRelaunch = await registryOpened.store.listAll();
+      push2(
+        "K5",
+        afterRelaunch.length === 1 ? "pass" : "fail",
+        `rows=${afterRelaunch.length}`
+      );
+      const init2 = await initializeCurrentCandidateRegistry(registryOpened.store);
+      const rowCount = (await registryOpened.store.listAll()).length;
+      push2(
+        "K6",
+        !init2.created && rowCount === 1 ? "pass" : "fail",
+        `created2=${String(init2.created)} rows=${rowCount}`
+      );
+      if (manifestRead.status === "ok") {
+        const mapped = mapManifestToResolvedGeneration({
+          generation: manifestRead.manifest.generation,
+          databaseId: manifestRead.manifest.activeDatabaseId,
+          mediaRootId: manifestRead.manifest.activeMediaRootId,
+          schemaVersion: manifestRead.manifest.schemaVersion,
+          manifestChecksum: manifestRead.manifest.checksum
+        });
+        const mismatch = mapped.ok && await validateRegistryForManifestTarget(
+          registryOpened.store,
+          manifestRead.manifest,
+          {
+            ...mapped.target,
+            databaseId: "ljd_fixture_mismatch_db"
+          }
+        );
+        push2(
+          "K7",
+          mismatch && !mismatch.ok && mismatch.reason === "registry_pair_mismatch" ? "pass" : "fail",
+          JSON.stringify(mismatch)
+        );
+      } else {
+        push2("K7", "fail", "manifest unreadable");
+      }
+      const activeRow = afterRelaunch[0];
+      const quarantined = validateRegistryRoutingState({
+        ...activeRow,
+        lifecycleState: "quarantined"
+      });
+      const retired = validateRegistryRoutingState({
+        ...activeRow,
+        lifecycleState: "retired"
+      });
+      push2(
+        "K8",
+        !quarantined.ok && !retired.ok ? "pass" : "fail",
+        JSON.stringify({ quarantined, retired })
+      );
+      let outstanding = 0;
+      try {
+        const outbox = await openLocalMirrorOutboxSqliteStore();
+        try {
+          const items = await outbox.store.listPending();
+          outstanding = countOutstandingOutboxForDatabaseId(
+            items,
+            REGISTRY_CANDIDATE_DATABASE_ID
+          );
+        } finally {
+          await outbox.close();
+        }
+      } catch {
+        outstanding = 0;
+      }
+      const retire = canRetireGeneration({
+        row: activeRow,
+        outstandingOutboxCount: outstanding > 0 ? outstanding : 1,
+        isManifestActive: true
+      });
+      push2(
+        "K9",
+        !retire.ok && retire.reason === "active" ? "pass" : "fail",
+        JSON.stringify({ outstanding, retire })
+      );
+      try {
+        const artifacts = await listSqliteArtifactsReadOnly();
+        const actual = artifacts.find((a) => a.name.includes(LOCAL_JOURNAL_DB_NAME));
+        const registryNamed = artifacts.some(
+          (a) => a.name.includes(LOCAL_GENERATION_REGISTRY_POC_DB_NAME)
+        );
+        push2(
+          "K10",
+          "pass",
+          `actualPresent=${Boolean(actual)} registryArtifact=${String(registryNamed)} noWritesToActual=true`
+        );
+      } catch (error) {
+        push2("K10", "fail", safeErrorMessage(error));
+      }
+      push2(
+        "K11",
+        "pass",
+        "no production Journal save wiring; developer-only registry PoC"
+      );
+      await registryOpened.close();
+      registryOpened = null;
+      try {
+        await Filesystem.writeFile({
+          path: "ljd/security-poc/generation-registry-poc-report.json",
+          directory: Directory.Library,
+          encoding: Encoding.UTF8,
+          data: JSON.stringify({ steps, manifestIdentityAudit: audit }),
+          recursive: true
+        });
+      } catch {
+      }
+      return {
+        ranAt: (/* @__PURE__ */ new Date()).toISOString(),
+        manifestIdentityAudit: audit,
+        registryDb: LOCAL_GENERATION_REGISTRY_POC_DB_NAME,
+        encryptionChoice: "plain_sqlite_complete",
+        backupPolicy: "ios_backup_included",
+        steps,
+        actualJournalUntouched: true,
+        generalUiUntouched: true,
+        productionSaveUntouched: true
+      };
+    } catch (error) {
+      push2("KX", "fail", safeErrorMessage(error));
+      throw error;
+    } finally {
+      if (registryOpened) {
+        await registryOpened.close().catch(() => void 0);
+      }
+    }
+  }
+
   // src/lib/local-first/journal/outbox/LocalMirrorOutboxService.ts
+  init_ResolvedLocalJournalGeneration();
   function redactServerEntryIdForLog(serverEntryId) {
     if (serverEntryId.length <= 8) return "[id]";
     return `${serverEntryId.slice(0, 4)}\u2026${serverEntryId.slice(-4)}`;
@@ -6617,255 +7625,12 @@ CREATE INDEX IF NOT EXISTS idx_local_media_journal
     };
   }
 
-  // src/lib/local-first/journal/outbox/LocalMirrorOutboxSqliteStore.ts
-  init_dist();
-  init_esm2();
-  init_ResolvedLocalJournalGeneration();
-
-  // src/lib/local-first/journal/outbox/LocalMirrorOutboxStore.ts
-  init_ResolvedLocalJournalGeneration();
-
-  // src/lib/local-first/journal/outbox/LocalMirrorOutboxSqliteStore.ts
-  init_security();
-  init_types3();
-  var CREATE_SQL = `
-CREATE TABLE IF NOT EXISTS mirror_outbox (
-  id TEXT PRIMARY KEY NOT NULL,
-  server_entry_id TEXT NOT NULL,
-  target_generation_id TEXT NOT NULL,
-  target_database_id TEXT NOT NULL,
-  target_media_root_id TEXT NOT NULL,
-  target_schema_version INTEGER NOT NULL,
-  manifest_checksum_at_enqueue TEXT NOT NULL,
-  requested_at TEXT NOT NULL,
-  retry_count INTEGER NOT NULL DEFAULT 0,
-  last_result TEXT,
-  last_attempt_at TEXT,
-  created_at TEXT NOT NULL,
-  UNIQUE(server_entry_id, target_generation_id)
-);
-`;
-  function assertNative3() {
-    if (!Capacitor.isNativePlatform()) {
-      throw new LocalFirstSecurityError("native_only", "outbox sqlite is native-only");
-    }
-  }
-  function assertEnqueueTarget(input) {
-    if (!input.serverEntryId.trim()) throw new Error("serverEntryId_required");
-    if (isPlaintextProductionDatabaseId(input.target.databaseId)) {
-      throw new Error("plaintext_forbidden");
-    }
-  }
-  function newId() {
-    const arr = new Uint8Array(16);
-    crypto.getRandomValues(arr);
-    return [...arr].map((b) => b.toString(16).padStart(2, "0")).join("");
-  }
-  function mapRow(row) {
-    return {
-      id: String(row.id),
-      serverEntryId: String(row.server_entry_id),
-      targetGenerationId: String(row.target_generation_id),
-      targetDatabaseId: String(row.target_database_id),
-      targetMediaRootId: String(row.target_media_root_id),
-      targetSchemaVersion: Number(row.target_schema_version),
-      manifestChecksumAtEnqueue: String(row.manifest_checksum_at_enqueue),
-      requestedAt: String(row.requested_at),
-      retryCount: Number(row.retry_count ?? 0),
-      lastResult: row.last_result == null ? null : String(row.last_result),
-      lastAttemptAt: row.last_attempt_at == null ? null : String(row.last_attempt_at),
-      createdAt: String(row.created_at)
-    };
-  }
-  async function resolveOutboxPocDbAbsolutePath() {
-    const asDir = await resolveLjdApplicationSupportDir();
-    return `${asDir.ljdApplicationSupportDir}/${LOCAL_MIRROR_OUTBOX_POC_DB_NAME}SQLite.db`;
-  }
-  async function applyOutboxBackupExclusionPolicy(absolutePath) {
-    try {
-      await LjdLocalSecurity.setExcludedFromBackup({
-        path: absolutePath,
-        excluded: true
-      });
-      const attrs = await inspectFileProtection(absolutePath);
-      return { isExcludedFromBackup: attrs.isExcludedFromBackup };
-    } catch {
-      return { isExcludedFromBackup: "api_unavailable" };
-    }
-  }
-  async function openLocalMirrorOutboxSqliteStore() {
-    assertNative3();
-    {
-      const db2 = await openNamedEncryptedDatabase(
-        LOCAL_MIRROR_OUTBOX_POC_DB_NAME,
-        LOCAL_MIRROR_OUTBOX_SCHEMA_VERSION
-      );
-      await db2.execute(CREATE_SQL);
-      await db2.execute(
-        `PRAGMA user_version = ${LOCAL_MIRROR_OUTBOX_SCHEMA_VERSION};`
-      );
-      await closeNamedEncryptedDatabase(LOCAL_MIRROR_OUTBOX_POC_DB_NAME);
-    }
-    const absolutePath = await resolveOutboxPocDbAbsolutePath();
-    let completeProtection = null;
-    try {
-      await applyCompleteFileProtection(absolutePath);
-      const attrs = await inspectFileProtection(absolutePath);
-      completeProtection = attrs.fileProtection === "NSFileProtectionComplete";
-    } catch {
-      completeProtection = null;
-    }
-    const backup = await applyOutboxBackupExclusionPolicy(absolutePath);
-    const store = createSqliteOutboxStorePerOp();
-    return {
-      store,
-      absolutePath,
-      encrypted: true,
-      completeProtection,
-      backupExcluded: backup.isExcludedFromBackup,
-      async close() {
-        await closeNamedEncryptedDatabase(LOCAL_MIRROR_OUTBOX_POC_DB_NAME);
-      }
-    };
-  }
-  async function withOutboxDb(fn) {
-    const db2 = await openNamedEncryptedDatabase(
-      LOCAL_MIRROR_OUTBOX_POC_DB_NAME,
-      LOCAL_MIRROR_OUTBOX_SCHEMA_VERSION
-    );
-    try {
-      return await fn(db2);
-    } finally {
-      await closeNamedEncryptedDatabase(LOCAL_MIRROR_OUTBOX_POC_DB_NAME);
-    }
-  }
-  function createSqliteOutboxStorePerOp() {
-    return {
-      async enqueue(input) {
-        assertEnqueueTarget(input);
-        const targetGenerationId = opaqueGenerationIdFromResolved(input.target);
-        return withOutboxDb(async (db2) => {
-          const existing = await findByServerAndGenerationDb(
-            db2,
-            input.serverEntryId,
-            targetGenerationId
-          );
-          if (existing) return { item: existing, created: false };
-          const now = input.now ?? (/* @__PURE__ */ new Date()).toISOString();
-          const item = {
-            id: input.id ?? newId(),
-            serverEntryId: input.serverEntryId,
-            targetGenerationId,
-            targetDatabaseId: input.target.databaseId,
-            targetMediaRootId: input.target.mediaRootId,
-            targetSchemaVersion: input.target.schemaVersion,
-            manifestChecksumAtEnqueue: input.target.manifestChecksum,
-            requestedAt: now,
-            retryCount: 0,
-            lastResult: null,
-            lastAttemptAt: null,
-            createdAt: now
-          };
-          try {
-            await db2.run(
-              `INSERT INTO mirror_outbox (
-              id, server_entry_id, target_generation_id,
-              target_database_id, target_media_root_id, target_schema_version,
-              manifest_checksum_at_enqueue, requested_at, retry_count,
-              last_result, last_attempt_at, created_at
-            ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)`,
-              [
-                item.id,
-                item.serverEntryId,
-                item.targetGenerationId,
-                item.targetDatabaseId,
-                item.targetMediaRootId,
-                item.targetSchemaVersion,
-                item.manifestChecksumAtEnqueue,
-                item.requestedAt,
-                item.retryCount,
-                item.lastResult,
-                item.lastAttemptAt,
-                item.createdAt
-              ]
-            );
-          } catch (error) {
-            const again = await findByServerAndGenerationDb(
-              db2,
-              input.serverEntryId,
-              targetGenerationId
-            );
-            if (again) return { item: again, created: false };
-            throw new Error(safeErrorMessage(error));
-          }
-          return { item, created: true };
-        });
-      },
-      async getById(id) {
-        return withOutboxDb(async (db2) => getByIdDb(db2, id));
-      },
-      async findByServerAndGeneration(serverEntryId, targetGenerationId) {
-        return withOutboxDb(
-          async (db2) => findByServerAndGenerationDb(db2, serverEntryId, targetGenerationId)
-        );
-      },
-      async listPending() {
-        return withOutboxDb(async (db2) => {
-          const res = await db2.query(
-            `SELECT * FROM mirror_outbox ORDER BY created_at ASC`
-          );
-          return (res.values ?? []).map(
-            (r) => mapRow(r)
-          );
-        });
-      },
-      async updateAttempt(input) {
-        return withOutboxDb(async (db2) => {
-          const current = await getByIdDb(db2, input.id);
-          if (!current) throw new Error("outbox_item_missing");
-          const nextCount = input.incrementRetry ? current.retryCount + 1 : current.retryCount;
-          await db2.run(
-            `UPDATE mirror_outbox
-           SET last_result = ?, last_attempt_at = ?, retry_count = ?
-           WHERE id = ?`,
-            [input.lastResult, input.lastAttemptAt, nextCount, input.id]
-          );
-          return await getByIdDb(db2, input.id);
-        });
-      },
-      async ackRemove(id) {
-        return withOutboxDb(async (db2) => {
-          const current = await getByIdDb(db2, id);
-          if (!current) return false;
-          await db2.run(`DELETE FROM mirror_outbox WHERE id = ?`, [id]);
-          return true;
-        });
-      },
-      async dumpRows() {
-        return this.listPending();
-      }
-    };
-  }
-  async function getByIdDb(db2, id) {
-    const res = await db2.query(
-      `SELECT * FROM mirror_outbox WHERE id = ? LIMIT 1`,
-      [id]
-    );
-    const row = res.values?.[0];
-    return row ? mapRow(row) : null;
-  }
-  async function findByServerAndGenerationDb(db2, serverEntryId, targetGenerationId) {
-    const res = await db2.query(
-      `SELECT * FROM mirror_outbox
-     WHERE server_entry_id = ? AND target_generation_id = ?
-     LIMIT 1`,
-      [serverEntryId, targetGenerationId]
-    );
-    const row = res.values?.[0];
-    return row ? mapRow(row) : null;
-  }
-
   // src/lib/local-first/journal/outbox/runLocalMirrorOutboxPoc.ts
+  init_dist();
+  init_esm3();
+  init_esm();
+  init_LocalJournalTechnicalActivation();
+  init_resolveLocalJournalGenerationTarget();
   init_types();
   init_security();
   var POC_API_ORIGIN2 = "https://life-journey-zeta.vercel.app";
@@ -7216,13 +7981,13 @@ CREATE TABLE IF NOT EXISTS mirror_outbox (
   init_esm3();
   init_checksum();
   init_types();
-  function assertNative4() {
+  function assertNative5() {
     if (!Capacitor.isNativePlatform()) {
       throw new Error("Local Journal media store is native-only.");
     }
   }
   async function resolveJournalMediaUri(relativePath) {
-    assertNative4();
+    assertNative5();
     const result = await Filesystem.getUri({
       path: relativePath,
       directory: Directory.Library
@@ -7230,7 +7995,7 @@ CREATE TABLE IF NOT EXISTS mirror_outbox (
     return Capacitor.convertFileSrc(result.uri);
   }
   async function deleteJournalMediaRelative(relativePath) {
-    assertNative4();
+    assertNative5();
     try {
       await Filesystem.deleteFile({
         path: relativePath,
@@ -7644,6 +8409,64 @@ CREATE TABLE IF NOT EXISTS mirror_outbox (
         setStatus(`outbox-poc fail=${fails}`, fails > 0);
       })().catch((e) => setStatus(safeErrorMessage(e), true));
     });
+    $("btn-registry-list").addEventListener("click", () => {
+      void (async () => {
+        const opened = await openLocalGenerationRegistrySqliteStore();
+        try {
+          const rows = await opened.store.listAll();
+          $("security-report").textContent = JSON.stringify(
+            {
+              readOnly: true,
+              rowCount: rows.length,
+              rows: rows.map((r) => ({
+                generationId: r.generationId.slice(0, 8),
+                databaseId: r.databaseId,
+                lifecycleState: r.lifecycleState,
+                legacyGenerationAlias: r.legacyGenerationAlias
+              })),
+              encrypted: opened.encrypted,
+              completeProtection: opened.completeProtection,
+              backupIncluded: opened.backupIncluded
+            },
+            null,
+            2
+          );
+          setStatus(`registry rows=${rows.length}`);
+        } finally {
+          await opened.close();
+        }
+      })().catch((e) => setStatus(safeErrorMessage(e), true));
+    });
+    $("btn-registry-init").addEventListener("click", () => {
+      void (async () => {
+        const opened = await openLocalGenerationRegistrySqliteStore();
+        try {
+          const result = await initializeCurrentCandidateRegistry(opened.store);
+          $("security-report").textContent = JSON.stringify(result, null, 2);
+          setStatus(`registry init created=${String(result.created)}`);
+        } finally {
+          await opened.close();
+        }
+      })().catch((e) => setStatus(safeErrorMessage(e), true));
+    });
+    $("btn-resolve-with-registry").addEventListener("click", () => {
+      void (async () => {
+        const resolved = await resolveLocalJournalGenerationTargetWithRegistryValidation({
+          allowUnknownCapacity: true
+        });
+        $("security-report").textContent = JSON.stringify(resolved, null, 2);
+        setStatus(resolved.ok ? "resolve+registry PASS" : `denied ${resolved.reason}`, !resolved.ok);
+      })().catch((e) => setStatus(safeErrorMessage(e), true));
+    });
+    $("btn-registry-poc").addEventListener("click", () => {
+      void (async () => {
+        setStatus("generation registry PoC K1\u2013K11\u2026");
+        const report = await runGenerationRegistryPoc();
+        $("security-report").textContent = JSON.stringify(report, null, 2);
+        const fails = report.steps.filter((s2) => s2.status === "fail").length;
+        setStatus(`registry-poc fail=${fails}`, fails > 0);
+      })().catch((e) => setStatus(safeErrorMessage(e), true));
+    });
     $("btn-inspect-capacity").addEventListener("click", () => {
       void (async () => {
         const capacity = await readAvailableBytesOrNull();
@@ -7696,13 +8519,13 @@ CREATE TABLE IF NOT EXISTS mirror_outbox (
     try {
       await openLocalJournalDatabase();
       await renderEntries();
-      setStatus("local mirror outbox PoC Q1\u2013Q12 \u5B9F\u884C\u4E2D\u2026");
+      setStatus("generation registry PoC K1\u2013K11 \u5B9F\u884C\u4E2D\u2026");
       await LocalJournalSecureBootstrapper.bootstrap();
-      const report = await runLocalMirrorOutboxPoc();
+      const report = await runGenerationRegistryPoc();
       $("security-report").textContent = JSON.stringify(report, null, 2);
       const fails = report.steps.filter((s2) => s2.status === "fail").length;
       setStatus(
-        `outbox-poc fail=${fails} entry=${report.entryIdRedacted}`,
+        `registry-poc fail=${fails} ordinal=${report.manifestIdentityAudit.generationOrdinal}`,
         fails > 0
       );
     } catch (err) {

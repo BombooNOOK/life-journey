@@ -17,15 +17,15 @@ import { runTechnicalActivationPreflight } from "@/lib/local-first/journal/activ
 import { runGenerationResolverIntegrationPoc } from "@/lib/local-first/journal/generation/runGenerationResolverIntegrationPoc";
 import { DeveloperResolvedGenerationMirror } from "@/lib/local-first/journal/generation/DeveloperResolvedGenerationMirror";
 import { resolveLocalJournalGenerationTarget } from "@/lib/local-first/journal/generation/resolveLocalJournalGenerationTarget";
-import { runLocalMirrorOutboxPoc } from "@/lib/local-first/journal/outbox/runLocalMirrorOutboxPoc";
+import { runGenerationRegistryPoc } from "@/lib/local-first/journal/registry/runGenerationRegistryPoc";
 import {
   enqueueBeforeMirror,
 } from "@/lib/local-first/journal/outbox/LocalMirrorOutboxService";
 import { openLocalMirrorOutboxSqliteStore } from "@/lib/local-first/journal/outbox/LocalMirrorOutboxSqliteStore";
+import { runLocalMirrorOutboxPoc } from "@/lib/local-first/journal/outbox/runLocalMirrorOutboxPoc";
 import { initializeCurrentCandidateRegistry } from "@/lib/local-first/journal/registry/initializeCurrentCandidateRegistry";
 import { openLocalGenerationRegistrySqliteStore } from "@/lib/local-first/journal/registry/LocalGenerationRegistrySqliteStore";
 import { resolveLocalJournalGenerationTargetWithRegistryValidation } from "@/lib/local-first/journal/registry/resolveWithRegistryValidation";
-import { runGenerationRegistryPoc } from "@/lib/local-first/journal/registry/runGenerationRegistryPoc";
 import { FAILURE_INJECTION_MISSING_ENTRY_ID } from "@/lib/local-first/journal/secureCopy/types";
 import {
   deleteJournalMediaRelative,
@@ -527,13 +527,13 @@ async function boot(): Promise<void> {
   try {
     await openLocalJournalDatabase();
     await renderEntries();
-    setStatus("local mirror outbox PoC Q1–Q12 実行中…");
+    setStatus("generation registry PoC K1–K11 実行中…");
     await LocalJournalSecureBootstrapper.bootstrap();
-    const report = await runLocalMirrorOutboxPoc();
+    const report = await runGenerationRegistryPoc();
     $("security-report").textContent = JSON.stringify(report, null, 2);
     const fails = report.steps.filter((s) => s.status === "fail").length;
     setStatus(
-      `outbox-poc fail=${fails} entry=${report.entryIdRedacted}`,
+      `registry-poc fail=${fails} ordinal=${report.manifestIdentityAudit.generationOrdinal}`,
       fails > 0,
     );
   } catch (err) {
