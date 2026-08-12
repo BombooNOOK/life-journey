@@ -17,6 +17,7 @@
  * Companion:
  * - docs/hybrid/HYBRID_PHASE_4B4H_PRODUCTION_ROUTING_ARCHITECTURE.md
  * - docs/product/ljd-local-mirror-outbox-spec.md（4B-4I outbox PoC）
+ * - docs/product/ljd-local-generation-lifecycle-spec.md（4B-4J generation lifecycle）
  */
 
 # Life Journey Diary｜Server-authoritative Transitional Local Routing
@@ -326,3 +327,12 @@ production save 配線、pending queue 実装、background retry、Local read �
 ## 21. 矛盾時の優先
 
 世界観 → Local-first 方針 → お引越し便 → activation SoT → write-routing SoT → **本 transitional routing SoT（候補）** → Hybrid メモ → コード。
+
+
+---
+
+## 22. 4B-4J 追記
+
+generation lifecycle 設計: `docs/product/ljd-local-generation-lifecycle-spec.md` ／  
+`docs/hybrid/HYBRID_PHASE_4B4J_GENERATION_LIFECYCLE_ARCHITECTURE.md`。  
+pending pin / retirement_blocked / independent registry は本 transitional routing と整合。

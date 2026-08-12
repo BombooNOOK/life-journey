@@ -32,7 +32,9 @@
 - Write-through PoC: `docs/hybrid/HYBRID_PHASE_4B4E_WRITE_THROUGH_MIRROR_POC.md`  
 - Generation resolver integration: `docs/hybrid/HYBRID_PHASE_4B4G_GENERATION_RESOLVER_INTEGRATION_POC.md`  
 - **Production transitional routing（4B-4H 設計）:** `docs/product/ljd-transitional-local-routing-spec.md`  
-  ／ `docs/hybrid/HYBRID_PHASE_4B4H_PRODUCTION_ROUTING_ARCHITECTURE.md`
+  ／ `docs/hybrid/HYBRID_PHASE_4B4H_PRODUCTION_ROUTING_ARCHITECTURE.md`  
+- **Generation lifecycle（4B-4J 設計）:** `docs/product/ljd-local-generation-lifecycle-spec.md`  
+  ／ `docs/hybrid/HYBRID_PHASE_4B4J_GENERATION_LIFECYCLE_ARCHITECTURE.md`
 
 ---
 
@@ -303,3 +305,15 @@ Strategy D への切替は **Source-of-Truth switch の一部**であり、techn
 | enqueue-before-mirror | 方針実証 |
 | production Journal save | **未接続** |
 | 証拠 | `docs/product/ljd-local-mirror-outbox-spec.md` ／ `docs/hybrid/HYBRID_PHASE_4B4I_LOCAL_MIRROR_OUTBOX_POC.md` |
+
+
+---
+
+## 13. 4B-4J generation lifecycle（追記）
+
+| 項目 | 状態 |
+| --- | --- |
+| independent generation registry | 設計候補 |
+| outstanding outbox → retirement_blocked | 設計 |
+| production save 配線 | **未接続** |
+| 証拠 | `docs/product/ljd-local-generation-lifecycle-spec.md` |

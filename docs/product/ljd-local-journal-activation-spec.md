@@ -17,6 +17,7 @@
  * - docs/product/ljd-device-storage-and-restore-spec.md
  * - docs/product/ljd-local-journal-write-routing-spec.md（4B-4D: 移行期 write 経路）
  * - docs/product/ljd-transitional-local-routing-spec.md（4B-4H: production transitional routing 設計）
+ * - docs/product/ljd-local-generation-lifecycle-spec.md（4B-4J: generation lifecycle 設計）
  */
 
 # Life Journey Diary｜Local Journal Activation Architecture
@@ -350,3 +351,11 @@ production transitional write routing の設計候補:
 `docs/product/ljd-transitional-local-routing-spec.md` ／  
 `docs/hybrid/HYBRID_PHASE_4B4H_PRODUCTION_ROUTING_ARCHITECTURE.md`。  
 配線・pending 実装は未着手。
+---
+
+## 17. 4B-4J 追記
+
+generation lifecycle（active/previous/retire/quarantine / independent registry）設計候補:  
+`docs/product/ljd-local-generation-lifecycle-spec.md` ／  
+`docs/hybrid/HYBRID_PHASE_4B4J_GENERATION_LIFECYCLE_ARCHITECTURE.md`。  
+registry 実装・rename・delete は未着手。
