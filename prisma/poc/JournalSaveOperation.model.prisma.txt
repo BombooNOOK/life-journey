@@ -1,0 +1,24 @@
+/**
+ * Prisma model draft for JournalSaveOperation (4B-4N).
+ * NOT merged into prisma/schema.prisma in this PoC — avoids migrate deploy → Neon.
+ * Apply only via prisma/poc/journal_save_operation_4b4n.sql on disposable local DB.
+ */
+
+/*
+model JournalSaveOperation {
+  id                 String    @id @default(cuid())
+  userId             String
+  saveOperationId    String
+  status             String
+  checkpoint         String
+  journalEntryId     String?
+  requestFingerprint String
+  resultCode         String?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+  completedAt        DateTime?
+
+  @@unique([userId, saveOperationId])
+  @@index([userId, createdAt])
+}
+*/

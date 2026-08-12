@@ -140,7 +140,7 @@ foreground / manual 第一。background sync 禁止（初期）。
 
 ## 8. 次 Phase 推奨（実装は別 ticket）
 
-1. **Save-operation idempotency PoC（C 中心、B の Local intent を伴う）** — Window B を先に構造化  
+1. **Save-operation idempotency PoC（C 中心）** — **4B-4N で Server core 実施**（Local intent B は次）  
 2. 並行または直後: **lightweight reconciliation PoC（A）** — 既存 month list のみ、全履歴禁止  
 3. Strategy D は見送り  
 
@@ -151,6 +151,8 @@ foreground / manual 第一。background sync 禁止（初期）。
 ## 9. Cross-links
 
 - `docs/product/ljd-save-operation-reconciliation-spec.md`  
+- `docs/product/ljd-journal-save-idempotency-spec.md`  
+- `docs/hybrid/HYBRID_PHASE_4B4N_SERVER_SAVE_IDEMPOTENCY_POC.md`  
 - `docs/product/ljd-transitional-local-routing-spec.md`  
 - `docs/hybrid/HYBRID_PHASE_4B4L_INTERNAL_SAVE_WIRING_POC.md`  
 - `docs/hybrid/HYBRID_PHASE_4B4I_LOCAL_MIRROR_OUTBOX_POC.md`  
