@@ -3330,21 +3330,6 @@ CREATE INDEX IF NOT EXISTS idx_local_media_journal
   // src/lib/local-first/journal/secureCopy/ServerToLocalCandidateCopyService.ts
   init_dist();
 
-  // src/lib/local-first/journal/checksum.ts
-  async function sha256HexOfBytes(bytes) {
-    const digest = await crypto.subtle.digest("SHA-256", bytes.slice());
-    return [...new Uint8Array(digest)].map((b) => b.toString(16).padStart(2, "0")).join("");
-  }
-  async function sha256HexOfUtf8(text) {
-    return sha256HexOfBytes(new TextEncoder().encode(text));
-  }
-  async function sha256HexOfBase64(base64Data) {
-    const binary = atob(base64Data);
-    const bytes = new Uint8Array(binary.length);
-    for (let i = 0; i < binary.length; i += 1) bytes[i] = binary.charCodeAt(i);
-    return sha256HexOfBytes(bytes);
-  }
-
   // src/lib/local-first/journal/stableId.ts
   var CROCKFORD = "0123456789ABCDEFGHJKMNPQRSTVWXYZ";
   function encodeTime(ms, length) {
@@ -3368,54 +3353,6 @@ CREATE INDEX IF NOT EXISTS idx_local_media_journal
   }
   function createLocalStableId() {
     return `${encodeTime(Date.now(), 10)}${encodeRandom(16)}`;
-  }
-
-  // src/lib/local-first/journal/mapper.ts
-  function mapServerJournalEntryLikeToLocal(server, options = {}) {
-    const now = (/* @__PURE__ */ new Date()).toISOString();
-    const journalStableId = options.journalStableId ?? createLocalStableId();
-    const mediaRefs = [];
-    const hasPhotoHint = Boolean(server.photoBlobUrl) || Boolean(server.photoBlobPathname) || Boolean(server.photoDataUrl) || Boolean(options.mediaRelativePath);
-    if (hasPhotoHint && options.mediaRelativePath) {
-      mediaRefs.push({
-        stableId: options.mediaStableId ?? createLocalStableId(),
-        journalStableId,
-        type: "image",
-        relativePath: options.mediaRelativePath,
-        createdAt: server.createdAt,
-        checksum: options.mediaChecksum ?? null,
-        mimeType: server.photoMimeType
-      });
-    }
-    return {
-      stableId: journalStableId,
-      dateKey: server.dateKey,
-      title: server.title.trim() || "\u7121\u984C\u306E\u3042\u3057\u3042\u3068",
-      content: server.content,
-      createdAt: server.createdAt,
-      updatedAt: server.updatedAt,
-      tags: normalizeTags(server.tags),
-      mediaRefs,
-      schemaVersion: LOCAL_JOURNAL_SCHEMA_USER_VERSION,
-      source: options.source ?? "mapped_server_shape",
-      localStatus: "active",
-      importedAt: options.importedAt ?? now,
-      legacyServerId: server.id,
-      serverUpdatedAt: server.updatedAt
-    };
-  }
-  function normalizeTags(tags) {
-    const out = [];
-    const seen = /* @__PURE__ */ new Set();
-    for (const raw of tags) {
-      const t = raw.trim();
-      if (!t) continue;
-      const withHash = t.startsWith("#") ? t : `#${t}`;
-      if (seen.has(withHash)) continue;
-      seen.add(withHash);
-      out.push(withHash);
-    }
-    return out;
   }
 
   // src/lib/local-first/journal/serverFetch.ts
@@ -3725,7 +3662,8 @@ CREATE INDEX IF NOT EXISTS idx_local_media_journal
   var TEST_PURPOSE_TAGS = [
     "#\u30C6\u30B9\u30C8",
     "#\u304A\u5F15\u8D8A\u3057\u30C6\u30B9\u30C8",
-    "#LocalCopyTest"
+    "#LocalCopyTest",
+    "#WriteThroughTest"
   ];
   var FAILURE_INJECTION_MISSING_ENTRY_ID = "ljd-poc-missing-entry-id";
 
@@ -3967,6 +3905,69 @@ CREATE INDEX IF NOT EXISTS idx_local_media_journal
     }
   }
 
+  // src/lib/local-first/journal/checksum.ts
+  async function sha256HexOfBytes(bytes) {
+    const digest = await crypto.subtle.digest("SHA-256", bytes.slice());
+    return [...new Uint8Array(digest)].map((b) => b.toString(16).padStart(2, "0")).join("");
+  }
+  async function sha256HexOfUtf8(text) {
+    return sha256HexOfBytes(new TextEncoder().encode(text));
+  }
+  async function sha256HexOfBase64(base64Data) {
+    const binary = atob(base64Data);
+    const bytes = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i += 1) bytes[i] = binary.charCodeAt(i);
+    return sha256HexOfBytes(bytes);
+  }
+
+  // src/lib/local-first/journal/mapper.ts
+  function mapServerJournalEntryLikeToLocal(server, options = {}) {
+    const now = (/* @__PURE__ */ new Date()).toISOString();
+    const journalStableId = options.journalStableId ?? createLocalStableId();
+    const mediaRefs = [];
+    const hasPhotoHint = Boolean(server.photoBlobUrl) || Boolean(server.photoBlobPathname) || Boolean(server.photoDataUrl) || Boolean(options.mediaRelativePath);
+    if (hasPhotoHint && options.mediaRelativePath) {
+      mediaRefs.push({
+        stableId: options.mediaStableId ?? createLocalStableId(),
+        journalStableId,
+        type: "image",
+        relativePath: options.mediaRelativePath,
+        createdAt: server.createdAt,
+        checksum: options.mediaChecksum ?? null,
+        mimeType: server.photoMimeType
+      });
+    }
+    return {
+      stableId: journalStableId,
+      dateKey: server.dateKey,
+      title: server.title.trim() || "\u7121\u984C\u306E\u3042\u3057\u3042\u3068",
+      content: server.content,
+      createdAt: server.createdAt,
+      updatedAt: server.updatedAt,
+      tags: normalizeTags(server.tags),
+      mediaRefs,
+      schemaVersion: LOCAL_JOURNAL_SCHEMA_USER_VERSION,
+      source: options.source ?? "mapped_server_shape",
+      localStatus: "active",
+      importedAt: options.importedAt ?? now,
+      legacyServerId: server.id,
+      serverUpdatedAt: server.updatedAt
+    };
+  }
+  function normalizeTags(tags) {
+    const out = [];
+    const seen = /* @__PURE__ */ new Set();
+    for (const raw of tags) {
+      const t = raw.trim();
+      if (!t) continue;
+      const withHash = t.startsWith("#") ? t : `#${t}`;
+      if (seen.has(withHash)) continue;
+      seen.add(withHash);
+      out.push(withHash);
+    }
+    return out;
+  }
+
   // src/lib/local-first/journal/secureCopy/testEntryGuard.ts
   function normalizeTag(raw) {
     const t = raw.trim();
@@ -4032,36 +4033,7 @@ CREATE INDEX IF NOT EXISTS idx_local_media_journal
     return false;
   }
 
-  // src/lib/local-first/journal/secureCopy/ServerToLocalCandidateCopyService.ts
-  function emptyBatch(blockedReason) {
-    return {
-      ok: false,
-      targetDb: SERVER_COPY_TARGET_DB_NAME,
-      copied: 0,
-      alreadyPresent: 0,
-      sourceChanged: 0,
-      failed: 0,
-      results: [],
-      blockedReason,
-      candidateEncrypted: null,
-      completeProtection: null,
-      backupExcluded: null,
-      rowCounts: null
-    };
-  }
-  function summarize(results) {
-    const copied = results.filter((r) => r.status === "copied").length;
-    const alreadyPresent = results.filter((r) => r.status === "already_present").length;
-    const sourceChanged = results.filter((r) => r.status === "source_changed").length;
-    const failed = results.filter((r) => r.status === "failed").length;
-    return {
-      copied,
-      alreadyPresent,
-      sourceChanged,
-      failed,
-      ok: failed === 0 && sourceChanged === 0
-    };
-  }
+  // src/lib/local-first/journal/secureCopy/mirrorServerJournalEntry.ts
   function failResult(serverId, detail) {
     return {
       status: "failed",
@@ -4069,10 +4041,12 @@ CREATE INDEX IF NOT EXISTS idx_local_media_journal
       stableId: null,
       legacyServerId: null,
       detail,
-      fingerprint: null
+      fingerprint: null,
+      serverFetched: false,
+      needsRetry: false
     };
   }
-  async function copyOne(serverId, deps, availableBytes) {
+  async function mirrorServerJournalEntryToLocalGeneration(serverId, deps, availableBytes) {
     const fetched = await deps.fetchEntry(serverId);
     if (!fetched.ok) {
       return failResult(serverId, fetched.message);
@@ -4080,7 +4054,16 @@ CREATE INDEX IF NOT EXISTS idx_local_media_journal
     const apiEntry = fetched.entry;
     const serverLike = apiJournalToServerLike(apiEntry);
     if (!hasTestPurposeTag(serverLike.tags)) {
-      return failResult(serverId, "not_test_entry");
+      return {
+        status: "failed",
+        serverId,
+        stableId: null,
+        legacyServerId: null,
+        detail: "not_test_entry",
+        fingerprint: null,
+        serverFetched: true,
+        needsRetry: false
+      };
     }
     const existing = await deps.repository.getByLegacyServerId(apiEntry.id);
     const incomingMeta = await buildSourceFingerprint({
@@ -4100,7 +4083,9 @@ CREATE INDEX IF NOT EXISTS idx_local_media_journal
           stableId: existing.stableId,
           legacyServerId: existing.legacyServerId,
           detail: "source_changed_no_overwrite",
-          fingerprint: incomingMeta
+          fingerprint: incomingMeta,
+          serverFetched: true,
+          needsRetry: false
         };
       }
       return {
@@ -4109,7 +4094,9 @@ CREATE INDEX IF NOT EXISTS idx_local_media_journal
         stableId: existing.stableId,
         legacyServerId: existing.legacyServerId,
         detail: "legacyServerId already present; left untouched",
-        fingerprint: existingFp
+        fingerprint: existingFp,
+        serverFetched: true,
+        needsRetry: false
       };
     }
     let photoBase64 = null;
@@ -4119,10 +4106,28 @@ CREATE INDEX IF NOT EXISTS idx_local_media_journal
     if (journalEntryNeedsPhoto(apiEntry)) {
       const photo = await deps.downloadPhoto(apiEntry.id, apiEntry.photoDataUrl);
       if (!photo.ok) {
-        return failResult(serverId, photo.message);
+        return {
+          status: "failed",
+          serverId,
+          stableId: null,
+          legacyServerId: apiEntry.id,
+          detail: photo.message,
+          fingerprint: null,
+          serverFetched: true,
+          needsRetry: true
+        };
       }
       if (availableBytes != null && photo.byteLength > 0 && photo.byteLength > availableBytes) {
-        return failResult(serverId, "insufficient_free_space");
+        return {
+          status: "failed",
+          serverId,
+          stableId: null,
+          legacyServerId: apiEntry.id,
+          detail: "insufficient_free_space",
+          fingerprint: null,
+          serverFetched: true,
+          needsRetry: true
+        };
       }
       photoBase64 = photo.base64;
       photoBytes = photo.byteLength;
@@ -4133,6 +4138,9 @@ CREATE INDEX IF NOT EXISTS idx_local_media_journal
     const mediaStableId = deps.createStableId();
     let relativePath = null;
     try {
+      if (deps.injectLocalFailure === "media_write") {
+        throw new Error("injected_local_media_write_failure");
+      }
       if (photoBase64 && photoHash) {
         const ext = photoMime?.includes("png") ? "png" : photoMime?.includes("webp") ? "webp" : "jpg";
         relativePath = await deps.media.write(
@@ -4143,8 +4151,21 @@ CREATE INDEX IF NOT EXISTS idx_local_media_journal
         const verify = await sha256HexOfBase64(written);
         if (verify !== photoHash) {
           await deps.media.delete(relativePath);
-          return failResult(serverId, "photo_checksum_mismatch");
+          relativePath = null;
+          return {
+            status: "failed",
+            serverId,
+            stableId: null,
+            legacyServerId: apiEntry.id,
+            detail: "photo_checksum_mismatch",
+            fingerprint: null,
+            serverFetched: true,
+            needsRetry: true
+          };
         }
+      }
+      if (deps.injectLocalFailure === "save") {
+        throw new Error("injected_local_save_failure");
       }
       if (photoMime) serverLike.photoMimeType = photoMime;
       if (photoBytes) serverLike.photoSizeBytes = photoBytes;
@@ -4169,19 +4190,72 @@ CREATE INDEX IF NOT EXISTS idx_local_media_journal
         mediaCount: stored.mediaRefs.length
       });
       return {
-        status: "copied",
+        status: "mirrored",
         serverId,
         stableId: stored.stableId,
         legacyServerId: stored.legacyServerId,
-        detail: "copied to encrypted candidate",
-        fingerprint
+        detail: "mirrored server-canonical entry to encrypted candidate",
+        fingerprint,
+        serverFetched: true,
+        needsRetry: false
       };
     } catch (error) {
       if (relativePath) {
         await deps.media.delete(relativePath).catch(() => void 0);
       }
-      return failResult(serverId, safeErrorMessage(error));
+      return {
+        status: "failed",
+        serverId,
+        stableId: null,
+        legacyServerId: apiEntry.id,
+        detail: safeErrorMessage(error),
+        fingerprint: null,
+        serverFetched: true,
+        needsRetry: true
+      };
     }
+  }
+
+  // src/lib/local-first/journal/secureCopy/ServerToLocalCandidateCopyService.ts
+  function emptyBatch(blockedReason) {
+    return {
+      ok: false,
+      targetDb: SERVER_COPY_TARGET_DB_NAME,
+      copied: 0,
+      alreadyPresent: 0,
+      sourceChanged: 0,
+      failed: 0,
+      results: [],
+      blockedReason,
+      candidateEncrypted: null,
+      completeProtection: null,
+      backupExcluded: null,
+      rowCounts: null
+    };
+  }
+  function toCopyEntryResult(mirror) {
+    const status = mirror.status === "mirrored" ? "copied" : mirror.status;
+    return {
+      status,
+      serverId: mirror.serverId,
+      stableId: mirror.stableId,
+      legacyServerId: mirror.legacyServerId,
+      detail: mirror.detail,
+      fingerprint: mirror.fingerprint
+    };
+  }
+  function summarize(results) {
+    const copied = results.filter((r) => r.status === "copied").length;
+    const alreadyPresent = results.filter((r) => r.status === "already_present").length;
+    const sourceChanged = results.filter((r) => r.status === "source_changed").length;
+    const failed = results.filter((r) => r.status === "failed").length;
+    return {
+      copied,
+      alreadyPresent,
+      sourceChanged,
+      failed,
+      ok: failed === 0 && sourceChanged === 0
+    };
   }
   function prepareCopyBatch(rawIds, options) {
     assertAllowedCopyTargetDb(SERVER_COPY_TARGET_DB_NAME);
@@ -4207,7 +4281,12 @@ CREATE INDEX IF NOT EXISTS idx_local_media_journal
     if (!prepared.ok) return prepared.batch;
     const results = [];
     for (const id of prepared.entryIds) {
-      results.push(await copyOne(id, deps, prepared.availableBytes));
+      const mirrored = await mirrorServerJournalEntryToLocalGeneration(
+        id,
+        deps,
+        prepared.availableBytes
+      );
+      results.push(toCopyEntryResult(mirrored));
     }
     const summary = summarize(results);
     const rowCounts = {
@@ -4262,17 +4341,127 @@ CREATE INDEX IF NOT EXISTS idx_local_media_journal
     }
   };
 
-  // src/lib/local-first/journal/secureCopy/runSecureCopyPoc.ts
+  // src/lib/local-first/journal/secureCopy/ServerAuthoritativeWriteThroughMirrorService.ts
   init_dist();
-  var SECURE_COPY_POC_ENTRY_IDS = [
-    "cmsplldz50000l904mbblxu4t",
-    // A: #テスト #LocalCopyTest + photo
-    "cmsplmm9q0002js04piqo3ls4",
-    // B: #テスト, no photo
-    "cmsploc7p0004js04emyv2kz9"
-    // C: #お引越しテスト + photo
-  ];
-  var SECURE_COPY_POC_API_ORIGIN = "https://life-journey-zeta.vercel.app";
+  function blockedMirror(blockedReason, serverEntryId, injected) {
+    return {
+      ok: false,
+      targetDb: SERVER_COPY_TARGET_DB_NAME,
+      result: "blocked",
+      serverEntryId,
+      needsRetry: false,
+      stableId: null,
+      legacyServerId: null,
+      detail: blockedReason,
+      fingerprint: null,
+      blockedReason,
+      candidateEncrypted: null,
+      completeProtection: null,
+      backupExcluded: null,
+      rowCounts: null,
+      injectedLocalFailure: injected ?? false
+    };
+  }
+  async function mirrorExplicitIdWithDeps(serverEntryId, deps, options) {
+    const prepared = prepareCopyBatch([serverEntryId], {
+      availableBytes: options?.availableBytes ?? null,
+      allowUnknownCapacity: options?.allowUnknownCapacity
+    });
+    if (!prepared.ok) {
+      return blockedMirror(
+        prepared.batch.blockedReason ?? "blocked",
+        serverEntryId,
+        options?.injectLocalFailure
+      );
+    }
+    const mirrored = await mirrorServerJournalEntryToLocalGeneration(
+      prepared.entryIds[0],
+      {
+        ...deps,
+        injectLocalFailure: options?.injectLocalFailure ?? false
+      },
+      prepared.availableBytes
+    );
+    const rowCounts = {
+      entries: await deps.repository.countEntries(),
+      tags: await deps.repository.countTags(),
+      media: await deps.repository.countMedia()
+    };
+    return {
+      ok: mirrored.status === "mirrored" || mirrored.status === "already_present",
+      targetDb: SERVER_COPY_TARGET_DB_NAME,
+      result: mirrored.status,
+      serverEntryId: mirrored.serverId,
+      needsRetry: mirrored.needsRetry,
+      stableId: mirrored.stableId,
+      legacyServerId: mirrored.legacyServerId,
+      detail: mirrored.detail,
+      fingerprint: mirrored.fingerprint,
+      blockedReason: null,
+      candidateEncrypted: true,
+      completeProtection: null,
+      backupExcluded: null,
+      rowCounts,
+      injectedLocalFailure: options?.injectLocalFailure ?? false
+    };
+  }
+  var ServerAuthoritativeWriteThroughMirrorService = {
+    /**
+     * Mirror one explicit Server entry into encrypted candidate.
+     * Production Journal save path must not call this.
+     */
+    async mirrorExplicitId(serverEntryId, options) {
+      if (!Capacitor.isNativePlatform()) {
+        throw new LocalFirstSecurityError(
+          "native_only",
+          "write-through mirror is native-only"
+        );
+      }
+      assertAllowedCopyTargetDb(SERVER_COPY_TARGET_DB_NAME);
+      const availableBytes = options && Object.prototype.hasOwnProperty.call(options, "availableBytes") ? options.availableBytes ?? null : (await readAvailableBytesOrNull()).availableBytes;
+      const prepared = prepareCopyBatch([serverEntryId], {
+        availableBytes,
+        allowUnknownCapacity: options?.allowUnknownCapacity
+      });
+      if (!prepared.ok) {
+        return blockedMirror(
+          prepared.batch.blockedReason ?? "blocked",
+          serverEntryId,
+          options?.injectLocalFailure
+        );
+      }
+      const media = await createNativeCandidateMediaStore();
+      const result = await withCandidateRepository(
+        async (repository) => mirrorExplicitIdWithDeps(
+          prepared.entryIds[0],
+          {
+            fetchEntry: fetchAuthenticatedJournalEntry,
+            downloadPhoto: downloadJournalPhotoBase64,
+            repository,
+            media,
+            createStableId: createLocalStableId
+          },
+          {
+            availableBytes,
+            allowUnknownCapacity: true,
+            injectLocalFailure: options?.injectLocalFailure ?? false
+          }
+        )
+      );
+      const inspection = await LocalJournalSecureBootstrapper.inspect();
+      return {
+        ...result,
+        candidateEncrypted: inspection.encrypted,
+        completeProtection: inspection.completeProtection,
+        backupExcluded: inspection.backupExcluded
+      };
+    }
+  };
+
+  // src/lib/local-first/journal/secureCopy/runWriteThroughMirrorPoc.ts
+  init_dist();
+  var WRITE_THROUGH_POC_ENTRY_ID = "cmsppllhx0000kv04nmct79ak";
+  var WRITE_THROUGH_POC_API_ORIGIN = "https://life-journey-zeta.vercel.app";
   var SESSION_COOKIE_PATH = "ljd/security-poc/session.cookie";
   async function loadPocSessionCookieHeader() {
     try {
@@ -4288,142 +4477,169 @@ CREATE INDEX IF NOT EXISTS idx_local_media_journal
       return null;
     }
   }
-  function summarizeCopy(results) {
-    return results.map((item) => ({
-      status: item.status,
-      serverId: item.serverId,
-      stableId: item.stableId,
-      detail: item.detail,
-      contentHash: item.fingerprint?.contentHash ?? null,
-      photoHash: item.fingerprint?.photoHash ?? null,
-      tagCount: item.fingerprint?.tags.length ?? null
-    }));
+  function summarizeMirror(result) {
+    return {
+      result: result.result,
+      serverEntryId: result.serverEntryId,
+      stableId: result.stableId,
+      legacyServerId: result.legacyServerId,
+      needsRetry: result.needsRetry,
+      detail: result.detail,
+      contentHash: result.fingerprint?.contentHash ?? null,
+      photoHash: result.fingerprint?.photoHash ?? null
+    };
   }
-  async function runSecureCopyPoc() {
+  async function removeCandidateEntryByLegacyServerIdForPoc(legacyServerId) {
+    assertAllowedCopyTargetDb(SERVER_COPY_TARGET_DB_NAME);
+    const existing = await withCandidateRepository(
+      (repo) => repo.getByLegacyServerId(legacyServerId)
+    );
+    if (!existing) return { removed: false, mediaDeleted: 0 };
+    const media = await createNativeCandidateMediaStore();
+    let mediaDeleted = 0;
+    for (const ref of existing.mediaRefs) {
+      await media.delete(ref.relativePath).catch(() => void 0);
+      mediaDeleted += 1;
+    }
+    const db2 = await openNamedEncryptedDatabase(SERVER_COPY_TARGET_DB_NAME, 1);
+    try {
+      await db2.run(`DELETE FROM local_media WHERE journal_stable_id = ?;`, [
+        existing.stableId
+      ]);
+      await db2.run(`DELETE FROM local_journal_tags WHERE journal_stable_id = ?;`, [
+        existing.stableId
+      ]);
+      await db2.run(`DELETE FROM local_journal_entries WHERE stable_id = ?;`, [
+        existing.stableId
+      ]);
+    } finally {
+      await closeNamedEncryptedDatabase(SERVER_COPY_TARGET_DB_NAME);
+    }
+    return { removed: true, mediaDeleted };
+  }
+  async function runWriteThroughMirrorPoc(options) {
     if (!Capacitor.isNativePlatform()) {
-      throw new Error("secure copy PoC is native-only");
+      throw new Error("write-through mirror PoC is native-only");
     }
     const steps = [];
     const push = (id, status, detail) => {
       steps.push({ id, status, detail });
     };
+    const entryId = (options?.entryId ?? WRITE_THROUGH_POC_ENTRY_ID).trim();
     try {
+      if (!entryId) {
+        push(
+          "W0",
+          "fail",
+          "explicit test entry ID required \u2014 stop and confirm with user (no auto discovery)"
+        );
+        throw new Error("WRITE_THROUGH_POC_ENTRY_ID unset");
+      }
       const cookieHeader = await loadPocSessionCookieHeader();
       if (!cookieHeader) {
-        push("C2", "fail", "missing session.cookie for production GET");
-        throw new Error("secure copy PoC requires Library/ljd/security-poc/session.cookie");
+        push("W2", "fail", "missing session.cookie for production GET");
+        throw new Error("write-through PoC requires Library/ljd/security-poc/session.cookie");
       }
       configureServerFetchPoc({
-        apiOrigin: SECURE_COPY_POC_API_ORIGIN,
+        apiOrigin: WRITE_THROUGH_POC_API_ORIGIN,
         cookieHeader
       });
+      await LocalJournalSecureBootstrapper.bootstrap();
       const before = await LocalJournalSecureBootstrapper.inspect();
       push(
-        "C1",
-        before.health.status === "ready" && (before.rowCounts.local_journal_entries ?? -1) === 0 ? "pass" : before.health.status === "ready" ? "pass" : "fail",
-        `health=${before.health.status} entries=${String(before.rowCounts.local_journal_entries ?? null)} encrypted=${String(before.encrypted)}`
+        "W1",
+        before.health.status === "ready" && before.encrypted === true ? "pass" : "fail",
+        `health=${before.health.status} encrypted=${String(before.encrypted)} entries=${String(before.rowCounts.local_journal_entries ?? null)}`
       );
-      const fetchSummaries = [];
-      let fetchOk = true;
-      for (const id of SECURE_COPY_POC_ENTRY_IDS) {
-        const fetched = await fetchAuthenticatedJournalEntry(id);
-        if (!fetched.ok) {
-          fetchOk = false;
-          fetchSummaries.push({ id, ok: false, code: fetched.code });
-          continue;
-        }
-        const like = apiJournalToServerLike(fetched.entry);
-        const testTagged = hasTestPurposeTag(like.tags);
-        const needsPhoto = journalEntryNeedsPhoto(fetched.entry);
-        if (!testTagged) fetchOk = false;
-        fetchSummaries.push({
-          id,
-          ok: true,
+      const fetched = await fetchAuthenticatedJournalEntry(entryId);
+      if (!fetched.ok) {
+        push("W2", "fail", `GET failed code=${fetched.code}`);
+        throw new Error("canonical GET failed");
+      }
+      const like = apiJournalToServerLike(fetched.entry);
+      const testTagged = hasTestPurposeTag(like.tags);
+      const serverUpdatedAt = fetched.entry.updatedAt;
+      const needsPhoto = journalEntryNeedsPhoto(fetched.entry);
+      push(
+        "W2",
+        testTagged ? "pass" : "fail",
+        JSON.stringify({
+          id: entryId,
           testTagged,
           needsPhoto,
           tagCount: like.tags.length,
-          updatedAt: fetched.entry.updatedAt,
+          updatedAt: serverUpdatedAt,
           contentChars: fetched.entry.content.length
-        });
+        })
+      );
+      if (!testTagged) {
+        throw new Error("entry is not a test-purpose journal");
       }
+      const prep = await removeCandidateEntryByLegacyServerIdForPoc(entryId);
       push(
-        "C2",
-        fetchOk && fetchSummaries.length === 3 ? "pass" : "fail",
-        JSON.stringify(fetchSummaries)
-      );
-      const firstCopy = await ServerToLocalCandidateCopyService.copyExplicitIds([
-        ...SECURE_COPY_POC_ENTRY_IDS
-      ]);
-      const firstBatchOk = firstCopy.failed === 0 && !firstCopy.blockedReason && (firstCopy.copied === 3 && firstCopy.alreadyPresent === 0 || firstCopy.copied === 0 && firstCopy.alreadyPresent === 3);
-      push(
-        "C3",
-        firstBatchOk ? "pass" : "fail",
-        JSON.stringify({
-          copied: firstCopy.copied,
-          alreadyPresent: firstCopy.alreadyPresent,
-          sourceChanged: firstCopy.sourceChanged,
-          failed: firstCopy.failed,
-          blockedReason: firstCopy.blockedReason,
-          results: summarizeCopy(firstCopy.results)
-        })
-      );
-      const afterCopy = await LocalJournalSecureBootstrapper.inspect();
-      const rowsOk = (afterCopy.rowCounts.local_journal_entries ?? -1) === 3 && (afterCopy.rowCounts.local_media ?? -1) === 2;
-      push(
-        "C4",
-        afterCopy.health.status === "ready" && rowsOk ? "pass" : "fail",
-        `entries=${String(afterCopy.rowCounts.local_journal_entries)} tags=${String(afterCopy.rowCounts.local_journal_tags)} media=${String(afterCopy.rowCounts.local_media)} version=${String(afterCopy.userVersion)}`
-      );
-      push(
-        "C5",
-        afterCopy.encrypted === true && afterCopy.backupExcluded === false && afterCopy.completeProtection === true && afterCopy.fileProtection != null && isCompleteProtection(afterCopy.fileProtection) ? "pass" : "fail",
-        `encrypted=${String(afterCopy.encrypted)} backupExcluded=${String(afterCopy.backupExcluded)} protection=${String(afterCopy.fileProtection)}`
-      );
-      const failureBatch = await ServerToLocalCandidateCopyService.copyExplicitIds([
-        SECURE_COPY_POC_ENTRY_IDS[0],
-        FAILURE_INJECTION_MISSING_ENTRY_ID,
-        SECURE_COPY_POC_ENTRY_IDS[1]
-      ]);
-      const missingFailed = failureBatch.results.some(
-        (r) => r.serverId === FAILURE_INJECTION_MISSING_ENTRY_ID && r.status === "failed"
-      );
-      const othersOk = failureBatch.results.filter((r) => r.serverId !== FAILURE_INJECTION_MISSING_ENTRY_ID).every((r) => r.status === "already_present" || r.status === "copied");
-      const mid = await LocalJournalSecureBootstrapper.inspect();
-      push(
-        "C6",
-        missingFailed && othersOk && (mid.rowCounts.local_journal_entries ?? -1) === 3 ? "pass" : "fail",
-        JSON.stringify({
-          missingFailed,
-          othersOk,
-          entries: mid.rowCounts.local_journal_entries,
-          results: summarizeCopy(failureBatch.results)
-        })
-      );
-      push(
-        "C7",
+        "prep",
         "pass",
-        "connections left closed by service; kill/relaunch verified by outer harness when needed"
+        JSON.stringify({ removedPriorLocal: prep.removed, mediaDeleted: prep.mediaDeleted })
       );
-      const stableBefore = firstCopy.results.filter((r) => r.stableId).map((r) => ({ serverId: r.serverId, stableId: r.stableId })).sort((a, b) => a.serverId.localeCompare(b.serverId));
-      const rerun = await ServerToLocalCandidateCopyService.copyExplicitIds([
-        ...SECURE_COPY_POC_ENTRY_IDS
-      ]);
-      const stableAfter = rerun.results.filter((r) => r.stableId).map((r) => ({ serverId: r.serverId, stableId: r.stableId })).sort((a, b) => a.serverId.localeCompare(b.serverId));
+      const failInject = await ServerAuthoritativeWriteThroughMirrorService.mirrorExplicitId(
+        entryId,
+        { injectLocalFailure: "save" }
+      );
       push(
-        "C8",
-        rerun.copied === 0 && rerun.alreadyPresent === 3 ? "pass" : "fail",
+        "W5",
+        failInject.result === "failed" && failInject.needsRetry === true ? "pass" : "fail",
+        JSON.stringify(summarizeMirror(failInject))
+      );
+      const afterFailInspect = await LocalJournalSecureBootstrapper.inspect();
+      const noLocalRow = await withCandidateRepository((r) => r.getByLegacyServerId(entryId)) === null;
+      const serverAfterFail = await fetchAuthenticatedJournalEntry(entryId);
+      const serverUntouched = serverAfterFail.ok && serverAfterFail.entry.updatedAt === serverUpdatedAt;
+      push(
+        "W6",
+        serverUntouched && noLocalRow && failInject.needsRetry ? "pass" : "fail",
         JSON.stringify({
-          copied: rerun.copied,
-          alreadyPresent: rerun.alreadyPresent,
-          stableBefore,
-          stableAfter
+          serverUntouched,
+          noLocalRow,
+          noPartialRow: noLocalRow,
+          updatedAtBefore: serverUpdatedAt,
+          updatedAtAfter: serverAfterFail.ok ? serverAfterFail.entry.updatedAt : null,
+          entries: afterFailInspect.rowCounts.local_journal_entries
         })
       );
-      const finalInspect = await LocalJournalSecureBootstrapper.inspect();
+      const success = await ServerAuthoritativeWriteThroughMirrorService.mirrorExplicitId(entryId);
       push(
-        "C9",
-        (finalInspect.rowCounts.local_journal_entries ?? -1) === 3 && (finalInspect.rowCounts.local_media ?? -1) === 2 ? "pass" : "fail",
-        `entries=${String(finalInspect.rowCounts.local_journal_entries)} media=${String(finalInspect.rowCounts.local_media)}`
+        "W7",
+        success.result === "mirrored" ? "pass" : "fail",
+        JSON.stringify(summarizeMirror(success))
+      );
+      push(
+        "W3",
+        success.result === "mirrored" ? "pass" : "fail",
+        JSON.stringify(summarizeMirror(success))
+      );
+      const afterMirror = await LocalJournalSecureBootstrapper.inspect();
+      const mediaOk = !needsPhoto || (afterMirror.rowCounts.local_media ?? 0) >= 1;
+      push(
+        "W4",
+        afterMirror.health.status === "ready" && Boolean(await withCandidateRepository((r) => r.getByLegacyServerId(entryId))) && mediaOk && Boolean(success.fingerprint?.contentHash) && (!needsPhoto || Boolean(success.fingerprint?.photoHash)) ? "pass" : "fail",
+        `entries=${String(afterMirror.rowCounts.local_journal_entries)} media=${String(afterMirror.rowCounts.local_media)} contentHash=${success.fingerprint?.contentHash ?? null} photoHash=${success.fingerprint?.photoHash ?? null} stableId=${success.stableId}`
+      );
+      const rerun = await ServerAuthoritativeWriteThroughMirrorService.mirrorExplicitId(entryId);
+      const afterRerun = await LocalJournalSecureBootstrapper.inspect();
+      push(
+        "W8",
+        rerun.result === "already_present" && rerun.stableId === success.stableId && (afterRerun.rowCounts.local_journal_entries ?? -1) === (afterMirror.rowCounts.local_journal_entries ?? -2) ? "pass" : "fail",
+        JSON.stringify({
+          ...summarizeMirror(rerun),
+          stableIdBefore: success.stableId,
+          entries: afterRerun.rowCounts.local_journal_entries
+        })
+      );
+      const persisted = await LocalJournalSecureBootstrapper.inspect();
+      push(
+        "W9",
+        persisted.health.status === "ready" && (persisted.rowCounts.local_journal_entries ?? 0) >= 1 ? "pass" : "fail",
+        `entries=${String(persisted.rowCounts.local_journal_entries)} media=${String(persisted.rowCounts.local_media)} (kill/relaunch verified by outer harness when needed)`
       );
       let prodEncrypted = null;
       try {
@@ -4441,9 +4657,9 @@ CREATE INDEX IF NOT EXISTS idx_local_media_journal
         (a) => a.name === `${SERVER_COPY_TARGET_DB_NAME}SQLite.db`
       );
       push(
-        "C10",
-        prodEncrypted === false && Boolean(prod) && Boolean(candidate) ? "pass" : "fail",
-        `prodEncrypted=${String(prodEncrypted)} prodBytes=${String(prod?.bytes ?? null)} candidateBytes=${String(candidate?.bytes ?? null)} serverUntouched=GET-only`
+        "W10",
+        prodEncrypted === false && Boolean(prod) && Boolean(candidate) && serverUntouched ? "pass" : "fail",
+        `prodEncrypted=${String(prodEncrypted)} prodBytes=${String(prod?.bytes ?? null)} candidateBytes=${String(candidate?.bytes ?? null)} generalUi=Server-only-save-unchanged`
       );
       const capacity = await readAvailableBytesOrNull();
       push(
@@ -4458,10 +4674,11 @@ CREATE INDEX IF NOT EXISTS idx_local_media_journal
     }
     const report = {
       ranAt: (/* @__PURE__ */ new Date()).toISOString(),
-      entryIds: SECURE_COPY_POC_ENTRY_IDS,
+      entryId: entryId || null,
       targetDb: SERVER_COPY_TARGET_DB_NAME,
       steps,
-      actualJournalUntouched: true
+      actualJournalUntouched: true,
+      generalUiUntouched: true
     };
     await Filesystem.mkdir({
       path: "ljd/security-poc",
@@ -4469,7 +4686,7 @@ CREATE INDEX IF NOT EXISTS idx_local_media_journal
       recursive: true
     }).catch(() => void 0);
     await Filesystem.writeFile({
-      path: "ljd/security-poc/secure-copy-report.json",
+      path: "ljd/security-poc/write-through-mirror-report.json",
       directory: Directory.Library,
       encoding: Encoding.UTF8,
       data: JSON.stringify(report, null, 2)
@@ -4696,6 +4913,54 @@ CREATE INDEX IF NOT EXISTS idx_local_media_journal
         );
       })().catch((e) => setStatus(safeErrorMessage(e), true));
     });
+    $("btn-write-through-mirror").addEventListener("click", () => {
+      void (async () => {
+        const id = $("write-through-entry-id").value.trim();
+        if (!id) {
+          setStatus("\u660E\u793A Server entry ID \u304C\u5FC5\u8981\u3067\u3059\uFF08\u81EA\u52D5\u691C\u7D22\u3057\u307E\u305B\u3093\uFF09\u3002", true);
+          return;
+        }
+        setStatus("write-through mirror\u2026\uFF08Server GET \u2192 candidate / \u672C\u756A save \u672A\u63A5\u7D9A\uFF09");
+        const result = await ServerAuthoritativeWriteThroughMirrorService.mirrorExplicitId(id);
+        $("security-report").textContent = JSON.stringify(
+          {
+            result: result.result,
+            serverEntryId: result.serverEntryId,
+            needsRetry: result.needsRetry,
+            stableId: result.stableId,
+            legacyServerId: result.legacyServerId,
+            detail: result.detail,
+            contentHash: result.fingerprint?.contentHash ?? null,
+            photoHash: result.fingerprint?.photoHash ?? null,
+            rowCounts: result.rowCounts,
+            injectedLocalFailure: result.injectedLocalFailure
+          },
+          null,
+          2
+        );
+        setStatus(
+          `mirror result=${result.result} needsRetry=${String(result.needsRetry)}`,
+          !result.ok
+        );
+      })().catch((e) => setStatus(safeErrorMessage(e), true));
+    });
+    $("btn-write-through-poc").addEventListener("click", () => {
+      void (async () => {
+        const id = $("write-through-entry-id").value.trim();
+        if (!id) {
+          setStatus("W1\u2013W10 \u306B\u306F\u660E\u793A\u30C6\u30B9\u30C8 entry ID \u304C\u5FC5\u8981\u3067\u3059\u3002", true);
+          return;
+        }
+        setStatus("write-through PoC W1\u2013W10\u2026");
+        const report = await runWriteThroughMirrorPoc({ entryId: id });
+        $("security-report").textContent = JSON.stringify(report, null, 2);
+        const fails = report.steps.filter((s2) => s2.status === "fail").length;
+        setStatus(
+          `write-through fail=${fails} idSet=${Boolean(report.entryId)} untouched=${String(report.actualJournalUntouched)}`,
+          fails > 0
+        );
+      })().catch((e) => setStatus(safeErrorMessage(e), true));
+    });
     $("btn-inspect-capacity").addEventListener("click", () => {
       void (async () => {
         const capacity = await readAvailableBytesOrNull();
@@ -4748,13 +5013,15 @@ CREATE INDEX IF NOT EXISTS idx_local_media_journal
     try {
       await openLocalJournalDatabase();
       await renderEntries();
-      setStatus("secure copy PoC \u5B9F\u884C\u4E2D\u2026\uFF08\u660E\u793A3\u4EF6\u306E\u307F / candidate \u56FA\u5B9A\uFF09");
+      setStatus("write-through PoC W1\u2013W10 \u5B9F\u884C\u4E2D\u2026\uFF08\u660E\u793A1\u4EF6\u306E\u307F / candidate \u56FA\u5B9A\uFF09");
       await LocalJournalSecureBootstrapper.bootstrap();
-      const report = await runSecureCopyPoc();
+      const report = await runWriteThroughMirrorPoc({
+        entryId: WRITE_THROUGH_POC_ENTRY_ID
+      });
       $("security-report").textContent = JSON.stringify(report, null, 2);
       const fails = report.steps.filter((s2) => s2.status === "fail").length;
       setStatus(
-        `secure-copy fail=${fails} ids=${SECURE_COPY_POC_ENTRY_IDS.length} untouched=${String(report.actualJournalUntouched)}`,
+        `write-through fail=${fails} id=${WRITE_THROUGH_POC_ENTRY_ID} untouched=${String(report.actualJournalUntouched)}`,
         fails > 0
       );
     } catch (err) {

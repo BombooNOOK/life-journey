@@ -45,6 +45,7 @@ next-env.d.ts
 
 # Capacitor / Xcode local noise (commit ios/ project; ignore user state)
 ios/DerivedData/
+.xcode-dd-*/
 ios/App/App.xcworkspace/xcuserdata/
 ios/App/App.xcodeproj/xcuserdata/
 ios/App/Pods/

@@ -31,11 +31,11 @@ import { hasTestPurposeTag } from "@/lib/local-first/journal/secureCopy/testEntr
 import { assertAllowedCopyTargetDb } from "@/lib/local-first/journal/secureCopy/candidateDbGuard";
 
 /**
- * Set ONLY after the user confirms a new dedicated Server test entry.
- * Empty → PoC refuses to invent an ID.
+ * Confirmed 4B-4E dedicated Server test entry (user-provided).
+ * #WriteThroughTest + photo. Never auto-discover other journals.
+ * Note: no `process.env` here — Capacitor lab.js has no Node process.
  */
-export const WRITE_THROUGH_POC_ENTRY_ID: string =
-  process.env.NEXT_PUBLIC_WRITE_THROUGH_POC_ENTRY_ID?.trim() || "";
+export const WRITE_THROUGH_POC_ENTRY_ID = "cmsppllhx0000kv04nmct79ak";
 
 export const WRITE_THROUGH_POC_API_ORIGIN = "https://life-journey-zeta.vercel.app";
 

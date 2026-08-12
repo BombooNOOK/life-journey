@@ -9,11 +9,7 @@ import { openLocalJournalDatabase } from "@/lib/local-first/journal/database";
 import { LocalJournalSecureBootstrapper } from "@/lib/local-first/journal/secureBootstrap/LocalJournalSecureBootstrapper";
 import { ServerToLocalCandidateCopyService } from "@/lib/local-first/journal/secureCopy/ServerToLocalCandidateCopyService";
 import { ServerAuthoritativeWriteThroughMirrorService } from "@/lib/local-first/journal/secureCopy/ServerAuthoritativeWriteThroughMirrorService";
-import {
-  runSecureCopyPoc,
-  SECURE_COPY_POC_ENTRY_IDS,
-} from "@/lib/local-first/journal/secureCopy/runSecureCopyPoc";
-import { runWriteThroughMirrorPoc } from "@/lib/local-first/journal/secureCopy/runWriteThroughMirrorPoc";
+import { runWriteThroughMirrorPoc, WRITE_THROUGH_POC_ENTRY_ID } from "@/lib/local-first/journal/secureCopy/runWriteThroughMirrorPoc";
 import { FAILURE_INJECTION_MISSING_ENTRY_ID } from "@/lib/local-first/journal/secureCopy/types";
 import {
   deleteJournalMediaRelative,
@@ -282,14 +278,15 @@ async function boot(): Promise<void> {
   try {
     await openLocalJournalDatabase();
     await renderEntries();
-    setStatus("secure copy PoC 実行中…（明示3件のみ / candidate 固定）");
-    // Ensure candidate exists first (idempotent).
+    setStatus("write-through PoC W1–W10 実行中…（明示1件のみ / candidate 固定）");
     await LocalJournalSecureBootstrapper.bootstrap();
-    const report = await runSecureCopyPoc();
+    const report = await runWriteThroughMirrorPoc({
+      entryId: WRITE_THROUGH_POC_ENTRY_ID,
+    });
     $("security-report").textContent = JSON.stringify(report, null, 2);
     const fails = report.steps.filter((s) => s.status === "fail").length;
     setStatus(
-      `secure-copy fail=${fails} ids=${SECURE_COPY_POC_ENTRY_IDS.length} untouched=${String(report.actualJournalUntouched)}`,
+      `write-through fail=${fails} id=${WRITE_THROUGH_POC_ENTRY_ID} untouched=${String(report.actualJournalUntouched)}`,
       fails > 0,
     );
   } catch (err) {

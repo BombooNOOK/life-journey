@@ -272,6 +272,7 @@ Strategy D への切替は **Source-of-Truth switch の一部**であり、techn
 | 共通 primitive `mirrorServerJournalEntryToLocalGeneration` | 実装 |
 | historical copy 再利用 | 実装（`copied` ← `mirrored`） |
 | `MirrorResult.needsRetry` | 実装（queue なし） |
-| Local failure injection | 実装（unit PASS） |
+| Local failure injection | 実装（unit + Simulator PASS） |
 | 一般 UI 接続 | なし |
-| Simulator W1–W10 | **明示 test entry ID 待ち** |
+| Simulator W1–W10 | **PASS**（entry `cmsppllhx0000kv04nmct79ak`） |
+| 証拠メモ | `docs/hybrid/HYBRID_PHASE_4B4E_WRITE_THROUGH_MIRROR_POC.md` |

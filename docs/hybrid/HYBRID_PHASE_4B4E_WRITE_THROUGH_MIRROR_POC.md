@@ -62,14 +62,34 @@ source_changed / no overwrite / capacity unknown fail-closed / no-secret logging
 
 ---
 
-## 5. Simulator W1–W10
+## 5. Simulator W1–W10 — PASS
 
-**Status: BLOCKED — explicit new test entry ID not provided.**
+| 項目 | 値 |
+| --- | --- |
+| Test entry | `cmsppllhx0000kv04nmct79ak`（`#WriteThroughTest` + photo） |
+| Server `updatedAt` | `2026-08-12T06:29:29.398Z`（失敗注入後も不変） |
+| Local `stableId` | `01KZTB4JH2DFH2WGNBW9CPS5AE` |
+| `legacyServerId` | `cmsppllhx0000kv04nmct79ak` |
+| contentHash | `62d1473acbea63496ef093ae983be0b590027e53320d90ebf654adfeb64847ed` |
+| photoHash | `4f151a52fa19d82d389ad7496deff7d4f221ac26debfaade23d15596a2b2e551` |
+| candidate after | entries=4 / media=3（既存3件+本PoC1件） |
+| actual DB | `prodEncrypted=false` / bytes unchanged path |
+| Mac free after DD cleanup | ~9.1GB |
 
-要件どおり Cursor は一般あしあとを選ばない。  
-ユーザーが Web LJD で `#WriteThroughTest` または `#テスト`（可能なら写真1）を保存し、cuid を明示するまで W1–W10 は実行しない。
+| Step | Result |
+| --- | --- |
+| W1 candidate ready | PASS |
+| W2 explicit GET | PASS |
+| W5 Local failure inject | PASS (`needsRetry=true`, no partial row) |
+| W6 Server untouched | PASS |
+| W7 retry → mirrored | PASS |
+| W3 mirror success | PASS |
+| W4 DB/media/hash | PASS |
+| W8 already_present | PASS（stableId 不変・増殖なし） |
+| W9 kill/relaunch persist | PASS（harness relaunch + rows retained） |
+| W10 actual / UI untouched | PASS |
 
-Runner: `runWriteThroughMirrorPoc({ entryId })`（diagnostics ボタン）。
+Runner: `runWriteThroughMirrorPoc`（diagnostics boot + 明示ボタン）。
 
 ---
 
@@ -82,3 +102,15 @@ RG-1〜4 **未完のまま**。write-through 成功でも変更しない。
 ## 7. 禁止事項（遵守）
 
 production save への組込み、independent dual-write、pointer、Repository 切替、Local原本化、Server delete/update、background sync、main merge。
+
+---
+
+## 8. 判定
+
+| 問い | 判定 |
+| --- | --- |
+| write-through mirror を正式採用候補にできるか | **A** |
+| 次に developer-only activation pointer PoC へ進めるか | **A** |
+| その前に 5〜10 件追加 copy が必要か | **B**（必須ではない） |
+| main 統合 | **B**（しない） |
+| 次Phase | developer-only activation pointer PoC（一般 UI はまだ Local-only read にしない） |
