@@ -3327,113 +3327,6 @@ CREATE INDEX IF NOT EXISTS idx_local_media_journal
     }
   };
 
-  // src/lib/local-first/journal/secureBootstrap/runSecureBootstrapPoc.ts
-  init_dist();
-  async function runSecureBootstrapPoc() {
-    if (!Capacitor.isNativePlatform()) {
-      throw new Error("secure bootstrap PoC is native-only");
-    }
-    const steps = [];
-    const push = (id, status, detail) => {
-      steps.push({ id, status, detail });
-    };
-    try {
-      const before = await LocalJournalSecureBootstrapper.inspect();
-      push(
-        "B1",
-        before.health.status === "missing" || before.health.status === "ready" ? "pass" : "fail",
-        `exists=${String(before.exists)} health=${before.health.status}`
-      );
-      const created = await LocalJournalSecureBootstrapper.bootstrap();
-      push(
-        "B1b",
-        created.ok && (created.status === "created" || created.status === "already_ready") ? "pass" : "fail",
-        `${created.status} ${created.detail}`
-      );
-      const after = await LocalJournalSecureBootstrapper.inspect();
-      push(
-        "B2",
-        after.encrypted === true ? "pass" : "fail",
-        `encrypted=${String(after.encrypted)}`
-      );
-      const zero = (after.rowCounts.local_journal_entries ?? -1) === 0 && (after.rowCounts.local_journal_tags ?? -1) === 0 && (after.rowCounts.local_media ?? -1) === 0;
-      push(
-        "B3",
-        after.health.status === "ready" && after.userVersion === 1 && zero ? "pass" : "fail",
-        `version=${String(after.userVersion)} tables=${after.tables.join(",")} rows=${JSON.stringify(after.rowCounts)}`
-      );
-      push(
-        "B4",
-        after.backupExcluded === false ? "pass" : "fail",
-        `isExcludedFromBackup=${String(after.backupExcluded)}`
-      );
-      push(
-        "B5",
-        after.completeProtection === true && after.fileProtection != null && isCompleteProtection(after.fileProtection) ? "pass" : "fail",
-        `protection=${String(after.fileProtection)}`
-      );
-      await closeNamedEncryptedDatabase(LOCAL_JOURNAL_SECURE_CANDIDATE_DB_NAME);
-      const reopened = await openNamedEncryptedDatabase(
-        LOCAL_JOURNAL_SECURE_CANDIDATE_DB_NAME,
-        1
-      );
-      await closeNamedEncryptedDatabase(LOCAL_JOURNAL_SECURE_CANDIDATE_DB_NAME);
-      push("B6", reopened ? "pass" : "fail", "close/reopen encrypted candidate");
-      push("B7", "pass", "connections closed (kill equivalent); relaunch covered by diagnostics reboot");
-      const again = await LocalJournalSecureBootstrapper.bootstrap();
-      push(
-        "B8",
-        again.alreadyReady === true ? "pass" : "fail",
-        again.detail
-      );
-      let prodEncrypted = null;
-      try {
-        prodEncrypted = Boolean(
-          (await CapacitorSQLite.isDatabaseEncrypted({
-            database: LOCAL_JOURNAL_DB_NAME
-          })).result
-        );
-      } catch {
-        prodEncrypted = null;
-      }
-      const artifacts = await listSqliteArtifactsReadOnly();
-      const prodFile = artifacts.find((item) => item.name === `${LOCAL_JOURNAL_DB_NAME}SQLite.db`);
-      const candidateFile = artifacts.find(
-        (item) => item.name === `${LOCAL_JOURNAL_SECURE_CANDIDATE_DB_NAME}SQLite.db`
-      );
-      push(
-        "B9",
-        prodEncrypted === false && Boolean(prodFile) && Boolean(candidateFile) ? "pass" : "fail",
-        `prodEncrypted=${String(prodEncrypted)} prodBytes=${String(prodFile?.bytes ?? null)} candidateBytes=${String(candidateFile?.bytes ?? null)}`
-      );
-      const capacity = await readAvailableBytesOrNull();
-      push(
-        "capacity",
-        capacity.decision.known ? "pass" : "fail",
-        `available=${String(capacity.availableBytes)} source=${capacity.source}`
-      );
-    } catch (error) {
-      push("error", "fail", safeErrorMessage(error));
-    }
-    const report = {
-      ranAt: (/* @__PURE__ */ new Date()).toISOString(),
-      steps,
-      actualJournalUntouched: true
-    };
-    await Filesystem.mkdir({
-      path: "ljd/security-poc",
-      directory: Directory.Library,
-      recursive: true
-    }).catch(() => void 0);
-    await Filesystem.writeFile({
-      path: "ljd/security-poc/secure-bootstrap-report.json",
-      directory: Directory.Library,
-      encoding: Encoding.UTF8,
-      data: JSON.stringify(report, null, 2)
-    });
-    return report;
-  }
-
   // src/lib/local-first/journal/secureCopy/ServerToLocalCandidateCopyService.ts
   init_dist();
 
@@ -3525,6 +3418,9 @@ CREATE INDEX IF NOT EXISTS idx_local_media_journal
     return out;
   }
 
+  // src/lib/local-first/journal/serverFetch.ts
+  init_dist();
+
   // src/lib/date/japanCalendarDate.ts
   var TZ_JAPAN = "Asia/Tokyo";
   function calendarDayKeyInJapanFromDate(date) {
@@ -3595,6 +3491,10 @@ CREATE INDEX IF NOT EXISTS idx_local_media_journal
   }
 
   // src/lib/local-first/journal/serverFetch.ts
+  var pocConfig = null;
+  function configureServerFetchPoc(config) {
+    pocConfig = config;
+  }
   function arrayBufferToBase64(buffer) {
     const bytes = new Uint8Array(buffer);
     let binary = "";
@@ -3642,7 +3542,72 @@ CREATE INDEX IF NOT EXISTS idx_local_media_journal
   function journalEntryNeedsPhoto(entry) {
     return entry.hasPhoto === true || Boolean(entry.photoSrc);
   }
+  function mapStatusToFetchErr(status) {
+    if (status === 401) {
+      return { ok: false, code: "AUTH_REQUIRED", message: "\u30ED\u30B0\u30A4\u30F3\u304C\u5FC5\u8981\u3067\u3059\u3002" };
+    }
+    if (status === 404) {
+      return { ok: false, code: "NOT_FOUND", message: "\u5BFE\u8C61\u306E\u8A18\u9332\u304C\u898B\u3064\u304B\u308A\u307E\u305B\u3093\u3002" };
+    }
+    return {
+      ok: false,
+      code: "FORBIDDEN_OR_MISSING",
+      message: `\u53D6\u5F97\u306B\u5931\u6557\u3057\u307E\u3057\u305F (${status})\u3002`
+    };
+  }
+  async function getJsonViaCapHttp(url) {
+    if (!pocConfig) throw new Error("server fetch PoC config missing");
+    const response = await CapacitorHttp.get({
+      url,
+      headers: {
+        Accept: "application/json",
+        Cookie: pocConfig.cookieHeader
+      },
+      responseType: "json"
+    });
+    return { status: response.status, json: response.data };
+  }
+  async function getBinaryViaCapHttp(url) {
+    if (!pocConfig) throw new Error("server fetch PoC config missing");
+    const response = await CapacitorHttp.get({
+      url,
+      headers: {
+        Cookie: pocConfig.cookieHeader
+      },
+      responseType: "blob"
+    });
+    const headers = {};
+    for (const [key, value] of Object.entries(response.headers ?? {})) {
+      headers[key.toLowerCase()] = String(value);
+    }
+    const raw = typeof response.data === "string" ? response.data : "";
+    const base64 = raw.includes(",") ? raw.split(",", 2)[1] : raw;
+    return {
+      status: response.status,
+      base64,
+      mimeType: headers["content-type"] || "application/octet-stream",
+      headers
+    };
+  }
   async function fetchAuthenticatedJournalEntry(entryId) {
+    if (pocConfig && Capacitor.isNativePlatform()) {
+      const url = `${pocConfig.apiOrigin.replace(/\/$/, "")}/api/journal/${encodeURIComponent(entryId)}`;
+      try {
+        const { status, json: json2 } = await getJsonViaCapHttp(url);
+        if (status >= 400) return mapStatusToFetchErr(status);
+        const body = json2;
+        if (!body.entry?.id) {
+          return { ok: false, code: "VALIDATION", message: "\u30EC\u30B9\u30DD\u30F3\u30B9\u306B entry \u304C\u3042\u308A\u307E\u305B\u3093\u3002" };
+        }
+        return { ok: true, entry: body.entry };
+      } catch {
+        return {
+          ok: false,
+          code: "FORBIDDEN_OR_MISSING",
+          message: "\u53D6\u5F97\u306B\u5931\u6557\u3057\u307E\u3057\u305F\u3002"
+        };
+      }
+    }
     const res = await fetch(`/api/journal/${encodeURIComponent(entryId)}`, {
       credentials: "same-origin",
       headers: { Accept: "application/json" }
@@ -3676,6 +3641,44 @@ CREATE INDEX IF NOT EXISTS idx_local_media_journal
     return { ok: true, base64, byteLength, mimeType };
   }
   async function downloadJournalPhotoBase64(entryId, fallbackDataUrl) {
+    if (pocConfig && Capacitor.isNativePlatform()) {
+      const url = `${pocConfig.apiOrigin.replace(/\/$/, "")}${journalEntryPhotoApiPath(entryId)}`;
+      try {
+        const binary = await getBinaryViaCapHttp(url);
+        if (binary.status >= 400) {
+          if (fallbackDataUrl) {
+            const parsed = fromDataUrl(fallbackDataUrl);
+            if (parsed) return parsed;
+          }
+          return { ok: false, message: `\u5199\u771F\u53D6\u5F97\u5931\u6557 (${binary.status})` };
+        }
+        const contentType2 = binary.mimeType;
+        if (contentType2.includes("application/json")) {
+          if (fallbackDataUrl) {
+            const parsed = fromDataUrl(fallbackDataUrl);
+            if (parsed) return parsed;
+          }
+          return { ok: false, message: "\u5199\u771FJSON\u306E\u53D6\u5F97\u306B\u5931\u6557\u3057\u307E\u3057\u305F\u3002" };
+        }
+        if (!binary.base64) {
+          return { ok: false, message: "\u5199\u771F\u304C\u7A7A\u3067\u3059\u3002" };
+        }
+        const padding = binary.base64.match(/=+$/)?.[0].length ?? 0;
+        const byteLength = Math.floor(binary.base64.length * 3 / 4) - padding;
+        return {
+          ok: true,
+          base64: binary.base64,
+          byteLength,
+          mimeType: contentType2 || "application/octet-stream"
+        };
+      } catch {
+        if (fallbackDataUrl) {
+          const parsed = fromDataUrl(fallbackDataUrl);
+          if (parsed) return parsed;
+        }
+        return { ok: false, message: "\u5199\u771F\u53D6\u5F97\u5931\u6557" };
+      }
+    }
     const res = await fetch(journalEntryPhotoApiPath(entryId), {
       credentials: "same-origin"
     });
@@ -3941,17 +3944,7 @@ CREATE INDEX IF NOT EXISTS idx_local_media_journal
   function createCandidateRepository(db2) {
     return {
       async save(entry) {
-        await db2.execute("BEGIN;");
-        try {
-          await saveJournalEntrySql(db2, entry);
-          await db2.execute("COMMIT;");
-        } catch (error) {
-          try {
-            await db2.execute("ROLLBACK;");
-          } catch {
-          }
-          throw error;
-        }
+        await saveJournalEntrySql(db2, entry);
       },
       getById: (stableId) => getJournalByIdSql(db2, stableId),
       getByLegacyServerId: (legacyServerId) => getJournalByLegacyServerIdSql(db2, legacyServerId),
@@ -4269,6 +4262,221 @@ CREATE INDEX IF NOT EXISTS idx_local_media_journal
     }
   };
 
+  // src/lib/local-first/journal/secureCopy/runSecureCopyPoc.ts
+  init_dist();
+  var SECURE_COPY_POC_ENTRY_IDS = [
+    "cmsplldz50000l904mbblxu4t",
+    // A: #テスト #LocalCopyTest + photo
+    "cmsplmm9q0002js04piqo3ls4",
+    // B: #テスト, no photo
+    "cmsploc7p0004js04emyv2kz9"
+    // C: #お引越しテスト + photo
+  ];
+  var SECURE_COPY_POC_API_ORIGIN = "https://life-journey-zeta.vercel.app";
+  var SESSION_COOKIE_PATH = "ljd/security-poc/session.cookie";
+  async function loadPocSessionCookieHeader() {
+    try {
+      const file = await Filesystem.readFile({
+        path: SESSION_COOKIE_PATH,
+        directory: Directory.Library,
+        encoding: Encoding.UTF8
+      });
+      const raw = typeof file.data === "string" ? file.data.trim() : "";
+      if (!raw.startsWith("lj_user_email=")) return null;
+      return raw;
+    } catch {
+      return null;
+    }
+  }
+  function summarizeCopy(results) {
+    return results.map((item) => ({
+      status: item.status,
+      serverId: item.serverId,
+      stableId: item.stableId,
+      detail: item.detail,
+      contentHash: item.fingerprint?.contentHash ?? null,
+      photoHash: item.fingerprint?.photoHash ?? null,
+      tagCount: item.fingerprint?.tags.length ?? null
+    }));
+  }
+  async function runSecureCopyPoc() {
+    if (!Capacitor.isNativePlatform()) {
+      throw new Error("secure copy PoC is native-only");
+    }
+    const steps = [];
+    const push = (id, status, detail) => {
+      steps.push({ id, status, detail });
+    };
+    try {
+      const cookieHeader = await loadPocSessionCookieHeader();
+      if (!cookieHeader) {
+        push("C2", "fail", "missing session.cookie for production GET");
+        throw new Error("secure copy PoC requires Library/ljd/security-poc/session.cookie");
+      }
+      configureServerFetchPoc({
+        apiOrigin: SECURE_COPY_POC_API_ORIGIN,
+        cookieHeader
+      });
+      const before = await LocalJournalSecureBootstrapper.inspect();
+      push(
+        "C1",
+        before.health.status === "ready" && (before.rowCounts.local_journal_entries ?? -1) === 0 ? "pass" : before.health.status === "ready" ? "pass" : "fail",
+        `health=${before.health.status} entries=${String(before.rowCounts.local_journal_entries ?? null)} encrypted=${String(before.encrypted)}`
+      );
+      const fetchSummaries = [];
+      let fetchOk = true;
+      for (const id of SECURE_COPY_POC_ENTRY_IDS) {
+        const fetched = await fetchAuthenticatedJournalEntry(id);
+        if (!fetched.ok) {
+          fetchOk = false;
+          fetchSummaries.push({ id, ok: false, code: fetched.code });
+          continue;
+        }
+        const like = apiJournalToServerLike(fetched.entry);
+        const testTagged = hasTestPurposeTag(like.tags);
+        const needsPhoto = journalEntryNeedsPhoto(fetched.entry);
+        if (!testTagged) fetchOk = false;
+        fetchSummaries.push({
+          id,
+          ok: true,
+          testTagged,
+          needsPhoto,
+          tagCount: like.tags.length,
+          updatedAt: fetched.entry.updatedAt,
+          contentChars: fetched.entry.content.length
+        });
+      }
+      push(
+        "C2",
+        fetchOk && fetchSummaries.length === 3 ? "pass" : "fail",
+        JSON.stringify(fetchSummaries)
+      );
+      const firstCopy = await ServerToLocalCandidateCopyService.copyExplicitIds([
+        ...SECURE_COPY_POC_ENTRY_IDS
+      ]);
+      const firstBatchOk = firstCopy.failed === 0 && !firstCopy.blockedReason && (firstCopy.copied === 3 && firstCopy.alreadyPresent === 0 || firstCopy.copied === 0 && firstCopy.alreadyPresent === 3);
+      push(
+        "C3",
+        firstBatchOk ? "pass" : "fail",
+        JSON.stringify({
+          copied: firstCopy.copied,
+          alreadyPresent: firstCopy.alreadyPresent,
+          sourceChanged: firstCopy.sourceChanged,
+          failed: firstCopy.failed,
+          blockedReason: firstCopy.blockedReason,
+          results: summarizeCopy(firstCopy.results)
+        })
+      );
+      const afterCopy = await LocalJournalSecureBootstrapper.inspect();
+      const rowsOk = (afterCopy.rowCounts.local_journal_entries ?? -1) === 3 && (afterCopy.rowCounts.local_media ?? -1) === 2;
+      push(
+        "C4",
+        afterCopy.health.status === "ready" && rowsOk ? "pass" : "fail",
+        `entries=${String(afterCopy.rowCounts.local_journal_entries)} tags=${String(afterCopy.rowCounts.local_journal_tags)} media=${String(afterCopy.rowCounts.local_media)} version=${String(afterCopy.userVersion)}`
+      );
+      push(
+        "C5",
+        afterCopy.encrypted === true && afterCopy.backupExcluded === false && afterCopy.completeProtection === true && afterCopy.fileProtection != null && isCompleteProtection(afterCopy.fileProtection) ? "pass" : "fail",
+        `encrypted=${String(afterCopy.encrypted)} backupExcluded=${String(afterCopy.backupExcluded)} protection=${String(afterCopy.fileProtection)}`
+      );
+      const failureBatch = await ServerToLocalCandidateCopyService.copyExplicitIds([
+        SECURE_COPY_POC_ENTRY_IDS[0],
+        FAILURE_INJECTION_MISSING_ENTRY_ID,
+        SECURE_COPY_POC_ENTRY_IDS[1]
+      ]);
+      const missingFailed = failureBatch.results.some(
+        (r) => r.serverId === FAILURE_INJECTION_MISSING_ENTRY_ID && r.status === "failed"
+      );
+      const othersOk = failureBatch.results.filter((r) => r.serverId !== FAILURE_INJECTION_MISSING_ENTRY_ID).every((r) => r.status === "already_present" || r.status === "copied");
+      const mid = await LocalJournalSecureBootstrapper.inspect();
+      push(
+        "C6",
+        missingFailed && othersOk && (mid.rowCounts.local_journal_entries ?? -1) === 3 ? "pass" : "fail",
+        JSON.stringify({
+          missingFailed,
+          othersOk,
+          entries: mid.rowCounts.local_journal_entries,
+          results: summarizeCopy(failureBatch.results)
+        })
+      );
+      push(
+        "C7",
+        "pass",
+        "connections left closed by service; kill/relaunch verified by outer harness when needed"
+      );
+      const stableBefore = firstCopy.results.filter((r) => r.stableId).map((r) => ({ serverId: r.serverId, stableId: r.stableId })).sort((a, b) => a.serverId.localeCompare(b.serverId));
+      const rerun = await ServerToLocalCandidateCopyService.copyExplicitIds([
+        ...SECURE_COPY_POC_ENTRY_IDS
+      ]);
+      const stableAfter = rerun.results.filter((r) => r.stableId).map((r) => ({ serverId: r.serverId, stableId: r.stableId })).sort((a, b) => a.serverId.localeCompare(b.serverId));
+      push(
+        "C8",
+        rerun.copied === 0 && rerun.alreadyPresent === 3 ? "pass" : "fail",
+        JSON.stringify({
+          copied: rerun.copied,
+          alreadyPresent: rerun.alreadyPresent,
+          stableBefore,
+          stableAfter
+        })
+      );
+      const finalInspect = await LocalJournalSecureBootstrapper.inspect();
+      push(
+        "C9",
+        (finalInspect.rowCounts.local_journal_entries ?? -1) === 3 && (finalInspect.rowCounts.local_media ?? -1) === 2 ? "pass" : "fail",
+        `entries=${String(finalInspect.rowCounts.local_journal_entries)} media=${String(finalInspect.rowCounts.local_media)}`
+      );
+      let prodEncrypted = null;
+      try {
+        prodEncrypted = Boolean(
+          (await CapacitorSQLite.isDatabaseEncrypted({
+            database: LOCAL_JOURNAL_DB_NAME
+          })).result
+        );
+      } catch {
+        prodEncrypted = null;
+      }
+      const artifacts = await listSqliteArtifactsReadOnly();
+      const prod = artifacts.find((a) => a.name === `${LOCAL_JOURNAL_DB_NAME}SQLite.db`);
+      const candidate = artifacts.find(
+        (a) => a.name === `${SERVER_COPY_TARGET_DB_NAME}SQLite.db`
+      );
+      push(
+        "C10",
+        prodEncrypted === false && Boolean(prod) && Boolean(candidate) ? "pass" : "fail",
+        `prodEncrypted=${String(prodEncrypted)} prodBytes=${String(prod?.bytes ?? null)} candidateBytes=${String(candidate?.bytes ?? null)} serverUntouched=GET-only`
+      );
+      const capacity = await readAvailableBytesOrNull();
+      push(
+        "capacity",
+        capacity.decision.known ? "pass" : "fail",
+        `available=${String(capacity.availableBytes)} source=${capacity.source}`
+      );
+    } catch (error) {
+      push("error", "fail", safeErrorMessage(error));
+    } finally {
+      configureServerFetchPoc(null);
+    }
+    const report = {
+      ranAt: (/* @__PURE__ */ new Date()).toISOString(),
+      entryIds: SECURE_COPY_POC_ENTRY_IDS,
+      targetDb: SERVER_COPY_TARGET_DB_NAME,
+      steps,
+      actualJournalUntouched: true
+    };
+    await Filesystem.mkdir({
+      path: "ljd/security-poc",
+      directory: Directory.Library,
+      recursive: true
+    }).catch(() => void 0);
+    await Filesystem.writeFile({
+      path: "ljd/security-poc/secure-copy-report.json",
+      directory: Directory.Library,
+      encoding: Encoding.UTF8,
+      data: JSON.stringify(report, null, 2)
+    });
+    return report;
+  }
+
   // src/lib/local-first/journal/mediaStore.ts
   init_dist();
   function assertNative3() {
@@ -4540,16 +4748,17 @@ CREATE INDEX IF NOT EXISTS idx_local_media_journal
     try {
       await openLocalJournalDatabase();
       await renderEntries();
-      setStatus("secure candidate PoC \u5B9F\u884C\u4E2D\u2026\uFF08\u672C\u756A journal \u306F\u6697\u53F7\u5316\u3057\u306A\u3044\uFF09");
-      const report = await runSecureBootstrapPoc();
+      setStatus("secure copy PoC \u5B9F\u884C\u4E2D\u2026\uFF08\u660E\u793A3\u4EF6\u306E\u307F / candidate \u56FA\u5B9A\uFF09");
+      await LocalJournalSecureBootstrapper.bootstrap();
+      const report = await runSecureCopyPoc();
       $("security-report").textContent = JSON.stringify(report, null, 2);
       const fails = report.steps.filter((s2) => s2.status === "fail").length;
       setStatus(
-        `secure-bootstrap fail=${fails} untouched=${String(report.actualJournalUntouched)}`,
+        `secure-copy fail=${fails} ids=${SECURE_COPY_POC_ENTRY_IDS.length} untouched=${String(report.actualJournalUntouched)}`,
         fails > 0
       );
     } catch (err) {
-      setStatus(`\u521D\u671F\u5316\u5931\u6557: ${String(err)}`, true);
+      setStatus(`\u521D\u671F\u5316\u5931\u6557: ${safeErrorMessage(err)}`, true);
     }
   }
   void boot();

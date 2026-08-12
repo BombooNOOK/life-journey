@@ -28,18 +28,10 @@ export function createCandidateRepository(
 ): JournalRepositoryPort {
   return {
     async save(entry: LocalJournalEntry): Promise<void> {
-      await db.execute("BEGIN;");
-      try {
-        await saveJournalEntrySql(db, entry);
-        await db.execute("COMMIT;");
-      } catch (error) {
-        try {
-          await db.execute("ROLLBACK;");
-        } catch {
-          /* */
-        }
-        throw error;
-      }
+      // Cap SQLite `run` already wraps each statement in a transaction.
+      // Explicit BEGIN here nests and fails ("cannot start a transaction within a transaction").
+      // Per-entry logical rollback is handled by the copy service (delete media + no row keep).
+      await saveJournalEntrySql(db, entry);
     },
     getById: (stableId) => getJournalByIdSql(db, stableId),
     getByLegacyServerId: (legacyServerId) =>

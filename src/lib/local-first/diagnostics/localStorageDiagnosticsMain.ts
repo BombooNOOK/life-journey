@@ -7,8 +7,11 @@ import { Capacitor } from "@capacitor/core";
 
 import { openLocalJournalDatabase } from "@/lib/local-first/journal/database";
 import { LocalJournalSecureBootstrapper } from "@/lib/local-first/journal/secureBootstrap/LocalJournalSecureBootstrapper";
-import { runSecureBootstrapPoc } from "@/lib/local-first/journal/secureBootstrap/runSecureBootstrapPoc";
 import { ServerToLocalCandidateCopyService } from "@/lib/local-first/journal/secureCopy/ServerToLocalCandidateCopyService";
+import {
+  runSecureCopyPoc,
+  SECURE_COPY_POC_ENTRY_IDS,
+} from "@/lib/local-first/journal/secureCopy/runSecureCopyPoc";
 import { FAILURE_INJECTION_MISSING_ENTRY_ID } from "@/lib/local-first/journal/secureCopy/types";
 import {
   deleteJournalMediaRelative,
@@ -227,16 +230,18 @@ async function boot(): Promise<void> {
   try {
     await openLocalJournalDatabase();
     await renderEntries();
-    setStatus("secure candidate PoC 実行中…（本番 journal は暗号化しない）");
-    const report = await runSecureBootstrapPoc();
+    setStatus("secure copy PoC 実行中…（明示3件のみ / candidate 固定）");
+    // Ensure candidate exists first (idempotent).
+    await LocalJournalSecureBootstrapper.bootstrap();
+    const report = await runSecureCopyPoc();
     $("security-report").textContent = JSON.stringify(report, null, 2);
     const fails = report.steps.filter((s) => s.status === "fail").length;
     setStatus(
-      `secure-bootstrap fail=${fails} untouched=${String(report.actualJournalUntouched)}`,
+      `secure-copy fail=${fails} ids=${SECURE_COPY_POC_ENTRY_IDS.length} untouched=${String(report.actualJournalUntouched)}`,
       fails > 0,
     );
   } catch (err) {
-    setStatus(`初期化失敗: ${String(err)}`, true);
+    setStatus(`初期化失敗: ${safeErrorMessage(err)}`, true);
   }
 }
 

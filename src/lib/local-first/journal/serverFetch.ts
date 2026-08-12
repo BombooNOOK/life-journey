@@ -1,7 +1,12 @@
 /**
  * Authenticated Server Journal GET helpers (cookie session).
  * No Neon credentials. No Server write. Shared by copy services.
+ *
+ * Optional PoC mode: absolute production origin + session cookie via CapacitorHttp
+ * (local diagnostics WebView is not same-origin with production).
  */
+
+import { Capacitor, CapacitorHttp } from "@capacitor/core";
 
 import { calendarDayKeyInJapanFromDate } from "@/lib/date/japanCalendarDate";
 import { extractTagsFromContent } from "@/lib/journal/diaryTags";
@@ -40,6 +45,24 @@ export type FetchedJournalEntry =
 export type DownloadedPhoto =
   | { ok: true; base64: string; byteLength: number; mimeType: string }
   | { ok: false; message: string };
+
+type ServerFetchPocConfig = {
+  /** Absolute origin, e.g. https://life-journey-zeta.vercel.app */
+  apiOrigin: string;
+  /** Full Cookie header value (never logged). */
+  cookieHeader: string;
+};
+
+let pocConfig: ServerFetchPocConfig | null = null;
+
+/** Developer PoC only. Do not call from product UI. */
+export function configureServerFetchPoc(config: ServerFetchPocConfig | null): void {
+  pocConfig = config;
+}
+
+export function getServerFetchPocConfig(): ServerFetchPocConfig | null {
+  return pocConfig;
+}
 
 function arrayBufferToBase64(buffer: ArrayBuffer): string {
   const bytes = new Uint8Array(buffer);
@@ -94,9 +117,81 @@ export function journalEntryNeedsPhoto(entry: ApiJournalEntry): boolean {
   return entry.hasPhoto === true || Boolean(entry.photoSrc);
 }
 
+function mapStatusToFetchErr(status: number): FetchedJournalEntry {
+  if (status === 401) {
+    return { ok: false, code: "AUTH_REQUIRED", message: "ログインが必要です。" };
+  }
+  if (status === 404) {
+    return { ok: false, code: "NOT_FOUND", message: "対象の記録が見つかりません。" };
+  }
+  return {
+    ok: false,
+    code: "FORBIDDEN_OR_MISSING",
+    message: `取得に失敗しました (${status})。`,
+  };
+}
+
+async function getJsonViaCapHttp(url: string): Promise<{ status: number; json: unknown }> {
+  if (!pocConfig) throw new Error("server fetch PoC config missing");
+  const response = await CapacitorHttp.get({
+    url,
+    headers: {
+      Accept: "application/json",
+      Cookie: pocConfig.cookieHeader,
+    },
+    responseType: "json",
+  });
+  return { status: response.status, json: response.data };
+}
+
+async function getBinaryViaCapHttp(
+  url: string,
+): Promise<{ status: number; base64: string; mimeType: string; headers: Record<string, string> }> {
+  if (!pocConfig) throw new Error("server fetch PoC config missing");
+  const response = await CapacitorHttp.get({
+    url,
+    headers: {
+      Cookie: pocConfig.cookieHeader,
+    },
+    responseType: "blob",
+  });
+  const headers: Record<string, string> = {};
+  for (const [key, value] of Object.entries(response.headers ?? {})) {
+    headers[key.toLowerCase()] = String(value);
+  }
+  const raw = typeof response.data === "string" ? response.data : "";
+  // Native may prefix data URL
+  const base64 = raw.includes(",") ? raw.split(",", 2)[1]! : raw;
+  return {
+    status: response.status,
+    base64,
+    mimeType: headers["content-type"] || "application/octet-stream",
+    headers,
+  };
+}
+
 export async function fetchAuthenticatedJournalEntry(
   entryId: string,
 ): Promise<FetchedJournalEntry> {
+  if (pocConfig && Capacitor.isNativePlatform()) {
+    const url = `${pocConfig.apiOrigin.replace(/\/$/, "")}/api/journal/${encodeURIComponent(entryId)}`;
+    try {
+      const { status, json } = await getJsonViaCapHttp(url);
+      if (status >= 400) return mapStatusToFetchErr(status);
+      const body = json as { entry?: ApiJournalEntry };
+      if (!body.entry?.id) {
+        return { ok: false, code: "VALIDATION", message: "レスポンスに entry がありません。" };
+      }
+      return { ok: true, entry: body.entry };
+    } catch {
+      return {
+        ok: false,
+        code: "FORBIDDEN_OR_MISSING",
+        message: "取得に失敗しました。",
+      };
+    }
+  }
+
   const res = await fetch(`/api/journal/${encodeURIComponent(entryId)}`, {
     credentials: "same-origin",
     headers: { Accept: "application/json" },
@@ -135,6 +230,47 @@ export async function downloadJournalPhotoBase64(
   entryId: string,
   fallbackDataUrl?: string | null,
 ): Promise<DownloadedPhoto> {
+  if (pocConfig && Capacitor.isNativePlatform()) {
+    const url = `${pocConfig.apiOrigin.replace(/\/$/, "")}${journalEntryPhotoApiPath(entryId)}`;
+    try {
+      const binary = await getBinaryViaCapHttp(url);
+      if (binary.status >= 400) {
+        if (fallbackDataUrl) {
+          const parsed = fromDataUrl(fallbackDataUrl);
+          if (parsed) return parsed;
+        }
+        return { ok: false, message: `写真取得失敗 (${binary.status})` };
+      }
+      const contentType = binary.mimeType;
+      if (contentType.includes("application/json")) {
+        // CapHttp may have decoded JSON into object already when content-type is json;
+        // for blob mode we expect base64 string — try fallback.
+        if (fallbackDataUrl) {
+          const parsed = fromDataUrl(fallbackDataUrl);
+          if (parsed) return parsed;
+        }
+        return { ok: false, message: "写真JSONの取得に失敗しました。" };
+      }
+      if (!binary.base64) {
+        return { ok: false, message: "写真が空です。" };
+      }
+      const padding = binary.base64.match(/=+$/)?.[0].length ?? 0;
+      const byteLength = Math.floor((binary.base64.length * 3) / 4) - padding;
+      return {
+        ok: true,
+        base64: binary.base64,
+        byteLength,
+        mimeType: contentType || "application/octet-stream",
+      };
+    } catch {
+      if (fallbackDataUrl) {
+        const parsed = fromDataUrl(fallbackDataUrl);
+        if (parsed) return parsed;
+      }
+      return { ok: false, message: "写真取得失敗" };
+    }
+  }
+
   const res = await fetch(journalEntryPhotoApiPath(entryId), {
     credentials: "same-origin",
   });
