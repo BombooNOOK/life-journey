@@ -1,36 +1,31 @@
 /**
- * Server → encrypted Local candidate multi-entry copy.
+ * Server → encrypted Local candidate multi-entry copy (historical).
  * Explicit entry IDs only. Never retargets ljd_local_journal.
  * Not invoked from general app startup.
+ *
+ * Low-level mirror: mirrorServerJournalEntryToLocalGeneration
+ * (shared with write-through PoC).
  */
 
 import { Capacitor } from "@capacitor/core";
 
-import { sha256HexOfBase64 } from "@/lib/local-first/journal/checksum";
-import { mapServerJournalEntryLikeToLocal } from "@/lib/local-first/journal/mapper";
 import { createLocalStableId } from "@/lib/local-first/journal/stableId";
 import {
-  apiJournalToServerLike,
   downloadJournalPhotoBase64,
   fetchAuthenticatedJournalEntry,
-  journalEntryNeedsPhoto,
-  type ApiJournalEntry,
 } from "@/lib/local-first/journal/serverFetch";
 import { createNativeCandidateMediaStore } from "@/lib/local-first/journal/secureCopy/candidateMediaStore";
 import { assertAllowedCopyTargetDb } from "@/lib/local-first/journal/secureCopy/candidateDbGuard";
 import { withCandidateRepository } from "@/lib/local-first/journal/secureCopy/candidateRepository";
 import {
-  buildSourceFingerprint,
-  fingerprintFromLocalEntry,
-  sourceFingerprintChanged,
-} from "@/lib/local-first/journal/secureCopy/sourceFingerprint";
-import { hasTestPurposeTag, parseExplicitEntryIds } from "@/lib/local-first/journal/secureCopy/testEntryGuard";
+  mirrorServerJournalEntryToLocalGeneration,
+  type MirrorPrimitiveDeps,
+} from "@/lib/local-first/journal/secureCopy/mirrorServerJournalEntry";
+import { parseExplicitEntryIds } from "@/lib/local-first/journal/secureCopy/testEntryGuard";
 import type {
-  CandidateMediaPort,
   CopyBatchResult,
   CopyEntryResult,
-  JournalRepositoryPort,
-  SourceFingerprint,
+  MirrorEntryResult,
 } from "@/lib/local-first/journal/secureCopy/types";
 import {
   SECURE_COPY_MAX_EXPLICIT_IDS,
@@ -41,26 +36,11 @@ import { LocalJournalSecureBootstrapper } from "@/lib/local-first/journal/secure
 import {
   decideCapacityKnown,
   readAvailableBytesOrNull,
-  safeErrorMessage,
 } from "@/lib/local-first/security";
 import { LocalFirstSecurityError } from "@/lib/local-first/security/types";
 
-export type CopyServiceDeps = {
-  fetchEntry: (id: string) => Promise<
-    | { ok: true; entry: ApiJournalEntry }
-    | { ok: false; code: string; message: string }
-  >;
-  downloadPhoto: (
-    id: string,
-    fallback?: string | null,
-  ) => Promise<
-    | { ok: true; base64: string; byteLength: number; mimeType: string }
-    | { ok: false; message: string }
-  >;
-  repository: JournalRepositoryPort;
-  media: CandidateMediaPort;
-  createStableId: () => string;
-};
+/** Historical copy deps = mirror primitive deps (no Local failure injection by default). */
+export type CopyServiceDeps = MirrorPrimitiveDeps;
 
 function emptyBatch(blockedReason: string | null): CopyBatchResult {
   return {
@@ -79,6 +59,19 @@ function emptyBatch(blockedReason: string | null): CopyBatchResult {
   };
 }
 
+function toCopyEntryResult(mirror: MirrorEntryResult): CopyEntryResult {
+  const status =
+    mirror.status === "mirrored" ? ("copied" as const) : mirror.status;
+  return {
+    status,
+    serverId: mirror.serverId,
+    stableId: mirror.stableId,
+    legacyServerId: mirror.legacyServerId,
+    detail: mirror.detail,
+    fingerprint: mirror.fingerprint,
+  };
+}
+
 function summarize(results: CopyEntryResult[]): Pick<
   CopyBatchResult,
   "copied" | "alreadyPresent" | "sourceChanged" | "failed" | "ok"
@@ -94,150 +87,6 @@ function summarize(results: CopyEntryResult[]): Pick<
     failed,
     ok: failed === 0 && sourceChanged === 0,
   };
-}
-
-function failResult(serverId: string, detail: string): CopyEntryResult {
-  return {
-    status: "failed",
-    serverId,
-    stableId: null,
-    legacyServerId: null,
-    detail,
-    fingerprint: null,
-  };
-}
-
-async function copyOne(
-  serverId: string,
-  deps: CopyServiceDeps,
-  availableBytes: number | null,
-): Promise<CopyEntryResult> {
-  const fetched = await deps.fetchEntry(serverId);
-  if (!fetched.ok) {
-    return failResult(serverId, fetched.message);
-  }
-  const apiEntry = fetched.entry;
-  const serverLike = apiJournalToServerLike(apiEntry);
-  if (!hasTestPurposeTag(serverLike.tags)) {
-    return failResult(serverId, "not_test_entry");
-  }
-
-  const existing = await deps.repository.getByLegacyServerId(apiEntry.id);
-  const incomingMeta = await buildSourceFingerprint({
-    legacyServerId: apiEntry.id,
-    serverUpdatedAt: apiEntry.updatedAt,
-    content: apiEntry.content,
-    tags: serverLike.tags,
-    photoHash: existing?.mediaRefs[0]?.checksum ?? null,
-    mediaCount: journalEntryNeedsPhoto(apiEntry) ? 1 : 0,
-  });
-
-  if (existing) {
-    const existingFp = await fingerprintFromLocalEntry(existing);
-    if (sourceFingerprintChanged(existingFp, incomingMeta)) {
-      return {
-        status: "source_changed",
-        serverId,
-        stableId: existing.stableId,
-        legacyServerId: existing.legacyServerId,
-        detail: "source_changed_no_overwrite",
-        fingerprint: incomingMeta,
-      };
-    }
-    return {
-      status: "already_present",
-      serverId,
-      stableId: existing.stableId,
-      legacyServerId: existing.legacyServerId,
-      detail: "legacyServerId already present; left untouched",
-      fingerprint: existingFp,
-    };
-  }
-
-  let photoBase64: string | null = null;
-  let photoBytes = 0;
-  let photoMime: string | null = null;
-  let photoHash: string | null = null;
-  if (journalEntryNeedsPhoto(apiEntry)) {
-    const photo = await deps.downloadPhoto(apiEntry.id, apiEntry.photoDataUrl);
-    if (!photo.ok) {
-      return failResult(serverId, photo.message);
-    }
-    if (
-      availableBytes != null &&
-      photo.byteLength > 0 &&
-      photo.byteLength > availableBytes
-    ) {
-      return failResult(serverId, "insufficient_free_space");
-    }
-    photoBase64 = photo.base64;
-    photoBytes = photo.byteLength;
-    photoMime = photo.mimeType;
-    photoHash = await sha256HexOfBase64(photo.base64);
-  }
-
-  const journalStableId = deps.createStableId();
-  const mediaStableId = deps.createStableId();
-  let relativePath: string | null = null;
-  try {
-    if (photoBase64 && photoHash) {
-      const ext = photoMime?.includes("png")
-        ? "png"
-        : photoMime?.includes("webp")
-          ? "webp"
-          : "jpg";
-      relativePath = await deps.media.write(
-        `${journalStableId}-${mediaStableId}.${ext}`,
-        photoBase64,
-      );
-      const written = await deps.media.readBase64(relativePath);
-      const verify = await sha256HexOfBase64(written);
-      if (verify !== photoHash) {
-        await deps.media.delete(relativePath);
-        return failResult(serverId, "photo_checksum_mismatch");
-      }
-    }
-
-    if (photoMime) serverLike.photoMimeType = photoMime;
-    if (photoBytes) serverLike.photoSizeBytes = photoBytes;
-
-    const local = mapServerJournalEntryLikeToLocal(serverLike, {
-      journalStableId,
-      mediaStableId: relativePath ? mediaStableId : undefined,
-      mediaRelativePath: relativePath,
-      mediaChecksum: photoHash,
-      source: "migrated_server",
-    });
-
-    await deps.repository.save(local);
-    const stored = await deps.repository.getById(local.stableId);
-    if (!stored) {
-      throw new Error("save confirmed missing");
-    }
-
-    const fingerprint: SourceFingerprint = await buildSourceFingerprint({
-      legacyServerId: stored.legacyServerId ?? apiEntry.id,
-      serverUpdatedAt: stored.serverUpdatedAt ?? apiEntry.updatedAt,
-      content: stored.content,
-      tags: stored.tags,
-      photoHash,
-      mediaCount: stored.mediaRefs.length,
-    });
-
-    return {
-      status: "copied",
-      serverId,
-      stableId: stored.stableId,
-      legacyServerId: stored.legacyServerId,
-      detail: "copied to encrypted candidate",
-      fingerprint,
-    };
-  } catch (error) {
-    if (relativePath) {
-      await deps.media.delete(relativePath).catch(() => undefined);
-    }
-    return failResult(serverId, safeErrorMessage(error));
-  }
 }
 
 export function prepareCopyBatch(
@@ -287,7 +136,12 @@ export async function copyExplicitIdsWithDeps(
 
   const results: CopyEntryResult[] = [];
   for (const id of prepared.entryIds) {
-    results.push(await copyOne(id, deps, prepared.availableBytes));
+    const mirrored = await mirrorServerJournalEntryToLocalGeneration(
+      id,
+      deps,
+      prepared.availableBytes,
+    );
+    results.push(toCopyEntryResult(mirrored));
   }
   const summary = summarize(results);
   const rowCounts = {

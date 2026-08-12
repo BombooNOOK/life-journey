@@ -341,6 +341,7 @@ describe("no-secret / no-content logging + test tag + media namespace", () => {
   it("recognizes test-purpose tags only", () => {
     expect(hasTestPurposeTag(["#テスト"])).toBe(true);
     expect(hasTestPurposeTag(["#LocalCopyTest"])).toBe(true);
+    expect(hasTestPurposeTag(["#WriteThroughTest"])).toBe(true);
     expect(hasTestPurposeTag(["#雨"])).toBe(false);
   });
 });

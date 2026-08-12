@@ -21,11 +21,13 @@
 # Life Journey Diary｜Local Journal Transitional Write Routing
 
 **Status:** Pre-Implementation Transitional Write Routing / Source of Truth Candidate  
-**ラベル:** **Designed candidate**＝移行期間の第一候補／**Future**＝Local-first 最終形／**Open**＝未確定／**Forbidden now**＝本Phase実装禁止／**Release Gate**＝未実証（PASS禁止）
+**ラベル:** **Designed candidate**＝移行期間の第一候補／**Future**＝Local-first 最終形／**Open**＝未確定／**Forbidden now**＝本Phase実装禁止／**Release Gate**＝未実証（PASS禁止）  
+**PoC (4B-4E):** developer-only write-through mirror 実装中。一般 Journal save 未接続。Simulator W1–W10 は明示 test entry ID 待ち。
 
 **関連:**  
 - Activation（technical vs SoT）: `docs/product/ljd-local-journal-activation-spec.md`  
-- Hybrid メモ: `docs/hybrid/HYBRID_PHASE_4B4D_WRITE_ROUTING_ARCHITECTURE.md`
+- Hybrid メモ: `docs/hybrid/HYBRID_PHASE_4B4D_WRITE_ROUTING_ARCHITECTURE.md`  
+- Write-through PoC: `docs/hybrid/HYBRID_PHASE_4B4E_WRITE_THROUGH_MIRROR_POC.md`
 
 ---
 
@@ -249,12 +251,27 @@ Strategy D への切替は **Source-of-Truth switch の一部**であり、techn
 
 ---
 
-## 8. 禁止（本Phase）
+## 8. 禁止（移行設計 Phase / 製品接続）
 
-write routing 実装、Server/Local write test、pointer 実装、Repository 切替、candidate activation、Local原本化、build / Simulator / Xcode、main merge。
+一般 Journal save への mirror 組込み、independent dual-write、pointer / Repository 切替、Local原本化、background sync、main merge。
+
+**4B-4E:** developer-only write-through mirror PoC（candidate のみ・明示 ID）は許可。詳細は `docs/hybrid/HYBRID_PHASE_4B4E_WRITE_THROUGH_MIRROR_POC.md`。
 
 ---
 
 ## 9. 矛盾時の優先
 
 世界観 → Local-first 方針 → お引越し便 → 端末保存・復元 → データ保護 SoT → **activation SoT** → **本 write-routing SoT（候補）** → Hybrid メモ → コード。
+
+---
+
+## 10. 4B-4E PoC 進捗（追記）
+
+| 項目 | 状態 |
+| --- | --- |
+| 共通 primitive `mirrorServerJournalEntryToLocalGeneration` | 実装 |
+| historical copy 再利用 | 実装（`copied` ← `mirrored`） |
+| `MirrorResult.needsRetry` | 実装（queue なし） |
+| Local failure injection | 実装（unit PASS） |
+| 一般 UI 接続 | なし |
+| Simulator W1–W10 | **明示 test entry ID 待ち** |

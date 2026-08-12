@@ -80,6 +80,22 @@
       <div class="actions">
         <button type="button" id="btn-copy-to-secure-candidate">Copy explicit IDs to encrypted candidate</button>
       </div>
+      <label class="note" for="write-through-entry-id">
+        4B-4E write-through mirror（明示1件・本番 save には未接続）
+        <input
+          id="write-through-entry-id"
+          type="text"
+          style="display:block;width:100%;margin-top:0.35rem;font:inherit"
+          placeholder="新規テスト専用 cuid（#WriteThroughTest / #テスト）"
+          autocomplete="off"
+          autocapitalize="off"
+          autocorrect="off"
+        />
+      </label>
+      <div class="actions">
+        <button type="button" id="btn-write-through-mirror">Write-through mirror (explicit ID)</button>
+        <button type="button" id="btn-write-through-poc">Run W1–W10 write-through PoC</button>
+      </div>
       <p id="status" class="status">起動中…</p>
       <section>
         <h2 style="font-size: 0.95rem; font-family: system-ui, sans-serif">Security attrs</h2>

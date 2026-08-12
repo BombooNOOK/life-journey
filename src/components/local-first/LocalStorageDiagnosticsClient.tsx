@@ -16,6 +16,7 @@ import {
 import { migrateServerJournalEntryToDevice } from "@/lib/local-first/journal/migrateFromServer";
 import { JournalRepository } from "@/lib/local-first/journal/repository";
 import { ServerToLocalCandidateCopyService } from "@/lib/local-first/journal/secureCopy/ServerToLocalCandidateCopyService";
+import { ServerAuthoritativeWriteThroughMirrorService } from "@/lib/local-first/journal/secureCopy/ServerAuthoritativeWriteThroughMirrorService";
 import { FAILURE_INJECTION_MISSING_ENTRY_ID } from "@/lib/local-first/journal/secureCopy/types";
 import type { LocalJournalEntry } from "@/lib/local-first/journal/types";
 import {
@@ -28,6 +29,7 @@ import { inspectFileProtection } from "@/lib/local-first/security/fileProtection
 export function LocalStorageDiagnosticsClient() {
   const [entryId, setEntryId] = useState("");
   const [candidateIds, setCandidateIds] = useState("");
+  const [writeThroughId, setWriteThroughId] = useState("");
   const [status, setStatus] = useState("準備中…");
   const [entries, setEntries] = useState<LocalJournalEntry[]>([]);
   const [previewUri, setPreviewUri] = useState<string | null>(null);
@@ -95,6 +97,35 @@ export function LocalStorageDiagnosticsClient() {
       ),
     );
   }, [candidateIds]);
+
+  const onWriteThroughMirror = useCallback(async () => {
+    if (!writeThroughId.trim()) {
+      setStatus("明示 Server entry ID が必要です（自動検索しません）。");
+      return;
+    }
+    setStatus("write-through mirror…（Server GET → candidate / 本番 save 未接続）");
+    const result = await ServerAuthoritativeWriteThroughMirrorService.mirrorExplicitId(
+      writeThroughId.trim(),
+    );
+    setStatus(
+      JSON.stringify(
+        {
+          result: result.result,
+          serverEntryId: result.serverEntryId,
+          needsRetry: result.needsRetry,
+          stableId: result.stableId,
+          legacyServerId: result.legacyServerId,
+          detail: result.detail,
+          contentHash: result.fingerprint?.contentHash ?? null,
+          photoHash: result.fingerprint?.photoHash ?? null,
+          rowCounts: result.rowCounts,
+          injectedLocalFailure: result.injectedLocalFailure,
+        },
+        null,
+        2,
+      ),
+    );
+  }, [writeThroughId]);
 
   const onClear = useCallback(async () => {
     const paths = await JournalRepository.deleteAll();
@@ -171,6 +202,18 @@ export function LocalStorageDiagnosticsClient() {
         />
       </label>
 
+      <label className="block text-sm">
+        <span className="font-medium">4B-4E: write-through mirror（明示1件・本番 save 未接続）</span>
+        <input
+          className="mt-1 w-full rounded-lg border border-stone-300 bg-white px-3 py-2 text-sm"
+          value={writeThroughId}
+          onChange={(e) => setWriteThroughId(e.target.value)}
+          placeholder="新規テスト専用 cuid（#WriteThroughTest / #テスト）"
+          autoCapitalize="off"
+          autoCorrect="off"
+        />
+      </label>
+
       <div className="flex flex-col gap-2 sm:flex-row">
         <button
           type="button"
@@ -185,6 +228,13 @@ export function LocalStorageDiagnosticsClient() {
           onClick={() => void onCopyToCandidate().catch((e) => setStatus(String(e)))}
         >
           Copy explicit IDs to encrypted candidate
+        </button>
+        <button
+          type="button"
+          className="rounded-lg bg-teal-800 px-4 py-2.5 text-sm font-semibold text-white"
+          onClick={() => void onWriteThroughMirror().catch((e) => setStatus(String(e)))}
+        >
+          Write-through mirror (explicit ID)
         </button>
         <button
           type="button"

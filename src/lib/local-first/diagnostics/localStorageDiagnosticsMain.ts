@@ -8,10 +8,12 @@ import { Capacitor } from "@capacitor/core";
 import { openLocalJournalDatabase } from "@/lib/local-first/journal/database";
 import { LocalJournalSecureBootstrapper } from "@/lib/local-first/journal/secureBootstrap/LocalJournalSecureBootstrapper";
 import { ServerToLocalCandidateCopyService } from "@/lib/local-first/journal/secureCopy/ServerToLocalCandidateCopyService";
+import { ServerAuthoritativeWriteThroughMirrorService } from "@/lib/local-first/journal/secureCopy/ServerAuthoritativeWriteThroughMirrorService";
 import {
   runSecureCopyPoc,
   SECURE_COPY_POC_ENTRY_IDS,
 } from "@/lib/local-first/journal/secureCopy/runSecureCopyPoc";
+import { runWriteThroughMirrorPoc } from "@/lib/local-first/journal/secureCopy/runWriteThroughMirrorPoc";
 import { FAILURE_INJECTION_MISSING_ENTRY_ID } from "@/lib/local-first/journal/secureCopy/types";
 import {
   deleteJournalMediaRelative,
@@ -171,6 +173,56 @@ async function boot(): Promise<void> {
       setStatus(
         `copy copied=${result.copied} present=${result.alreadyPresent} changed=${result.sourceChanged} failed=${result.failed} blocked=${String(result.blockedReason)}`,
         !result.ok || Boolean(result.blockedReason),
+      );
+    })().catch((e) => setStatus(safeErrorMessage(e), true));
+  });
+
+  $("btn-write-through-mirror").addEventListener("click", () => {
+    void (async () => {
+      const id = ($("write-through-entry-id") as HTMLInputElement).value.trim();
+      if (!id) {
+        setStatus("明示 Server entry ID が必要です（自動検索しません）。", true);
+        return;
+      }
+      setStatus("write-through mirror…（Server GET → candidate / 本番 save 未接続）");
+      const result = await ServerAuthoritativeWriteThroughMirrorService.mirrorExplicitId(id);
+      $("security-report").textContent = JSON.stringify(
+        {
+          result: result.result,
+          serverEntryId: result.serverEntryId,
+          needsRetry: result.needsRetry,
+          stableId: result.stableId,
+          legacyServerId: result.legacyServerId,
+          detail: result.detail,
+          contentHash: result.fingerprint?.contentHash ?? null,
+          photoHash: result.fingerprint?.photoHash ?? null,
+          rowCounts: result.rowCounts,
+          injectedLocalFailure: result.injectedLocalFailure,
+        },
+        null,
+        2,
+      );
+      setStatus(
+        `mirror result=${result.result} needsRetry=${String(result.needsRetry)}`,
+        !result.ok,
+      );
+    })().catch((e) => setStatus(safeErrorMessage(e), true));
+  });
+
+  $("btn-write-through-poc").addEventListener("click", () => {
+    void (async () => {
+      const id = ($("write-through-entry-id") as HTMLInputElement).value.trim();
+      if (!id) {
+        setStatus("W1–W10 には明示テスト entry ID が必要です。", true);
+        return;
+      }
+      setStatus("write-through PoC W1–W10…");
+      const report = await runWriteThroughMirrorPoc({ entryId: id });
+      $("security-report").textContent = JSON.stringify(report, null, 2);
+      const fails = report.steps.filter((s) => s.status === "fail").length;
+      setStatus(
+        `write-through fail=${fails} idSet=${Boolean(report.entryId)} untouched=${String(report.actualJournalUntouched)}`,
+        fails > 0,
       );
     })().catch((e) => setStatus(safeErrorMessage(e), true));
   });
