@@ -15,6 +15,7 @@
  * - docs/product/ljd-moving-package-spec.md
  * - docs/product/ljd-local-data-security-spec.md
  * - docs/product/ljd-device-storage-and-restore-spec.md
+ * - docs/product/ljd-local-journal-write-routing-spec.md（4B-4D: 移行期 write 経路）
  */
 
 # Life Journey Diary｜Local Journal Activation Architecture
@@ -272,7 +273,14 @@ previous generation は端末内 rollback 保険。お引越し便の正式対�
 
 > Technical activation のあと、**新しいあしあとをどこへ write するか**  
 > （Server only / Local only / dual-write / Local-first with Server mirror）  
-> が最大の未決。activation 実装より前か同時に方針比較が必要。
+> が最大の未決。
+
+**4B-4D 回答候補:** 移行期間は **Server-authoritative write-through mirror** を第一候補とする。  
+詳細: `docs/product/ljd-local-journal-write-routing-spec.md` ／  
+`docs/hybrid/HYBRID_PHASE_4B4D_WRITE_ROUTING_ARCHITECTURE.md`。  
+実装・Local-first 最終切替は別 Phase / Gate。
+
+activation 実装より前か同時に方針比較が必要、という 4B-4C 時点の注意は、**write-through を先に確定する順序**として 4B-4D で具体化した。
 
 ---
 

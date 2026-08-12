@@ -84,7 +84,10 @@ empty plaintext は legacy として残す（削除・rename しない）。
 ## 7. Server / 原本 / RG / moving
 
 - activation ≠ Local原本化。当面 Server 原本維持・parallel verification。  
-- **次Phase課題:** activation 後の新規あしあと write 先（Server / Local / dual）。  
+- **次Phase課題（4B-4D で回答候補）:** activation 後の新規あしあと write 先。  
+  移行期第一候補 = **Server-authoritative write-through mirror**。  
+  SoT: `docs/product/ljd-local-journal-write-routing-spec.md` ／  
+  メモ: `docs/hybrid/HYBRID_PHASE_4B4D_WRITE_ROUTING_ARCHITECTURE.md`。  
 - RG-1〜4 未完。本Phaseで PASS にしない。原本切替前は RG-2/3 重要。  
 - お引越し便初期候補: **active generation のみ正式**。previous は端末内保険。
 
@@ -107,7 +110,7 @@ pointer 実装、rename、Repository 切替、actual DB/media 変更、Local/Ser
 | 問い | 判定 |
 | --- | --- |
 | pointer/generation を第一候補にしてよいか | **A** |
-| 次に activation 実装 PoC へ進めるか | **B（条件付き）** — write 先方針の短い比較が先か同時 |
+| 次に activation 実装 PoC へ進めるか | **B（条件付き）** — write 先方針の短い比較が先か同時 → **4B-4D で実施** |
 | その前に追加 multi-copy すべきか | **B** — 必須ではない。方針確定後でよい |
 | main 統合 | **B** |
-| 次Phase推奨 | write-target 比較メモ →（任意）同 generation 明示5〜10件 → activation PoC（Group A） |
+| 次Phase推奨 | write-through 確定（4B-4D）→ write-through mirror PoC → developer-only activation pointer（一般 UI は Local-only にしない） |
