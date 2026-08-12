@@ -324,7 +324,8 @@ production save 配線、pending queue 実装、background retry、Local read �
 
 **追記（4B-4L）:** internal save mirror wiring PoC は `docs/hybrid/HYBRID_PHASE_4B4L_INTERNAL_SAVE_WIRING_POC.md`。  
 developer/internal gate 有効時のみ `handleConfirmedServerJournalMirror` を Server 成功後に fire-and-forget。  
-`SERVER_SUCCESS_TO_OUTBOX_GAP` は未解決（Release Blocker 候補）。
+**native/live L1–L13 正式 PASS**（明示 `#SaveWiringTest` 1 件、FAILS=0）。  
+`SERVER_SUCCESS_TO_OUTBOX_GAP` は**未解決**（Release Blocker 候補のまま）。一般 production rollout / main merge は不可。
 
 ---
 
@@ -351,5 +352,6 @@ registry validation 層 PoC: `docs/hybrid/HYBRID_PHASE_4B4K_GENERATION_REGISTRY_
 
 ## 24. 4B-4L 追記
 
-internal save mirror wiring PoC: `docs/hybrid/HYBRID_PHASE_4B4L_INTERNAL_SAVE_WIRING_POC.md`。
+internal save mirror wiring PoC: `docs/hybrid/HYBRID_PHASE_4B4L_INTERNAL_SAVE_WIRING_POC.md`。  
+**Status: 正式 PASS**（native/live L1–L13）。`SERVER_SUCCESS_TO_OUTBOX_GAP` 未解決。main 統合不可。
 

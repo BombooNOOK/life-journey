@@ -36,6 +36,23 @@ import type {
   ConfirmedServerJournalMirrorInput,
   ConfirmedServerJournalMirrorResult,
 } from "@/lib/local-first/journal/save/types";
+import { SAVE_WIRING_POC_ENTRY_ID_PATH } from "@/lib/local-first/journal/save/types";
+
+/** Record this save's entry id for L2–L11 live PoC (gate ON only; never searches journal list). */
+async function recordSaveWiringTestEntryId(serverEntryId: string): Promise<void> {
+  try {
+    const { Directory, Encoding, Filesystem } = await import("@capacitor/filesystem");
+    await Filesystem.writeFile({
+      path: SAVE_WIRING_POC_ENTRY_ID_PATH,
+      directory: Directory.Library,
+      encoding: Encoding.UTF8,
+      data: serverEntryId,
+      recursive: true,
+    });
+  } catch {
+    /* optional — live PoC helper only */
+  }
+}
 
 function mapAttemptOutcome(
   serverEntryId: string,
@@ -95,6 +112,9 @@ export async function handleConfirmedServerJournalMirror(
   if (!canRunInternalJournalSaveMirror()) {
     return { status: "disabled", serverEntryId };
   }
+
+  // Capture entry id from this confirmed Server save response (not from browsing entries).
+  await recordSaveWiringTestEntryId(serverEntryId);
 
   const routing = await assertSaveMirrorRoutingPreconditions({
     allowUnknownCapacity: true,

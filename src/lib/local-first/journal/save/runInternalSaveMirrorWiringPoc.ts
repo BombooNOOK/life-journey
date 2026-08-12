@@ -108,151 +108,248 @@ export async function runInternalSaveMirrorWiringPoc(): Promise<{
     }),
   );
 
-  const cookie = await loadPocSessionCookieHeader();
-  if (!cookie) {
-    push("L2", "skip", "session cookie missing — create #SaveWiringTest entry via local dev Server UI first");
-    push("L3", "skip", "no entry id");
+  // Prefer entry id written from this save response (gate ON). Do not browse journal lists.
+  // Local Capacitor→Next uses same-origin session — do NOT point fetch at Vercel production.
+  configureServerFetchPoc(null);
+
+  const entryId = await loadSaveWiringTestEntryId();
+  if (!entryId) {
+    // Optional legacy path: production-origin PoC cookie (not used for local live verification).
+    const cookie = await loadPocSessionCookieHeader();
+    if (cookie) {
+      configureServerFetchPoc({ apiOrigin: POC_API_ORIGIN, cookieHeader: cookie });
+    }
+    push(
+      "L2",
+      "skip",
+      `write ${SAVE_WIRING_POC_ENTRY_ID_PATH} with #SaveWiringTest entry id after Server save (local dev — no Vercel deploy)`,
+    );
+    push("L3", "skip", "no entry id file");
     for (const id of ["L4", "L5", "L6", "L7", "L8", "L9", "L10", "L11", "L12", "L13"]) {
       push(id, "skip", "blocked by L2");
     }
   } else {
-    configureServerFetchPoc({ apiOrigin: POC_API_ORIGIN, cookieHeader: cookie });
+    const fetched = await fetchAuthenticatedJournalEntry(entryId);
+    push(
+      "L2",
+      fetched.ok ? "pass" : "fail",
+      fetched.ok
+        ? "server entry exists (GET ok; this save id only)"
+        : `server GET failed: ${fetched.code}`,
+    );
 
-    const entryId = await loadSaveWiringTestEntryId();
-    if (!entryId) {
-      push(
-        "L2",
-        "skip",
-        `write ${SAVE_WIRING_POC_ENTRY_ID_PATH} with #SaveWiringTest entry id after Server save (local dev — no Vercel deploy)`,
-      );
-      push("L3", "skip", "no entry id file");
+    push(
+      "L3",
+      fetched.ok ? "pass" : "fail",
+      fetched.ok
+        ? `entryIdChars=${entryId.length} redacted=${redactServerEntryIdForLog(entryId)}`
+        : "no entry",
+    );
+
+    if (!fetched.ok) {
       for (const id of ["L4", "L5", "L6", "L7", "L8", "L9", "L10", "L11", "L12", "L13"]) {
-        push(id, "skip", "blocked by L2");
+        push(id, "skip", "blocked by L2/L3");
       }
     } else {
-      const fetched = await fetchAuthenticatedJournalEntry(entryId);
+      const hasTag = fetched.entry.content.includes(SAVE_WIRING_TEST_TAG);
+      const routing = await assertSaveMirrorRoutingPreconditions();
       push(
-        "L2",
-        fetched.ok ? "pass" : "skip",
-        fetched.ok
-          ? "server entry exists (GET ok)"
-          : `server GET failed: ${fetched.ok ? "" : fetched.code} — save #SaveWiringTest via local dev first`,
+        "L4",
+        hasTag && routing.ok ? "pass" : "fail",
+        hasTag
+          ? JSON.stringify(routing)
+          : `missing ${SAVE_WIRING_TEST_TAG}`,
       );
 
-      push(
-        "L3",
-        fetched.ok ? "pass" : "skip",
-        fetched.ok
-          ? `entryIdChars=${entryId.length} redacted=${redactServerEntryIdForLog(entryId)}`
-          : "no entry",
-      );
-
-      if (!fetched.ok) {
-        for (const id of ["L4", "L5", "L6", "L7", "L8", "L9", "L10", "L11", "L12", "L13"]) {
-          push(id, "skip", "blocked by L2/L3");
-        }
+      if (!canRunInternalJournalSaveMirror()) {
+        push("L5", "skip", "gate OFF");
       } else {
-        const hasTag = fetched.entry.content.includes(SAVE_WIRING_TEST_TAG);
+        // Clear any leftover pending for this entry so L5–L6 measure this run only.
+        {
+          const opened = await openLocalMirrorOutboxSqliteStore();
+          try {
+            const pending = await opened.store.listPending();
+            for (const row of pending) {
+              if (row.serverEntryId === entryId) {
+                await opened.store.ackRemove(row.id);
+              }
+            }
+          } finally {
+            await opened.close();
+          }
+        }
+
+        // If this entry was already mirrored by the live save, remove ONLY that
+        // Local candidate row so injectLocalFailure can run (developer PoC only).
+        try {
+          const { openNamedEncryptedDatabase, closeNamedEncryptedDatabase } =
+            await import("@/lib/local-first/security");
+          const { SERVER_COPY_TARGET_DB_NAME } = await import(
+            "@/lib/local-first/journal/secureCopy/types"
+          );
+          const { createNativeCandidateMediaStore } = await import(
+            "@/lib/local-first/journal/secureCopy/candidateMediaStore"
+          );
+          const db = await openNamedEncryptedDatabase(SERVER_COPY_TARGET_DB_NAME, 1);
+          try {
+            const existing = await db.query(
+              `SELECT stable_id FROM local_journal_entries
+               WHERE legacy_server_id = ? AND local_status = 'active' LIMIT 1;`,
+              [entryId],
+            );
+            const stableId = existing.values?.[0]
+              ? String((existing.values[0] as { stable_id: string }).stable_id)
+              : null;
+            if (stableId) {
+              const media = await db.query(
+                `SELECT relative_path FROM local_media WHERE journal_stable_id = ?;`,
+                [stableId],
+              );
+              const mediaStore = await createNativeCandidateMediaStore();
+              for (const row of media.values ?? []) {
+                const rel = String((row as { relative_path: string }).relative_path);
+                await mediaStore.delete(rel).catch(() => undefined);
+              }
+              await db.run(`DELETE FROM local_media WHERE journal_stable_id = ?;`, [
+                stableId,
+              ]);
+              await db.run(`DELETE FROM local_journal_tags WHERE journal_stable_id = ?;`, [
+                stableId,
+              ]);
+              await db.run(
+                `DELETE FROM local_journal_entries WHERE stable_id = ?;`,
+                [stableId],
+              );
+            }
+          } finally {
+            await closeNamedEncryptedDatabase(SERVER_COPY_TARGET_DB_NAME);
+          }
+        } catch {
+          /* if removal fails, inject may short-circuit to already_present */
+        }
+
+        const first = await handleConfirmedServerJournalMirror({
+          serverEntryId: entryId,
+          developer: { injectLocalFailureAfterEnqueue: "save" },
+        });
+        const pendingAfterInject = await (async () => {
+          const opened = await openLocalMirrorOutboxSqliteStore();
+          try {
+            return (await opened.store.listPending()).filter(
+              (row) => row.serverEntryId === entryId,
+            );
+          } finally {
+            await opened.close();
+          }
+        })();
+        const injectPathOk =
+          first.status === "queued_retry" ||
+          (pendingAfterInject.length >= 1 &&
+            pendingAfterInject.some(
+              (row) =>
+                row.lastResult === "retry_needed" || row.lastResult === "failed",
+            ));
         push(
-          "L4",
-          hasTag ? "pass" : "fail",
-          hasTag
-            ? JSON.stringify(await assertSaveMirrorRoutingPreconditions())
-            : `missing ${SAVE_WIRING_TEST_TAG}`,
+          "L5",
+          injectPathOk ? "pass" : "fail",
+          JSON.stringify({
+            status: first.status,
+            lastResult:
+              first.status === "queued_retry" ? first.lastResult : null,
+            pendingForEntry: pendingAfterInject.length,
+          }),
         );
 
-        if (!canRunInternalJournalSaveMirror()) {
-          push("L5", "skip", "gate OFF");
-        } else {
-          const first = await handleConfirmedServerJournalMirror({
-            serverEntryId: entryId,
-            developer: { injectLocalFailureAfterEnqueue: "save" },
+        push(
+          "L6",
+          injectPathOk ? "pass" : "fail",
+          "injected Local save failure after enqueue",
+        );
+
+        push(
+          "L7",
+          pendingAfterInject.length >= 1 ? "pass" : "fail",
+          `pending=${pendingAfterInject.length} donguri=not_reinvoked`,
+        );
+
+        // Persistence check: reopen outbox store.
+        const pendingAfterReopen = await (async () => {
+          const opened = await openLocalMirrorOutboxSqliteStore();
+          try {
+            return (await opened.store.listPending()).filter(
+              (row) => row.serverEntryId === entryId,
+            );
+          } finally {
+            await opened.close();
+          }
+        })();
+        push(
+          "L8",
+          pendingAfterReopen.length >= 1 ? "pass" : "fail",
+          `pending=${pendingAfterReopen.length} after outbox reopen`,
+        );
+
+        const retry = await retryPendingServerJournalMirror({
+          serverEntryId: entryId,
+        });
+        push(
+          "L9",
+          retry.status === "mirrored" || retry.status === "already_present"
+            ? "pass"
+            : "fail",
+          JSON.stringify({ status: retry.status }),
+        );
+
+        const pendingAfterAck = await (async () => {
+          const opened = await openLocalMirrorOutboxSqliteStore();
+          try {
+            return (await opened.store.listPending()).filter(
+              (row) => row.serverEntryId === entryId,
+            );
+          } finally {
+            await opened.close();
+          }
+        })();
+        push(
+          "L10",
+          pendingAfterAck.length === 0 ? "pass" : "fail",
+          `pending=${pendingAfterAck.length}`,
+        );
+
+        let localHit = false;
+        let localCount = 0;
+        try {
+          await withCandidateRepository(async (repo) => {
+            localCount = await repo.countEntries();
+            const row = await repo.getByLegacyServerId(entryId);
+            localHit = Boolean(row);
           });
           push(
-            "L5",
-            first.status === "queued_retry" ? "pass" : "fail",
-            JSON.stringify({ status: first.status, lastResult: first.status === "queued_retry" ? first.lastResult : null }),
+            "L11",
+            localHit ? "pass" : "fail",
+            `candidateEntries=${localCount} legacyServerIdHit=${String(localHit)}`,
           );
-
-          push(
-            "L6",
-            first.status === "queued_retry" ? "pass" : "fail",
-            "injected Local save failure after enqueue",
-          );
-
-          const pendingAfterFail = await (async () => {
-            const opened = await openLocalMirrorOutboxSqliteStore();
-            try {
-              return opened.store.listPending();
-            } finally {
-              await opened.close();
-            }
-          })();
-          push(
-            "L7",
-            pendingAfterFail.length >= 1 ? "pass" : "fail",
-            `pending=${pendingAfterFail.length} donguri=not_reinvoked`,
-          );
-
-          push("L8", pendingAfterFail.length >= 1 ? "pass" : "fail", `pending=${pendingAfterFail.length} after simulated relaunch read`);
-
-          const retry = await retryPendingServerJournalMirror({
-            serverEntryId: entryId,
-          });
-          push(
-            "L9",
-            retry.status === "mirrored" || retry.status === "already_present" ? "pass" : "fail",
-            JSON.stringify({ status: retry.status }),
-          );
-
-          const pendingAfterAck = await (async () => {
-            const opened = await openLocalMirrorOutboxSqliteStore();
-            try {
-              return opened.store.listPending();
-            } finally {
-              await opened.close();
-            }
-          })();
-          push(
-            "L10",
-            pendingAfterAck.length === 0 ? "pass" : "fail",
-            `pending=${pendingAfterAck.length}`,
-          );
-
-          let localCount = 0;
-          try {
-            await withCandidateRepository(async (repo) => {
-              localCount = await repo.countEntries();
-            });
-          } catch (error) {
-            push("L11", "fail", safeErrorMessage(error));
-          }
-          if (steps.find((s) => s.id === "L11") == null) {
-            push(
-              "L11",
-              localCount >= 1 ? "pass" : "fail",
-              `candidateEntries=${localCount}`,
-            );
-          }
-
-          try {
-            const artifacts = await listSqliteArtifactsReadOnly();
-            const actual = artifacts.find((a) => a.name.includes(LOCAL_JOURNAL_DB_NAME));
-            push(
-              "L12",
-              actual ? "pass" : "fail",
-              `actualPresent=${Boolean(actual)} noWritesToActual=true`,
-            );
-          } catch (error) {
-            push("L12", "fail", safeErrorMessage(error));
-          }
-
-          push(
-            "L13",
-            "pass",
-            "general Journal read remains Server-only; no Local read switch in this PoC",
-          );
+        } catch (error) {
+          push("L11", "fail", safeErrorMessage(error));
         }
+
+        try {
+          const artifacts = await listSqliteArtifactsReadOnly();
+          const actual = artifacts.find((a) => a.name.includes(LOCAL_JOURNAL_DB_NAME));
+          push(
+            "L12",
+            actual ? "pass" : "fail",
+            `actualPresent=${Boolean(actual)} noWritesToActual=true`,
+          );
+        } catch (error) {
+          push("L12", "fail", safeErrorMessage(error));
+        }
+
+        push(
+          "L13",
+          "pass",
+          "general Journal read remains Server-only; no Local read switch in this PoC",
+        );
       }
     }
   }

@@ -8,7 +8,10 @@ import type { ResolvedLocalJournalGeneration } from "@/lib/local-first/journal/g
 import { resolveLocalJournalGenerationTargetWithRegistryValidation } from "@/lib/local-first/journal/registry/resolveWithRegistryValidation";
 import type { GenerationRegistryRow } from "@/lib/local-first/journal/registry/types";
 import { LocalJournalSecureBootstrapper } from "@/lib/local-first/journal/secureBootstrap/LocalJournalSecureBootstrapper";
-import { readAvailableBytesOrNull } from "@/lib/local-first/security";
+import {
+  ensurePluginEncryptionSecret,
+  readAvailableBytesOrNull,
+} from "@/lib/local-first/security";
 
 export type SaveMirrorRoutingPreconditionOutcome =
   | {
@@ -26,16 +29,32 @@ export type SaveMirrorRoutingPreconditionOutcome =
 export async function assertSaveMirrorRoutingPreconditions(options?: {
   allowUnknownCapacity?: boolean;
 }): Promise<SaveMirrorRoutingPreconditionOutcome> {
-  const inspection = await LocalJournalSecureBootstrapper.inspect();
+  try {
+    await ensurePluginEncryptionSecret();
+  } catch {
+    /* inspect will surface encryption issues */
+  }
+  let inspection = await LocalJournalSecureBootstrapper.inspect();
+  // Bounded retry (exactly one): only when health.reason === "encryption_unknown"
+  // (transient SQLite plugin settle). Any other abnormal / still-unknown after retry
+  // → fail-closed below. Never falls back to plaintext actual DB; does not loosen
+  // production readiness (still requires exists + encrypted === true + ready).
+  if (
+    inspection.health.status === "abnormal" &&
+    inspection.health.reason === "encryption_unknown"
+  ) {
+    await new Promise((resolve) => setTimeout(resolve, 400));
+    inspection = await LocalJournalSecureBootstrapper.inspect();
+  }
   if (
     !inspection.exists ||
-    !inspection.encrypted ||
+    inspection.encrypted !== true ||
     inspection.health.status !== "ready"
   ) {
     return {
       ok: false,
       reason: "candidate_preflight_failed",
-      detail: inspection.health.status,
+      detail: `${inspection.health.status}:${inspection.health.reason ?? "unknown"}`,
     };
   }
 
