@@ -342,7 +342,9 @@ Journal API 変更、DB migration、idempotency / reconciliation / pre-save inte
 
 - `docs/hybrid/HYBRID_PHASE_4B4M_SERVER_SUCCESS_OUTBOX_GAP_ARCHITECTURE.md`
 - `docs/hybrid/HYBRID_PHASE_4B4N_SERVER_SAVE_IDEMPOTENCY_POC.md` (Strategy C core PoC)
+- `docs/hybrid/HYBRID_PHASE_4B4O_LOCAL_SAVE_OPERATION_INTENT_POC.md` (Strategy B Local intent PoC)
 - `docs/product/ljd-journal-save-idempotency-spec.md`
+- `docs/product/ljd-local-save-operation-intent-spec.md`
 - `docs/product/ljd-transitional-local-routing-spec.md`
 - `docs/hybrid/HYBRID_PHASE_4B4L_INTERNAL_SAVE_WIRING_POC.md`
 - `docs/product/ljd-local-mirror-outbox-spec.md`

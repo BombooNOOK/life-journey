@@ -109,9 +109,9 @@ Not claiming “all auto-resume in production HTTP” — domain harness only.
 
 ## 9. Next Phase recommendation
 
-1. Durable pre-save **Local intent** (Strategy B) generating/storing `saveOperationId` before POST  
-2. Then wire production `POST /api/journal` behind flag using this domain  
-3. Controlled migrate of `JournalSaveOperation` via normal Prisma path on non-prod first  
+1. Durable pre-save **Local intent** (Strategy B) — **4B-4O**  
+2. **4B-4P** Non-production Prisma Idempotency Integration (not production POST)  
+3. **4B-4Q** developer/internal end-to-end save-operation wiring  
 4. Keep Window C reconciliation separate (4B-4M)
 
 ---

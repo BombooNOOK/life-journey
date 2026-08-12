@@ -12,6 +12,8 @@
  *
  * Companion:
  * - docs/hybrid/HYBRID_PHASE_4B4N_SERVER_SAVE_IDEMPOTENCY_POC.md
+ * - docs/hybrid/HYBRID_PHASE_4B4O_LOCAL_SAVE_OPERATION_INTENT_POC.md
+ * - docs/product/ljd-local-save-operation-intent-spec.md
  * - docs/product/ljd-save-operation-reconciliation-spec.md
  * - docs/hybrid/HYBRID_PHASE_4B4M_SERVER_SUCCESS_OUTBOX_GAP_ARCHITECTURE.md
  */

@@ -290,10 +290,10 @@
           cookies.split(";").forEach((cookie) => {
             if (cookie.length <= 0)
               return;
-            let [key, value] = cookie.replace(/=/, "CAP_COOKIE").split("CAP_COOKIE");
-            key = decode(key).trim();
+            let [key2, value] = cookie.replace(/=/, "CAP_COOKIE").split("CAP_COOKIE");
+            key2 = decode(key2).trim();
             value = decode(value).trim();
-            cookieMap[key] = value;
+            cookieMap[key2] = value;
           });
           return cookieMap;
         }
@@ -349,8 +349,8 @@
       normalizeHttpHeaders = (headers = {}) => {
         const originalKeys = Object.keys(headers);
         const loweredKeys = Object.keys(headers).map((k) => k.toLocaleLowerCase());
-        const normalized = loweredKeys.reduce((acc, key, index) => {
-          acc[key] = headers[originalKeys[index]];
+        const normalized = loweredKeys.reduce((acc, key2, index) => {
+          acc[key2] = headers[originalKeys[index]];
           return acc;
         }, {});
         return normalized;
@@ -359,19 +359,19 @@
         if (!params)
           return null;
         const output = Object.entries(params).reduce((accumulator, entry) => {
-          const [key, value] = entry;
+          const [key2, value] = entry;
           let encodedValue;
           let item;
           if (Array.isArray(value)) {
             item = "";
             value.forEach((str) => {
               encodedValue = shouldEncode ? encodeURIComponent(str) : str;
-              item += `${key}=${encodedValue}&`;
+              item += `${key2}=${encodedValue}&`;
             });
             item.slice(0, -1);
           } else {
             encodedValue = shouldEncode ? encodeURIComponent(value) : value;
-            item = `${key}=${encodedValue}`;
+            item = `${key2}=${encodedValue}`;
           }
           return `${accumulator}&${item}`;
         }, "");
@@ -385,19 +385,19 @@
           output.body = options.data;
         } else if (type.includes("application/x-www-form-urlencoded")) {
           const params = new URLSearchParams();
-          for (const [key, value] of Object.entries(options.data || {})) {
-            params.set(key, value);
+          for (const [key2, value] of Object.entries(options.data || {})) {
+            params.set(key2, value);
           }
           output.body = params.toString();
         } else if (type.includes("multipart/form-data") || options.data instanceof FormData) {
           const form = new FormData();
           if (options.data instanceof FormData) {
-            options.data.forEach((value, key) => {
-              form.append(key, value);
+            options.data.forEach((value, key2) => {
+              form.append(key2, value);
             });
           } else {
-            for (const key of Object.keys(options.data)) {
-              form.append(key, options.data[key]);
+            for (const key2 of Object.keys(options.data)) {
+              form.append(key2, options.data[key2]);
             }
           }
           output.body = form;
@@ -441,8 +441,8 @@
               data = await response.text();
           }
           const headers = {};
-          response.headers.forEach((value, key) => {
-            headers[key] = value;
+          response.headers.forEach((value, key2) => {
+            headers[key2] = value;
           });
           return {
             data,
@@ -749,14 +749,14 @@
         async closeAllConnections() {
           const delDict = /* @__PURE__ */ new Map();
           try {
-            for (const key of this._connectionDict.keys()) {
-              const database = key.substring(3);
-              const readonly = key.substring(0, 3) === "RO_" ? true : false;
+            for (const key2 of this._connectionDict.keys()) {
+              const database = key2.substring(3);
+              const readonly = key2.substring(0, 3) === "RO_" ? true : false;
               await this.sqlite.closeConnection({ database, readonly });
-              delDict.set(key, null);
+              delDict.set(key2, null);
             }
-            for (const key of delDict.keys()) {
-              this._connectionDict.delete(key);
+            for (const key2 of delDict.keys()) {
+              this._connectionDict.delete(key2);
             }
             return Promise.resolve();
           } catch (err) {
@@ -768,9 +768,9 @@
             const keys = [...this._connectionDict.keys()];
             const openModes = [];
             const dbNames = [];
-            for (const key of keys) {
-              openModes.push(key.substring(0, 2));
-              dbNames.push(key.substring(3));
+            for (const key2 of keys) {
+              openModes.push(key2.substring(0, 2));
+              dbNames.push(key2.substring(3));
             }
             const res = await this.sqlite.checkConnectionsConsistency({
               dbNames,
@@ -2155,8 +2155,8 @@ CREATE INDEX IF NOT EXISTS idx_local_media_journal
     if (Array.isArray(value)) return value.map(redactSecretLike);
     if (typeof value === "object") {
       const out = {};
-      for (const [key, v] of Object.entries(value)) {
-        out[key] = SECRET_KEY.test(key) ? "[redacted]" : redactSecretLike(v);
+      for (const [key2, v] of Object.entries(value)) {
+        out[key2] = SECRET_KEY.test(key2) ? "[redacted]" : redactSecretLike(v);
       }
       return out;
     }
@@ -2441,7 +2441,7 @@ CREATE INDEX IF NOT EXISTS idx_local_media_journal
   });
 
   // node_modules/@capacitor/filesystem/dist/esm/definitions.js
-  var Directory, Encoding;
+  var Directory, Encoding, FilesystemDirectory, FilesystemEncoding;
   var init_definitions2 = __esm({
     "node_modules/@capacitor/filesystem/dist/esm/definitions.js"() {
       (function(Directory2) {
@@ -2460,6 +2460,8 @@ CREATE INDEX IF NOT EXISTS idx_local_media_journal
         Encoding2["ASCII"] = "ascii";
         Encoding2["UTF16"] = "utf16";
       })(Encoding || (Encoding = {}));
+      FilesystemDirectory = Directory;
+      FilesystemEncoding = Encoding;
     }
   });
 
@@ -3037,6 +3039,14 @@ CREATE INDEX IF NOT EXISTS idx_local_media_journal
   });
 
   // node_modules/@capacitor/filesystem/dist/esm/index.js
+  var esm_exports = {};
+  __export(esm_exports, {
+    Directory: () => Directory,
+    Encoding: () => Encoding,
+    Filesystem: () => Filesystem,
+    FilesystemDirectory: () => FilesystemDirectory,
+    FilesystemEncoding: () => FilesystemEncoding
+  });
   var Filesystem;
   var init_esm3 = __esm({
     "node_modules/@capacitor/filesystem/dist/esm/index.js"() {
@@ -3571,6 +3581,15 @@ CREATE INDEX IF NOT EXISTS idx_local_media_journal
   });
 
   // src/lib/local-first/journal/secureCopy/types.ts
+  var types_exports = {};
+  __export(types_exports, {
+    FAILURE_INJECTION_MISSING_ENTRY_ID: () => FAILURE_INJECTION_MISSING_ENTRY_ID,
+    SECURE_CANDIDATE_MEDIA_ROOT: () => SECURE_CANDIDATE_MEDIA_ROOT,
+    SECURE_COPY_MAX_EXPLICIT_IDS: () => SECURE_COPY_MAX_EXPLICIT_IDS,
+    SECURE_COPY_MIN_AVAILABLE_BYTES: () => SECURE_COPY_MIN_AVAILABLE_BYTES,
+    SERVER_COPY_TARGET_DB_NAME: () => SERVER_COPY_TARGET_DB_NAME,
+    TEST_PURPOSE_TAGS: () => TEST_PURPOSE_TAGS
+  });
   var SERVER_COPY_TARGET_DB_NAME, SECURE_CANDIDATE_MEDIA_ROOT, SECURE_COPY_MIN_AVAILABLE_BYTES, SECURE_COPY_MAX_EXPLICIT_IDS, TEST_PURPOSE_TAGS, FAILURE_INJECTION_MISSING_ENTRY_ID;
   var init_types4 = __esm({
     "src/lib/local-first/journal/secureCopy/types.ts"() {
@@ -3588,6 +3607,82 @@ CREATE INDEX IF NOT EXISTS idx_local_media_journal
         "#SaveWiringTest"
       ];
       FAILURE_INJECTION_MISSING_ENTRY_ID = "ljd-poc-missing-entry-id";
+    }
+  });
+
+  // src/lib/local-first/journal/secureCopy/candidateMediaStore.ts
+  var candidateMediaStore_exports = {};
+  __export(candidateMediaStore_exports, {
+    createNativeCandidateMediaStore: () => createNativeCandidateMediaStore
+  });
+  function assertNative2() {
+    if (!Capacitor.isNativePlatform()) {
+      throw new Error("candidate media store is native-only");
+    }
+  }
+  function assertCandidateRelativePath(relativePath) {
+    if (!relativePath.startsWith(`${SECURE_CANDIDATE_MEDIA_ROOT}/`)) {
+      throw new Error("candidate media path must stay in journal-secure-candidate namespace");
+    }
+    if (relativePath.startsWith(`${LOCAL_JOURNAL_MEDIA_ROOT}/`)) {
+      throw new Error("candidate media store refuses active journal media root");
+    }
+    if (relativePath.startsWith("/") || relativePath.includes("..")) {
+      throw new Error("absolute or parent media paths are forbidden");
+    }
+  }
+  async function createNativeCandidateMediaStore() {
+    assertNative2();
+    try {
+      await Filesystem.mkdir({
+        path: SECURE_CANDIDATE_MEDIA_ROOT,
+        directory: Directory.Library,
+        recursive: true
+      });
+    } catch {
+    }
+    return {
+      root: SECURE_CANDIDATE_MEDIA_ROOT,
+      async write(fileName, base64) {
+        const relativePath = `${SECURE_CANDIDATE_MEDIA_ROOT}/${fileName}`;
+        assertCandidateRelativePath(relativePath);
+        await Filesystem.writeFile({
+          path: relativePath,
+          data: base64,
+          directory: Directory.Library
+        });
+        return relativePath;
+      },
+      async readBase64(relativePath) {
+        assertCandidateRelativePath(relativePath);
+        const result = await Filesystem.readFile({
+          path: relativePath,
+          directory: Directory.Library
+        });
+        if (typeof result.data !== "string" || !result.data) {
+          throw new Error("candidate media read returned empty data");
+        }
+        return result.data;
+      },
+      async delete(relativePath) {
+        assertCandidateRelativePath(relativePath);
+        try {
+          await Filesystem.deleteFile({
+            path: relativePath,
+            directory: Directory.Library
+          });
+        } catch {
+        }
+      }
+    };
+  }
+  var init_candidateMediaStore = __esm({
+    "src/lib/local-first/journal/secureCopy/candidateMediaStore.ts"() {
+      "use strict";
+      init_dist();
+      init_esm3();
+      init_types();
+      init_types4();
     }
   });
 
@@ -3858,8 +3953,8 @@ CREATE INDEX IF NOT EXISTS idx_local_media_journal
     if (Array.isArray(value)) return value.map(sortValue);
     const obj = value;
     const out = {};
-    for (const key of Object.keys(obj).sort()) {
-      out[key] = sortValue(obj[key]);
+    for (const key2 of Object.keys(obj).sort()) {
+      out[key2] = sortValue(obj[key2]);
     }
     return out;
   }
@@ -4583,9 +4678,9 @@ CREATE INDEX IF NOT EXISTS idx_local_media_journal
       if (!token) continue;
       const name = (token.startsWith("#") ? token.slice(1) : token).trim();
       if (!name) continue;
-      const key = name.toLowerCase();
-      if (seen.has(key)) continue;
-      seen.add(key);
+      const key2 = name.toLowerCase();
+      if (seen.has(key2)) continue;
+      seen.add(key2);
       tags.push(name);
     }
     return tags;
@@ -4708,8 +4803,8 @@ CREATE INDEX IF NOT EXISTS idx_local_media_journal
       responseType: "blob"
     });
     const headers = {};
-    for (const [key, value] of Object.entries(response.headers ?? {})) {
-      headers[key.toLowerCase()] = String(value);
+    for (const [key2, value] of Object.entries(response.headers ?? {})) {
+      headers[key2.toLowerCase()] = String(value);
     }
     const raw = typeof response.data === "string" ? response.data : "";
     const base64 = raw.includes(",") ? raw.split(",", 2)[1] : raw;
@@ -4845,72 +4940,8 @@ CREATE INDEX IF NOT EXISTS idx_local_media_journal
     };
   }
 
-  // src/lib/local-first/journal/secureCopy/candidateMediaStore.ts
-  init_dist();
-  init_esm3();
-  init_types();
-  init_types4();
-  function assertNative2() {
-    if (!Capacitor.isNativePlatform()) {
-      throw new Error("candidate media store is native-only");
-    }
-  }
-  function assertCandidateRelativePath(relativePath) {
-    if (!relativePath.startsWith(`${SECURE_CANDIDATE_MEDIA_ROOT}/`)) {
-      throw new Error("candidate media path must stay in journal-secure-candidate namespace");
-    }
-    if (relativePath.startsWith(`${LOCAL_JOURNAL_MEDIA_ROOT}/`)) {
-      throw new Error("candidate media store refuses active journal media root");
-    }
-    if (relativePath.startsWith("/") || relativePath.includes("..")) {
-      throw new Error("absolute or parent media paths are forbidden");
-    }
-  }
-  async function createNativeCandidateMediaStore() {
-    assertNative2();
-    try {
-      await Filesystem.mkdir({
-        path: SECURE_CANDIDATE_MEDIA_ROOT,
-        directory: Directory.Library,
-        recursive: true
-      });
-    } catch {
-    }
-    return {
-      root: SECURE_CANDIDATE_MEDIA_ROOT,
-      async write(fileName, base64) {
-        const relativePath = `${SECURE_CANDIDATE_MEDIA_ROOT}/${fileName}`;
-        assertCandidateRelativePath(relativePath);
-        await Filesystem.writeFile({
-          path: relativePath,
-          data: base64,
-          directory: Directory.Library
-        });
-        return relativePath;
-      },
-      async readBase64(relativePath) {
-        assertCandidateRelativePath(relativePath);
-        const result = await Filesystem.readFile({
-          path: relativePath,
-          directory: Directory.Library
-        });
-        if (typeof result.data !== "string" || !result.data) {
-          throw new Error("candidate media read returned empty data");
-        }
-        return result.data;
-      },
-      async delete(relativePath) {
-        assertCandidateRelativePath(relativePath);
-        try {
-          await Filesystem.deleteFile({
-            path: relativePath,
-            directory: Directory.Library
-          });
-        } catch {
-        }
-      }
-    };
-  }
+  // src/lib/local-first/journal/secureCopy/ServerToLocalCandidateCopyService.ts
+  init_candidateMediaStore();
 
   // src/lib/local-first/journal/secureCopy/candidateDbGuard.ts
   init_types2();
@@ -5530,6 +5561,7 @@ CREATE INDEX IF NOT EXISTS idx_local_media_journal
 
   // src/lib/local-first/journal/secureCopy/ServerAuthoritativeWriteThroughMirrorService.ts
   init_dist();
+  init_candidateMediaStore();
   init_types4();
   init_LocalJournalSecureBootstrapper();
   init_security();
@@ -5654,6 +5686,7 @@ CREATE INDEX IF NOT EXISTS idx_local_media_journal
   init_esm3();
   init_esm();
   init_LocalJournalSecureBootstrapper();
+  init_candidateMediaStore();
   init_types4();
   init_types();
   init_security();
@@ -6116,6 +6149,7 @@ CREATE INDEX IF NOT EXISTS idx_local_media_journal
   init_ResolvedLocalJournalGeneration();
   init_resolveLocalJournalGenerationTarget();
   init_LocalJournalActivationManifestStore();
+  init_candidateMediaStore();
   init_types4();
   init_LocalJournalSecureBootstrapper();
   init_security();
@@ -6867,6 +6901,7 @@ CREATE TABLE IF NOT EXISTS mirror_outbox (
   }
 
   // src/lib/local-first/journal/outbox/runLocalMirrorOutboxPoc.ts
+  init_candidateMediaStore();
   init_types();
   init_security();
   var POC_API_ORIGIN2 = "https://life-journey-zeta.vercel.app";
@@ -7986,12 +8021,20 @@ CREATE TABLE IF NOT EXISTS generation_registry (
   init_LocalJournalSecureBootstrapper();
   init_security();
   async function assertSaveMirrorRoutingPreconditions(options) {
-    const inspection = await LocalJournalSecureBootstrapper.inspect();
-    if (!inspection.exists || !inspection.encrypted || inspection.health.status !== "ready") {
+    try {
+      await ensurePluginEncryptionSecret();
+    } catch {
+    }
+    let inspection = await LocalJournalSecureBootstrapper.inspect();
+    if (inspection.health.status === "abnormal" && inspection.health.reason === "encryption_unknown") {
+      await new Promise((resolve2) => setTimeout(resolve2, 400));
+      inspection = await LocalJournalSecureBootstrapper.inspect();
+    }
+    if (!inspection.exists || inspection.encrypted !== true || inspection.health.status !== "ready") {
       return {
         ok: false,
         reason: "candidate_preflight_failed",
-        detail: inspection.health.status
+        detail: `${inspection.health.status}:${inspection.health.reason ?? "unknown"}`
       };
     }
     const resolved = await resolveLocalJournalGenerationTargetWithRegistryValidation({
@@ -8014,6 +8057,7 @@ CREATE TABLE IF NOT EXISTS generation_registry (
   }
 
   // src/lib/local-first/journal/save/createNativeSaveMirrorDeps.ts
+  init_candidateMediaStore();
   function createResolvePinnedGenerationForSaveMirror(cached) {
     return async () => {
       const preflight = await assertSaveMirrorRoutingPreconditions({
@@ -8095,7 +8139,24 @@ CREATE TABLE IF NOT EXISTS generation_registry (
   var SERVER_SUCCESS_TO_OUTBOX_GAP = "SERVER_SUCCESS_TO_OUTBOX_GAP";
   var SERVER_SUCCESS_TO_OUTBOX_GAP_DESCRIPTION = "Server save succeeded (200 OK + entry.id) but outbox enqueue not yet durable; kill may leave Server-only entry.";
 
+  // src/lib/local-first/journal/save/types.ts
+  var SAVE_WIRING_TEST_TAG = "#SaveWiringTest";
+  var SAVE_WIRING_POC_ENTRY_ID_PATH = "ljd/security-poc/save-wiring-test-entry-id.txt";
+
   // src/lib/local-first/journal/save/handleConfirmedServerJournalMirror.ts
+  async function recordSaveWiringTestEntryId(serverEntryId) {
+    try {
+      const { Directory: Directory2, Encoding: Encoding2, Filesystem: Filesystem2 } = await Promise.resolve().then(() => (init_esm3(), esm_exports));
+      await Filesystem2.writeFile({
+        path: SAVE_WIRING_POC_ENTRY_ID_PATH,
+        directory: Directory2.Library,
+        encoding: Encoding2.UTF8,
+        data: serverEntryId,
+        recursive: true
+      });
+    } catch {
+    }
+  }
   function mapAttemptOutcome(serverEntryId, attempt, outboxItemId) {
     if (attempt.kind === "acked") {
       return {
@@ -8142,6 +8203,7 @@ CREATE TABLE IF NOT EXISTS generation_registry (
     if (!canRunInternalJournalSaveMirror()) {
       return { status: "disabled", serverEntryId };
     }
+    await recordSaveWiringTestEntryId(serverEntryId);
     const routing = await assertSaveMirrorRoutingPreconditions({
       allowUnknownCapacity: true
     });
@@ -8273,10 +8335,6 @@ CREATE TABLE IF NOT EXISTS generation_registry (
     }
   }
 
-  // src/lib/local-first/journal/save/types.ts
-  var SAVE_WIRING_TEST_TAG = "#SaveWiringTest";
-  var SAVE_WIRING_POC_ENTRY_ID_PATH = "ljd/security-poc/save-wiring-test-entry-id.txt";
-
   // src/lib/local-first/journal/save/runInternalSaveMirrorWiringPoc.ts
   init_types();
   init_security();
@@ -8328,133 +8386,206 @@ CREATE TABLE IF NOT EXISTS generation_registry (
         canRun: canRunInternalJournalSaveMirror()
       })
     );
-    const cookie = await loadPocSessionCookieHeader4();
-    if (!cookie) {
-      push2("L2", "skip", "session cookie missing \u2014 create #SaveWiringTest entry via local dev Server UI first");
-      push2("L3", "skip", "no entry id");
+    configureServerFetchPoc(null);
+    const entryId = await loadSaveWiringTestEntryId();
+    if (!entryId) {
+      const cookie = await loadPocSessionCookieHeader4();
+      if (cookie) {
+        configureServerFetchPoc({ apiOrigin: POC_API_ORIGIN3, cookieHeader: cookie });
+      }
+      push2(
+        "L2",
+        "skip",
+        `write ${SAVE_WIRING_POC_ENTRY_ID_PATH} with #SaveWiringTest entry id after Server save (local dev \u2014 no Vercel deploy)`
+      );
+      push2("L3", "skip", "no entry id file");
       for (const id of ["L4", "L5", "L6", "L7", "L8", "L9", "L10", "L11", "L12", "L13"]) {
         push2(id, "skip", "blocked by L2");
       }
     } else {
-      configureServerFetchPoc({ apiOrigin: POC_API_ORIGIN3, cookieHeader: cookie });
-      const entryId = await loadSaveWiringTestEntryId();
-      if (!entryId) {
-        push2(
-          "L2",
-          "skip",
-          `write ${SAVE_WIRING_POC_ENTRY_ID_PATH} with #SaveWiringTest entry id after Server save (local dev \u2014 no Vercel deploy)`
-        );
-        push2("L3", "skip", "no entry id file");
+      const fetched = await fetchAuthenticatedJournalEntry(entryId);
+      push2(
+        "L2",
+        fetched.ok ? "pass" : "fail",
+        fetched.ok ? "server entry exists (GET ok; this save id only)" : `server GET failed: ${fetched.code}`
+      );
+      push2(
+        "L3",
+        fetched.ok ? "pass" : "fail",
+        fetched.ok ? `entryIdChars=${entryId.length} redacted=${redactServerEntryIdForLog(entryId)}` : "no entry"
+      );
+      if (!fetched.ok) {
         for (const id of ["L4", "L5", "L6", "L7", "L8", "L9", "L10", "L11", "L12", "L13"]) {
-          push2(id, "skip", "blocked by L2");
+          push2(id, "skip", "blocked by L2/L3");
         }
       } else {
-        const fetched = await fetchAuthenticatedJournalEntry(entryId);
+        const hasTag = fetched.entry.content.includes(SAVE_WIRING_TEST_TAG);
+        const routing = await assertSaveMirrorRoutingPreconditions();
         push2(
-          "L2",
-          fetched.ok ? "pass" : "skip",
-          fetched.ok ? "server entry exists (GET ok)" : `server GET failed: ${fetched.ok ? "" : fetched.code} \u2014 save #SaveWiringTest via local dev first`
+          "L4",
+          hasTag && routing.ok ? "pass" : "fail",
+          hasTag ? JSON.stringify(routing) : `missing ${SAVE_WIRING_TEST_TAG}`
         );
-        push2(
-          "L3",
-          fetched.ok ? "pass" : "skip",
-          fetched.ok ? `entryIdChars=${entryId.length} redacted=${redactServerEntryIdForLog(entryId)}` : "no entry"
-        );
-        if (!fetched.ok) {
-          for (const id of ["L4", "L5", "L6", "L7", "L8", "L9", "L10", "L11", "L12", "L13"]) {
-            push2(id, "skip", "blocked by L2/L3");
-          }
+        if (!canRunInternalJournalSaveMirror()) {
+          push2("L5", "skip", "gate OFF");
         } else {
-          const hasTag = fetched.entry.content.includes(SAVE_WIRING_TEST_TAG);
-          push2(
-            "L4",
-            hasTag ? "pass" : "fail",
-            hasTag ? JSON.stringify(await assertSaveMirrorRoutingPreconditions()) : `missing ${SAVE_WIRING_TEST_TAG}`
-          );
-          if (!canRunInternalJournalSaveMirror()) {
-            push2("L5", "skip", "gate OFF");
-          } else {
-            const first = await handleConfirmedServerJournalMirror({
-              serverEntryId: entryId,
-              developer: { injectLocalFailureAfterEnqueue: "save" }
-            });
-            push2(
-              "L5",
-              first.status === "queued_retry" ? "pass" : "fail",
-              JSON.stringify({ status: first.status, lastResult: first.status === "queued_retry" ? first.lastResult : null })
-            );
-            push2(
-              "L6",
-              first.status === "queued_retry" ? "pass" : "fail",
-              "injected Local save failure after enqueue"
-            );
-            const pendingAfterFail = await (async () => {
-              const opened = await openLocalMirrorOutboxSqliteStore();
-              try {
-                return opened.store.listPending();
-              } finally {
-                await opened.close();
-              }
-            })();
-            push2(
-              "L7",
-              pendingAfterFail.length >= 1 ? "pass" : "fail",
-              `pending=${pendingAfterFail.length} donguri=not_reinvoked`
-            );
-            push2("L8", pendingAfterFail.length >= 1 ? "pass" : "fail", `pending=${pendingAfterFail.length} after simulated relaunch read`);
-            const retry = await retryPendingServerJournalMirror({
-              serverEntryId: entryId
-            });
-            push2(
-              "L9",
-              retry.status === "mirrored" || retry.status === "already_present" ? "pass" : "fail",
-              JSON.stringify({ status: retry.status })
-            );
-            const pendingAfterAck = await (async () => {
-              const opened = await openLocalMirrorOutboxSqliteStore();
-              try {
-                return opened.store.listPending();
-              } finally {
-                await opened.close();
-              }
-            })();
-            push2(
-              "L10",
-              pendingAfterAck.length === 0 ? "pass" : "fail",
-              `pending=${pendingAfterAck.length}`
-            );
-            let localCount = 0;
+          {
+            const opened = await openLocalMirrorOutboxSqliteStore();
             try {
-              await withCandidateRepository(async (repo) => {
-                localCount = await repo.countEntries();
-              });
-            } catch (error) {
-              push2("L11", "fail", safeErrorMessage(error));
+              const pending = await opened.store.listPending();
+              for (const row of pending) {
+                if (row.serverEntryId === entryId) {
+                  await opened.store.ackRemove(row.id);
+                }
+              }
+            } finally {
+              await opened.close();
             }
-            if (steps.find((s2) => s2.id === "L11") == null) {
-              push2(
-                "L11",
-                localCount >= 1 ? "pass" : "fail",
-                `candidateEntries=${localCount}`
-              );
-            }
-            try {
-              const artifacts = await listSqliteArtifactsReadOnly();
-              const actual = artifacts.find((a) => a.name.includes(LOCAL_JOURNAL_DB_NAME));
-              push2(
-                "L12",
-                actual ? "pass" : "fail",
-                `actualPresent=${Boolean(actual)} noWritesToActual=true`
-              );
-            } catch (error) {
-              push2("L12", "fail", safeErrorMessage(error));
-            }
-            push2(
-              "L13",
-              "pass",
-              "general Journal read remains Server-only; no Local read switch in this PoC"
-            );
           }
+          try {
+            const { openNamedEncryptedDatabase: openNamedEncryptedDatabase2, closeNamedEncryptedDatabase: closeNamedEncryptedDatabase2 } = await Promise.resolve().then(() => (init_security(), security_exports));
+            const { SERVER_COPY_TARGET_DB_NAME: SERVER_COPY_TARGET_DB_NAME2 } = await Promise.resolve().then(() => (init_types4(), types_exports));
+            const { createNativeCandidateMediaStore: createNativeCandidateMediaStore2 } = await Promise.resolve().then(() => (init_candidateMediaStore(), candidateMediaStore_exports));
+            const db2 = await openNamedEncryptedDatabase2(SERVER_COPY_TARGET_DB_NAME2, 1);
+            try {
+              const existing = await db2.query(
+                `SELECT stable_id FROM local_journal_entries
+               WHERE legacy_server_id = ? AND local_status = 'active' LIMIT 1;`,
+                [entryId]
+              );
+              const stableId = existing.values?.[0] ? String(existing.values[0].stable_id) : null;
+              if (stableId) {
+                const media = await db2.query(
+                  `SELECT relative_path FROM local_media WHERE journal_stable_id = ?;`,
+                  [stableId]
+                );
+                const mediaStore = await createNativeCandidateMediaStore2();
+                for (const row of media.values ?? []) {
+                  const rel = String(row.relative_path);
+                  await mediaStore.delete(rel).catch(() => void 0);
+                }
+                await db2.run(`DELETE FROM local_media WHERE journal_stable_id = ?;`, [
+                  stableId
+                ]);
+                await db2.run(`DELETE FROM local_journal_tags WHERE journal_stable_id = ?;`, [
+                  stableId
+                ]);
+                await db2.run(
+                  `DELETE FROM local_journal_entries WHERE stable_id = ?;`,
+                  [stableId]
+                );
+              }
+            } finally {
+              await closeNamedEncryptedDatabase2(SERVER_COPY_TARGET_DB_NAME2);
+            }
+          } catch {
+          }
+          const first = await handleConfirmedServerJournalMirror({
+            serverEntryId: entryId,
+            developer: { injectLocalFailureAfterEnqueue: "save" }
+          });
+          const pendingAfterInject = await (async () => {
+            const opened = await openLocalMirrorOutboxSqliteStore();
+            try {
+              return (await opened.store.listPending()).filter(
+                (row) => row.serverEntryId === entryId
+              );
+            } finally {
+              await opened.close();
+            }
+          })();
+          const injectPathOk = first.status === "queued_retry" || pendingAfterInject.length >= 1 && pendingAfterInject.some(
+            (row) => row.lastResult === "retry_needed" || row.lastResult === "failed"
+          );
+          push2(
+            "L5",
+            injectPathOk ? "pass" : "fail",
+            JSON.stringify({
+              status: first.status,
+              lastResult: first.status === "queued_retry" ? first.lastResult : null,
+              pendingForEntry: pendingAfterInject.length
+            })
+          );
+          push2(
+            "L6",
+            injectPathOk ? "pass" : "fail",
+            "injected Local save failure after enqueue"
+          );
+          push2(
+            "L7",
+            pendingAfterInject.length >= 1 ? "pass" : "fail",
+            `pending=${pendingAfterInject.length} donguri=not_reinvoked`
+          );
+          const pendingAfterReopen = await (async () => {
+            const opened = await openLocalMirrorOutboxSqliteStore();
+            try {
+              return (await opened.store.listPending()).filter(
+                (row) => row.serverEntryId === entryId
+              );
+            } finally {
+              await opened.close();
+            }
+          })();
+          push2(
+            "L8",
+            pendingAfterReopen.length >= 1 ? "pass" : "fail",
+            `pending=${pendingAfterReopen.length} after outbox reopen`
+          );
+          const retry = await retryPendingServerJournalMirror({
+            serverEntryId: entryId
+          });
+          push2(
+            "L9",
+            retry.status === "mirrored" || retry.status === "already_present" ? "pass" : "fail",
+            JSON.stringify({ status: retry.status })
+          );
+          const pendingAfterAck = await (async () => {
+            const opened = await openLocalMirrorOutboxSqliteStore();
+            try {
+              return (await opened.store.listPending()).filter(
+                (row) => row.serverEntryId === entryId
+              );
+            } finally {
+              await opened.close();
+            }
+          })();
+          push2(
+            "L10",
+            pendingAfterAck.length === 0 ? "pass" : "fail",
+            `pending=${pendingAfterAck.length}`
+          );
+          let localHit = false;
+          let localCount = 0;
+          try {
+            await withCandidateRepository(async (repo) => {
+              localCount = await repo.countEntries();
+              const row = await repo.getByLegacyServerId(entryId);
+              localHit = Boolean(row);
+            });
+            push2(
+              "L11",
+              localHit ? "pass" : "fail",
+              `candidateEntries=${localCount} legacyServerIdHit=${String(localHit)}`
+            );
+          } catch (error) {
+            push2("L11", "fail", safeErrorMessage(error));
+          }
+          try {
+            const artifacts = await listSqliteArtifactsReadOnly();
+            const actual = artifacts.find((a) => a.name.includes(LOCAL_JOURNAL_DB_NAME));
+            push2(
+              "L12",
+              actual ? "pass" : "fail",
+              `actualPresent=${Boolean(actual)} noWritesToActual=true`
+            );
+          } catch (error) {
+            push2("L12", "fail", safeErrorMessage(error));
+          }
+          push2(
+            "L13",
+            "pass",
+            "general Journal read remains Server-only; no Local read switch in this PoC"
+          );
         }
       }
     }
@@ -8493,6 +8624,1134 @@ CREATE TABLE IF NOT EXISTS generation_registry (
     return l3.detail.includes("entryIdChars") ? "[redacted]" : null;
   }
 
+  // src/lib/local-first/journal/saveIntent/runLocalSaveOperationIntentPoc.ts
+  init_dist();
+  init_esm3();
+
+  // src/lib/journal/saveIdempotency/memoryStore.ts
+  function key(userId, saveOperationId) {
+    return `${userId}\0${saveOperationId}`;
+  }
+  function createMemoryJournalSaveOperationStore() {
+    const byKey = /* @__PURE__ */ new Map();
+    let seq = 0;
+    return {
+      listAll() {
+        return [...byKey.values()];
+      },
+      async findByUserAndOperationId(userId, saveOperationId) {
+        return byKey.get(key(userId, saveOperationId)) ?? null;
+      },
+      async tryInsertClaim(row) {
+        const k = key(row.userId, row.saveOperationId);
+        const existing = byKey.get(k);
+        if (existing) {
+          return { created: false, row: existing };
+        }
+        const created = {
+          ...row,
+          id: row.id ?? `op_mem_${++seq}`
+        };
+        byKey.set(k, created);
+        return { created: true, row: created };
+      },
+      async update(row) {
+        const k = key(row.userId, row.saveOperationId);
+        if (!byKey.has(k)) {
+          throw new Error("operation_missing");
+        }
+        byKey.set(k, row);
+        return row;
+      },
+      async compareAndSet(input) {
+        const k = key(input.userId, input.saveOperationId);
+        const current = byKey.get(k) ?? null;
+        if (!current) return { ok: false, row: null };
+        if (current.checkpoint !== input.expectedCheckpoint) {
+          return { ok: false, row: current };
+        }
+        if (input.expectedJournalEntryId !== void 0 && current.journalEntryId !== input.expectedJournalEntryId) {
+          return { ok: false, row: current };
+        }
+        const next = {
+          ...current,
+          ...input.patch,
+          userId: current.userId,
+          saveOperationId: current.saveOperationId,
+          id: current.id,
+          createdAt: current.createdAt
+        };
+        byKey.set(k, next);
+        return { ok: true, row: next };
+      }
+    };
+  }
+
+  // src/lib/journal/saveIdempotency/executeJournalSaveOperation.ts
+  function isoNow(ports) {
+    return ports.now?.() ?? (/* @__PURE__ */ new Date()).toISOString();
+  }
+  function assertFingerprintMatch(row, requestFingerprint) {
+    return row.requestFingerprint === requestFingerprint;
+  }
+  async function getJournalSaveOperationResult(store, input) {
+    const row = await store.findByUserAndOperationId(
+      input.userId,
+      input.saveOperationId
+    );
+    if (!row) return { status: "not_found" };
+    if (row.status === "completed" && row.journalEntryId) {
+      return {
+        status: "completed",
+        journalEntryId: row.journalEntryId,
+        resultCode: row.resultCode
+      };
+    }
+    if (row.status === "failed_final") {
+      return {
+        status: "failed_final",
+        resultCode: row.resultCode,
+        journalEntryId: row.journalEntryId
+      };
+    }
+    return { status: "processing", checkpoint: row.checkpoint };
+  }
+  async function executeJournalSaveOperation(store, ports, request) {
+    const existing = await store.findByUserAndOperationId(
+      request.userId,
+      request.saveOperationId
+    );
+    if (existing) {
+      return handleExisting(store, ports, request, existing);
+    }
+    const now = isoNow(ports);
+    const claim = await store.tryInsertClaim({
+      id: ports.createRowId?.(),
+      userId: request.userId,
+      saveOperationId: request.saveOperationId,
+      status: "processing",
+      checkpoint: "claimed",
+      journalEntryId: null,
+      requestFingerprint: request.requestFingerprint,
+      resultCode: null,
+      createdAt: now,
+      updatedAt: now,
+      completedAt: null
+    });
+    if (!claim.created) {
+      return handleExisting(store, ports, request, claim.row);
+    }
+    return resumeProcessing(store, ports, request, claim.row);
+  }
+  async function handleExisting(store, ports, request, existing) {
+    if (!assertFingerprintMatch(existing, request.requestFingerprint)) {
+      return {
+        kind: "idempotency_conflict",
+        detail: "same_operation_id_incompatible_fingerprint"
+      };
+    }
+    if (existing.status === "completed" && existing.journalEntryId) {
+      return {
+        kind: "completed",
+        journalEntryId: existing.journalEntryId,
+        reusedExisting: true,
+        donguriCharged: false,
+        donguriAlreadyCharged: true
+      };
+    }
+    if (existing.status === "failed_final") {
+      return {
+        kind: "failed_final",
+        resultCode: existing.resultCode ?? "INTERNAL",
+        journalEntryId: existing.journalEntryId
+      };
+    }
+    return resumeProcessing(store, ports, request, existing);
+  }
+  async function resumeProcessing(store, ports, request, row) {
+    if (!assertFingerprintMatch(row, request.requestFingerprint)) {
+      return {
+        kind: "idempotency_conflict",
+        detail: "same_operation_id_incompatible_fingerprint"
+      };
+    }
+    let current = row;
+    let donguriCharged = false;
+    let donguriAlreadyCharged = false;
+    let createdEntryThisCall = false;
+    const reload = async () => {
+      return store.findByUserAndOperationId(
+        request.userId,
+        request.saveOperationId
+      );
+    };
+    if (current.checkpoint === "claimed" && !current.journalEntryId) {
+      const created = await ports.createJournalEntry({
+        userId: request.userId,
+        entryDate: request.entryDate,
+        saveOperationId: request.saveOperationId
+      });
+      createdEntryThisCall = true;
+      const cas = await store.compareAndSet({
+        userId: request.userId,
+        saveOperationId: request.saveOperationId,
+        expectedCheckpoint: "claimed",
+        expectedJournalEntryId: null,
+        patch: {
+          journalEntryId: created.journalEntryId,
+          checkpoint: "entry_created",
+          updatedAt: isoNow(ports)
+        }
+      });
+      if (!cas.ok) {
+        await ports.deleteJournalEntry(created.journalEntryId);
+        createdEntryThisCall = false;
+        const latest = await reload();
+        if (!latest) {
+          return {
+            kind: "processing",
+            checkpoint: "claimed",
+            detail: "operation_missing_after_cas_loss"
+          };
+        }
+        if (latest.status === "completed" && latest.journalEntryId) {
+          return {
+            kind: "completed",
+            journalEntryId: latest.journalEntryId,
+            reusedExisting: true,
+            donguriCharged: false,
+            donguriAlreadyCharged: true
+          };
+        }
+        current = latest;
+      } else {
+        current = cas.row;
+      }
+    }
+    if (!current.journalEntryId) {
+      return {
+        kind: "processing",
+        checkpoint: current.checkpoint,
+        detail: "entry_not_yet_attached"
+      };
+    }
+    const entryId = current.journalEntryId;
+    if (current.checkpoint === "entry_created") {
+      await ports.applyPhoto({
+        journalEntryId: entryId,
+        hasPhoto: request.hasPhoto
+      });
+      const cas = await store.compareAndSet({
+        userId: request.userId,
+        saveOperationId: request.saveOperationId,
+        expectedCheckpoint: "entry_created",
+        expectedJournalEntryId: entryId,
+        patch: {
+          checkpoint: "photo_completed",
+          updatedAt: isoNow(ports)
+        }
+      });
+      if (cas.ok) {
+        current = cas.row;
+      } else {
+        const latest = await reload();
+        if (!latest) {
+          return {
+            kind: "processing",
+            checkpoint: "entry_created",
+            detail: "operation_missing_after_photo"
+          };
+        }
+        current = latest;
+      }
+    }
+    if (current.checkpoint === "photo_completed") {
+      const charge = await ports.chargeDonguri({
+        userId: request.userId,
+        journalEntryId: entryId
+      });
+      if (charge.insufficient) {
+        await ports.deleteJournalEntry(entryId);
+        const casFail = await store.compareAndSet({
+          userId: request.userId,
+          saveOperationId: request.saveOperationId,
+          expectedCheckpoint: "photo_completed",
+          expectedJournalEntryId: entryId,
+          patch: {
+            status: "failed_final",
+            resultCode: "ACORN_INSUFFICIENT",
+            journalEntryId: null,
+            checkpoint: "completed",
+            completedAt: isoNow(ports),
+            updatedAt: isoNow(ports)
+          }
+        });
+        if (casFail.ok) {
+          return {
+            kind: "failed_final",
+            resultCode: "ACORN_INSUFFICIENT",
+            journalEntryId: null
+          };
+        }
+        const latest = await reload();
+        if (latest?.status === "failed_final") {
+          return {
+            kind: "failed_final",
+            resultCode: latest.resultCode ?? "ACORN_INSUFFICIENT",
+            journalEntryId: latest.journalEntryId
+          };
+        }
+        return {
+          kind: "processing",
+          checkpoint: latest?.checkpoint ?? "photo_completed",
+          detail: "insufficient_cas_lost"
+        };
+      }
+      donguriCharged = charge.charged;
+      donguriAlreadyCharged = charge.alreadyCharged;
+      const cas = await store.compareAndSet({
+        userId: request.userId,
+        saveOperationId: request.saveOperationId,
+        expectedCheckpoint: "photo_completed",
+        expectedJournalEntryId: entryId,
+        patch: {
+          checkpoint: "donguri_settled",
+          updatedAt: isoNow(ports)
+        }
+      });
+      if (cas.ok) {
+        current = cas.row;
+      } else {
+        const latest = await reload();
+        if (!latest) {
+          return {
+            kind: "processing",
+            checkpoint: "photo_completed",
+            detail: "operation_missing_after_donguri"
+          };
+        }
+        current = latest;
+        donguriAlreadyCharged = true;
+      }
+    }
+    if (current.checkpoint === "donguri_settled" && current.status !== "completed") {
+      const charge = await ports.chargeDonguri({
+        userId: request.userId,
+        journalEntryId: entryId
+      });
+      donguriAlreadyCharged = charge.alreadyCharged || donguriAlreadyCharged;
+      donguriCharged = charge.charged || donguriCharged;
+      if (charge.insufficient) {
+        await store.compareAndSet({
+          userId: request.userId,
+          saveOperationId: request.saveOperationId,
+          expectedCheckpoint: "donguri_settled",
+          expectedJournalEntryId: entryId,
+          patch: {
+            status: "failed_final",
+            resultCode: "INTERNAL",
+            checkpoint: "completed",
+            completedAt: isoNow(ports),
+            updatedAt: isoNow(ports)
+          }
+        });
+        return {
+          kind: "failed_final",
+          resultCode: "INTERNAL",
+          journalEntryId: entryId
+        };
+      }
+      const cas = await store.compareAndSet({
+        userId: request.userId,
+        saveOperationId: request.saveOperationId,
+        expectedCheckpoint: "donguri_settled",
+        expectedJournalEntryId: entryId,
+        patch: {
+          status: "completed",
+          checkpoint: "completed",
+          resultCode: "OK",
+          completedAt: isoNow(ports),
+          journalEntryId: entryId,
+          updatedAt: isoNow(ports)
+        }
+      });
+      if (cas.ok) {
+        current = cas.row;
+      } else {
+        const latest = await reload();
+        if (latest?.status === "completed" && latest.journalEntryId) {
+          return {
+            kind: "completed",
+            journalEntryId: latest.journalEntryId,
+            reusedExisting: !createdEntryThisCall,
+            donguriCharged: false,
+            donguriAlreadyCharged: true
+          };
+        }
+        return {
+          kind: "processing",
+          checkpoint: latest?.checkpoint ?? "donguri_settled",
+          detail: "completed_mark_cas_lost"
+        };
+      }
+    }
+    if (current.status === "completed" && current.journalEntryId) {
+      return {
+        kind: "completed",
+        journalEntryId: current.journalEntryId,
+        reusedExisting: !createdEntryThisCall && current.checkpoint === "completed",
+        donguriCharged,
+        donguriAlreadyCharged
+      };
+    }
+    if (current.status === "failed_final") {
+      return {
+        kind: "failed_final",
+        resultCode: current.resultCode ?? "INTERNAL",
+        journalEntryId: current.journalEntryId
+      };
+    }
+    return {
+      kind: "processing",
+      checkpoint: current.checkpoint,
+      detail: "not_converged"
+    };
+  }
+
+  // src/lib/journal/saveIdempotency/fakePorts.ts
+  function createFakeJournalWorld(options) {
+    return {
+      entries: /* @__PURE__ */ new Map(),
+      donguriChargedEntryIds: /* @__PURE__ */ new Set(),
+      createCount: 0,
+      photoApplyCount: 0,
+      chargeAttempts: 0,
+      chargeSuccessCount: 0,
+      deleteCount: 0,
+      insufficientBalance: options?.insufficientBalance ?? false
+    };
+  }
+  function createFakeSavePorts(world, options) {
+    let entrySeq = 0;
+    return {
+      now: options?.now,
+      createRowId: options?.createRowId,
+      async createJournalEntry(input) {
+        world.createCount += 1;
+        const journalEntryId = `entry_${++entrySeq}_${input.saveOperationId.slice(0, 8)}`;
+        world.entries.set(journalEntryId, {
+          userId: input.userId,
+          entryDate: input.entryDate,
+          photo: false
+        });
+        return { journalEntryId };
+      },
+      async applyPhoto(input) {
+        world.photoApplyCount += 1;
+        const e = world.entries.get(input.journalEntryId);
+        if (!e) throw new Error("entry_missing_for_photo");
+        world.entries.set(input.journalEntryId, {
+          ...e,
+          photo: input.hasPhoto
+        });
+      },
+      async chargeDonguri(input) {
+        world.chargeAttempts += 1;
+        if (world.donguriChargedEntryIds.has(input.journalEntryId)) {
+          return { charged: false, alreadyCharged: true, insufficient: false };
+        }
+        if (world.insufficientBalance) {
+          return { charged: false, alreadyCharged: false, insufficient: true };
+        }
+        world.donguriChargedEntryIds.add(input.journalEntryId);
+        world.chargeSuccessCount += 1;
+        return { charged: true, alreadyCharged: false, insufficient: false };
+      },
+      async deleteJournalEntry(journalEntryId) {
+        world.deleteCount += 1;
+        world.entries.delete(journalEntryId);
+      }
+    };
+  }
+
+  // src/lib/journal/saveIdempotency/requestFingerprint.ts
+  function buildJournalSaveRequestFingerprint(input) {
+    const contentHash = input.contentHash.trim().toLowerCase();
+    const entryDate = input.entryDate.trim();
+    const photoIdentity = input.photoIdentity.trim() || "none";
+    return `v1|${contentHash}|${entryDate}|${photoIdentity}`;
+  }
+
+  // src/lib/local-first/journal/saveIntent/runLocalSaveOperationIntentPoc.ts
+  init_types5();
+
+  // src/lib/local-first/journal/saveIntent/LocalSaveOperationIntentService.ts
+  function newIntentId() {
+    const arr = new Uint8Array(16);
+    crypto.getRandomValues(arr);
+    return `intent_${[...arr].map((b) => b.toString(16).padStart(2, "0")).join("")}`;
+  }
+  async function prepareSaveOperationIntent(store, input) {
+    const actorKey = input.actorKey.trim().toLowerCase();
+    const saveOperationId = input.saveOperationId.trim();
+    const requestFingerprint = input.requestFingerprint.trim();
+    if (!actorKey) throw new Error("actorKey_required");
+    if (!saveOperationId) throw new Error("saveOperationId_required");
+    if (!requestFingerprint) throw new Error("requestFingerprint_required");
+    const now = input.now ?? (/* @__PURE__ */ new Date()).toISOString();
+    const candidate = {
+      intentId: input.intentId ?? newIntentId(),
+      saveOperationId,
+      actorKey,
+      status: "prepared",
+      serverEntryId: null,
+      requestFingerprint,
+      draftRef: input.draftRef ?? null,
+      createdAt: now,
+      lastAttemptAt: null,
+      completedAt: null,
+      failureCode: null
+    };
+    const inserted = await store.tryInsert(candidate);
+    if (!inserted.created) {
+      const existing = inserted.row;
+      if (existing.actorKey !== actorKey) {
+        return {
+          kind: "fingerprint_conflict",
+          intent: existing,
+          detail: "cross_actor_operation_id"
+        };
+      }
+      if (existing.requestFingerprint !== requestFingerprint) {
+        return {
+          kind: "fingerprint_conflict",
+          intent: existing,
+          detail: "same_operation_id_incompatible_fingerprint"
+        };
+      }
+      return { kind: "existing", intent: existing };
+    }
+    return { kind: "created", intent: inserted.row };
+  }
+  async function markSaveOperationPostAttempted(store, input) {
+    const row = await store.findByActorAndSaveOperationId(
+      input.actorKey.trim().toLowerCase(),
+      input.saveOperationId.trim()
+    );
+    if (!row) throw new Error("intent_missing");
+    if (row.status === "completed" || row.status === "server_failed_final") {
+      return row;
+    }
+    if (row.status === "recovery_required") {
+      return row;
+    }
+    const now = input.now ?? (/* @__PURE__ */ new Date()).toISOString();
+    return store.update({
+      ...row,
+      status: "awaiting_result",
+      lastAttemptAt: now
+    });
+  }
+  function buildMirrorCandidate(intent, serverEntryId, target) {
+    return {
+      fromIntentId: intent.intentId,
+      saveOperationId: intent.saveOperationId,
+      enqueueInput: {
+        serverEntryId,
+        target
+      }
+    };
+  }
+  async function applyOperationLookupToIntent(store, ports, input) {
+    const actorKey = input.actorKey.trim().toLowerCase();
+    const saveOperationId = input.saveOperationId.trim();
+    let intent = await store.findByActorAndSaveOperationId(actorKey, saveOperationId);
+    if (!intent) throw new Error("intent_missing");
+    if (intent.requestFingerprint !== input.requestFingerprint.trim()) {
+      return { kind: "fingerprint_conflict", intent };
+    }
+    if (intent.status === "completed" && intent.serverEntryId) {
+      return { kind: "completed", intent, reusedMirror: true };
+    }
+    if (intent.status === "server_failed_final") {
+      return { kind: "server_failed_final", intent };
+    }
+    if (intent.status === "recovery_required") {
+      return {
+        kind: "recovery_required",
+        intent,
+        detail: intent.failureCode ?? "PAYLOAD_UNAVAILABLE"
+      };
+    }
+    const result = await ports.lookup.getJournalSaveOperationResult({
+      userId: actorKey,
+      saveOperationId
+    });
+    return applyLookupResult(store, ports, intent, result, input.now);
+  }
+  async function applyLookupResult(store, ports, intent, result, nowIso) {
+    const now = nowIso ?? (/* @__PURE__ */ new Date()).toISOString();
+    if (result.status === "processing") {
+      const updated2 = await store.update({
+        ...intent,
+        status: "awaiting_result",
+        lastAttemptAt: now
+      });
+      return { kind: "awaiting_result", intent: updated2, detail: "processing" };
+    }
+    if (result.status === "failed_final") {
+      const updated2 = await store.update({
+        ...intent,
+        status: "server_failed_final",
+        serverEntryId: result.journalEntryId,
+        failureCode: result.resultCode === "ACORN_INSUFFICIENT" ? "ACORN_INSUFFICIENT" : "LOOKUP_FAILED_FINAL",
+        lastAttemptAt: now,
+        completedAt: now
+      });
+      return { kind: "server_failed_final", intent: updated2 };
+    }
+    if (result.status === "completed") {
+      const bound = await store.update({
+        ...intent,
+        status: "server_completed",
+        serverEntryId: result.journalEntryId,
+        failureCode: null,
+        lastAttemptAt: now
+      });
+      const resolved = await ports.generationResolver.resolveHealthyTechnicalActive();
+      if (!resolved.ok) {
+        return {
+          kind: "server_completed",
+          intent: bound,
+          serverEntryId: result.journalEntryId,
+          mirrorEnqueueCandidate: null
+        };
+      }
+      const candidate = buildMirrorCandidate(
+        bound,
+        result.journalEntryId,
+        resolved.target
+      );
+      return {
+        kind: "server_completed",
+        intent: bound,
+        serverEntryId: result.journalEntryId,
+        mirrorEnqueueCandidate: candidate
+      };
+    }
+    const canRetry = await ports.draftResolver.canResolvePayload(intent.draftRef);
+    if (canRetry) {
+      const updated2 = await store.update({
+        ...intent,
+        status: "awaiting_result",
+        lastAttemptAt: now
+      });
+      return {
+        kind: "awaiting_result",
+        intent: updated2,
+        detail: "not_found_retryable"
+      };
+    }
+    const updated = await store.update({
+      ...intent,
+      status: "recovery_required",
+      failureCode: "PAYLOAD_UNAVAILABLE",
+      lastAttemptAt: now
+    });
+    return {
+      kind: "recovery_required",
+      intent: updated,
+      detail: "not_found_and_no_durable_payload"
+    };
+  }
+  async function markIntentMirrorEnqueued(store, input) {
+    const intent = await store.findByActorAndSaveOperationId(
+      input.actorKey.trim().toLowerCase(),
+      input.saveOperationId.trim()
+    );
+    if (!intent) throw new Error("intent_missing");
+    if (intent.status === "completed") return intent;
+    const now = input.now ?? (/* @__PURE__ */ new Date()).toISOString();
+    return store.update({
+      ...intent,
+      status: "completed",
+      serverEntryId: input.serverEntryId,
+      completedAt: now,
+      lastAttemptAt: now,
+      failureCode: null
+    });
+  }
+  function createUnavailableDraftPayloadResolver() {
+    return {
+      async canResolvePayload() {
+        return false;
+      }
+    };
+  }
+
+  // src/lib/local-first/journal/saveIntent/types.ts
+  var LOCAL_SAVE_OPERATION_INTENT_POC_DB_NAME = "ljd_local_save_operation_intent_poc";
+  var LOCAL_SAVE_OPERATION_INTENT_SCHEMA_VERSION = 1;
+  function actorKeyFromViewerEmail(email) {
+    return email.trim().toLowerCase();
+  }
+
+  // src/lib/local-first/journal/saveIntent/LocalSaveOperationIntentSqliteStore.ts
+  init_dist();
+  init_esm2();
+  init_security();
+  init_types3();
+  var CREATE_SQL3 = `
+CREATE TABLE IF NOT EXISTS save_operation_intent (
+  intent_id TEXT PRIMARY KEY NOT NULL,
+  save_operation_id TEXT NOT NULL UNIQUE,
+  actor_key TEXT NOT NULL,
+  status TEXT NOT NULL,
+  server_entry_id TEXT,
+  request_fingerprint TEXT NOT NULL,
+  draft_ref TEXT,
+  created_at TEXT NOT NULL,
+  last_attempt_at TEXT,
+  completed_at TEXT,
+  failure_code TEXT
+);
+`;
+  function assertNative5() {
+    if (!Capacitor.isNativePlatform()) {
+      throw new LocalFirstSecurityError(
+        "native_only",
+        "save operation intent sqlite is native-only"
+      );
+    }
+  }
+  function mapRow3(row) {
+    return {
+      intentId: String(row.intent_id),
+      saveOperationId: String(row.save_operation_id),
+      actorKey: String(row.actor_key),
+      status: String(row.status),
+      serverEntryId: row.server_entry_id == null ? null : String(row.server_entry_id),
+      requestFingerprint: String(row.request_fingerprint),
+      draftRef: row.draft_ref == null ? null : String(row.draft_ref),
+      createdAt: String(row.created_at),
+      lastAttemptAt: row.last_attempt_at == null ? null : String(row.last_attempt_at),
+      completedAt: row.completed_at == null ? null : String(row.completed_at),
+      failureCode: row.failure_code == null ? null : String(row.failure_code)
+    };
+  }
+  async function resolveSaveIntentPocDbAbsolutePath() {
+    const asDir = await resolveLjdApplicationSupportDir();
+    return `${asDir.ljdApplicationSupportDir}/${LOCAL_SAVE_OPERATION_INTENT_POC_DB_NAME}SQLite.db`;
+  }
+  async function applySaveIntentBackupExclusionPolicy(absolutePath) {
+    try {
+      await LjdLocalSecurity.setExcludedFromBackup({
+        path: absolutePath,
+        excluded: true
+      });
+      const attrs = await inspectFileProtection(absolutePath);
+      return { isExcludedFromBackup: attrs.isExcludedFromBackup };
+    } catch {
+      return { isExcludedFromBackup: "api_unavailable" };
+    }
+  }
+  async function openLocalSaveOperationIntentSqliteStore() {
+    assertNative5();
+    {
+      const db2 = await openNamedEncryptedDatabase(
+        LOCAL_SAVE_OPERATION_INTENT_POC_DB_NAME,
+        LOCAL_SAVE_OPERATION_INTENT_SCHEMA_VERSION
+      );
+      await db2.execute(CREATE_SQL3);
+      await db2.execute(
+        `PRAGMA user_version = ${LOCAL_SAVE_OPERATION_INTENT_SCHEMA_VERSION};`
+      );
+      await closeNamedEncryptedDatabase(LOCAL_SAVE_OPERATION_INTENT_POC_DB_NAME);
+    }
+    const absolutePath = await resolveSaveIntentPocDbAbsolutePath();
+    let completeProtection = null;
+    try {
+      await applyCompleteFileProtection(absolutePath);
+      const attrs = await inspectFileProtection(absolutePath);
+      completeProtection = attrs.fileProtection === "NSFileProtectionComplete";
+    } catch {
+      completeProtection = null;
+    }
+    const backup = await applySaveIntentBackupExclusionPolicy(absolutePath);
+    return {
+      store: createSqliteIntentStorePerOp(),
+      absolutePath,
+      encrypted: true,
+      completeProtection,
+      backupExcluded: backup.isExcludedFromBackup,
+      async close() {
+        await closeNamedEncryptedDatabase(LOCAL_SAVE_OPERATION_INTENT_POC_DB_NAME);
+      }
+    };
+  }
+  async function withIntentDb(fn) {
+    const db2 = await openNamedEncryptedDatabase(
+      LOCAL_SAVE_OPERATION_INTENT_POC_DB_NAME,
+      LOCAL_SAVE_OPERATION_INTENT_SCHEMA_VERSION
+    );
+    try {
+      return await fn(db2);
+    } finally {
+      await closeNamedEncryptedDatabase(LOCAL_SAVE_OPERATION_INTENT_POC_DB_NAME);
+    }
+  }
+  async function getByOpDb(db2, saveOperationId) {
+    const res = await db2.query(
+      `SELECT * FROM save_operation_intent WHERE save_operation_id = ? LIMIT 1`,
+      [saveOperationId]
+    );
+    const row = res.values?.[0];
+    return row ? mapRow3(row) : null;
+  }
+  function createSqliteIntentStorePerOp() {
+    return {
+      async findBySaveOperationId(saveOperationId) {
+        return withIntentDb((db2) => getByOpDb(db2, saveOperationId));
+      },
+      async findByActorAndSaveOperationId(actorKey, saveOperationId) {
+        return withIntentDb(async (db2) => {
+          const row = await getByOpDb(db2, saveOperationId);
+          if (!row || row.actorKey !== actorKey) return null;
+          return row;
+        });
+      },
+      async tryInsert(row) {
+        return withIntentDb(async (db2) => {
+          const existing = await getByOpDb(db2, row.saveOperationId);
+          if (existing) return { created: false, row: existing };
+          try {
+            await db2.run(
+              `INSERT INTO save_operation_intent (
+              intent_id, save_operation_id, actor_key, status,
+              server_entry_id, request_fingerprint, draft_ref,
+              created_at, last_attempt_at, completed_at, failure_code
+            ) VALUES (?,?,?,?,?,?,?,?,?,?,?)`,
+              [
+                row.intentId,
+                row.saveOperationId,
+                row.actorKey,
+                row.status,
+                row.serverEntryId,
+                row.requestFingerprint,
+                row.draftRef,
+                row.createdAt,
+                row.lastAttemptAt,
+                row.completedAt,
+                row.failureCode
+              ]
+            );
+          } catch (error) {
+            const again = await getByOpDb(db2, row.saveOperationId);
+            if (again) return { created: false, row: again };
+            throw new Error(safeErrorMessage(error));
+          }
+          return { created: true, row };
+        });
+      },
+      async update(row) {
+        return withIntentDb(async (db2) => {
+          const current = await getByOpDb(db2, row.saveOperationId);
+          if (!current) throw new Error("intent_missing");
+          await db2.run(
+            `UPDATE save_operation_intent SET
+            status = ?, server_entry_id = ?, request_fingerprint = ?,
+            draft_ref = ?, last_attempt_at = ?, completed_at = ?, failure_code = ?
+           WHERE save_operation_id = ? AND actor_key = ?`,
+            [
+              row.status,
+              row.serverEntryId,
+              row.requestFingerprint,
+              row.draftRef,
+              row.lastAttemptAt,
+              row.completedAt,
+              row.failureCode,
+              row.saveOperationId,
+              row.actorKey
+            ]
+          );
+          return await getByOpDb(db2, row.saveOperationId);
+        });
+      },
+      async listByActor(actorKey) {
+        return withIntentDb(async (db2) => {
+          const res = await db2.query(
+            `SELECT * FROM save_operation_intent
+           WHERE actor_key = ? ORDER BY created_at ASC`,
+            [actorKey]
+          );
+          return (res.values ?? []).map(
+            (r) => mapRow3(r)
+          );
+        });
+      },
+      async dumpRows() {
+        return withIntentDb(async (db2) => {
+          const res = await db2.query(
+            `SELECT * FROM save_operation_intent ORDER BY created_at ASC`
+          );
+          return (res.values ?? []).map(
+            (r) => mapRow3(r)
+          );
+        });
+      }
+    };
+  }
+
+  // src/lib/local-first/journal/saveIntent/runLocalSaveOperationIntentPoc.ts
+  init_types();
+  init_security();
+  var REPORT_PATH = "ljd/security-poc/local-save-operation-intent-poc-report.json";
+  var ACTOR = actorKeyFromViewerEmail("poc-intent@example.com");
+  function newPocOperationId(suffix) {
+    const arr = new Uint8Array(6);
+    crypto.getRandomValues(arr);
+    const hex = [...arr].map((b) => b.toString(16).padStart(2, "0")).join("");
+    return `01HX4B4OINTENT${suffix}${hex}`.slice(0, 26);
+  }
+  function fp() {
+    return buildJournalSaveRequestFingerprint({
+      contentHash: "poc4b4o",
+      entryDate: "2026-08-12",
+      photoIdentity: "none"
+    });
+  }
+  async function runLocalSaveOperationIntentPoc() {
+    if (!Capacitor.isNativePlatform()) {
+      throw new Error("local save operation intent PoC is native-only");
+    }
+    const steps = [];
+    const push2 = (id, status, detail) => {
+      steps.push({ id, status, detail });
+    };
+    let absolutePathRedacted = null;
+    let encrypted = null;
+    let completeProtection = null;
+    let backupExcluded = null;
+    let productionOutboxUntouched = true;
+    let outboxCountBefore = 0;
+    try {
+      const outboxOpened = await openLocalMirrorOutboxSqliteStore();
+      try {
+        outboxCountBefore = (await outboxOpened.store.dumpRows()).length;
+      } finally {
+        await outboxOpened.close();
+      }
+    } catch {
+      outboxCountBefore = -1;
+    }
+    const opened = await openLocalSaveOperationIntentSqliteStore();
+    encrypted = opened.encrypted;
+    completeProtection = opened.completeProtection;
+    backupExcluded = opened.backupExcluded;
+    absolutePathRedacted = opened.absolutePath.includes(
+      LOCAL_SAVE_OPERATION_INTENT_POC_DB_NAME
+    ) ? `\u2026/${LOCAL_SAVE_OPERATION_INTENT_POC_DB_NAME}SQLite.db` : "path_unexpected";
+    const OP = newPocOperationId("MAIN");
+    const OP7 = newPocOperationId("NF00");
+    try {
+      const before = await opened.store.dumpRows();
+      push2(
+        "I1",
+        "pass",
+        `rows=${before.length} (PoC DB ready; freshOp=${OP.slice(0, 12)}\u2026)`
+      );
+      const prepared = await prepareSaveOperationIntent(opened.store, {
+        actorKey: ACTOR,
+        saveOperationId: OP,
+        requestFingerprint: fp(),
+        draftRef: null
+      });
+      push2(
+        "I2",
+        prepared.kind === "created" ? "pass" : "fail",
+        `kind=${prepared.kind} status=${"intent" in prepared ? prepared.intent.status : "?"}`
+      );
+      await opened.close();
+      const reopened = await openLocalSaveOperationIntentSqliteStore();
+      try {
+        const row = await reopened.store.findByActorAndSaveOperationId(ACTOR, OP);
+        push2(
+          "I3",
+          row?.status === "prepared" ? "pass" : "fail",
+          `status=${row?.status ?? "missing"}`
+        );
+        await prepareSaveOperationIntent(reopened.store, {
+          actorKey: ACTOR,
+          saveOperationId: OP,
+          requestFingerprint: fp()
+        });
+        const sameOp = (await reopened.store.dumpRows()).filter(
+          (r) => r.saveOperationId === OP
+        );
+        push2(
+          "I4",
+          sameOp.length === 1 ? "pass" : "fail",
+          `sameOpRows=${sameOp.length}`
+        );
+        await markSaveOperationPostAttempted(reopened.store, {
+          actorKey: ACTOR,
+          saveOperationId: OP
+        });
+        const serverStore = createMemoryJournalSaveOperationStore();
+        const world = createFakeJournalWorld();
+        const ports = createFakeSavePorts(world);
+        await executeJournalSaveOperation(serverStore, ports, {
+          userId: ACTOR,
+          saveOperationId: OP,
+          requestFingerprint: fp(),
+          entryDate: "2026-08-12",
+          hasPhoto: false
+        });
+        const generationResolver = {
+          async resolveHealthyTechnicalActive() {
+            return {
+              ok: true,
+              target: {
+                generation: TECHNICAL_CANDIDATE_GENERATION,
+                databaseId: TECHNICAL_ACTIVE_DATABASE_ID,
+                mediaRootId: TECHNICAL_ACTIVE_MEDIA_ROOT_ID,
+                schemaVersion: EXPECTED_JOURNAL_SCHEMA_VERSION,
+                manifestChecksum: "poc_checksum"
+              }
+            };
+          }
+        };
+        const applied = await applyOperationLookupToIntent(
+          reopened.store,
+          {
+            lookup: {
+              getJournalSaveOperationResult: (input) => getJournalSaveOperationResult(serverStore, input)
+            },
+            draftResolver: createUnavailableDraftPayloadResolver(),
+            generationResolver
+          },
+          {
+            actorKey: ACTOR,
+            saveOperationId: OP,
+            requestFingerprint: fp()
+          }
+        );
+        push2(
+          "I5",
+          applied.kind === "server_completed" ? "pass" : "fail",
+          `kind=${applied.kind}`
+        );
+        const candidateOk = applied.kind === "server_completed" && applied.mirrorEnqueueCandidate != null;
+        push2(
+          "I6",
+          candidateOk ? "pass" : "fail",
+          applied.kind === "server_completed" ? `candidateEntryChars=${applied.mirrorEnqueueCandidate?.enqueueInput.serverEntryId.length ?? 0}` : `kind=${applied.kind}`
+        );
+        if (applied.kind === "server_completed" && applied.serverEntryId) {
+          await markIntentMirrorEnqueued(reopened.store, {
+            actorKey: ACTOR,
+            saveOperationId: OP,
+            serverEntryId: applied.serverEntryId
+          });
+        }
+        await prepareSaveOperationIntent(reopened.store, {
+          actorKey: ACTOR,
+          saveOperationId: OP7,
+          requestFingerprint: fp(),
+          draftRef: null
+        });
+        await markSaveOperationPostAttempted(reopened.store, {
+          actorKey: ACTOR,
+          saveOperationId: OP7
+        });
+        const emptyServer = createMemoryJournalSaveOperationStore();
+        const nf = await applyOperationLookupToIntent(
+          reopened.store,
+          {
+            lookup: {
+              getJournalSaveOperationResult: (input) => getJournalSaveOperationResult(emptyServer, input)
+            },
+            draftResolver: createUnavailableDraftPayloadResolver(),
+            generationResolver
+          },
+          {
+            actorKey: ACTOR,
+            saveOperationId: OP7,
+            requestFingerprint: fp()
+          }
+        );
+        push2(
+          "I7",
+          nf.kind === "recovery_required" ? "pass" : "fail",
+          `kind=${nf.kind} code=${nf.kind === "recovery_required" ? nf.intent.failureCode : ""}`
+        );
+        const artifacts = await listSqliteArtifactsReadOnly();
+        const journalTouched = artifacts.some(
+          (a) => a.name.includes(LOCAL_JOURNAL_DB_NAME) && a.name.includes("intent")
+        );
+        let outboxCountAfter = outboxCountBefore;
+        try {
+          const outboxOpened = await openLocalMirrorOutboxSqliteStore();
+          try {
+            outboxCountAfter = (await outboxOpened.store.dumpRows()).length;
+          } finally {
+            await outboxOpened.close();
+          }
+        } catch {
+          outboxCountAfter = outboxCountBefore;
+        }
+        productionOutboxUntouched = outboxCountBefore < 0 || outboxCountAfter === outboxCountBefore;
+        push2(
+          "I8",
+          !journalTouched && productionOutboxUntouched ? "pass" : "fail",
+          JSON.stringify({
+            intentDbPresent: artifacts.some(
+              (a) => a.name.includes(LOCAL_SAVE_OPERATION_INTENT_POC_DB_NAME)
+            ),
+            journalIntentCollision: journalTouched,
+            outboxBefore: outboxCountBefore,
+            outboxAfter: outboxCountAfter,
+            pathOk: (await resolveSaveIntentPocDbAbsolutePath()).includes(
+              LOCAL_SAVE_OPERATION_INTENT_POC_DB_NAME
+            )
+          })
+        );
+        push2(
+          "I9",
+          "pass",
+          "production POST /api/journal not invoked; general production save untouched by this PoC"
+        );
+      } finally {
+        await reopened.close();
+      }
+    } catch (e) {
+      push2("I_FATAL", "fail", safeErrorMessage(e));
+    }
+    const report = {
+      ranAt: (/* @__PURE__ */ new Date()).toISOString(),
+      steps,
+      absolutePathRedacted,
+      encrypted,
+      completeProtection,
+      backupExcluded,
+      productionPostUntouched: true,
+      actualJournalUntouched: true,
+      productionOutboxUntouched,
+      nextPhase: "4B-4P_non_production_prisma_idempotency_integration"
+    };
+    try {
+      await Filesystem.writeFile({
+        path: REPORT_PATH,
+        directory: Directory.Library,
+        data: JSON.stringify(report, null, 2),
+        encoding: Encoding.UTF8,
+        recursive: true
+      });
+    } catch {
+    }
+    return report;
+  }
+
   // src/lib/local-first/diagnostics/localStorageDiagnosticsMain.ts
   init_types4();
 
@@ -8501,13 +9760,13 @@ CREATE TABLE IF NOT EXISTS generation_registry (
   init_esm3();
   init_checksum();
   init_types();
-  function assertNative5() {
+  function assertNative6() {
     if (!Capacitor.isNativePlatform()) {
       throw new Error("Local Journal media store is native-only.");
     }
   }
   async function resolveJournalMediaUri(relativePath) {
-    assertNative5();
+    assertNative6();
     const result = await Filesystem.getUri({
       path: relativePath,
       directory: Directory.Library
@@ -8515,7 +9774,7 @@ CREATE TABLE IF NOT EXISTS generation_registry (
     return Capacitor.convertFileSrc(result.uri);
   }
   async function deleteJournalMediaRelative(relativePath) {
-    assertNative5();
+    assertNative6();
     try {
       await Filesystem.deleteFile({
         path: relativePath,
@@ -8994,6 +10253,15 @@ CREATE TABLE IF NOT EXISTS generation_registry (
         $("security-report").textContent = JSON.stringify(report, null, 2);
         const fails = report.steps.filter((s2) => s2.status === "fail").length;
         setStatus(`save-wiring-poc fail=${fails} gap=${report.residualGap}`, fails > 0);
+      })().catch((e) => setStatus(safeErrorMessage(e), true));
+    });
+    $("btn-save-intent-poc").addEventListener("click", () => {
+      void (async () => {
+        setStatus("local save operation intent PoC I1\u2013I9\u2026");
+        const report = await runLocalSaveOperationIntentPoc();
+        $("security-report").textContent = JSON.stringify(report, null, 2);
+        const fails = report.steps.filter((s2) => s2.status === "fail").length;
+        setStatus(`save-intent-poc fail=${fails}`, fails > 0);
       })().catch((e) => setStatus(safeErrorMessage(e), true));
     });
     $("btn-inspect-capacity").addEventListener("click", () => {
