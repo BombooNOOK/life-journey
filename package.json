@@ -31,6 +31,7 @@
     "db:migrate:controlled:plan": "node scripts/controlled-production-migrate.mjs --mode=local-dry --plan-only",
     "db:migrate:controlled:local-dry": "node scripts/controlled-production-migrate.mjs --mode=local-dry",
     "db:migrate:controlled:production:plan": "node scripts/controlled-production-migrate.mjs --mode=production --plan-only",
+    "db:preflight:production": "node scripts/production-preflight.mjs",
     "postinstall": "prisma generate && patch-package && node scripts/copy-pdfjs-worker.mjs",
     "test": "vitest run",
     "daily-number:data:build": "npx tsx scripts/build-daily-number-data.ts",

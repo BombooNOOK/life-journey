@@ -127,7 +127,8 @@ Vercel Dashboard 実測で `DATABASE_URL` が **Production and Preview** 共通�
 
 ### Strategy C｜migrate を build から完全分離（長期本命・4B-4V 実装）
 
-実装: `scripts/controlled-production-migrate.mjs` + `vercel-build.mjs` never migrates.
+実装: `scripts/controlled-production-migrate.mjs` + `scripts/production-preflight.mjs` + `vercel-build.mjs` never migrates.  
+4B-4V.1a: Snapshot Gate **code-enforced**; Production URL = `PRODUCTION_DATABASE_URL` only; read-only preflight cannot call `migrate deploy`.
 
 通常 Vercel build から `migrate deploy` を外し、controlled release:
 

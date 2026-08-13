@@ -69,9 +69,10 @@ Vercel application build は **一切** `prisma migrate deploy` を実行しな�
 
 npm aliases:
 
+- `db:preflight:production` — **read-only** Production preflight（`PRODUCTION_DATABASE_URL` only；`migrate deploy` 不可）  
 - `db:migrate:controlled:plan` — local-dry plan  
 - `db:migrate:controlled:local-dry` — local-dry apply（ljd_dev only）  
-- `db:migrate:controlled:production:plan` — production **plan only**（still requires production gates; Neon apply は 4B-4V.1 まで禁止）
+- `db:migrate:controlled:production:plan` — production **plan only**（full production gates；Neon apply は別途明示承認まで禁止）
 
 単なる `prisma migrate deploy` alias は **不十分**（guard なし）。
 
@@ -79,22 +80,23 @@ npm aliases:
 
 ## 3. Operator gates（Production）
 
-すべて必須。不完全一致は fail。
+すべて必須。不完全一致は fail。**4B-4V.1a で controlled migrate script が code 強制**（runbook のみではない）。
 
 | Env / flag | Value | Role |
 | --- | --- | --- |
 | `LJD_CONTROLLED_MIGRATE_MODE` | `production` | explicit production mode |
 | `LJD_ALLOW_PRODUCTION_MIGRATION` | `YES` | human confirmation token（secret ではない・CI 常設禁止） |
 | `LJD_PRODUCTION_BACKUP_CONFIRMED` | `YES` | backup/restore **capability** 確認済み（V3）— **Dashboard 実測 PASS** |
-| `LJD_PRODUCTION_MIGRATION_PRE_SNAPSHOT_REQUIRED` | `YES` | migration直前手動 Snapshot 必須 Gate |
-| `LJD_PRODUCTION_PRE_SNAPSHOT_CREATED` | `YES` | 当該 Snapshot 作成・確認済み（未作成なら migrate 禁止） |
+| `LJD_PRODUCTION_MIGRATION_PRE_SNAPSHOT_REQUIRED` | `YES` | migration直前手動 Snapshot 必須 Gate（**code**） |
+| `LJD_PRODUCTION_PRE_SNAPSHOT_CREATED` | `YES` | 当該 Snapshot 作成・確認済み（未作成なら migrate 禁止・**code**） |
+| `LJD_PRODUCTION_PRE_SNAPSHOT_AT` | ISO/UTC timestamp | non-secret Snapshot metadata（例 `2026-08-13T06:43:21Z`） |
 | `LJD_EXPECTED_DB_FINGERPRINT` | 16-hex | redacted identity fingerprint match（V1） |
 | `LJD_EXPECTED_PENDING_MIGRATIONS` | comma list | pending 全件と完全一致（V2） |
-| `DATABASE_URL` | （operator 環境） | ログにフル URL / password を出さない |
+| `PRODUCTION_DATABASE_URL` | （operator session env） | Production 専用。**`DATABASE_URL` 代用禁止**。repo `.env` に保存しない |
 
-Fingerprint は `sha256(host\|port\|database).slice(0,16)`。label は redacted host/db のみ。
+Fingerprint は `sha256(host\|port\|database).slice(0,16)`。label は redacted host/db のみ。フル URL / password は log しない。
 
-**注:** `PRE_SNAPSHOT_*` flags は runbook Gate。4B-4V.1 実装時に controlled command へ組み込む候補。Snapshot 未確認のまま Production migrate してはならない。
+**Confirmed operator Snapshot（非 secret）:** `2026-08-13 06:43:21 UTC` / ~43.1MB / manual / expires never。Snapshot API 操作はしない。
 
 ---
 
@@ -133,7 +135,7 @@ Prisma に「deploy dry-run」は **無い**。本実行前に実在機能で確
 
 `LJD_PRODUCTION_BACKUP_CONFIRMED=YES` を capability 確認済みとして扱ってよい。
 
-### 5.2 Pre-migration Snapshot Gate — **必須・未充足**
+### 5.2 Pre-migration Snapshot Gate — **必須・code enforced（4B-4V.1a）**
 
 Capability PASS だけでは Production migrate 不可。
 
@@ -141,17 +143,20 @@ Capability PASS だけでは Production migrate 不可。
 
 1. migration 直前に Neon Dashboard から **手動 Snapshot を 1 つ作成**  
 2. Snapshot が正常に作成されたことを確認  
-3. `LJD_PRODUCTION_MIGRATION_PRE_SNAPSHOT_REQUIRED=YES` かつ `LJD_PRODUCTION_PRE_SNAPSHOT_CREATED=YES`  
+3. `LJD_PRODUCTION_MIGRATION_PRE_SNAPSHOT_REQUIRED=YES`  
+4. `LJD_PRODUCTION_PRE_SNAPSHOT_CREATED=YES`  
+5. `LJD_PRODUCTION_PRE_SNAPSHOT_AT=<timestamp>`（例: `2026-08-13T06:43:21Z`）  
 
-**Snapshot 作成確認前は Production migration 禁止。**
+**未設定時は controlled migrate が `prisma migrate deploy` に到達しない。**
 
 本更新時点:
 
 - Restore 実行: **していない**  
-- Snapshot Create: **していない**  
+- Snapshot Create: **済み**（`2026-08-13 06:43:21 UTC`）  
 - Production migration: **していない**  
+- Production read-only preflight（live）: **未実施**（URL 未供給）  
 
-6 時間 history window があるため、migrate 実行はその window と手動 Snapshot の両方を意識する（手動 Snapshot を必須とするのは window 切れ・計画的 rollback 点の明示のため）。
+6 時間 history window があるため、migrate 実行はその window と手動 Snapshot の両方を意識する。
 
 ---
 
