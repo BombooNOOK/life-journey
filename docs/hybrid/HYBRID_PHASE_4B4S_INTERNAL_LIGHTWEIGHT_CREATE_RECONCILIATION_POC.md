@@ -13,6 +13,8 @@
 - [HYBRID_PHASE_4B4M_SERVER_SUCCESS_OUTBOX_GAP_ARCHITECTURE.md](./HYBRID_PHASE_4B4M_SERVER_SUCCESS_OUTBOX_GAP_ARCHITECTURE.md)
 - [ljd-local-mirror-outbox-spec.md](../product/ljd-local-mirror-outbox-spec.md)
 - [ljd-local-generation-lifecycle-spec.md](../product/ljd-local-generation-lifecycle-spec.md)
+- [HYBRID_PHASE_4B4T_VERCEL_DATABASE_MIGRATION_SAFETY.md](./HYBRID_PHASE_4B4T_VERCEL_DATABASE_MIGRATION_SAFETY.md)
+- [ljd-database-migration-deployment-safety-spec.md](../product/ljd-database-migration-deployment-safety-spec.md)
 
 **Formal main (do not merge):** `a160d25743d82713b3d218abacd2d26833b0bc9b`
 

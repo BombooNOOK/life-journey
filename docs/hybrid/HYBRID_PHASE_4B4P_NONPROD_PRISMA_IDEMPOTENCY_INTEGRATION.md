@@ -11,6 +11,8 @@
 - [HYBRID_PHASE_4B4O_LOCAL_SAVE_OPERATION_INTENT_POC.md](./HYBRID_PHASE_4B4O_LOCAL_SAVE_OPERATION_INTENT_POC.md)
 - [HYBRID_PHASE_4B4O1_PREVIEW_BUILD_HEALTH.md](./HYBRID_PHASE_4B4O1_PREVIEW_BUILD_HEALTH.md)
 - [ljd-save-operation-reconciliation-spec.md](../product/ljd-save-operation-reconciliation-spec.md)
+- [HYBRID_PHASE_4B4T_VERCEL_DATABASE_MIGRATION_SAFETY.md](./HYBRID_PHASE_4B4T_VERCEL_DATABASE_MIGRATION_SAFETY.md)
+- [ljd-database-migration-deployment-safety-spec.md](../product/ljd-database-migration-deployment-safety-spec.md)
 
 **Formal main (do not merge):** `a160d25743d82713b3d218abacd2d26833b0bc9b`
 
