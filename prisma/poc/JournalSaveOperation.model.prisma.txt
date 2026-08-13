@@ -1,13 +1,14 @@
 /**
- * Prisma model draft for JournalSaveOperation (4B-4N).
- * NOT merged into prisma/schema.prisma in this PoC — avoids migrate deploy → Neon.
- * Apply only via prisma/poc/journal_save_operation_4b4n.sql on disposable local DB.
+ * Prisma model draft for JournalSaveOperation (4B-4P).
+ * Mirrored into prisma/schema.prisma for client generate.
+ * Formal prisma/migrations/ promotion is GATED on Preview DB isolation (currently unknown → B).
  */
 
 /*
 model JournalSaveOperation {
   id                 String    @id @default(cuid())
-  userId             String
+  /// Normalized viewer-email today (Journal ownership). Not named "email" to allow future identity migration.
+  actorKey           String
   saveOperationId    String
   status             String
   checkpoint         String
@@ -18,7 +19,7 @@ model JournalSaveOperation {
   updatedAt          DateTime  @updatedAt
   completedAt        DateTime?
 
-  @@unique([userId, saveOperationId])
-  @@index([userId, createdAt])
+  @@unique([actorKey, saveOperationId])
+  @@index([actorKey, createdAt])
 }
 */

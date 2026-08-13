@@ -92,6 +92,29 @@ model JournalEntry {
   @@index([email, profileId])
 }
 
+/// Server Journal save-operation idempotency (4B-4P candidate).
+/// Domain userId maps to actorKey (normalized viewer email today).
+/// NOT promoted to prisma/migrations/ until Preview DB isolation is proven.
+/// No content / photo / secrets. Not wired to production POST /api/journal.
+model JournalSaveOperation {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  /// Normalized viewer-email identity today; not named "email" for future UID migration room.
+  actorKey           String
+  saveOperationId    String
+  status             String
+  checkpoint         String
+  journalEntryId     String?
+  requestFingerprint String
+  resultCode         String?
+  completedAt        DateTime?
+
+  @@unique([actorKey, saveOperationId])
+  @@index([actorKey, createdAt])
+}
+
 /// 日記下書き（プロフィール × 日本暦日ごとに1件。どんぐり非消費）
 model JournalDraft {
   id        String   @id @default(cuid())
