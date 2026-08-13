@@ -2,20 +2,23 @@
  * Life Journey Diary｜Journal Save Operation Idempotency Spec
  *
  * Status: Pre-Implementation / Server Save Idempotency Candidate
- * Updated: 2026-08-13 (4B-4P nonprod Prisma verification)
- * Branch: feat/nonprod-prisma-journal-save-idempotency
+ * Updated: 2026-08-13 (4B-4U official migration on local disposable DB)
+ * Branch: feat/official-journal-save-operation-migration
  * Formal main (unmerged): a160d25743d82713b3d218abacd2d26833b0bc9b
- * Scope: Strategy C — domain + memory + disposable Postgres Prisma adapter.
- * Forbidden now: production Neon migrate, prisma/migrations promotion without Preview isolation,
- * production POST wiring, Vercel Production deploy, main merge, general rollout.
+ * Scope: Strategy C — domain + memory + Prisma store; official migration promoted locally.
+ * Forbidden now: Production Neon migrate apply, production POST wiring,
+ * Vercel Production deploy, main merge, general rollout.
  *
  * Companion:
  * - docs/hybrid/HYBRID_PHASE_4B4N_SERVER_SAVE_IDEMPOTENCY_POC.md
  * - docs/hybrid/HYBRID_PHASE_4B4O_LOCAL_SAVE_OPERATION_INTENT_POC.md
  * - docs/hybrid/HYBRID_PHASE_4B4P_NONPROD_PRISMA_IDEMPOTENCY_INTEGRATION.md
  * - docs/hybrid/HYBRID_PHASE_4B4Q_INTERNAL_SAVE_OPERATION_E2E.md
+ * - docs/hybrid/HYBRID_PHASE_4B4U_OFFICIAL_JOURNAL_SAVE_OPERATION_MIGRATION.md
+ * - docs/hybrid/HYBRID_PHASE_4B4T1_PREVIEW_MIGRATION_GATE.md
  * - docs/product/ljd-local-save-operation-intent-spec.md
  * - docs/product/ljd-save-operation-reconciliation-spec.md
+ * - docs/product/ljd-database-migration-deployment-safety-spec.md
  * - docs/hybrid/HYBRID_PHASE_4B4M_SERVER_SUCCESS_OUTBOX_GAP_ARCHITECTURE.md
  */
 
@@ -149,7 +152,9 @@ Server C enables safe result recovery after response loss.
 | Domain unit PoC | Done (4B-4N) |
 | Local durable intent | Done (4B-4O) |
 | Nonprod Prisma / disposable Postgres | Done (4B-4P) — unique / concurrent / N1–N5 / persistence |
-| Formal `prisma/migrations/` promotion | **Blocked** until Vercel Preview DB isolation proven |
+| Formal `prisma/migrations/` promotion | **Done locally (4B-4U)** — `20260813140000_add_journal_save_operation` |
+| Production Neon apply | **Not done** — Preview gate + release checklist required |
+| Production POST wiring | **Not done** — table may exist unused |
 | Production POST wiring | Forbidden |
 | Production Neon migrate | Forbidden |
 | Strategy B Local intent | Done (separate PoC) |

@@ -13,6 +13,7 @@
  * Companion:
  * - docs/hybrid/HYBRID_PHASE_4B4T_VERCEL_DATABASE_MIGRATION_SAFETY.md
  * - docs/hybrid/HYBRID_PHASE_4B4T1_PREVIEW_MIGRATION_GATE.md
+ * - docs/hybrid/HYBRID_PHASE_4B4U_OFFICIAL_JOURNAL_SAVE_OPERATION_MIGRATION.md
  * - docs/hybrid/HYBRID_PHASE_4B4P_NONPROD_PRISMA_IDEMPOTENCY_INTEGRATION.md
  * - docs/hybrid/HYBRID_PHASE_4B4Q_INTERNAL_SAVE_OPERATION_E2E.md
  * - docs/hybrid/HYBRID_PHASE_4B4S_INTERNAL_LIGHTWEIGHT_CREATE_RECONCILIATION_POC.md
@@ -175,13 +176,13 @@ Preview ごと、または共有 Preview non-prod DB（Neon branch 等）。
 | --- | --- | --- |
 | 1 | Migration deployment 経路が安全（少なくとも Preview が Production schema を mutation しない） | **gate で充足候補** |
 | 2 | Preview/Production DB isolation 証明、**または** Preview migrate 無効化が実装済み | isolation は **shared**；migrate 無効化は **実装済み** |
-| 3 | Local disposable `127.0.0.1:5433/ljd_dev` で正式 Prisma migration 再現 PASS | 昇格 Phase で実施 |
-| 4 | Existing production schema への forward migration レビュー（additive） | 昇格 Phase |
-| 5 | Data-destructive operation なし | 昇格 Phase |
+| 3 | Local disposable `127.0.0.1:5433/ljd_dev` で正式 Prisma migration 再現 PASS | **4B-4U PASS**（fresh + upgrade） |
+| 4 | Existing production schema への forward migration レビュー（additive） | SQL reviewed locally; Production apply still **B** |
+| 5 | Data-destructive operation なし | **4B-4U SQL: none** |
 | 6 | Rollback / forward-fix 方針が文書化されている | §7 |
 | 7 | App は migration 適用直後も save behavior 非変更（feature flag / 未配線） | 必須 |
 
-**現時点:** gate（1–2）は 4B-4T.1 で前進。公式 migration ファイル追加は **まだ行わない**（3–5 とレビューを別 Phase）。
+**現時点:** gate（1–2）は 4B-4T.1 で充足候補。正式 migration ファイルは **4B-4U で local 昇格済み**（`20260813140000_add_journal_save_operation`）。**Production Neon への apply は未実施** — §6 checklist + Strategy C 長期運用を推奨。
 
 ---
 

@@ -1,7 +1,8 @@
--- 4B-4P non-production candidate ONLY.
--- DO NOT add to prisma/migrations/ until Vercel Preview DB isolation is proven.
--- DO NOT apply to production Neon.
--- Apply only to disposable local: 127.0.0.1:5433/ljd_dev (ljd-postgres-dev).
+-- 4B-4P non-production candidate SQL (historical).
+-- Official migration: prisma/migrations/20260813140000_add_journal_save_operation/
+-- Prefer official migrate deploy on disposable local only.
+-- DO NOT apply this file to production Neon.
+-- Apply only to disposable local: 127.0.0.1:5433/ljd_dev (ljd-postgres-dev) if needed for legacy PoC.
 --
 -- Column actorKey (not "email"): holds normalized viewer-email identity today
 -- for Journal ownership compatibility; name allows future non-email identity migration.

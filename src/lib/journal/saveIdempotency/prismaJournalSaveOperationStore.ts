@@ -1,7 +1,7 @@
 /**
- * Prisma-backed JournalSaveOperation store (4B-4P).
+ * Prisma-backed JournalSaveOperation store (4B-4P/U).
  * Domain stays free of Prisma; this adapter maps userId ↔ actorKey.
- * Requires table applied via prisma/poc/4b4p_journal_save_operation.sql on disposable DB.
+ * Requires official migration `20260813140000_add_journal_save_operation` on target DB.
  * Not wired to production POST /api/journal.
  */
 

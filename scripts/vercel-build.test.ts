@@ -111,6 +111,35 @@ describe("4B-4T.1 runVercelBuild dry harness", () => {
     expect(result.plan.runMigrateDeploy).toBe(true);
   });
 
+  it("U-P1 preview plan excludes migrate even when official JournalSaveOperation migration exists", async () => {
+    const fs = await import("node:fs");
+    const path = await import("node:path");
+    const migDir = path.join(
+      process.cwd(),
+      "prisma/migrations/20260813140000_add_journal_save_operation/migration.sql",
+    );
+    expect(fs.existsSync(migDir)).toBe(true);
+    const plan = resolveVercelBuildPlan("preview");
+    expect(plan.runMigrateDeploy).toBe(false);
+    const steps = buildVercelCommandSteps(plan);
+    expect(steps.some((s) => s.id === "prisma_migrate_deploy")).toBe(false);
+  });
+
+  it("U-P3 production plan selects migrate (fake; no DB)", () => {
+    /** @type {string[]} */
+    const called = [];
+    const result = runVercelBuild({
+      vercelEnv: "production",
+      log: () => {},
+      runStep: (step) => {
+        called.push(step.id);
+        return 0;
+      },
+    });
+    expect(called).toContain("prisma_migrate_deploy");
+    expect(result.plan.runMigrateDeploy).toBe(true);
+  });
+
   it("parseVercelBuildArgv prefers --vercel-env over process env", () => {
     const parsed = parseVercelBuildArgv(
       ["--vercel-env=preview", "--plan-only"],
