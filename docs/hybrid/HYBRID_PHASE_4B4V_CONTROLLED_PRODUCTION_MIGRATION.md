@@ -1,6 +1,6 @@
 # Hybrid Phase 4B-4V｜Controlled Production Migration Architecture & Runbook
 
-**Status:** Architecture + local-dry harness PASS（Production Neon **not** applied）  
+**Status:** Architecture + local-dry harness PASS；Backup capability Gate **PASS = A**（Dashboard 実測）；Production Neon migrate / Snapshot create **not** done  
 **Branch:** `docs/controlled-production-migration-runbook`  
 **Base:** `feat/official-journal-save-operation-migration` @ `e85b982d838cc7d9e6625d18c0e834372de26c19`  
 **Date:** 2026-08-13  
@@ -14,7 +14,7 @@
 - [ljd-database-migration-deployment-safety-spec.md](../product/ljd-database-migration-deployment-safety-spec.md)
 
 **Formal main (do not merge):** `a160d25743d82713b3d218abacd2d26833b0bc9b`  
-**Production Neon / deploy / POST:** **No**
+**Production Neon migrate / Snapshot create / deploy / POST:** **No**（本追記でも未実施）
 
 ---
 
@@ -39,7 +39,7 @@ Implementation: `scripts/vercel-build.mjs` → always `prisma generate` + `next 
 | Tests | `scripts/controlled-production-migrate.test.ts` |
 | npm | `db:migrate:controlled:plan` / `:local-dry` / `:production:plan` |
 
-Gates: mode, allow=`YES`, backup=`YES`, fingerprint, pending allowlist.  
+Gates: mode, allow=`YES`, backup capability=`YES`, **pre-snapshot required/created**, fingerprint, pending allowlist.  
 No full URL/password logs.  
 Not hooked from build / postinstall / dev.
 
@@ -55,16 +55,45 @@ Candidate name: `20260813140000_add_journal_save_operation` — do not assume it
 
 ---
 
-## 4. Backup Gate
+## 4. Backup & Restore / Snapshot Gates
 
-`LJD_PRODUCTION_BACKUP_CONFIRMED=YES` required for production mode.  
-4B-4V does not run backup; user must confirm capability before **4B-4V.1**.
+### 4.1 Capability（V3）— **PASS = A**
+
+Neon Dashboard 実測（ユーザー報告・secret 非記載）:
+
+| Item | Result |
+| --- | --- |
+| Branch | production |
+| Restore from history | available |
+| PITR / history window | **6 hours** |
+| Manual Snapshot | creatable |
+| Current Snapshot | **none** |
+| Snapshot schedule | not on current plan / upgrade |
+
+→ `LJD_PRODUCTION_BACKUP_CONFIRMED=YES` を capability として満たしてよい。
+
+### 4.2 Pre-migration Snapshot — **必須・未充足**
+
+| Flag（runbook） | Meaning |
+| --- | --- |
+| `LJD_PRODUCTION_MIGRATION_PRE_SNAPSHOT_REQUIRED=YES` | Snapshot Gate 有効 |
+| `LJD_PRODUCTION_PRE_SNAPSHOT_CREATED=YES` | 手動 Snapshot 作成・確認済み |
+
+**Snapshot 作成確認前は Production migration 禁止。**  
+Restore / Snapshot Create / migrate は本追記では **未実施**。
+
+### 4.3 Path before 4B-4V.1
+
+```
+metadata check → manual Snapshot → confirm Snapshot → STOP
+→ user explicit OK → only then 4B-4V.1 migrate
+```
 
 ---
 
-## 5. Failure matrix V1–V6
+## 5. Failure matrix V1–V6（+ V3b）
 
-See runbook §8. Local-dry tests cover V1/V2/V4-shaped blocks without Neon.
+See runbook §8. V3b = pre-snapshot missing → refuse migrate.
 
 ---
 
@@ -77,8 +106,11 @@ Forward-fix over down migration.
 
 ## 7. Next
 
-**4B-4V.1｜Controlled Production Schema Migration** — after Neon backup confirmation; schema only; no POST wiring.  
-Then internal Production-server idempotency verification → later POST wiring.
+| Step | Allowed now? |
+| --- | --- |
+| Operator: create manual Snapshot | **A（ユーザー操作）** — Cursor は実行しない |
+| 4B-4V.1 Production schema migration | **B** until Snapshot confirmed + user OK |
+| Production POST wiring | **B** |
 
 Pagination caps remain a separate reconciliation blocker.
 
@@ -92,18 +124,19 @@ Pagination caps remain a separate reconciliation blocker.
 | Hybrid + gate + controlled regression | **162 passed** |
 | tsc | PASS |
 | local-dry `--plan-only` on ljd_dev | PASS（pending=0） |
-| Production Neon / deploy | **Not done** |
+| Production Neon / Snapshot / deploy | **Not done** |
 
 ---
 
-## 9. Verdicts
+## 9. Verdicts（updated）
 
 | Question | Answer |
 | --- | --- |
 | Fully separate migrate from Production build? | **A** |
 | Controlled migration runbook as A? | **A** |
-| Proceed to Production DB migration Phase now? | **B**（needs backup confirmation first） |
-| Neon backup/restore user confirmation required first? | **A** |
-| Internal Production-server wiring next? | **A**（design/plan after or parallel to V.1；execute after schema） |
+| Backup/Restore capability Gate | **A（PASS）** |
+| Proceed to Snapshot creation（operator）? | **A** |
+| Proceed to Production migration execution now? | **B** |
+| Internal Production-server wiring next? | after V.1 schema |
 | Production POST wiring now? | **B** |
 | main merge? | **No** |

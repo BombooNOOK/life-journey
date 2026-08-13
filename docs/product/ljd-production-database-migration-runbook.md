@@ -2,11 +2,12 @@
  * Life Journey Diary｜Production Database Migration Runbook
  *
  * Status: Pre-Implementation Controlled Production Migration Runbook / Source of Truth Candidate
- * Updated: 2026-08-13
+ * Updated: 2026-08-13（Neon Backup & Restore Dashboard 実測追記）
  * Branch: docs/controlled-production-migration-runbook
  * Base: feat/official-journal-save-operation-migration @ e85b982
  * Formal main (unmerged): a160d25743d82713b3d218abacd2d26833b0bc9b
- * Scope: runbook + local-dry guards. No Production Neon migrate. No Production deploy.
+ * Scope: runbook + local-dry guards. No Production Neon migrate. No Snapshot create.
+ *        No Production deploy. No POST wiring. No main merge.
  *
  * Companion:
  * - docs/hybrid/HYBRID_PHASE_4B4V_CONTROLLED_PRODUCTION_MIGRATION.md
@@ -19,15 +20,16 @@
 # Life Journey Diary｜Production Database Migration Runbook
 
 **Status:** Pre-Implementation Controlled Production Migration Runbook / Source of Truth Candidate  
-**ラベル:** **Designed + local-dry implemented**／**Forbidden now**＝Production Neon apply／**Next**＝4B-4V.1 after backup confirmation
+**ラベル:** **Designed + local-dry implemented**／**Backup capability Gate = A（実測）**／**Pre-snapshot Gate = 必須・未作成**／**Forbidden now**＝Production migrate / Snapshot create（本更新では未実施）
 
-**絶対条件:** migration と application behavior 変更を同時にしない。feature OFF のまま schema のみ先に進める。
+**絶対条件:** migration と application behavior 変更を同時にしない。feature OFF のまま schema のみ先に進める。  
+**絶対条件:** 手動 Snapshot 作成確認前は Production migration **禁止**。
 
 ---
 
 ## 0. 一文
 
-Vercel application build は **一切** `prisma migrate deploy` を実行しない（Strategy C）。Production schema 変更は operator が controlled command で、identity / confirmation / pending allowlist / backup Gate を満たしたときだけ行う。
+Vercel application build は **一切** `prisma migrate deploy` を実行しない（Strategy C）。Production schema 変更は operator が controlled command で、identity / confirmation / pending allowlist / backup capability / **migration直前手動 Snapshot** を満たしたときだけ行う。
 
 ---
 
@@ -40,6 +42,20 @@ Vercel application build は **一切** `prisma migrate deploy` を実行しな�
 4. internal verification
 5. feature wiring（別 Phase・別判断）
 ```
+
+### 1.1 Immediate path to 4B-4V.1（ユーザー確定）
+
+まだ Production migrate は行わない。次の順序のみ:
+
+```
+1. Production DB の migration 前 metadata 確認（status / pending / fingerprint 等）
+2. Neon Dashboard で手動 Snapshot を 1 つ作成
+3. Snapshot が正常に作成されたことを確認
+4. そこで一度停止
+5. ユーザー明示確認後にのみ 4B-4V.1 Production Schema Migration へ進む
+```
+
+本 docs 更新時点では **1–5 いずれも未実施**（Backup capability の Dashboard 確認のみ完了）。
 
 ---
 
@@ -55,7 +71,7 @@ npm aliases:
 
 - `db:migrate:controlled:plan` — local-dry plan  
 - `db:migrate:controlled:local-dry` — local-dry apply（ljd_dev only）  
-- `db:migrate:controlled:production:plan` — production **plan only**（still requires production gates; 4B-4V では Neon に対して実行しない）
+- `db:migrate:controlled:production:plan` — production **plan only**（still requires production gates; Neon apply は 4B-4V.1 まで禁止）
 
 単なる `prisma migrate deploy` alias は **不十分**（guard なし）。
 
@@ -69,12 +85,16 @@ npm aliases:
 | --- | --- | --- |
 | `LJD_CONTROLLED_MIGRATE_MODE` | `production` | explicit production mode |
 | `LJD_ALLOW_PRODUCTION_MIGRATION` | `YES` | human confirmation token（secret ではない・CI 常設禁止） |
-| `LJD_PRODUCTION_BACKUP_CONFIRMED` | `YES` | backup/restore capability 確認済み Gate（V3） |
+| `LJD_PRODUCTION_BACKUP_CONFIRMED` | `YES` | backup/restore **capability** 確認済み（V3）— **Dashboard 実測 PASS** |
+| `LJD_PRODUCTION_MIGRATION_PRE_SNAPSHOT_REQUIRED` | `YES` | migration直前手動 Snapshot 必須 Gate |
+| `LJD_PRODUCTION_PRE_SNAPSHOT_CREATED` | `YES` | 当該 Snapshot 作成・確認済み（未作成なら migrate 禁止） |
 | `LJD_EXPECTED_DB_FINGERPRINT` | 16-hex | redacted identity fingerprint match（V1） |
 | `LJD_EXPECTED_PENDING_MIGRATIONS` | comma list | pending 全件と完全一致（V2） |
 | `DATABASE_URL` | （operator 環境） | ログにフル URL / password を出さない |
 
 Fingerprint は `sha256(host\|port\|database).slice(0,16)`。label は redacted host/db のみ。
+
+**注:** `PRE_SNAPSHOT_*` flags は runbook Gate。4B-4V.1 実装時に controlled command へ組み込む候補。Snapshot 未確認のまま Production migrate してはならない。
 
 ---
 
@@ -94,12 +114,44 @@ Prisma に「deploy dry-run」は **無い**。本実行前に実在機能で確
 
 ---
 
-## 5. Backup Gate（実行前・必須）
+## 5. Backup & Restore Gate（Dashboard 実測）
 
-Production migration **前**に Neon backup / restore capability が利用可能であることをユーザーが確認し、`LJD_PRODUCTION_BACKUP_CONFIRMED=YES` を明示する。
+### 5.1 Capability Gate — **PASS = A**
 
-- 本 Phase（4B-4V）では backup **実行しない**  
-- 確認なしで 4B-4V.1 Production apply へ進まない  
+ユーザー Neon Dashboard 実測（secret / 接続文字列は非記載）:
+
+| Item | Result |
+| --- | --- |
+| 対象 branch | **production** |
+| Restore from history | **利用可能** |
+| History window（point-in-time） | **過去 6 時間** |
+| 手動 Snapshot | **作成可能** |
+| 現在の Snapshot | **なし** |
+| Snapshot schedule | 現プランでは未設定／Upgrade 対象 |
+
+したがって 4B-4V の V3「Production DB の backup / restore capability が実際に存在し利用可能」は **PASS = A**。
+
+`LJD_PRODUCTION_BACKUP_CONFIRMED=YES` を capability 確認済みとして扱ってよい。
+
+### 5.2 Pre-migration Snapshot Gate — **必須・未充足**
+
+Capability PASS だけでは Production migrate 不可。
+
+**必須 precondition:**
+
+1. migration 直前に Neon Dashboard から **手動 Snapshot を 1 つ作成**  
+2. Snapshot が正常に作成されたことを確認  
+3. `LJD_PRODUCTION_MIGRATION_PRE_SNAPSHOT_REQUIRED=YES` かつ `LJD_PRODUCTION_PRE_SNAPSHOT_CREATED=YES`  
+
+**Snapshot 作成確認前は Production migration 禁止。**
+
+本更新時点:
+
+- Restore 実行: **していない**  
+- Snapshot Create: **していない**  
+- Production migration: **していない**  
+
+6 時間 history window があるため、migrate 実行はその window と手動 Snapshot の両方を意識する（手動 Snapshot を必須とするのは window 切れ・計画的 rollback 点の明示のため）。
 
 ---
 
@@ -132,7 +184,8 @@ table 存在だけでは既存 LJD save 挙動は変わらない（未配線）�
 | --- | --- | --- |
 | V1 | DB identity / fingerprint mismatch | 実行禁止 |
 | V2 | unexpected pending migrations | 停止（allowlist 修正 or 調査） |
-| V3 | backup capability 未確認 | 停止 |
+| V3 | backup capability 未確認 | 停止（**現時点 capability は PASS**） |
+| V3b | pre-migration Snapshot 未作成 / 未確認 | **Production migrate 禁止** |
 | V4 | migrate command failure | **app deploy しない** |
 | V5 | migrate OK / schema verify fail | feature OFF 維持・調査 |
 | V6 | migrate OK / app deploy fail | additive schema → 既存 app 継続可能か確認；feature OFF |
@@ -142,20 +195,25 @@ table 存在だけでは既存 LJD save 挙動は変わらない（未配線）�
 ## 9. Forward-fix
 
 `JournalSaveOperation` migration は additive（new table + indexes、既存 DROP なし）。  
-Production issue → down ではなく feature OFF + 修正 migration。
+Production issue → down ではなく feature OFF + 修正 migration。必要なら Snapshot / PITR（6h）を recovery 候補として評価。
 
 ---
 
-## 10. Next Phase（4B-4V.1）— 今回やらない
+## 10. Next Phase（4B-4V.1）— 条件
 
-ユーザー明示確認の上:
+**今は進まない。** 4B-4V.1 に進める条件:
 
-1. Neon backup/restore 確認記録  
-2. Production fingerprint 記録  
-3. pending allowlist 確定  
-4. controlled **production** migrate（schema only）  
-5. verification  
-6. **Still no** production POST wiring  
+| # | 条件 | 現状 |
+| --- | --- | --- |
+| 1 | Backup/Restore capability Gate | **PASS = A** |
+| 2 | Production migration 前 metadata 確認 | 未 |
+| 3 | 手動 Snapshot 作成 + 正常確認 | 未 |
+| 4 | ユーザー明示「4B-4V.1 へ進め」 | 未 |
+| 5 | fingerprint / pending allowlist | 未（V.1 時） |
+| 6 | controlled production migrate | **禁止 until 1–4** |
+| 7 | production POST wiring | **別 Phase・禁止** |
+
+ユーザー操作の次ステップ候補: **Snapshot 作成のみ**（migrate はまだ禁止）。
 
 ---
 
