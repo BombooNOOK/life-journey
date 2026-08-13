@@ -106,6 +106,20 @@ A alone does **not** close production `SERVER_SUCCESS_TO_OUTBOX_GAP`.
 
 ---
 
+## 7b. Build health
+
+| Check | Result |
+| --- | --- |
+| tsc | PASS |
+| Reconciliation + Hybrid regression | **135 passed**（+ integration optional PASS on `ljd_dev`） |
+| next build（no migrate deploy） | PASS |
+| `prisma/migrations/` / production POST | Unchanged |
+| Mac free（after） | ~8.2Gi |
+
+**Latest:** `f7f6fce3528f65f3f6cea81f927e536fa091a8b8`
+
+---
+
 ## 8. Verdicts
 
 | Question | Answer |
