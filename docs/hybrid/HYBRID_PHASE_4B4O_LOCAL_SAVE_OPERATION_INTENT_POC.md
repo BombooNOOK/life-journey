@@ -84,8 +84,8 @@ No production route wiring. Fake Server results via 4B-4N domain.
 
 ## 8. Phase order lock
 
-**Next = 4B-4P** Non-production Prisma Idempotency Integration.  
-Not production POST. Not 4B-4Q until 4B-4P PASS.
+**Next = 4B-4Q** internal E2E (after 4B-4P nonprod Prisma PASS).  
+Still not production POST / Neon migrate / main merge.
 
 ---
 

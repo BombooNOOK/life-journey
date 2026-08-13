@@ -18,4 +18,9 @@ export {
 } from "@/lib/journal/saveIdempotency/executeJournalSaveOperation";
 
 export { createMemoryJournalSaveOperationStore } from "@/lib/journal/saveIdempotency/memoryStore";
+export { createPrismaJournalSaveOperationStore } from "@/lib/journal/saveIdempotency/prismaJournalSaveOperationStore";
 export { buildJournalSaveRequestFingerprint } from "@/lib/journal/saveIdempotency/requestFingerprint";
+export {
+  assertLocalDisposableDatabaseUrl,
+  auditDatabaseUrlForNonprodIdempotency,
+} from "@/lib/journal/saveIdempotency/assertLocalDisposableDatabaseUrl";

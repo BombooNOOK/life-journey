@@ -2,17 +2,17 @@
  * Life Journey Diary｜Journal Save Operation Idempotency Spec
  *
  * Status: Pre-Implementation / Server Save Idempotency Candidate
- * Updated: 2026-08-13
- * Branch: feat/server-journal-save-idempotency-poc
- * Base: docs/server-success-outbox-gap-closure @ c69f7fe
+ * Updated: 2026-08-13 (4B-4P nonprod Prisma verification)
+ * Branch: feat/nonprod-prisma-journal-save-idempotency
  * Formal main (unmerged): a160d25743d82713b3d218abacd2d26833b0bc9b
- * Scope: Server Strategy C core (domain + memory + local disposable unique).
- * Forbidden now: production Neon migrate, production POST wiring, Strategy B Local intent,
- * reconciliation impl, Vercel deploy, main merge, general rollout.
+ * Scope: Strategy C — domain + memory + disposable Postgres Prisma adapter.
+ * Forbidden now: production Neon migrate, prisma/migrations promotion without Preview isolation,
+ * production POST wiring, Vercel Production deploy, main merge, general rollout.
  *
  * Companion:
  * - docs/hybrid/HYBRID_PHASE_4B4N_SERVER_SAVE_IDEMPOTENCY_POC.md
  * - docs/hybrid/HYBRID_PHASE_4B4O_LOCAL_SAVE_OPERATION_INTENT_POC.md
+ * - docs/hybrid/HYBRID_PHASE_4B4P_NONPROD_PRISMA_IDEMPOTENCY_INTEGRATION.md
  * - docs/product/ljd-local-save-operation-intent-spec.md
  * - docs/product/ljd-save-operation-reconciliation-spec.md
  * - docs/hybrid/HYBRID_PHASE_4B4M_SERVER_SUCCESS_OUTBOX_GAP_ARCHITECTURE.md
@@ -146,8 +146,27 @@ Server C enables safe result recovery after response loss.
 | Gate | Now |
 | --- | --- |
 | Domain unit PoC | Done (4B-4N) |
+| Local durable intent | Done (4B-4O) |
+| Nonprod Prisma / disposable Postgres | Done (4B-4P) — unique / concurrent / N1–N5 / persistence |
+| Formal `prisma/migrations/` promotion | **Blocked** until Vercel Preview DB isolation proven |
 | Production POST wiring | Forbidden |
 | Production Neon migrate | Forbidden |
-| Strategy B Local intent | Next Phase |
+| Strategy B Local intent | Done (separate PoC) |
 | General production rollout | No |
 | main merge | No |
+
+---
+
+## 13. Nonprod Prisma results (4B-4P)
+
+| Item | Result |
+| --- | --- |
+| DB | `127.0.0.1:5433/ljd_dev` only |
+| Column identity | `actorKey` (normalized email today; not named `email`) |
+| Unique `(actorKey, saveOperationId)` | PASS |
+| Concurrent claim | 1 operation / 1 entry / 1 charge PASS |
+| N1–N5 + N4 no re-charge | PASS |
+| Persistence / reopen lookup | PASS |
+| Candidate SQL | `prisma/poc/4b4p_journal_save_operation.sql` |
+| Prisma adapter | `createPrismaJournalSaveOperationStore` |
+| JournalEntry schema change | **Not required** |
