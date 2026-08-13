@@ -10,6 +10,7 @@
  *
  * Companion:
  * - docs/hybrid/HYBRID_PHASE_4B4R_LIGHTWEIGHT_CREATE_RECONCILIATION_ARCHITECTURE.md
+ * - docs/hybrid/HYBRID_PHASE_4B4S_INTERNAL_LIGHTWEIGHT_CREATE_RECONCILIATION_POC.md
  * - docs/product/ljd-save-operation-reconciliation-spec.md
  * - docs/hybrid/HYBRID_PHASE_4B4Q_INTERNAL_SAVE_OPERATION_E2E.md
  * - docs/product/ljd-local-mirror-outbox-spec.md
@@ -21,7 +22,8 @@
 # Life Journey Diary｜Lightweight Create Reconciliation Spec
 
 **Status:** Pre-Implementation Server-authoritative Create Reconciliation / Insurance Layer Candidate  
-**ラベル:** **Designed candidate**＝第一候補／**Open**＝未確定／**Forbidden now**＝本Phase実装禁止／**Release Gate**＝未実証
+**PoC:** 4B-4S internal domain PASS（memory S1–S14；optional local Postgres fixture）  
+**ラベル:** **Designed candidate**＝第一候補／**Open**＝pagination production／**Forbidden now**＝production wiring・background／**Release Gate**＝list cap / migration / POST
 
 **前提:** Server = Source of Truth。4B-4Q internal で B+C（intent + idempotency + outbox）は Window B/C の通常 save path を閉じ得る。  
 **本 SoT:** Strategy **A** — missing **create** のみの保険層。B+C の代替ではない。
@@ -116,9 +118,10 @@ Server が原本なので、Local completeness を再確認する **保険層**�
 **R-B + current-month always-rescan + R-D manual fallback**
 
 1. `lastFullyReconciledMonth` の **翌月**から、**直前の完了月**まで month-step  
-2. **Current month（UTC filter の “now” が属する月）**は常に再 scan（未完成期間）  
+2. **Current month（UTC filter の “now” が属する月）**は常に再 scan（未完成期間）— watermark 固定禁止  
 3. Cap 超過 / API failure / 手動 recovery → **R-D**  
-4. Checkpoint 無し bootstrap は §9（全履歴毎回 scan 禁止）
+4. Checkpoint 無し bootstrap は §9（全履歴毎回 scan 禁止）  
+5. Past-month watermark は **Local `legacyServerId` completeness 再確認後のみ** advance（outbox enqueue だけでは不可）
 
 ---
 
@@ -144,21 +147,38 @@ activation manifest / generation registry / mirror outbox に **混ぜない**�
 
 - Restore 後に古い checkpoint へ戻る → **余分な再 scan**（取りこぼしより安全）  
 - **必須安全条件:** checkpoint が Local generation の実データより「先」だけ復元され、未処理月を飛ばす設計を禁止  
-  - 例: restore 時に checkpoint を Local の既知 `legacyServerId` 集合と照合し、不整合なら checkpoint を **reset / conservative rewind**  
+  - 例: restore 時に closed month を Server list で再検証し、Local `legacyServerId` 欠落なら checkpoint を **rewind**（4B-4S 実証）  
+  - `generationIdAtCompletion` mismatch → rewind / bootstrap required  
+  - **outbox exclude との非対称:** enqueue 後すぐ watermark advance すると restore で skip 危険 → **禁止（Local mirror 完了後のみ advance）**  
   - checkpoint-only 新しく Local 空 → full bootstrap policy（§9）へ
 
 ---
 
-## 7. Watermark advancement
+## 7. Watermark advancement（4B-4S 正式化）
 
-Checkpoint / watermark は次の後でのみ advance:
+**背景:** reconciliation checkpoint は backup **include** 候補、mirror outbox は backup **exclude**。  
+そのため `outbox enqueue → checkpoint advance → mirror 前に backup/restore` だと、checkpoint だけ復元され outbox が消え、**未 mirror の missing を skip** する危険がある。
 
-1. 対象 month scope の Server list 取得成功  
-2. IDs compared  
-3. missing を特定  
-4. 各 missing について recovery work が **durable outbox に capture**（enqueue 成功 or unique hit）
+### Past closed month（正式）
 
-**進めない:** API failure、manifest/registry/generation fail-closed、enqueue 失敗中。
+`lastFullyReconciledMonth` を進められるのは、次をすべて満たした後のみ:
+
+1. 対象 month の Server list 取得成功  
+2. **list cap 未到達**（`entries.length < configuredCap`）— 到達時は completeness 不明  
+3. IDs compared / missing identified  
+4. missing があれば outbox enqueue → mirror → ack（既存 primitive）  
+5. **再確認:** その月の対象 Server entry id が **すべて** active Local generation の `legacyServerId` として存在  
+6. 当該 missing について **outbox pending が残っていない**
+
+**outbox へ enqueue しただけでは advance しない。**  
+mirror 成功後の Local completeness 再確認が必須。
+
+**進めない:** API failure、list cap reached、manifest/registry/generation fail-closed、enqueue 失敗、mirror pending/failure、Local 再確認で欠落あり。
+
+### Current month
+
+完了 watermark を **固定しない**。毎回 bounded rescan。  
+`recovery_captured` は **run 内の中間 result** として残してよいが、**persistent completeness watermark とは分離**。
 
 ### Completeness の語分離
 
@@ -167,12 +187,16 @@ Checkpoint / watermark は次の後でのみ advance:
 | **scope_fetched** | month list 取得完了（cap 未超過） |
 | **ids_compared** | Server ids vs Local `legacyServerId` |
 | **missing_identified** | recovery candidates 列挙 |
-| **recovery_captured** | missing が outbox に durable |
-| **local_mirror_completed** | outbox → mirror → ack（既存 4B-4I/L） |
+| **recovery_captured** | missing が outbox に durable（**中間**・watermark 条件ではない） |
+| **local_mirror_completed** | 対象 id が Local に存在（mirror/ack 後の再確認） |
+| **month_fully_reconciled** | past month のみ: Local completeness + no pending outbox → checkpoint 可 |
 
-`reconciled` を「list を見ただけ」に使わない。  
-**Month watermark advance の条件候補 A:** その月が `recovery_captured` まで完了（mirror 完了は outbox に委譲してよい）。  
-Open: pending outbox が残っていても月を完了扱いにするか — **候補 A = 残ってよい**（durable capture 済みなら watermark advance 可）。mirror 失敗は outbox pending として既存 retry。
+`reconciled` を「list を見ただけ」や「outbox に入れただけ」に使わない。
+
+### Generation mismatch / restore safety
+
+- `generationIdAtCompletion` ≠ 現在 healthy generation → checkpoint を completeness 証明に使わず **rewind / bootstrap required**（silent skip 禁止）  
+- checkpoint が過去月完了を示しても Local に欠落がある（outbox なし）→ checkpoint 信用で skip せず **rescan/recovery**
 
 ---
 
@@ -180,8 +204,22 @@ Open: pending outbox が残っていても月を完了扱いにするか — **�
 
 - Reconciliation month key = Server list の **UTC `YYYY-MM`**（`parseMonth` と同一）  
 - Current month = 「今」が属する UTC month → **毎回 rescan**、`lastFullyReconciledMonth` に **含めない**（未完成）  
-- 過去月: cap 内で全件比較 + recovery_captured 後に advance  
+- 過去月: cap 内で全件比較 + **Local mirror 完了再確認** 後にのみ advance  
 - Japan `dateKey` は missing 判定キーに使わない
+
+### List cap（Release Constraint）
+
+`GET /api/journal` は pagination なし。month の実 cap（コード）:
+
+| 条件 | take |
+| --- | --- |
+| `month` + `view=list` | **200** |
+| `month`（calendar / 非 list） | **400** |
+| `year` | **500** |
+
+response count `>= configuredCap` → **scope completeness 不明**（`list_cap_reached` / `scope_truncated`）。  
+checkpoint advance 禁止・「reconciled」禁止・次月へ自動進行しない。  
+**production release 前に pagination/cursor 等が必要になり得る** → Release Blocker 候補。4B-4S では pagination API を追加しない。
 
 ---
 

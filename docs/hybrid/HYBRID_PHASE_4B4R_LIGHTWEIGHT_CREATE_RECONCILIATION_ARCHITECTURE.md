@@ -54,12 +54,15 @@ No sync engine, no update/delete, no production API change.
 | Scan | **R-B** + current UTC month always rescan + **R-D** manual |
 | Checkpoint | Independent small metadata store（not manifest/registry/outbox） |
 | Backup | **Include** checkpoint; rewind/reset if newer-than-Local risk |
-| Advance | After `recovery_captured`（outbox durable）; not on API/gen failure |
+| Advance | **Local mirror completeness**（all Server ids present as `legacyServerId` + no pending outbox）後のみ。**outbox enqueue だけでは advance しない**（4B-4S 正式化） |
 | Missing | Server `id` ∉ Local `legacyServerId` |
 | Recovery | Existing outbox enqueue → GET → mirror → ack |
 | Generation | New recovery jobs → **current healthy technical_active**（not pending retarget） |
 | Timing | Foreground / Journal open bounded / restore — no background |
 | Bootstrap | Recent bounded + R-D；never unbounded full scan |
+| List cap | `>= take` → scope incomplete；pagination = production Release Blocker 候補 |
+
+**4B-4S:** [HYBRID_PHASE_4B4S_INTERNAL_LIGHTWEIGHT_CREATE_RECONCILIATION_POC.md](./HYBRID_PHASE_4B4S_INTERNAL_LIGHTWEIGHT_CREATE_RECONCILIATION_POC.md)
 
 ---
 
