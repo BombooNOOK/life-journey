@@ -13,6 +13,8 @@
  * Companion:
  * - docs/hybrid/HYBRID_PHASE_4B4T_VERCEL_DATABASE_MIGRATION_SAFETY.md
  * - docs/hybrid/HYBRID_PHASE_4B4T1_PREVIEW_MIGRATION_GATE.md
+ * - docs/hybrid/HYBRID_PHASE_4B4V_CONTROLLED_PRODUCTION_MIGRATION.md
+ * - docs/product/ljd-production-database-migration-runbook.md
  * - docs/hybrid/HYBRID_PHASE_4B4U_OFFICIAL_JOURNAL_SAVE_OPERATION_MIGRATION.md
  * - docs/hybrid/HYBRID_PHASE_4B4P_NONPROD_PRISMA_IDEMPOTENCY_INTEGRATION.md
  * - docs/hybrid/HYBRID_PHASE_4B4Q_INTERNAL_SAVE_OPERATION_E2E.md
@@ -23,8 +25,8 @@
 
 # Life Journey Diary｜Database Migration Deployment Safety Spec
 
-**Status:** Source of Truth Candidate（4B-4T audit + 4B-4T.1 Preview migrate gate implemented）  
-**ラベル:** **Implemented short-term**＝Strategy B gate／**Shared DATABASE_URL**＝Dashboard 実測／**Forbidden now**＝昇格・Production deploy・env scope 変更／**Release Gate**＝official migration は別 Phase
+**Status:** Source of Truth Candidate（4B-4T/T.1 + 4B-4U migration + **4B-4V Strategy C build separation**）  
+**ラベル:** **Implemented**＝Preview gate + build-never-migrates + controlled command local-dry／**Shared DATABASE_URL**／**Forbidden now**＝Production Neon apply／**Next**＝4B-4V.1 after backup confirm
 
 **絶対条件:** Preview は Production DB へ schema mutation しない。
 
@@ -32,7 +34,8 @@
 
 ## 0. 一文
 
-Vercel Dashboard 実測で `DATABASE_URL` が **Production and Preview** 共通設定のため、migration 安全設計上は **shared** と扱う。`build:vercel` は `VERCEL_ENV` gate（4B-4T.1）により Preview では `prisma migrate deploy` を実行しない。
+Vercel Dashboard 実測で `DATABASE_URL` が **Production and Preview** 共通設定のため、migration 安全設計上は **shared** と扱う。  
+`build:vercel` は **一切** `prisma migrate deploy` を実行しない（4B-4V Strategy C）。Production schema 変更は controlled command のみ。
 
 ---
 
@@ -45,8 +48,9 @@ Vercel Dashboard 実測で `DATABASE_URL` が **Production and Preview** 共通�
 | `vercel.json` `buildCommand` | `npm run build:vercel` |
 | `package.json` `build:vercel` | `node scripts/vercel-build.mjs`（4B-4T.1） |
 | Preview（`VERCEL_ENV=preview`） | `prisma generate && next build` — **migrate なし** |
-| Production（`VERCEL_ENV=production`） | `prisma generate && prisma migrate deploy && next build` |
-| unset / unknown / development | **migrate なし**（fail-safe） |
+| Production（`VERCEL_ENV=production`） | `prisma generate && next build` — **migrate なし**（4B-4V） |
+| unset / unknown / development | **migrate なし** |
+| Controlled migrate | `scripts/controlled-production-migrate.mjs`（operator-only） |
 | 対象 DB | Dashboard: `DATABASE_URL` = **Production and Preview** 共通設定（値は非記載） |
 | 効果（gate 後） | Preview feature branch は共有 DB へ schema mutation しない |
 
@@ -121,22 +125,23 @@ Vercel Dashboard 実測で `DATABASE_URL` が **Production and Preview** 共通�
 | 運用 | `vercel.json` は `build:vercel` のまま；責務は script 内で明示 |
 | 位置づけ | **短期安全策 A — implemented（4B-4T.1）** |
 
-### Strategy C｜migrate を build から完全分離（長期本命）
+### Strategy C｜migrate を build から完全分離（長期本命・4B-4V 実装）
+
+実装: `scripts/controlled-production-migrate.mjs` + `vercel-build.mjs` never migrates.
 
 通常 Vercel build から `migrate deploy` を外し、controlled release:
 
-1. migration（明示ステップ）  
+1. migration（明示ステップ + gates）  
 2. schema verification  
-3. application deploy  
+3. application deploy（feature OFF）  
 
 | 観点 | 評価 |
 | --- | --- |
 | 安全性 | 最高（誰がいつ schema を変えるか明示） |
-| 運用負荷 | 中〜高（runbook / 権限 / チェックリスト） |
-| schema/app compatibility | expand/contract と組み合わせやすい |
-| failed migration | app deploy と分離できる |
-| rollback | forward-fix 前提を明文化しやすい |
-| 位置づけ | **長期本命候補 A** |
+| 運用負荷 | 中（runbook / fingerprint / backup Gate） |
+| 位置づけ | **長期本命 A — implemented in repo（Production apply still separate Phase）** |
+
+Runbook: `docs/product/ljd-production-database-migration-runbook.md`
 
 ### Strategy D｜Preview 専用 DB
 

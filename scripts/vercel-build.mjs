@@ -1,11 +1,11 @@
 /**
- * Vercel build entry with Preview migration gate (4B-4T.1).
+ * Vercel build entry (4B-4T.1 Preview gate + 4B-4V Strategy C).
  *
- * - production → prisma generate && prisma migrate deploy && next build
- * - preview / development / unset / unknown → prisma generate && next build
- *   (NO prisma migrate deploy)
+ * Application builds NEVER run `prisma migrate deploy` — including Production.
+ * Schema changes: operator-only `scripts/controlled-production-migrate.mjs`.
  *
- * Fail-safe: only exact VERCEL_ENV=production runs migrate.
+ * All VERCEL_ENV values → prisma generate && next build
+ *
  * Never prints DATABASE_URL or secrets.
  *
  * Usage:
@@ -30,7 +30,7 @@ export function resolveVercelBuildPlan(raw) {
       kind: "unset",
       normalized: null,
       runMigrateDeploy: false,
-      reason: "VERCEL_ENV_unset_fail_safe_no_migrate",
+      reason: "VERCEL_ENV_unset_build_never_migrates",
     };
   }
   const normalized = String(raw).trim().toLowerCase();
@@ -38,8 +38,8 @@ export function resolveVercelBuildPlan(raw) {
     return {
       kind: "production",
       normalized,
-      runMigrateDeploy: true,
-      reason: "VERCEL_ENV_production_migrate_allowed",
+      runMigrateDeploy: false,
+      reason: "VERCEL_ENV_production_build_never_migrates_use_controlled_command",
     };
   }
   if (normalized === "preview") {
