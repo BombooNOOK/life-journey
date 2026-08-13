@@ -10,7 +10,9 @@
 - [ljd-journal-save-idempotency-spec.md](../product/ljd-journal-save-idempotency-spec.md)
 - [ljd-local-save-operation-intent-spec.md](../product/ljd-local-save-operation-intent-spec.md)
 - [ljd-local-mirror-outbox-spec.md](../product/ljd-local-mirror-outbox-spec.md)
+- [ljd-lightweight-create-reconciliation-spec.md](../product/ljd-lightweight-create-reconciliation-spec.md)
 - [HYBRID_PHASE_4B4P_NONPROD_PRISMA_IDEMPOTENCY_INTEGRATION.md](./HYBRID_PHASE_4B4P_NONPROD_PRISMA_IDEMPOTENCY_INTEGRATION.md)
+- [HYBRID_PHASE_4B4R_LIGHTWEIGHT_CREATE_RECONCILIATION_ARCHITECTURE.md](./HYBRID_PHASE_4B4R_LIGHTWEIGHT_CREATE_RECONCILIATION_ARCHITECTURE.md)
 
 **Formal main (do not merge):** `a160d25743d82713b3d218abacd2d26833b0bc9b`
 

@@ -10,6 +10,8 @@
  * Companion:
  * - docs/hybrid/HYBRID_PHASE_4B4I_LOCAL_MIRROR_OUTBOX_POC.md
  * - docs/product/ljd-transitional-local-routing-spec.md
+ * - docs/product/ljd-lightweight-create-reconciliation-spec.md
+ * - docs/hybrid/HYBRID_PHASE_4B4R_LIGHTWEIGHT_CREATE_RECONCILIATION_ARCHITECTURE.md
  */
 
 # Life Journey Diary｜Local Mirror Outbox

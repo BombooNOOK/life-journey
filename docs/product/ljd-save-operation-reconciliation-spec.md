@@ -345,6 +345,8 @@ Journal API 変更、DB migration、idempotency / reconciliation / pre-save inte
 - `docs/hybrid/HYBRID_PHASE_4B4O_LOCAL_SAVE_OPERATION_INTENT_POC.md` (Strategy B Local intent PoC)
 - `docs/hybrid/HYBRID_PHASE_4B4P_NONPROD_PRISMA_IDEMPOTENCY_INTEGRATION.md` (nonprod Prisma)
 - `docs/hybrid/HYBRID_PHASE_4B4Q_INTERNAL_SAVE_OPERATION_E2E.md` (B+C internal E2E)
+- `docs/hybrid/HYBRID_PHASE_4B4R_LIGHTWEIGHT_CREATE_RECONCILIATION_ARCHITECTURE.md` (Strategy A insurance)
+- `docs/product/ljd-lightweight-create-reconciliation-spec.md`
 - `docs/product/ljd-journal-save-idempotency-spec.md`
 - `docs/product/ljd-local-save-operation-intent-spec.md`
 - `docs/product/ljd-transitional-local-routing-spec.md`

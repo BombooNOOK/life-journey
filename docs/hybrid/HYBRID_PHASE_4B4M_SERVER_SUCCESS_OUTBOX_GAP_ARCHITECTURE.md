@@ -155,6 +155,9 @@ foreground / manual 第一。background sync 禁止（初期）。
 - `docs/product/ljd-local-save-operation-intent-spec.md`  
 - `docs/hybrid/HYBRID_PHASE_4B4N_SERVER_SAVE_IDEMPOTENCY_POC.md`  
 - `docs/hybrid/HYBRID_PHASE_4B4O_LOCAL_SAVE_OPERATION_INTENT_POC.md`  
+- `docs/hybrid/HYBRID_PHASE_4B4Q_INTERNAL_SAVE_OPERATION_E2E.md`  
+- `docs/hybrid/HYBRID_PHASE_4B4R_LIGHTWEIGHT_CREATE_RECONCILIATION_ARCHITECTURE.md`  
+- `docs/product/ljd-lightweight-create-reconciliation-spec.md`  
 - `docs/product/ljd-transitional-local-routing-spec.md`  
 - `docs/hybrid/HYBRID_PHASE_4B4L_INTERNAL_SAVE_WIRING_POC.md`  
 - `docs/hybrid/HYBRID_PHASE_4B4I_LOCAL_MIRROR_OUTBOX_POC.md`  

@@ -21,6 +21,8 @@
  *
  * Companion:
  * - docs/hybrid/HYBRID_PHASE_4B4J_GENERATION_LIFECYCLE_ARCHITECTURE.md
+ * - docs/product/ljd-lightweight-create-reconciliation-spec.md
+ * - docs/hybrid/HYBRID_PHASE_4B4R_LIGHTWEIGHT_CREATE_RECONCILIATION_ARCHITECTURE.md
  */
 
 # Life Journey Diary｜Local Journal Generation Lifecycle
