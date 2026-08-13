@@ -1,11 +1,12 @@
 # Hybrid Phase 4B-4T｜Vercel Database Isolation & Prisma Migration Deployment Safety
 
-**Status:** Architecture / audit PASS（docs only）  
-**Branch:** `docs/vercel-database-migration-safety`  
+**Status:** Architecture PASS + Dashboard shared-URL fact; gate implemented in 4B-4T.1  
+**Branch:** `docs/vercel-database-migration-safety` → continue `fix/vercel-preview-migration-gate`  
 **Base:** `feat/internal-lightweight-create-reconciliation-poc` @ `63ec015253fe30e41c23eb5aeab52883fc4b24e4`  
 **Date:** 2026-08-13  
 
-**Parent SoT:** [ljd-database-migration-deployment-safety-spec.md](../product/ljd-database-migration-deployment-safety-spec.md)
+**Parent SoT:** [ljd-database-migration-deployment-safety-spec.md](../product/ljd-database-migration-deployment-safety-spec.md)  
+**Implementation:** [HYBRID_PHASE_4B4T1_PREVIEW_MIGRATION_GATE.md](./HYBRID_PHASE_4B4T1_PREVIEW_MIGRATION_GATE.md)
 
 **Cross-links:**
 - [HYBRID_PHASE_4B4P_NONPROD_PRISMA_IDEMPOTENCY_INTEGRATION.md](./HYBRID_PHASE_4B4P_NONPROD_PRISMA_IDEMPOTENCY_INTEGRATION.md)
@@ -33,9 +34,10 @@ Context: B+C+A recovery architecture is candidate **A**; production wiring remai
 | Source | Value |
 | --- | --- |
 | `vercel.json` | `"buildCommand": "npm run build:vercel"` |
-| `package.json` | `"build:vercel": "prisma generate && prisma migrate deploy && next build"` |
-| Preview | Same buildCommand → **migrate deploy can run** |
-| Production | Same → **migrate deploy can run** |
+| `package.json`（4B-4T.1） | `"build:vercel": "node scripts/vercel-build.mjs"` |
+| Preview | `VERCEL_ENV=preview` → generate + next build (**no migrate**) |
+| Production | `VERCEL_ENV=production` → generate + migrate deploy + next build |
+| unset / unknown | **no migrate**（fail-safe） |
 | `postinstall` | `prisma generate` only |
 | GitHub Actions | **None** in repo |
 | Neon Preview branches | **Not evidenced** in repo |
@@ -46,20 +48,16 @@ Context: B+C+A recovery architecture is candidate **A**; production wiring remai
 
 | Question | Answer |
 | --- | --- |
-| Production vs Preview `DATABASE_URL` distinct? | **Unknown** |
-| Evidence | Vercel CLI unavailable (`command not found`); no dashboard capture this Phase |
-| Treat as isolated? | **No**（推測禁止） |
+| Production vs Preview `DATABASE_URL` setting | **Shared** — Dashboard: scope **Production and Preview** |
+| Secret value inspected? | **No**（非表示・非共有） |
+| Host/DB fingerprint proof? | Not separately proven |
+| Migration-safety treatment | **Shared** — Preview must not run migrate |
+| Treat as isolated Preview DB? | **No** |
 
-### Dashboard checklist for user（no secrets）
+### Dashboard checklist（completed）
 
-Record redacted fingerprints only for Production vs Preview:
-
-- Env scope binding  
-- Host fingerprint same/different  
-- Database name fingerprint same/different  
-- Neon same branch/DB or not  
-
-Until **proven different** (or Preview migrate disabled in code), treat Preview as able to mutate Production schema if URLs are shared.
+- Env scope binding: **Production and Preview**（同一設定）  
+- Follow-up optional: redacted host fingerprints if splitting Preview DB later（Strategy D）
 
 ---
 
@@ -67,10 +65,10 @@ Until **proven different** (or Preview migrate disabled in code), treat Preview 
 
 | Strategy | Role | Verdict |
 | --- | --- | --- |
-| **A** All deploys migrate+build | Current | **B** — not production-safe candidate while isolation Unknown |
-| **B** `VERCEL_ENV` gate（Preview: generate+build; Production: +migrate） | Short-term | **A（有力）** — implements absolute rule: Preview must not mutate Production schema via build |
-| **C** Migrate outside Vercel build | Long-term | **A（本命）** — controlled release: migrate → verify → deploy |
-| **D** Preview-only DB | Reinforcement | Useful **if introduced**; does not alone justify auto-migrate from every feature branch |
+| **A** All deploys migrate+build | Former default | **B** — unsafe with shared DATABASE_URL |
+| **B** `VERCEL_ENV` gate | Short-term | **A — implemented（4B-4T.1）** |
+| **C** Migrate outside Vercel build | Long-term | **A（本命）** |
+| **D** Preview-only DB | Reinforcement | Still optional; not currently configured |
 
 **絶対条件:** Preview は Production DB へ schema mutation しない。
 
@@ -80,10 +78,10 @@ Until **proven different** (or Preview migrate disabled in code), treat Preview 
 
 | Horizon | Recommendation |
 | --- | --- |
-| Short | Strategy **B** design next（実装は別 Phase）+ Dashboard isolation 記録 |
+| Short | Strategy **B** — **done in 4B-4T.1** |
 | Long | Strategy **C** runbook; optional **D** Preview DB |
 
-This Phase: **docs only** — no `package.json` / Vercel change.
+See [HYBRID_PHASE_4B4T1_PREVIEW_MIGRATION_GATE.md](./HYBRID_PHASE_4B4T1_PREVIEW_MIGRATION_GATE.md).
 
 ---
 
@@ -141,10 +139,10 @@ Possible later stages: schema-only → feature disabled → internal → rollout
 | Question | Answer |
 | --- | --- |
 | Keep current migrate deploy && next build as-is? | **B** |
-| Remove migration from Preview builds（方針 A）? | **A** |
-| Proceed to official Prisma migration promotion next? | **B** |
-| User Vercel Dashboard confirmation required first? | **A** |
-| Implement pagination before migration work? | **B**（別 blocker；migration path 安全化を先に） |
+| Remove migration from Preview builds（方針 A）? | **A**（4B-4T.1 implemented） |
+| Proceed to official Prisma migration promotion next? | **A（評価可）** — gate 後の別 Phase；ファイルは未追加 |
+| User Vercel Dashboard confirmation required first? | **Done**（shared Production and Preview） |
+| Implement pagination before migration work? | **B** |
 | Production POST wiring now? | **B** |
 | main merge? | **No** |
 
@@ -152,4 +150,5 @@ Possible later stages: schema-only → feature disabled → internal → rollout
 
 ## 12. Forbidden confirmation
 
-No Vercel env change, no Neon migrate, no `prisma/migrations/` add, no build script change, no deploy, no POST wiring, no pagination, no main merge. Working tree code unchanged（docs only）.
+4B-4T docs phase: no env/deploy.  
+4B-4T.1: build gate only — still no Production deploy, no Vercel env change, no official JournalSaveOperation migration add, no main merge.

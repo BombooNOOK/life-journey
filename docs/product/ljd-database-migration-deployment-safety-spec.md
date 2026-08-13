@@ -2,15 +2,17 @@
  * Life Journey Diary｜Database Migration Deployment Safety Spec
  *
  * Status: Pre-Implementation Database Migration Deployment Safety / Source of Truth Candidate
- * Updated: 2026-08-13
- * Branch: docs/vercel-database-migration-safety
- * Base: feat/internal-lightweight-create-reconciliation-poc @ 63ec015
+ * Updated: 2026-08-13（4B-4T.1: Dashboard shared DATABASE_URL + Preview migrate gate）
+ * Branch: fix/vercel-preview-migration-gate
+ * Base: docs/vercel-database-migration-safety @ e770390
  * Formal main (unmerged): a160d25743d82713b3d218abacd2d26833b0bc9b
- * Scope: design / audit only. No Vercel env change, no migrate apply,
- *        no prisma/migrations/ promotion, no build script change, no deploy, no main merge.
+ * Scope: safety design + Preview migration gate implementation notes.
+ *        No Vercel env var changes, no official JournalSaveOperation migration,
+ *        no Production deploy, no main merge.
  *
  * Companion:
  * - docs/hybrid/HYBRID_PHASE_4B4T_VERCEL_DATABASE_MIGRATION_SAFETY.md
+ * - docs/hybrid/HYBRID_PHASE_4B4T1_PREVIEW_MIGRATION_GATE.md
  * - docs/hybrid/HYBRID_PHASE_4B4P_NONPROD_PRISMA_IDEMPOTENCY_INTEGRATION.md
  * - docs/hybrid/HYBRID_PHASE_4B4Q_INTERNAL_SAVE_OPERATION_E2E.md
  * - docs/hybrid/HYBRID_PHASE_4B4S_INTERNAL_LIGHTWEIGHT_CREATE_RECONCILIATION_POC.md
@@ -20,8 +22,8 @@
 
 # Life Journey Diary｜Database Migration Deployment Safety Spec
 
-**Status:** Pre-Implementation Database Migration Deployment Safety / Source of Truth Candidate  
-**ラベル:** **Designed candidate**＝短期/長期方針／**Unknown**＝未証明 isolation／**Forbidden now**＝昇格・deploy・env 変更／**Release Gate**＝isolation 証明後
+**Status:** Source of Truth Candidate（4B-4T audit + 4B-4T.1 Preview migrate gate implemented）  
+**ラベル:** **Implemented short-term**＝Strategy B gate／**Shared DATABASE_URL**＝Dashboard 実測／**Forbidden now**＝昇格・Production deploy・env scope 変更／**Release Gate**＝official migration は別 Phase
 
 **絶対条件:** Preview は Production DB へ schema mutation しない。
 
@@ -29,7 +31,7 @@
 
 ## 0. 一文
 
-`build:vercel` が全 Vercel deployment で `prisma migrate deploy` を実行し得る現状では、Preview/Production の `DATABASE_URL` 分離が未証明のまま `prisma/migrations/` へ候補テーブルを昇格してはならない。
+Vercel Dashboard 実測で `DATABASE_URL` が **Production and Preview** 共通設定のため、migration 安全設計上は **shared** と扱う。`build:vercel` は `VERCEL_ENV` gate（4B-4T.1）により Preview では `prisma migrate deploy` を実行しない。
 
 ---
 
@@ -40,10 +42,14 @@
 | 項目 | 事実（コード/設定） |
 | --- | --- |
 | `vercel.json` `buildCommand` | `npm run build:vercel` |
-| `package.json` `build:vercel` | `prisma generate && prisma migrate deploy && next build` |
-| 適用範囲 | Vercel 上の **Production および Preview** デプロイ（同一 buildCommand） |
-| 対象 DB | そのデプロイに紐づく env の `DATABASE_URL`（値は本 Phase で未確認） |
-| 効果 | `prisma/migrations/` 配下の未適用 migration が **deploy 先 DB に適用**される |
+| `package.json` `build:vercel` | `node scripts/vercel-build.mjs`（4B-4T.1） |
+| Preview（`VERCEL_ENV=preview`） | `prisma generate && next build` — **migrate なし** |
+| Production（`VERCEL_ENV=production`） | `prisma generate && prisma migrate deploy && next build` |
+| unset / unknown / development | **migrate なし**（fail-safe） |
+| 対象 DB | Dashboard: `DATABASE_URL` = **Production and Preview** 共通設定（値は非記載） |
+| 効果（gate 後） | Preview feature branch は共有 DB へ schema mutation しない |
+
+明示スクリプト: `build:vercel:preview` / `build:vercel:production` / `build:vercel:plan`
 
 ### 1.2 その他経路
 
@@ -67,44 +73,22 @@
 
 ## 2. Vercel environment isolation（判定）
 
-| Env | `DATABASE_URL` isolation | 本 Phase の判定 |
+| Env | `DATABASE_URL` | 本 Phase の判定 |
 | --- | --- | --- |
-| Production | Dashboard / CLI 未確認 | **Unknown** |
-| Preview | Dashboard / CLI 未確認 | **Unknown** |
+| Production | Dashboard: **Production and Preview** 共通設定 | **Shared with Preview**（値は非表示） |
+| Preview | 同上 | **Shared with Production** |
 | Development | ローカルは `ljd_dev` 方針（docs/DEV） | ローカル運用は別問題 |
 
-**確認手段（本セッション）:**
+**Dashboard 実測（ユーザー確認・secret 非共有）:**
 
-- `vercel` CLI: **command not found**（認証・env 列挙不可）  
-- in-repo に Preview/Production host 比較証跡なし（4B-4P 時点も未検証）  
-- secret 値の取得・表示は禁止
+- `DATABASE_URL` は **「Production and Preview」** に適用されている  
+- 接続文字列の中身（host/db 値）までは表示していない  
+- したがって「同一接続先」を fingerprint で証明したわけではないが、**同一 Environment Variable 設定が両 scope に適用**されているため、migration 安全設計上は **shared 扱い**
 
-**安全側の扱い:** Isolation **未証明** → **分離済みと推測しない**。  
-`JournalSaveOperation` の `prisma/migrations/` 昇格は **ブロック継続**。
+**安全側の扱い:** 分離済み Preview DB としては扱わない。  
+4B-4T.1 の Preview migrate gate により、共有設定でも Preview build からの schema mutation を防ぐ。
 
-### 2.1 ユーザーが Vercel Dashboard で確認する項目（secret 非表示）
-
-比較してよいのは redacted fingerprint のみ。
-
-For **Production** / **Preview** /（あれば）**Development** それぞれ:
-
-1. `DATABASE_URL` が **Environment = Production / Preview / Development** のどれに紐づくか  
-2. Host の redacted 形（例: `ep-*****.ap-northeast-1.aws.neon.tech`）が **同一か別か**  
-3. Database name（pathname）の redacted 形が **同一か別か**  
-4. Neon 側で **同一 branch / 同一 database** か、Preview 専用か  
-5. Preview 用に Neon branch / 別 project を用意しているか（**未導入なら「無い」と記録**）
-
-結果テンプレ:
-
-```
-Production host fingerprint: …
-Preview host fingerprint: …
-Same host? yes/no
-Same database name? yes/no
-Isolation proven? yes/no/unknown
-```
-
-`yes` でない限り promotion **B**。
+`JournalSaveOperation` の `prisma/migrations/` 昇格は、gate 実装 PASS 後の **別 Phase** で条件再評価（本 Phase ではまだ追加しない）。
 
 ---
 
@@ -121,21 +105,20 @@ Isolation proven? yes/no/unknown
 | Rollback | build 内 migrate 失敗 = deploy 失敗だが、**一部適用済み**の可能性は DB 側に残る |
 | 本番候補 | **第一候補にしない** → 判定 **B（維持不可）** |
 
-### Strategy B｜`VERCEL_ENV` gate（短期有力）
+### Strategy B｜`VERCEL_ENV` gate（短期・4B-4T.1 実装）
 
-例:
+実装: `scripts/vercel-build.mjs`
 
 - Preview / 非 production: `prisma generate && next build`  
-- Production only: `prisma generate && prisma migrate deploy && next build`
+- Production only: `prisma generate && prisma migrate deploy && next build`  
+- unset / unknown: **migrate なし**（fail-safe）
 
 | 観点 | 評価 |
 | --- | --- |
-| Preview → Production mutation | Production と Preview が共有 DB でも **Preview build は schema を触らない**（絶対条件に近づく） |
-| Atomicity | migrate 成功 → next build 失敗時、schema は先に進み app は旧のまま、という窓は残る |
-| 運用 | スクリプト1箇所の分岐で導入しやすい |
-| 位置づけ | **短期安全策の有力候補 A**（実装は別 Phase） |
-
-注意: Production build 内 migrate の失敗モード・互換性は Strategy C ほど制御できない。
+| Preview → Production mutation | 共有 `DATABASE_URL` でも Preview build は schema を触らない |
+| Atomicity | migrate 成功 → next build 失敗の窓は Production に残る（Strategy C で改善） |
+| 運用 | `vercel.json` は `build:vercel` のまま；責務は script 内で明示 |
+| 位置づけ | **短期安全策 A — implemented（4B-4T.1）** |
 
 ### Strategy C｜migrate を build から完全分離（長期本命）
 
@@ -166,19 +149,19 @@ Preview ごと、または共有 Preview non-prod DB（Neon branch 等）。
 
 ---
 
-## 4. 推奨構成（本 Phase・コード変更なし）
+## 4. 推奨構成
 
-### 短期（次の実装候補 Phase）
+### 短期（4B-4T.1）
 
-1. **Preview から `prisma migrate deploy` を外す**（Strategy **B** 第一候補）  
-2. Dashboard で Preview/Production `DATABASE_URL` fingerprint を記録し isolation を **証明 or 非証明**  
-3. Isolation 未証明の間は `prisma/migrations/` へ 4B-4P 候補を **昇格しない**  
+1. **Preview から `prisma migrate deploy` を外す** — **implemented**（Strategy B）  
+2. Dashboard: `DATABASE_URL` = Production and Preview → **shared 扱い確定**  
+3. `prisma/migrations/` へ 4B-4P 候補の昇格は **別 Phase**（gate PASS 後に条件再評価）  
 4. Preview build health: `prisma generate && next build` を維持（4B-4O.1）
 
 ### 長期（production migration 運用）
 
 1. Strategy **C**: migrate を build 外の controlled release へ  
-2. Strategy **D** で Preview 専用 DB（任意だが推奨）  
+2. Strategy **D** で Preview 専用 DB（任意だが推奨；現状は未導入）  
 3. expand → verify → wire feature（§6）
 
 ---
@@ -188,17 +171,17 @@ Preview ごと、または共有 Preview non-prod DB（Neon branch 等）。
 4B-4P candidate: `prisma/poc/4b4p_journal_save_operation.sql`  
 → 正式 `prisma/migrations/` へ昇格してよいのは **すべて満たすときのみ**:
 
-| # | 条件 |
-| --- | --- |
-| 1 | Migration deployment 経路が安全（少なくとも Preview が Production schema を mutation しない） |
-| 2 | Preview/Production DB isolation が **Dashboard 証跡で証明**、または Preview migrate 無効化が **実装済み** |
-| 3 | Local disposable `127.0.0.1:5433/ljd_dev` で **正式 Prisma migration** 再現 PASS |
-| 4 | Existing production schema への **forward migration レビュー**済み（additive） |
-| 5 | Data-destructive operation **なし**（DROP TABLE of user data 等禁止） |
-| 6 | Rollback / forward-fix 方針が文書化されている |
-| 7 | App は migration 適用直後も **save behavior 非変更**（feature flag / 未配線） |
+| # | 条件 | 4B-4T.1 時点 |
+| --- | --- | --- |
+| 1 | Migration deployment 経路が安全（少なくとも Preview が Production schema を mutation しない） | **gate で充足候補** |
+| 2 | Preview/Production DB isolation 証明、**または** Preview migrate 無効化が実装済み | isolation は **shared**；migrate 無効化は **実装済み** |
+| 3 | Local disposable `127.0.0.1:5433/ljd_dev` で正式 Prisma migration 再現 PASS | 昇格 Phase で実施 |
+| 4 | Existing production schema への forward migration レビュー（additive） | 昇格 Phase |
+| 5 | Data-destructive operation なし | 昇格 Phase |
+| 6 | Rollback / forward-fix 方針が文書化されている | §7 |
+| 7 | App は migration 適用直後も save behavior 非変更（feature flag / 未配線） | 必須 |
 
-**現時点:** 1・2 未充足 → promotion **B**。
+**現時点:** gate（1–2）は 4B-4T.1 で前進。公式 migration ファイル追加は **まだ行わない**（3–5 とレビューを別 Phase）。
 
 ---
 
