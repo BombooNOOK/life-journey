@@ -1,5 +1,5 @@
 /**
- * 4B-4T.1 Preview migration gate — T1–T5 (no Production Neon).
+ * 4B-4T.1 Preview migration gate + 4B-4V Strategy C (build never migrates).
  */
 
 import { describe, expect, it } from "vitest";
@@ -11,7 +11,7 @@ import {
   runVercelBuild,
 } from "./vercel-build.mjs";
 
-describe("4B-4T.1 resolveVercelBuildPlan", () => {
+describe("4B-4T.1 / 4B-4V resolveVercelBuildPlan", () => {
   it("T1 VERCEL_ENV=preview → no migrate", () => {
     const plan = resolveVercelBuildPlan("preview");
     expect(plan.runMigrateDeploy).toBe(false);
@@ -21,16 +21,12 @@ describe("4B-4T.1 resolveVercelBuildPlan", () => {
     expect(steps.some((s) => s.id === "prisma_migrate_deploy")).toBe(false);
   });
 
-  it("T2 VERCEL_ENV=production → migrate selected (dry; no DB)", () => {
+  it("T2 VERCEL_ENV=production → no migrate in build (Strategy C)", () => {
     const plan = resolveVercelBuildPlan("production");
-    expect(plan.runMigrateDeploy).toBe(true);
+    expect(plan.runMigrateDeploy).toBe(false);
     expect(plan.kind).toBe("production");
     const steps = buildVercelCommandSteps(plan);
-    expect(steps.map((s) => s.id)).toEqual([
-      "prisma_generate",
-      "prisma_migrate_deploy",
-      "next_build",
-    ]);
+    expect(steps.map((s) => s.id)).toEqual(["prisma_generate", "next_build"]);
   });
 
   it("T3 VERCEL_ENV=development → no migrate", () => {
@@ -50,12 +46,12 @@ describe("4B-4T.1 resolveVercelBuildPlan", () => {
     const plan = resolveVercelBuildPlan("staging");
     expect(plan.kind).toBe("unknown");
     expect(plan.runMigrateDeploy).toBe(false);
-    expect(resolveVercelBuildPlan("PRODUCTION").runMigrateDeploy).toBe(true); // case-insensitive exact production
-    expect(resolveVercelBuildPlan("Production ").runMigrateDeploy).toBe(true);
+    expect(resolveVercelBuildPlan("PRODUCTION").runMigrateDeploy).toBe(false);
+    expect(resolveVercelBuildPlan("Production ").runMigrateDeploy).toBe(false);
   });
 });
 
-describe("4B-4T.1 runVercelBuild dry harness", () => {
+describe("4B-4T.1 / 4B-4V runVercelBuild dry harness", () => {
   it("T1 dry-run does not invoke migrate step callback", () => {
     /** @type {string[]} */
     const called = [];
@@ -68,13 +64,12 @@ describe("4B-4T.1 runVercelBuild dry harness", () => {
         return 0;
       },
     });
-    // dryRun skips runStep entirely
     expect(called).toEqual([]);
     expect(result.executed).toEqual(["prisma_generate", "next_build"]);
     expect(result.plan.runMigrateDeploy).toBe(false);
   });
 
-  it("T2 fake harness records migrate without spawning prisma", () => {
+  it("T2 production build steps exclude migrate (fake; no DB)", () => {
     /** @type {string[]} */
     const called = [];
     const result = runVercelBuild({
@@ -82,15 +77,10 @@ describe("4B-4T.1 runVercelBuild dry harness", () => {
       log: () => {},
       runStep: (step) => {
         called.push(step.id);
-        // Never connect to Neon — fake success
         return 0;
       },
     });
-    expect(called).toEqual([
-      "prisma_generate",
-      "prisma_migrate_deploy",
-      "next_build",
-    ]);
+    expect(called).toEqual(["prisma_generate", "next_build"]);
     expect(result.exitCode).toBe(0);
   });
 
@@ -108,7 +98,7 @@ describe("4B-4T.1 runVercelBuild dry harness", () => {
     });
     expect(called).toEqual([]);
     expect(result.exitCode).toBe(0);
-    expect(result.plan.runMigrateDeploy).toBe(true);
+    expect(result.plan.runMigrateDeploy).toBe(false);
   });
 
   it("U-P1 preview plan excludes migrate even when official JournalSaveOperation migration exists", async () => {
@@ -125,7 +115,7 @@ describe("4B-4T.1 runVercelBuild dry harness", () => {
     expect(steps.some((s) => s.id === "prisma_migrate_deploy")).toBe(false);
   });
 
-  it("U-P3 production plan selects migrate (fake; no DB)", () => {
+  it("U-P3 / 4B-4V production build does not select migrate (controlled command instead)", () => {
     /** @type {string[]} */
     const called = [];
     const result = runVercelBuild({
@@ -136,8 +126,8 @@ describe("4B-4T.1 runVercelBuild dry harness", () => {
         return 0;
       },
     });
-    expect(called).toContain("prisma_migrate_deploy");
-    expect(result.plan.runMigrateDeploy).toBe(true);
+    expect(called).not.toContain("prisma_migrate_deploy");
+    expect(result.plan.runMigrateDeploy).toBe(false);
   });
 
   it("parseVercelBuildArgv prefers --vercel-env over process env", () => {
