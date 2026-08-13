@@ -92,19 +92,21 @@ model JournalEntry {
   @@index([email, profileId])
 }
 
-/// Server Journal save-operation idempotency (4B-4P candidate).
+/// Server Journal save-operation idempotency (official schema; 4B-4U).
 /// Domain userId maps to actorKey (normalized viewer email today).
-/// NOT promoted to prisma/migrations/ until Preview DB isolation is proven.
-/// No content / photo / secrets. Not wired to production POST /api/journal.
+/// Additive table only — not wired to production POST /api/journal yet.
+/// No content / photo / secrets. No FK to JournalEntry (history survives entry delete).
 model JournalSaveOperation {
   id        String   @id @default(cuid())
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  /// Normalized viewer-email identity today; not named "email" for future UID migration room.
+  /// Actor identity key (today: normalized viewer email). Not schema-locked as "email".
   actorKey           String
   saveOperationId    String
+  /// Domain: processing | completed | failed_final (String + domain validation; no Prisma enum).
   status             String
+  /// Domain: claimed | entry_created | photo_completed | donguri_settled | completed
   checkpoint         String
   journalEntryId     String?
   requestFingerprint String
