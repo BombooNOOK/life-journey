@@ -50,7 +50,7 @@ export async function resolveLocalJournalGenerationTargetWithRegistryValidation(
     };
   }
 
-  let store = options?.registryStore;
+  const store = options?.registryStore;
   if (!store) {
     const opened = await openLocalGenerationRegistrySqliteStore();
     try {

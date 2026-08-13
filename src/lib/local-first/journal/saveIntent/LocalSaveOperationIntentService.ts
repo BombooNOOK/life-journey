@@ -132,7 +132,7 @@ export async function applyOperationLookupToIntent(
 ): Promise<ApplyLookupOutcome> {
   const actorKey = input.actorKey.trim().toLowerCase();
   const saveOperationId = input.saveOperationId.trim();
-  let intent = await store.findByActorAndSaveOperationId(actorKey, saveOperationId);
+  const intent = await store.findByActorAndSaveOperationId(actorKey, saveOperationId);
   if (!intent) throw new Error("intent_missing");
 
   if (intent.requestFingerprint !== input.requestFingerprint.trim()) {

@@ -9,7 +9,7 @@ import { resolveLocalJournalGenerationTargetWithRegistryValidation } from "@/lib
 import type { GenerationRegistryRow } from "@/lib/local-first/journal/registry/types";
 import { LocalJournalSecureBootstrapper } from "@/lib/local-first/journal/secureBootstrap/LocalJournalSecureBootstrapper";
 import {
-  ensurePluginEncryptionSecret,
+  isPluginEncryptionSecretStored,
   readAvailableBytesOrNull,
 } from "@/lib/local-first/security";
 
@@ -30,7 +30,8 @@ export async function assertSaveMirrorRoutingPreconditions(options?: {
   allowUnknownCapacity?: boolean;
 }): Promise<SaveMirrorRoutingPreconditionOutcome> {
   try {
-    await ensurePluginEncryptionSecret();
+    // Probe only — do not invent a passphrase here; inspect surfaces encryption gaps.
+    await isPluginEncryptionSecretStored();
   } catch {
     /* inspect will surface encryption issues */
   }
@@ -66,6 +67,13 @@ export async function assertSaveMirrorRoutingPreconditions(options?: {
       ok: false,
       reason: resolved.reason,
       detail: resolved.detail,
+    };
+  }
+  if (!("registryRow" in resolved) || !resolved.registryRow) {
+    return {
+      ok: false,
+      reason: "registry_missing",
+      detail: "ok_without_registry_row",
     };
   }
 

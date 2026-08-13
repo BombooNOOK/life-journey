@@ -12,6 +12,7 @@ export {
   closeNamedEncryptedDatabase,
   configurePluginEncryptionSecret,
   ensurePluginEncryptionSecret,
+  isPluginEncryptionSecretStored,
   openNamedEncryptedDatabase,
   shouldSetPluginEncryptionSecret,
 } from "@/lib/local-first/security/encryptedDatabase";

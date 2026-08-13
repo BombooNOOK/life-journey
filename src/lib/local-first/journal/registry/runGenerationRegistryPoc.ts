@@ -130,11 +130,12 @@ export async function runGenerationRegistryPoc(): Promise<{
       registryStore: registryOpened.store,
       allowUnknownCapacity: true,
     });
+    const k4Ok = resolved.ok && "registryRow" in resolved && !!resolved.registryRow;
     push(
       "K4",
-      resolved.ok ? "pass" : "fail",
+      k4Ok ? "pass" : "fail",
       JSON.stringify(
-        resolved.ok
+        k4Ok
           ? {
               lifecycle: resolved.registryRow.lifecycleState,
               generationIdChars: resolved.registryRow.generationId.length,

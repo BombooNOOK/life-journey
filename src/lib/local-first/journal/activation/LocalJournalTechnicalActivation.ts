@@ -221,6 +221,17 @@ async function interpretResolve(
     };
   }
 
+  // Fail-closed: only status "ok" carries a manifest. Narrow without assertion.
+  if (read.status !== "ok" || !read.manifest) {
+    return {
+      status: "corrupt_manifest",
+      manifest: null,
+      detail: `unexpected_manifest_read_status=${read.status}`,
+      technicalDatabaseId: null,
+      technicalMediaRootId: null,
+    };
+  }
+
   const manifest = read.manifest;
   if (manifest.activeDatabaseId === "ljd_local_journal") {
     return {

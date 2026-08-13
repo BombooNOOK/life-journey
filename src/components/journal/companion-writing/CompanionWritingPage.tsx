@@ -385,13 +385,14 @@ export function CompanionWritingPage() {
         }
         throw new Error(data.error ?? `あしあとを残せませんでした。（${res.status}）`);
       }
-      if (!data.entry?.id) {
+      const savedEntry = data.entry;
+      if (!savedEntry?.id) {
         throw new Error("保存に失敗しました。あしあとIDを取得できませんでした。");
       }
 
       void import("@/lib/local-first/journal/save/handleConfirmedServerJournalMirror")
         .then(({ handleConfirmedServerJournalMirror }) =>
-          handleConfirmedServerJournalMirror({ serverEntryId: data.entry.id }),
+          handleConfirmedServerJournalMirror({ serverEntryId: savedEntry.id }),
         )
         .catch(() => undefined);
 
@@ -402,7 +403,7 @@ export function CompanionWritingPage() {
 
       writeCompanionWritingCalendarComplete({
         version: 1,
-        entryId: data.entry.id,
+        entryId: savedEntry.id,
         entryDateYmd: entryDate,
         companionType: resolvedCompanionType,
         profileId: effectiveProfileId,

@@ -115,8 +115,8 @@ function mirrorDeps(options?: {
   donguriCalls: number;
 } {
   const repository = options?.repository ?? memoryRepository();
-  let serverCreateCalls = 0;
-  let donguriCalls = 0;
+  const serverCreateCalls = 0;
+  const donguriCalls = 0;
   return {
     repository,
     serverCreateCalls,

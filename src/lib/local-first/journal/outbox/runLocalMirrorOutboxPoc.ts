@@ -6,7 +6,7 @@
 
 import { Capacitor } from "@capacitor/core";
 import { Directory, Encoding, Filesystem } from "@capacitor/filesystem";
-import { CapacitorSQLite } from "@capacitor-community/sqlite";
+import { CapacitorSQLite, SQLiteConnection } from "@capacitor-community/sqlite";
 
 import { LocalJournalTechnicalActivation } from "@/lib/local-first/journal/activation/LocalJournalTechnicalActivation";
 import { resolveLocalJournalGenerationTarget } from "@/lib/local-first/journal/generation/resolveLocalJournalGenerationTarget";
@@ -429,14 +429,8 @@ export async function runLocalMirrorOutboxPoc(): Promise<{
     opened = null;
 
     try {
-      if (
-        (
-          await CapacitorSQLite.isConnection({
-            database: LOCAL_JOURNAL_DB_NAME,
-            readonly: false,
-          })
-        ).result
-      ) {
+      const sqlite = new SQLiteConnection(CapacitorSQLite);
+      if ((await sqlite.isConnection(LOCAL_JOURNAL_DB_NAME, false)).result) {
         /* diagnostics may hold actual journal */
       }
     } catch {
