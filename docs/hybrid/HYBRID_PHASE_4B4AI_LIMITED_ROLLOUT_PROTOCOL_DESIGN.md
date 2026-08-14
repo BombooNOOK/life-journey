@@ -378,9 +378,11 @@ Optional reorder: AI-2 may start in parallel with AI-1 after contracts freeze; A
   and Next build pass locally.
 - Migration SQL static audit passes: one additive table and unique index only;
   no `DROP`, `ALTER`, or unrelated table change.
-- Local disposable PostgreSQL integration is **HOLD**: Docker Desktop's daemon
-  did not become reachable (bounded `docker info` probes timed out), so the
-  migration and real-DB capability/lookup/account-delete cases were not run.
-  No fallback database, Neon, Production, or remote connection was used.
-- Consequently AI-1 cannot be marked PASS until the specified local disposable
-  DB suite runs successfully.
+- Local disposable PostgreSQL integration subsequently **PASS** after a normal
+  macOS restart and non-destructive Docker Desktop launch. The audited target
+  was `127.0.0.1:5433/ljd_dev` only; no fallback database, Neon, Production,
+  or remote connection was used.
+- Applied the additive rollout migration only to that disposable DB. Route
+  integration validates capability AND admission, lookup state isolation and
+  fingerprint mismatch, and lookup recovery after rollout disable. Account
+  delete validates both JSO+rollout cleanup and injected-failure rollback.

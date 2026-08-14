@@ -99,6 +99,8 @@ describe.skipIf(!runLocal)("4B-4AC account-delete JSO Gate", () => {
     await seedAccount(OTHER);
     await seedRollout(ACTOR);
     await seedRollout(OTHER);
+    await seedJso(ACTOR, "01LJD4B4ACROLLOUTACTOR00001");
+    await seedJso(OTHER, "01LJD4B4ACROLLOUTOTHER00001");
 
     await deleteUserAccount({
       emailInput: "4B4AC-DEL@LJD.INVALID",
@@ -111,11 +113,18 @@ describe.skipIf(!runLocal)("4B-4AC account-delete JSO Gate", () => {
     expect(
       await prisma.journalSaveIdempotencyRollout.count({ where: { actorKey: OTHER } }),
     ).toBe(1);
+    expect(
+      await prisma.journalSaveOperation.count({ where: { actorKey: ACTOR } }),
+    ).toBe(0);
+    expect(
+      await prisma.journalSaveOperation.count({ where: { actorKey: OTHER } }),
+    ).toBe(1);
   });
 
   it("JSO cleanup failure rolls back the account-delete transaction", async () => {
     await seedAccount(ACTOR);
     await seedJso(ACTOR, "01LJD4B4ACROLLBACKACTOR0001");
+    await seedRollout(ACTOR);
     await prisma.$executeRawUnsafe(`
       CREATE OR REPLACE FUNCTION ljd_4b4ac_block_jso_delete()
       RETURNS trigger AS $$
@@ -146,6 +155,9 @@ describe.skipIf(!runLocal)("4B-4AC account-delete JSO Gate", () => {
       expect(await prisma.profile.count({ where: { email: ACTOR } })).toBe(1);
       expect(
         await prisma.journalSaveOperation.count({ where: { actorKey: ACTOR } }),
+      ).toBe(1);
+      expect(
+        await prisma.journalSaveIdempotencyRollout.count({ where: { actorKey: ACTOR } }),
       ).toBe(1);
     } finally {
       await prisma.$executeRawUnsafe(
