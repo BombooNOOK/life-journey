@@ -19,7 +19,10 @@ const NO_STORE = {
 export async function GET() {
   const viewerEmail = await getViewerEmailFromCookie();
   if (!viewerEmail) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401, ...NO_STORE });
+    return NextResponse.json(
+      { error: "ログイン情報を確認できませんでした。", code: "AUTH_REQUIRED" },
+      { status: 401, ...NO_STORE },
+    );
   }
 
   if (!isJournalSaveIdempotencyEnabled()) {

@@ -29,7 +29,9 @@ describe("4B-4AI-1 capability + lookup route contracts", () => {
 
   it("uses cookie identity only and fails capability closed", async () => {
     getViewerEmailFromCookie.mockResolvedValue(null);
-    expect((await capability.GET()).status).toBe(401);
+    const unauthorized = await capability.GET();
+    expect(unauthorized.status).toBe(401);
+    expect(await unauthorized.json()).toMatchObject({ code: "AUTH_REQUIRED" });
 
     getViewerEmailFromCookie.mockResolvedValue("Person@Example.com");
     isJournalSaveIdempotencyEnabled.mockReturnValue(false);
@@ -65,6 +67,14 @@ describe("4B-4AI-1 capability + lookup route contracts", () => {
   });
 
   it("validates lookup input and hides other actors through scoped query", async () => {
+    getViewerEmailFromCookie.mockResolvedValue(null);
+    const unauth = await lookup.GET(
+      new Request("https://ljd.invalid/api/journal/save-operations/01HXSAVEOPERATIONID00000001?requestFingerprint=x"),
+      { params: Promise.resolve({ saveOperationId: "01HXSAVEOPERATIONID00000001" }) },
+    );
+    expect(unauth.status).toBe(401);
+    expect(await unauth.json()).toMatchObject({ code: "AUTH_REQUIRED" });
+
     getViewerEmailFromCookie.mockResolvedValue("owner@ljd.invalid");
     const invalid = await lookup.GET(
       new Request("https://ljd.invalid/api/journal/save-operations/bad?requestFingerprint=x"),
