@@ -368,3 +368,19 @@ Optional reorder: AI-2 may start in parallel with AI-1 after contracts freeze; A
   transaction.
 - No rollout write route, rollout row, migration execution, Production access,
   or feature enable was performed.
+
+## AI-1.1 finalization record
+
+- Unauthenticated capability and lookup responses use the existing Journal
+  `401` + `AUTH_REQUIRED` contract; tests assert the response contains neither
+  actor nor email.
+- Route/protocol/account-delete source audit tests, Prisma generate, TypeScript,
+  and Next build pass locally.
+- Migration SQL static audit passes: one additive table and unique index only;
+  no `DROP`, `ALTER`, or unrelated table change.
+- Local disposable PostgreSQL integration is **HOLD**: Docker Desktop's daemon
+  did not become reachable (bounded `docker info` probes timed out), so the
+  migration and real-DB capability/lookup/account-delete cases were not run.
+  No fallback database, Neon, Production, or remote connection was used.
+- Consequently AI-1 cannot be marked PASS until the specified local disposable
+  DB suite runs successfully.
