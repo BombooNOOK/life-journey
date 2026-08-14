@@ -10,10 +10,10 @@
       __defProp(target, name, { get: all[name], enumerable: true });
   };
 
-  // node_modules/@capacitor/core/dist/index.js
+  // ../life-journey-release-server-idempotency-off-prep/node_modules/@capacitor/core/dist/index.js
   var ExceptionCode, CapacitorException, getPlatformId, createCapacitor, initCapacitorGlobal, Capacitor, registerPlugin, WebPlugin, encode, decode, CapacitorCookiesPluginWeb, CapacitorCookies, readBlobAsBase64, normalizeHttpHeaders, buildUrlParams, buildRequestInit, CapacitorHttpPluginWeb, CapacitorHttp, SystemBarsStyle, SystemBarType, SystemBarsPluginWeb, SystemBars;
   var init_dist = __esm({
-    "node_modules/@capacitor/core/dist/index.js"() {
+    "../life-journey-release-server-idempotency-off-prep/node_modules/@capacitor/core/dist/index.js"() {
       (function(ExceptionCode2) {
         ExceptionCode2["Unimplemented"] = "UNIMPLEMENTED";
         ExceptionCode2["Unavailable"] = "UNAVAILABLE";
@@ -519,14 +519,14 @@
     }
   });
 
-  // node_modules/@capacitor-community/sqlite/dist/esm/web.js
+  // ../life-journey-release-server-idempotency-off-prep/node_modules/@capacitor-community/sqlite/dist/esm/web.js
   var web_exports = {};
   __export(web_exports, {
     CapacitorSQLiteWeb: () => CapacitorSQLiteWeb
   });
   var CapacitorSQLiteWeb;
   var init_web = __esm({
-    "node_modules/@capacitor-community/sqlite/dist/esm/web.js"() {
+    "../life-journey-release-server-idempotency-off-prep/node_modules/@capacitor-community/sqlite/dist/esm/web.js"() {
       init_dist();
       CapacitorSQLiteWeb = class extends WebPlugin {
         constructor() {
@@ -997,10 +997,10 @@
     }
   });
 
-  // node_modules/@capacitor/filesystem/dist/esm/definitions.js
+  // ../life-journey-release-server-idempotency-off-prep/node_modules/@capacitor/filesystem/dist/esm/definitions.js
   var Directory, Encoding;
   var init_definitions = __esm({
-    "node_modules/@capacitor/filesystem/dist/esm/definitions.js"() {
+    "../life-journey-release-server-idempotency-off-prep/node_modules/@capacitor/filesystem/dist/esm/definitions.js"() {
       (function(Directory2) {
         Directory2["Documents"] = "DOCUMENTS";
         Directory2["Data"] = "DATA";
@@ -1020,7 +1020,7 @@
     }
   });
 
-  // node_modules/@capacitor/filesystem/dist/esm/web.js
+  // ../life-journey-release-server-idempotency-off-prep/node_modules/@capacitor/filesystem/dist/esm/web.js
   var web_exports2 = {};
   __export(web_exports2, {
     FilesystemWeb: () => FilesystemWeb
@@ -1046,7 +1046,7 @@
   }
   var FilesystemWeb;
   var init_web2 = __esm({
-    "node_modules/@capacitor/filesystem/dist/esm/web.js"() {
+    "../life-journey-release-server-idempotency-off-prep/node_modules/@capacitor/filesystem/dist/esm/web.js"() {
       init_dist();
       init_definitions();
       FilesystemWeb = class _FilesystemWeb extends WebPlugin {
@@ -1593,14 +1593,14 @@
     }
   });
 
-  // plugins/ljd-local-security/dist/esm/web.js
+  // ../life-journey-release-server-idempotency-off-prep/plugins/ljd-local-security/dist/esm/web.js
   var web_exports3 = {};
   __export(web_exports3, {
     LjdLocalSecurityWeb: () => LjdLocalSecurityWeb
   });
   var LjdLocalSecurityWeb;
   var init_web3 = __esm({
-    "plugins/ljd-local-security/dist/esm/web.js"() {
+    "../life-journey-release-server-idempotency-off-prep/plugins/ljd-local-security/dist/esm/web.js"() {
       "use strict";
       init_dist();
       LjdLocalSecurityWeb = class extends WebPlugin {
@@ -1635,10 +1635,10 @@
   // src/lib/local-first/journal/database.ts
   init_dist();
 
-  // node_modules/@capacitor-community/sqlite/dist/esm/index.js
+  // ../life-journey-release-server-idempotency-off-prep/node_modules/@capacitor-community/sqlite/dist/esm/index.js
   init_dist();
 
-  // node_modules/@capacitor-community/sqlite/dist/esm/definitions.js
+  // ../life-journey-release-server-idempotency-off-prep/node_modules/@capacitor-community/sqlite/dist/esm/definitions.js
   var SQLiteConnection = class {
     constructor(sqlite) {
       this.sqlite = sqlite;
@@ -2463,7 +2463,7 @@
     }
   };
 
-  // node_modules/@capacitor-community/sqlite/dist/esm/index.js
+  // ../life-journey-release-server-idempotency-off-prep/node_modules/@capacitor-community/sqlite/dist/esm/index.js
   var CapacitorSQLite = registerPlugin("CapacitorSQLite", {
     web: () => Promise.resolve().then(() => (init_web(), web_exports)).then((m) => new m.CapacitorSQLiteWeb()),
     electron: () => window.CapacitorCustomPlatform.plugins.CapacitorSQLite
@@ -2587,10 +2587,10 @@ CREATE INDEX IF NOT EXISTS idx_local_media_journal
   // src/lib/local-first/journal/mediaStore.ts
   init_dist();
 
-  // node_modules/@capacitor/filesystem/dist/esm/index.js
+  // ../life-journey-release-server-idempotency-off-prep/node_modules/@capacitor/filesystem/dist/esm/index.js
   init_dist();
 
-  // node_modules/@capacitor/synapse/dist/synapse.mjs
+  // ../life-journey-release-server-idempotency-off-prep/node_modules/@capacitor/synapse/dist/synapse.mjs
   function s(t) {
     t.CapacitorUtils.Synapse = new Proxy(
       {},
@@ -2637,7 +2637,7 @@ CREATE INDEX IF NOT EXISTS idx_local_media_journal
     typeof window > "u" || (window.CapacitorUtils = window.CapacitorUtils || {}, window.Capacitor !== void 0 && !t ? s(window) : window.cordova !== void 0 && u(window));
   }
 
-  // node_modules/@capacitor/filesystem/dist/esm/index.js
+  // ../life-journey-release-server-idempotency-off-prep/node_modules/@capacitor/filesystem/dist/esm/index.js
   init_definitions();
   var Filesystem = registerPlugin("Filesystem", {
     web: () => Promise.resolve().then(() => (init_web2(), web_exports2)).then((m) => new m.FilesystemWeb())
@@ -2839,10 +2839,48 @@ CREATE INDEX IF NOT EXISTS idx_local_media_journal
     }
   };
 
+  // src/lib/journal/clientSaveIntent/lifecycle.ts
+  var ALLOWED_TRANSITIONS = {
+    prepared: [
+      "prepared",
+      "awaiting_result",
+      "server_completed",
+      "completed",
+      "recovery_required",
+      "failed_final"
+    ],
+    awaiting_result: [
+      "awaiting_result",
+      "server_completed",
+      "completed",
+      "recovery_required",
+      "failed_final"
+    ],
+    server_completed: ["server_completed", "completed"],
+    completed: ["completed"],
+    recovery_required: ["recovery_required", "awaiting_result", "failed_final"],
+    failed_final: ["failed_final"]
+  };
+  function isClientSaveOperationIntentTransitionAllowed(from, to) {
+    return ALLOWED_TRANSITIONS[from].includes(to);
+  }
+  function assertClientSaveOperationIntentTransition(from, to) {
+    if (!isClientSaveOperationIntentTransitionAllowed(from, to)) {
+      throw new Error(`intent_transition_invalid:${from}->${to}`);
+    }
+  }
+
+  // src/lib/journal/clientSaveIntent/NativeClientSaveOperationIntentStore.ts
+  init_dist();
+
+  // src/lib/journal/clientSaveIntent/types.ts
+  var CLIENT_SAVE_OPERATION_INTENT_DB_NAME = "ljd_client_save_operation_intent";
+  var CLIENT_SAVE_OPERATION_INTENT_SCHEMA_VERSION = 1;
+
   // src/lib/local-first/security/backupInclusion.ts
   init_dist();
 
-  // plugins/ljd-local-security/dist/esm/index.js
+  // ../life-journey-release-server-idempotency-off-prep/plugins/ljd-local-security/dist/esm/index.js
   init_dist();
   var LjdLocalSecurity = registerPlugin("LjdLocalSecurity", {
     web: () => Promise.resolve().then(() => (init_web3(), web_exports3)).then((m) => new m.LjdLocalSecurityWeb())
@@ -2856,9 +2894,11 @@ CREATE INDEX IF NOT EXISTS idx_local_media_journal
       this.code = code;
     }
   };
+  var LJD_FILE_PROTECTION_CANDIDATE = "NSFileProtectionComplete";
   var LJD_PLUGIN_KEYCHAIN_SERVICE = "unlockSecret";
   var LJD_PLUGIN_KEYCHAIN_ACCOUNT = "ljd_CapacitorSQLitePlugin";
   var LJD_PLUGIN_KEYCHAIN_ACCESSIBILITY_MEASURED = "kSecAttrAccessibleWhenUnlocked";
+  var LJD_SQLITE_ENCRYPTION_MODE = "secret";
 
   // src/lib/local-first/security/noSecretLog.ts
   var SECRET_KEY = /passphrase|password|secret|encryptionkey|encryption_secret|unlocksecret/i;
@@ -2905,11 +2945,112 @@ CREATE INDEX IF NOT EXISTS idx_local_media_journal
     return new LocalFirstSecurityError(code, message);
   }
 
+  // src/lib/local-first/security/backupInclusion.ts
+  async function ensurePathExcludedFromBackup(path) {
+    if (!Capacitor.isNativePlatform()) {
+      throw new LocalFirstSecurityError(
+        "native_only",
+        "backup exclusion helper is native-only"
+      );
+    }
+    if (!path) {
+      throw new LocalFirstSecurityError("path_required", "path required");
+    }
+    try {
+      const current = await LjdLocalSecurity.inspectPath({ path });
+      if (!shouldExcludeFromBackup(current.isExcludedFromBackup)) {
+        return current;
+      }
+      return await LjdLocalSecurity.setExcludedFromBackup({
+        path,
+        excluded: true
+      });
+    } catch (error) {
+      throw mapSecurityError(error);
+    }
+  }
+  function shouldExcludeFromBackup(current) {
+    return current !== true;
+  }
+
   // src/lib/local-first/security/encryptedDatabase.ts
   init_dist();
+  function assertNotProductionJournal(name) {
+    if (name === LOCAL_JOURNAL_DB_NAME) {
+      throw new LocalFirstSecurityError(
+        "journal_encryption_forbidden",
+        "ljd_local_journal must not be opened encrypted in 4B-3E; plaintext\u2192encrypted migration is a later phase"
+      );
+    }
+  }
+  async function configurePluginEncryptionSecret(passphrase) {
+    if (!Capacitor.isNativePlatform()) {
+      throw new LocalFirstSecurityError(
+        "native_only",
+        "encryption secret configure is native-only"
+      );
+    }
+    if (!passphrase) {
+      throw new LocalFirstSecurityError("unknown", "passphrase required");
+    }
+    try {
+      await CapacitorSQLite.setEncryptionSecret({ passphrase });
+    } catch (error) {
+      throw mapSecurityError(error);
+    }
+  }
+  async function openNamedEncryptedDatabase(name, version = 1) {
+    assertNotProductionJournal(name);
+    if (!Capacitor.isNativePlatform()) {
+      throw new LocalFirstSecurityError(
+        "native_only",
+        "encrypted DB open is native-only"
+      );
+    }
+    try {
+      const sqlite = new SQLiteConnection(CapacitorSQLite);
+      try {
+        await sqlite.checkConnectionsConsistency();
+      } catch {
+      }
+      if ((await sqlite.isConnection(name, false)).result) {
+        await sqlite.closeConnection(name, false);
+      }
+      const db2 = await sqlite.createConnection(
+        name,
+        true,
+        LJD_SQLITE_ENCRYPTION_MODE,
+        version,
+        false
+      );
+      await db2.open();
+      return db2;
+    } catch (error) {
+      throw mapSecurityError(error);
+    }
+  }
 
   // src/lib/local-first/security/fileProtection.ts
   init_dist();
+  function isCompleteProtection(label) {
+    return label === LJD_FILE_PROTECTION_CANDIDATE;
+  }
+  async function applyCompleteFileProtection(path) {
+    if (!Capacitor.isNativePlatform()) {
+      throw new LocalFirstSecurityError(
+        "native_only",
+        "file protection helper is native-only"
+      );
+    }
+    if (!path) {
+      throw new LocalFirstSecurityError("path_required", "path required");
+    }
+    try {
+      return await LjdLocalSecurity.setCompleteProtection({ path });
+    } catch (error) {
+      throw mapSecurityError(error);
+    }
+  }
   async function inspectFileProtection(path) {
     if (!Capacitor.isNativePlatform()) {
       throw new LocalFirstSecurityError(
@@ -3054,6 +3195,281 @@ CREATE INDEX IF NOT EXISTS idx_local_media_journal
     }
   }
 
+  // src/lib/journal/clientSaveIntent/NativeClientSaveOperationIntentStore.ts
+  var CREATE_SQL = `
+CREATE TABLE IF NOT EXISTS client_save_operation_intent (
+  intent_id TEXT PRIMARY KEY NOT NULL,
+  save_operation_id TEXT NOT NULL UNIQUE,
+  actor_key TEXT NOT NULL,
+  draft_ref TEXT,
+  request_fingerprint TEXT NOT NULL,
+  status TEXT NOT NULL,
+  server_entry_id TEXT,
+  failure_code TEXT,
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL,
+  last_attempt_at TEXT,
+  completed_at TEXT
+);`;
+  var REQUIRED_COLUMNS = [
+    "intent_id",
+    "save_operation_id",
+    "actor_key",
+    "draft_ref",
+    "request_fingerprint",
+    "status",
+    "server_entry_id",
+    "failure_code",
+    "created_at",
+    "updated_at",
+    "last_attempt_at",
+    "completed_at"
+  ];
+  function assertNative2() {
+    if (!Capacitor.isNativePlatform()) {
+      throw new LocalFirstSecurityError(
+        "native_only",
+        "client save intent storage has no browser fallback"
+      );
+    }
+  }
+  function mapRow(row) {
+    return {
+      intentId: String(row.intent_id),
+      saveOperationId: String(row.save_operation_id),
+      actorKey: String(row.actor_key),
+      draftRef: row.draft_ref == null ? null : String(row.draft_ref),
+      requestFingerprint: String(row.request_fingerprint),
+      status: String(row.status),
+      serverEntryId: row.server_entry_id == null ? null : String(row.server_entry_id),
+      failureCode: row.failure_code == null ? null : String(row.failure_code),
+      createdAt: String(row.created_at),
+      updatedAt: String(row.updated_at),
+      lastAttemptAt: row.last_attempt_at == null ? null : String(row.last_attempt_at),
+      completedAt: row.completed_at == null ? null : String(row.completed_at)
+    };
+  }
+  async function withDb(fn) {
+    const db2 = await openNamedEncryptedDatabase(
+      CLIENT_SAVE_OPERATION_INTENT_DB_NAME,
+      CLIENT_SAVE_OPERATION_INTENT_SCHEMA_VERSION
+    );
+    try {
+      await ensureSchema(db2);
+      return await fn(db2);
+    } finally {
+      await db2.close();
+    }
+  }
+  async function ensureSchema(db2) {
+    const versionResult = await db2.query("PRAGMA user_version");
+    const version = Number(versionResult.values?.[0]?.user_version ?? -1);
+    if (version === 0) {
+      const existing = await db2.query(
+        "SELECT name FROM sqlite_master WHERE type = 'table' AND name = ? LIMIT 1",
+        ["client_save_operation_intent"]
+      );
+      if (existing.values?.length) {
+        throw new Error("intent_schema_partial_or_unversioned");
+      }
+      await db2.execute(CREATE_SQL);
+      await db2.execute(`PRAGMA user_version = ${CLIENT_SAVE_OPERATION_INTENT_SCHEMA_VERSION}`);
+      return;
+    }
+    if (version !== CLIENT_SAVE_OPERATION_INTENT_SCHEMA_VERSION) {
+      throw new Error("intent_schema_version_unsupported");
+    }
+    const columns = await db2.query("PRAGMA table_info(client_save_operation_intent)");
+    const names = new Set(
+      (columns.values ?? []).map((column) => String(column.name))
+    );
+    if (REQUIRED_COLUMNS.some((column) => !names.has(column))) {
+      throw new Error("intent_schema_columns_invalid");
+    }
+  }
+  async function initializeNativeClientSaveOperationIntentStore() {
+    assertNative2();
+    await withDb(async () => void 0);
+  }
+  async function find(db2, saveOperationId) {
+    const result = await db2.query(
+      "SELECT * FROM client_save_operation_intent WHERE save_operation_id = ? LIMIT 1",
+      [saveOperationId]
+    );
+    const row = result.values?.[0];
+    return row ? mapRow(row) : null;
+  }
+  function createNativeClientSaveOperationIntentStore() {
+    assertNative2();
+    return {
+      async findByActorAndSaveOperationId(actorKey, saveOperationId) {
+        return withDb(async (db2) => {
+          const row = await find(db2, saveOperationId);
+          return row?.actorKey === actorKey ? row : null;
+        });
+      },
+      async tryInsert(intent) {
+        return withDb(async (db2) => {
+          const existing = await find(db2, intent.saveOperationId);
+          if (existing) return { created: false, intent: existing };
+          await db2.run(
+            `INSERT INTO client_save_operation_intent (
+            intent_id, save_operation_id, actor_key, draft_ref, request_fingerprint,
+            status, server_entry_id, failure_code, created_at, updated_at,
+            last_attempt_at, completed_at
+          ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)`,
+            [
+              intent.intentId,
+              intent.saveOperationId,
+              intent.actorKey,
+              intent.draftRef,
+              intent.requestFingerprint,
+              intent.status,
+              intent.serverEntryId,
+              intent.failureCode,
+              intent.createdAt,
+              intent.updatedAt,
+              intent.lastAttemptAt,
+              intent.completedAt
+            ]
+          );
+          return { created: true, intent };
+        });
+      },
+      async update(intent) {
+        return withDb(async (db2) => {
+          const existing = await find(db2, intent.saveOperationId);
+          if (!existing || existing.actorKey !== intent.actorKey) throw new Error("intent_missing");
+          assertClientSaveOperationIntentTransition(existing.status, intent.status);
+          await db2.run(
+            `UPDATE client_save_operation_intent SET
+            draft_ref=?, request_fingerprint=?, status=?, server_entry_id=?,
+            failure_code=?, updated_at=?, last_attempt_at=?, completed_at=?
+           WHERE save_operation_id=? AND actor_key=?`,
+            [
+              intent.draftRef,
+              intent.requestFingerprint,
+              intent.status,
+              intent.serverEntryId,
+              intent.failureCode,
+              intent.updatedAt,
+              intent.lastAttemptAt,
+              intent.completedAt,
+              intent.saveOperationId,
+              intent.actorKey
+            ]
+          );
+          const updated = await find(db2, intent.saveOperationId);
+          if (!updated || updated.actorKey !== intent.actorKey) throw new Error("intent_missing");
+          return updated;
+        });
+      },
+      async listRecoverableByActor(actorKey) {
+        return withDb(async (db2) => {
+          const result = await db2.query(
+            `SELECT * FROM client_save_operation_intent
+           WHERE actor_key = ? AND status IN ('prepared','awaiting_result','server_completed','recovery_required')
+           ORDER BY created_at ASC`,
+            [actorKey]
+          );
+          return (result.values ?? []).map((row) => mapRow(row));
+        });
+      },
+      async deleteByActor(actorKey) {
+        return withDb(async (db2) => {
+          const result = await db2.run(
+            "DELETE FROM client_save_operation_intent WHERE actor_key = ?",
+            [actorKey]
+          );
+          return result.changes?.changes ?? 0;
+        });
+      }
+    };
+  }
+
+  // src/lib/journal/clientSaveIntent/NativeSaveIntentBootstrap.ts
+  init_dist();
+  function generateEphemeralBootstrapSecret() {
+    const bytes = new Uint8Array(32);
+    crypto.getRandomValues(bytes);
+    return Array.from(bytes, (byte) => byte.toString(16).padStart(2, "0")).join("");
+  }
+  function nativeDatabasePath(databasesDir) {
+    return `${databasesDir.replace(/\/$/, "")}/${CLIENT_SAVE_OPERATION_INTENT_DB_NAME}SQLite.db`;
+  }
+  var productionDependencies = {
+    isNativePlatform: () => Capacitor.isNativePlatform(),
+    inspectKeychain: inspectPluginDbKeyAccessibility,
+    configureSecret: configurePluginEncryptionSecret,
+    initializeDatabase: initializeNativeClientSaveOperationIntentStore,
+    createStore: createNativeClientSaveOperationIntentStore,
+    resolveApplicationSupport: resolveLjdApplicationSupportDir,
+    excludeFromBackup: ensurePathExcludedFromBackup,
+    applyCompleteProtection: applyCompleteFileProtection,
+    inspectProtection: inspectFileProtection,
+    isCompleteProtection,
+    generateSecret: generateEphemeralBootstrapSecret
+  };
+  async function initializeWithDependencies(deps) {
+    if (!deps.isNativePlatform()) return { status: "unsupported_platform" };
+    let keychain;
+    try {
+      keychain = await deps.inspectKeychain();
+    } catch {
+      return { status: "secure_store_unavailable" };
+    }
+    if (keychain.found && !keychain.matchesWhenUnlocked) {
+      return { status: "secure_store_unavailable" };
+    }
+    if (!keychain.found) {
+      try {
+        await deps.configureSecret(deps.generateSecret());
+        keychain = await deps.inspectKeychain();
+      } catch {
+        return { status: "secure_store_unavailable" };
+      }
+    }
+    if (!keychain.found || !keychain.matchesWhenUnlocked) {
+      return { status: "secure_store_unavailable" };
+    }
+    try {
+      await deps.initializeDatabase();
+    } catch (error) {
+      return {
+        status: /intent_schema_(?:partial_or_unversioned|version_unsupported|columns_invalid)/.test(
+          error instanceof Error ? error.message : ""
+        ) ? "schema_error" : "database_unavailable"
+      };
+    }
+    try {
+      const databasePath = nativeDatabasePath((await deps.resolveApplicationSupport()).ljdDatabasesDir);
+      const backup = await deps.excludeFromBackup(databasePath);
+      const protectedPath = await deps.applyCompleteProtection(databasePath);
+      const inspected = await deps.inspectProtection(databasePath);
+      if (backup.isExcludedFromBackup !== true || protectedPath.fileProtection !== "NSFileProtectionComplete" || !deps.isCompleteProtection(inspected.fileProtection)) {
+        return { status: "database_unavailable" };
+      }
+    } catch {
+      return { status: "database_unavailable" };
+    }
+    try {
+      return { status: "ready", store: deps.createStore() };
+    } catch {
+      return { status: "database_unavailable" };
+    }
+  }
+  var initialization = null;
+  var readiness = { status: "unsupported_platform" };
+  async function initializeSaveIntentStore() {
+    if (!initialization) {
+      initialization = initializeWithDependencies(productionDependencies).then((result) => {
+        readiness = { status: result.status };
+        return result;
+      });
+    }
+    return initialization;
+  }
+
   // src/lib/local-first/diagnostics/localStorageDiagnosticsMain.ts
   function $(id) {
     const el = document.getElementById(id);
@@ -3111,6 +3527,19 @@ CREATE INDEX IF NOT EXISTS idx_local_media_journal
     )} diagnostics=local-storage remoteShell=false`;
     if (!Capacitor.isNativePlatform()) {
       setStatus("\u30CD\u30A4\u30C6\u30A3\u30D6\u5C02\u7528\u3067\u3059\u3002", true);
+      return;
+    }
+    const intentBootstrap = await initializeSaveIntentStore();
+    $("security-report").textContent = JSON.stringify(
+      {
+        developerOnly: true,
+        secureSaveIntentBootstrap: { status: intentBootstrap.status }
+      },
+      null,
+      2
+    );
+    if (intentBootstrap.status !== "ready") {
+      setStatus(`Secure Save Intent bootstrap unavailable: ${intentBootstrap.status}`, true);
       return;
     }
     $("btn-load").addEventListener("click", () => {
@@ -3180,7 +3609,7 @@ CREATE INDEX IF NOT EXISTS idx_local_media_journal
     try {
       await openLocalJournalDatabase();
       await renderEntries();
-      setStatus("Diagnostics\u6E96\u5099\u5B8C\u4E86\uFF08SQLite foundation\uFF09\u3002");
+      setStatus("Diagnostics\u6E96\u5099\u5B8C\u4E86\uFF08SQLite foundation + secure Save Intent store\uFF09\u3002");
     } catch (err) {
       setStatus(`\u521D\u671F\u5316\u5931\u6557: ${String(err)}`, true);
     }

@@ -11,6 +11,7 @@ import {
   resolveJournalMediaUri,
 } from "@/lib/local-first/journal/mediaStore";
 import { JournalRepository } from "@/lib/local-first/journal/repository";
+import { initializeSaveIntentStore } from "@/lib/journal/clientSaveIntent";
 import {
   inspectPluginDbKeyAccessibility,
   listSqliteArtifactsReadOnly,
@@ -91,6 +92,20 @@ async function boot(): Promise<void> {
     return;
   }
 
+  const intentBootstrap = await initializeSaveIntentStore();
+  $("security-report").textContent = JSON.stringify(
+    {
+      developerOnly: true,
+      secureSaveIntentBootstrap: { status: intentBootstrap.status },
+    },
+    null,
+    2,
+  );
+  if (intentBootstrap.status !== "ready") {
+    setStatus(`Secure Save Intent bootstrap unavailable: ${intentBootstrap.status}`, true);
+    return;
+  }
+
   $("btn-load").addEventListener("click", () => {
     void (async () => {
       await openLocalJournalDatabase();
@@ -163,7 +178,7 @@ async function boot(): Promise<void> {
   try {
     await openLocalJournalDatabase();
     await renderEntries();
-    setStatus("Diagnostics準備完了（SQLite foundation）。");
+    setStatus("Diagnostics準備完了（SQLite foundation + secure Save Intent store）。");
   } catch (err) {
     setStatus(`初期化失敗: ${String(err)}`, true);
   }

@@ -2,6 +2,7 @@ import type {
   ClientSaveOperationIntent,
   ClientSaveOperationIntentStore,
 } from "@/lib/journal/clientSaveIntent/types";
+import { assertClientSaveOperationIntentTransition } from "@/lib/journal/clientSaveIntent/lifecycle";
 
 export function createMemoryClientSaveOperationIntentStore(): ClientSaveOperationIntentStore {
   const rows = new Map<string, ClientSaveOperationIntent>();
@@ -17,7 +18,9 @@ export function createMemoryClientSaveOperationIntentStore(): ClientSaveOperatio
       return { created: true, intent: { ...intent } };
     },
     async update(intent) {
-      if (!rows.has(intent.saveOperationId)) throw new Error("intent_missing");
+      const existing = rows.get(intent.saveOperationId);
+      if (!existing || existing.actorKey !== intent.actorKey) throw new Error("intent_missing");
+      assertClientSaveOperationIntentTransition(existing.status, intent.status);
       rows.set(intent.saveOperationId, { ...intent });
       return { ...intent };
     },

@@ -54,3 +54,38 @@ export async function ensurePathIncludedInBackup(
     throw mapSecurityError(error);
   }
 }
+
+/**
+ * Applies the explicit opt-out policy for metadata-only databases that must
+ * never be restored from an iCloud/device backup. This is intentionally
+ * separate from the life-record inclusion policy above.
+ */
+export async function ensurePathExcludedFromBackup(
+  path: string,
+): Promise<PathAttributes> {
+  if (!Capacitor.isNativePlatform()) {
+    throw new LocalFirstSecurityError(
+      "native_only",
+      "backup exclusion helper is native-only",
+    );
+  }
+  if (!path) {
+    throw new LocalFirstSecurityError("path_required", "path required");
+  }
+  try {
+    const current = await LjdLocalSecurity.inspectPath({ path });
+    if (!shouldExcludeFromBackup(current.isExcludedFromBackup)) {
+      return current;
+    }
+    return await LjdLocalSecurity.setExcludedFromBackup({
+      path,
+      excluded: true,
+    });
+  } catch (error) {
+    throw mapSecurityError(error);
+  }
+}
+
+export function shouldExcludeFromBackup(current: TriStateBool): boolean {
+  return current !== true;
+}

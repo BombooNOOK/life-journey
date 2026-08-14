@@ -20,6 +20,7 @@ import {
   openNamedEncryptedDatabase,
 } from "@/lib/local-first/security";
 import { LocalFirstSecurityError } from "@/lib/local-first/security/types";
+import { assertClientSaveOperationIntentTransition } from "@/lib/journal/clientSaveIntent/lifecycle";
 
 const CREATE_SQL = `
 CREATE TABLE IF NOT EXISTS client_save_operation_intent (
@@ -36,6 +37,21 @@ CREATE TABLE IF NOT EXISTS client_save_operation_intent (
   last_attempt_at TEXT,
   completed_at TEXT
 );`;
+
+const REQUIRED_COLUMNS = [
+  "intent_id",
+  "save_operation_id",
+  "actor_key",
+  "draft_ref",
+  "request_fingerprint",
+  "status",
+  "server_entry_id",
+  "failure_code",
+  "created_at",
+  "updated_at",
+  "last_attempt_at",
+  "completed_at",
+] as const;
 
 function assertNative(): void {
   if (!Capacitor.isNativePlatform()) {
@@ -71,11 +87,44 @@ async function withDb<T>(fn: (db: SQLiteDBConnection) => Promise<T>): Promise<T>
     CLIENT_SAVE_OPERATION_INTENT_SCHEMA_VERSION,
   );
   try {
-    await db.execute(CREATE_SQL);
+    await ensureSchema(db);
     return await fn(db);
   } finally {
     await db.close();
   }
+}
+
+async function ensureSchema(db: SQLiteDBConnection): Promise<void> {
+  const versionResult = await db.query("PRAGMA user_version");
+  const version = Number(versionResult.values?.[0]?.user_version ?? -1);
+  if (version === 0) {
+    const existing = await db.query(
+      "SELECT name FROM sqlite_master WHERE type = 'table' AND name = ? LIMIT 1",
+      ["client_save_operation_intent"],
+    );
+    if (existing.values?.length) {
+      throw new Error("intent_schema_partial_or_unversioned");
+    }
+    await db.execute(CREATE_SQL);
+    await db.execute(`PRAGMA user_version = ${CLIENT_SAVE_OPERATION_INTENT_SCHEMA_VERSION}`);
+    return;
+  }
+  if (version !== CLIENT_SAVE_OPERATION_INTENT_SCHEMA_VERSION) {
+    throw new Error("intent_schema_version_unsupported");
+  }
+  const columns = await db.query("PRAGMA table_info(client_save_operation_intent)");
+  const names = new Set(
+    (columns.values ?? []).map((column) => String((column as Record<string, unknown>).name)),
+  );
+  if (REQUIRED_COLUMNS.some((column) => !names.has(column))) {
+    throw new Error("intent_schema_columns_invalid");
+  }
+}
+
+/** Opens and validates the versioned SQLCipher schema without changing intent data. */
+export async function initializeNativeClientSaveOperationIntentStore(): Promise<void> {
+  assertNative();
+  await withDb(async () => undefined);
 }
 
 async function find(
@@ -121,6 +170,9 @@ export function createNativeClientSaveOperationIntentStore(): ClientSaveOperatio
     },
     async update(intent) {
       return withDb(async (db) => {
+        const existing = await find(db, intent.saveOperationId);
+        if (!existing || existing.actorKey !== intent.actorKey) throw new Error("intent_missing");
+        assertClientSaveOperationIntentTransition(existing.status, intent.status);
         await db.run(
           `UPDATE client_save_operation_intent SET
             draft_ref=?, request_fingerprint=?, status=?, server_entry_id=?,

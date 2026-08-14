@@ -5,7 +5,9 @@
 
 export {
   BACKUP_INCLUSION_POLICY,
+  ensurePathExcludedFromBackup,
   ensurePathIncludedInBackup,
+  shouldExcludeFromBackup,
   shouldForceBackupInclusion,
 } from "@/lib/local-first/security/backupInclusion";
 export {

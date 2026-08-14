@@ -12,6 +12,18 @@ export const CLIENT_SAVE_OPERATION_INTENT_DB_NAME =
   "ljd_client_save_operation_intent" as const;
 export const CLIENT_SAVE_OPERATION_INTENT_SCHEMA_VERSION = 1 as const;
 
+/**
+ * Native secure-store admission is an independent prerequisite to server
+ * capability. AI-3 must require both before it attaches saveOperationId.
+ * Details are deliberately collapsed before reaching any UI surface.
+ */
+export type ClientSaveIntentStoreReadiness =
+  | { status: "ready" }
+  | { status: "unsupported_platform" }
+  | { status: "secure_store_unavailable" }
+  | { status: "database_unavailable" }
+  | { status: "schema_error" };
+
 export type ClientSaveOperationIntentStatus =
   | "prepared"
   | "awaiting_result"
@@ -60,6 +72,10 @@ export type ClientSaveOperationIntentStore = {
   listRecoverableByActor(actorKey: string): Promise<ClientSaveOperationIntent[]>;
   deleteByActor(actorKey: string): Promise<number>;
 };
+
+export type ClientSaveIntentStoreBootstrapResult =
+  | { status: "ready"; store: ClientSaveOperationIntentStore }
+  | Exclude<ClientSaveIntentStoreReadiness, { status: "ready" }>;
 
 export type ClientSaveIdempotencyCapability =
   | { enabled: false; reason: "server_capability_unavailable" | "not_eligible" }

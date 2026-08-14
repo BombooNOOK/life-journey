@@ -87,16 +87,22 @@ async function updateForResult(
   now: string,
 ): Promise<ClientSaveOperationIntent> {
   switch (result.kind) {
-    case "completed":
-      return store.update({
+    case "completed": {
+      const serverCompleted = await store.update({
         ...intent,
-        status: "completed",
+        status: "server_completed",
         serverEntryId: result.serverEntryId,
         failureCode: null,
         updatedAt: now,
         lastAttemptAt: now,
+      });
+      return store.update({
+        ...serverCompleted,
+        status: "completed",
+        updatedAt: now,
         completedAt: now,
       });
+    }
     case "processing":
       return store.update({
         ...intent,

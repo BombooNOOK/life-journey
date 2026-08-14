@@ -4,7 +4,18 @@ export {
   runNewClientSaveOperation,
 } from "@/lib/journal/clientSaveIntent/ClientSaveOperationIntentService";
 export { createMemoryClientSaveOperationIntentStore } from "@/lib/journal/clientSaveIntent/memoryStore";
-export { createNativeClientSaveOperationIntentStore } from "@/lib/journal/clientSaveIntent/NativeClientSaveOperationIntentStore";
+export {
+  createNativeClientSaveOperationIntentStore,
+  initializeNativeClientSaveOperationIntentStore,
+} from "@/lib/journal/clientSaveIntent/NativeClientSaveOperationIntentStore";
+export {
+  getSaveIntentStoreReadiness,
+  initializeSaveIntentStore,
+} from "@/lib/journal/clientSaveIntent/NativeSaveIntentBootstrap";
+export {
+  assertClientSaveOperationIntentTransition,
+  isClientSaveOperationIntentTransitionAllowed,
+} from "@/lib/journal/clientSaveIntent/lifecycle";
 export {
   createClientSaveOperationId,
   isValidClientSaveOperationId,
@@ -12,6 +23,8 @@ export {
 } from "@/lib/journal/clientSaveIntent/saveOperationId";
 export type {
   ClientSaveIdempotencyCapability,
+  ClientSaveIntentStoreBootstrapResult,
+  ClientSaveIntentStoreReadiness,
   ClientSaveIdempotencyCapabilityProvider,
   ClientSaveOperationIntent,
   ClientSaveOperationIntentStatus,
