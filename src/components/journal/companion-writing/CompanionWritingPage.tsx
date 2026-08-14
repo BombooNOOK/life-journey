@@ -55,6 +55,7 @@ import {
   journalCalendarAfterCompanionSavePath,
   journalNewEntryPath,
 } from "@/lib/journal/journalNav";
+import { runJournalCreateSave } from "@/lib/journal/clientSaveIntent/JournalCreateSaveOrchestrator";
 import { LOG_HOUSE_BACK_LINK } from "@/lib/journal/logHouseLabels";
 import {
   activityOptions,
@@ -343,11 +344,9 @@ export function CompanionWritingPage() {
     setError(null);
     setSaving(true);
     try {
-      const res = await fetch("/api/journal", {
-        method: "POST",
-        credentials: "same-origin",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
+      const result = await runJournalCreateSave({
+        viewerEmail: user?.email ?? "",
+        payload: {
           content,
           mood,
           activity,
@@ -357,8 +356,10 @@ export function CompanionWritingPage() {
           entryDate,
           profileId: effectiveProfileId,
           effectiveProfileId,
-        }),
+          includeInBook: true,
+        },
       });
+      const res = result.kind === "legacy" ? result.response : null;
 
       let data: {
         entry?: { id: string };
@@ -367,7 +368,7 @@ export function CompanionWritingPage() {
         donguriBalance?: number | null;
       };
       try {
-        data = (await res.json()) as {
+        data = (res ? await res.json() : result.kind === "completed" ? result.data : {}) as {
           entry?: { id: string };
           error?: string;
           code?: string;
@@ -376,7 +377,16 @@ export function CompanionWritingPage() {
       } catch {
         throw new Error("サーバーからの応答を読み取れませんでした。");
       }
-      if (!res.ok) {
+      if (result.kind !== "legacy" && result.kind !== "completed") {
+        if (result.kind === "failed_final" && result.code === "ACORN_INSUFFICIENT") {
+          setPreferDraftMode(true);
+          setSaveDialog("shortage");
+          setSaving(false);
+          return;
+        }
+        throw new Error(result.kind === "processing" ? "保存処理中です。しばらくしてから確認してください。" : "保存結果を安全に確認できませんでした。");
+      }
+      if (res && !res.ok) {
         if (data.code === "ACORN_INSUFFICIENT") {
           setPreferDraftMode(true);
           setSaveDialog("shortage");
@@ -424,6 +434,7 @@ export function CompanionWritingPage() {
     questionSet,
     resolveCompanionTypeForSave,
     tagInput,
+    user?.email,
   ]);
 
   const saveServerDraft = useCallback(async () => {

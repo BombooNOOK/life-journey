@@ -18,6 +18,10 @@ export {
   isClientSaveOperationIntentTransitionAllowed,
 } from "@/lib/journal/clientSaveIntent/lifecycle";
 export {
+  recoverJournalCreateSaves,
+  runJournalCreateSave,
+} from "@/lib/journal/clientSaveIntent/JournalCreateSaveOrchestrator";
+export {
   createClientSaveOperationId,
   isValidClientSaveOperationId,
   normalizeClientActorKey,

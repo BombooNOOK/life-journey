@@ -54,6 +54,7 @@ import {
   journalPreviewPath,
   resolveJournalEntryMonthKey,
 } from "@/lib/journal/journalNav";
+import { runJournalCreateSave } from "@/lib/journal/clientSaveIntent/JournalCreateSaveOrchestrator";
 import {
   CONTENT_FONT_MODE_LABELS_JA,
   CONTENT_FONT_MODES,
@@ -868,30 +869,55 @@ function JournalPageContent() {
         return {};
       })();
 
-      const res = await fetch(endpoint, {
-        method: editingId ? "PATCH" : "POST",
-        credentials: "same-origin",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          content: mergedContent,
-          mood,
-          activity,
-          companionType,
-          designTheme,
-          contentFontMode,
-          ...photoPayload,
-          entryDate,
-          effectiveProfileId,
-        }),
-      });
-      const data = (await res.json()) as {
+      const requestPayload = {
+        content: mergedContent,
+        mood,
+        activity,
+        companionType,
+        designTheme,
+        contentFontMode,
+        ...photoPayload,
+        entryDate,
+        profileId: effectiveProfileId,
+        effectiveProfileId,
+        includeInBook: true,
+      };
+      const orchestrated = isNewEntrySave
+        ? await runJournalCreateSave({
+            viewerEmail: user?.email ?? "",
+            payload: requestPayload,
+            afterServerCompleted: async () => localDraft.clearDraftAfterSuccessfulSave(),
+          })
+        : null;
+      const res =
+        orchestrated?.kind === "legacy"
+          ? orchestrated.response
+          : !isNewEntrySave
+            ? await fetch(endpoint, {
+                method: "PATCH",
+                credentials: "same-origin",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(requestPayload),
+              })
+            : null;
+      const data = (res ? await res.json() : orchestrated?.kind === "completed" ? orchestrated.data : {}) as {
         error?: string;
         code?: string;
         entry?: { id?: string };
         guardianColorName?: string | null;
         donguriBalance?: number | null;
       };
-      if (!res.ok) {
+      if (orchestrated && orchestrated.kind !== "legacy" && orchestrated.kind !== "completed") {
+        if (orchestrated.kind === "failed_final" && orchestrated.code === "ACORN_INSUFFICIENT") {
+          setAcornBalance((prev) => prev !== null && prev < DONGURI_DIARY_SAVE_COST ? prev : DONGURI_DIARY_SAVE_COST - 1);
+          setPreferDraftMode(true);
+          setError("どんぐりが足りません。下書きとして残すか、どんぐりをためてから森に残してください。");
+        } else {
+          setError(orchestrated.kind === "processing" ? "保存処理中です。しばらくしてから確認してください。" : "保存結果を安全に確認できませんでした。");
+        }
+        return;
+      }
+      if (res && !res.ok) {
         if (isNewEntrySave) {
           setSaveTransition(null);
           saveTransitionStartedAtRef.current = null;
