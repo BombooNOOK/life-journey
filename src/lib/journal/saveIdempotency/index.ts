@@ -21,6 +21,15 @@ export { createMemoryJournalSaveOperationStore } from "@/lib/journal/saveIdempot
 export { createPrismaJournalSaveOperationStore } from "@/lib/journal/saveIdempotency/prismaJournalSaveOperationStore";
 export { buildJournalSaveRequestFingerprint } from "@/lib/journal/saveIdempotency/requestFingerprint";
 export {
+  buildProductionJournalSaveFingerprint,
+  photoIdentityFromPatch,
+} from "@/lib/journal/saveIdempotency/productionRequestFingerprint";
+export {
+  isJournalSaveIdempotencyEnabled,
+  JOURNAL_SAVE_IDEMPOTENCY_FLAG,
+} from "@/lib/journal/saveIdempotency/journalSaveIdempotencyGate";
+export { parseSaveOperationIdFromBody } from "@/lib/journal/saveIdempotency/saveOperationId";
+export {
   assertLocalDisposableDatabaseUrl,
   auditDatabaseUrlForNonprodIdempotency,
 } from "@/lib/journal/saveIdempotency/assertLocalDisposableDatabaseUrl";

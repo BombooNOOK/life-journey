@@ -1,7 +1,7 @@
 /**
  * Domain service: Server Journal save-operation idempotency core (4B-4N).
  *
- * Not wired to production POST /api/journal.
+ * Production POST wiring: feature-gated in `/api/journal` (4B-4Y; default OFF).
  * Unique(userId, saveOperationId) is the final defence against dual claim.
  * Checkpoint CAS + orphan entry delete limits dual create under concurrent resume.
  *

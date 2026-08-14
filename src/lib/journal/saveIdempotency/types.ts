@@ -1,6 +1,6 @@
 /**
- * Server Journal save-operation idempotency (4B-4N PoC).
- * Domain types only — not wired to production POST /api/journal.
+ * Server Journal save-operation idempotency (4B-4N PoC → 4B-4Y Production wiring).
+ * Domain types — Production POST uses these behind LJD_JOURNAL_SAVE_IDEMPOTENCY_ENABLED.
  * Does not store content / photo / secrets.
  */
 

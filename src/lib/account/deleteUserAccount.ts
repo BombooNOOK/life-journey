@@ -217,6 +217,7 @@ export async function deleteUserAccount(params: {
     deletedBookshelfBooks: number;
     deletedJournalEntries: number;
     deletedJournalDrafts: number;
+    deletedJournalSaveOperations: number;
     deletedGardenDisplayFlowers: number;
     deletedMailboxNotices: number;
     deletedDonguriLedger: number;
@@ -239,6 +240,10 @@ export async function deleteUserAccount(params: {
           const deletedBookshelfBooks = await tx.diaryBookshelfBook.deleteMany({ where: scope });
           const deletedJournalEntries = await tx.journalEntry.deleteMany({ where: scope });
           const deletedJournalDrafts = await tx.journalDraft.deleteMany({ where: scope });
+          // 4B-4Y: actorKey SoT = normalizeEmail(viewerEmail); delete with account PII cleanup.
+          const deletedJournalSaveOperations = await tx.journalSaveOperation.deleteMany({
+            where: { actorKey: email },
+          });
           const deletedGardenDisplayFlowers = await tx.gardenDisplayFlower.deleteMany({
             where: scope,
           });
@@ -262,6 +267,7 @@ export async function deleteUserAccount(params: {
             deletedBookshelfBooks: deletedBookshelfBooks.count,
             deletedJournalEntries: deletedJournalEntries.count,
             deletedJournalDrafts: deletedJournalDrafts.count,
+            deletedJournalSaveOperations: deletedJournalSaveOperations.count,
             deletedGardenDisplayFlowers: deletedGardenDisplayFlowers.count,
             deletedMailboxNotices: deletedMailboxNotices.count,
             deletedDonguriLedger: deletedDonguriLedger.count,

@@ -45,6 +45,13 @@ import {
   parsePhotoPatchFromRequestBody,
   resolveJournalEntryPhotoDbFields,
 } from "@/lib/journal/journalEntryPhotoPersist";
+import { isJournalSaveIdempotencyEnabled } from "@/lib/journal/saveIdempotency/journalSaveIdempotencyGate";
+import {
+  buildProductionJournalSaveFingerprint,
+  photoIdentityFromPatch,
+} from "@/lib/journal/saveIdempotency/productionRequestFingerprint";
+import { runIdempotentProductionJournalSave } from "@/lib/journal/saveIdempotency/runIdempotentProductionJournalSave";
+import { parseSaveOperationIdFromBody } from "@/lib/journal/saveIdempotency/saveOperationId";
 import {
   isActivityId,
   isAllowedDiaryDesignThemeRaw,
@@ -444,22 +451,6 @@ export async function POST(req: Request) {
     );
   }
 
-  // 森にあしあとを残す：事前にどんぐり残高を確認
-  const acornBalance = await sumDonguriBalance({
-    email: viewerEmail,
-    profileId: profileId || "",
-  });
-  if (!profileId || acornBalance < DONGURI_DIARY_SAVE_COST) {
-    return NextResponse.json(
-      {
-        error: "どんぐりが足りません。下書きとして残すか、どんぐりをためてから森に残してください。",
-        code: "ACORN_INSUFFICIENT",
-        balance: acornBalance,
-        required: DONGURI_DIARY_SAVE_COST,
-      },
-      { status: 402 },
-    );
-  }
   if (!isMoodId(mood)) {
     return NextResponse.json(
       { error: "気分の値が不正です。", code: "BAD_MOOD" },
@@ -496,6 +487,116 @@ export async function POST(req: Request) {
     return NextResponse.json(
       { error: "記録日の値が不正です。", code: "BAD_ENTRY_DATE" },
       { status: 400 },
+    );
+  }
+
+  /**
+   * 4B-4Y: JournalSaveOperation idempotency (feature-gated, default OFF).
+   * - OFF → legacy create path unchanged
+   * - ON + missing saveOperationId → legacy (compat; never mint server IDs)
+   * - ON + invalid saveOperationId → 400
+   * - ON + valid saveOperationId → JSO orchestration
+   *
+   * Skip upfront acorn gate on JSO path so completed/resume retries are not
+   * blocked by a later low balance (charge still uses entry:{id} dedup).
+   */
+  if (isJournalSaveIdempotencyEnabled()) {
+    const opId = parseSaveOperationIdFromBody(json);
+    if (opId.ok === false && opId.code === "INVALID") {
+      return NextResponse.json(
+        {
+          error: "saveOperationId の形式が不正です。",
+          code: "BAD_SAVE_OPERATION_ID",
+          detail: opId.detail,
+        },
+        { status: 400, ...JSON_NO_STORE },
+      );
+    }
+    if (opId.ok) {
+      if (!profileId) {
+        const balance = await sumDonguriBalance({
+          email: viewerEmail,
+          profileId: "",
+        });
+        return NextResponse.json(
+          {
+            error:
+              "どんぐりが足りません。下書きとして残すか、どんぐりをためてから森に残してください。",
+            code: "ACORN_INSUFFICIENT",
+            balance,
+            required: DONGURI_DIARY_SAVE_COST,
+          },
+          { status: 402, ...JSON_NO_STORE },
+        );
+      }
+      const entryDateYmd = journalEntryDateToIsoDateInput(parsedEntryDate);
+      if (!entryDateYmd) {
+        return NextResponse.json(
+          { error: "記録日の値が不正です。", code: "BAD_ENTRY_DATE" },
+          { status: 400 },
+        );
+      }
+      const requestFingerprint = buildProductionJournalSaveFingerprint({
+        content,
+        entryDate: entryDateYmd,
+        profileId: profileId || "",
+        mood,
+        activity,
+        companionType,
+        designTheme,
+        contentFontMode,
+        includeInBook,
+        photoIdentity: photoIdentityFromPatch({
+          kind: photoPatch.kind,
+          dataUrl: photoPatch.kind === "set" ? photoPatch.dataUrl : undefined,
+        }),
+      });
+      try {
+        return await runIdempotentProductionJournalSave({
+          viewerEmail,
+          saveOperationId: opId.saveOperationId,
+          requestFingerprint,
+          entryDateYmd,
+          hasPhoto: photoPatch.kind === "set",
+          portContext: {
+            viewerEmail,
+            profileId: profileId || "",
+            content,
+            mood,
+            activity,
+            companionType,
+            designTheme,
+            contentFontMode,
+            includeInBook,
+            parsedEntryDate,
+            photoPatch,
+          },
+        });
+      } catch (e) {
+        const message =
+          e instanceof Error ? e.message : "あしあとの保存に失敗しました。";
+        return NextResponse.json(
+          { error: message, code: "DB_SAVE" },
+          { status: 500 },
+        );
+      }
+    }
+  }
+
+  // Legacy path: 森にあしあとを残す：事前にどんぐり残高を確認
+  const acornBalance = await sumDonguriBalance({
+    email: viewerEmail,
+    profileId: profileId || "",
+  });
+  if (!profileId || acornBalance < DONGURI_DIARY_SAVE_COST) {
+    return NextResponse.json(
+      {
+        error: "どんぐりが足りません。下書きとして残すか、どんぐりをためてから森に残してください。",
+        code: "ACORN_INSUFFICIENT",
+        balance: acornBalance,
+        required: DONGURI_DIARY_SAVE_COST,
+      },
+      { status: 402 },
     );
   }
 
