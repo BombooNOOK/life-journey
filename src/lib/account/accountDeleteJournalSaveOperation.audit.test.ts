@@ -25,6 +25,13 @@ describe("4B-4Z account delete JSO cleanup audit", () => {
     expect(src).not.toContain("isJournalSaveIdempotencyEnabled");
   });
 
+  it("deletes the dedicated rollout row atomically by normalized actorKey", () => {
+    const path = join(process.cwd(), "src/lib/account/deleteUserAccount.ts");
+    const src = readFileSync(path, "utf8");
+    expect(src).toContain("journalSaveIdempotencyRollout.deleteMany");
+    expect(src).toContain('where: { actorKey: email }');
+  });
+
   it("documents deploy caveats for missing JSO table", () => {
     // Production already has JournalSaveOperation (4B-4V.1).
     // If this code ships to an environment without the table, the whole

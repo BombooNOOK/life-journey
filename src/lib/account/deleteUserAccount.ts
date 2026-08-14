@@ -240,6 +240,11 @@ export async function deleteUserAccount(params: {
           const deletedBookshelfBooks = await tx.diaryBookshelfBook.deleteMany({ where: scope });
           const deletedJournalEntries = await tx.journalEntry.deleteMany({ where: scope });
           const deletedJournalDrafts = await tx.journalDraft.deleteMany({ where: scope });
+          // 4B-4AI-1: rollout cohort is actorKey=email today; keep delete atomic
+          // so a deleted account cannot retain a future protocol admission row.
+          await tx.journalSaveIdempotencyRollout.deleteMany({
+            where: { actorKey: email },
+          });
           // 4B-4Y: actorKey SoT = normalizeEmail(viewerEmail); delete with account PII cleanup.
           const deletedJournalSaveOperations = await tx.journalSaveOperation.deleteMany({
             where: { actorKey: email },
