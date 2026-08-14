@@ -2839,6 +2839,68 @@ CREATE INDEX IF NOT EXISTS idx_local_media_journal
     }
   };
 
+  // src/lib/journal/clientSaveIntent/saveOperationId.ts
+  var MIN_LENGTH = 16;
+  var MAX_LENGTH = 64;
+  var PATTERN = /^[0-9A-Za-z_-]+$/;
+  function normalizeClientActorKey(viewerEmail) {
+    return viewerEmail.trim().toLowerCase();
+  }
+  function isValidClientSaveOperationId(value) {
+    return value.length >= MIN_LENGTH && value.length <= MAX_LENGTH && PATTERN.test(value);
+  }
+  function createClientSaveOperationId(random = crypto) {
+    const bytes = new Uint8Array(24);
+    random.getRandomValues(bytes);
+    const base64 = btoa(String.fromCharCode(...bytes)).replaceAll("+", "-").replaceAll("/", "_").replaceAll("=", "");
+    const id = `jso_${base64}`;
+    if (!isValidClientSaveOperationId(id)) {
+      throw new Error("generated_save_operation_id_invalid");
+    }
+    return id;
+  }
+
+  // src/lib/journal/clientSaveIntent/ClientSaveOperationIntentService.ts
+  function nowIso() {
+    return (/* @__PURE__ */ new Date()).toISOString();
+  }
+  function newIntentId() {
+    const bytes = new Uint8Array(16);
+    crypto.getRandomValues(bytes);
+    return `intent_${Array.from(bytes, (byte) => byte.toString(16).padStart(2, "0")).join("")}`;
+  }
+  async function prepareClientSaveOperationIntent(store, input) {
+    const actorKey = normalizeClientActorKey(input.viewerEmail);
+    const requestFingerprint = input.requestFingerprint.trim();
+    const saveOperationId = (input.saveOperationId ?? createClientSaveOperationId()).trim();
+    if (!actorKey) throw new Error("viewer_email_required");
+    if (!requestFingerprint) throw new Error("request_fingerprint_required");
+    if (!isValidClientSaveOperationId(saveOperationId)) {
+      throw new Error("save_operation_id_invalid");
+    }
+    const now = input.now ?? nowIso();
+    const candidate = {
+      intentId: newIntentId(),
+      saveOperationId,
+      actorKey,
+      draftRef: input.draftRef ?? null,
+      requestFingerprint,
+      status: "prepared",
+      serverEntryId: null,
+      failureCode: null,
+      createdAt: now,
+      updatedAt: now,
+      lastAttemptAt: null,
+      completedAt: null
+    };
+    const insert = await store.tryInsert(candidate);
+    if (insert.created) return { kind: "created", intent: insert.intent };
+    if (insert.intent.actorKey !== actorKey || insert.intent.requestFingerprint !== requestFingerprint) {
+      return { kind: "conflict", intent: insert.intent };
+    }
+    return { kind: "existing", intent: insert.intent };
+  }
+
   // src/lib/journal/clientSaveIntent/lifecycle.ts
   var ALLOWED_TRANSITIONS = {
     prepared: [
@@ -2975,6 +3037,27 @@ CREATE INDEX IF NOT EXISTS idx_local_media_journal
 
   // src/lib/local-first/security/encryptedDatabase.ts
   init_dist();
+  var PluginSecretConfigurationError = class extends Error {
+    constructor(reason) {
+      super(`plugin_secret_configuration_${reason}`);
+      this.name = "PluginSecretConfigurationError";
+      this.reason = reason;
+    }
+  };
+  function classifyPluginSecretConfigurationFailure(error) {
+    const message = error instanceof Error ? error.message : String(error);
+    if (/not implemented|unimplemented|method.*not.*found/i.test(message)) {
+      return "api_unavailable";
+    }
+    if (/no encryption set/i.test(message)) return "encryption_not_configured";
+    if (/no database folder|getdatabasesurl|database location/i.test(message)) {
+      return "database_location_unavailable";
+    }
+    if (/keychain|secitem|security service|errsec/i.test(message)) {
+      return "keychain_write_failed";
+    }
+    return "unknown";
+  }
   function assertNotProductionJournal(name) {
     if (name === LOCAL_JOURNAL_DB_NAME) {
       throw new LocalFirstSecurityError(
@@ -2995,6 +3078,35 @@ CREATE INDEX IF NOT EXISTS idx_local_media_journal
     }
     try {
       await CapacitorSQLite.setEncryptionSecret({ passphrase });
+    } catch (error) {
+      throw new PluginSecretConfigurationError(classifyPluginSecretConfigurationFailure(error));
+    }
+  }
+  async function isPluginEncryptionSecretStored() {
+    if (!Capacitor.isNativePlatform()) {
+      throw new LocalFirstSecurityError(
+        "native_only",
+        "encryption secret inspection is native-only"
+      );
+    }
+    try {
+      return (await CapacitorSQLite.isSecretStored()).result === true;
+    } catch (error) {
+      throw mapSecurityError(error);
+    }
+  }
+  async function pluginRejectsDifferentEncryptionSecret(candidate) {
+    if (!Capacitor.isNativePlatform()) {
+      throw new LocalFirstSecurityError(
+        "native_only",
+        "encryption secret comparison is native-only"
+      );
+    }
+    if (!candidate) {
+      throw new LocalFirstSecurityError("unknown", "candidate required");
+    }
+    try {
+      return (await CapacitorSQLite.checkEncryptionSecret({ passphrase: candidate })).result !== true;
     } catch (error) {
       throw mapSecurityError(error);
     }
@@ -3399,6 +3511,7 @@ CREATE TABLE IF NOT EXISTS client_save_operation_intent (
   }
   var productionDependencies = {
     isNativePlatform: () => Capacitor.isNativePlatform(),
+    isPluginSecretStored: isPluginEncryptionSecretStored,
     inspectKeychain: inspectPluginDbKeyAccessibility,
     configureSecret: configurePluginEncryptionSecret,
     initializeDatabase: initializeNativeClientSaveOperationIntentStore,
@@ -3411,63 +3524,95 @@ CREATE TABLE IF NOT EXISTS client_save_operation_intent (
     generateSecret: generateEphemeralBootstrapSecret
   };
   async function initializeWithDependencies(deps) {
-    if (!deps.isNativePlatform()) return { status: "unsupported_platform" };
-    let keychain;
+    if (!deps.isNativePlatform()) {
+      return { result: { status: "unsupported_platform" }, diagnosticStage: "platform" };
+    }
+    let secretStored;
     try {
-      keychain = await deps.inspectKeychain();
+      secretStored = await deps.isPluginSecretStored();
     } catch {
-      return { status: "secure_store_unavailable" };
+      return {
+        result: { status: "secure_store_unavailable" },
+        diagnosticStage: "plugin_secret_read_initial"
+      };
     }
-    if (keychain.found && !keychain.matchesWhenUnlocked) {
-      return { status: "secure_store_unavailable" };
-    }
-    if (!keychain.found) {
+    if (!secretStored) {
       try {
         await deps.configureSecret(deps.generateSecret());
-        keychain = await deps.inspectKeychain();
-      } catch {
-        return { status: "secure_store_unavailable" };
+        secretStored = await deps.isPluginSecretStored();
+      } catch (error) {
+        return {
+          result: { status: "secure_store_unavailable" },
+          diagnosticStage: error instanceof PluginSecretConfigurationError ? `plugin_secret_create_${error.reason}` : "plugin_secret_create_unknown"
+        };
       }
     }
-    if (!keychain.found || !keychain.matchesWhenUnlocked) {
-      return { status: "secure_store_unavailable" };
+    if (!secretStored) {
+      return {
+        result: { status: "secure_store_unavailable" },
+        diagnosticStage: "plugin_secret_read_after_create"
+      };
+    }
+    try {
+      const keychain = await deps.inspectKeychain();
+      if (!keychain.found || !keychain.matchesWhenUnlocked) {
+        return {
+          result: { status: "secure_store_unavailable" },
+          diagnosticStage: "keychain_accessibility"
+        };
+      }
+    } catch {
+      return {
+        result: { status: "secure_store_unavailable" },
+        diagnosticStage: "keychain_accessibility"
+      };
     }
     try {
       await deps.initializeDatabase();
     } catch (error) {
       return {
-        status: /intent_schema_(?:partial_or_unversioned|version_unsupported|columns_invalid)/.test(
-          error instanceof Error ? error.message : ""
-        ) ? "schema_error" : "database_unavailable"
+        result: {
+          status: /intent_schema_(?:partial_or_unversioned|version_unsupported|columns_invalid)/.test(
+            error instanceof Error ? error.message : ""
+          ) ? "schema_error" : "database_unavailable"
+        },
+        diagnosticStage: "database_open"
       };
     }
     try {
-      const databasePath = nativeDatabasePath((await deps.resolveApplicationSupport()).ljdDatabasesDir);
+      const databasePath = nativeDatabasePath(
+        (await deps.resolveApplicationSupport()).ljdApplicationSupportDir
+      );
       const backup = await deps.excludeFromBackup(databasePath);
       const protectedPath = await deps.applyCompleteProtection(databasePath);
       const inspected = await deps.inspectProtection(databasePath);
       if (backup.isExcludedFromBackup !== true || protectedPath.fileProtection !== "NSFileProtectionComplete" || !deps.isCompleteProtection(inspected.fileProtection)) {
-        return { status: "database_unavailable" };
+        return { result: { status: "database_unavailable" }, diagnosticStage: "storage_attributes" };
       }
     } catch {
-      return { status: "database_unavailable" };
+      return { result: { status: "database_unavailable" }, diagnosticStage: "storage_attributes" };
     }
     try {
-      return { status: "ready", store: deps.createStore() };
+      return { result: { status: "ready", store: deps.createStore() }, diagnosticStage: "ready" };
     } catch {
-      return { status: "database_unavailable" };
+      return { result: { status: "database_unavailable" }, diagnosticStage: "database_open" };
     }
   }
   var initialization = null;
   var readiness = { status: "unsupported_platform" };
+  var diagnosticStage = "not_started";
   async function initializeSaveIntentStore() {
     if (!initialization) {
-      initialization = initializeWithDependencies(productionDependencies).then((result) => {
-        readiness = { status: result.status };
-        return result;
+      initialization = initializeWithDependencies(productionDependencies).then((attempt) => {
+        diagnosticStage = attempt.diagnosticStage;
+        readiness = { status: attempt.result.status };
+        return attempt.result;
       });
     }
     return initialization;
+  }
+  function getSaveIntentStoreBootstrapDiagnosticStage() {
+    return diagnosticStage;
   }
 
   // src/lib/local-first/diagnostics/localStorageDiagnosticsMain.ts
@@ -3483,6 +3628,98 @@ CREATE TABLE IF NOT EXISTS client_save_operation_intent (
   }
   function escapeHtml(value) {
     return value.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;");
+  }
+  function inMemoryDifferentSecretCandidate() {
+    const bytes = new Uint8Array(32);
+    crypto.getRandomValues(bytes);
+    return Array.from(bytes, (byte) => byte.toString(16).padStart(2, "0")).join("");
+  }
+  var AI2_RESTART_ACTOR = "ai2-restart@ljd.invalid";
+  var AI2_LIFECYCLE_ACTOR = "ai2-lifecycle@ljd.invalid";
+  var AI2_DELETE_ACTOR = "ai2-delete@ljd.invalid";
+  var AI2_OTHER_ACTOR = "ai2-other@ljd.invalid";
+  async function prepareProbeIntent(store, viewerEmail, saveOperationId) {
+    const prepared = await prepareClientSaveOperationIntent(store.store, {
+      viewerEmail,
+      saveOperationId,
+      requestFingerprint: "0".repeat(64),
+      draftRef: "diagnostic_metadata_only"
+    });
+    return prepared.intent;
+  }
+  async function runSecureSaveIntentProbe(bootstrap) {
+    const store = bootstrap.store;
+    const restartIntent = await prepareProbeIntent(
+      bootstrap,
+      AI2_RESTART_ACTOR,
+      "ai2_restart_intent_0000000001"
+    );
+    const lifecycle = await prepareProbeIntent(
+      bootstrap,
+      AI2_LIFECYCLE_ACTOR,
+      "ai2_lifecycle_intent_00000001"
+    );
+    let completed = lifecycle;
+    if (completed.status === "prepared") {
+      completed = await store.update({ ...completed, status: "awaiting_result" });
+      completed = await store.update({
+        ...completed,
+        status: "server_completed",
+        serverEntryId: "diagnostic_entry"
+      });
+      completed = await store.update({ ...completed, status: "completed" });
+    }
+    let terminalRewindRejected = false;
+    try {
+      await store.update({ ...completed, status: "awaiting_result" });
+    } catch {
+      terminalRewindRejected = true;
+    }
+    let recoveryFailed = await prepareProbeIntent(
+      bootstrap,
+      AI2_LIFECYCLE_ACTOR,
+      "ai2_failed_intent_000000000001"
+    );
+    if (recoveryFailed.status === "prepared") {
+      recoveryFailed = await store.update({ ...recoveryFailed, status: "recovery_required" });
+      recoveryFailed = await store.update({ ...recoveryFailed, status: "failed_final" });
+    }
+    await prepareProbeIntent(bootstrap, AI2_DELETE_ACTOR, "ai2_delete_intent_00000000001");
+    await prepareProbeIntent(bootstrap, AI2_OTHER_ACTOR, "ai2_other_intent_000000000001");
+    const deleted = await store.deleteByActor(AI2_DELETE_ACTOR);
+    const otherRetained = await store.findByActorAndSaveOperationId(
+      AI2_OTHER_ACTOR,
+      "ai2_other_intent_000000000001"
+    ) != null;
+    await store.deleteByActor(AI2_OTHER_ACTOR);
+    return {
+      restartIntentPrepared: restartIntent.status === "prepared" && await store.findByActorAndSaveOperationId(
+        AI2_RESTART_ACTOR,
+        "ai2_restart_intent_0000000001"
+      ) != null,
+      lifecycleCompleted: completed.status === "completed",
+      recoveryAndFailedFinal: recoveryFailed.status === "failed_final",
+      terminalRewindRejected,
+      pendingByActor: (await store.listRecoverableByActor(AI2_RESTART_ACTOR)).some(
+        (intent) => intent.saveOperationId === "ai2_restart_intent_0000000001"
+      ),
+      actorIsolation: await store.findByActorAndSaveOperationId(
+        AI2_OTHER_ACTOR,
+        "ai2_restart_intent_0000000001"
+      ) == null,
+      deleteByActor: deleted === 1 && otherRetained
+    };
+  }
+  async function inspectSecureIntentFileAttributes() {
+    const location = await resolveLjdApplicationSupportDir();
+    const attrs = await inspectFileProtection(
+      `${location.ljdApplicationSupportDir}/${CLIENT_SAVE_OPERATION_INTENT_DB_NAME}SQLite.db`
+    );
+    return {
+      exists: attrs.exists,
+      backupExcluded: attrs.isExcludedFromBackup,
+      fileProtection: attrs.fileProtection
+    };
   }
   async function renderEntries() {
     const listEl = $("list");
@@ -3529,11 +3766,32 @@ CREATE TABLE IF NOT EXISTS client_save_operation_intent (
       setStatus("\u30CD\u30A4\u30C6\u30A3\u30D6\u5C02\u7528\u3067\u3059\u3002", true);
       return;
     }
+    const secretWasStored = await isPluginEncryptionSecretStored();
+    let keylessOpenRejected = null;
+    if (!secretWasStored) {
+      try {
+        await initializeNativeClientSaveOperationIntentStore();
+        keylessOpenRejected = false;
+      } catch {
+        keylessOpenRejected = true;
+      }
+    }
     const intentBootstrap = await initializeSaveIntentStore();
+    const intentProbe = intentBootstrap.status === "ready" ? await runSecureSaveIntentProbe(intentBootstrap) : null;
+    const wrongSecretRejected = intentBootstrap.status === "ready" ? await pluginRejectsDifferentEncryptionSecret(inMemoryDifferentSecretCandidate()) : null;
+    const intentFileAttributes = intentBootstrap.status === "ready" ? await inspectSecureIntentFileAttributes() : null;
     $("security-report").textContent = JSON.stringify(
       {
         developerOnly: true,
-        secureSaveIntentBootstrap: { status: intentBootstrap.status }
+        secureSaveIntentBootstrap: {
+          status: intentBootstrap.status,
+          diagnosticStage: getSaveIntentStoreBootstrapDiagnosticStage(),
+          secretWasStored,
+          keylessOpenRejected,
+          wrongSecretRejected
+        },
+        nativeSaveIntentProbe: intentProbe,
+        secureIntentFileAttributes: intentFileAttributes
       },
       null,
       2

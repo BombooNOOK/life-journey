@@ -20,6 +20,7 @@ function dependencies(
 ): NativeSaveIntentBootstrapDependencies {
   return {
     isNativePlatform: () => true,
+    isPluginSecretStored: async () => true,
     inspectKeychain: async () => ({ found: true, matchesWhenUnlocked: true }),
     configureSecret: async () => undefined,
     initializeDatabase: async () => undefined,
@@ -48,17 +49,18 @@ describe("4B-4AI-2 native secure save-intent bootstrap", () => {
   });
 
   it("creates a plugin secret only when none exists, then prepares one encrypted store", async () => {
-    let keychainCalls = 0;
-    const configureSecret = vi.fn(async () => undefined);
+    let secretStored = false;
+    const configureSecret = vi.fn(async () => {
+      secretStored = true;
+    });
     const initializeDatabase = vi.fn(async () => undefined);
     const result = await initializeSaveIntentStoreForTest(
       dependencies({
-        inspectKeychain: async () => {
-          keychainCalls += 1;
-          return keychainCalls === 1
-            ? { found: false, matchesWhenUnlocked: false }
-            : { found: true, matchesWhenUnlocked: true };
-        },
+        inspectKeychain: async () => ({
+          found: secretStored,
+          matchesWhenUnlocked: secretStored,
+        }),
+        isPluginSecretStored: async () => secretStored,
         configureSecret,
         initializeDatabase,
       }),

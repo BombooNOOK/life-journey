@@ -37,18 +37,31 @@ and `failed_final` are terminal; for example,
 `completed → awaiting_result` is rejected. The client lifecycle remains
 separate from server JSO checkpoints.
 
-## AI-2 local verification status
+## AI-2.1 native verification status
 
-- Unit tests verify browser rejection, Keychain/bootstrap fail-closed mapping,
-  idempotent readiness, backup exclusion, lifecycle validation, actor-scoped
-  store behavior, and existing Save Intent service regressions.
-- iOS Simulator Debug build succeeds.
-- On the disposable iPhone Simulator, the developer-only diagnostics shell
-  reports `secure_store_unavailable`; no DB is created and no fallback occurs.
-  This establishes fail-closed behavior, but does **not** establish a ready
-  Keychain/SQLCipher open for the new DB.
+The initial Simulator HOLD was diagnosed as a **test-build signing condition**:
+the app had been built with `CODE_SIGNING_ALLOWED=NO`, so plugin
+`setEncryptionSecret` failed at its Keychain write. Plugin registration and
+`isSecretStored` had already succeeded. The formal Keychain path, accessibility
+policy, SQLCipher mode, and Capacitor configuration were not changed.
 
-Therefore native ready/restart/encrypted-header/wrong-key runtime verification
-remains required before AI-2 may be marked PASS. No personal or company device
-was used, no Keychain reset, app uninstall, erase, restore, or app-data deletion
-was performed.
+A normally locally signed Debug Simulator build then verified:
+
+- fresh boot: no stored secret → keyless encrypted open rejected → plugin
+  Keychain secret created → bootstrap `ready`;
+- process restart: stored secret reused and the existing prepared test-metadata
+  intent was found;
+- a different in-memory candidate was rejected by the plugin's non-mutating
+  secret comparison API;
+- intent DB exists beneath Application Support, does not have the plaintext
+  SQLite header, has `user_version=1`/expected schema enforced by the ready
+  gate, is backup-excluded, and has `NSFileProtectionComplete`;
+- completed / failed-final lifecycle handling, terminal rewind rejection,
+  pending listing, actor isolation, and `deleteByActor` preservation of another
+  actor's row.
+
+Safe developer-only diagnostic stage codes expose no secret or native error
+text. Browser remains `unsupported_platform` with no store fallback.
+
+No personal or company device was used, and no Keychain reset, app uninstall,
+erase, restore, or app-data deletion was performed.

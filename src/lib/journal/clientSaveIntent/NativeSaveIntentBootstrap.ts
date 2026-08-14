@@ -14,8 +14,10 @@ import {
   ensurePathExcludedFromBackup,
   inspectFileProtection,
   inspectPluginDbKeyAccessibility,
+  isPluginEncryptionSecretStored,
   isCompleteProtection,
   resolveLjdApplicationSupportDir,
+  PluginSecretConfigurationError,
 } from "@/lib/local-first/security";
 import {
   createNativeClientSaveOperationIntentStore,
@@ -30,6 +32,7 @@ import {
 
 export type NativeSaveIntentBootstrapDependencies = {
   isNativePlatform: () => boolean;
+  isPluginSecretStored: () => Promise<boolean>;
   inspectKeychain: () => Promise<{ found: boolean; matchesWhenUnlocked: boolean }>;
   configureSecret: (secret: string) => Promise<void>;
   initializeDatabase: () => Promise<void>;
@@ -41,6 +44,21 @@ export type NativeSaveIntentBootstrapDependencies = {
   isCompleteProtection: (label: string) => boolean;
   generateSecret: () => string;
 };
+
+export type NativeSaveIntentBootstrapDiagnosticStage =
+  | "not_started"
+  | "platform"
+  | "plugin_secret_read_initial"
+  | "plugin_secret_create_api_unavailable"
+  | "plugin_secret_create_encryption_not_configured"
+  | "plugin_secret_create_database_location_unavailable"
+  | "plugin_secret_create_keychain_write_failed"
+  | "plugin_secret_create_unknown"
+  | "plugin_secret_read_after_create"
+  | "keychain_accessibility"
+  | "database_open"
+  | "storage_attributes"
+  | "ready";
 
 function generateEphemeralBootstrapSecret(): string {
   const bytes = new Uint8Array(32);
@@ -54,6 +72,7 @@ function nativeDatabasePath(databasesDir: string): string {
 
 const productionDependencies: NativeSaveIntentBootstrapDependencies = {
   isNativePlatform: () => Capacitor.isNativePlatform(),
+  isPluginSecretStored: isPluginEncryptionSecretStored,
   inspectKeychain: inspectPluginDbKeyAccessibility,
   configureSecret: configurePluginEncryptionSecret,
   initializeDatabase: initializeNativeClientSaveOperationIntentStore,
@@ -66,41 +85,74 @@ const productionDependencies: NativeSaveIntentBootstrapDependencies = {
   generateSecret: generateEphemeralBootstrapSecret,
 };
 
+type BootstrapAttempt = {
+  result: ClientSaveIntentStoreBootstrapResult;
+  diagnosticStage: NativeSaveIntentBootstrapDiagnosticStage;
+};
+
 async function initializeWithDependencies(
   deps: NativeSaveIntentBootstrapDependencies,
-): Promise<ClientSaveIntentStoreBootstrapResult> {
-  if (!deps.isNativePlatform()) return { status: "unsupported_platform" };
+): Promise<BootstrapAttempt> {
+  if (!deps.isNativePlatform()) {
+    return { result: { status: "unsupported_platform" }, diagnosticStage: "platform" };
+  }
 
-  let keychain;
+  let secretStored: boolean;
   try {
-    keychain = await deps.inspectKeychain();
+    secretStored = await deps.isPluginSecretStored();
   } catch {
-    return { status: "secure_store_unavailable" };
+    return {
+      result: { status: "secure_store_unavailable" },
+      diagnosticStage: "plugin_secret_read_initial",
+    };
   }
-  if (keychain.found && !keychain.matchesWhenUnlocked) {
-    return { status: "secure_store_unavailable" };
-  }
-  if (!keychain.found) {
+  if (!secretStored) {
     try {
       await deps.configureSecret(deps.generateSecret());
-      keychain = await deps.inspectKeychain();
-    } catch {
-      return { status: "secure_store_unavailable" };
+      secretStored = await deps.isPluginSecretStored();
+    } catch (error) {
+      return {
+        result: { status: "secure_store_unavailable" },
+        diagnosticStage:
+          error instanceof PluginSecretConfigurationError
+            ? `plugin_secret_create_${error.reason}`
+            : "plugin_secret_create_unknown",
+      };
     }
   }
-  if (!keychain.found || !keychain.matchesWhenUnlocked) {
-    return { status: "secure_store_unavailable" };
+  if (!secretStored) {
+    return {
+      result: { status: "secure_store_unavailable" },
+      diagnosticStage: "plugin_secret_read_after_create",
+    };
+  }
+  try {
+    const keychain = await deps.inspectKeychain();
+    if (!keychain.found || !keychain.matchesWhenUnlocked) {
+      return {
+        result: { status: "secure_store_unavailable" },
+        diagnosticStage: "keychain_accessibility",
+      };
+    }
+  } catch {
+    return {
+      result: { status: "secure_store_unavailable" },
+      diagnosticStage: "keychain_accessibility",
+    };
   }
 
   try {
     await deps.initializeDatabase();
   } catch (error) {
     return {
-      status: /intent_schema_(?:partial_or_unversioned|version_unsupported|columns_invalid)/.test(
-        error instanceof Error ? error.message : "",
-      )
-        ? "schema_error"
-        : "database_unavailable",
+      result: {
+        status: /intent_schema_(?:partial_or_unversioned|version_unsupported|columns_invalid)/.test(
+          error instanceof Error ? error.message : "",
+        )
+          ? "schema_error"
+          : "database_unavailable",
+      },
+      diagnosticStage: "database_open",
     };
   }
 
@@ -116,20 +168,21 @@ async function initializeWithDependencies(
       protectedPath.fileProtection !== "NSFileProtectionComplete" ||
       !deps.isCompleteProtection(inspected.fileProtection)
     ) {
-      return { status: "database_unavailable" };
+      return { result: { status: "database_unavailable" }, diagnosticStage: "storage_attributes" };
     }
   } catch {
-    return { status: "database_unavailable" };
+    return { result: { status: "database_unavailable" }, diagnosticStage: "storage_attributes" };
   }
   try {
-    return { status: "ready", store: deps.createStore() };
+    return { result: { status: "ready", store: deps.createStore() }, diagnosticStage: "ready" };
   } catch {
-    return { status: "database_unavailable" };
+    return { result: { status: "database_unavailable" }, diagnosticStage: "database_open" };
   }
 }
 
 let initialization: Promise<ClientSaveIntentStoreBootstrapResult> | null = null;
 let readiness: ClientSaveIntentStoreReadiness = { status: "unsupported_platform" };
+let diagnosticStage: NativeSaveIntentBootstrapDiagnosticStage = "not_started";
 
 /**
  * Idempotent per-process bootstrap. A successful call never recreates the DB
@@ -137,9 +190,10 @@ let readiness: ClientSaveIntentStoreReadiness = { status: "unsupported_platform"
  */
 export async function initializeSaveIntentStore(): Promise<ClientSaveIntentStoreBootstrapResult> {
   if (!initialization) {
-    initialization = initializeWithDependencies(productionDependencies).then((result) => {
-      readiness = { status: result.status };
-      return result;
+    initialization = initializeWithDependencies(productionDependencies).then((attempt) => {
+      diagnosticStage = attempt.diagnosticStage;
+      readiness = { status: attempt.result.status };
+      return attempt.result;
     });
   }
   return initialization;
@@ -149,9 +203,14 @@ export function getSaveIntentStoreReadiness(): ClientSaveIntentStoreReadiness {
   return readiness;
 }
 
+/** Developer diagnostics only; contains a stage code and never secret/error text. */
+export function getSaveIntentStoreBootstrapDiagnosticStage(): NativeSaveIntentBootstrapDiagnosticStage {
+  return diagnosticStage;
+}
+
 /** Test seam: no secret or platform bridge is involved in its callers. */
 export async function initializeSaveIntentStoreForTest(
   deps: NativeSaveIntentBootstrapDependencies,
 ): Promise<ClientSaveIntentStoreBootstrapResult> {
-  return initializeWithDependencies(deps);
+  return (await initializeWithDependencies(deps)).result;
 }

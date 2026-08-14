@@ -24,6 +24,40 @@ import {
   LocalFirstSecurityError,
 } from "@/lib/local-first/security/types";
 
+export type PluginSecretConfigurationFailure =
+  | "api_unavailable"
+  | "encryption_not_configured"
+  | "database_location_unavailable"
+  | "keychain_write_failed"
+  | "unknown";
+
+/** Safe classification only; the native error text and secret never escape. */
+export class PluginSecretConfigurationError extends Error {
+  readonly reason: PluginSecretConfigurationFailure;
+  constructor(reason: PluginSecretConfigurationFailure) {
+    super(`plugin_secret_configuration_${reason}`);
+    this.name = "PluginSecretConfigurationError";
+    this.reason = reason;
+  }
+}
+
+function classifyPluginSecretConfigurationFailure(
+  error: unknown,
+): PluginSecretConfigurationFailure {
+  const message = error instanceof Error ? error.message : String(error);
+  if (/not implemented|unimplemented|method.*not.*found/i.test(message)) {
+    return "api_unavailable";
+  }
+  if (/no encryption set/i.test(message)) return "encryption_not_configured";
+  if (/no database folder|getdatabasesurl|database location/i.test(message)) {
+    return "database_location_unavailable";
+  }
+  if (/keychain|secitem|security service|errsec/i.test(message)) {
+    return "keychain_write_failed";
+  }
+  return "unknown";
+}
+
 function assertNotProductionJournal(name: string): void {
   if (name === LOCAL_JOURNAL_DB_NAME) {
     throw new LocalFirstSecurityError(
@@ -51,6 +85,44 @@ export async function configurePluginEncryptionSecret(
   }
   try {
     await CapacitorSQLite.setEncryptionSecret({ passphrase });
+  } catch (error) {
+    throw new PluginSecretConfigurationError(classifyPluginSecretConfigurationFailure(error));
+  }
+}
+
+/** Checks the plugin's own Keychain state without returning the secret. */
+export async function isPluginEncryptionSecretStored(): Promise<boolean> {
+  if (!Capacitor.isNativePlatform()) {
+    throw new LocalFirstSecurityError(
+      "native_only",
+      "encryption secret inspection is native-only",
+    );
+  }
+  try {
+    return (await CapacitorSQLite.isSecretStored()).result === true;
+  } catch (error) {
+    throw mapSecurityError(error);
+  }
+}
+
+/**
+ * Native diagnostic only: asks the plugin to compare an in-memory candidate.
+ * It does not write, replace, or return any Keychain material.
+ */
+export async function pluginRejectsDifferentEncryptionSecret(
+  candidate: string,
+): Promise<boolean> {
+  if (!Capacitor.isNativePlatform()) {
+    throw new LocalFirstSecurityError(
+      "native_only",
+      "encryption secret comparison is native-only",
+    );
+  }
+  if (!candidate) {
+    throw new LocalFirstSecurityError("unknown", "candidate required");
+  }
+  try {
+    return (await CapacitorSQLite.checkEncryptionSecret({ passphrase: candidate })).result !== true;
   } catch (error) {
     throw mapSecurityError(error);
   }

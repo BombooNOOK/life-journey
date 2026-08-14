@@ -12,7 +12,10 @@ export {
 } from "@/lib/local-first/security/backupInclusion";
 export {
   configurePluginEncryptionSecret,
+  isPluginEncryptionSecretStored,
   openNamedEncryptedDatabase,
+  pluginRejectsDifferentEncryptionSecret,
+  PluginSecretConfigurationError,
 } from "@/lib/local-first/security/encryptedDatabase";
 export {
   applyCompleteFileProtection,

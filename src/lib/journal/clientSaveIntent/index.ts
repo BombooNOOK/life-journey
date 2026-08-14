@@ -9,6 +9,7 @@ export {
   initializeNativeClientSaveOperationIntentStore,
 } from "@/lib/journal/clientSaveIntent/NativeClientSaveOperationIntentStore";
 export {
+  getSaveIntentStoreBootstrapDiagnosticStage,
   getSaveIntentStoreReadiness,
   initializeSaveIntentStore,
 } from "@/lib/journal/clientSaveIntent/NativeSaveIntentBootstrap";
