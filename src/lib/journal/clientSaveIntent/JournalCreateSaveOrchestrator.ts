@@ -1,7 +1,10 @@
 import { initializeSaveIntentStore } from "@/lib/journal/clientSaveIntent/NativeSaveIntentBootstrap";
 import { prepareClientSaveOperationIntent } from "@/lib/journal/clientSaveIntent/ClientSaveOperationIntentService";
 import { normalizeClientActorKey } from "@/lib/journal/clientSaveIntent/saveOperationId";
-import { isSaveIntentActivityBlockedForActor } from "@/lib/account/accountDeleteSaveIntentTeardown";
+import {
+  isSaveIntentActivityBlockedForActor,
+  resumeAccountDeleteSaveIntentCleanup,
+} from "@/lib/account/accountDeleteSaveIntentTeardown";
 import type {
   ClientSaveIntentStoreBootstrapResult,
   ClientSaveOperationIntent,
@@ -145,6 +148,11 @@ export async function runJournalCreateSave(
     return { kind: "protocol_start_failed", reason: "account_delete_in_progress" };
   }
   const bootstrap = await deps.bootstrap();
+  if (bootstrap.status === "ready" && actorKey) {
+    if (await resumeAccountDeleteSaveIntentCleanup(actorKey, bootstrap.store)) {
+      return { kind: "protocol_start_failed", reason: "account_delete_in_progress" };
+    }
+  }
   const capability = await deps.capability();
   if (bootstrap.status !== "ready" || capability.kind !== "enabled") {
     return { kind: "legacy", response: await deps.post(input.payload) };
@@ -212,6 +220,7 @@ export async function recoverJournalCreateSaves(
   const actorKey = normalizeClientActorKey(input.viewerEmail);
   if (bootstrap.status !== "ready" || !actorKey) return [];
   if (isSaveIntentActivityBlockedForActor(actorKey)) return [];
+  if (await resumeAccountDeleteSaveIntentCleanup(actorKey, bootstrap.store)) return [];
   const capability = await deps.capability();
   const recovered: JournalCreateSaveResult[] = [];
   for (let intent of await bootstrap.store.listRecoverableByActor(actorKey)) {

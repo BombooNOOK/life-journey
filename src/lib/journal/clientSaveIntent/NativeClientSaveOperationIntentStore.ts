@@ -37,6 +37,12 @@ CREATE TABLE IF NOT EXISTS client_save_operation_intent (
   last_attempt_at TEXT,
   completed_at TEXT
 );`;
+const CREATE_TOMBSTONE_SQL = `
+CREATE TABLE IF NOT EXISTS client_save_operation_deletion_tombstone (
+  actor_key TEXT PRIMARY KEY NOT NULL,
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL
+);`;
 
 const REQUIRED_COLUMNS = [
   "intent_id",
@@ -106,10 +112,14 @@ async function ensureSchema(db: SQLiteDBConnection): Promise<void> {
       throw new Error("intent_schema_partial_or_unversioned");
     }
     await db.execute(CREATE_SQL);
+    await db.execute(CREATE_TOMBSTONE_SQL);
     await db.execute(`PRAGMA user_version = ${CLIENT_SAVE_OPERATION_INTENT_SCHEMA_VERSION}`);
     return;
   }
-  if (version !== CLIENT_SAVE_OPERATION_INTENT_SCHEMA_VERSION) {
+  if (version === 1) {
+    await db.execute(CREATE_TOMBSTONE_SQL);
+    await db.execute(`PRAGMA user_version = ${CLIENT_SAVE_OPERATION_INTENT_SCHEMA_VERSION}`);
+  } else if (version !== CLIENT_SAVE_OPERATION_INTENT_SCHEMA_VERSION) {
     throw new Error("intent_schema_version_unsupported");
   }
   const columns = await db.query("PRAGMA table_info(client_save_operation_intent)");
@@ -119,6 +129,16 @@ async function ensureSchema(db: SQLiteDBConnection): Promise<void> {
   if (REQUIRED_COLUMNS.some((column) => !names.has(column))) {
     throw new Error("intent_schema_columns_invalid");
   }
+}
+
+/** Test seam for additive schema migration; production always reaches this via withDb. */
+export async function ensureNativeClientSaveOperationIntentSchemaForTest(
+  db: {
+    query: SQLiteDBConnection["query"];
+    execute: (statements: string) => Promise<unknown>;
+  },
+): Promise<void> {
+  await ensureSchema(db as SQLiteDBConnection);
 }
 
 /** Opens and validates the versioned SQLCipher schema without changing intent data. */
@@ -208,6 +228,33 @@ export function createNativeClientSaveOperationIntentStore(): ClientSaveOperatio
           [actorKey],
         );
         return result.changes?.changes ?? 0;
+      });
+    },
+    async getDeletionTombstone(actorKey) {
+      return withDb(async (db) => {
+        const result = await db.query(
+          "SELECT actor_key, created_at, updated_at FROM client_save_operation_deletion_tombstone WHERE actor_key = ? LIMIT 1",
+          [actorKey],
+        );
+        const row = result.values?.[0] as Record<string, unknown> | undefined;
+        return row
+          ? { actorKey: String(row.actor_key), createdAt: String(row.created_at), updatedAt: String(row.updated_at) }
+          : null;
+      });
+    },
+    async writeDeletionTombstone(actorKey, now) {
+      await withDb(async (db) => {
+        await db.run(
+          `INSERT INTO client_save_operation_deletion_tombstone (actor_key, created_at, updated_at)
+           VALUES (?, ?, ?)
+           ON CONFLICT(actor_key) DO UPDATE SET updated_at=excluded.updated_at`,
+          [actorKey, now, now],
+        );
+      });
+    },
+    async clearDeletionTombstone(actorKey) {
+      await withDb(async (db) => {
+        await db.run("DELETE FROM client_save_operation_deletion_tombstone WHERE actor_key = ?", [actorKey]);
       });
     },
   };

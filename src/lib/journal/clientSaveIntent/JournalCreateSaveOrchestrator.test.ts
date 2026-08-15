@@ -102,6 +102,9 @@ describe("common Journal create-save orchestrator", () => {
           },
           listRecoverableByActor: async () => [],
           deleteByActor: async () => 0,
+          getDeletionTombstone: async () => null,
+          writeDeletionTombstone: async () => undefined,
+          clearDeletionTombstone: async () => undefined,
         },
       }),
     });

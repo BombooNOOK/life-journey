@@ -19,7 +19,7 @@ export function isSaveIntentActivityBlockedForActor(actorKey: string): boolean {
 
 export type AccountDeleteSaveIntentTeardown = {
   actorKey: string;
-  serverDeleteFailed(): void;
+  serverDeleteFailed(): Promise<void>;
   serverDeleteSucceeded(): Promise<{ deletedIntentCount: number }>;
 };
 
@@ -42,6 +42,14 @@ export async function beginAccountDeleteSaveIntentTeardown(
   }
   deletionInFlightActors.add(actorKey);
   const store = bootstrap.status === "ready" ? bootstrap.store : null;
+  if (store) {
+    try {
+      await store.writeDeletionTombstone(actorKey, new Date().toISOString());
+    } catch {
+      deletionInFlightActors.delete(actorKey);
+      throw new Error("account_delete_tombstone_write_failed");
+    }
+  }
   return createTeardown(actorKey, store);
 }
 
@@ -52,10 +60,19 @@ function createTeardown(
   let settled = false;
   return {
     actorKey,
-    serverDeleteFailed() {
+    async serverDeleteFailed() {
       if (settled) return;
       settled = true;
       deletionInFlightActors.delete(actorKey);
+      if (store) {
+        try {
+          await store.clearDeletionTombstone(actorKey);
+        } catch {
+          // Fail closed: preserve the runtime block when durable cancellation
+          // cannot be confirmed.
+          deletedActors.add(actorKey);
+        }
+      }
     },
     async serverDeleteSucceeded() {
       if (settled) throw new Error("account_delete_teardown_already_settled");
@@ -68,9 +85,28 @@ function createTeardown(
       const deletedIntentCount = await store.deleteByActor(actorKey);
       const remaining = await store.listRecoverableByActor(actorKey);
       if (remaining.length !== 0) throw new Error("account_delete_intent_cleanup_incomplete");
+      await store.clearDeletionTombstone(actorKey);
       return { deletedIntentCount };
     },
   };
+}
+
+/** Restart-safe local cleanup only; it never touches Journal transport. */
+export async function resumeAccountDeleteSaveIntentCleanup(
+  actorKey: string,
+  store: ClientSaveOperationIntentStore,
+): Promise<boolean> {
+  const tombstone = await store.getDeletionTombstone(actorKey);
+  if (!tombstone) return false;
+  deletedActors.add(actorKey);
+  try {
+    await store.deleteByActor(actorKey);
+    if ((await store.listRecoverableByActor(actorKey)).length !== 0) return true;
+    await store.clearDeletionTombstone(actorKey);
+    return false;
+  } catch {
+    return true;
+  }
 }
 
 export function resetAccountDeleteSaveIntentTeardownForTest(): void {

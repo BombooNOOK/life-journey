@@ -61,7 +61,7 @@ export function AccountDeleteForm({ blockMessage = null }: Props) {
         body: JSON.stringify({ confirmationWord: confirmationWord.trim() }),
       });
       if (!res.ok) {
-        teardown.serverDeleteFailed();
+        await teardown.serverDeleteFailed();
         setConfirmOpen(false);
         const json = (await res.json().catch(() => ({}))) as { error?: string };
         setError(json.error ?? "アカウントの削除に失敗しました。");
@@ -86,7 +86,7 @@ export function AccountDeleteForm({ blockMessage = null }: Props) {
         router.refresh();
         return;
       }
-      teardown?.serverDeleteFailed();
+      await teardown?.serverDeleteFailed();
       setConfirmOpen(false);
       setError("アカウントの削除に失敗しました。時間をおいて再度お試しください。");
     } finally {

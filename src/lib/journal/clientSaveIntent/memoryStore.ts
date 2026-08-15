@@ -6,6 +6,7 @@ import { assertClientSaveOperationIntentTransition } from "@/lib/journal/clientS
 
 export function createMemoryClientSaveOperationIntentStore(): ClientSaveOperationIntentStore {
   const rows = new Map<string, ClientSaveOperationIntent>();
+  const tombstones = new Map<string, { actorKey: string; createdAt: string; updatedAt: string }>();
   return {
     async findByActorAndSaveOperationId(actorKey, saveOperationId) {
       const row = rows.get(saveOperationId);
@@ -45,6 +46,21 @@ export function createMemoryClientSaveOperationIntentStore(): ClientSaveOperatio
         }
       }
       return count;
+    },
+    async getDeletionTombstone(actorKey) {
+      const tombstone = tombstones.get(actorKey);
+      return tombstone ? { ...tombstone } : null;
+    },
+    async writeDeletionTombstone(actorKey, now) {
+      const existing = tombstones.get(actorKey);
+      tombstones.set(actorKey, {
+        actorKey,
+        createdAt: existing?.createdAt ?? now,
+        updatedAt: now,
+      });
+    },
+    async clearDeletionTombstone(actorKey) {
+      tombstones.delete(actorKey);
     },
   };
 }

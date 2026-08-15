@@ -10,7 +10,7 @@
 
 export const CLIENT_SAVE_OPERATION_INTENT_DB_NAME =
   "ljd_client_save_operation_intent" as const;
-export const CLIENT_SAVE_OPERATION_INTENT_SCHEMA_VERSION = 1 as const;
+export const CLIENT_SAVE_OPERATION_INTENT_SCHEMA_VERSION = 2 as const;
 
 /**
  * Native secure-store admission is an independent prerequisite to server
@@ -71,6 +71,9 @@ export type ClientSaveOperationIntentStore = {
   update(intent: ClientSaveOperationIntent): Promise<ClientSaveOperationIntent>;
   listRecoverableByActor(actorKey: string): Promise<ClientSaveOperationIntent[]>;
   deleteByActor(actorKey: string): Promise<number>;
+  getDeletionTombstone(actorKey: string): Promise<{ actorKey: string; createdAt: string; updatedAt: string } | null>;
+  writeDeletionTombstone(actorKey: string, now: string): Promise<void>;
+  clearDeletionTombstone(actorKey: string): Promise<void>;
 };
 
 export type ClientSaveIntentStoreBootstrapResult =
