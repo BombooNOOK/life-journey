@@ -16,6 +16,7 @@ import {
 } from "@/lib/account/residentRegistrationUiCopy";
 import { mobileReadable } from "@/lib/auth/mobileReadableStyles";
 import { clearAllFirstVisitClientState } from "@/lib/onboarding/firstVisitWizard/session";
+import { beginAccountDeleteSaveIntentTeardown } from "@/lib/account/accountDeleteSaveIntentTeardown";
 
 type Props = {
   blockMessage?: string | null;
@@ -23,7 +24,7 @@ type Props = {
 
 export function AccountDeleteForm({ blockMessage = null }: Props) {
   const router = useRouter();
-  const { signOutUser } = useFirebaseAuth();
+  const { user, signOutUser } = useFirebaseAuth();
   const [confirmationWord, setConfirmationWord] = useState("");
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -50,24 +51,42 @@ export function AccountDeleteForm({ blockMessage = null }: Props) {
 
     setError(null);
     setBusy(true);
+    let teardown: Awaited<ReturnType<typeof beginAccountDeleteSaveIntentTeardown>> | null = null;
+    let serverDeleted = false;
     try {
+      teardown = await beginAccountDeleteSaveIntentTeardown(user?.email ?? "");
       const res = await fetch("/api/account/delete", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ confirmationWord: confirmationWord.trim() }),
       });
-      const json = (await res.json()) as { error?: string; code?: string };
       if (!res.ok) {
+        teardown.serverDeleteFailed();
         setConfirmOpen(false);
+        const json = (await res.json().catch(() => ({}))) as { error?: string };
         setError(json.error ?? "アカウントの削除に失敗しました。");
         return;
       }
 
+      // A successful HTTP status is the server-side deletion boundary. Do not
+      // allow a response parsing issue to release the actor activity guard.
+      serverDeleted = true;
+      await teardown.serverDeleteSucceeded();
       clearAllFirstVisitClientState();
       await signOutUser();
       router.push("/");
       router.refresh();
     } catch {
+      if (serverDeleted) {
+        // Server deletion is authoritative and irreversible. Its actor is
+        // already suppressed even if local SQLCipher cleanup failed.
+        clearAllFirstVisitClientState();
+        await signOutUser();
+        router.push("/");
+        router.refresh();
+        return;
+      }
+      teardown?.serverDeleteFailed();
       setConfirmOpen(false);
       setError("アカウントの削除に失敗しました。時間をおいて再度お試しください。");
     } finally {
