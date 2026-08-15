@@ -191,12 +191,26 @@ awaiting_result | prepared (after crash mid-flight)
       processing    → keep same opId; wait / later re-lookup; no new POST required
       failed_final  → intent failed_final; no POST
       fingerprint_mismatch → recovery_required; no POST
-      not_found     → re-check capability; if still enabled AND original payload still available in memory
-                     → same saveOperationId POST only
+      not_found     → current-session exact canonical payload + matching fingerprint + capability v1
+                     → continuation_available; explicit user action may same-saveOperationId POST
                      → else recovery_required (no empty POST, no new opId)
 ```
 
 **Background automatic POST: forbidden.**
+
+### Limited rollout v1 payload policy
+
+- The Intent DB remains metadata-only: no journal text, photo bytes, or recovery snapshot.
+- `continuation_available` is possible only while the exact canonical payload remains in
+  current process memory. It is verified against the stored fingerprint before the
+  user presses “保存を続ける”.
+- Mount recovery is lookup-only. It never POSTs.
+- After restart, current-session payload memory is absent. `not_found` is therefore
+  `recovery_required`: POST 0, legacy fallback 0, new operation ID 0, intent deletion 0.
+- General/public rollout remains **B** until a separate phase resolves durable
+  exact-payload recovery. Candidates to design later: device-primary durable draft
+  reference, encrypted recovery snapshot outside Intent DB, or an equivalent safe
+  server-side protocol. None is selected or implemented in v1.
 
 ---
 

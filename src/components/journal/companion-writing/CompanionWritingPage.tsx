@@ -125,7 +125,11 @@ export function CompanionWritingPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { user, loading: authLoading } = useFirebaseAuth();
-  const foregroundRecovery = useForegroundJournalCreateRecovery({ viewerEmail: user?.email });
+  const [foregroundRecoveryRevision, setForegroundRecoveryRevision] = useState(0);
+  const foregroundRecovery = useForegroundJournalCreateRecovery({
+    viewerEmail: user?.email,
+    revision: foregroundRecoveryRevision,
+  });
   const { entitlement, loading: entitlementLoading } = useEntitlement();
   const profileId = (searchParams.get("profile") ?? "").trim();
   const dateFromQuery = searchParams.get("date");
@@ -386,6 +390,7 @@ export function CompanionWritingPage() {
           setSaving(false);
           return;
         }
+        if (result.kind === "processing") setForegroundRecoveryRevision((value) => value + 1);
         throw new Error(result.kind === "processing" ? "保存処理中です。しばらくしてから確認してください。" : "保存結果を安全に確認できませんでした。");
       }
       if (res && !res.ok) {
@@ -724,6 +729,11 @@ export function CompanionWritingPage() {
             <p className="rounded-md bg-amber-50 px-3 py-2 text-sm text-amber-900">保存状況を確認しています。</p>
           ) : foregroundRecovery.status === "completed" ? (
             <p className="rounded-md bg-emerald-50 px-3 py-2 text-sm text-emerald-900">以前の保存は完了しています。</p>
+          ) : foregroundRecovery.status === "continuation_available" ? (
+            <div className="rounded-md bg-amber-50 px-3 py-2 text-sm text-amber-900">
+              <p>前回の保存が途中で止まっていました。内容を確認して、保存を続けることができます。</p>
+              <button type="button" className="mt-2 rounded bg-amber-700 px-3 py-1 text-white" onClick={() => void foregroundRecovery.continueSave()}>保存を続ける</button>
+            </div>
           ) : foregroundRecovery.status === "recovery_required" ? (
             <p className="rounded-md bg-amber-50 px-3 py-2 text-sm text-amber-900">以前の保存状況を確認できませんでした。内容を確認してから、もう一度保存してください。</p>
           ) : foregroundRecovery.status === "failed_final" ? (

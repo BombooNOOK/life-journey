@@ -31,6 +31,7 @@ export type JournalCreateSaveResult =
   | { kind: "legacy"; response: Response }
   | { kind: "completed"; entryId: string; data: Record<string, unknown>; intent?: ClientSaveOperationIntent }
   | { kind: "processing"; intent: ClientSaveOperationIntent }
+  | { kind: "continuation_available"; intent: ClientSaveOperationIntent }
   | { kind: "recovery_required"; intent: ClientSaveOperationIntent; reason: string }
   | { kind: "failed_final"; intent: ClientSaveOperationIntent; code: "ACORN_INSUFFICIENT" | "SERVER_FAILED_FINAL" }
   | { kind: "protocol_start_failed"; reason: string };
@@ -106,6 +107,14 @@ const productionDeps: JournalCreateSaveOrchestratorDeps = {
     ),
 };
 
+// Deliberately process-memory only. It is never written to the Intent DB and
+// disappears on restart, which makes restart not_found recovery fail closed.
+const currentSessionPayloads = new Map<string, JournalCreatePayload>();
+
+function sessionPayloadKey(actorKey: string, saveOperationId: string): string {
+  return `${actorKey}:${saveOperationId}`;
+}
+
 async function update(
   store: ClientSaveOperationIntentStore,
   intent: ClientSaveOperationIntent,
@@ -146,6 +155,10 @@ export async function runJournalCreateSave(
   }
   let intent = prepared.intent;
   try {
+    currentSessionPayloads.set(
+      sessionPayloadKey(actorKey, intent.saveOperationId),
+      { ...input.payload, includeInBook: input.payload.includeInBook ?? true },
+    );
     intent = await update(bootstrap.store, intent, {
       status: "awaiting_result",
       lastAttemptAt: new Date().toISOString(),
@@ -258,10 +271,19 @@ export async function recoverJournalCreateSaves(
         recovered.push({ kind: "recovery_required", intent, reason: "invalid_lookup_response" });
         continue;
     }
-    // Foreground mount is lookup-only.  The current intent schema deliberately
-    // contains no body or image data, so it cannot prove an exact replay.
-    // A future explicit “continue save” action may call a dedicated replay
-    // operation only after reconstructing and fingerprinting the full payload.
+    const currentPayload = currentSessionPayloads.get(
+      sessionPayloadKey(actorKey, intent.saveOperationId),
+    );
+    if (
+      capability.kind === "enabled" &&
+      currentPayload &&
+      (await fingerprint(currentPayload)) === intent.requestFingerprint
+    ) {
+      recovered.push({ kind: "continuation_available", intent });
+      continue;
+    }
+    // Foreground mount is lookup-only. The intent schema deliberately contains
+    // no body or image data, so restarted sessions cannot prove an exact replay.
     intent = await update(bootstrap.store, intent, {
       status: "recovery_required",
       failureCode: "PAYLOAD_UNAVAILABLE",
@@ -269,6 +291,18 @@ export async function recoverJournalCreateSaves(
     recovered.push({ kind: "recovery_required", intent, reason: "payload_unavailable_or_rollout_off" });
   }
   return recovered;
+}
+
+export async function continueCurrentSessionJournalCreateSaveRecovery(
+  input: { viewerEmail: string; saveOperationId: string; afterServerCompleted?: (entryId: string) => Promise<void> },
+  deps?: JournalCreateSaveOrchestratorDeps,
+): Promise<JournalCreateSaveResult> {
+  const actorKey = normalizeClientActorKey(input.viewerEmail);
+  const payload = actorKey
+    ? currentSessionPayloads.get(sessionPayloadKey(actorKey, input.saveOperationId))
+    : undefined;
+  if (!payload) return { kind: "protocol_start_failed", reason: "current_payload_unavailable" };
+  return continueJournalCreateSaveRecovery({ ...input, payload }, deps);
 }
 
 const foregroundRecoveryFlights = new Map<string, Promise<JournalCreateSaveResult[]>>();

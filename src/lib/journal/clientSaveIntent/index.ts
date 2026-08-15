@@ -18,6 +18,7 @@ export {
   isClientSaveOperationIntentTransitionAllowed,
 } from "@/lib/journal/clientSaveIntent/lifecycle";
 export {
+  continueCurrentSessionJournalCreateSaveRecovery,
   continueJournalCreateSaveRecovery,
   recoverJournalCreateSaves,
   runForegroundJournalCreateRecovery,

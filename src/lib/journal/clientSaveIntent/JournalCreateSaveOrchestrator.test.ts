@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 
 import {
   continueJournalCreateSaveRecovery,
+  continueCurrentSessionJournalCreateSaveRecovery,
   recoverJournalCreateSaves,
   runForegroundJournalCreateRecovery,
   runJournalCreateSave,
@@ -237,5 +238,25 @@ describe("common Journal create-save orchestrator", () => {
     );
     expect(resumed).toMatchObject({ kind: "completed", entryId: "entry_replayed" });
     expect(post.mock.calls[1]?.[0]).toMatchObject({ saveOperationId: initial.intent.saveOperationId });
+  });
+
+  it("offers, but does not perform, a current-session exact continuation on not_found", async () => {
+    const store = createMemoryClientSaveOperationIntentStore();
+    const post = vi.fn(async () => new Response(JSON.stringify({}), { status: 202 }));
+    const injected: JournalCreateSaveOrchestratorDeps = {
+      bootstrap: async () => ({ status: "ready", store }),
+      capability: async () => ({ kind: "enabled" }),
+      post,
+      lookup: async () => new Response(JSON.stringify({ state: "not_found" })),
+    };
+    const initial = await runJournalCreateSave({ viewerEmail: "person@example.com", payload }, injected);
+    if (initial.kind !== "processing") throw new Error("expected pending intent");
+    const mounted = await recoverJournalCreateSaves({ viewerEmail: "person@example.com" }, injected);
+    expect(mounted[0]).toMatchObject({ kind: "continuation_available" });
+    expect(post).toHaveBeenCalledTimes(1);
+    await continueCurrentSessionJournalCreateSaveRecovery(
+      { viewerEmail: "person@example.com", saveOperationId: initial.intent.saveOperationId },
+      { ...injected, post: async () => new Response(JSON.stringify({ entry: { id: "continued" } }), { status: 200 }) },
+    );
   });
 });
