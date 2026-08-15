@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from "vitest";
 import {
   continueJournalCreateSaveRecovery,
   continueCurrentSessionJournalCreateSaveRecovery,
+  clearCurrentSessionJournalCreatePayloadsForTest,
   recoverJournalCreateSaves,
   runForegroundJournalCreateRecovery,
   runJournalCreateSave,
@@ -241,6 +242,7 @@ describe("common Journal create-save orchestrator", () => {
   });
 
   it("offers, but does not perform, a current-session exact continuation on not_found", async () => {
+    clearCurrentSessionJournalCreatePayloadsForTest();
     const store = createMemoryClientSaveOperationIntentStore();
     const post = vi.fn(async () => new Response(JSON.stringify({}), { status: 202 }));
     const injected: JournalCreateSaveOrchestratorDeps = {
@@ -258,5 +260,68 @@ describe("common Journal create-save orchestrator", () => {
       { viewerEmail: "person@example.com", saveOperationId: initial.intent.saveOperationId },
       { ...injected, post: async () => new Response(JSON.stringify({ entry: { id: "continued" } }), { status: 200 }) },
     );
+  });
+
+  it("treats a restart-cleared session payload as recovery_required without POST", async () => {
+    clearCurrentSessionJournalCreatePayloadsForTest();
+    const store = createMemoryClientSaveOperationIntentStore();
+    const post = vi.fn(async () => new Response(JSON.stringify({}), { status: 202 }));
+    const injected: JournalCreateSaveOrchestratorDeps = {
+      bootstrap: async () => ({ status: "ready", store }),
+      capability: async () => ({ kind: "enabled" }),
+      post,
+      lookup: async () => new Response(JSON.stringify({ state: "not_found" })),
+    };
+    await runJournalCreateSave({ viewerEmail: "person@example.com", payload }, injected);
+    expect((await recoverJournalCreateSaves({ viewerEmail: "person@example.com" }, injected))[0]?.kind).toBe(
+      "continuation_available",
+    );
+    clearCurrentSessionJournalCreatePayloadsForTest();
+    const afterRestart = await recoverJournalCreateSaves({ viewerEmail: "person@example.com" }, injected);
+    expect(afterRestart[0]).toMatchObject({ kind: "recovery_required" });
+    expect(post).toHaveBeenCalledTimes(1);
+    const recovered = afterRestart[0];
+    if (!recovered || recovered.kind !== "recovery_required") throw new Error("expected recovery_required");
+    expect(await store.findByActorAndSaveOperationId("person@example.com", recovered.intent.saveOperationId)).not.toBeNull();
+  });
+
+  it("single-flights duplicate explicit continuation and releases after failure", async () => {
+    clearCurrentSessionJournalCreatePayloadsForTest();
+    const store = createMemoryClientSaveOperationIntentStore();
+    let releasePost: (() => void) | undefined;
+    const post = vi.fn(async () => {
+      await new Promise<void>((resolve) => {
+        releasePost = resolve;
+      });
+      throw new Error("transport_lost");
+    });
+    const injected: JournalCreateSaveOrchestratorDeps = {
+      bootstrap: async () => ({ status: "ready", store }),
+      capability: async () => ({ kind: "enabled" }),
+      post,
+      lookup: async () => new Response(JSON.stringify({ state: "not_found" })),
+    };
+    const initial = await runJournalCreateSave(
+      { viewerEmail: "person@example.com", payload },
+      { ...injected, post: async () => new Response(JSON.stringify({}), { status: 202 }) },
+    );
+    if (initial.kind !== "processing") throw new Error("expected pending intent");
+    const one = continueCurrentSessionJournalCreateSaveRecovery(
+      { viewerEmail: "person@example.com", saveOperationId: initial.intent.saveOperationId },
+      injected,
+    );
+    const two = continueCurrentSessionJournalCreateSaveRecovery(
+      { viewerEmail: "person@example.com", saveOperationId: initial.intent.saveOperationId },
+      injected,
+    );
+    await vi.waitFor(() => expect(post).toHaveBeenCalledTimes(1));
+    releasePost?.();
+    await Promise.all([one, two]);
+    expect(post).toHaveBeenCalledTimes(1);
+    const retry = await continueCurrentSessionJournalCreateSaveRecovery(
+      { viewerEmail: "person@example.com", saveOperationId: initial.intent.saveOperationId },
+      { ...injected, post: async () => new Response(JSON.stringify({}), { status: 202 }) },
+    );
+    expect(retry.kind).toBe("processing");
   });
 });

@@ -207,6 +207,8 @@ awaiting_result | prepared (after crash mid-flight)
 - Mount recovery is lookup-only. It never POSTs.
 - After restart, current-session payload memory is absent. `not_found` is therefore
   `recovery_required`: POST 0, legacy fallback 0, new operation ID 0, intent deletion 0.
+- Explicit continuation is application-single-flight per actor and save operation; repeated
+  taps share one POST attempt, and the guard releases after that attempt settles.
 - General/public rollout remains **B** until a separate phase resolves durable
   exact-payload recovery. Candidates to design later: device-primary durable draft
   reference, encrypted recovery snapshot outside Intent DB, or an equivalent safe

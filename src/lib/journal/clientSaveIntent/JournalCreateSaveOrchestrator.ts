@@ -110,9 +110,16 @@ const productionDeps: JournalCreateSaveOrchestratorDeps = {
 // Deliberately process-memory only. It is never written to the Intent DB and
 // disappears on restart, which makes restart not_found recovery fail closed.
 const currentSessionPayloads = new Map<string, JournalCreatePayload>();
+const continuationFlights = new Map<string, Promise<JournalCreateSaveResult>>();
 
 function sessionPayloadKey(actorKey: string, saveOperationId: string): string {
   return `${actorKey}:${saveOperationId}`;
+}
+
+/** Test-only volatile-session reset; durable intent rows are intentionally untouched. */
+export function clearCurrentSessionJournalCreatePayloadsForTest(): void {
+  currentSessionPayloads.clear();
+  continuationFlights.clear();
 }
 
 async function update(
@@ -294,6 +301,22 @@ export async function recoverJournalCreateSaves(
 }
 
 export async function continueCurrentSessionJournalCreateSaveRecovery(
+  input: { viewerEmail: string; saveOperationId: string; afterServerCompleted?: (entryId: string) => Promise<void> },
+  deps?: JournalCreateSaveOrchestratorDeps,
+): Promise<JournalCreateSaveResult> {
+  const actorKey = normalizeClientActorKey(input.viewerEmail);
+  if (!actorKey) return { kind: "protocol_start_failed", reason: "current_payload_unavailable" };
+  const key = sessionPayloadKey(actorKey, input.saveOperationId);
+  const active = continuationFlights.get(key);
+  if (active) return active;
+  const flight = continueCurrentSessionJournalCreateSaveRecoveryInner(input, deps).finally(() => {
+    continuationFlights.delete(key);
+  });
+  continuationFlights.set(key, flight);
+  return flight;
+}
+
+async function continueCurrentSessionJournalCreateSaveRecoveryInner(
   input: { viewerEmail: string; saveOperationId: string; afterServerCompleted?: (entryId: string) => Promise<void> },
   deps?: JournalCreateSaveOrchestratorDeps,
 ): Promise<JournalCreateSaveResult> {
