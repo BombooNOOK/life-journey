@@ -2937,7 +2937,7 @@ CREATE INDEX IF NOT EXISTS idx_local_media_journal
 
   // src/lib/journal/clientSaveIntent/types.ts
   var CLIENT_SAVE_OPERATION_INTENT_DB_NAME = "ljd_client_save_operation_intent";
-  var CLIENT_SAVE_OPERATION_INTENT_SCHEMA_VERSION = 1;
+  var CLIENT_SAVE_OPERATION_INTENT_SCHEMA_VERSION = 2;
 
   // src/lib/local-first/security/backupInclusion.ts
   init_dist();
@@ -3323,6 +3323,12 @@ CREATE TABLE IF NOT EXISTS client_save_operation_intent (
   last_attempt_at TEXT,
   completed_at TEXT
 );`;
+  var CREATE_TOMBSTONE_SQL = `
+CREATE TABLE IF NOT EXISTS client_save_operation_deletion_tombstone (
+  actor_key TEXT PRIMARY KEY NOT NULL,
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL
+);`;
   var REQUIRED_COLUMNS = [
     "intent_id",
     "save_operation_id",
@@ -3385,10 +3391,14 @@ CREATE TABLE IF NOT EXISTS client_save_operation_intent (
         throw new Error("intent_schema_partial_or_unversioned");
       }
       await db2.execute(CREATE_SQL);
+      await db2.execute(CREATE_TOMBSTONE_SQL);
       await db2.execute(`PRAGMA user_version = ${CLIENT_SAVE_OPERATION_INTENT_SCHEMA_VERSION}`);
       return;
     }
-    if (version !== CLIENT_SAVE_OPERATION_INTENT_SCHEMA_VERSION) {
+    if (version === 1) {
+      await db2.execute(CREATE_TOMBSTONE_SQL);
+      await db2.execute(`PRAGMA user_version = ${CLIENT_SAVE_OPERATION_INTENT_SCHEMA_VERSION}`);
+    } else if (version !== CLIENT_SAVE_OPERATION_INTENT_SCHEMA_VERSION) {
       throw new Error("intent_schema_version_unsupported");
     }
     const columns = await db2.query("PRAGMA table_info(client_save_operation_intent)");
@@ -3494,6 +3504,31 @@ CREATE TABLE IF NOT EXISTS client_save_operation_intent (
             [actorKey]
           );
           return result.changes?.changes ?? 0;
+        });
+      },
+      async getDeletionTombstone(actorKey) {
+        return withDb(async (db2) => {
+          const result = await db2.query(
+            "SELECT actor_key, created_at, updated_at FROM client_save_operation_deletion_tombstone WHERE actor_key = ? LIMIT 1",
+            [actorKey]
+          );
+          const row = result.values?.[0];
+          return row ? { actorKey: String(row.actor_key), createdAt: String(row.created_at), updatedAt: String(row.updated_at) } : null;
+        });
+      },
+      async writeDeletionTombstone(actorKey, now) {
+        await withDb(async (db2) => {
+          await db2.run(
+            `INSERT INTO client_save_operation_deletion_tombstone (actor_key, created_at, updated_at)
+           VALUES (?, ?, ?)
+           ON CONFLICT(actor_key) DO UPDATE SET updated_at=excluded.updated_at`,
+            [actorKey, now, now]
+          );
+        });
+      },
+      async clearDeletionTombstone(actorKey) {
+        await withDb(async (db2) => {
+          await db2.run("DELETE FROM client_save_operation_deletion_tombstone WHERE actor_key = ?", [actorKey]);
         });
       }
     };
