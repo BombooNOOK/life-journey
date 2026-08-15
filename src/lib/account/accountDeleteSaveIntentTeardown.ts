@@ -4,6 +4,7 @@ import type {
   ClientSaveIntentStoreBootstrapResult,
   ClientSaveOperationIntentStore,
 } from "@/lib/journal/clientSaveIntent/types";
+import { wrapIntentStoreWithNativeCleanupFault } from "@/lib/localE2eHarness/nativeCleanupAdapter";
 
 type Deps = {
   bootstrap: () => Promise<ClientSaveIntentStoreBootstrapResult>;
@@ -41,7 +42,9 @@ export async function beginAccountDeleteSaveIntentTeardown(
     throw new Error("account_delete_secure_intent_store_unavailable");
   }
   deletionInFlightActors.add(actorKey);
-  const store = bootstrap.status === "ready" ? bootstrap.store : null;
+  const rawStore = bootstrap.status === "ready" ? bootstrap.store : null;
+  // One-shot cleanup fault is a no-op unless armed for this actor.
+  const store = rawStore ? wrapIntentStoreWithNativeCleanupFault(rawStore, actorKey) : null;
   if (store) {
     try {
       await store.writeDeletionTombstone(actorKey, new Date().toISOString());

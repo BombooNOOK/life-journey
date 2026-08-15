@@ -10,6 +10,7 @@ import type {
   ClientSaveOperationIntent,
   ClientSaveOperationIntentStore,
 } from "@/lib/journal/clientSaveIntent/types";
+import { wrapJournalCreateDepsWithLocalE2eFaults } from "@/lib/localE2eHarness/transportAdapters";
 
 export type JournalCreatePayload = {
   content: string;
@@ -111,6 +112,15 @@ const productionDeps: JournalCreateSaveOrchestratorDeps = {
     ),
 };
 
+/** Default path only: wrap is a no-op unless a one-shot fault is armed. */
+function resolveDeps(
+  viewerEmail: string,
+  deps: JournalCreateSaveOrchestratorDeps,
+): JournalCreateSaveOrchestratorDeps {
+  if (deps !== productionDeps) return deps;
+  return wrapJournalCreateDepsWithLocalE2eFaults(productionDeps, () => viewerEmail);
+}
+
 // Deliberately process-memory only. It is never written to the Intent DB and
 // disappears on restart, which makes restart not_found recovery fail closed.
 const currentSessionPayloads = new Map<string, JournalCreatePayload>();
@@ -143,19 +153,20 @@ export async function runJournalCreateSave(
   },
   deps: JournalCreateSaveOrchestratorDeps = productionDeps,
 ): Promise<JournalCreateSaveResult> {
+  const effectiveDeps = resolveDeps(input.viewerEmail, deps);
   const actorKey = normalizeClientActorKey(input.viewerEmail);
   if (actorKey && isSaveIntentActivityBlockedForActor(actorKey)) {
     return { kind: "protocol_start_failed", reason: "account_delete_in_progress" };
   }
-  const bootstrap = await deps.bootstrap();
+  const bootstrap = await effectiveDeps.bootstrap();
   if (bootstrap.status === "ready" && actorKey) {
     if (await resumeAccountDeleteSaveIntentCleanup(actorKey, bootstrap.store)) {
       return { kind: "protocol_start_failed", reason: "account_delete_in_progress" };
     }
   }
-  const capability = await deps.capability();
+  const capability = await effectiveDeps.capability();
   if (bootstrap.status !== "ready" || capability.kind !== "enabled") {
-    return { kind: "legacy", response: await deps.post(input.payload) };
+    return { kind: "legacy", response: await effectiveDeps.post(input.payload) };
   }
   if (!actorKey) return { kind: "protocol_start_failed", reason: "actor_unavailable" };
   const requestFingerprint = await fingerprint(input.payload);
@@ -182,7 +193,11 @@ export async function runJournalCreateSave(
       status: "awaiting_result",
       lastAttemptAt: new Date().toISOString(),
     });
-    const response = await deps.post({ ...input.payload, includeInBook: input.payload.includeInBook ?? true, saveOperationId: intent.saveOperationId });
+    const response = await effectiveDeps.post({
+      ...input.payload,
+      includeInBook: input.payload.includeInBook ?? true,
+      saveOperationId: intent.saveOperationId,
+    });
     const data = await responseJson(response);
     if (response.status === 200 && typeof data.entry === "object" && data.entry && typeof (data.entry as { id?: unknown }).id === "string") {
       intent = await update(bootstrap.store, intent, { status: "server_completed", serverEntryId: (data.entry as { id: string }).id });
@@ -216,12 +231,13 @@ export async function recoverJournalCreateSaves(
   },
   deps: JournalCreateSaveOrchestratorDeps = productionDeps,
 ): Promise<JournalCreateSaveResult[]> {
-  const bootstrap = await deps.bootstrap();
+  const effectiveDeps = resolveDeps(input.viewerEmail, deps);
+  const bootstrap = await effectiveDeps.bootstrap();
   const actorKey = normalizeClientActorKey(input.viewerEmail);
   if (bootstrap.status !== "ready" || !actorKey) return [];
   if (isSaveIntentActivityBlockedForActor(actorKey)) return [];
   if (await resumeAccountDeleteSaveIntentCleanup(actorKey, bootstrap.store)) return [];
-  const capability = await deps.capability();
+  const capability = await effectiveDeps.capability();
   const recovered: JournalCreateSaveResult[] = [];
   for (let intent of await bootstrap.store.listRecoverableByActor(actorKey)) {
     if (intent.actorKey !== actorKey) {
@@ -252,7 +268,10 @@ export async function recoverJournalCreateSaves(
     }
     let response: Response;
     try {
-      response = await deps.lookup({ saveOperationId: intent.saveOperationId, requestFingerprint: intent.requestFingerprint });
+      response = await effectiveDeps.lookup({
+        saveOperationId: intent.saveOperationId,
+        requestFingerprint: intent.requestFingerprint,
+      });
     } catch {
       recovered.push({ kind: "recovery_required", intent, reason: "lookup_unavailable" });
       continue;
@@ -377,12 +396,13 @@ export async function continueJournalCreateSaveRecovery(
   },
   deps: JournalCreateSaveOrchestratorDeps = productionDeps,
 ): Promise<JournalCreateSaveResult> {
+  const effectiveDeps = resolveDeps(input.viewerEmail, deps);
   const actorKey = normalizeClientActorKey(input.viewerEmail);
   if (actorKey && isSaveIntentActivityBlockedForActor(actorKey)) {
     return { kind: "protocol_start_failed", reason: "account_delete_in_progress" };
   }
-  const bootstrap = await deps.bootstrap();
-  const capability = await deps.capability();
+  const bootstrap = await effectiveDeps.bootstrap();
+  const capability = await effectiveDeps.capability();
   if (bootstrap.status !== "ready" || !actorKey || capability.kind !== "enabled") {
     return { kind: "protocol_start_failed", reason: "recovery_not_admitted" };
   }
@@ -397,7 +417,7 @@ export async function continueJournalCreateSaveRecovery(
     lastAttemptAt: new Date().toISOString(),
   });
   try {
-    const response = await deps.post({
+    const response = await effectiveDeps.post({
       ...input.payload,
       includeInBook: input.payload.includeInBook ?? true,
       saveOperationId: awaiting.saveOperationId,

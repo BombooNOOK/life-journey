@@ -21,6 +21,11 @@ import {
 } from "@/lib/auth/clientCookies";
 import { getFirebaseAuth, waitForFirebaseAuthPersistence } from "@/lib/firebase/client";
 import { consumeRedirectResultOnce } from "@/lib/firebase/redirectResult";
+import {
+  clearLocalE2eClientSession,
+  getLocalE2eClientSession,
+  subscribeLocalE2eClientSession,
+} from "@/lib/localE2eHarness/clientSession";
 
 type FirebaseAuthContextValue = {
   user: User | null;
@@ -65,7 +70,16 @@ async function syncAuthCookiesOnServer(user: User | null) {
 
 export function FirebaseAuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
+  const [localE2eEmail, setLocalE2eEmail] = useState<string | null>(
+    () => getLocalE2eClientSession()?.email ?? null,
+  );
   const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    return subscribeLocalE2eClientSession((session) => {
+      setLocalE2eEmail(session?.email ?? null);
+    });
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -189,6 +203,12 @@ export function FirebaseAuthProvider({ children }: { children: ReactNode }) {
         unsubscribe = onAuthStateChanged(auth, (next) => {
           if (cancelled) return;
           setUser(next);
+          // Local E2E bridge owns cookies/session while active; do not let
+          // Firebase null state clear the fixed harness actor.
+          if (getLocalE2eClientSession()) {
+            setLoading(false);
+            return;
+          }
           if (isFirstAuthCallback) {
             isFirstAuthCallback = false;
             if (next) {
@@ -204,7 +224,9 @@ export function FirebaseAuthProvider({ children }: { children: ReactNode }) {
       } catch {
         if (!cancelled) {
           setUser(null);
-          syncAuthCookies(null);
+          if (!getLocalE2eClientSession()) {
+            syncAuthCookies(null);
+          }
           setLoading(false);
         }
       }
@@ -219,15 +241,55 @@ export function FirebaseAuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const signOutUser = useCallback(async () => {
+    if (getLocalE2eClientSession()) {
+      await clearLocalE2eClientSession();
+      syncAuthCookies(null);
+      setLocalE2eEmail(null);
+      return;
+    }
     const auth = getFirebaseAuth();
     await signOut(auth);
     syncAuthCookies(null);
     await syncAuthCookiesOnServer(null);
   }, []);
 
+  const effectiveUser = useMemo((): User | null => {
+    if (!localE2eEmail) return user;
+    // Minimal viewer stub for Journal UI. Not a Firebase credential.
+    return {
+      email: localE2eEmail,
+      uid: `local-e2e:${localE2eEmail}`,
+      emailVerified: true,
+      isAnonymous: false,
+      metadata: {},
+      providerData: [],
+      refreshToken: "",
+      tenantId: null,
+      displayName: null,
+      phoneNumber: null,
+      photoURL: null,
+      providerId: "local-e2e",
+      delete: async () => {
+        throw new Error("local_e2e_user_immutable");
+      },
+      getIdToken: async () => {
+        throw new Error("local_e2e_no_id_token");
+      },
+      getIdTokenResult: async () => {
+        throw new Error("local_e2e_no_id_token");
+      },
+      reload: async () => undefined,
+      toJSON: () => ({ email: localE2eEmail, uid: `local-e2e:${localE2eEmail}` }),
+    } as User;
+  }, [localE2eEmail, user]);
+
   const value = useMemo(
-    () => ({ user, loading, signOutUser }),
-    [user, loading, signOutUser],
+    () => ({
+      user: effectiveUser,
+      loading: localE2eEmail ? false : loading,
+      signOutUser,
+    }),
+    [effectiveUser, loading, localE2eEmail, signOutUser],
   );
 
   return (
