@@ -49,6 +49,21 @@ describe("account delete native save-intent teardown", () => {
     expect(isSaveIntentActivityBlockedForActor(actor)).toBe(false);
   });
 
+  it("keeps actor save activity suppressed when server success is followed by native cleanup failure", async () => {
+    resetAccountDeleteSaveIntentTeardownForTest();
+    const store = createMemoryClientSaveOperationIntentStore();
+    await seed(store, actor, "01HXSAVEOPERATIONID00000001");
+    const teardown = await beginAccountDeleteSaveIntentTeardown(actor, {
+      bootstrap: async () => ({
+        status: "ready",
+        store: { ...store, deleteByActor: async () => { throw new Error("native_cleanup_failed"); } },
+      }),
+    });
+    await expect(teardown.serverDeleteSucceeded()).rejects.toThrow("native_cleanup_failed");
+    expect(isSaveIntentActivityBlockedForActor(actor)).toBe(true);
+    expect(await store.findByActorAndSaveOperationId(actor, "01HXSAVEOPERATIONID00000001")).not.toBeNull();
+  });
+
   it("allows browser deletion without native cleanup but blocks unavailable native storage", async () => {
     resetAccountDeleteSaveIntentTeardownForTest();
     const browser = await beginAccountDeleteSaveIntentTeardown(actor, {
