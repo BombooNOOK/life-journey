@@ -180,7 +180,6 @@ export async function runJournalCreateSave(
 export async function recoverJournalCreateSaves(
   input: {
     viewerEmail: string;
-    resolvePayload: (intent: ClientSaveOperationIntent) => Promise<JournalCreatePayload | null>;
     afterServerCompleted?: (entryId: string) => Promise<void>;
   },
   deps: JournalCreateSaveOrchestratorDeps = productionDeps,
@@ -193,6 +192,28 @@ export async function recoverJournalCreateSaves(
   for (let intent of await bootstrap.store.listRecoverableByActor(actorKey)) {
     if (intent.actorKey !== actorKey) {
       recovered.push({ kind: "recovery_required", intent, reason: "actor_mismatch" });
+      continue;
+    }
+    // A server result was already received.  Recovery must finish local work
+    // only; contacting the server again is both unnecessary and unsafe.
+    if (intent.status === "server_completed" && intent.serverEntryId) {
+      const entryId = intent.serverEntryId;
+      try {
+        await input.afterServerCompleted?.(entryId);
+        intent = await update(bootstrap.store, intent, {
+          status: "completed",
+          completedAt: new Date().toISOString(),
+        });
+        recovered.push({ kind: "completed", entryId, data: {}, intent });
+      } catch {
+        recovered.push({ kind: "recovery_required", intent, reason: "local_post_save_failed" });
+      }
+      continue;
+    }
+    // A pending operation never falls back to legacy.  Capability failure
+    // therefore leaves it intact without issuing a lookup or POST.
+    if (capability.kind === "unavailable") {
+      recovered.push({ kind: "recovery_required", intent, reason: "capability_unavailable" });
       continue;
     }
     let response: Response;
@@ -237,35 +258,108 @@ export async function recoverJournalCreateSaves(
         recovered.push({ kind: "recovery_required", intent, reason: "invalid_lookup_response" });
         continue;
     }
-    const payload = await input.resolvePayload(intent);
-    if (!payload || capability.kind !== "enabled" || (await fingerprint(payload)) !== intent.requestFingerprint) {
-      intent = await update(bootstrap.store, intent, { status: "recovery_required", failureCode: "PAYLOAD_UNAVAILABLE" });
-      recovered.push({ kind: "recovery_required", intent, reason: "payload_unavailable_or_rollout_off" });
-      continue;
-    }
-    try {
-      const replay = await deps.post({ ...payload, includeInBook: payload.includeInBook ?? true, saveOperationId: intent.saveOperationId });
-      const replayData = await responseJson(replay);
-      const entryId = typeof replayData.entry === "object" && replayData.entry && typeof (replayData.entry as { id?: unknown }).id === "string"
-        ? (replayData.entry as { id: string }).id
-        : null;
-      if (replay.status === 200 && entryId) {
-        intent = await update(bootstrap.store, intent, { status: "server_completed", serverEntryId: entryId });
-        await input.afterServerCompleted?.(entryId);
-        intent = await update(bootstrap.store, intent, { status: "completed", completedAt: new Date().toISOString() });
-        recovered.push({ kind: "completed", entryId, data: replayData, intent });
-      } else if (replay.status === 409) {
-        intent = await update(bootstrap.store, intent, { status: "recovery_required", failureCode: "IDEMPOTENCY_CONFLICT" });
-        recovered.push({ kind: "recovery_required", intent, reason: "fingerprint_mismatch" });
-      } else if (replay.status === 402) {
-        intent = await update(bootstrap.store, intent, { status: "failed_final", failureCode: "ACORN_INSUFFICIENT", completedAt: new Date().toISOString() });
-        recovered.push({ kind: "failed_final", intent, code: "ACORN_INSUFFICIENT" });
-      } else {
-        recovered.push({ kind: "processing", intent });
-      }
-    } catch {
-      recovered.push({ kind: "processing", intent });
-    }
+    // Foreground mount is lookup-only.  The current intent schema deliberately
+    // contains no body or image data, so it cannot prove an exact replay.
+    // A future explicit “continue save” action may call a dedicated replay
+    // operation only after reconstructing and fingerprinting the full payload.
+    intent = await update(bootstrap.store, intent, {
+      status: "recovery_required",
+      failureCode: "PAYLOAD_UNAVAILABLE",
+    });
+    recovered.push({ kind: "recovery_required", intent, reason: "payload_unavailable_or_rollout_off" });
   }
   return recovered;
+}
+
+const foregroundRecoveryFlights = new Map<string, Promise<JournalCreateSaveResult[]>>();
+
+/** Application-scoped single-flight guard for route mounts and React Strict Mode. */
+export function runForegroundJournalCreateRecovery(
+  input: Parameters<typeof recoverJournalCreateSaves>[0],
+  deps?: JournalCreateSaveOrchestratorDeps,
+): Promise<JournalCreateSaveResult[]> {
+  const actorKey = normalizeClientActorKey(input.viewerEmail);
+  if (!actorKey) return Promise.resolve([]);
+  const active = foregroundRecoveryFlights.get(actorKey);
+  if (active) return active;
+  const flight = recoverJournalCreateSaves(input, deps).finally(() => {
+    foregroundRecoveryFlights.delete(actorKey);
+  });
+  foregroundRecoveryFlights.set(actorKey, flight);
+  return flight;
+}
+
+/**
+ * Explicit user-action path for a not-found intent. Callers must supply a
+ * freshly reconstructed canonical payload; mount recovery never calls this.
+ */
+export async function continueJournalCreateSaveRecovery(
+  input: {
+    viewerEmail: string;
+    saveOperationId: string;
+    payload: JournalCreatePayload;
+    afterServerCompleted?: (entryId: string) => Promise<void>;
+  },
+  deps: JournalCreateSaveOrchestratorDeps = productionDeps,
+): Promise<JournalCreateSaveResult> {
+  const bootstrap = await deps.bootstrap();
+  const actorKey = normalizeClientActorKey(input.viewerEmail);
+  const capability = await deps.capability();
+  if (bootstrap.status !== "ready" || !actorKey || capability.kind !== "enabled") {
+    return { kind: "protocol_start_failed", reason: "recovery_not_admitted" };
+  }
+  const intent = await bootstrap.store.findByActorAndSaveOperationId(actorKey, input.saveOperationId);
+  if (!intent || intent.actorKey !== actorKey || (await fingerprint(input.payload)) !== intent.requestFingerprint) {
+    return intent
+      ? { kind: "recovery_required", intent, reason: "payload_fingerprint_mismatch" }
+      : { kind: "protocol_start_failed", reason: "intent_not_found" };
+  }
+  const awaiting = await update(bootstrap.store, intent, {
+    status: "awaiting_result",
+    lastAttemptAt: new Date().toISOString(),
+  });
+  try {
+    const response = await deps.post({
+      ...input.payload,
+      includeInBook: input.payload.includeInBook ?? true,
+      saveOperationId: awaiting.saveOperationId,
+    });
+    const data = await responseJson(response);
+    const entryId =
+      typeof data.entry === "object" &&
+      data.entry &&
+      typeof (data.entry as { id?: unknown }).id === "string"
+        ? (data.entry as { id: string }).id
+        : null;
+    if (response.status === 200 && entryId) {
+      let completedIntent = await update(bootstrap.store, awaiting, {
+        status: "server_completed",
+        serverEntryId: entryId,
+      });
+      await input.afterServerCompleted?.(entryId);
+      completedIntent = await update(bootstrap.store, completedIntent, {
+        status: "completed",
+        completedAt: new Date().toISOString(),
+      });
+      return { kind: "completed", entryId, data, intent: completedIntent };
+    }
+    if (response.status === 202) return { kind: "processing", intent: awaiting };
+    if (response.status === 409) {
+      return {
+        kind: "recovery_required",
+        intent: await update(bootstrap.store, awaiting, { status: "recovery_required", failureCode: "IDEMPOTENCY_CONFLICT" }),
+        reason: "fingerprint_mismatch",
+      };
+    }
+    if (response.status === 402) {
+      return {
+        kind: "failed_final",
+        intent: await update(bootstrap.store, awaiting, { status: "failed_final", failureCode: "ACORN_INSUFFICIENT", completedAt: new Date().toISOString() }),
+        code: "ACORN_INSUFFICIENT",
+      };
+    }
+    return { kind: "processing", intent: awaiting };
+  } catch {
+    return { kind: "processing", intent: awaiting };
+  }
 }

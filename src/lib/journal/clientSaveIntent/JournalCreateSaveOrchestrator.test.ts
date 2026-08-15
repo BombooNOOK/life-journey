@@ -1,7 +1,14 @@
 import { describe, expect, it, vi } from "vitest";
 
-import { runJournalCreateSave, type JournalCreateSaveOrchestratorDeps } from "@/lib/journal/clientSaveIntent/JournalCreateSaveOrchestrator";
+import {
+  continueJournalCreateSaveRecovery,
+  recoverJournalCreateSaves,
+  runForegroundJournalCreateRecovery,
+  runJournalCreateSave,
+  type JournalCreateSaveOrchestratorDeps,
+} from "@/lib/journal/clientSaveIntent/JournalCreateSaveOrchestrator";
 import { createMemoryClientSaveOperationIntentStore } from "@/lib/journal/clientSaveIntent/memoryStore";
+import { prepareClientSaveOperationIntent } from "@/lib/journal/clientSaveIntent/ClientSaveOperationIntentService";
 
 const payload = {
   content: "canonical body",
@@ -31,6 +38,20 @@ function deps(overrides: Partial<JournalCreateSaveOrchestratorDeps> = {}) {
       ...overrides,
     } satisfies JournalCreateSaveOrchestratorDeps,
   };
+}
+
+async function pending(store: ReturnType<typeof createMemoryClientSaveOperationIntentStore>, status: "awaiting_result" | "server_completed" = "awaiting_result") {
+  const prepared = await prepareClientSaveOperationIntent(store, {
+    viewerEmail: "person@example.com",
+    requestFingerprint: "v1|fingerprint",
+    saveOperationId: "01HXSAVEOPERATIONID00000001",
+  });
+  const awaiting = await store.update({
+    ...prepared.intent,
+    status: "awaiting_result",
+  });
+  if (status === "awaiting_result") return awaiting;
+  return store.update({ ...awaiting, status: "server_completed", serverEntryId: "entry_existing" });
 }
 
 describe("common Journal create-save orchestrator", () => {
@@ -105,5 +126,116 @@ describe("common Journal create-save orchestrator", () => {
       });
     }
     expect(failedPost).toHaveBeenCalledTimes(1);
+  });
+
+  it.each([
+    ["completed", { state: "completed", entryId: "entry_recovered" }, "completed"],
+    ["processing", { state: "processing" }, "processing"],
+    ["failed", { state: "failed_final" }, "failed_final"],
+    ["mismatch", { state: "fingerprint_mismatch" }, "recovery_required"],
+  ])("awaiting intent lookup %s never POSTs", async (_name, lookupBody, expected) => {
+    const { deps: injected, store, post } = deps({
+      lookup: async () => new Response(JSON.stringify(lookupBody)),
+    });
+    await pending(store);
+    const results = await recoverJournalCreateSaves(
+      { viewerEmail: "person@example.com" },
+      injected,
+    );
+    expect(results[0]?.kind).toBe(expected);
+    expect(post).not.toHaveBeenCalled();
+  });
+
+  it("keeps not_found pending without payload replay, including rollout OFF", async () => {
+    const { deps: injected, store, post } = deps({
+      capability: async () => ({ kind: "disabled" }),
+      lookup: async () => new Response(JSON.stringify({ state: "not_found" })),
+    });
+    await pending(store);
+    const results = await recoverJournalCreateSaves(
+      { viewerEmail: "person@example.com" },
+      injected,
+    );
+    expect(results[0]).toMatchObject({ kind: "recovery_required" });
+    expect(post).not.toHaveBeenCalled();
+  });
+
+  it("finishes server_completed locally without lookup or POST", async () => {
+    const { deps: injected, store, post } = deps();
+    await pending(store, "server_completed");
+    const lookup = vi.fn(injected.lookup);
+    const results = await recoverJournalCreateSaves(
+      { viewerEmail: "person@example.com" },
+      { ...injected, lookup },
+    );
+    expect(results[0]).toMatchObject({ kind: "completed", entryId: "entry_existing" });
+    expect(lookup).not.toHaveBeenCalled();
+    expect(post).not.toHaveBeenCalled();
+  });
+
+  it("does not fall back to legacy when pending capability lookup is unavailable", async () => {
+    const { deps: injected, store, post } = deps({ capability: async () => ({ kind: "unavailable" }) });
+    await pending(store);
+    const results = await recoverJournalCreateSaves(
+      { viewerEmail: "person@example.com" },
+      injected,
+    );
+    expect(results[0]).toMatchObject({ kind: "recovery_required", reason: "capability_unavailable" });
+    expect(post).not.toHaveBeenCalled();
+  });
+
+  it("does not touch an intent whose actor snapshot differs from the foreground actor", async () => {
+    const { deps: injected, store, post } = deps();
+    const foreign = await pending(store);
+    const lookup = vi.fn(injected.lookup);
+    const results = await recoverJournalCreateSaves(
+      { viewerEmail: "person@example.com" },
+      {
+        ...injected,
+        lookup,
+        bootstrap: async () => ({
+          status: "ready",
+          store: { ...store, listRecoverableByActor: async () => [{ ...foreign, actorKey: "other@example.com" }] },
+        }),
+      },
+    );
+    expect(results[0]).toMatchObject({ kind: "recovery_required", reason: "actor_mismatch" });
+    expect(lookup).not.toHaveBeenCalled();
+    expect(post).not.toHaveBeenCalled();
+  });
+
+  it("single-flights duplicate foreground mounts", async () => {
+    const { deps: injected, store } = deps();
+    await pending(store);
+    const lookup = vi.fn(async () => new Response(JSON.stringify({ state: "processing" })));
+    const shared = { ...injected, lookup };
+    await Promise.all([
+      runForegroundJournalCreateRecovery({ viewerEmail: "person@example.com" }, shared),
+      runForegroundJournalCreateRecovery({ viewerEmail: "person@example.com" }, shared),
+    ]);
+    expect(lookup).toHaveBeenCalledTimes(1);
+  });
+
+  it("replays only an explicit, fingerprint-matched payload with the same operation id", async () => {
+    const store = createMemoryClientSaveOperationIntentStore();
+    const post = vi
+      .fn()
+      .mockResolvedValueOnce(new Response(JSON.stringify({}), { status: 202 }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ entry: { id: "entry_replayed" } }), { status: 200 }));
+    const injected: JournalCreateSaveOrchestratorDeps = {
+      bootstrap: async () => ({ status: "ready", store }),
+      capability: async () => ({ kind: "enabled" }),
+      post,
+      lookup: async () => new Response(JSON.stringify({ state: "not_found" })),
+    };
+    const initial = await runJournalCreateSave({ viewerEmail: "person@example.com", payload }, injected);
+    expect(initial.kind).toBe("processing");
+    if (initial.kind !== "processing") return;
+    const resumed = await continueJournalCreateSaveRecovery(
+      { viewerEmail: "person@example.com", saveOperationId: initial.intent.saveOperationId, payload },
+      injected,
+    );
+    expect(resumed).toMatchObject({ kind: "completed", entryId: "entry_replayed" });
+    expect(post.mock.calls[1]?.[0]).toMatchObject({ saveOperationId: initial.intent.saveOperationId });
   });
 });

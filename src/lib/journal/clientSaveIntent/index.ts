@@ -18,7 +18,9 @@ export {
   isClientSaveOperationIntentTransitionAllowed,
 } from "@/lib/journal/clientSaveIntent/lifecycle";
 export {
+  continueJournalCreateSaveRecovery,
   recoverJournalCreateSaves,
+  runForegroundJournalCreateRecovery,
   runJournalCreateSave,
 } from "@/lib/journal/clientSaveIntent/JournalCreateSaveOrchestrator";
 export {

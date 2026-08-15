@@ -56,6 +56,7 @@ import {
   journalNewEntryPath,
 } from "@/lib/journal/journalNav";
 import { runJournalCreateSave } from "@/lib/journal/clientSaveIntent/JournalCreateSaveOrchestrator";
+import { useForegroundJournalCreateRecovery } from "@/lib/journal/clientSaveIntent/useForegroundJournalCreateRecovery";
 import { LOG_HOUSE_BACK_LINK } from "@/lib/journal/logHouseLabels";
 import {
   activityOptions,
@@ -124,6 +125,7 @@ export function CompanionWritingPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { user, loading: authLoading } = useFirebaseAuth();
+  const foregroundRecovery = useForegroundJournalCreateRecovery({ viewerEmail: user?.email });
   const { entitlement, loading: entitlementLoading } = useEntitlement();
   const profileId = (searchParams.get("profile") ?? "").trim();
   const dateFromQuery = searchParams.get("date");
@@ -718,6 +720,15 @@ export function CompanionWritingPage() {
 
       {step === "write" && questionSet ? (
         <section className={companionWritingWizardStepClass}>
+          {foregroundRecovery.status === "checking" || foregroundRecovery.status === "processing" ? (
+            <p className="rounded-md bg-amber-50 px-3 py-2 text-sm text-amber-900">保存状況を確認しています。</p>
+          ) : foregroundRecovery.status === "completed" ? (
+            <p className="rounded-md bg-emerald-50 px-3 py-2 text-sm text-emerald-900">以前の保存は完了しています。</p>
+          ) : foregroundRecovery.status === "recovery_required" ? (
+            <p className="rounded-md bg-amber-50 px-3 py-2 text-sm text-amber-900">以前の保存状況を確認できませんでした。内容を確認してから、もう一度保存してください。</p>
+          ) : foregroundRecovery.status === "failed_final" ? (
+            <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-800">以前の保存を完了できませんでした。内容を確認してください。</p>
+          ) : null}
           {error ? (
             <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-800" role="alert">
               {error}
