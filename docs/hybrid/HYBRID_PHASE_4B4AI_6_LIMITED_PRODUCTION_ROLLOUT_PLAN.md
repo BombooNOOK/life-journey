@@ -85,6 +85,13 @@ database, and an environment-owned fixed actor. The session route ignores a
 client-supplied email. Production must continue to return 404 for the harness,
 and no Production activation plan exists for it.
 
+Residual coupling to note before slim release review: formal Journal create
+and account-delete paths currently wrap production deps with local fault
+adapters. Those adapters are inert unless a local process-memory fault is
+armed, and the arming control plane is gated away in Production. Execution
+planning should still decide whether the slim release tree-shakes or retains
+that inert wrapper surface.
+
 ### D. Documentation and tests
 
 Release validation tests and runbooks are included only when they do not
@@ -107,6 +114,18 @@ Static audit of
 
 Do not use a down migration or database restore as ordinary rollback. The
 normal safety response is disabling admission; the additive table remains.
+
+### Operator tooling dependency
+
+This worktree contains the rollout migration SQL but excludes the controlled
+Production migrate runner as part of the slim-release boundary. The
+established snapshot / fingerprint / pending-allowlist operator scripts live
+in the sibling mainline checkout (`scripts/controlled-production-migrate.mjs`
+and related preflight docs). Those scripts currently hardcode the earlier
+`JournalSaveOperation` pending-migration allowlist. Before Stage 2 execution
+approval, the operator allowlist must be revised to the exact approved
+pending set for the rollout migration and must not silently apply a larger
+pending set.
 
 ## Eligibility and coexistence invariants
 
