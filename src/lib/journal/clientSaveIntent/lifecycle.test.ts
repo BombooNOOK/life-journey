@@ -19,12 +19,27 @@ describe("client save intent lifecycle", () => {
     expect(isClientSaveOperationIntentTransitionAllowed("completed", "completed")).toBe(true);
   });
 
+  it("lets a recovery-required intent accept a late server result", () => {
+    expect(
+      isClientSaveOperationIntentTransitionAllowed("recovery_required", "server_completed"),
+    ).toBe(true);
+    expect(isClientSaveOperationIntentTransitionAllowed("recovery_required", "prepared")).toBe(
+      false,
+    );
+  });
+
   it("rejects terminal-state rewinds", () => {
     expect(() =>
       assertClientSaveOperationIntentTransition("completed", "awaiting_result"),
     ).toThrow("intent_transition_invalid");
     expect(() =>
+      assertClientSaveOperationIntentTransition("completed", "prepared"),
+    ).toThrow("intent_transition_invalid");
+    expect(() =>
       assertClientSaveOperationIntentTransition("failed_final", "prepared"),
+    ).toThrow("intent_transition_invalid");
+    expect(() =>
+      assertClientSaveOperationIntentTransition("failed_final", "awaiting_result"),
     ).toThrow("intent_transition_invalid");
   });
 });

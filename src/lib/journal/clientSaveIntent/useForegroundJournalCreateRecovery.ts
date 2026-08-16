@@ -37,7 +37,11 @@ export function useForegroundJournalCreateRecovery(input: {
       viewerEmail,
       afterServerCompleted: input.onCompleted,
     }).then((results) => {
-      if (cancelled || results.length === 0) return;
+      if (cancelled) return;
+      if (results.length === 0) {
+        setState({ status: "idle" });
+        return;
+      }
       const result = results[0] as JournalCreateSaveResult;
       if (result.kind === "completed") setState({ status: "completed", entryId: result.entryId });
       else if (result.kind === "processing") setState({ status: "processing" });
@@ -46,6 +50,9 @@ export function useForegroundJournalCreateRecovery(input: {
       }
       else if (result.kind === "failed_final") setState({ status: "failed_final", code: result.code });
       else setState({ status: "recovery_required" });
+    }, () => {
+      // Never leave the viewer on an endless "checking" state.
+      if (!cancelled) setState({ status: "recovery_required" });
     });
     return () => {
       cancelled = true;

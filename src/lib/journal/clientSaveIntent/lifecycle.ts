@@ -24,7 +24,14 @@ const ALLOWED_TRANSITIONS: Readonly<
   ],
   server_completed: ["server_completed", "completed"],
   completed: ["completed"],
-  recovery_required: ["recovery_required", "awaiting_result", "failed_final"],
+  // A recovery-required intent can still learn that the server finished the
+  // operation, so it must be able to move forward without a new attempt.
+  recovery_required: [
+    "recovery_required",
+    "awaiting_result",
+    "server_completed",
+    "failed_final",
+  ],
   failed_final: ["failed_final"],
 };
 

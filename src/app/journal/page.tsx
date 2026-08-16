@@ -286,6 +286,17 @@ function JournalPageContent() {
   });
   const effectiveProfileId = profileState.effectiveProfileId || profileId;
   const [error, setError] = useState<string | null>(null);
+  // Ambiguous-save error text must not linger once recovery has a definite result.
+  useEffect(() => {
+    if (
+      foregroundRecovery.status === "completed" ||
+      foregroundRecovery.status === "continuation_available" ||
+      foregroundRecovery.status === "recovery_required" ||
+      foregroundRecovery.status === "failed_final"
+    ) {
+      setError(null);
+    }
+  }, [foregroundRecovery.status]);
   const [numerologyDebug, setNumerologyDebug] = useState<JournalNumerologyDebug | null>(null);
   const [owlRegenLoading, setOwlRegenLoading] = useState(false);
   const [navigatingToPreview, setNavigatingToPreview] = useState(false);
@@ -914,6 +925,13 @@ function JournalPageContent() {
         donguriBalance?: number | null;
       };
       if (orchestrated && orchestrated.kind !== "legacy" && orchestrated.kind !== "completed") {
+        // The story overlay must never outlive an unresolved save, or the
+        // recovery banner stays hidden behind it.
+        if (isNewEntrySave) {
+          setSaveTransition(null);
+          saveTransitionStartedAtRef.current = null;
+          saveTransitionAnimalShownAtRef.current = null;
+        }
         if (orchestrated.kind === "failed_final" && orchestrated.code === "ACORN_INSUFFICIENT") {
           setAcornBalance((prev) => prev !== null && prev < DONGURI_DIARY_SAVE_COST ? prev : DONGURI_DIARY_SAVE_COST - 1);
           setPreferDraftMode(true);
