@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { Prisma } from "@prisma/client";
 
-import { getViewerEmailFromCookie } from "@/lib/auth/viewer";
+import { getViewerEmailFromCookie, normalizeEmail } from "@/lib/auth/viewer";
 import { loadEntitlementContext } from "@/lib/entitlement/accountSettingsForEntitlement";
 import {
   canCreateJournalEntry,
@@ -46,6 +46,7 @@ import {
   resolveJournalEntryPhotoDbFields,
 } from "@/lib/journal/journalEntryPhotoPersist";
 import { isJournalSaveIdempotencyEnabled } from "@/lib/journal/saveIdempotency/journalSaveIdempotencyGate";
+import { resolveJournalSaveIdempotencyRolloutEligibility } from "@/lib/journal/saveIdempotency/rolloutProtocol";
 import {
   buildProductionJournalSaveFingerprint,
   photoIdentityFromPatch,
@@ -493,15 +494,24 @@ export async function POST(req: Request) {
   /**
    * 4B-4Y: JournalSaveOperation idempotency (feature-gated, default OFF).
    * - OFF → legacy create path unchanged
-   * - ON + missing saveOperationId → legacy (compat; never mint server IDs)
+   * - missing saveOperationId → legacy (compat; never mint server IDs)
    * - ON + invalid saveOperationId → 400
-   * - ON + valid saveOperationId → JSO orchestration
+   * - valid saveOperationId → global + actor rollout admission before JSO orchestration
    *
    * Skip upfront acorn gate on JSO path so completed/resume retries are not
    * blocked by a later low balance (charge still uses entry:{id} dedup).
    */
-  if (isJournalSaveIdempotencyEnabled()) {
-    const opId = parseSaveOperationIdFromBody(json);
+  const opId = parseSaveOperationIdFromBody(json);
+  if (opId.ok || (isJournalSaveIdempotencyEnabled() && opId.code === "INVALID")) {
+    if (opId.ok && !isJournalSaveIdempotencyEnabled()) {
+      return NextResponse.json(
+        {
+          error: "この保存方式は現在利用できません。",
+          code: "IDEMPOTENCY_ADMISSION_DENIED",
+        },
+        { status: 403, ...JSON_NO_STORE },
+      );
+    }
     if (opId.ok === false && opId.code === "INVALID") {
       return NextResponse.json(
         {
@@ -513,6 +523,26 @@ export async function POST(req: Request) {
       );
     }
     if (opId.ok) {
+      const eligible = await resolveJournalSaveIdempotencyRolloutEligibility({
+        globalEnabled: true,
+        actorKey: normalizeEmail(viewerEmail),
+        loadRollout: (actorKey) =>
+          prisma.journalSaveIdempotencyRollout.findUnique({
+            where: { actorKey },
+            select: { enabled: true, protocolVersion: true },
+          }),
+      });
+      if (!eligible) {
+        // A valid protocol request must never fall back to legacy after an
+        // admission read failure; doing so would weaken idempotency guarantees.
+        return NextResponse.json(
+          {
+            error: "この保存方式は現在利用できません。",
+            code: "IDEMPOTENCY_ADMISSION_DENIED",
+          },
+          { status: 403, ...JSON_NO_STORE },
+        );
+      }
       if (!profileId) {
         const balance = await sumDonguriBalance({
           email: viewerEmail,

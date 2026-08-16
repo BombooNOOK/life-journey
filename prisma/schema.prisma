@@ -117,6 +117,17 @@ model JournalSaveOperation {
   @@index([actorKey, createdAt])
 }
 
+/// Explicit, empty-by-default cohort for Journal save idempotency protocol rollout.
+/// actorKey currently equals normalized viewer email; email-change remap remains a release gate.
+model JournalSaveIdempotencyRollout {
+  id              String   @id @default(cuid())
+  actorKey        String   @unique
+  protocolVersion Int
+  enabled         Boolean  @default(false)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
 /// 日記下書き（プロフィール × 日本暦日ごとに1件。どんぐり非消費）
 model JournalDraft {
   id        String   @id @default(cuid())

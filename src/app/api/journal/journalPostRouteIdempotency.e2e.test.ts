@@ -76,6 +76,7 @@ function newOp(tag: string): string {
 
 async function cleanupActors() {
   for (const email of ALL_ACTORS) {
+    await prisma.journalSaveIdempotencyRollout.deleteMany({ where: { actorKey: email } });
     await prisma.journalSaveOperation.deleteMany({ where: { actorKey: email } });
     await prisma.logHouseDonguriLedgerEntry.deleteMany({ where: { email } });
     await prisma.journalDraft.deleteMany({ where: { email } });
@@ -109,6 +110,9 @@ async function seedActor(params: {
       email,
       nickname: params.nickname ?? `4b4z-${email.split("@")[0]}`,
     },
+  });
+  await prisma.journalSaveIdempotencyRollout.create({
+    data: { actorKey: email, enabled: true, protocolVersion: 1 },
   });
   const amount = params.donguri ?? 30;
   if (amount !== 0) {
@@ -196,7 +200,7 @@ describe.skipIf(!runE2e)("4B-4Z Journal POST route idempotency E2E (local DB)", 
     await prisma.$disconnect();
   });
 
-  it("E2E1 feature OFF: legacy without/with saveOperationId; JSO=0", async () => {
+  it("E2E1 feature OFF: no opId remains legacy; valid opId is admission denied", async () => {
     setIdempotencyFlag(false);
     const { profileId } = await seedActor({ email: ACTOR_OFF });
     const op = newOp("OFF");
@@ -214,13 +218,82 @@ describe.skipIf(!runE2e)("4B-4Z Journal POST route idempotency E2E (local DB)", 
         entryDate: "2026-08-12",
       }),
     );
-    expect(withId.status).toBe(200);
-    expect(withId.json.code).toBe("OK");
-    expect(withId.json.saveOperation).toBeUndefined();
+    expect(withId.status).toBe(403);
+    expect(withId.json.code).toBe("IDEMPOTENCY_ADMISSION_DENIED");
 
-    expect(await countEntries(ACTOR_OFF)).toBe(2);
+    expect(await countEntries(ACTOR_OFF)).toBe(1);
     expect(await countJso(ACTOR_OFF)).toBe(0);
-    expect(await countDiarySaveCharges(ACTOR_OFF)).toBe(2);
+    expect(await countDiarySaveCharges(ACTOR_OFF)).toBe(1);
+  });
+
+  it.each([
+    ["row missing", async (email: string) => {
+      await prisma.journalSaveIdempotencyRollout.deleteMany({ where: { actorKey: email } });
+    }],
+    ["row disabled", async (email: string) => {
+      await prisma.journalSaveIdempotencyRollout.update({
+        where: { actorKey: email },
+        data: { enabled: false },
+      });
+    }],
+    ["wrong protocol version", async (email: string) => {
+      await prisma.journalSaveIdempotencyRollout.update({
+        where: { actorKey: email },
+        data: { protocolVersion: 2 },
+      });
+    }],
+  ] as const)("E2E1a global ON + %s blocks opId without legacy fallback", async (_case, makeIneligible) => {
+    setIdempotencyFlag(true);
+    const { profileId } = await seedActor({ email: ACTOR_OFF });
+    await makeIneligible(ACTOR_OFF);
+
+    const blocked = await postJournal(
+      ACTOR_OFF,
+      baseBody(profileId, { saveOperationId: newOp("NO") }),
+    );
+    expect(blocked.status).toBe(403);
+    expect(blocked.json.code).toBe("IDEMPOTENCY_ADMISSION_DENIED");
+    expect(await countEntries(ACTOR_OFF)).toBe(0);
+    expect(await countJso(ACTOR_OFF)).toBe(0);
+    expect(await countDiarySaveCharges(ACTOR_OFF)).toBe(0);
+  });
+
+  it("E2E1b capability-eligible actor disabled before POST is authoritatively blocked", async () => {
+    setIdempotencyFlag(true);
+    const { profileId } = await seedActor({ email: ACTOR_OFF });
+    await prisma.journalSaveIdempotencyRollout.update({
+      where: { actorKey: ACTOR_OFF },
+      data: { enabled: false },
+    });
+
+    const blocked = await postJournal(
+      ACTOR_OFF,
+      baseBody(profileId, { saveOperationId: newOp("RV") }),
+    );
+    expect(blocked.status).toBe(403);
+    expect(blocked.json.code).toBe("IDEMPOTENCY_ADMISSION_DENIED");
+    expect(await countEntries(ACTOR_OFF)).toBe(0);
+    expect(await countJso(ACTOR_OFF)).toBe(0);
+    expect(await countDiarySaveCharges(ACTOR_OFF)).toBe(0);
+  });
+
+  it("E2E1c another actor's rollout row does not admit this actor", async () => {
+    setIdempotencyFlag(true);
+    const { profileId } = await seedActor({ email: ACTOR_OFF });
+    await prisma.journalSaveIdempotencyRollout.deleteMany({ where: { actorKey: ACTOR_OFF } });
+    await prisma.journalSaveIdempotencyRollout.create({
+      data: { actorKey: ACTOR_B, enabled: true, protocolVersion: 1 },
+    });
+
+    const blocked = await postJournal(
+      ACTOR_OFF,
+      baseBody(profileId, { saveOperationId: newOp("OT") }),
+    );
+    expect(blocked.status).toBe(403);
+    expect(blocked.json.code).toBe("IDEMPOTENCY_ADMISSION_DENIED");
+    expect(await countEntries(ACTOR_OFF)).toBe(0);
+    expect(await countJso(ACTOR_OFF)).toBe(0);
+    expect(await countDiarySaveCharges(ACTOR_OFF)).toBe(0);
   });
 
   it("E2E2 fresh save: 200, entry1, jso1, charge1, completed", async () => {
