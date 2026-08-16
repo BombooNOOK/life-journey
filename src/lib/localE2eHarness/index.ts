@@ -24,6 +24,9 @@ export {
   activateLocalE2eClientSessionViaBridge,
   clearLocalE2eClientSession,
   getLocalE2eClientSession,
+  isLocalE2eClientRuntimeEnabled,
+  resolveFirebaseAuthEffectiveUser,
+  restoreLocalE2eClientSessionCookies,
   setLocalE2eClientSessionForTest,
   subscribeLocalE2eClientSession,
 } from "@/lib/localE2eHarness/clientSession";
