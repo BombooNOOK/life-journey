@@ -21,6 +21,7 @@ export async function seedLocalE2eActorFixture(options?: {
   const email = resolveLocalE2eActorEmail(options?.email) ?? resolveLocalE2eActorEmail();
   if (!email) throw new Error("local_e2e_actor_email_required");
 
+  const residentNumber = `LJE2E-${email.slice(0, 8)}`;
   await prisma.accountSettings.upsert({
     where: { email },
     create: {
@@ -28,10 +29,16 @@ export async function seedLocalE2eActorFixture(options?: {
       isAdmin: false,
       isMonitor: true,
       profileLimit: 3,
+      forestResidentNumber: residentNumber,
+      forestResidentIssuedAt: new Date(),
+      forestResidentDisplayName: options?.nickname ?? "local-e2e",
     },
     update: {
       isMonitor: true,
       profileLimit: 3,
+      forestResidentNumber: residentNumber,
+      forestResidentIssuedAt: new Date(),
+      forestResidentDisplayName: options?.nickname ?? "local-e2e",
     },
   });
 
@@ -47,6 +54,41 @@ export async function seedLocalE2eActorFixture(options?: {
         nickname: options?.nickname ?? "local-e2e",
       },
     }));
+
+  // Journal/Companion require onboarding stage >= 3 (hasKanteiOrder).
+  const existingOrder = await prisma.order.findFirst({
+    where: { email, profileId: profile.id },
+    select: { id: true },
+  });
+  if (!existingOrder) {
+    await prisma.order.create({
+      data: {
+        lastName: "検証",
+        firstName: "太郎",
+        lastNameKana: "ケンショウ",
+        firstNameKana: "タロウ",
+        lastNameRoman: "KENSHO",
+        firstNameRoman: "TARO",
+        fullNameDisplay: "検証 太郎",
+        fullNameKanaDisplay: "ケンショウ タロウ",
+        fullNameRomanDisplay: "KENSHO TARO",
+        birthDate: "1990-01-15",
+        birthYear: 1990,
+        birthMonth: 1,
+        birthDay: 15,
+        postalCode: "1000001",
+        address: "東京都千代田区1-1 local-e2e",
+        phone: "09000000000",
+        email,
+        profileId: profile.id,
+        numerologyJson: JSON.stringify({ lifePath: 1, source: "local-e2e" }),
+        stonesJson: JSON.stringify([]),
+        stoneFocusTheme: "特に決まっていない",
+        status: "completed",
+        kanteiCode: `LJK-E2E-${Date.now().toString(36).toUpperCase()}`,
+      },
+    });
+  }
 
   const amount = options?.donguri ?? 50;
   if (amount !== 0) {
@@ -90,6 +132,7 @@ export async function cleanupLocalE2eActorFixture(emailInput?: string): Promise<
   await prisma.journalDraft.deleteMany({ where: { email } });
   await prisma.journalEntry.deleteMany({ where: { email } });
   await prisma.logHouseDonguriLedgerEntry.deleteMany({ where: { email } });
+  await prisma.order.deleteMany({ where: { email } });
   await prisma.profile.deleteMany({ where: { email } });
   await prisma.accountSettings.deleteMany({ where: { email } });
 }

@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 
@@ -254,6 +255,28 @@ export function LocalE2eHarnessClient() {
             Clear session
           </button>
         </div>
+        {sessionEmail ? (
+          <div className="flex flex-wrap gap-2">
+            <Link
+              href="/journal"
+              className="rounded border border-emerald-700 bg-emerald-700 px-3 py-1.5 text-white"
+            >
+              Open Journal runtime
+            </Link>
+            <Link
+              href="/journal/with-companion"
+              className="rounded border border-emerald-700 bg-emerald-700 px-3 py-1.5 text-white"
+            >
+              Open Companion runtime
+            </Link>
+            <Link
+              href="/orders/account/delete"
+              className="rounded border border-amber-800 bg-amber-800 px-3 py-1.5 text-white"
+            >
+              Open account delete runtime
+            </Link>
+          </div>
+        ) : null}
       </section>
 
       <section className="space-y-2">

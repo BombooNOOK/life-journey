@@ -24,6 +24,7 @@ import { consumeRedirectResultOnce } from "@/lib/firebase/redirectResult";
 import {
   clearLocalE2eClientSession,
   getLocalE2eClientSession,
+  restoreLocalE2eClientSessionCookies,
   subscribeLocalE2eClientSession,
 } from "@/lib/localE2eHarness/clientSession";
 
@@ -53,6 +54,8 @@ const OAUTH_CURRENT_USER_WAIT_MS = 20000;
 
 async function syncAuthCookiesOnServer(user: User | null) {
   try {
+    // Local E2E bridge owns the cookie actor while active.
+    if (!user?.email && getLocalE2eClientSession()) return;
     if (!user?.email) {
       await fetch("/api/auth/session", { method: "DELETE" });
       return;
@@ -86,6 +89,13 @@ export function FirebaseAuthProvider({ children }: { children: ReactNode }) {
     let unsubscribe: (() => void) | undefined;
 
     const run = async () => {
+      // Restore fixed local-E2E actor before Firebase null can clear cookies
+      // on full-page navigations (Companion save → calendar).
+      if (getLocalE2eClientSession()) {
+        await restoreLocalE2eClientSessionCookies();
+        if (cancelled) return;
+      }
+
       let auth: Auth | null = null;
       try {
         auth = getFirebaseAuth({ deferPersistence: true });
