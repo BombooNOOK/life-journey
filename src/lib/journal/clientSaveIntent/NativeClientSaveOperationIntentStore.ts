@@ -32,11 +32,32 @@ function assertNative(): void {
   }
 }
 
+/**
+ * Capacitor SQLite 8.1.1 `execute`/`run` default `transaction=true` and issue
+ * `BEGIN TRANSACTION` before the caller's SQL. Atomic intent+payload persist
+ * therefore uses `beginTransaction` / `commitTransaction` / `rollbackTransaction`
+ * plus `run(..., false)` — never `execute("BEGIN")`.
+ */
 function adaptNativeConnection(db: SQLiteDBConnection): ClientSaveIntentSqlConnection {
   return {
     query: (sql, params) => db.query(sql, params),
     run: (sql, params) => db.run(sql, params),
     execute: (statements) => db.execute(statements),
+    nativeTransaction: {
+      begin: async () => {
+        await db.beginTransaction();
+      },
+      commit: async () => {
+        await db.commitTransaction();
+      },
+      rollback: async () => {
+        await db.rollbackTransaction();
+      },
+      run: async (sql, params = []) => {
+        const result = await db.run(sql, params, false);
+        return { changes: { changes: Number(result.changes?.changes ?? 0) } };
+      },
+    },
   };
 }
 

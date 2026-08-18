@@ -78,10 +78,28 @@ const REQUIRED_PAYLOAD_COLUMNS = [
   "created_at",
 ] as const;
 
+export type ClientSaveIntentSqlRunResult = { changes?: { changes: number } };
+
+/**
+ * Capacitor Community SQLite 8.1.1 wraps `execute()` / `run()` in
+ * `BEGIN TRANSACTION` when the `transaction` argument is omitted (default true).
+ * Native adapters must therefore drive atomic work through plugin
+ * begin/commit/rollback and `run(..., transaction=false)` — never SQL BEGIN
+ * via `execute("BEGIN")`, which nests and fails with
+ * "cannot start a transaction within a transaction".
+ */
+export type ClientSaveIntentNativeTransactionApi = {
+  begin(): Promise<void>;
+  commit(): Promise<void>;
+  rollback(): Promise<void>;
+  run(sql: string, params?: unknown[]): Promise<ClientSaveIntentSqlRunResult>;
+};
+
 export type ClientSaveIntentSqlConnection = {
   query(sql: string, params?: unknown[]): Promise<{ values?: Record<string, unknown>[] }>;
-  run(sql: string, params?: unknown[]): Promise<{ changes?: { changes: number } }>;
+  run(sql: string, params?: unknown[]): Promise<ClientSaveIntentSqlRunResult>;
   execute(statements: string): Promise<unknown>;
+  nativeTransaction?: ClientSaveIntentNativeTransactionApi;
 };
 
 export type ClientSaveIntentSqlSession = {
@@ -137,11 +155,34 @@ export async function ensureClientSaveIntentSchema(
 
 async function withTransaction<T>(
   db: ClientSaveIntentSqlConnection,
-  fn: () => Promise<T>,
+  fn: (tx: ClientSaveIntentSqlConnection) => Promise<T>,
 ): Promise<T> {
+  if (db.nativeTransaction) {
+    await db.nativeTransaction.begin();
+    const tx: ClientSaveIntentSqlConnection = {
+      query: (sql, params) => db.query(sql, params),
+      run: (sql, params) => db.nativeTransaction!.run(sql, params),
+      execute: () => {
+        throw new Error("execute_not_allowed_inside_native_transaction");
+      },
+      nativeTransaction: db.nativeTransaction,
+    };
+    try {
+      const result = await fn(tx);
+      await db.nativeTransaction.commit();
+      return result;
+    } catch (error) {
+      try {
+        await db.nativeTransaction.rollback();
+      } catch {
+        // Keep the original persist/load failure.
+      }
+      throw error;
+    }
+  }
   await db.execute("BEGIN");
   try {
-    const result = await fn();
+    const result = await fn(db);
     await db.execute("COMMIT");
     return result;
   } catch (error) {
@@ -323,15 +364,15 @@ export function createClientSaveDurableStoreFromSql(
     },
     async deleteByActor(actorKey) {
       return session.withDb(async (db) => {
-        return withTransaction(db, async () => {
-          await db.run(
+        return withTransaction(db, async (tx) => {
+          await tx.run(
             `DELETE FROM client_save_operation_payload
              WHERE save_operation_id IN (
                SELECT save_operation_id FROM client_save_operation_intent WHERE actor_key = ?
              )`,
             [actorKey],
           );
-          const result = await db.run(
+          const result = await tx.run(
             "DELETE FROM client_save_operation_intent WHERE actor_key = ?",
             [actorKey],
           );
@@ -374,13 +415,13 @@ export function createClientSaveDurableStoreFromSql(
     },
     async persistPreparedIntentWithExactPayload(input) {
       return session.withDb(async (db) => {
-        return withTransaction(db, async () =>
+        return withTransaction(db, async (tx) =>
           applyPersistPreparedIntentWithExactPayload(
             {
-              findIntent: (id) => findIntent(db, id),
-              insertIntent: (intent) => insertIntentRow(db, intent),
-              findPayload: (id) => findPayload(db, id),
-              insertPayload: (row) => insertPayloadRow(db, row),
+              findIntent: (id) => findIntent(tx, id),
+              insertIntent: (intent) => insertIntentRow(tx, intent),
+              findPayload: (id) => findPayload(tx, id),
+              insertPayload: (row) => insertPayloadRow(tx, row),
             },
             input,
           ),
@@ -397,12 +438,12 @@ export function createClientSaveDurableStoreFromSql(
     },
     async deleteExactPayloadBySaveOperationId(input) {
       return session.withDb(async (db) => {
-        return withTransaction(db, async () =>
+        return withTransaction(db, async (tx) =>
           applyDeleteExactPayloadIfCompleted(
             {
-              findIntent: (id) => findIntent(db, id),
-              findPayload: (id) => findPayload(db, id),
-              deletePayload: (id) => deletePayloadRow(db, id),
+              findIntent: (id) => findIntent(tx, id),
+              findPayload: (id) => findPayload(tx, id),
+              deletePayload: (id) => deletePayloadRow(tx, id),
             },
             input,
           ),
