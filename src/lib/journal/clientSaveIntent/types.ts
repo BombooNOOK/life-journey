@@ -5,12 +5,15 @@
  * deliberately separate from the Server JournalSaveOperation record, which
  * prevents duplicate server execution.
  *
- * Never persist journal text, photo data, cookies, or secrets here.
+ * Intent rows remain metadata-only. Exact POST JSON lives in the sibling
+ * payload table (AI-7.1), still inside the same SQLCipher database.
+ * Cookies, auth tokens, and email never belong in request_json.
  */
 
 export const CLIENT_SAVE_OPERATION_INTENT_DB_NAME =
   "ljd_client_save_operation_intent" as const;
-export const CLIENT_SAVE_OPERATION_INTENT_SCHEMA_VERSION = 2 as const;
+export const CLIENT_SAVE_OPERATION_INTENT_SCHEMA_VERSION = 3 as const;
+export const CLIENT_SAVE_EXACT_PAYLOAD_VERSION = 1 as const;
 
 /**
  * Native secure-store admission is an independent prerequisite to server
@@ -74,6 +77,16 @@ export type ClientSaveOperationIntentStore = {
   getDeletionTombstone(actorKey: string): Promise<{ actorKey: string; createdAt: string; updatedAt: string } | null>;
   writeDeletionTombstone(actorKey: string, now: string): Promise<void>;
   clearDeletionTombstone(actorKey: string): Promise<void>;
+};
+
+export type ClientSaveDurableStore = ClientSaveOperationIntentStore & {
+  persistPreparedIntentWithExactPayload(input: {
+    intent: ClientSaveOperationIntent;
+    payload: unknown;
+  }): Promise<import("@/lib/journal/clientSaveIntent/durableExactPayload").PersistExactPayloadResult>;
+  loadExactPayloadBySaveOperationId(
+    saveOperationId: string,
+  ): Promise<import("@/lib/journal/clientSaveIntent/durableExactPayload").LoadExactPayloadResult>;
 };
 
 export type ClientSaveIntentStoreBootstrapResult =

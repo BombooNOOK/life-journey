@@ -5,6 +5,17 @@ export {
 } from "@/lib/journal/clientSaveIntent/ClientSaveOperationIntentService";
 export { createMemoryClientSaveOperationIntentStore } from "@/lib/journal/clientSaveIntent/memoryStore";
 export {
+  canonicalizeExactJournalSavePayload,
+  fingerprintCanonicalJournalSaveRequest,
+  stringifyCanonicalJournalSaveRequest,
+} from "@/lib/journal/clientSaveIntent/exactPayloadCanonical";
+export type { CanonicalJournalSaveRequest } from "@/lib/journal/clientSaveIntent/exactPayloadCanonical";
+export type {
+  ClientSaveExactPayloadRecord,
+  LoadExactPayloadResult,
+  PersistExactPayloadResult,
+} from "@/lib/journal/clientSaveIntent/durableExactPayload";
+export {
   createNativeClientSaveOperationIntentStore,
   initializeNativeClientSaveOperationIntentStore,
 } from "@/lib/journal/clientSaveIntent/NativeClientSaveOperationIntentStore";
@@ -30,6 +41,7 @@ export {
   normalizeClientActorKey,
 } from "@/lib/journal/clientSaveIntent/saveOperationId";
 export type {
+  ClientSaveDurableStore,
   ClientSaveIdempotencyCapability,
   ClientSaveIntentStoreBootstrapResult,
   ClientSaveIntentStoreReadiness,

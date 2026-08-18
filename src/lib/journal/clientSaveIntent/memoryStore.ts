@@ -1,12 +1,62 @@
 import type {
+  ClientSaveDurableStore,
   ClientSaveOperationIntent,
-  ClientSaveOperationIntentStore,
 } from "@/lib/journal/clientSaveIntent/types";
 import { assertClientSaveOperationIntentTransition } from "@/lib/journal/clientSaveIntent/lifecycle";
+import {
+  applyPersistPreparedIntentWithExactPayload,
+  verifyLoadedExactPayload,
+  type ClientSaveExactPayloadRecord,
+} from "@/lib/journal/clientSaveIntent/durableExactPayload";
 
-export function createMemoryClientSaveOperationIntentStore(): ClientSaveOperationIntentStore {
-  const rows = new Map<string, ClientSaveOperationIntent>();
-  const tombstones = new Map<string, { actorKey: string; createdAt: string; updatedAt: string }>();
+export function createMemoryClientSaveOperationIntentStore(
+  options: {
+    failPayloadInsert?: boolean;
+    backing?: {
+      rows: Map<string, ClientSaveOperationIntent>;
+      payloads: Map<string, ClientSaveExactPayloadRecord>;
+      tombstones: Map<string, { actorKey: string; createdAt: string; updatedAt: string }>;
+    };
+  } = {},
+): ClientSaveDurableStore {
+  const rows = options.backing?.rows ?? new Map<string, ClientSaveOperationIntent>();
+  const payloads = options.backing?.payloads ?? new Map<string, ClientSaveExactPayloadRecord>();
+  const tombstones =
+    options.backing?.tombstones ??
+    new Map<string, { actorKey: string; createdAt: string; updatedAt: string }>();
+
+  function snapshot() {
+    return {
+      intents: new Map(rows),
+      payloads: new Map(payloads),
+    };
+  }
+
+  function restore(snap: ReturnType<typeof snapshot>) {
+    rows.clear();
+    payloads.clear();
+    for (const [key, value] of snap.intents) rows.set(key, value);
+    for (const [key, value] of snap.payloads) payloads.set(key, value);
+  }
+
+  const tx = {
+    async findIntent(saveOperationId: string) {
+      const row = rows.get(saveOperationId);
+      return row ? { ...row } : null;
+    },
+    async insertIntent(intent: ClientSaveOperationIntent) {
+      rows.set(intent.saveOperationId, { ...intent });
+    },
+    async findPayload(saveOperationId: string) {
+      const row = payloads.get(saveOperationId);
+      return row ? { ...row } : null;
+    },
+    async insertPayload(row: ClientSaveExactPayloadRecord) {
+      if (options.failPayloadInsert) throw new Error("payload_insert_forced_failure");
+      payloads.set(row.saveOperationId, { ...row });
+    },
+  };
+
   return {
     async findByActorAndSaveOperationId(actorKey, saveOperationId) {
       const row = rows.get(saveOperationId);
@@ -39,9 +89,10 @@ export function createMemoryClientSaveOperationIntentStore(): ClientSaveOperatio
     },
     async deleteByActor(actorKey) {
       let count = 0;
-      for (const [id, row] of rows) {
+      for (const [id, row] of [...rows]) {
         if (row.actorKey === actorKey) {
           rows.delete(id);
+          payloads.delete(id);
           count += 1;
         }
       }
@@ -61,6 +112,21 @@ export function createMemoryClientSaveOperationIntentStore(): ClientSaveOperatio
     },
     async clearDeletionTombstone(actorKey) {
       tombstones.delete(actorKey);
+    },
+    async persistPreparedIntentWithExactPayload(input) {
+      const snap = snapshot();
+      try {
+        return await applyPersistPreparedIntentWithExactPayload(tx, input);
+      } catch (error) {
+        restore(snap);
+        throw error;
+      }
+    },
+    async loadExactPayloadBySaveOperationId(saveOperationId) {
+      const payload = payloads.get(saveOperationId);
+      if (!payload) return { kind: "missing" as const };
+      const intent = rows.get(saveOperationId);
+      return verifyLoadedExactPayload({ ...payload }, intent?.requestFingerprint);
     },
   };
 }

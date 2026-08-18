@@ -13,9 +13,14 @@ import type { SQLiteDBConnection } from "@capacitor-community/sqlite";
 import {
   CLIENT_SAVE_OPERATION_INTENT_DB_NAME,
   CLIENT_SAVE_OPERATION_INTENT_SCHEMA_VERSION,
+  type ClientSaveDurableStore,
   type ClientSaveOperationIntent,
-  type ClientSaveOperationIntentStore,
 } from "@/lib/journal/clientSaveIntent/types";
+import {
+  applyPersistPreparedIntentWithExactPayload,
+  verifyLoadedExactPayload,
+  type ClientSaveExactPayloadRecord,
+} from "@/lib/journal/clientSaveIntent/durableExactPayload";
 import {
   openNamedEncryptedDatabase,
 } from "@/lib/local-first/security";
@@ -43,6 +48,16 @@ CREATE TABLE IF NOT EXISTS client_save_operation_deletion_tombstone (
   created_at TEXT NOT NULL,
   updated_at TEXT NOT NULL
 );`;
+const CREATE_PAYLOAD_SQL = `
+CREATE TABLE IF NOT EXISTS client_save_operation_payload (
+  save_operation_id TEXT PRIMARY KEY NOT NULL,
+  payload_version INTEGER NOT NULL,
+  request_json TEXT NOT NULL,
+  request_fingerprint TEXT NOT NULL,
+  request_byte_length INTEGER NOT NULL,
+  created_at TEXT NOT NULL,
+  FOREIGN KEY (save_operation_id) REFERENCES client_save_operation_intent(save_operation_id)
+);`;
 
 const REQUIRED_COLUMNS = [
   "intent_id",
@@ -57,6 +72,15 @@ const REQUIRED_COLUMNS = [
   "updated_at",
   "last_attempt_at",
   "completed_at",
+] as const;
+
+const REQUIRED_PAYLOAD_COLUMNS = [
+  "save_operation_id",
+  "payload_version",
+  "request_json",
+  "request_fingerprint",
+  "request_byte_length",
+  "created_at",
 ] as const;
 
 function assertNative(): void {
@@ -94,9 +118,29 @@ async function withDb<T>(fn: (db: SQLiteDBConnection) => Promise<T>): Promise<T>
   );
   try {
     await ensureSchema(db);
+    await db.execute("PRAGMA foreign_keys = ON");
     return await fn(db);
   } finally {
     await db.close();
+  }
+}
+
+async function withTransaction<T>(
+  db: SQLiteDBConnection,
+  fn: () => Promise<T>,
+): Promise<T> {
+  await db.execute("BEGIN");
+  try {
+    const result = await fn();
+    await db.execute("COMMIT");
+    return result;
+  } catch (error) {
+    try {
+      await db.execute("ROLLBACK");
+    } catch {
+      // Keep the original persist/load failure.
+    }
+    throw error;
   }
 }
 
@@ -113,11 +157,16 @@ async function ensureSchema(db: SQLiteDBConnection): Promise<void> {
     }
     await db.execute(CREATE_SQL);
     await db.execute(CREATE_TOMBSTONE_SQL);
+    await db.execute(CREATE_PAYLOAD_SQL);
     await db.execute(`PRAGMA user_version = ${CLIENT_SAVE_OPERATION_INTENT_SCHEMA_VERSION}`);
     return;
   }
   if (version === 1) {
     await db.execute(CREATE_TOMBSTONE_SQL);
+    await db.execute(CREATE_PAYLOAD_SQL);
+    await db.execute(`PRAGMA user_version = ${CLIENT_SAVE_OPERATION_INTENT_SCHEMA_VERSION}`);
+  } else if (version === 2) {
+    await db.execute(CREATE_PAYLOAD_SQL);
     await db.execute(`PRAGMA user_version = ${CLIENT_SAVE_OPERATION_INTENT_SCHEMA_VERSION}`);
   } else if (version !== CLIENT_SAVE_OPERATION_INTENT_SCHEMA_VERSION) {
     throw new Error("intent_schema_version_unsupported");
@@ -127,6 +176,15 @@ async function ensureSchema(db: SQLiteDBConnection): Promise<void> {
     (columns.values ?? []).map((column) => String((column as Record<string, unknown>).name)),
   );
   if (REQUIRED_COLUMNS.some((column) => !names.has(column))) {
+    throw new Error("intent_schema_columns_invalid");
+  }
+  const payloadColumns = await db.query("PRAGMA table_info(client_save_operation_payload)");
+  const payloadNames = new Set(
+    (payloadColumns.values ?? []).map((column) =>
+      String((column as Record<string, unknown>).name),
+    ),
+  );
+  if (REQUIRED_PAYLOAD_COLUMNS.some((column) => !payloadNames.has(column))) {
     throw new Error("intent_schema_columns_invalid");
   }
 }
@@ -159,7 +217,69 @@ async function find(
   return row ? mapRow(row) : null;
 }
 
-export function createNativeClientSaveOperationIntentStore(): ClientSaveOperationIntentStore {
+function mapPayloadRow(row: Record<string, unknown>): ClientSaveExactPayloadRecord {
+  return {
+    saveOperationId: String(row.save_operation_id),
+    payloadVersion: 1,
+    requestJson: String(row.request_json),
+    requestFingerprint: String(row.request_fingerprint),
+    requestByteLength: Number(row.request_byte_length),
+    createdAt: String(row.created_at),
+  };
+}
+
+async function findPayload(
+  db: SQLiteDBConnection,
+  saveOperationId: string,
+): Promise<ClientSaveExactPayloadRecord | null> {
+  const result = await db.query(
+    "SELECT * FROM client_save_operation_payload WHERE save_operation_id = ? LIMIT 1",
+    [saveOperationId],
+  );
+  const row = result.values?.[0] as Record<string, unknown> | undefined;
+  return row ? mapPayloadRow(row) : null;
+}
+
+async function insertIntentRow(
+  db: SQLiteDBConnection,
+  intent: ClientSaveOperationIntent,
+): Promise<void> {
+  await db.run(
+    `INSERT INTO client_save_operation_intent (
+      intent_id, save_operation_id, actor_key, draft_ref, request_fingerprint,
+      status, server_entry_id, failure_code, created_at, updated_at,
+      last_attempt_at, completed_at
+    ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)`,
+    [
+      intent.intentId, intent.saveOperationId, intent.actorKey, intent.draftRef,
+      intent.requestFingerprint, intent.status, intent.serverEntryId,
+      intent.failureCode, intent.createdAt, intent.updatedAt,
+      intent.lastAttemptAt, intent.completedAt,
+    ],
+  );
+}
+
+async function insertPayloadRow(
+  db: SQLiteDBConnection,
+  row: ClientSaveExactPayloadRecord,
+): Promise<void> {
+  await db.run(
+    `INSERT INTO client_save_operation_payload (
+      save_operation_id, payload_version, request_json, request_fingerprint,
+      request_byte_length, created_at
+    ) VALUES (?,?,?,?,?,?)`,
+    [
+      row.saveOperationId,
+      row.payloadVersion,
+      row.requestJson,
+      row.requestFingerprint,
+      row.requestByteLength,
+      row.createdAt,
+    ],
+  );
+}
+
+export function createNativeClientSaveOperationIntentStore(): ClientSaveDurableStore {
   assertNative();
   return {
     async findByActorAndSaveOperationId(actorKey, saveOperationId) {
@@ -172,19 +292,7 @@ export function createNativeClientSaveOperationIntentStore(): ClientSaveOperatio
       return withDb(async (db) => {
         const existing = await find(db, intent.saveOperationId);
         if (existing) return { created: false, intent: existing };
-        await db.run(
-          `INSERT INTO client_save_operation_intent (
-            intent_id, save_operation_id, actor_key, draft_ref, request_fingerprint,
-            status, server_entry_id, failure_code, created_at, updated_at,
-            last_attempt_at, completed_at
-          ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)`,
-          [
-            intent.intentId, intent.saveOperationId, intent.actorKey, intent.draftRef,
-            intent.requestFingerprint, intent.status, intent.serverEntryId,
-            intent.failureCode, intent.createdAt, intent.updatedAt,
-            intent.lastAttemptAt, intent.completedAt,
-          ],
-        );
+        await insertIntentRow(db, intent);
         return { created: true, intent };
       });
     },
@@ -223,11 +331,20 @@ export function createNativeClientSaveOperationIntentStore(): ClientSaveOperatio
     },
     async deleteByActor(actorKey) {
       return withDb(async (db) => {
-        const result = await db.run(
-          "DELETE FROM client_save_operation_intent WHERE actor_key = ?",
-          [actorKey],
-        );
-        return result.changes?.changes ?? 0;
+        return withTransaction(db, async () => {
+          await db.run(
+            `DELETE FROM client_save_operation_payload
+             WHERE save_operation_id IN (
+               SELECT save_operation_id FROM client_save_operation_intent WHERE actor_key = ?
+             )`,
+            [actorKey],
+          );
+          const result = await db.run(
+            "DELETE FROM client_save_operation_intent WHERE actor_key = ?",
+            [actorKey],
+          );
+          return result.changes?.changes ?? 0;
+        });
       });
     },
     async getDeletionTombstone(actorKey) {
@@ -255,6 +372,29 @@ export function createNativeClientSaveOperationIntentStore(): ClientSaveOperatio
     async clearDeletionTombstone(actorKey) {
       await withDb(async (db) => {
         await db.run("DELETE FROM client_save_operation_deletion_tombstone WHERE actor_key = ?", [actorKey]);
+      });
+    },
+    async persistPreparedIntentWithExactPayload(input) {
+      return withDb(async (db) => {
+        return withTransaction(db, async () =>
+          applyPersistPreparedIntentWithExactPayload(
+            {
+              findIntent: (id) => find(db, id),
+              insertIntent: (intent) => insertIntentRow(db, intent),
+              findPayload: (id) => findPayload(db, id),
+              insertPayload: (row) => insertPayloadRow(db, row),
+            },
+            input,
+          ),
+        );
+      });
+    },
+    async loadExactPayloadBySaveOperationId(saveOperationId) {
+      return withDb(async (db) => {
+        const payload = await findPayload(db, saveOperationId);
+        if (!payload) return { kind: "missing" as const };
+        const intent = await find(db, saveOperationId);
+        return verifyLoadedExactPayload(payload, intent?.requestFingerprint);
       });
     },
   };
