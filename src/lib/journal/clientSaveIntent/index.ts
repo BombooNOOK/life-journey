@@ -12,6 +12,7 @@ export {
 export type { CanonicalJournalSaveRequest } from "@/lib/journal/clientSaveIntent/exactPayloadCanonical";
 export type {
   ClientSaveExactPayloadRecord,
+  DeleteExactPayloadResult,
   LoadExactPayloadResult,
   PersistExactPayloadResult,
 } from "@/lib/journal/clientSaveIntent/durableExactPayload";

@@ -144,8 +144,8 @@ describe("common Journal create-save orchestrator", () => {
       status: "completed",
       serverEntryId: "entry_1",
     });
-    expect(await store.loadExactPayloadBySaveOperationId(String(sent.saveOperationId))).toMatchObject({
-      kind: "ok",
+    expect(await store.loadExactPayloadBySaveOperationId(String(sent.saveOperationId))).toEqual({
+      kind: "missing",
     });
   });
 
@@ -575,6 +575,82 @@ describe("common Journal create-save orchestrator", () => {
       { viewerEmail: "person@example.com", saveOperationId: initial.intent.saveOperationId },
       { ...injected, post: async () => new Response(JSON.stringify({}), { status: 202 }) },
     );
-    expect(retry.kind).toBe("processing");
+    expect(retry.kind).toBe("pending");
+    expect(post).toHaveBeenCalledTimes(1);
+  });
+
+  it("replays at most once per operation across sequential foreground recovers", async () => {
+    clearCurrentSessionJournalCreatePayloadsForTest();
+    const store = createMemoryClientSaveOperationIntentStore();
+    const post = vi
+      .fn()
+      .mockRejectedValueOnce(new Error("timeout"))
+      .mockRejectedValue(new Error("timeout_again"));
+    const injected: JournalCreateSaveOrchestratorDeps = {
+      bootstrap: async () => ({ status: "ready", store }),
+      capability: async () => ({ kind: "enabled" }),
+      post,
+      lookup: async () => new Response(JSON.stringify({ state: "not_found" })),
+    };
+    const initial = await runJournalCreateSave({ viewerEmail: "person@example.com", payload }, injected);
+    if (initial.kind !== "pending") throw new Error("expected pending");
+    const first = await recoverJournalCreateSaves({ viewerEmail: "person@example.com" }, injected);
+    expect(first[0]?.kind).toBe("pending");
+    expect(post).toHaveBeenCalledTimes(2);
+    const second = await recoverJournalCreateSaves({ viewerEmail: "person@example.com" }, injected);
+    expect(second[0]?.kind).toBe("pending");
+    expect(post).toHaveBeenCalledTimes(2);
+  });
+
+  it("replays each recoverable operation at most once without looping", async () => {
+    clearCurrentSessionJournalCreatePayloadsForTest();
+    const store = createMemoryClientSaveOperationIntentStore();
+    const post = vi.fn(async () => {
+      throw new Error("timeout");
+    });
+    const injected: JournalCreateSaveOrchestratorDeps = {
+      bootstrap: async () => ({ status: "ready", store }),
+      capability: async () => ({ kind: "enabled" }),
+      post,
+      lookup: async () => new Response(JSON.stringify({ state: "not_found" })),
+    };
+    const first = await runJournalCreateSave({ viewerEmail: "person@example.com", payload }, injected);
+    const second = await runJournalCreateSave(
+      { viewerEmail: "person@example.com", payload: { ...payload, content: "second body" } },
+      injected,
+    );
+    expect(first.kind).toBe("pending");
+    expect(second.kind).toBe("pending");
+    const recovered = await recoverJournalCreateSaves({ viewerEmail: "person@example.com" }, injected);
+    expect(recovered).toHaveLength(2);
+    expect(recovered.every((row) => row.kind === "pending")).toBe(true);
+    expect(post).toHaveBeenCalledTimes(4);
+  });
+
+  it("keeps completed when payload cleanup throws", async () => {
+    const store = createMemoryClientSaveOperationIntentStore();
+    const failing: ClientSaveDurableStore = {
+      ...store,
+      deleteExactPayloadBySaveOperationId: async () => {
+        throw new Error("cleanup_disk");
+      },
+    };
+    const result = await runJournalCreateSave(
+      { viewerEmail: "person@example.com", payload },
+      {
+        bootstrap: async () => ({ status: "ready", store: failing }),
+        capability: async () => ({ kind: "enabled" }),
+        post: async () => new Response(JSON.stringify({ entry: { id: "entry_1" } }), { status: 200 }),
+        lookup: async () => new Response(),
+      },
+    );
+    expect(result).toMatchObject({ kind: "completed", recoveryState: "completed", entryId: "entry_1" });
+    if (result.kind !== "completed" || !result.intent) throw new Error("expected completed intent");
+    expect(
+      await store.findByActorAndSaveOperationId("person@example.com", result.intent.saveOperationId),
+    ).toMatchObject({ status: "completed", serverEntryId: "entry_1" });
+    expect(await store.loadExactPayloadBySaveOperationId(result.intent.saveOperationId)).toMatchObject({
+      kind: "ok",
+    });
   });
 });

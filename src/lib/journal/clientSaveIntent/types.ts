@@ -87,6 +87,23 @@ export type ClientSaveDurableStore = ClientSaveOperationIntentStore & {
   loadExactPayloadBySaveOperationId(
     saveOperationId: string,
   ): Promise<import("@/lib/journal/clientSaveIntent/durableExactPayload").LoadExactPayloadResult>;
+  /**
+   * Deletes one payload row after the matching intent is locally completed.
+   * Never deletes intent metadata. Safe to retry.
+   */
+  deleteExactPayloadBySaveOperationId(input: {
+    actorKey: string;
+    saveOperationId: string;
+  }): Promise<import("@/lib/journal/clientSaveIntent/durableExactPayload").DeleteExactPayloadResult>;
+  /**
+   * Per-id maintenance for leftover completed payloads. Not a bulk DELETE.
+   * failed_final / pending / processing / recovery_required rows are skipped.
+   */
+  cleanupCompletedExactPayloadsForActor(actorKey: string): Promise<{
+    attempted: number;
+    deleted: number;
+    results: import("@/lib/journal/clientSaveIntent/durableExactPayload").DeleteExactPayloadResult[];
+  }>;
 };
 
 export type ClientSaveIntentStoreBootstrapResult =

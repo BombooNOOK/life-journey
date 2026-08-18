@@ -140,3 +140,58 @@ export function verifyLoadedExactPayload(
   }
   return { kind: "ok", payload: record, request };
 }
+
+export type DeleteExactPayloadResult =
+  | { kind: "deleted"; saveOperationId: string }
+  | { kind: "already_absent"; saveOperationId: string }
+  | {
+      kind: "blocked";
+      reason: "intent_missing" | "actor_mismatch" | "intent_not_completed";
+      saveOperationId: string;
+      status?: ClientSaveOperationIntent["status"];
+    };
+
+export type ExactPayloadCleanupTransaction = {
+  findIntent(saveOperationId: string): Promise<ClientSaveOperationIntent | null>;
+  findPayload(saveOperationId: string): Promise<ClientSaveExactPayloadRecord | null>;
+  deletePayload(saveOperationId: string): Promise<void>;
+};
+
+/**
+ * Deletes one exact payload row after local completion is durable.
+ * Never deletes the intent row, JournalEntry, or any other operation's payload.
+ */
+export async function applyDeleteExactPayloadIfCompleted(
+  tx: ExactPayloadCleanupTransaction,
+  input: { actorKey: string; saveOperationId: string },
+): Promise<DeleteExactPayloadResult> {
+  const intent = await tx.findIntent(input.saveOperationId);
+  if (!intent) {
+    return { kind: "blocked", reason: "intent_missing", saveOperationId: input.saveOperationId };
+  }
+  if (intent.actorKey !== input.actorKey) {
+    return {
+      kind: "blocked",
+      reason: "actor_mismatch",
+      saveOperationId: input.saveOperationId,
+      status: intent.status,
+    };
+  }
+  if (intent.status !== "completed" || !intent.serverEntryId) {
+    // pending / processing / recovery_required / failed_final / unbound
+    // server_completed keep the payload. failed_final is retained this phase
+    // so a later user review can still inspect the exact body/photo.
+    return {
+      kind: "blocked",
+      reason: "intent_not_completed",
+      saveOperationId: input.saveOperationId,
+      status: intent.status,
+    };
+  }
+  const payload = await tx.findPayload(input.saveOperationId);
+  if (!payload) {
+    return { kind: "already_absent", saveOperationId: input.saveOperationId };
+  }
+  await tx.deletePayload(input.saveOperationId);
+  return { kind: "deleted", saveOperationId: input.saveOperationId };
+}

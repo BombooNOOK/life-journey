@@ -4,9 +4,11 @@ import type {
 } from "@/lib/journal/clientSaveIntent/types";
 import { assertClientSaveOperationIntentTransition } from "@/lib/journal/clientSaveIntent/lifecycle";
 import {
+  applyDeleteExactPayloadIfCompleted,
   applyPersistPreparedIntentWithExactPayload,
   verifyLoadedExactPayload,
   type ClientSaveExactPayloadRecord,
+  type DeleteExactPayloadResult,
 } from "@/lib/journal/clientSaveIntent/durableExactPayload";
 
 export function createMemoryClientSaveOperationIntentStore(
@@ -57,7 +59,7 @@ export function createMemoryClientSaveOperationIntentStore(
     },
   };
 
-  return {
+  const store: ClientSaveDurableStore = {
     async findByActorAndSaveOperationId(actorKey, saveOperationId) {
       const row = rows.get(saveOperationId);
       return row?.actorKey === actorKey ? { ...row } : null;
@@ -128,5 +130,45 @@ export function createMemoryClientSaveOperationIntentStore(
       const intent = rows.get(saveOperationId);
       return verifyLoadedExactPayload({ ...payload }, intent?.requestFingerprint);
     },
+    async deleteExactPayloadBySaveOperationId(input) {
+      return applyDeleteExactPayloadIfCompleted(
+        {
+          findIntent: async (id) => {
+            const row = rows.get(id);
+            return row ? { ...row } : null;
+          },
+          findPayload: async (id) => {
+            const row = payloads.get(id);
+            return row ? { ...row } : null;
+          },
+          deletePayload: async (id) => {
+            payloads.delete(id);
+          },
+        },
+        input,
+      );
+    },
+    async cleanupCompletedExactPayloadsForActor(actorKey) {
+      const ids = [...payloads.keys()].filter((id) => {
+        const intent = rows.get(id);
+        return (
+          intent?.actorKey === actorKey &&
+          intent.status === "completed" &&
+          Boolean(intent.serverEntryId)
+        );
+      });
+      let deleted = 0;
+      const results: DeleteExactPayloadResult[] = [];
+      for (const saveOperationId of ids) {
+        const result = await store.deleteExactPayloadBySaveOperationId({
+          actorKey,
+          saveOperationId,
+        });
+        results.push(result);
+        if (result.kind === "deleted") deleted += 1;
+      }
+      return { attempted: ids.length, deleted, results };
+    },
   };
+  return store;
 }

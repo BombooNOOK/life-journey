@@ -63,6 +63,11 @@ export type JournalCreateSaveResult =
       recoveryState: "processing";
       intent: ClientSaveOperationIntent;
     }
+  /**
+   * Compatibility only. AI-7.2+ foreground recovery exact-replays stored
+   * request_json automatically, so the orchestrator no longer produces this
+   * kind. Journal/companion UI still maps it; do not delete in this phase.
+   */
   | { kind: "continuation_available"; intent: ClientSaveOperationIntent }
   | {
       kind: "recovery_required";
@@ -170,14 +175,65 @@ function resolveDeps(
 }
 
 const continuationFlights = new Map<string, Promise<JournalCreateSaveResult>>();
+/** Process-local: at most one exact POST replay per operation per JS lifetime. */
+const foregroundExactReplayOnce = new Set<string>();
 
 function sessionPayloadKey(actorKey: string, saveOperationId: string): string {
   return `${actorKey}:${saveOperationId}`;
 }
 
+function claimForegroundExactReplay(actorKey: string, saveOperationId: string): boolean {
+  const key = sessionPayloadKey(actorKey, saveOperationId);
+  if (foregroundExactReplayOnce.has(key)) return false;
+  foregroundExactReplayOnce.add(key);
+  return true;
+}
+
 /** Test-only flight reset; durable intent+payload rows are intentionally untouched. */
 export function clearCurrentSessionJournalCreatePayloadsForTest(): void {
   continuationFlights.clear();
+  foregroundExactReplayOnce.clear();
+}
+
+function hasPayloadCleanup(
+  store: ClientSaveOperationIntentStore,
+): store is ClientSaveDurableStore {
+  return (
+    isDurableStore(store) &&
+    typeof store.deleteExactPayloadBySaveOperationId === "function"
+  );
+}
+
+/**
+ * Payload cleanup is maintenance after local completed is durable.
+ * Failure must not rewrite the save as failed_final.
+ */
+async function cleanupPayloadAfterCompleted(
+  store: ClientSaveOperationIntentStore,
+  intent: ClientSaveOperationIntent,
+): Promise<void> {
+  if (intent.status !== "completed" || !intent.serverEntryId) return;
+  if (!hasPayloadCleanup(store)) return;
+  try {
+    await store.deleteExactPayloadBySaveOperationId({
+      actorKey: intent.actorKey,
+      saveOperationId: intent.saveOperationId,
+    });
+  } catch {
+    // Leftover payload is retryable; the save stays completed.
+  }
+}
+
+async function retryCompletedPayloadCleanup(
+  store: ClientSaveOperationIntentStore,
+  actorKey: string,
+): Promise<void> {
+  if (!hasPayloadCleanup(store)) return;
+  try {
+    await store.cleanupCompletedExactPayloadsForActor(actorKey);
+  } catch {
+    // Foreground recovery continues even if maintenance fails.
+  }
 }
 
 async function update(
@@ -239,6 +295,7 @@ async function applyPostedProtocolResponse(input: {
       status: "completed",
       completedAt: new Date().toISOString(),
     });
+    await cleanupPayloadAfterCompleted(input.store, intent);
     return { kind: "completed", recoveryState: "completed", entryId, data, intent };
   }
   if (input.response.status === 202) {
@@ -486,6 +543,7 @@ export async function recoverJournalCreateSaves(
   if (bootstrap.status !== "ready" || !actorKey) return [];
   if (isSaveIntentActivityBlockedForActor(actorKey)) return [];
   if (await resumeAccountDeleteSaveIntentCleanup(actorKey, bootstrap.store)) return [];
+  await retryCompletedPayloadCleanup(bootstrap.store, actorKey);
   const recovered: JournalCreateSaveResult[] = [];
   const replayedThisCycle = new Set<string>();
   for (let intent of await bootstrap.store.listRecoverableByActor(actorKey)) {
@@ -506,6 +564,7 @@ export async function recoverJournalCreateSaves(
           status: "completed",
           completedAt: new Date().toISOString(),
         });
+        await cleanupPayloadAfterCompleted(bootstrap.store, intent);
         recovered.push({
           kind: "completed",
           recoveryState: "completed",
@@ -561,6 +620,7 @@ export async function recoverJournalCreateSaves(
             status: "completed",
             completedAt: new Date().toISOString(),
           });
+          await cleanupPayloadAfterCompleted(bootstrap.store, intent);
           recovered.push({
             kind: "completed",
             recoveryState: "completed",
@@ -627,6 +687,10 @@ export async function recoverJournalCreateSaves(
       continue;
     }
     if (replayedThisCycle.has(intent.saveOperationId)) {
+      recovered.push({ kind: "pending", recoveryState: "pending", intent });
+      continue;
+    }
+    if (!claimForegroundExactReplay(actorKey, intent.saveOperationId)) {
       recovered.push({ kind: "pending", recoveryState: "pending", intent });
       continue;
     }
