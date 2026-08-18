@@ -35,6 +35,10 @@ export {
   runForegroundJournalCreateRecovery,
   runJournalCreateSave,
 } from "@/lib/journal/clientSaveIntent/JournalCreateSaveOrchestrator";
+export type {
+  JournalCreateRecoveryState,
+  JournalCreateSaveResult,
+} from "@/lib/journal/clientSaveIntent/JournalCreateSaveOrchestrator";
 export {
   createClientSaveOperationId,
   isValidClientSaveOperationId,

@@ -390,8 +390,12 @@ export function CompanionWritingPage() {
           setSaving(false);
           return;
         }
-        if (result.kind === "processing") setForegroundRecoveryRevision((value) => value + 1);
-        throw new Error(result.kind === "processing" ? "保存処理中です。しばらくしてから確認してください。" : "保存結果を安全に確認できませんでした。");
+        if (result.kind === "processing" || result.kind === "pending") setForegroundRecoveryRevision((value) => value + 1);
+        throw new Error(
+          result.kind === "processing" || result.kind === "pending"
+            ? "保存処理中です。しばらくしてから確認してください。"
+            : "保存結果を安全に確認できませんでした。",
+        );
       }
       if (res && !res.ok) {
         if (data.code === "ACORN_INSUFFICIENT") {
@@ -725,7 +729,7 @@ export function CompanionWritingPage() {
 
       {step === "write" && questionSet ? (
         <section className={companionWritingWizardStepClass}>
-          {foregroundRecovery.status === "checking" || foregroundRecovery.status === "processing" ? (
+          {foregroundRecovery.status === "checking" || foregroundRecovery.status === "processing" || foregroundRecovery.status === "pending" ? (
             <p className="rounded-md bg-amber-50 px-3 py-2 text-sm text-amber-900">保存状況を確認しています。</p>
           ) : foregroundRecovery.status === "completed" ? (
             <p className="rounded-md bg-emerald-50 px-3 py-2 text-sm text-emerald-900">以前の保存は完了しています。</p>

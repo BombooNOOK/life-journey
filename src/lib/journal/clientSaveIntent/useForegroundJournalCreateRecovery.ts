@@ -11,6 +11,7 @@ import {
 export type ForegroundJournalRecoveryState =
   | { status: "idle" | "checking" }
   | { status: "completed"; entryId: string }
+  | { status: "pending" }
   | { status: "processing" }
   | { status: "continuation_available"; saveOperationId: string }
   | { status: "failed_final"; code: "ACORN_INSUFFICIENT" | "SERVER_FAILED_FINAL" }
@@ -44,6 +45,7 @@ export function useForegroundJournalCreateRecovery(input: {
       }
       const result = results[0] as JournalCreateSaveResult;
       if (result.kind === "completed") setState({ status: "completed", entryId: result.entryId });
+      else if (result.kind === "pending") setState({ status: "pending" });
       else if (result.kind === "processing") setState({ status: "processing" });
       else if (result.kind === "continuation_available") {
         setState({ status: "continuation_available", saveOperationId: result.intent.saveOperationId });
@@ -67,6 +69,7 @@ export function useForegroundJournalCreateRecovery(input: {
       afterServerCompleted: input.onCompleted,
     });
     if (result.kind === "completed") setState({ status: "completed", entryId: result.entryId });
+    else if (result.kind === "pending") setState({ status: "pending" });
     else if (result.kind === "processing") setState({ status: "processing" });
     else if (result.kind === "failed_final") setState({ status: "failed_final", code: result.code });
     else setState({ status: "recovery_required" });

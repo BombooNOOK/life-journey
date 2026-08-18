@@ -290,6 +290,7 @@ function JournalPageContent() {
   useEffect(() => {
     if (
       foregroundRecovery.status === "completed" ||
+      foregroundRecovery.status === "pending" ||
       foregroundRecovery.status === "continuation_available" ||
       foregroundRecovery.status === "recovery_required" ||
       foregroundRecovery.status === "failed_final"
@@ -937,8 +938,14 @@ function JournalPageContent() {
           setPreferDraftMode(true);
           setError("どんぐりが足りません。下書きとして残すか、どんぐりをためてから森に残してください。");
         } else {
-          setError(orchestrated.kind === "processing" ? "保存処理中です。しばらくしてから確認してください。" : "保存結果を安全に確認できませんでした。");
-          if (orchestrated.kind === "processing") setForegroundRecoveryRevision((value) => value + 1);
+          setError(
+            orchestrated.kind === "processing" || orchestrated.kind === "pending"
+              ? "保存処理中です。しばらくしてから確認してください。"
+              : "保存結果を安全に確認できませんでした。",
+          );
+          if (orchestrated.kind === "processing" || orchestrated.kind === "pending") {
+            setForegroundRecoveryRevision((value) => value + 1);
+          }
         }
         return;
       }
@@ -1839,7 +1846,7 @@ function JournalPageContent() {
       {draftNotice ? (
         <p className="rounded-md bg-emerald-50 px-3 py-2 text-sm text-emerald-900">{draftNotice}</p>
       ) : null}
-      {foregroundRecovery.status === "checking" || foregroundRecovery.status === "processing" ? (
+      {foregroundRecovery.status === "checking" || foregroundRecovery.status === "processing" || foregroundRecovery.status === "pending" ? (
         <p className="rounded-md bg-amber-50 px-3 py-2 text-sm text-amber-900">保存状況を確認しています。</p>
       ) : foregroundRecovery.status === "completed" ? (
         <p className="rounded-md bg-emerald-50 px-3 py-2 text-sm text-emerald-900">以前の保存は完了しています。</p>

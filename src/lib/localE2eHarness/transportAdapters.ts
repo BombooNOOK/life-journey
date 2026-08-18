@@ -18,6 +18,24 @@ function lookupJson(state: "processing" | "not_found"): Response {
  * Wraps post/lookup only. Capability and bootstrap stay formal.
  * Response-loss: real POST completes; client discards the successful Response.
  */
+async function maybeDropSuccessfulResponse(
+  actorKey: string,
+  saveOperationId: string | null,
+  response: Response,
+): Promise<Response> {
+  if (
+    actorKey &&
+    response.ok &&
+    response.status === 200 &&
+    consumeLocalE2eFault("response_loss_after_server_success", actorKey, saveOperationId)
+  ) {
+    // Server work already finished. Drop the body so the orchestrator
+    // treats this as transport ambiguity (catch → pending).
+    throw new Error("local_e2e_response_loss_after_server_success");
+  }
+  return response;
+}
+
 export function wrapJournalCreateDepsWithLocalE2eFaults(
   deps: JournalCreateSaveOrchestratorDeps,
   viewerEmailForScope: () => string | null | undefined,
@@ -29,17 +47,21 @@ export function wrapJournalCreateDepsWithLocalE2eFaults(
       const saveOperationId =
         typeof payload.saveOperationId === "string" ? payload.saveOperationId : null;
       const response = await deps.post(payload);
-      if (
-        actorKey &&
-        response.ok &&
-        response.status === 200 &&
-        consumeLocalE2eFault("response_loss_after_server_success", actorKey, saveOperationId)
-      ) {
-        // Server work already finished. Drop the body so the orchestrator
-        // treats this as transport ambiguity (catch → processing).
-        throw new Error("local_e2e_response_loss_after_server_success");
+      return maybeDropSuccessfulResponse(actorKey, saveOperationId, response);
+    },
+    async postExactJson(requestJson: string) {
+      const actorKey = normalizeClientActorKey(viewerEmailForScope() ?? "") ?? "";
+      let saveOperationId: string | null = null;
+      try {
+        const parsed = JSON.parse(requestJson) as { saveOperationId?: unknown };
+        saveOperationId = typeof parsed.saveOperationId === "string" ? parsed.saveOperationId : null;
+      } catch {
+        saveOperationId = null;
       }
-      return response;
+      const response = await (deps.postExactJson
+        ? deps.postExactJson(requestJson)
+        : deps.post(JSON.parse(requestJson) as JournalCreatePayload));
+      return maybeDropSuccessfulResponse(actorKey, saveOperationId, response);
     },
     async lookup(input) {
       const actorKey = normalizeClientActorKey(viewerEmailForScope() ?? "") ?? "";
