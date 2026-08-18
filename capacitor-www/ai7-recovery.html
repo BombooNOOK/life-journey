@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover"
+    />
+    <title>AI-7 Device Recovery Harness｜Developer</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --ink: #1c1917;
+        --muted: #78716c;
+        --paper: #f4f6f3;
+        --card: #ffffff;
+        --line: #e7e5e4;
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0; min-height: 100vh;
+        font-family: system-ui, sans-serif;
+        background: var(--paper);
+        color: var(--ink);
+        padding: max(1rem, env(safe-area-inset-top)) 1rem max(1.5rem, env(safe-area-inset-bottom));
+      }
+      main { max-width: 36rem; margin: 0 auto; }
+      h1 { font-size: 1.1rem; margin: 0 0 0.35rem; }
+      .note, .muted { color: var(--muted); font-size: 0.82rem; line-height: 1.45; }
+      .actions { display: grid; gap: 0.55rem; margin: 1rem 0; }
+      button {
+        appearance: none; border: 1px solid var(--line); background: var(--card);
+        color: var(--ink); border-radius: 0.5rem; padding: 0.75rem 1rem;
+        font-size: 0.9rem; font-weight: 600;
+      }
+      .status {
+        margin: 0.75rem 0; padding: 0.75rem 0.9rem; border-radius: 0.5rem;
+        background: #fff; border: 1px solid var(--line); font-size: 0.82rem;
+        line-height: 1.45; white-space: pre-wrap;
+      }
+      .status.err { border-color: #fecaca; background: #fff7f5; color: #9a3412; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <p class="muted">Developer tool · AI-7 isolated native recovery</p>
+      <h1>AI-7 Device Recovery Harness</h1>
+      <p class="note">
+        SQLCipher persist と in-process fake transport のみ。Production / localhost POST はありません。
+        通常のあしあと clear は使いません。
+      </p>
+      <p id="platform" class="muted">platform…</p>
+      <div class="actions">
+        <button type="button" id="btn-text">T1 Persist text</button>
+        <button type="button" id="btn-photo">T2 Persist photo</button>
+        <button type="button" id="btn-inspect">Inspect</button>
+        <button type="button" id="btn-recover">Fake Recover</button>
+        <button type="button" id="btn-cleanup">Cleanup test operation</button>
+      </div>
+      <p id="status" class="status">起動中…</p>
+      <pre id="inspect" class="status">未実行</pre>
+    </main>
+    <script src="./ai7-recovery.js"></script>
+  </body>
+</html>

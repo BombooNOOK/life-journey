@@ -1,3 +1,4 @@
+var process={env:{NODE_ENV:"development",NEXT_PUBLIC_AI7_DEVICE_HARNESS:"YES"}};
 "use strict";
 (() => {
   var __defProp = Object.defineProperty;
@@ -519,13 +520,49 @@
     }
   });
 
-  // ../life-journey-release-server-idempotency-off-prep/node_modules/@capacitor-community/sqlite/dist/esm/web.js
+  // ../life-journey-release-server-idempotency-off-prep/plugins/ljd-local-security/dist/esm/web.js
   var web_exports = {};
   __export(web_exports, {
+    LjdLocalSecurityWeb: () => LjdLocalSecurityWeb
+  });
+  var LjdLocalSecurityWeb;
+  var init_web = __esm({
+    "../life-journey-release-server-idempotency-off-prep/plugins/ljd-local-security/dist/esm/web.js"() {
+      "use strict";
+      init_dist();
+      LjdLocalSecurityWeb = class extends WebPlugin {
+        async inspectPath() {
+          throw this.unimplemented("Not implemented on web.");
+        }
+        async setCompleteProtection() {
+          throw this.unimplemented("Not implemented on web.");
+        }
+        async setExcludedFromBackup() {
+          throw this.unimplemented("Not implemented on web.");
+        }
+        async resolveApplicationSupportLjdDir() {
+          throw this.unimplemented("Not implemented on web.");
+        }
+        async inspectGenericPasswordAccessibility() {
+          throw this.unimplemented("Not implemented on web.");
+        }
+        async getVolumeAvailableCapacity() {
+          throw this.unimplemented("Not implemented on web.");
+        }
+        async listSqliteArtifactsInLjdDir() {
+          throw this.unimplemented("Not implemented on web.");
+        }
+      };
+    }
+  });
+
+  // ../life-journey-release-server-idempotency-off-prep/node_modules/@capacitor-community/sqlite/dist/esm/web.js
+  var web_exports2 = {};
+  __export(web_exports2, {
     CapacitorSQLiteWeb: () => CapacitorSQLiteWeb
   });
   var CapacitorSQLiteWeb;
-  var init_web = __esm({
+  var init_web2 = __esm({
     "../life-journey-release-server-idempotency-off-prep/node_modules/@capacitor-community/sqlite/dist/esm/web.js"() {
       init_dist();
       CapacitorSQLiteWeb = class extends WebPlugin {
@@ -1021,8 +1058,8 @@
   });
 
   // ../life-journey-release-server-idempotency-off-prep/node_modules/@capacitor/filesystem/dist/esm/web.js
-  var web_exports2 = {};
-  __export(web_exports2, {
+  var web_exports3 = {};
+  __export(web_exports3, {
     FilesystemWeb: () => FilesystemWeb
   });
   function resolve(path) {
@@ -1045,7 +1082,7 @@
     return parent !== children && pathsA.every((value, index) => value === pathsB[index]);
   }
   var FilesystemWeb;
-  var init_web2 = __esm({
+  var init_web3 = __esm({
     "../life-journey-release-server-idempotency-off-prep/node_modules/@capacitor/filesystem/dist/esm/web.js"() {
       init_dist();
       init_definitions();
@@ -1127,15 +1164,15 @@
         }
         static doUpgrade(event) {
           const eventTarget = event.target;
-          const db2 = eventTarget.result;
+          const db = eventTarget.result;
           switch (event.oldVersion) {
             case 0:
             case 1:
             default: {
-              if (db2.objectStoreNames.contains("FileStorage")) {
-                db2.deleteObjectStore("FileStorage");
+              if (db.objectStoreNames.contains("FileStorage")) {
+                db.deleteObjectStore("FileStorage");
               }
-              const store = db2.createObjectStore("FileStorage", { keyPath: "path" });
+              const store = db.createObjectStore("FileStorage", { keyPath: "path" });
               store.createIndex("by_folder", "folder");
             }
           }
@@ -1593,46 +1630,109 @@
     }
   });
 
-  // ../life-journey-release-server-idempotency-off-prep/plugins/ljd-local-security/dist/esm/web.js
-  var web_exports3 = {};
-  __export(web_exports3, {
-    LjdLocalSecurityWeb: () => LjdLocalSecurityWeb
-  });
-  var LjdLocalSecurityWeb;
-  var init_web3 = __esm({
-    "../life-journey-release-server-idempotency-off-prep/plugins/ljd-local-security/dist/esm/web.js"() {
-      "use strict";
-      init_dist();
-      LjdLocalSecurityWeb = class extends WebPlugin {
-        async inspectPath() {
-          throw this.unimplemented("Not implemented on web.");
-        }
-        async setCompleteProtection() {
-          throw this.unimplemented("Not implemented on web.");
-        }
-        async setExcludedFromBackup() {
-          throw this.unimplemented("Not implemented on web.");
-        }
-        async resolveApplicationSupportLjdDir() {
-          throw this.unimplemented("Not implemented on web.");
-        }
-        async inspectGenericPasswordAccessibility() {
-          throw this.unimplemented("Not implemented on web.");
-        }
-        async getVolumeAvailableCapacity() {
-          throw this.unimplemented("Not implemented on web.");
-        }
-        async listSqliteArtifactsInLjdDir() {
-          throw this.unimplemented("Not implemented on web.");
-        }
-      };
-    }
-  });
-
-  // src/lib/local-first/diagnostics/localStorageDiagnosticsMain.ts
+  // src/lib/journal/clientSaveIntent/ai7DeviceRecoveryHarness/deviceUi.ts
   init_dist();
 
-  // src/lib/local-first/journal/database.ts
+  // src/lib/journal/clientSaveIntent/NativeSaveIntentBootstrap.ts
+  init_dist();
+
+  // src/lib/local-first/security/backupInclusion.ts
+  init_dist();
+
+  // ../life-journey-release-server-idempotency-off-prep/plugins/ljd-local-security/dist/esm/index.js
+  init_dist();
+  var LjdLocalSecurity = registerPlugin("LjdLocalSecurity", {
+    web: () => Promise.resolve().then(() => (init_web(), web_exports)).then((m) => new m.LjdLocalSecurityWeb())
+  });
+
+  // src/lib/local-first/security/types.ts
+  var LocalFirstSecurityError = class extends Error {
+    constructor(code, message) {
+      super(message);
+      this.name = "LocalFirstSecurityError";
+      this.code = code;
+    }
+  };
+  var LJD_FILE_PROTECTION_CANDIDATE = "NSFileProtectionComplete";
+  var LJD_PLUGIN_KEYCHAIN_SERVICE = "unlockSecret";
+  var LJD_PLUGIN_KEYCHAIN_ACCOUNT = "ljd_CapacitorSQLitePlugin";
+  var LJD_PLUGIN_KEYCHAIN_ACCESSIBILITY_MEASURED = "kSecAttrAccessibleWhenUnlocked";
+  var LJD_SQLITE_ENCRYPTION_MODE = "secret";
+
+  // src/lib/local-first/security/noSecretLog.ts
+  var SECRET_KEY = /passphrase|password|secret|encryptionkey|encryption_secret|unlocksecret/i;
+  function redactSecretLike(value) {
+    if (value == null) return value;
+    if (typeof value === "string") {
+      if (value.length > 8 && /^[A-Za-z0-9+/=_-]{16,}$/.test(value)) {
+        return "[redacted]";
+      }
+      return value;
+    }
+    if (Array.isArray(value)) return value.map(redactSecretLike);
+    if (typeof value === "object") {
+      const out = {};
+      for (const [key, v] of Object.entries(value)) {
+        out[key] = SECRET_KEY.test(key) ? "[redacted]" : redactSecretLike(v);
+      }
+      return out;
+    }
+    return value;
+  }
+  function safeErrorMessage(error) {
+    if (error instanceof Error) {
+      const msg = error.message;
+      const hasSecretValue = SECRET_KEY.test(msg) && /:\s*['"]?[A-Za-z0-9+/=_-]{12,}/.test(msg);
+      if (hasSecretValue) return `${error.name}: [redacted security error]`;
+      return msg.replace(/\b[A-Fa-f0-9]{24,}\b/g, "[redacted]");
+    }
+    return String(redactSecretLike(error));
+  }
+
+  // src/lib/local-first/security/securityErrorMapping.ts
+  function mapSecurityError(error) {
+    if (error instanceof LocalFirstSecurityError) return error;
+    const message = safeErrorMessage(error);
+    let code = "unknown";
+    if (/native-only|native only/i.test(message)) code = "native_only";
+    else if (/path required/i.test(message)) code = "path_required";
+    else if (/journal_encryption_forbidden|must not be opened encrypted/i.test(message)) {
+      code = "journal_encryption_forbidden";
+    } else if (/not implemented on web|unimplemented/i.test(message)) {
+      code = "bridge_unimplemented";
+    }
+    return new LocalFirstSecurityError(code, message);
+  }
+
+  // src/lib/local-first/security/backupInclusion.ts
+  async function ensurePathExcludedFromBackup(path) {
+    if (!Capacitor.isNativePlatform()) {
+      throw new LocalFirstSecurityError(
+        "native_only",
+        "backup exclusion helper is native-only"
+      );
+    }
+    if (!path) {
+      throw new LocalFirstSecurityError("path_required", "path required");
+    }
+    try {
+      const current = await LjdLocalSecurity.inspectPath({ path });
+      if (!shouldExcludeFromBackup(current.isExcludedFromBackup)) {
+        return current;
+      }
+      return await LjdLocalSecurity.setExcludedFromBackup({
+        path,
+        excluded: true
+      });
+    } catch (error) {
+      throw mapSecurityError(error);
+    }
+  }
+  function shouldExcludeFromBackup(current) {
+    return current !== true;
+  }
+
+  // src/lib/local-first/security/encryptedDatabase.ts
   init_dist();
 
   // ../life-journey-release-server-idempotency-off-prep/node_modules/@capacitor-community/sqlite/dist/esm/index.js
@@ -2465,126 +2565,139 @@
 
   // ../life-journey-release-server-idempotency-off-prep/node_modules/@capacitor-community/sqlite/dist/esm/index.js
   var CapacitorSQLite = registerPlugin("CapacitorSQLite", {
-    web: () => Promise.resolve().then(() => (init_web(), web_exports)).then((m) => new m.CapacitorSQLiteWeb()),
+    web: () => Promise.resolve().then(() => (init_web2(), web_exports2)).then((m) => new m.CapacitorSQLiteWeb()),
     electron: () => window.CapacitorCustomPlatform.plugins.CapacitorSQLite
   });
 
   // src/lib/local-first/journal/types.ts
   var LOCAL_JOURNAL_DB_NAME = "ljd_local_journal";
-  var LOCAL_JOURNAL_SCHEMA_USER_VERSION = 1;
 
-  // src/lib/local-first/journal/database.ts
-  var connection = null;
-  var db = null;
-  function assertLocalJournalNative() {
-    if (!Capacitor.isNativePlatform()) {
-      throw new Error("Local Journal foundation is native-only.");
+  // src/lib/local-first/security/encryptedDatabase.ts
+  var PluginSecretConfigurationError = class extends Error {
+    constructor(reason) {
+      super(`plugin_secret_configuration_${reason}`);
+      this.name = "PluginSecretConfigurationError";
+      this.reason = reason;
     }
-  }
-  function getConnection() {
-    if (!connection) connection = new SQLiteConnection(CapacitorSQLite);
-    return connection;
-  }
-  var SCHEMA_SQL = `
-CREATE TABLE IF NOT EXISTS local_journal_entries (
-  stable_id TEXT PRIMARY KEY NOT NULL,
-  date_key TEXT NOT NULL,
-  title TEXT NOT NULL,
-  content TEXT NOT NULL,
-  created_at TEXT NOT NULL,
-  updated_at TEXT NOT NULL,
-  tags_json TEXT NOT NULL DEFAULT '[]',
-  schema_version INTEGER NOT NULL,
-  source TEXT NOT NULL,
-  local_status TEXT NOT NULL,
-  imported_at TEXT,
-  legacy_server_id TEXT,
-  server_updated_at TEXT
-);
-
-CREATE INDEX IF NOT EXISTS idx_local_journal_date
-  ON local_journal_entries (date_key);
-
-CREATE INDEX IF NOT EXISTS idx_local_journal_updated
-  ON local_journal_entries (updated_at);
-
-CREATE UNIQUE INDEX IF NOT EXISTS idx_local_journal_legacy_server
-  ON local_journal_entries (legacy_server_id)
-  WHERE legacy_server_id IS NOT NULL;
-
-CREATE TABLE IF NOT EXISTS local_journal_tags (
-  journal_stable_id TEXT NOT NULL,
-  tag TEXT NOT NULL,
-  PRIMARY KEY (journal_stable_id, tag)
-);
-
-CREATE INDEX IF NOT EXISTS idx_local_journal_tags_tag
-  ON local_journal_tags (tag);
-
-CREATE TABLE IF NOT EXISTS local_media (
-  stable_id TEXT PRIMARY KEY NOT NULL,
-  journal_stable_id TEXT NOT NULL,
-  type TEXT NOT NULL,
-  relative_path TEXT NOT NULL,
-  created_at TEXT NOT NULL,
-  checksum TEXT,
-  mime_type TEXT
-);
-
-CREATE INDEX IF NOT EXISTS idx_local_media_journal
-  ON local_media (journal_stable_id);
-`;
-  async function readUserVersion(database) {
-    const versionResult = await database.query("PRAGMA user_version;");
-    const raw = versionResult.values?.[0];
-    const current = typeof raw?.user_version === "number" ? raw.user_version : typeof raw?.user_version === "string" ? Number(raw.user_version) : Number(Object.values(raw ?? {})[0] ?? 0);
-    return Number.isFinite(current) ? current : 0;
-  }
-  async function applyFoundationSchema(database) {
-    await database.execute(SCHEMA_SQL);
-    await database.execute(`PRAGMA user_version = ${LOCAL_JOURNAL_SCHEMA_USER_VERSION};`);
-  }
-  async function withLocalJournalTransaction(fn) {
-    const database = await openLocalJournalDatabase();
-    await database.execute("BEGIN;");
-    try {
-      const result = await fn(database);
-      await database.execute("COMMIT;");
-      return result;
-    } catch (err) {
-      try {
-        await database.execute("ROLLBACK;");
-      } catch {
-      }
-      throw err;
+  };
+  function classifyPluginSecretConfigurationFailure(error) {
+    const message = error instanceof Error ? error.message : String(error);
+    if (/not implemented|unimplemented|method.*not.*found/i.test(message)) {
+      return "api_unavailable";
     }
+    if (/no encryption set/i.test(message)) return "encryption_not_configured";
+    if (/no database folder|getdatabasesurl|database location/i.test(message)) {
+      return "database_location_unavailable";
+    }
+    if (/keychain|secitem|security service|errsec/i.test(message)) {
+      return "keychain_write_failed";
+    }
+    return "unknown";
   }
-  async function openLocalJournalDatabase() {
-    assertLocalJournalNative();
-    if (db) return db;
-    const sqlite = getConnection();
-    const consistency = await sqlite.checkConnectionsConsistency();
-    const isConn = (await sqlite.isConnection(LOCAL_JOURNAL_DB_NAME, false)).result;
-    if (consistency.result && isConn) {
-      db = await sqlite.retrieveConnection(LOCAL_JOURNAL_DB_NAME, false);
-    } else {
-      db = await sqlite.createConnection(
-        LOCAL_JOURNAL_DB_NAME,
-        false,
-        "no-encryption",
-        LOCAL_JOURNAL_SCHEMA_USER_VERSION,
-        false
+  function assertNotProductionJournal(name) {
+    if (name === LOCAL_JOURNAL_DB_NAME) {
+      throw new LocalFirstSecurityError(
+        "journal_encryption_forbidden",
+        "ljd_local_journal must not be opened encrypted in 4B-3E; plaintext\u2192encrypted migration is a later phase"
       );
     }
-    await db.open();
-    const current = await readUserVersion(db);
-    if (current < LOCAL_JOURNAL_SCHEMA_USER_VERSION) {
-      await applyFoundationSchema(db);
+  }
+  async function configurePluginEncryptionSecret(passphrase) {
+    if (!Capacitor.isNativePlatform()) {
+      throw new LocalFirstSecurityError(
+        "native_only",
+        "encryption secret configure is native-only"
+      );
     }
-    return db;
+    if (!passphrase) {
+      throw new LocalFirstSecurityError("unknown", "passphrase required");
+    }
+    try {
+      await CapacitorSQLite.setEncryptionSecret({ passphrase });
+    } catch (error) {
+      throw new PluginSecretConfigurationError(classifyPluginSecretConfigurationFailure(error));
+    }
+  }
+  async function isPluginEncryptionSecretStored() {
+    if (!Capacitor.isNativePlatform()) {
+      throw new LocalFirstSecurityError(
+        "native_only",
+        "encryption secret inspection is native-only"
+      );
+    }
+    try {
+      return (await CapacitorSQLite.isSecretStored()).result === true;
+    } catch (error) {
+      throw mapSecurityError(error);
+    }
+  }
+  async function openNamedEncryptedDatabase(name, version = 1) {
+    assertNotProductionJournal(name);
+    if (!Capacitor.isNativePlatform()) {
+      throw new LocalFirstSecurityError(
+        "native_only",
+        "encrypted DB open is native-only"
+      );
+    }
+    try {
+      const sqlite = new SQLiteConnection(CapacitorSQLite);
+      try {
+        await sqlite.checkConnectionsConsistency();
+      } catch {
+      }
+      if ((await sqlite.isConnection(name, false)).result) {
+        await sqlite.closeConnection(name, false);
+      }
+      const db = await sqlite.createConnection(
+        name,
+        true,
+        LJD_SQLITE_ENCRYPTION_MODE,
+        version,
+        false
+      );
+      await db.open();
+      return db;
+    } catch (error) {
+      throw mapSecurityError(error);
+    }
   }
 
-  // src/lib/local-first/journal/mediaStore.ts
+  // src/lib/local-first/security/fileProtection.ts
+  init_dist();
+  function isCompleteProtection(label) {
+    return label === LJD_FILE_PROTECTION_CANDIDATE;
+  }
+  async function applyCompleteFileProtection(path) {
+    if (!Capacitor.isNativePlatform()) {
+      throw new LocalFirstSecurityError(
+        "native_only",
+        "file protection helper is native-only"
+      );
+    }
+    if (!path) {
+      throw new LocalFirstSecurityError("path_required", "path required");
+    }
+    try {
+      return await LjdLocalSecurity.setCompleteProtection({ path });
+    } catch (error) {
+      throw mapSecurityError(error);
+    }
+  }
+  async function inspectFileProtection(path) {
+    if (!Capacitor.isNativePlatform()) {
+      throw new LocalFirstSecurityError(
+        "native_only",
+        "file protection inspect is native-only"
+      );
+    }
+    try {
+      return await LjdLocalSecurity.inspectPath({ path });
+    } catch (error) {
+      throw mapSecurityError(error);
+    }
+  }
+
+  // src/lib/local-first/security/mediaProtection.ts
   init_dist();
 
   // ../life-journey-release-server-idempotency-off-prep/node_modules/@capacitor/filesystem/dist/esm/index.js
@@ -2640,266 +2753,64 @@ CREATE INDEX IF NOT EXISTS idx_local_media_journal
   // ../life-journey-release-server-idempotency-off-prep/node_modules/@capacitor/filesystem/dist/esm/index.js
   init_definitions();
   var Filesystem = registerPlugin("Filesystem", {
-    web: () => Promise.resolve().then(() => (init_web2(), web_exports2)).then((m) => new m.FilesystemWeb())
+    web: () => Promise.resolve().then(() => (init_web3(), web_exports3)).then((m) => new m.FilesystemWeb())
   });
   f();
 
-  // src/lib/local-first/journal/mediaStore.ts
-  function assertNative() {
+  // src/lib/local-first/security/pluginKeychain.ts
+  init_dist();
+  async function inspectPluginDbKeyAccessibility() {
     if (!Capacitor.isNativePlatform()) {
-      throw new Error("Local Journal media store is native-only.");
+      throw new LocalFirstSecurityError(
+        "native_only",
+        "plugin Keychain inspect is native-only"
+      );
     }
-  }
-  async function resolveJournalMediaUri(relativePath) {
-    assertNative();
-    const result = await Filesystem.getUri({
-      path: relativePath,
-      directory: Directory.Library
-    });
-    return Capacitor.convertFileSrc(result.uri);
-  }
-  async function deleteJournalMediaRelative(relativePath) {
-    assertNative();
     try {
-      await Filesystem.deleteFile({
-        path: relativePath,
-        directory: Directory.Library
+      const result = await LjdLocalSecurity.inspectGenericPasswordAccessibility({
+        service: LJD_PLUGIN_KEYCHAIN_SERVICE,
+        account: LJD_PLUGIN_KEYCHAIN_ACCOUNT
       });
-    } catch {
+      return {
+        found: result.found,
+        accessibility: result.accessibility,
+        matchesWhenUnlocked: result.found && result.accessibility === LJD_PLUGIN_KEYCHAIN_ACCESSIBILITY_MEASURED,
+        returnedSecretData: false
+      };
+    } catch (error) {
+      throw mapSecurityError(error);
     }
   }
 
-  // src/lib/local-first/journal/repository.ts
-  function parseTagsJson(raw) {
+  // src/lib/local-first/security/storageCapacity.ts
+  init_dist();
+
+  // src/lib/local-first/security/storageInspection.ts
+  init_dist();
+
+  // src/lib/local-first/security/storageLocation.ts
+  init_dist();
+  async function resolveLjdApplicationSupportDir() {
+    if (!Capacitor.isNativePlatform()) {
+      throw new LocalFirstSecurityError(
+        "native_only",
+        "Application Support resolve is native-only"
+      );
+    }
     try {
-      const parsed = JSON.parse(raw);
-      if (!Array.isArray(parsed)) return [];
-      return parsed.map(String);
-    } catch {
-      return [];
+      return await LjdLocalSecurity.resolveApplicationSupportLjdDir();
+    } catch (error) {
+      throw mapSecurityError(error);
     }
-  }
-  async function loadMediaForJournal(journalStableId) {
-    const db2 = await openLocalJournalDatabase();
-    const result = await db2.query(
-      `SELECT stable_id, journal_stable_id, type, relative_path, created_at, checksum, mime_type
-     FROM local_media WHERE journal_stable_id = ?;`,
-      [journalStableId]
-    );
-    return (result.values ?? []).map((r) => ({
-      stableId: String(r.stable_id),
-      journalStableId: String(r.journal_stable_id),
-      type: String(r.type),
-      relativePath: String(r.relative_path),
-      createdAt: String(r.created_at),
-      checksum: r.checksum == null ? null : String(r.checksum),
-      mimeType: r.mime_type == null ? null : String(r.mime_type)
-    }));
-  }
-  function mapEntryRow(r, mediaRefs) {
-    return {
-      stableId: String(r.stable_id),
-      dateKey: String(r.date_key),
-      title: String(r.title),
-      content: String(r.content),
-      createdAt: String(r.created_at),
-      updatedAt: String(r.updated_at),
-      tags: parseTagsJson(String(r.tags_json ?? "[]")),
-      mediaRefs,
-      schemaVersion: Number(r.schema_version),
-      source: String(r.source),
-      localStatus: String(r.local_status),
-      importedAt: r.imported_at == null ? null : String(r.imported_at),
-      legacyServerId: r.legacy_server_id == null ? null : String(r.legacy_server_id),
-      serverUpdatedAt: r.server_updated_at == null ? null : String(r.server_updated_at)
-    };
-  }
-  var JournalRepository = {
-    async save(entry) {
-      await withLocalJournalTransaction(async (db2) => {
-        await db2.run(
-          `INSERT OR REPLACE INTO local_journal_entries (
-          stable_id, date_key, title, content, created_at, updated_at,
-          tags_json, schema_version, source, local_status, imported_at, legacy_server_id,
-          server_updated_at
-        ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?);`,
-          [
-            entry.stableId,
-            entry.dateKey,
-            entry.title,
-            entry.content,
-            entry.createdAt,
-            entry.updatedAt,
-            JSON.stringify(entry.tags),
-            entry.schemaVersion,
-            entry.source,
-            entry.localStatus,
-            entry.importedAt,
-            entry.legacyServerId,
-            entry.serverUpdatedAt
-          ]
-        );
-        await db2.run(`DELETE FROM local_journal_tags WHERE journal_stable_id = ?;`, [
-          entry.stableId
-        ]);
-        for (const tag of entry.tags) {
-          await db2.run(
-            `INSERT OR REPLACE INTO local_journal_tags (journal_stable_id, tag) VALUES (?, ?);`,
-            [entry.stableId, tag]
-          );
-        }
-        await db2.run(`DELETE FROM local_media WHERE journal_stable_id = ?;`, [entry.stableId]);
-        for (const media of entry.mediaRefs) {
-          await db2.run(
-            `INSERT OR REPLACE INTO local_media (
-            stable_id, journal_stable_id, type, relative_path, created_at, checksum, mime_type
-          ) VALUES (?,?,?,?,?,?,?);`,
-            [
-              media.stableId,
-              media.journalStableId,
-              media.type,
-              media.relativePath,
-              media.createdAt,
-              media.checksum,
-              media.mimeType
-            ]
-          );
-        }
-      });
-    },
-    async getById(stableId) {
-      const db2 = await openLocalJournalDatabase();
-      const result = await db2.query(
-        `SELECT * FROM local_journal_entries WHERE stable_id = ? AND local_status = 'active' LIMIT 1;`,
-        [stableId]
-      );
-      const row = result.values?.[0];
-      if (!row) return null;
-      return mapEntryRow(row, await loadMediaForJournal(stableId));
-    },
-    async getByLegacyServerId(legacyServerId) {
-      const db2 = await openLocalJournalDatabase();
-      const result = await db2.query(
-        `SELECT * FROM local_journal_entries
-       WHERE legacy_server_id = ? AND local_status = 'active' LIMIT 1;`,
-        [legacyServerId]
-      );
-      const row = result.values?.[0];
-      if (!row) return null;
-      return mapEntryRow(row, await loadMediaForJournal(String(row.stable_id)));
-    },
-    /** @deprecated Prefer getByLegacyServerId */
-    async findByLegacyServerId(legacyServerId) {
-      return this.getByLegacyServerId(legacyServerId);
-    },
-    async list() {
-      const db2 = await openLocalJournalDatabase();
-      const result = await db2.query(
-        `SELECT * FROM local_journal_entries
-       WHERE local_status = 'active'
-       ORDER BY date_key DESC, created_at DESC;`
-      );
-      const out = [];
-      for (const row of result.values ?? []) {
-        const r = row;
-        out.push(mapEntryRow(r, await loadMediaForJournal(String(r.stable_id))));
-      }
-      return out;
-    },
-    async count() {
-      const db2 = await openLocalJournalDatabase();
-      const result = await db2.query(
-        `SELECT COUNT(*) AS c FROM local_journal_entries WHERE local_status = 'active';`
-      );
-      const row = result.values?.[0];
-      return Number(row?.c ?? 0);
-    },
-    /**
-     * Diagnostics / test cleanup only — deletes all local journal rows + returns media paths.
-     * Does not touch Neon / Blob.
-     */
-    async deleteAll() {
-      const listed = await this.list();
-      const relativePaths = [];
-      await withLocalJournalTransaction(async (db2) => {
-        for (const entry of listed) {
-          for (const m of entry.mediaRefs) relativePaths.push(m.relativePath);
-          await db2.run(`DELETE FROM local_media WHERE journal_stable_id = ?;`, [entry.stableId]);
-          await db2.run(`DELETE FROM local_journal_tags WHERE journal_stable_id = ?;`, [
-            entry.stableId
-          ]);
-          await db2.run(`DELETE FROM local_journal_entries WHERE stable_id = ?;`, [entry.stableId]);
-        }
-      });
-      return relativePaths;
-    },
-    /** @deprecated Prefer deleteAll */
-    async deletePocData() {
-      return this.deleteAll();
-    }
-  };
-
-  // src/lib/journal/clientSaveIntent/saveOperationId.ts
-  var MIN_LENGTH = 16;
-  var MAX_LENGTH = 64;
-  var PATTERN = /^[0-9A-Za-z_-]+$/;
-  function normalizeClientActorKey(viewerEmail) {
-    return viewerEmail.trim().toLowerCase();
-  }
-  function isValidClientSaveOperationId(value) {
-    return value.length >= MIN_LENGTH && value.length <= MAX_LENGTH && PATTERN.test(value);
-  }
-  function createClientSaveOperationId(random = crypto) {
-    const bytes = new Uint8Array(24);
-    random.getRandomValues(bytes);
-    const base64 = btoa(String.fromCharCode(...bytes)).replaceAll("+", "-").replaceAll("/", "_").replaceAll("=", "");
-    const id = `jso_${base64}`;
-    if (!isValidClientSaveOperationId(id)) {
-      throw new Error("generated_save_operation_id_invalid");
-    }
-    return id;
   }
 
-  // src/lib/journal/clientSaveIntent/ClientSaveOperationIntentService.ts
-  function nowIso() {
-    return (/* @__PURE__ */ new Date()).toISOString();
-  }
-  function newIntentId() {
-    const bytes = new Uint8Array(16);
-    crypto.getRandomValues(bytes);
-    return `intent_${Array.from(bytes, (byte) => byte.toString(16).padStart(2, "0")).join("")}`;
-  }
-  async function prepareClientSaveOperationIntent(store, input) {
-    const actorKey = normalizeClientActorKey(input.viewerEmail);
-    const requestFingerprint = input.requestFingerprint.trim();
-    const saveOperationId = (input.saveOperationId ?? createClientSaveOperationId()).trim();
-    if (!actorKey) throw new Error("viewer_email_required");
-    if (!requestFingerprint) throw new Error("request_fingerprint_required");
-    if (!isValidClientSaveOperationId(saveOperationId)) {
-      throw new Error("save_operation_id_invalid");
-    }
-    const now = input.now ?? nowIso();
-    const candidate = {
-      intentId: newIntentId(),
-      saveOperationId,
-      actorKey,
-      draftRef: input.draftRef ?? null,
-      requestFingerprint,
-      status: "prepared",
-      serverEntryId: null,
-      failureCode: null,
-      createdAt: now,
-      updatedAt: now,
-      lastAttemptAt: null,
-      completedAt: null
-    };
-    const insert = await store.tryInsert(candidate);
-    if (insert.created) return { kind: "created", intent: insert.intent };
-    if (insert.intent.actorKey !== actorKey || insert.intent.requestFingerprint !== requestFingerprint) {
-      return { kind: "conflict", intent: insert.intent };
-    }
-    return { kind: "existing", intent: insert.intent };
-  }
+  // src/lib/journal/clientSaveIntent/NativeClientSaveOperationIntentStore.ts
+  init_dist();
+
+  // src/lib/journal/clientSaveIntent/types.ts
+  var CLIENT_SAVE_OPERATION_INTENT_DB_NAME = "ljd_client_save_operation_intent";
+  var CLIENT_SAVE_OPERATION_INTENT_SCHEMA_VERSION = 3;
+  var CLIENT_SAVE_EXACT_PAYLOAD_VERSION = 1;
 
   // src/lib/journal/clientSaveIntent/lifecycle.ts
   var ALLOWED_TRANSITIONS = {
@@ -2939,10 +2850,16 @@ CREATE INDEX IF NOT EXISTS idx_local_media_journal
     }
   }
 
-  // src/lib/journal/clientSaveIntent/types.ts
-  var CLIENT_SAVE_OPERATION_INTENT_DB_NAME = "ljd_client_save_operation_intent";
-  var CLIENT_SAVE_OPERATION_INTENT_SCHEMA_VERSION = 3;
-  var CLIENT_SAVE_EXACT_PAYLOAD_VERSION = 1;
+  // src/lib/journal/clientSaveIntent/saveOperationId.ts
+  var MIN_LENGTH = 16;
+  var MAX_LENGTH = 64;
+  var PATTERN = /^[0-9A-Za-z_-]+$/;
+  function normalizeClientActorKey(viewerEmail) {
+    return viewerEmail.trim().toLowerCase();
+  }
+  function isValidClientSaveOperationId(value) {
+    return value.length >= MIN_LENGTH && value.length <= MAX_LENGTH && PATTERN.test(value);
+  }
 
   // src/lib/journal/contentFontMode.ts
   var CONTENT_FONT_MODES = ["relaxed", "standard", "generous", "compact"];
@@ -3487,9 +3404,6 @@ CREATE INDEX IF NOT EXISTS idx_local_media_journal
     return { kind: "deleted", saveOperationId: input.saveOperationId };
   }
 
-  // src/lib/journal/clientSaveIntent/NativeClientSaveOperationIntentStore.ts
-  init_dist();
-
   // src/lib/journal/clientSaveIntent/clientSaveIntentSqlStore.ts
   var CREATE_INTENT_SQL = `
 CREATE TABLE IF NOT EXISTS client_save_operation_intent (
@@ -3544,41 +3458,41 @@ CREATE TABLE IF NOT EXISTS client_save_operation_payload (
     "request_byte_length",
     "created_at"
   ];
-  async function ensureClientSaveIntentSchema(db2) {
-    const versionResult = await db2.query("PRAGMA user_version");
+  async function ensureClientSaveIntentSchema(db) {
+    const versionResult = await db.query("PRAGMA user_version");
     const version = Number(versionResult.values?.[0]?.user_version ?? -1);
     if (version === 0) {
-      const existing = await db2.query(
+      const existing = await db.query(
         "SELECT name FROM sqlite_master WHERE type = 'table' AND name = ? LIMIT 1",
         ["client_save_operation_intent"]
       );
       if (existing.values?.length) {
         throw new Error("intent_schema_partial_or_unversioned");
       }
-      await db2.execute(CREATE_INTENT_SQL);
-      await db2.execute(CREATE_TOMBSTONE_SQL);
-      await db2.execute(CREATE_PAYLOAD_SQL);
-      await db2.execute(`PRAGMA user_version = ${CLIENT_SAVE_OPERATION_INTENT_SCHEMA_VERSION}`);
+      await db.execute(CREATE_INTENT_SQL);
+      await db.execute(CREATE_TOMBSTONE_SQL);
+      await db.execute(CREATE_PAYLOAD_SQL);
+      await db.execute(`PRAGMA user_version = ${CLIENT_SAVE_OPERATION_INTENT_SCHEMA_VERSION}`);
       return;
     }
     if (version === 1) {
-      await db2.execute(CREATE_TOMBSTONE_SQL);
-      await db2.execute(CREATE_PAYLOAD_SQL);
-      await db2.execute(`PRAGMA user_version = ${CLIENT_SAVE_OPERATION_INTENT_SCHEMA_VERSION}`);
+      await db.execute(CREATE_TOMBSTONE_SQL);
+      await db.execute(CREATE_PAYLOAD_SQL);
+      await db.execute(`PRAGMA user_version = ${CLIENT_SAVE_OPERATION_INTENT_SCHEMA_VERSION}`);
     } else if (version === 2) {
-      await db2.execute(CREATE_PAYLOAD_SQL);
-      await db2.execute(`PRAGMA user_version = ${CLIENT_SAVE_OPERATION_INTENT_SCHEMA_VERSION}`);
+      await db.execute(CREATE_PAYLOAD_SQL);
+      await db.execute(`PRAGMA user_version = ${CLIENT_SAVE_OPERATION_INTENT_SCHEMA_VERSION}`);
     } else if (version !== CLIENT_SAVE_OPERATION_INTENT_SCHEMA_VERSION) {
       throw new Error("intent_schema_version_unsupported");
     }
-    const columns = await db2.query("PRAGMA table_info(client_save_operation_intent)");
+    const columns = await db.query("PRAGMA table_info(client_save_operation_intent)");
     const names = new Set(
       (columns.values ?? []).map((column) => String(column.name))
     );
     if (REQUIRED_COLUMNS.some((column) => !names.has(column))) {
       throw new Error("intent_schema_columns_invalid");
     }
-    const payloadColumns = await db2.query("PRAGMA table_info(client_save_operation_payload)");
+    const payloadColumns = await db.query("PRAGMA table_info(client_save_operation_payload)");
     const payloadNames = new Set(
       (payloadColumns.values ?? []).map(
         (column) => String(column.name)
@@ -3588,15 +3502,15 @@ CREATE TABLE IF NOT EXISTS client_save_operation_payload (
       throw new Error("intent_schema_columns_invalid");
     }
   }
-  async function withTransaction(db2, fn) {
-    await db2.execute("BEGIN");
+  async function withTransaction(db, fn) {
+    await db.execute("BEGIN");
     try {
       const result = await fn();
-      await db2.execute("COMMIT");
+      await db.execute("COMMIT");
       return result;
     } catch (error) {
       try {
-        await db2.execute("ROLLBACK");
+        await db.execute("ROLLBACK");
       } catch {
       }
       throw error;
@@ -3628,24 +3542,24 @@ CREATE TABLE IF NOT EXISTS client_save_operation_payload (
       createdAt: String(row.created_at)
     };
   }
-  async function findIntent(db2, saveOperationId) {
-    const result = await db2.query(
+  async function findIntent(db, saveOperationId) {
+    const result = await db.query(
       "SELECT * FROM client_save_operation_intent WHERE save_operation_id = ? LIMIT 1",
       [saveOperationId]
     );
     const row = result.values?.[0];
     return row ? mapRow(row) : null;
   }
-  async function findPayload(db2, saveOperationId) {
-    const result = await db2.query(
+  async function findPayload(db, saveOperationId) {
+    const result = await db.query(
       "SELECT * FROM client_save_operation_payload WHERE save_operation_id = ? LIMIT 1",
       [saveOperationId]
     );
     const row = result.values?.[0];
     return row ? mapPayloadRow(row) : null;
   }
-  async function insertIntentRow(db2, intent) {
-    await db2.run(
+  async function insertIntentRow(db, intent) {
+    await db.run(
       `INSERT INTO client_save_operation_intent (
       intent_id, save_operation_id, actor_key, draft_ref, request_fingerprint,
       status, server_entry_id, failure_code, created_at, updated_at,
@@ -3667,8 +3581,8 @@ CREATE TABLE IF NOT EXISTS client_save_operation_payload (
       ]
     );
   }
-  async function insertPayloadRow(db2, row) {
-    await db2.run(
+  async function insertPayloadRow(db, row) {
+    await db.run(
       `INSERT INTO client_save_operation_payload (
       save_operation_id, payload_version, request_json, request_fingerprint,
       request_byte_length, created_at
@@ -3683,33 +3597,33 @@ CREATE TABLE IF NOT EXISTS client_save_operation_payload (
       ]
     );
   }
-  async function deletePayloadRow(db2, saveOperationId) {
-    await db2.run("DELETE FROM client_save_operation_payload WHERE save_operation_id = ?", [
+  async function deletePayloadRow(db, saveOperationId) {
+    await db.run("DELETE FROM client_save_operation_payload WHERE save_operation_id = ?", [
       saveOperationId
     ]);
   }
   function createClientSaveDurableStoreFromSql(session) {
     const store = {
       async findByActorAndSaveOperationId(actorKey, saveOperationId) {
-        return session.withDb(async (db2) => {
-          const row = await findIntent(db2, saveOperationId);
+        return session.withDb(async (db) => {
+          const row = await findIntent(db, saveOperationId);
           return row?.actorKey === actorKey ? row : null;
         });
       },
       async tryInsert(intent) {
-        return session.withDb(async (db2) => {
-          const existing = await findIntent(db2, intent.saveOperationId);
+        return session.withDb(async (db) => {
+          const existing = await findIntent(db, intent.saveOperationId);
           if (existing) return { created: false, intent: existing };
-          await insertIntentRow(db2, intent);
+          await insertIntentRow(db, intent);
           return { created: true, intent };
         });
       },
       async update(intent) {
-        return session.withDb(async (db2) => {
-          const existing = await findIntent(db2, intent.saveOperationId);
+        return session.withDb(async (db) => {
+          const existing = await findIntent(db, intent.saveOperationId);
           if (!existing || existing.actorKey !== intent.actorKey) throw new Error("intent_missing");
           assertClientSaveOperationIntentTransition(existing.status, intent.status);
-          await db2.run(
+          await db.run(
             `UPDATE client_save_operation_intent SET
             draft_ref=?, request_fingerprint=?, status=?, server_entry_id=?,
             failure_code=?, updated_at=?, last_attempt_at=?, completed_at=?
@@ -3727,14 +3641,14 @@ CREATE TABLE IF NOT EXISTS client_save_operation_payload (
               intent.actorKey
             ]
           );
-          const updated = await findIntent(db2, intent.saveOperationId);
+          const updated = await findIntent(db, intent.saveOperationId);
           if (!updated || updated.actorKey !== intent.actorKey) throw new Error("intent_missing");
           return updated;
         });
       },
       async listRecoverableByActor(actorKey) {
-        return session.withDb(async (db2) => {
-          const result = await db2.query(
+        return session.withDb(async (db) => {
+          const result = await db.query(
             `SELECT * FROM client_save_operation_intent
            WHERE actor_key = ? AND status IN ('prepared','awaiting_result','server_completed','recovery_required')
            ORDER BY created_at ASC`,
@@ -3744,16 +3658,16 @@ CREATE TABLE IF NOT EXISTS client_save_operation_payload (
         });
       },
       async deleteByActor(actorKey) {
-        return session.withDb(async (db2) => {
-          return withTransaction(db2, async () => {
-            await db2.run(
+        return session.withDb(async (db) => {
+          return withTransaction(db, async () => {
+            await db.run(
               `DELETE FROM client_save_operation_payload
              WHERE save_operation_id IN (
                SELECT save_operation_id FROM client_save_operation_intent WHERE actor_key = ?
              )`,
               [actorKey]
             );
-            const result = await db2.run(
+            const result = await db.run(
               "DELETE FROM client_save_operation_intent WHERE actor_key = ?",
               [actorKey]
             );
@@ -3762,8 +3676,8 @@ CREATE TABLE IF NOT EXISTS client_save_operation_payload (
         });
       },
       async getDeletionTombstone(actorKey) {
-        return session.withDb(async (db2) => {
-          const result = await db2.query(
+        return session.withDb(async (db) => {
+          const result = await db.query(
             "SELECT actor_key, created_at, updated_at FROM client_save_operation_deletion_tombstone WHERE actor_key = ? LIMIT 1",
             [actorKey]
           );
@@ -3776,8 +3690,8 @@ CREATE TABLE IF NOT EXISTS client_save_operation_payload (
         });
       },
       async writeDeletionTombstone(actorKey, now) {
-        await session.withDb(async (db2) => {
-          await db2.run(
+        await session.withDb(async (db) => {
+          await db.run(
             `INSERT INTO client_save_operation_deletion_tombstone (actor_key, created_at, updated_at)
            VALUES (?, ?, ?)
            ON CONFLICT(actor_key) DO UPDATE SET updated_at=excluded.updated_at`,
@@ -3786,22 +3700,22 @@ CREATE TABLE IF NOT EXISTS client_save_operation_payload (
         });
       },
       async clearDeletionTombstone(actorKey) {
-        await session.withDb(async (db2) => {
-          await db2.run("DELETE FROM client_save_operation_deletion_tombstone WHERE actor_key = ?", [
+        await session.withDb(async (db) => {
+          await db.run("DELETE FROM client_save_operation_deletion_tombstone WHERE actor_key = ?", [
             actorKey
           ]);
         });
       },
       async persistPreparedIntentWithExactPayload(input) {
-        return session.withDb(async (db2) => {
+        return session.withDb(async (db) => {
           return withTransaction(
-            db2,
+            db,
             async () => applyPersistPreparedIntentWithExactPayload(
               {
-                findIntent: (id) => findIntent(db2, id),
-                insertIntent: (intent) => insertIntentRow(db2, intent),
-                findPayload: (id) => findPayload(db2, id),
-                insertPayload: (row) => insertPayloadRow(db2, row)
+                findIntent: (id) => findIntent(db, id),
+                insertIntent: (intent) => insertIntentRow(db, intent),
+                findPayload: (id) => findPayload(db, id),
+                insertPayload: (row) => insertPayloadRow(db, row)
               },
               input
             )
@@ -3809,22 +3723,22 @@ CREATE TABLE IF NOT EXISTS client_save_operation_payload (
         });
       },
       async loadExactPayloadBySaveOperationId(saveOperationId) {
-        return session.withDb(async (db2) => {
-          const payload = await findPayload(db2, saveOperationId);
+        return session.withDb(async (db) => {
+          const payload = await findPayload(db, saveOperationId);
           if (!payload) return { kind: "missing" };
-          const intent = await findIntent(db2, saveOperationId);
+          const intent = await findIntent(db, saveOperationId);
           return verifyLoadedExactPayload(payload, intent?.requestFingerprint);
         });
       },
       async deleteExactPayloadBySaveOperationId(input) {
-        return session.withDb(async (db2) => {
+        return session.withDb(async (db) => {
           return withTransaction(
-            db2,
+            db,
             async () => applyDeleteExactPayloadIfCompleted(
               {
-                findIntent: (id) => findIntent(db2, id),
-                findPayload: (id) => findPayload(db2, id),
-                deletePayload: (id) => deletePayloadRow(db2, id)
+                findIntent: (id) => findIntent(db, id),
+                findPayload: (id) => findPayload(db, id),
+                deletePayload: (id) => deletePayloadRow(db, id)
               },
               input
             )
@@ -3832,8 +3746,8 @@ CREATE TABLE IF NOT EXISTS client_save_operation_payload (
         });
       },
       async cleanupCompletedExactPayloadsForActor(actorKey) {
-        const ids = await session.withDb(async (db2) => {
-          const result = await db2.query(
+        const ids = await session.withDb(async (db) => {
+          const result = await db.query(
             `SELECT p.save_operation_id AS save_operation_id
            FROM client_save_operation_payload p
            INNER JOIN client_save_operation_intent i
@@ -3859,376 +3773,8 @@ CREATE TABLE IF NOT EXISTS client_save_operation_payload (
     return store;
   }
 
-  // src/lib/local-first/security/backupInclusion.ts
-  init_dist();
-
-  // ../life-journey-release-server-idempotency-off-prep/plugins/ljd-local-security/dist/esm/index.js
-  init_dist();
-  var LjdLocalSecurity = registerPlugin("LjdLocalSecurity", {
-    web: () => Promise.resolve().then(() => (init_web3(), web_exports3)).then((m) => new m.LjdLocalSecurityWeb())
-  });
-
-  // src/lib/local-first/security/types.ts
-  var LocalFirstSecurityError = class extends Error {
-    constructor(code, message) {
-      super(message);
-      this.name = "LocalFirstSecurityError";
-      this.code = code;
-    }
-  };
-  var LJD_FILE_PROTECTION_CANDIDATE = "NSFileProtectionComplete";
-  var LJD_PLUGIN_KEYCHAIN_SERVICE = "unlockSecret";
-  var LJD_PLUGIN_KEYCHAIN_ACCOUNT = "ljd_CapacitorSQLitePlugin";
-  var LJD_PLUGIN_KEYCHAIN_ACCESSIBILITY_MEASURED = "kSecAttrAccessibleWhenUnlocked";
-  var LJD_SQLITE_ENCRYPTION_MODE = "secret";
-
-  // src/lib/local-first/security/noSecretLog.ts
-  var SECRET_KEY = /passphrase|password|secret|encryptionkey|encryption_secret|unlocksecret/i;
-  function redactSecretLike(value) {
-    if (value == null) return value;
-    if (typeof value === "string") {
-      if (value.length > 8 && /^[A-Za-z0-9+/=_-]{16,}$/.test(value)) {
-        return "[redacted]";
-      }
-      return value;
-    }
-    if (Array.isArray(value)) return value.map(redactSecretLike);
-    if (typeof value === "object") {
-      const out = {};
-      for (const [key, v] of Object.entries(value)) {
-        out[key] = SECRET_KEY.test(key) ? "[redacted]" : redactSecretLike(v);
-      }
-      return out;
-    }
-    return value;
-  }
-  function safeErrorMessage(error) {
-    if (error instanceof Error) {
-      const msg = error.message;
-      const hasSecretValue = SECRET_KEY.test(msg) && /:\s*['"]?[A-Za-z0-9+/=_-]{12,}/.test(msg);
-      if (hasSecretValue) return `${error.name}: [redacted security error]`;
-      return msg.replace(/\b[A-Fa-f0-9]{24,}\b/g, "[redacted]");
-    }
-    return String(redactSecretLike(error));
-  }
-
-  // src/lib/local-first/security/securityErrorMapping.ts
-  function mapSecurityError(error) {
-    if (error instanceof LocalFirstSecurityError) return error;
-    const message = safeErrorMessage(error);
-    let code = "unknown";
-    if (/native-only|native only/i.test(message)) code = "native_only";
-    else if (/path required/i.test(message)) code = "path_required";
-    else if (/journal_encryption_forbidden|must not be opened encrypted/i.test(message)) {
-      code = "journal_encryption_forbidden";
-    } else if (/not implemented on web|unimplemented/i.test(message)) {
-      code = "bridge_unimplemented";
-    }
-    return new LocalFirstSecurityError(code, message);
-  }
-
-  // src/lib/local-first/security/backupInclusion.ts
-  async function ensurePathExcludedFromBackup(path) {
-    if (!Capacitor.isNativePlatform()) {
-      throw new LocalFirstSecurityError(
-        "native_only",
-        "backup exclusion helper is native-only"
-      );
-    }
-    if (!path) {
-      throw new LocalFirstSecurityError("path_required", "path required");
-    }
-    try {
-      const current = await LjdLocalSecurity.inspectPath({ path });
-      if (!shouldExcludeFromBackup(current.isExcludedFromBackup)) {
-        return current;
-      }
-      return await LjdLocalSecurity.setExcludedFromBackup({
-        path,
-        excluded: true
-      });
-    } catch (error) {
-      throw mapSecurityError(error);
-    }
-  }
-  function shouldExcludeFromBackup(current) {
-    return current !== true;
-  }
-
-  // src/lib/local-first/security/encryptedDatabase.ts
-  init_dist();
-  var PluginSecretConfigurationError = class extends Error {
-    constructor(reason) {
-      super(`plugin_secret_configuration_${reason}`);
-      this.name = "PluginSecretConfigurationError";
-      this.reason = reason;
-    }
-  };
-  function classifyPluginSecretConfigurationFailure(error) {
-    const message = error instanceof Error ? error.message : String(error);
-    if (/not implemented|unimplemented|method.*not.*found/i.test(message)) {
-      return "api_unavailable";
-    }
-    if (/no encryption set/i.test(message)) return "encryption_not_configured";
-    if (/no database folder|getdatabasesurl|database location/i.test(message)) {
-      return "database_location_unavailable";
-    }
-    if (/keychain|secitem|security service|errsec/i.test(message)) {
-      return "keychain_write_failed";
-    }
-    return "unknown";
-  }
-  function assertNotProductionJournal(name) {
-    if (name === LOCAL_JOURNAL_DB_NAME) {
-      throw new LocalFirstSecurityError(
-        "journal_encryption_forbidden",
-        "ljd_local_journal must not be opened encrypted in 4B-3E; plaintext\u2192encrypted migration is a later phase"
-      );
-    }
-  }
-  async function configurePluginEncryptionSecret(passphrase) {
-    if (!Capacitor.isNativePlatform()) {
-      throw new LocalFirstSecurityError(
-        "native_only",
-        "encryption secret configure is native-only"
-      );
-    }
-    if (!passphrase) {
-      throw new LocalFirstSecurityError("unknown", "passphrase required");
-    }
-    try {
-      await CapacitorSQLite.setEncryptionSecret({ passphrase });
-    } catch (error) {
-      throw new PluginSecretConfigurationError(classifyPluginSecretConfigurationFailure(error));
-    }
-  }
-  async function isPluginEncryptionSecretStored() {
-    if (!Capacitor.isNativePlatform()) {
-      throw new LocalFirstSecurityError(
-        "native_only",
-        "encryption secret inspection is native-only"
-      );
-    }
-    try {
-      return (await CapacitorSQLite.isSecretStored()).result === true;
-    } catch (error) {
-      throw mapSecurityError(error);
-    }
-  }
-  async function pluginRejectsDifferentEncryptionSecret(candidate) {
-    if (!Capacitor.isNativePlatform()) {
-      throw new LocalFirstSecurityError(
-        "native_only",
-        "encryption secret comparison is native-only"
-      );
-    }
-    if (!candidate) {
-      throw new LocalFirstSecurityError("unknown", "candidate required");
-    }
-    try {
-      return (await CapacitorSQLite.checkEncryptionSecret({ passphrase: candidate })).result !== true;
-    } catch (error) {
-      throw mapSecurityError(error);
-    }
-  }
-  async function openNamedEncryptedDatabase(name, version = 1) {
-    assertNotProductionJournal(name);
-    if (!Capacitor.isNativePlatform()) {
-      throw new LocalFirstSecurityError(
-        "native_only",
-        "encrypted DB open is native-only"
-      );
-    }
-    try {
-      const sqlite = new SQLiteConnection(CapacitorSQLite);
-      try {
-        await sqlite.checkConnectionsConsistency();
-      } catch {
-      }
-      if ((await sqlite.isConnection(name, false)).result) {
-        await sqlite.closeConnection(name, false);
-      }
-      const db2 = await sqlite.createConnection(
-        name,
-        true,
-        LJD_SQLITE_ENCRYPTION_MODE,
-        version,
-        false
-      );
-      await db2.open();
-      return db2;
-    } catch (error) {
-      throw mapSecurityError(error);
-    }
-  }
-
-  // src/lib/local-first/security/fileProtection.ts
-  init_dist();
-  function isCompleteProtection(label) {
-    return label === LJD_FILE_PROTECTION_CANDIDATE;
-  }
-  async function applyCompleteFileProtection(path) {
-    if (!Capacitor.isNativePlatform()) {
-      throw new LocalFirstSecurityError(
-        "native_only",
-        "file protection helper is native-only"
-      );
-    }
-    if (!path) {
-      throw new LocalFirstSecurityError("path_required", "path required");
-    }
-    try {
-      return await LjdLocalSecurity.setCompleteProtection({ path });
-    } catch (error) {
-      throw mapSecurityError(error);
-    }
-  }
-  async function inspectFileProtection(path) {
-    if (!Capacitor.isNativePlatform()) {
-      throw new LocalFirstSecurityError(
-        "native_only",
-        "file protection inspect is native-only"
-      );
-    }
-    try {
-      return await LjdLocalSecurity.inspectPath({ path });
-    } catch (error) {
-      throw mapSecurityError(error);
-    }
-  }
-
-  // src/lib/local-first/security/mediaProtection.ts
-  init_dist();
-
-  // src/lib/local-first/security/pluginKeychain.ts
-  init_dist();
-  async function inspectPluginDbKeyAccessibility() {
-    if (!Capacitor.isNativePlatform()) {
-      throw new LocalFirstSecurityError(
-        "native_only",
-        "plugin Keychain inspect is native-only"
-      );
-    }
-    try {
-      const result = await LjdLocalSecurity.inspectGenericPasswordAccessibility({
-        service: LJD_PLUGIN_KEYCHAIN_SERVICE,
-        account: LJD_PLUGIN_KEYCHAIN_ACCOUNT
-      });
-      return {
-        found: result.found,
-        accessibility: result.accessibility,
-        matchesWhenUnlocked: result.found && result.accessibility === LJD_PLUGIN_KEYCHAIN_ACCESSIBILITY_MEASURED,
-        returnedSecretData: false
-      };
-    } catch (error) {
-      throw mapSecurityError(error);
-    }
-  }
-
-  // src/lib/local-first/security/storageCapacity.ts
-  init_dist();
-  function mapVolumeResultToReading(result, platform = Capacitor.getPlatform()) {
-    const available = typeof result.availableBytes === "number" && Number.isFinite(result.availableBytes) ? result.availableBytes : null;
-    return {
-      ok: Boolean(result.ok) && available != null,
-      availableBytes: available,
-      importantUsageBytes: typeof result.importantUsageBytes === "number" ? result.importantUsageBytes : null,
-      volumeAvailableCapacity: typeof result.volumeAvailableCapacity === "number" ? result.volumeAvailableCapacity : null,
-      opportunisticUsageBytes: typeof result.opportunisticUsageBytes === "number" ? result.opportunisticUsageBytes : null,
-      source: result.source,
-      platform
-    };
-  }
-  function decideCapacityKnown(availableBytes) {
-    if (availableBytes == null) {
-      return {
-        known: false,
-        availableBytes: null,
-        reason: "capacity_unknown_fail_closed"
-      };
-    }
-    return { known: true, availableBytes, reason: "ok" };
-  }
-  async function readStorageCapacity() {
-    if (!Capacitor.isNativePlatform()) {
-      throw new LocalFirstSecurityError("native_only", "storage capacity is native-only");
-    }
-    try {
-      const result = await LjdLocalSecurity.getVolumeAvailableCapacity();
-      return mapVolumeResultToReading(result);
-    } catch (error) {
-      throw mapSecurityError(error);
-    }
-  }
-  var pluginStorageCapacityProvider = {
-    read: readStorageCapacity
-  };
-  async function readAvailableBytesOrNull() {
-    try {
-      const reading = await pluginStorageCapacityProvider.read();
-      const decision = decideCapacityKnown(reading.ok ? reading.availableBytes : null);
-      return {
-        availableBytes: decision.availableBytes,
-        source: reading.source,
-        platform: reading.platform,
-        decision
-      };
-    } catch {
-      return {
-        availableBytes: null,
-        source: "api_error",
-        platform: Capacitor.getPlatform(),
-        decision: decideCapacityKnown(null)
-      };
-    }
-  }
-
-  // src/lib/local-first/security/storageInspection.ts
-  init_dist();
-  function classifySqliteArtifactRole(fileName) {
-    if (fileName.endsWith("-wal") || fileName.includes(".db-wal")) return "sidecar_wal";
-    if (fileName.endsWith("-shm") || fileName.includes(".db-shm")) return "sidecar_shm";
-    if (fileName.includes("-journal")) return "sidecar_journal";
-    if (fileName.endsWith("SQLite.db") || fileName.endsWith(".db")) return "sqlite_db";
-    return "other";
-  }
-  async function listSqliteArtifactsReadOnly() {
-    if (!Capacitor.isNativePlatform()) {
-      throw new LocalFirstSecurityError(
-        "native_only",
-        "sqlite artifact inspection is native-only"
-      );
-    }
-    try {
-      const listing = await LjdLocalSecurity.listSqliteArtifactsInLjdDir();
-      return (listing.artifacts ?? []).map((item) => ({
-        name: item.name,
-        bytes: Number(item.bytes) || 0,
-        role: item.role || classifySqliteArtifactRole(item.name)
-      }));
-    } catch (error) {
-      throw mapSecurityError(error);
-    }
-  }
-
-  // src/lib/local-first/security/storageLocation.ts
-  init_dist();
-  async function resolveLjdApplicationSupportDir() {
-    if (!Capacitor.isNativePlatform()) {
-      throw new LocalFirstSecurityError(
-        "native_only",
-        "Application Support resolve is native-only"
-      );
-    }
-    try {
-      return await LjdLocalSecurity.resolveApplicationSupportLjdDir();
-    } catch (error) {
-      throw mapSecurityError(error);
-    }
-  }
-
   // src/lib/journal/clientSaveIntent/NativeClientSaveOperationIntentStore.ts
-  function assertNative2() {
+  function assertNative() {
     if (!Capacitor.isNativePlatform()) {
       throw new LocalFirstSecurityError(
         "native_only",
@@ -4236,11 +3782,11 @@ CREATE TABLE IF NOT EXISTS client_save_operation_payload (
       );
     }
   }
-  function adaptNativeConnection(db2) {
+  function adaptNativeConnection(db) {
     return {
-      query: (sql, params) => db2.query(sql, params),
-      run: (sql, params) => db2.run(sql, params),
-      execute: (statements) => db2.execute(statements)
+      query: (sql, params) => db.query(sql, params),
+      run: (sql, params) => db.run(sql, params),
+      execute: (statements) => db.execute(statements)
     };
   }
   async function withNativeEncryptedDb(fn) {
@@ -4249,27 +3795,26 @@ CREATE TABLE IF NOT EXISTS client_save_operation_payload (
       CLIENT_SAVE_OPERATION_INTENT_SCHEMA_VERSION
     );
     try {
-      const db2 = adaptNativeConnection(native);
-      await ensureClientSaveIntentSchema(db2);
-      await db2.execute("PRAGMA foreign_keys = ON");
-      return await fn(db2);
+      const db = adaptNativeConnection(native);
+      await ensureClientSaveIntentSchema(db);
+      await db.execute("PRAGMA foreign_keys = ON");
+      return await fn(db);
     } finally {
       await native.close();
     }
   }
   async function initializeNativeClientSaveOperationIntentStore() {
-    assertNative2();
+    assertNative();
     await withNativeEncryptedDb(async () => void 0);
   }
   function createNativeClientSaveOperationIntentStore() {
-    assertNative2();
+    assertNative();
     return createClientSaveDurableStoreFromSql({
       withDb: withNativeEncryptedDb
     });
   }
 
   // src/lib/journal/clientSaveIntent/NativeSaveIntentBootstrap.ts
-  init_dist();
   function generateEphemeralBootstrapSecret() {
     const bytes = new Uint8Array(32);
     crypto.getRandomValues(bytes);
@@ -4380,266 +3925,920 @@ CREATE TABLE IF NOT EXISTS client_save_operation_payload (
     }
     return initialization;
   }
-  function getSaveIntentStoreBootstrapDiagnosticStage() {
-    return diagnosticStage;
+
+  // src/lib/journal/clientSaveIntent/ai7DeviceRecoveryHarness/constants.ts
+  var AI7_DEVICE_RECOVERY_TEST_ACTOR = "ai7-device-recovery-test@ljd.invalid";
+  var AI7_DEVICE_HARNESS_FLAG = "NEXT_PUBLIC_AI7_DEVICE_HARNESS";
+  var AI7_DEVICE_HARNESS_FLAG_VALUE = "YES";
+  var AI7_TEXT_SAVE_OPERATION_ID = "ai7dev_text_testop_000001";
+  var AI7_PHOTO_SAVE_OPERATION_ID = "ai7dev_photo_testop_00001";
+  var AI7_TEST_PROFILE_ID = "ai7_test_profile_isolated";
+  var AI7_TEST_DRAFT_REF = "ai7_device_recovery_harness";
+
+  // src/lib/journal/clientSaveIntent/ai7DeviceRecoveryHarness/gate.ts
+  function evaluateAi7DeviceRecoveryHarnessGate(input = {}) {
+    const nodeEnv = (input.nodeEnv ?? "development" ?? "").trim();
+    const flag = (input.flag ?? process.env[AI7_DEVICE_HARNESS_FLAG] ?? "").trim();
+    const isNative = input.isNativePlatform === true;
+    const nodeEnvOk = nodeEnv !== "production";
+    const flagOk = flag === AI7_DEVICE_HARNESS_FLAG_VALUE;
+    if (!nodeEnvOk) {
+      return {
+        ok: false,
+        reason: "production_build",
+        pageAllowed: false,
+        operationsAllowed: false
+      };
+    }
+    if (!flagOk) {
+      return {
+        ok: false,
+        reason: "flag_off",
+        pageAllowed: false,
+        operationsAllowed: false
+      };
+    }
+    if (!isNative) {
+      return {
+        ok: false,
+        reason: "not_native",
+        pageAllowed: true,
+        operationsAllowed: false
+      };
+    }
+    return {
+      ok: true,
+      reason: "ok",
+      pageAllowed: true,
+      operationsAllowed: true
+    };
   }
 
-  // src/lib/local-first/diagnostics/localStorageDiagnosticsMain.ts
+  // src/lib/journal/clientSaveIntent/ai7DeviceRecoveryHarness/fakeTransport.ts
+  function parseBody(input) {
+    const requestJson = typeof input === "string" ? input : JSON.stringify(input);
+    let saveOperationId = "";
+    try {
+      const parsed = JSON.parse(requestJson);
+      saveOperationId = typeof parsed.saveOperationId === "string" ? parsed.saveOperationId : "";
+    } catch {
+      saveOperationId = "";
+    }
+    return {
+      saveOperationId,
+      requestFingerprint: `ai7-fake:${saveOperationId}`,
+      requestJson
+    };
+  }
+  function jsonResponse(body, status = 200) {
+    return new Response(JSON.stringify(body), {
+      status,
+      headers: { "Content-Type": "application/json" }
+    });
+  }
+  function createAi7FakeJournalTransport() {
+    const byOperation = /* @__PURE__ */ new Map();
+    const transport = {
+      postCalls: 0,
+      lookupCalls: 0,
+      posts: [],
+      capability: async () => ({ kind: "enabled" }),
+      async post(payload) {
+        return transport.postExactJson(JSON.stringify(payload));
+      },
+      async postExactJson(requestJson) {
+        transport.postCalls += 1;
+        const parsed = parseBody(requestJson);
+        const existing = byOperation.get(parsed.saveOperationId);
+        if (existing) {
+          transport.posts.push(existing);
+          return jsonResponse({ entry: { id: existing.entryId } });
+        }
+        const record = {
+          ...parsed,
+          entryId: `ai7_sim_entry_${byOperation.size + 1}`
+        };
+        byOperation.set(parsed.saveOperationId, record);
+        transport.posts.push(record);
+        return jsonResponse({ entry: { id: record.entryId } });
+      },
+      async lookup(input) {
+        transport.lookupCalls += 1;
+        const found = byOperation.get(input.saveOperationId);
+        if (!found) {
+          return jsonResponse({ state: "not_found" });
+        }
+        return jsonResponse({
+          state: "completed",
+          entryId: found.entryId
+        });
+      }
+    };
+    return transport;
+  }
+  function createAi7FakeOrchestratorDeps(bootstrap, transport = createAi7FakeJournalTransport()) {
+    return {
+      bootstrap,
+      capability: transport.capability,
+      post: transport.post,
+      postExactJson: transport.postExactJson,
+      lookup: transport.lookup,
+      fake: transport
+    };
+  }
+
+  // src/lib/journal/clientSaveIntent/ai7DeviceRecoveryHarness/payloads.ts
+  var AI7_TEST_PHOTO_DATA_URL = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==";
+  var baseFields = {
+    mood: "calm",
+    activity: "record_anyway",
+    companionType: "owl",
+    designTheme: "simple_plain",
+    contentFontMode: "standard",
+    entryDate: "2026-08-18",
+    profileId: AI7_TEST_PROFILE_ID,
+    includeInBook: true
+  };
+  function ai7TextTestPayload() {
+    return {
+      ...baseFields,
+      content: "AI7 isolated recovery text",
+      saveOperationId: AI7_TEXT_SAVE_OPERATION_ID
+    };
+  }
+  function ai7PhotoTestPayload() {
+    return {
+      ...baseFields,
+      content: "AI7 isolated recovery photo",
+      photoDataUrl: AI7_TEST_PHOTO_DATA_URL,
+      saveOperationId: AI7_PHOTO_SAVE_OPERATION_ID
+    };
+  }
+
+  // src/lib/localE2eHarness/faultStore.ts
+  var armed = /* @__PURE__ */ new Map();
+  function matchesScope(fault, actorKey, saveOperationId) {
+    if (fault.actorKey !== actorKey.trim().toLowerCase()) return false;
+    if (!fault.saveOperationId) return true;
+    return fault.saveOperationId === (saveOperationId ?? "").trim();
+  }
+  function consumeLocalE2eFault(mode, actorKey, saveOperationId) {
+    const fault = armed.get(mode);
+    if (!fault) return false;
+    if (!matchesScope(fault, actorKey, saveOperationId)) return false;
+    armed.delete(mode);
+    return true;
+  }
+
+  // src/lib/account/accountDeleteSaveIntentTeardown.ts
+  var deletionInFlightActors = /* @__PURE__ */ new Set();
+  var deletedActors = /* @__PURE__ */ new Set();
+  function isSaveIntentActivityBlockedForActor(actorKey) {
+    return deletionInFlightActors.has(actorKey) || deletedActors.has(actorKey);
+  }
+  async function resumeAccountDeleteSaveIntentCleanup(actorKey, store) {
+    const tombstone = await store.getDeletionTombstone(actorKey);
+    if (!tombstone) return false;
+    deletedActors.add(actorKey);
+    try {
+      await store.deleteByActor(actorKey);
+      if ((await store.listRecoverableByActor(actorKey)).length !== 0) return true;
+      await store.clearDeletionTombstone(actorKey);
+      return false;
+    } catch {
+      return true;
+    }
+  }
+
+  // src/lib/localE2eHarness/transportAdapters.ts
+  function lookupJson(state) {
+    return new Response(JSON.stringify({ state }), {
+      status: 200,
+      headers: { "Content-Type": "application/json" }
+    });
+  }
+  async function maybeDropSuccessfulResponse(actorKey, saveOperationId, response) {
+    if (actorKey && response.ok && response.status === 200 && consumeLocalE2eFault("response_loss_after_server_success", actorKey, saveOperationId)) {
+      throw new Error("local_e2e_response_loss_after_server_success");
+    }
+    return response;
+  }
+  function wrapJournalCreateDepsWithLocalE2eFaults(deps, viewerEmailForScope) {
+    return {
+      ...deps,
+      async post(payload) {
+        const actorKey = normalizeClientActorKey(viewerEmailForScope() ?? "") ?? "";
+        const saveOperationId = typeof payload.saveOperationId === "string" ? payload.saveOperationId : null;
+        const response = await deps.post(payload);
+        return maybeDropSuccessfulResponse(actorKey, saveOperationId, response);
+      },
+      async postExactJson(requestJson) {
+        const actorKey = normalizeClientActorKey(viewerEmailForScope() ?? "") ?? "";
+        let saveOperationId = null;
+        try {
+          const parsed = JSON.parse(requestJson);
+          saveOperationId = typeof parsed.saveOperationId === "string" ? parsed.saveOperationId : null;
+        } catch {
+          saveOperationId = null;
+        }
+        const response = await (deps.postExactJson ? deps.postExactJson(requestJson) : deps.post(JSON.parse(requestJson)));
+        return maybeDropSuccessfulResponse(actorKey, saveOperationId, response);
+      },
+      async lookup(input) {
+        const actorKey = normalizeClientActorKey(viewerEmailForScope() ?? "") ?? "";
+        if (actorKey && consumeLocalE2eFault("lookup_processing_once", actorKey, input.saveOperationId)) {
+          return lookupJson("processing");
+        }
+        if (actorKey && consumeLocalE2eFault("lookup_not_found_once", actorKey, input.saveOperationId)) {
+          return lookupJson("not_found");
+        }
+        return deps.lookup(input);
+      }
+    };
+  }
+
+  // src/lib/journal/clientSaveIntent/JournalCreateSaveOrchestrator.ts
+  function isDurableStore(store) {
+    return typeof store.persistPreparedIntentWithExactPayload === "function" && typeof store.loadExactPayloadBySaveOperationId === "function";
+  }
+  async function responseJson(response) {
+    try {
+      return await response.json();
+    } catch {
+      return {};
+    }
+  }
+  async function serverCapability() {
+    try {
+      const response = await fetch("/api/journal/save-capability", { credentials: "same-origin" });
+      if (!response.ok) return { kind: "unavailable" };
+      const data = await response.json();
+      if (data.protocolVersion !== 1) return { kind: "unknown_protocol" };
+      return data.idempotentSaveEnabled === true ? { kind: "enabled" } : { kind: "disabled" };
+    } catch {
+      return { kind: "unavailable" };
+    }
+  }
+  var productionDeps = {
+    bootstrap: initializeSaveIntentStore,
+    capability: serverCapability,
+    post: (payload) => fetch("/api/journal", {
+      method: "POST",
+      credentials: "same-origin",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    }),
+    postExactJson: (requestJson) => fetch("/api/journal", {
+      method: "POST",
+      credentials: "same-origin",
+      headers: { "Content-Type": "application/json" },
+      body: requestJson
+    }),
+    lookup: ({ saveOperationId, requestFingerprint }) => fetch(
+      `/api/journal/save-operations/${encodeURIComponent(saveOperationId)}?requestFingerprint=${encodeURIComponent(requestFingerprint)}`,
+      { credentials: "same-origin" }
+    )
+  };
+  function resolveDeps(viewerEmail, deps) {
+    if (deps !== productionDeps) return deps;
+    return wrapJournalCreateDepsWithLocalE2eFaults(productionDeps, () => viewerEmail);
+  }
+  var continuationFlights = /* @__PURE__ */ new Map();
+  var foregroundExactReplayOnce = /* @__PURE__ */ new Set();
+  function sessionPayloadKey(actorKey, saveOperationId) {
+    return `${actorKey}:${saveOperationId}`;
+  }
+  function claimForegroundExactReplay(actorKey, saveOperationId) {
+    const key = sessionPayloadKey(actorKey, saveOperationId);
+    if (foregroundExactReplayOnce.has(key)) return false;
+    foregroundExactReplayOnce.add(key);
+    return true;
+  }
+  function clearCurrentSessionJournalCreatePayloadsForTest() {
+    continuationFlights.clear();
+    foregroundExactReplayOnce.clear();
+  }
+  function hasPayloadCleanup(store) {
+    return isDurableStore(store) && typeof store.deleteExactPayloadBySaveOperationId === "function";
+  }
+  async function cleanupPayloadAfterCompleted(store, intent) {
+    if (intent.status !== "completed" || !intent.serverEntryId) return;
+    if (!hasPayloadCleanup(store)) return;
+    try {
+      await store.deleteExactPayloadBySaveOperationId({
+        actorKey: intent.actorKey,
+        saveOperationId: intent.saveOperationId
+      });
+    } catch {
+    }
+  }
+  async function retryCompletedPayloadCleanup(store, actorKey) {
+    if (!hasPayloadCleanup(store)) return;
+    try {
+      await store.cleanupCompletedExactPayloadsForActor(actorKey);
+    } catch {
+    }
+  }
+  async function update(store, intent, patch) {
+    return store.update({ ...intent, ...patch, updatedAt: (/* @__PURE__ */ new Date()).toISOString() });
+  }
+  async function postStoredRequestJson(deps, requestJson) {
+    if (deps.postExactJson) {
+      return deps.postExactJson(requestJson);
+    }
+    return deps.post(JSON.parse(requestJson));
+  }
+  function saveOperationIdFromRequestJson(requestJson) {
+    try {
+      const parsed = JSON.parse(requestJson);
+      return typeof parsed.saveOperationId === "string" ? parsed.saveOperationId : null;
+    } catch {
+      return null;
+    }
+  }
+  async function applyPostedProtocolResponse(input) {
+    const data = await responseJson(input.response);
+    const entryId = typeof data.entry === "object" && data.entry && typeof data.entry.id === "string" ? data.entry.id : null;
+    if (input.response.status === 200 && entryId) {
+      let intent = await update(input.store, input.intent, {
+        status: "server_completed",
+        serverEntryId: entryId
+      });
+      try {
+        await input.afterServerCompleted?.(entryId);
+      } catch {
+        return {
+          kind: "recovery_required",
+          recoveryState: "recovery_required",
+          intent,
+          reason: "local_post_save_failed"
+        };
+      }
+      intent = await update(input.store, intent, {
+        status: "completed",
+        completedAt: (/* @__PURE__ */ new Date()).toISOString()
+      });
+      await cleanupPayloadAfterCompleted(input.store, intent);
+      return { kind: "completed", recoveryState: "completed", entryId, data, intent };
+    }
+    if (input.response.status === 202) {
+      return { kind: "processing", recoveryState: "processing", intent: input.intent };
+    }
+    if (input.response.status === 409) {
+      return {
+        kind: "recovery_required",
+        recoveryState: "recovery_required",
+        intent: await update(input.store, input.intent, {
+          status: "recovery_required",
+          failureCode: "IDEMPOTENCY_CONFLICT"
+        }),
+        reason: "fingerprint_mismatch"
+      };
+    }
+    if (input.response.status === 402 || input.response.status === 500 && data.saveOperation?.status === "failed_final") {
+      const code = input.response.status === 402 ? "ACORN_INSUFFICIENT" : "SERVER_FAILED_FINAL";
+      return {
+        kind: "failed_final",
+        recoveryState: "failed_final",
+        intent: await update(input.store, input.intent, {
+          status: "failed_final",
+          failureCode: code,
+          completedAt: (/* @__PURE__ */ new Date()).toISOString()
+        }),
+        code
+      };
+    }
+    return {
+      kind: "recovery_required",
+      recoveryState: "recovery_required",
+      intent: input.intent,
+      reason: "ambiguous_response"
+    };
+  }
+  function failClosedPayload(intent, reason) {
+    return {
+      kind: "recovery_required",
+      recoveryState: "recovery_required",
+      intent,
+      reason
+    };
+  }
+  async function replayExactStoredPayload(input) {
+    const loaded = await input.store.loadExactPayloadBySaveOperationId(input.intent.saveOperationId);
+    if (loaded.kind === "missing") {
+      const intent = await update(input.store, input.intent, {
+        status: "recovery_required",
+        failureCode: "PAYLOAD_UNAVAILABLE"
+      });
+      return failClosedPayload(intent, "PAYLOAD_UNAVAILABLE");
+    }
+    if (loaded.kind === "corrupt") {
+      const intent = await update(input.store, input.intent, {
+        status: "recovery_required",
+        failureCode: "PAYLOAD_UNAVAILABLE"
+      });
+      return failClosedPayload(intent, "payload_corrupt");
+    }
+    if (loaded.kind === "fingerprint_mismatch") {
+      const intent = await update(input.store, input.intent, {
+        status: "recovery_required",
+        failureCode: "IDEMPOTENCY_CONFLICT"
+      });
+      return failClosedPayload(intent, "fingerprint_mismatch");
+    }
+    const requestJson = loaded.payload.requestJson;
+    const jsonId = saveOperationIdFromRequestJson(requestJson);
+    if (jsonId !== input.intent.saveOperationId) {
+      const intent = await update(input.store, input.intent, {
+        status: "recovery_required",
+        failureCode: "PAYLOAD_UNAVAILABLE"
+      });
+      return failClosedPayload(intent, "save_operation_id_mismatch");
+    }
+    const recanon = canonicalizeExactJournalSavePayload({
+      saveOperationId: input.intent.saveOperationId,
+      payload: loaded.request
+    });
+    if (!recanon.ok) {
+      const intent = await update(input.store, input.intent, {
+        status: "recovery_required",
+        failureCode: "PAYLOAD_UNAVAILABLE"
+      });
+      return failClosedPayload(intent, "payload_immutable_mismatch");
+    }
+    if (recanon.requestFingerprint !== input.intent.requestFingerprint) {
+      const intent = await update(input.store, input.intent, {
+        status: "recovery_required",
+        failureCode: "IDEMPOTENCY_CONFLICT"
+      });
+      return failClosedPayload(intent, "fingerprint_mismatch");
+    }
+    if (recanon.requestJson !== requestJson) {
+      const intent = await update(input.store, input.intent, {
+        status: "recovery_required",
+        failureCode: "PAYLOAD_UNAVAILABLE"
+      });
+      return failClosedPayload(intent, "payload_immutable_mismatch");
+    }
+    const awaiting = await update(input.store, input.intent, {
+      status: "awaiting_result",
+      lastAttemptAt: (/* @__PURE__ */ new Date()).toISOString()
+    });
+    try {
+      const response = await postStoredRequestJson(input.deps, requestJson);
+      return applyPostedProtocolResponse({
+        store: input.store,
+        intent: awaiting,
+        response,
+        afterServerCompleted: input.afterServerCompleted
+      });
+    } catch {
+      return { kind: "pending", recoveryState: "pending", intent: awaiting };
+    }
+  }
+  async function recoverJournalCreateSaves(input, deps = productionDeps) {
+    const effectiveDeps = resolveDeps(input.viewerEmail, deps);
+    const bootstrap = await effectiveDeps.bootstrap();
+    const actorKey = normalizeClientActorKey(input.viewerEmail);
+    if (bootstrap.status !== "ready" || !actorKey) return [];
+    if (isSaveIntentActivityBlockedForActor(actorKey)) return [];
+    if (await resumeAccountDeleteSaveIntentCleanup(actorKey, bootstrap.store)) return [];
+    await retryCompletedPayloadCleanup(bootstrap.store, actorKey);
+    const recovered = [];
+    const replayedThisCycle = /* @__PURE__ */ new Set();
+    for (let intent of await bootstrap.store.listRecoverableByActor(actorKey)) {
+      if (intent.actorKey !== actorKey) {
+        recovered.push({
+          kind: "recovery_required",
+          recoveryState: "recovery_required",
+          intent,
+          reason: "actor_mismatch"
+        });
+        continue;
+      }
+      if (intent.status === "server_completed" && intent.serverEntryId) {
+        const entryId = intent.serverEntryId;
+        try {
+          await input.afterServerCompleted?.(entryId);
+          intent = await update(bootstrap.store, intent, {
+            status: "completed",
+            completedAt: (/* @__PURE__ */ new Date()).toISOString()
+          });
+          await cleanupPayloadAfterCompleted(bootstrap.store, intent);
+          recovered.push({
+            kind: "completed",
+            recoveryState: "completed",
+            entryId,
+            data: {},
+            intent
+          });
+        } catch {
+          recovered.push({
+            kind: "recovery_required",
+            recoveryState: "recovery_required",
+            intent,
+            reason: "local_post_save_failed"
+          });
+        }
+        continue;
+      }
+      let response;
+      try {
+        response = await effectiveDeps.lookup({
+          saveOperationId: intent.saveOperationId,
+          requestFingerprint: intent.requestFingerprint
+        });
+      } catch {
+        recovered.push({
+          kind: "recovery_required",
+          recoveryState: "recovery_required",
+          intent,
+          reason: "lookup_unavailable"
+        });
+        continue;
+      }
+      const lookup = await responseJson(response);
+      switch (lookup.state) {
+        case "completed": {
+          const entryId = typeof lookup.entryId === "string" ? lookup.entryId : "";
+          if (!entryId) {
+            recovered.push({
+              kind: "recovery_required",
+              recoveryState: "recovery_required",
+              intent,
+              reason: "invalid_lookup_completed"
+            });
+            continue;
+          }
+          intent = await update(bootstrap.store, intent, {
+            status: "server_completed",
+            serverEntryId: entryId
+          });
+          try {
+            await input.afterServerCompleted?.(entryId);
+            intent = await update(bootstrap.store, intent, {
+              status: "completed",
+              completedAt: (/* @__PURE__ */ new Date()).toISOString()
+            });
+            await cleanupPayloadAfterCompleted(bootstrap.store, intent);
+            recovered.push({
+              kind: "completed",
+              recoveryState: "completed",
+              entryId,
+              data: {},
+              intent
+            });
+          } catch {
+            recovered.push({
+              kind: "recovery_required",
+              recoveryState: "recovery_required",
+              intent,
+              reason: "local_post_save_failed"
+            });
+          }
+          continue;
+        }
+        case "processing":
+          recovered.push({ kind: "processing", recoveryState: "processing", intent });
+          continue;
+        case "failed_final":
+          intent = await update(bootstrap.store, intent, {
+            status: "failed_final",
+            failureCode: "SERVER_FAILED_FINAL",
+            completedAt: (/* @__PURE__ */ new Date()).toISOString()
+          });
+          recovered.push({
+            kind: "failed_final",
+            recoveryState: "failed_final",
+            intent,
+            code: "SERVER_FAILED_FINAL"
+          });
+          continue;
+        case "fingerprint_mismatch":
+          intent = await update(bootstrap.store, intent, {
+            status: "recovery_required",
+            failureCode: "IDEMPOTENCY_CONFLICT"
+          });
+          recovered.push({
+            kind: "recovery_required",
+            recoveryState: "recovery_required",
+            intent,
+            reason: "fingerprint_mismatch"
+          });
+          continue;
+        case "not_found":
+          break;
+        default:
+          recovered.push({
+            kind: "recovery_required",
+            recoveryState: "recovery_required",
+            intent,
+            reason: "invalid_lookup_response"
+          });
+          continue;
+      }
+      if (!isDurableStore(bootstrap.store)) {
+        intent = await update(bootstrap.store, intent, {
+          status: "recovery_required",
+          failureCode: "PAYLOAD_UNAVAILABLE"
+        });
+        recovered.push(failClosedPayload(intent, "PAYLOAD_UNAVAILABLE"));
+        continue;
+      }
+      if (replayedThisCycle.has(intent.saveOperationId)) {
+        recovered.push({ kind: "pending", recoveryState: "pending", intent });
+        continue;
+      }
+      if (!claimForegroundExactReplay(actorKey, intent.saveOperationId)) {
+        recovered.push({ kind: "pending", recoveryState: "pending", intent });
+        continue;
+      }
+      replayedThisCycle.add(intent.saveOperationId);
+      recovered.push(
+        await replayExactStoredPayload({
+          store: bootstrap.store,
+          intent,
+          deps: effectiveDeps,
+          afterServerCompleted: input.afterServerCompleted
+        })
+      );
+    }
+    return recovered;
+  }
+
+  // src/lib/journal/clientSaveIntent/ai7DeviceRecoveryHarness/controller.ts
+  function requireOperations(gate) {
+    const result = evaluateAi7DeviceRecoveryHarnessGate({
+      isNativePlatform: true,
+      ...gate
+    });
+    if (!result.operationsAllowed) {
+      return result;
+    }
+    return result;
+  }
+  function isDurableStore2(store) {
+    return typeof store.persistPreparedIntentWithExactPayload === "function" && typeof store.loadExactPayloadBySaveOperationId === "function";
+  }
+  function newIntentId() {
+    const bytes = new Uint8Array(16);
+    crypto.getRandomValues(bytes);
+    return `intent_${Array.from(bytes, (byte) => byte.toString(16).padStart(2, "0")).join("")}`;
+  }
+  function isAi7DeviceRecoveryTestActor(actorKey) {
+    return normalizeClientActorKey(actorKey) === AI7_DEVICE_RECOVERY_TEST_ACTOR;
+  }
+  function operationIdFor(kind) {
+    return kind === "photo" ? AI7_PHOTO_SAVE_OPERATION_ID : AI7_TEXT_SAVE_OPERATION_ID;
+  }
+  function payloadFor(kind) {
+    return kind === "photo" ? ai7PhotoTestPayload() : ai7TextTestPayload();
+  }
+  async function persistAi7DeviceRecoveryTestOperation(kind, deps) {
+    const gate = requireOperations(deps.gate);
+    if (!gate.operationsAllowed) {
+      return { kind: "unavailable", reason: gate.reason };
+    }
+    if (!isDurableStore2(deps.store)) {
+      return { kind: "rejected", reason: "store_not_durable" };
+    }
+    const saveOperationId = operationIdFor(kind);
+    const payload = payloadFor(kind);
+    const canonical = canonicalizeExactJournalSavePayload({
+      saveOperationId,
+      payload
+    });
+    if (!canonical.ok) {
+      return { kind: "rejected", reason: `payload_rejected:${canonical.code}` };
+    }
+    const now = (/* @__PURE__ */ new Date()).toISOString();
+    const prepared = {
+      intentId: newIntentId(),
+      saveOperationId,
+      actorKey: AI7_DEVICE_RECOVERY_TEST_ACTOR,
+      draftRef: AI7_TEST_DRAFT_REF,
+      requestFingerprint: canonical.requestFingerprint,
+      status: "prepared",
+      serverEntryId: null,
+      failureCode: null,
+      createdAt: now,
+      updatedAt: now,
+      lastAttemptAt: null,
+      completedAt: null
+    };
+    const persisted = await deps.store.persistPreparedIntentWithExactPayload({
+      intent: prepared,
+      payload
+    });
+    if (persisted.kind !== "created" && persisted.kind !== "already_exists") {
+      return { kind: "rejected", reason: persisted.kind };
+    }
+    let intent = persisted.intent;
+    if (intent.status === "prepared") {
+      intent = await deps.store.update({
+        ...intent,
+        status: "awaiting_result",
+        lastAttemptAt: now,
+        updatedAt: now
+      });
+    }
+    return { kind: "persisted", harnessKind: kind, status: intent.status };
+  }
+  async function inspectAi7DeviceRecoveryTestOperations(deps) {
+    const gate = requireOperations(deps.gate);
+    if (!gate.operationsAllowed) {
+      return { kind: "unavailable", reason: gate.reason };
+    }
+    const operations = [];
+    for (const kind of ["text", "photo"]) {
+      const saveOperationId = operationIdFor(kind);
+      const intent = await deps.store.findByActorAndSaveOperationId(
+        AI7_DEVICE_RECOVERY_TEST_ACTOR,
+        saveOperationId
+      );
+      if (!intent) {
+        operations.push({
+          kind,
+          present: false,
+          status: "absent",
+          payloadPresent: false,
+          fingerprintVerified: false,
+          payloadExact: false,
+          pending: false,
+          completed: false
+        });
+        continue;
+      }
+      const loaded = await deps.store.loadExactPayloadBySaveOperationId(saveOperationId);
+      const payloadPresent = loaded.kind === "ok";
+      const fingerprintVerified = loaded.kind === "ok" && loaded.payload.requestFingerprint === intent.requestFingerprint;
+      const payloadExact = loaded.kind === "ok" && loaded.request.saveOperationId === saveOperationId && loaded.payload.requestJson.length > 0;
+      operations.push({
+        kind,
+        present: true,
+        status: intent.status,
+        payloadPresent,
+        fingerprintVerified,
+        payloadExact,
+        pending: intent.status === "prepared" || intent.status === "awaiting_result" || intent.status === "server_completed" || intent.status === "recovery_required",
+        completed: intent.status === "completed"
+      });
+    }
+    return {
+      pendingTestOperationExists: operations.some((row) => row.pending),
+      operations
+    };
+  }
+  async function recoverAi7DeviceRecoveryTestOperations(deps) {
+    const gate = requireOperations(deps.gate);
+    if (!gate.operationsAllowed) {
+      return { kind: "unavailable", reason: gate.reason };
+    }
+    const orchestratorDeps = createAi7FakeOrchestratorDeps(
+      async () => ({ status: "ready", store: deps.store }),
+      deps.fake
+    );
+    const results = await recoverJournalCreateSaves(
+      { viewerEmail: AI7_DEVICE_RECOVERY_TEST_ACTOR },
+      orchestratorDeps
+    );
+    return {
+      kind: "recovered",
+      results,
+      postCalls: orchestratorDeps.fake.postCalls,
+      lookupCalls: orchestratorDeps.fake.lookupCalls
+    };
+  }
+  async function cleanupAi7DeviceRecoveryTestOperations(deps) {
+    const gate = requireOperations(deps.gate);
+    if (!gate.operationsAllowed) {
+      return { kind: "unavailable", reason: gate.reason };
+    }
+    const requested = normalizeClientActorKey(
+      deps.actorKey ?? AI7_DEVICE_RECOVERY_TEST_ACTOR
+    );
+    if (!isAi7DeviceRecoveryTestActor(requested)) {
+      return { kind: "rejected", reason: "actor_not_test_namespace" };
+    }
+    const deletedIntentCount = await deps.store.deleteByActor(AI7_DEVICE_RECOVERY_TEST_ACTOR);
+    clearCurrentSessionJournalCreatePayloadsForTest();
+    return { kind: "cleaned", deletedIntentCount };
+  }
+
+  // src/lib/journal/clientSaveIntent/ai7DeviceRecoveryHarness/deviceUi.ts
   function $(id) {
     const el = document.getElementById(id);
     if (!el) throw new Error(`Missing #${id}`);
     return el;
   }
-  function setStatus(message, isError = false) {
-    const el = $("status");
-    el.textContent = message;
-    el.className = isError ? "status err" : "status ok";
+  function asDurable(store) {
+    if (store && typeof store === "object" && "persistPreparedIntentWithExactPayload" in store) {
+      return store;
+    }
+    return null;
   }
-  function escapeHtml(value) {
-    return value.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;");
-  }
-  function inMemoryDifferentSecretCandidate() {
-    const bytes = new Uint8Array(32);
-    crypto.getRandomValues(bytes);
-    return Array.from(bytes, (byte) => byte.toString(16).padStart(2, "0")).join("");
-  }
-  var AI2_RESTART_ACTOR = "ai2-restart@ljd.invalid";
-  var AI2_LIFECYCLE_ACTOR = "ai2-lifecycle@ljd.invalid";
-  var AI2_DELETE_ACTOR = "ai2-delete@ljd.invalid";
-  var AI2_OTHER_ACTOR = "ai2-other@ljd.invalid";
-  async function prepareProbeIntent(store, viewerEmail, saveOperationId) {
-    const prepared = await prepareClientSaveOperationIntent(store.store, {
-      viewerEmail,
-      saveOperationId,
-      requestFingerprint: "0".repeat(64),
-      draftRef: "diagnostic_metadata_only"
+  function formatInspect(snapshot) {
+    const pending = snapshot.pendingTestOperationExists ? "yes" : "no";
+    const lines = snapshot.operations.map((row) => {
+      return [
+        row.kind,
+        `status=${row.status}`,
+        row.pending ? "pending" : null,
+        row.completed ? "completed" : null,
+        row.payloadPresent ? "payload_present" : "payload_absent",
+        row.fingerprintVerified ? "fingerprint_verified" : "fingerprint_unverified",
+        row.payloadExact ? "payload_exact" : "payload_not_exact"
+      ].filter(Boolean).join(" ");
     });
-    return prepared.intent;
-  }
-  async function runSecureSaveIntentProbe(bootstrap) {
-    const store = bootstrap.store;
-    const restartIntent = await prepareProbeIntent(
-      bootstrap,
-      AI2_RESTART_ACTOR,
-      "ai2_restart_intent_0000000001"
-    );
-    const lifecycle = await prepareProbeIntent(
-      bootstrap,
-      AI2_LIFECYCLE_ACTOR,
-      "ai2_lifecycle_intent_00000001"
-    );
-    let completed = lifecycle;
-    if (completed.status === "prepared") {
-      completed = await store.update({ ...completed, status: "awaiting_result" });
-      completed = await store.update({
-        ...completed,
-        status: "server_completed",
-        serverEntryId: "diagnostic_entry"
-      });
-      completed = await store.update({ ...completed, status: "completed" });
-    }
-    let terminalRewindRejected = false;
-    try {
-      await store.update({ ...completed, status: "awaiting_result" });
-    } catch {
-      terminalRewindRejected = true;
-    }
-    let recoveryFailed = await prepareProbeIntent(
-      bootstrap,
-      AI2_LIFECYCLE_ACTOR,
-      "ai2_failed_intent_000000000001"
-    );
-    if (recoveryFailed.status === "prepared") {
-      recoveryFailed = await store.update({ ...recoveryFailed, status: "recovery_required" });
-      recoveryFailed = await store.update({ ...recoveryFailed, status: "failed_final" });
-    }
-    await prepareProbeIntent(bootstrap, AI2_DELETE_ACTOR, "ai2_delete_intent_00000000001");
-    await prepareProbeIntent(bootstrap, AI2_OTHER_ACTOR, "ai2_other_intent_000000000001");
-    const deleted = await store.deleteByActor(AI2_DELETE_ACTOR);
-    const otherRetained = await store.findByActorAndSaveOperationId(
-      AI2_OTHER_ACTOR,
-      "ai2_other_intent_000000000001"
-    ) != null;
-    await store.deleteByActor(AI2_OTHER_ACTOR);
-    return {
-      restartIntentPrepared: restartIntent.status === "prepared" && await store.findByActorAndSaveOperationId(
-        AI2_RESTART_ACTOR,
-        "ai2_restart_intent_0000000001"
-      ) != null,
-      lifecycleCompleted: completed.status === "completed",
-      recoveryAndFailedFinal: recoveryFailed.status === "failed_final",
-      terminalRewindRejected,
-      pendingByActor: (await store.listRecoverableByActor(AI2_RESTART_ACTOR)).some(
-        (intent) => intent.saveOperationId === "ai2_restart_intent_0000000001"
-      ),
-      actorIsolation: await store.findByActorAndSaveOperationId(
-        AI2_OTHER_ACTOR,
-        "ai2_restart_intent_0000000001"
-      ) == null,
-      deleteByActor: deleted === 1 && otherRetained
-    };
-  }
-  async function inspectSecureIntentFileAttributes() {
-    const location = await resolveLjdApplicationSupportDir();
-    const attrs = await inspectFileProtection(
-      `${location.ljdApplicationSupportDir}/${CLIENT_SAVE_OPERATION_INTENT_DB_NAME}SQLite.db`
-    );
-    return {
-      exists: attrs.exists,
-      backupExcluded: attrs.isExcludedFromBackup,
-      fileProtection: attrs.fileProtection
-    };
-  }
-  async function renderEntries() {
-    const listEl = $("list");
-    const previewEl = $("preview");
-    listEl.innerHTML = "";
-    previewEl.removeAttribute("src");
-    previewEl.hidden = true;
-    const entries = await JournalRepository.list();
-    if (entries.length === 0) {
-      listEl.innerHTML = "<p class='muted'>Local Journal \u306F\u7A7A\u3067\u3059\u3002remote shell \u306E /preview/local-storage-diagnostics \u3067\u521D\u671F\u5316\u30FB\u8A3A\u65AD\u3057\u3066\u304F\u3060\u3055\u3044\u3002</p>";
-      return;
-    }
-    for (const entry of entries) {
-      const card = document.createElement("article");
-      card.className = "card";
-      card.innerHTML = `
-      <h3>${escapeHtml(entry.title)}</h3>
-      <p class="meta">stableId: ${escapeHtml(entry.stableId)}</p>
-      <p class="meta">legacyServerId: ${escapeHtml(entry.legacyServerId ?? "(none)")}</p>
-      <p class="meta">source: ${escapeHtml(entry.source)}</p>
-      <p class="meta">dateKey: ${escapeHtml(entry.dateKey)}</p>
-      <p class="meta">tags: ${escapeHtml(entry.tags.join(" "))}</p>
-      <p class="meta">media: ${escapeHtml(
-        entry.mediaRefs.map((m) => m.relativePath).join(", ") || "(none)"
-      )}</p>
-    `;
-      listEl.appendChild(card);
-      const first = entry.mediaRefs[0];
-      if (first) {
-        try {
-          previewEl.src = await resolveJournalMediaUri(first.relativePath);
-          previewEl.hidden = false;
-        } catch (err) {
-          setStatus(`\u753B\u50CFURI\u5931\u6557: ${String(err)}`, true);
-        }
-      }
-    }
+    return `pending test operation exists: ${pending}
+${lines.join("\n")}`;
   }
   async function boot() {
-    $("platform").textContent = `platform=${Capacitor.getPlatform()} native=${String(
-      Capacitor.isNativePlatform()
-    )} diagnostics=local-storage remoteShell=false`;
-    if (!Capacitor.isNativePlatform()) {
-      setStatus("\u30CD\u30A4\u30C6\u30A3\u30D6\u5C02\u7528\u3067\u3059\u3002", true);
+    const native = Capacitor.isNativePlatform();
+    const gate = evaluateAi7DeviceRecoveryHarnessGate({ isNativePlatform: native });
+    $("platform").textContent = `platform=${Capacitor.getPlatform()} native=${String(native)} gate=${gate.reason}`;
+    const setStatus = (text, isError = false) => {
+      const el = $("status");
+      el.textContent = text;
+      el.className = isError ? "status err" : "status ok";
+    };
+    if (!gate.pageAllowed) {
+      setStatus("harness unavailable", true);
       return;
     }
-    const secretWasStored = await isPluginEncryptionSecretStored();
-    let keylessOpenRejected = null;
-    if (!secretWasStored) {
-      try {
-        await initializeNativeClientSaveOperationIntentStore();
-        keylessOpenRejected = false;
-      } catch {
-        keylessOpenRejected = true;
+    if (!gate.operationsAllowed) {
+      setStatus(`operations unavailable: ${gate.reason}`, true);
+      return;
+    }
+    const storeFromBootstrap = async () => {
+      const bootstrap = await initializeSaveIntentStore();
+      if (bootstrap.status !== "ready") {
+        throw new Error(`store:${bootstrap.status}`);
       }
-    }
-    const intentBootstrap = await initializeSaveIntentStore();
-    const intentProbe = intentBootstrap.status === "ready" ? await runSecureSaveIntentProbe(intentBootstrap) : null;
-    const wrongSecretRejected = intentBootstrap.status === "ready" ? await pluginRejectsDifferentEncryptionSecret(inMemoryDifferentSecretCandidate()) : null;
-    const intentFileAttributes = intentBootstrap.status === "ready" ? await inspectSecureIntentFileAttributes() : null;
-    $("security-report").textContent = JSON.stringify(
-      {
-        developerOnly: true,
-        secureSaveIntentBootstrap: {
-          status: intentBootstrap.status,
-          diagnosticStage: getSaveIntentStoreBootstrapDiagnosticStage(),
-          secretWasStored,
-          keylessOpenRejected,
-          wrongSecretRejected
-        },
-        nativeSaveIntentProbe: intentProbe,
-        secureIntentFileAttributes: intentFileAttributes
-      },
-      null,
-      2
-    );
-    if (intentBootstrap.status !== "ready") {
-      setStatus(`Secure Save Intent bootstrap unavailable: ${intentBootstrap.status}`, true);
-      return;
-    }
-    $("btn-load").addEventListener("click", () => {
+      const store = asDurable(bootstrap.store);
+      if (!store) throw new Error("store_not_durable");
+      return store;
+    };
+    const refresh = async () => {
+      const snapshot = await inspectAi7DeviceRecoveryTestOperations({
+        store: await storeFromBootstrap()
+      });
+      if ("kind" in snapshot && snapshot.kind === "unavailable") {
+        setStatus(`unavailable:${snapshot.reason}`, true);
+        return;
+      }
+      $("inspect").textContent = formatInspect(snapshot);
+      const view = snapshot;
+      setStatus(
+        view.pendingTestOperationExists ? "pending test operation exists" : view.operations.some((row) => row.completed) ? "completed" : "no test operation"
+      );
+    };
+    $("btn-text").addEventListener("click", () => {
       void (async () => {
-        await openLocalJournalDatabase();
-        await renderEntries();
-        setStatus(`\u8AAD\u8FBC\u5B8C\u4E86 count=${await JournalRepository.count()}\uFF08\u30B5\u30FC\u30D0\u30FC\u518D\u53D6\u5F97\u306A\u3057\uFF09`);
-      })().catch((e) => setStatus(String(e), true));
+        const result = await persistAi7DeviceRecoveryTestOperation("text", {
+          store: await storeFromBootstrap()
+        });
+        setStatus(JSON.stringify(result), result.kind !== "persisted");
+        await refresh();
+      })().catch((error) => setStatus(String(error), true));
     });
-    $("btn-clear").addEventListener("click", () => {
+    $("btn-photo").addEventListener("click", () => {
       void (async () => {
-        const paths = await JournalRepository.deleteAll();
-        for (const p of paths) await deleteJournalMediaRelative(p);
-        await renderEntries();
-        setStatus("\u7AEF\u672BLocal\u8A3A\u65AD\u30C7\u30FC\u30BF\u3092\u524A\u9664\uFF08\u30B5\u30FC\u30D0\u30FC\u672A\u5909\u66F4\uFF09\u3002");
-      })().catch((e) => setStatus(String(e), true));
+        const result = await persistAi7DeviceRecoveryTestOperation("photo", {
+          store: await storeFromBootstrap()
+        });
+        setStatus(JSON.stringify(result), result.kind !== "persisted");
+        await refresh();
+      })().catch((error) => setStatus(String(error), true));
     });
-    $("btn-inspect-capacity").addEventListener("click", () => {
+    $("btn-inspect").addEventListener("click", () => {
+      void refresh().catch((error) => setStatus(String(error), true));
+    });
+    $("btn-recover").addEventListener("click", () => {
       void (async () => {
-        const capacity = await readAvailableBytesOrNull();
-        let artifacts = [];
-        try {
-          artifacts = await listSqliteArtifactsReadOnly();
-        } catch {
-          artifacts = [];
+        const result = await recoverAi7DeviceRecoveryTestOperations({
+          store: await storeFromBootstrap()
+        });
+        if (result.kind === "recovered") {
+          setStatus(
+            `fake_recover posts=${result.postCalls} lookups=${result.lookupCalls}`
+          );
+        } else {
+          setStatus(JSON.stringify(result), true);
         }
-        const report = {
-          readOnly: true,
-          platform: capacity.platform,
-          availableBytes: capacity.availableBytes,
-          capacitySource: capacity.source,
-          api: capacity.decision.known ? "available" : "unavailable",
-          decision: capacity.decision.reason,
-          artifacts
-        };
-        $("security-report").textContent = JSON.stringify(report, null, 2);
-        setStatus(
-          `capacity api=${report.api} available=${String(capacity.availableBytes)} (no secrets/paths)`
-        );
-      })().catch((e) => setStatus(safeErrorMessage(e), true));
+        await refresh();
+      })().catch((error) => setStatus(String(error), true));
     });
-    $("btn-inspect-attrs").addEventListener("click", () => {
+    $("btn-cleanup").addEventListener("click", () => {
       void (async () => {
-        const asDir = await resolveLjdApplicationSupportDir();
-        const dirAttrs = await inspectFileProtection(asDir.ljdApplicationSupportDir);
-        let kc = null;
-        try {
-          kc = await inspectPluginDbKeyAccessibility();
-        } catch {
-          kc = null;
-        }
-        const report = {
-          readOnly: true,
-          dummyCreated: false,
-          applicationSupport: asDir,
-          dirAttrs: {
-            exists: dirAttrs.exists,
-            isExcludedFromBackup: dirAttrs.isExcludedFromBackup,
-            fileProtection: dirAttrs.fileProtection
-          },
-          pluginKeychain: kc
-        };
-        $("security-report").textContent = JSON.stringify(report, null, 2);
-        setStatus("read-only storage attrs\uFF08secret\u975E\u53D6\u5F97\u30FBdummy\u975E\u751F\u6210\uFF09");
-      })().catch((e) => setStatus(safeErrorMessage(e), true));
+        const result = await cleanupAi7DeviceRecoveryTestOperations({
+          store: await storeFromBootstrap()
+        });
+        setStatus(JSON.stringify(result), result.kind !== "cleaned");
+        await refresh();
+      })().catch((error) => setStatus(String(error), true));
     });
-    try {
-      await openLocalJournalDatabase();
-      await renderEntries();
-      setStatus("Diagnostics\u6E96\u5099\u5B8C\u4E86\uFF08SQLite foundation + secure Save Intent store\uFF09\u3002");
-    } catch (err) {
-      setStatus(`\u521D\u671F\u5316\u5931\u6557: ${String(err)}`, true);
-    }
+    await refresh();
   }
   void boot();
 })();
