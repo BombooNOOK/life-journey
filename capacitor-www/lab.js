@@ -3589,9 +3589,31 @@ CREATE TABLE IF NOT EXISTS client_save_operation_payload (
     }
   }
   async function withTransaction(db2, fn) {
+    if (db2.nativeTransaction) {
+      await db2.nativeTransaction.begin();
+      const tx = {
+        query: (sql, params) => db2.query(sql, params),
+        run: (sql, params) => db2.nativeTransaction.run(sql, params),
+        execute: () => {
+          throw new Error("execute_not_allowed_inside_native_transaction");
+        },
+        nativeTransaction: db2.nativeTransaction
+      };
+      try {
+        const result = await fn(tx);
+        await db2.nativeTransaction.commit();
+        return result;
+      } catch (error) {
+        try {
+          await db2.nativeTransaction.rollback();
+        } catch {
+        }
+        throw error;
+      }
+    }
     await db2.execute("BEGIN");
     try {
-      const result = await fn();
+      const result = await fn(db2);
       await db2.execute("COMMIT");
       return result;
     } catch (error) {
@@ -3745,15 +3767,15 @@ CREATE TABLE IF NOT EXISTS client_save_operation_payload (
       },
       async deleteByActor(actorKey) {
         return session.withDb(async (db2) => {
-          return withTransaction(db2, async () => {
-            await db2.run(
+          return withTransaction(db2, async (tx) => {
+            await tx.run(
               `DELETE FROM client_save_operation_payload
              WHERE save_operation_id IN (
                SELECT save_operation_id FROM client_save_operation_intent WHERE actor_key = ?
              )`,
               [actorKey]
             );
-            const result = await db2.run(
+            const result = await tx.run(
               "DELETE FROM client_save_operation_intent WHERE actor_key = ?",
               [actorKey]
             );
@@ -3796,12 +3818,12 @@ CREATE TABLE IF NOT EXISTS client_save_operation_payload (
         return session.withDb(async (db2) => {
           return withTransaction(
             db2,
-            async () => applyPersistPreparedIntentWithExactPayload(
+            async (tx) => applyPersistPreparedIntentWithExactPayload(
               {
-                findIntent: (id) => findIntent(db2, id),
-                insertIntent: (intent) => insertIntentRow(db2, intent),
-                findPayload: (id) => findPayload(db2, id),
-                insertPayload: (row) => insertPayloadRow(db2, row)
+                findIntent: (id) => findIntent(tx, id),
+                insertIntent: (intent) => insertIntentRow(tx, intent),
+                findPayload: (id) => findPayload(tx, id),
+                insertPayload: (row) => insertPayloadRow(tx, row)
               },
               input
             )
@@ -3820,11 +3842,11 @@ CREATE TABLE IF NOT EXISTS client_save_operation_payload (
         return session.withDb(async (db2) => {
           return withTransaction(
             db2,
-            async () => applyDeleteExactPayloadIfCompleted(
+            async (tx) => applyDeleteExactPayloadIfCompleted(
               {
-                findIntent: (id) => findIntent(db2, id),
-                findPayload: (id) => findPayload(db2, id),
-                deletePayload: (id) => deletePayloadRow(db2, id)
+                findIntent: (id) => findIntent(tx, id),
+                findPayload: (id) => findPayload(tx, id),
+                deletePayload: (id) => deletePayloadRow(tx, id)
               },
               input
             )
@@ -4240,7 +4262,22 @@ CREATE TABLE IF NOT EXISTS client_save_operation_payload (
     return {
       query: (sql, params) => db2.query(sql, params),
       run: (sql, params) => db2.run(sql, params),
-      execute: (statements) => db2.execute(statements)
+      execute: (statements) => db2.execute(statements),
+      nativeTransaction: {
+        begin: async () => {
+          await db2.beginTransaction();
+        },
+        commit: async () => {
+          await db2.commitTransaction();
+        },
+        rollback: async () => {
+          await db2.rollbackTransaction();
+        },
+        run: async (sql, params = []) => {
+          const result = await db2.run(sql, params, false);
+          return { changes: { changes: Number(result.changes?.changes ?? 0) } };
+        }
+      }
     };
   }
   async function withNativeEncryptedDb(fn) {
