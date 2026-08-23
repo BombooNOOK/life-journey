@@ -9,7 +9,13 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { onAuthStateChanged, signOut, type Auth, type User } from "firebase/auth";
+import {
+  onAuthStateChanged,
+  onIdTokenChanged,
+  signOut,
+  type Auth,
+  type User,
+} from "firebase/auth";
 
 import {
   clearGoogleOAuthRedirectFlow,
@@ -19,6 +25,8 @@ import {
   syncLjAuthClientCookies,
   takeOAuthReturnTo,
 } from "@/lib/auth/clientCookies";
+import { getVerifiedAuthSessionSyncController } from "@/lib/auth/syncVerifiedAuthSession";
+import { isVerifiedAuthSessionClientSyncAllowed } from "@/lib/auth/verifiedAuthSessionClientGate";
 import { getFirebaseAuth, waitForFirebaseAuthPersistence } from "@/lib/firebase/client";
 import { consumeRedirectResultOnce } from "@/lib/firebase/redirectResult";
 import {
@@ -90,6 +98,40 @@ export function FirebaseAuthProvider({ children }: { children: ReactNode }) {
     return subscribeLocalE2eClientSession((session) => {
       setLocalE2eEmail(session?.email ?? null);
     });
+  }, []);
+
+  /**
+   * AI-8.1b: parallel verified session sync (lj_session).
+   * Separate from onAuthStateChanged legacy cookie path.
+   * Default OFF via NEXT_PUBLIC_LJD_VERIFIED_AUTH_SESSION_ENABLED.
+   */
+  useEffect(() => {
+    if (!isVerifiedAuthSessionClientSyncAllowed()) {
+      return;
+    }
+
+    let cancelled = false;
+    let unsubscribeToken: (() => void) | undefined;
+    const controller = getVerifiedAuthSessionSyncController();
+
+    try {
+      const auth = getFirebaseAuth({ deferPersistence: true });
+      unsubscribeToken = onIdTokenChanged(auth, (next) => {
+        if (cancelled) return;
+        // Local E2E harness has no real Firebase ID token — skip verified sync.
+        if (isLocalE2eClientRuntimeEnabled() && getLocalE2eClientSession()) {
+          return;
+        }
+        void controller.handleAuthUser(next);
+      });
+    } catch {
+      // Auth init failure must not break legacy provider.
+    }
+
+    return () => {
+      cancelled = true;
+      unsubscribeToken?.();
+    };
   }, []);
 
   useEffect(() => {
@@ -270,6 +312,15 @@ export function FirebaseAuthProvider({ children }: { children: ReactNode }) {
     await signOut(auth);
     syncAuthCookies(null);
     await syncAuthCookiesOnServer(null);
+    // Parallel verified clear — must not block or undo legacy logout.
+    // onIdTokenChanged(null) also clears; this is a best-effort complement.
+    if (isVerifiedAuthSessionClientSyncAllowed()) {
+      void getVerifiedAuthSessionSyncController()
+        .clearAfterLegacySignOut()
+        .catch(() => {
+          /* state becomes failed inside controller; do not throw into legacy logout */
+        });
+    }
   }, []);
 
   const effectiveUser = useMemo((): User | null => {
