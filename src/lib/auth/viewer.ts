@@ -1,5 +1,11 @@
 import { cookies } from "next/headers";
 
+/**
+ * Legacy / non-authoritative viewer email from `lj_user_email`.
+ *
+ * AI-8.1a: Still used by existing journal/account routes. Not Firebase-token
+ * verified. For verified identity use getVerifiedViewerSession() (lj_session).
+ */
 export async function getViewerEmailFromCookie(): Promise<string | null> {
   const store = await cookies();
   const raw = store.get("lj_user_email")?.value;
