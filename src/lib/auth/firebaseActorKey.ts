@@ -1,8 +1,9 @@
 /**
- * Pure stable actor-key helper for future idempotency identity (AI-8.1a).
+ * Pure stable actor-key helper (AI-8.1a / AI-8.2).
  * Does NOT write to JournalSaveOperation / rollout / product tables yet.
  *
- * Format: `firebase:<UID>` — namespace avoids collision with normalized-email keys.
+ * Format: `firebase:<UID>` — derived from AccountIdentity.firebaseUid; not stored
+ * as an alias/claim row. Namespace avoids collision with normalized-email keys.
  * UID is not trimmed or rewritten (Firebase UIDs are opaque; empty rejects).
  */
 
