@@ -239,6 +239,14 @@ model AccountSettings {
 
   /// 管理者一覧用の会員番号（登録順 1, 2, 3…。表示は 00001 形式）
   memberNumber Int? @unique
+
+  /// Stable ownership anchor (AI-X6.5A). Nullable during transition.
+  /// One AccountIdentity → at most one AccountSettings (UNIQUE; NULL allowed for legacy).
+  /// Email column remains unique for compatibility / contact metadata — not durable ownership.
+  /// FK Restrict: identity must not be deleted while settings still reference it
+  /// (product purge before identity removal — see account delete order design).
+  identityId String?          @unique
+  identity   AccountIdentity? @relation(fields: [identityId], references: [id], onDelete: Restrict)
 }
 
 /// 鑑定書製本版（BASE単発）の申込予定・製本進捗（決済前は pending）
@@ -598,6 +606,8 @@ model AccountIdentity {
 
   emails            AccountIdentityEmail[]
   legacyActorClaims AccountIdentityLegacyActorClaim[]
+  /// Optional 1:1 product account row (AI-X6.5A). Null until bound/backfilled.
+  accountSettings   AccountSettings?
 }
 
 /// Authentication/contact email lifecycle for an AccountIdentity.
