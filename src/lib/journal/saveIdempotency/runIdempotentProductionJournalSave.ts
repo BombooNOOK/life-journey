@@ -22,6 +22,7 @@ import {
   entrySelect,
   type ProductionJournalSavePortContext,
 } from "@/lib/journal/saveIdempotency/productionJournalSavePorts";
+import { assessStableJsoFlagCombination } from "@/lib/journal/saveIdempotency/assessStableJsoFlagCombination";
 import {
   resolveJournalSaveWriteActorKey,
   stableJsoWriteRejectHttp,
@@ -140,6 +141,16 @@ export async function runIdempotentProductionJournalSave(
       status: reject.status,
       ...JSON_NO_STORE,
     });
+  }
+  if (writeActor.mode === "stable") {
+    // AI-X6.4: report unsafe write-ON/recovery-OFF; do not force recovery ON.
+    const combo = assessStableJsoFlagCombination();
+    if (combo.status === "unsafe") {
+      console.warn(
+        "[ljd-stable-jso]",
+        JSON.stringify({ status: "unsafe", reason: combo.reason }),
+      );
+    }
   }
   const actorKey = writeActor.actorKey;
 

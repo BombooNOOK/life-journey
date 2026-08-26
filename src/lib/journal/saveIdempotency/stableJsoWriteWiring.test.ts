@@ -8,7 +8,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const getViewerEmailFromCookie = vi.fn();
 const isJournalSaveIdempotencyEnabled = vi.fn();
 const findRollout = vi.fn();
-const findOperation = vi.fn();
+const findManyOperations = vi.fn();
 const observeJournalIdentityShadow = vi.fn();
 const resolveJournalSaveWriteActorKey = vi.fn();
 const executeJournalSaveOperation = vi.fn();
@@ -37,7 +37,7 @@ vi.mock("@/lib/journal/saveIdempotency/resolveJournalSaveWriteActorKey", async (
 vi.mock("@/lib/db", () => ({
   prisma: {
     journalSaveIdempotencyRollout: { findUnique: findRollout },
-    journalSaveOperation: { findUnique: findOperation },
+    journalSaveOperation: { findMany: findManyOperations },
     journalEntry: { findFirst: vi.fn() },
   },
 }));
@@ -62,6 +62,13 @@ vi.mock("@/lib/profile/orderPerProfile", () => ({
 }));
 vi.mock("@/lib/journal/journalEntryApiSerialize", () => ({
   formatJournalEntryForApiResponse: (e: unknown) => e,
+}));
+vi.mock("@/lib/journal/saveIdempotency/assessStableJsoFlagCombination", () => ({
+  assessStableJsoFlagCombination: () => ({
+    status: "ok",
+    writeEnabled: true,
+    recoveryEnabled: true,
+  }),
 }));
 
 const capability = await import("@/app/api/journal/save-capability/route");
@@ -183,9 +190,9 @@ describe("AI-X6.3 stable JSO write wiring", () => {
     expect(findRollout).not.toHaveBeenCalled();
   });
 
-  it("recovery lookup remains email-scoped (no historical expansion in X6.3)", async () => {
+  it("recovery lookup with recovery flag OFF remains single cookie-email key (X6.4 legacy)", async () => {
     getViewerEmailFromCookie.mockResolvedValue("owner@ljd.invalid");
-    findOperation.mockResolvedValue(null);
+    findManyOperations.mockResolvedValue([]);
     const res = await lookup.GET(
       new Request(
         `https://ljd.invalid/api/journal/save-operations/01HXSAVEOPERATIONID00000001?requestFingerprint=${"a".repeat(64)}`,
@@ -193,12 +200,10 @@ describe("AI-X6.3 stable JSO write wiring", () => {
       { params: Promise.resolve({ saveOperationId: "01HXSAVEOPERATIONID00000001" }) },
     );
     expect(await res.json()).toEqual({ protocolVersion: 1, state: "not_found" });
-    expect(findOperation).toHaveBeenCalledWith({
+    expect(findManyOperations).toHaveBeenCalledWith({
       where: {
-        actorKey_saveOperationId: {
-          actorKey: "owner@ljd.invalid",
-          saveOperationId: "01HXSAVEOPERATIONID00000001",
-        },
+        saveOperationId: "01HXSAVEOPERATIONID00000001",
+        actorKey: { in: ["owner@ljd.invalid"] },
       },
       select: {
         status: true,
@@ -206,6 +211,7 @@ describe("AI-X6.3 stable JSO write wiring", () => {
         requestFingerprint: true,
         resultCode: true,
       },
+      take: 2,
     });
     expect(resolveJournalSaveWriteActorKey).not.toHaveBeenCalled();
   });

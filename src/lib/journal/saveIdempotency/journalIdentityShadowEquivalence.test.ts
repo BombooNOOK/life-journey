@@ -9,7 +9,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const getViewerEmailFromCookie = vi.fn();
 const isJournalSaveIdempotencyEnabled = vi.fn();
 const findRollout = vi.fn();
-const findOperation = vi.fn();
+const findManyOperations = vi.fn();
 const observeJournalIdentityShadow = vi.fn();
 const resolveJournalSaveWriteActorKey = vi.fn();
 const executeJournalSaveOperation = vi.fn();
@@ -40,7 +40,7 @@ vi.mock("@/lib/journal/saveIdempotency/resolveJournalSaveWriteActorKey", () => (
 vi.mock("@/lib/db", () => ({
   prisma: {
     journalSaveIdempotencyRollout: { findUnique: findRollout },
-    journalSaveOperation: { findUnique: findOperation },
+    journalSaveOperation: { findMany: findManyOperations },
     journalEntry: { findFirst: vi.fn() },
   },
 }));
@@ -65,6 +65,13 @@ vi.mock("@/lib/profile/orderPerProfile", () => ({
 }));
 vi.mock("@/lib/journal/journalEntryApiSerialize", () => ({
   formatJournalEntryForApiResponse: (e: unknown) => e,
+}));
+vi.mock("@/lib/journal/saveIdempotency/assessStableJsoFlagCombination", () => ({
+  assessStableJsoFlagCombination: () => ({
+    status: "ok",
+    writeEnabled: false,
+    recoveryEnabled: false,
+  }),
 }));
 
 const capability = await import("@/app/api/journal/save-capability/route");
@@ -146,12 +153,14 @@ describe("AI-X6.2 authority equivalence (shadow cannot alter paths)", () => {
 
   async function lookupSnapshot() {
     getViewerEmailFromCookie.mockResolvedValue("owner@ljd.invalid");
-    findOperation.mockResolvedValue({
-      status: "completed",
-      journalEntryId: "entry_1",
-      requestFingerprint: "a".repeat(64),
-      resultCode: "OK",
-    });
+    findManyOperations.mockResolvedValue([
+      {
+        status: "completed",
+        journalEntryId: "entry_1",
+        requestFingerprint: "a".repeat(64),
+        resultCode: "OK",
+      },
+    ]);
     const res = await lookup.GET(
       new Request(
         `https://ljd.invalid/api/journal/save-operations/01HXSAVEOPERATIONID00000001?requestFingerprint=${"a".repeat(64)}`,
@@ -161,7 +170,7 @@ describe("AI-X6.2 authority equivalence (shadow cannot alter paths)", () => {
     return {
       status: res.status,
       body: await res.json(),
-      where: findOperation.mock.calls[0]?.[0],
+      where: findManyOperations.mock.calls[0]?.[0],
       observeArgs: observeJournalIdentityShadow.mock.calls[0]?.[0],
     };
   }
@@ -186,10 +195,8 @@ describe("AI-X6.2 authority equivalence (shadow cannot alter paths)", () => {
     expect(withShadow.body).toEqual(baseline.body);
     expect(withShadow.where).toEqual({
       where: {
-        actorKey_saveOperationId: {
-          actorKey: "owner@ljd.invalid",
-          saveOperationId: "01HXSAVEOPERATIONID00000001",
-        },
+        saveOperationId: "01HXSAVEOPERATIONID00000001",
+        actorKey: { in: ["owner@ljd.invalid"] },
       },
       select: {
         status: true,
@@ -197,6 +204,7 @@ describe("AI-X6.2 authority equivalence (shadow cannot alter paths)", () => {
         requestFingerprint: true,
         resultCode: true,
       },
+      take: 2,
     });
     expect(baseline.where).toEqual(withShadow.where);
     expect(withShadow.observeArgs).toMatchObject({

@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const getViewerEmailFromCookie = vi.fn();
 const isJournalSaveIdempotencyEnabled = vi.fn();
 const findRollout = vi.fn();
-const findOperation = vi.fn();
+const findManyOperations = vi.fn();
 
 vi.mock("@/lib/auth/viewer", () => ({
   getViewerEmailFromCookie,
@@ -15,7 +15,7 @@ vi.mock("@/lib/journal/saveIdempotency/journalSaveIdempotencyGate", () => ({
 vi.mock("@/lib/db", () => ({
   prisma: {
     journalSaveIdempotencyRollout: { findUnique: findRollout },
-    journalSaveOperation: { findUnique: findOperation },
+    journalSaveOperation: { findMany: findManyOperations },
   },
 }));
 
@@ -81,9 +81,9 @@ describe("4B-4AI-1 capability + lookup route contracts", () => {
       { params: Promise.resolve({ saveOperationId: "bad" }) },
     );
     expect(invalid.status).toBe(400);
-    expect(findOperation).not.toHaveBeenCalled();
+    expect(findManyOperations).not.toHaveBeenCalled();
 
-    findOperation.mockResolvedValue(null);
+    findManyOperations.mockResolvedValue([]);
     const response = await lookup.GET(
       new Request(
         `https://ljd.invalid/api/journal/save-operations/01HXSAVEOPERATIONID00000001?requestFingerprint=${"a".repeat(64)}`,
@@ -91,12 +91,10 @@ describe("4B-4AI-1 capability + lookup route contracts", () => {
       { params: Promise.resolve({ saveOperationId: "01HXSAVEOPERATIONID00000001" }) },
     );
     expect(await response.json()).toEqual({ protocolVersion: 1, state: "not_found" });
-    expect(findOperation).toHaveBeenCalledWith({
+    expect(findManyOperations).toHaveBeenCalledWith({
       where: {
-        actorKey_saveOperationId: {
-          actorKey: "owner@ljd.invalid",
-          saveOperationId: "01HXSAVEOPERATIONID00000001",
-        },
+        saveOperationId: "01HXSAVEOPERATIONID00000001",
+        actorKey: { in: ["owner@ljd.invalid"] },
       },
       select: {
         status: true,
@@ -104,17 +102,20 @@ describe("4B-4AI-1 capability + lookup route contracts", () => {
         requestFingerprint: true,
         resultCode: true,
       },
+      take: 2,
     });
   });
 
   it("allows owner recovery after rollout/global OFF because lookup is not new admission", async () => {
     getViewerEmailFromCookie.mockResolvedValue("owner@ljd.invalid");
-    findOperation.mockResolvedValue({
-      status: "completed",
-      journalEntryId: "entry_1",
-      requestFingerprint: "a".repeat(64),
-      resultCode: "OK",
-    });
+    findManyOperations.mockResolvedValue([
+      {
+        status: "completed",
+        journalEntryId: "entry_1",
+        requestFingerprint: "a".repeat(64),
+        resultCode: "OK",
+      },
+    ]);
     const response = await lookup.GET(
       new Request(
         `https://ljd.invalid/api/journal/save-operations/01HXSAVEOPERATIONID00000001?requestFingerprint=${"a".repeat(64)}`,

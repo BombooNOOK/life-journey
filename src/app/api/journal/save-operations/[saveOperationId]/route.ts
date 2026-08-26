@@ -3,6 +3,9 @@ import { NextResponse } from "next/server";
 import { observeJournalIdentityShadow } from "@/lib/auth/observeJournalIdentityShadow";
 import { getViewerEmailFromCookie, normalizeEmail } from "@/lib/auth/viewer";
 import { prisma } from "@/lib/db";
+import { findJournalSaveOperationByAuthorizedActorKeys } from "@/lib/journal/saveIdempotency/findJournalSaveOperationByAuthorizedActorKeys";
+import { resolveJournalSaveRecoveryAuthority } from "@/lib/journal/saveIdempotency/resolveJournalSaveRecoveryAuthority";
+import { stableJsoWriteRejectHttp } from "@/lib/journal/saveIdempotency/resolveJournalSaveWriteActorKey";
 import {
   toPublicSaveOperationLookup,
 } from "@/lib/journal/saveIdempotency/rolloutProtocol";
@@ -21,6 +24,11 @@ type RouteContext = { params: Promise<{ saveOperationId: string }> };
  * eligibility or the global admission flag: disabling a cohort must not strand
  * an authenticated owner with an already-created operation. New admission
  * remains controlled solely by save-capability.
+ *
+ * AI-X6.4: when LJD_STABLE_JSO_RECOVERY_ENABLED is ON, lookup uses
+ * firebase:<UID> + explicit LegacyActorClaim actorKeys. Flag OFF keeps
+ * cookie-email actorKey exactly as before. Never grants access from current
+ * email alone.
  */
 export async function GET(request: Request, context: RouteContext) {
   const viewerEmail = await getViewerEmailFromCookie();
@@ -47,33 +55,45 @@ export async function GET(request: Request, context: RouteContext) {
     );
   }
 
-  // Authority remains cookie-email. Shadow (AI-X6.2) observes only; lookup keys unchanged.
-  const actorKey = normalizeEmail(viewerEmail);
+  // Shadow baseline remains cookie-email (AI-X6.2).
+  const legacyCookieActorKey = normalizeEmail(viewerEmail);
   try {
     await observeJournalIdentityShadow({
       route: "journal.save_operations.lookup",
-      legacyCookieActorKey: actorKey,
+      legacyCookieActorKey,
       saveOperationId: parsedId.saveOperationId,
     });
   } catch {
     // Observe must never affect recovery lookup authority.
   }
 
-  try {
-    const row = await prisma.journalSaveOperation.findUnique({
-      where: {
-        actorKey_saveOperationId: {
-          actorKey,
-          saveOperationId: parsedId.saveOperationId,
-        },
-      },
-      select: {
-        status: true,
-        journalEntryId: true,
-        requestFingerprint: true,
-        resultCode: true,
-      },
+  const authority = await resolveJournalSaveRecoveryAuthority(viewerEmail);
+  if (authority.mode === "stable_rejected") {
+    const reject = stableJsoWriteRejectHttp(authority.reason);
+    return NextResponse.json(reject.body, {
+      status: reject.status,
+      ...NO_STORE,
     });
+  }
+
+  try {
+    const lookup = await findJournalSaveOperationByAuthorizedActorKeys(prisma, {
+      actorKeys: authority.actorKeys,
+      saveOperationId: parsedId.saveOperationId,
+    });
+
+    if (lookup.kind === "ambiguous") {
+      // Fail closed — never pick among duplicates. No actorKeys/emails exposed.
+      return NextResponse.json(
+        {
+          error: "保存状態を一意に特定できません。",
+          code: "JSO_RECOVERY_AMBIGUOUS",
+        },
+        { status: 409, ...NO_STORE },
+      );
+    }
+
+    const row = lookup.kind === "found" ? lookup.row : null;
     // Scoped query means another actor's identical ID is indistinguishable from absent.
     return NextResponse.json(
       toPublicSaveOperationLookup({

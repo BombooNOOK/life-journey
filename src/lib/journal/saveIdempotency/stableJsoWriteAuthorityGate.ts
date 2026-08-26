@@ -4,7 +4,9 @@
  *
  * Enable: LJD_STABLE_JSO_WRITE_AUTHORITY_ENABLED=YES|1
  *
- * Do NOT enable in Vercel Preview/Production until X6.4 + X6.6 prerequisites.
+ * Do NOT enable in Vercel Preview/Production until X6.4 recovery is also ON
+ * and X6.6 native pending-intent identity is ready. write-ON/recovery-OFF is
+ * unsafe (see assessStableJsoFlagCombination).
  */
 
 export const STABLE_JSO_WRITE_AUTHORITY_FLAG =
