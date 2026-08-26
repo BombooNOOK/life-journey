@@ -8,6 +8,7 @@ import {
   resolveSaveCapability,
 } from "@/lib/journal/saveIdempotency/rolloutProtocol";
 import { isJournalSaveIdempotencyEnabled } from "@/lib/journal/saveIdempotency/journalSaveIdempotencyGate";
+import { resolveJournalSaveWriteActorKey } from "@/lib/journal/saveIdempotency/resolveJournalSaveWriteActorKey";
 
 const NO_STORE = {
   headers: { "Cache-Control": "private, no-store, max-age=0, must-revalidate" },
@@ -26,12 +27,12 @@ export async function GET() {
     );
   }
 
-  // Authority remains cookie-email. Shadow (AI-X6.2) observes only.
-  const actorKey = normalizeEmail(viewerEmail);
+  // Shadow baseline remains cookie-email (AI-X6.2).
+  const legacyCookieActorKey = normalizeEmail(viewerEmail);
   try {
     await observeJournalIdentityShadow({
       route: "journal.save_capability",
-      legacyCookieActorKey: actorKey,
+      legacyCookieActorKey,
     });
   } catch {
     // Observe must never affect capability admission.
@@ -40,6 +41,14 @@ export async function GET() {
   if (!isJournalSaveIdempotencyEnabled()) {
     return NextResponse.json(disabledSaveCapability(), NO_STORE);
   }
+
+  // AI-X6.3: when stable-write flag ON, capability must evaluate the SAME
+  // stableActorKey as new JSO writes (no email/UID mix). Unresolved → fail closed.
+  const writeActor = await resolveJournalSaveWriteActorKey(viewerEmail);
+  if (writeActor.mode === "stable_rejected") {
+    return NextResponse.json(disabledSaveCapability(), NO_STORE);
+  }
+  const actorKey = writeActor.actorKey;
 
   try {
     const rollout = await prisma.journalSaveIdempotencyRollout.findUnique({

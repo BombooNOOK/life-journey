@@ -22,6 +22,10 @@ import {
   entrySelect,
   type ProductionJournalSavePortContext,
 } from "@/lib/journal/saveIdempotency/productionJournalSavePorts";
+import {
+  resolveJournalSaveWriteActorKey,
+  stableJsoWriteRejectHttp,
+} from "@/lib/journal/saveIdempotency/resolveJournalSaveWriteActorKey";
 import { sumDonguriBalance } from "@/lib/loghouse/donguriLedger";
 import { findKanteiOrderForProfile } from "@/lib/profile/orderPerProfile";
 import type { ExecuteJournalSaveOperationOutcome } from "@/lib/journal/saveIdempotency/types";
@@ -115,17 +119,30 @@ export function mapIdempotencyOutcomeToStatus(
 export async function runIdempotentProductionJournalSave(
   input: IdempotentJournalSaveHttpInput,
 ): Promise<NextResponse> {
-  // Authority remains cookie-email. Shadow (AI-X6.2) observes only; never alters actorKey.
-  const actorKey = normalizeEmail(input.viewerEmail);
+  // Cookie-email remains the shadow comparison baseline (AI-X6.2).
+  const legacyCookieActorKey = normalizeEmail(input.viewerEmail);
   try {
     await observeJournalIdentityShadow({
       route: "journal.save",
-      legacyCookieActorKey: actorKey,
+      legacyCookieActorKey,
       saveOperationId: input.saveOperationId,
     });
   } catch {
     // Observe must never affect save authority (defense in depth).
   }
+
+  // AI-X6.3: NEW JSO writes use firebase:<UID> only when stable-write flag ON.
+  // FLAG OFF → legacy email actorKey. No silent email fallback when flag ON.
+  const writeActor = await resolveJournalSaveWriteActorKey(input.viewerEmail);
+  if (writeActor.mode === "stable_rejected") {
+    const reject = stableJsoWriteRejectHttp(writeActor.reason);
+    return NextResponse.json(reject.body, {
+      status: reject.status,
+      ...JSON_NO_STORE,
+    });
+  }
+  const actorKey = writeActor.actorKey;
+
   const store = createPrismaJournalSaveOperationStore(prisma);
   const ports = createProductionJournalSavePorts(input.portContext);
 

@@ -11,6 +11,7 @@ const isJournalSaveIdempotencyEnabled = vi.fn();
 const findRollout = vi.fn();
 const findOperation = vi.fn();
 const observeJournalIdentityShadow = vi.fn();
+const resolveJournalSaveWriteActorKey = vi.fn();
 const executeJournalSaveOperation = vi.fn();
 const createPrismaJournalSaveOperationStore = vi.fn(() => ({ kind: "store" }));
 const createProductionJournalSavePorts = vi.fn(() => ({ kind: "ports" }));
@@ -24,6 +25,17 @@ vi.mock("@/lib/journal/saveIdempotency/journalSaveIdempotencyGate", () => ({
 }));
 vi.mock("@/lib/auth/observeJournalIdentityShadow", () => ({
   observeJournalIdentityShadow,
+}));
+vi.mock("@/lib/journal/saveIdempotency/resolveJournalSaveWriteActorKey", () => ({
+  resolveJournalSaveWriteActorKey,
+  stableJsoWriteRejectHttp: (reason: string) => ({
+    status: reason === "verified_session_required" ? 401 : 409,
+    body: {
+      error: "安定したアカウント識別子を確認できませんでした。",
+      code: "STABLE_IDENTITY_REQUIRED",
+      state: reason,
+    },
+  }),
 }));
 vi.mock("@/lib/db", () => ({
   prisma: {
@@ -67,6 +79,11 @@ describe("AI-X6.2 authority equivalence (shadow cannot alter paths)", () => {
     createPrismaJournalSaveOperationStore.mockReturnValue({ kind: "store" });
     createProductionJournalSavePorts.mockReturnValue({ kind: "ports" });
     observeJournalIdentityShadow.mockResolvedValue(null);
+    // X6.2 equivalence assumes legacy write authority (stable-write flag OFF).
+    resolveJournalSaveWriteActorKey.mockImplementation(async (email: string) => ({
+      mode: "legacy",
+      actorKey: email.trim().toLowerCase(),
+    }));
   });
 
   async function capabilitySnapshot() {
