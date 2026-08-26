@@ -4,6 +4,7 @@
 
 import { NextResponse } from "next/server";
 
+import { observeJournalIdentityShadow } from "@/lib/auth/observeJournalIdentityShadow";
 import { normalizeEmail } from "@/lib/auth/viewer";
 import { prisma } from "@/lib/db";
 import { guardianColorNameForEntryDate } from "@/lib/journal/guardianColorForEntryDate";
@@ -114,7 +115,17 @@ export function mapIdempotencyOutcomeToStatus(
 export async function runIdempotentProductionJournalSave(
   input: IdempotentJournalSaveHttpInput,
 ): Promise<NextResponse> {
+  // Authority remains cookie-email. Shadow (AI-X6.2) observes only; never alters actorKey.
   const actorKey = normalizeEmail(input.viewerEmail);
+  try {
+    await observeJournalIdentityShadow({
+      route: "journal.save",
+      legacyCookieActorKey: actorKey,
+      saveOperationId: input.saveOperationId,
+    });
+  } catch {
+    // Observe must never affect save authority (defense in depth).
+  }
   const store = createPrismaJournalSaveOperationStore(prisma);
   const ports = createProductionJournalSavePorts(input.portContext);
 

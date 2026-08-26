@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 
+import { observeJournalIdentityShadow } from "@/lib/auth/observeJournalIdentityShadow";
 import { getViewerEmailFromCookie, normalizeEmail } from "@/lib/auth/viewer";
 import { prisma } from "@/lib/db";
 import {
@@ -46,11 +47,23 @@ export async function GET(request: Request, context: RouteContext) {
     );
   }
 
+  // Authority remains cookie-email. Shadow (AI-X6.2) observes only; lookup keys unchanged.
+  const actorKey = normalizeEmail(viewerEmail);
+  try {
+    await observeJournalIdentityShadow({
+      route: "journal.save_operations.lookup",
+      legacyCookieActorKey: actorKey,
+      saveOperationId: parsedId.saveOperationId,
+    });
+  } catch {
+    // Observe must never affect recovery lookup authority.
+  }
+
   try {
     const row = await prisma.journalSaveOperation.findUnique({
       where: {
         actorKey_saveOperationId: {
-          actorKey: normalizeEmail(viewerEmail),
+          actorKey,
           saveOperationId: parsedId.saveOperationId,
         },
       },

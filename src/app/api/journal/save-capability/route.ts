@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 
+import { observeJournalIdentityShadow } from "@/lib/auth/observeJournalIdentityShadow";
 import { getViewerEmailFromCookie, normalizeEmail } from "@/lib/auth/viewer";
 import { prisma } from "@/lib/db";
 import {
@@ -25,13 +26,24 @@ export async function GET() {
     );
   }
 
+  // Authority remains cookie-email. Shadow (AI-X6.2) observes only.
+  const actorKey = normalizeEmail(viewerEmail);
+  try {
+    await observeJournalIdentityShadow({
+      route: "journal.save_capability",
+      legacyCookieActorKey: actorKey,
+    });
+  } catch {
+    // Observe must never affect capability admission.
+  }
+
   if (!isJournalSaveIdempotencyEnabled()) {
     return NextResponse.json(disabledSaveCapability(), NO_STORE);
   }
 
   try {
     const rollout = await prisma.journalSaveIdempotencyRollout.findUnique({
-      where: { actorKey: normalizeEmail(viewerEmail) },
+      where: { actorKey },
       select: { enabled: true, protocolVersion: true },
     });
     return NextResponse.json(
