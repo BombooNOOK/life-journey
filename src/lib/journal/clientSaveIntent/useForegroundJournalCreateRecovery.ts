@@ -24,18 +24,23 @@ export type ForegroundJournalRecoveryState =
  */
 export function useForegroundJournalCreateRecovery(input: {
   viewerEmail: string | null | undefined;
+  firebaseUid?: string | null;
+  authLoading?: boolean;
   onCompleted?: (entryId: string) => Promise<void>;
   revision?: number;
 }): ForegroundJournalRecoveryState & { continueSave: () => Promise<void> } {
   const [state, setState] = useState<ForegroundJournalRecoveryState>({ status: "idle" });
   const viewerEmail = input.viewerEmail?.trim() ?? "";
+  const firebaseUid = input.firebaseUid?.trim() ?? null;
+  const authLoading = input.authLoading ?? false;
 
   useEffect(() => {
-    if (!viewerEmail) return;
+    if (authLoading || !viewerEmail) return;
     let cancelled = false;
     setState({ status: "checking" });
     void runForegroundJournalCreateRecovery({
       viewerEmail,
+      firebaseUid,
       afterServerCompleted: input.onCompleted,
     }).then((results) => {
       if (cancelled) return;
@@ -59,12 +64,13 @@ export function useForegroundJournalCreateRecovery(input: {
     return () => {
       cancelled = true;
     };
-  }, [input.onCompleted, input.revision, viewerEmail]);
+  }, [authLoading, firebaseUid, input.onCompleted, input.revision, viewerEmail]);
 
   const continueSave = useCallback(async () => {
     if (!viewerEmail || state.status !== "continuation_available") return;
     const result = await continueCurrentSessionJournalCreateSaveRecovery({
       viewerEmail,
+      firebaseUid,
       saveOperationId: state.saveOperationId,
       afterServerCompleted: input.onCompleted,
     });
@@ -73,7 +79,7 @@ export function useForegroundJournalCreateRecovery(input: {
     else if (result.kind === "processing") setState({ status: "processing" });
     else if (result.kind === "failed_final") setState({ status: "failed_final", code: result.code });
     else setState({ status: "recovery_required" });
-  }, [input.onCompleted, state, viewerEmail]);
+  }, [firebaseUid, input.onCompleted, state, viewerEmail]);
 
   return { ...state, continueSave };
 }

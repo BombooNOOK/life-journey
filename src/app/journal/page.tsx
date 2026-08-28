@@ -55,6 +55,10 @@ import {
   resolveJournalEntryMonthKey,
 } from "@/lib/journal/journalNav";
 import { runJournalCreateSave } from "@/lib/journal/clientSaveIntent/JournalCreateSaveOrchestrator";
+import {
+  buildClientSaveIntentOrchestratorSession,
+  resolveClientSaveIntentAuthSession,
+} from "@/lib/journal/clientSaveIntent/clientSaveIntentAuthSession";
 import { useForegroundJournalCreateRecovery } from "@/lib/journal/clientSaveIntent/useForegroundJournalCreateRecovery";
 import {
   CONTENT_FONT_MODE_LABELS_JA,
@@ -221,9 +225,19 @@ function JournalPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { user, loading: authLoading } = useFirebaseAuth();
+  const saveIntentAuthSession = useMemo(
+    () => resolveClientSaveIntentAuthSession({ user, authLoading }),
+    [user, authLoading],
+  );
+  const saveIntentOrchestratorSession = useMemo(
+    () => buildClientSaveIntentOrchestratorSession(saveIntentAuthSession),
+    [saveIntentAuthSession],
+  );
   const [foregroundRecoveryRevision, setForegroundRecoveryRevision] = useState(0);
   const foregroundRecovery = useForegroundJournalCreateRecovery({
-    viewerEmail: user?.email,
+    viewerEmail: saveIntentAuthSession.viewerEmail,
+    firebaseUid: saveIntentAuthSession.firebaseUid,
+    authLoading: saveIntentAuthSession.authLoading,
     revision: foregroundRecoveryRevision,
   });
   const { entitlement, loading: entitlementLoading } = useEntitlement();
@@ -901,11 +915,13 @@ function JournalPageContent() {
         includeInBook: true,
       };
       const orchestrated = isNewEntrySave
-        ? await runJournalCreateSave({
-            viewerEmail: user?.email ?? "",
-            payload: requestPayload,
-            afterServerCompleted: async () => localDraft.clearDraftAfterSuccessfulSave(),
-          })
+        ? saveIntentOrchestratorSession
+          ? await runJournalCreateSave({
+              ...saveIntentOrchestratorSession,
+              payload: requestPayload,
+              afterServerCompleted: async () => localDraft.clearDraftAfterSuccessfulSave(),
+            })
+          : { kind: "protocol_start_failed" as const, reason: "recovery_not_admitted" }
         : null;
       const res =
         orchestrated?.kind === "legacy"

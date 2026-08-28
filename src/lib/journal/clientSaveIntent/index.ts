@@ -3,6 +3,11 @@ export {
   recoverClientSaveOperation,
   runNewClientSaveOperation,
 } from "@/lib/journal/clientSaveIntent/ClientSaveOperationIntentService";
+export {
+  buildClientSaveIntentOrchestratorSession,
+  resolveClientSaveIntentAuthSession,
+} from "@/lib/journal/clientSaveIntent/clientSaveIntentAuthSession";
+export type { ClientSaveIntentAuthSession } from "@/lib/journal/clientSaveIntent/clientSaveIntentAuthSession";
 export { createMemoryClientSaveOperationIntentStore } from "@/lib/journal/clientSaveIntent/memoryStore";
 export {
   canonicalizeExactJournalSavePayload,
