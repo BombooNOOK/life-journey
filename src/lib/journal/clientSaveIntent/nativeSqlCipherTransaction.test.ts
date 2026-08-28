@@ -31,6 +31,7 @@ function preparedIntent(requestFingerprint: string): ClientSaveOperationIntent {
     intentId: "intent_native_tx",
     saveOperationId: OP,
     actorKey: ACTOR,
+    stableActorKey: null,
     draftRef: null,
     requestFingerprint,
     status: "prepared",

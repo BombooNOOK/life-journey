@@ -1,6 +1,17 @@
 import { initializeSaveIntentStore } from "@/lib/journal/clientSaveIntent/NativeSaveIntentBootstrap";
 import { canonicalizeExactJournalSavePayload } from "@/lib/journal/clientSaveIntent/exactPayloadCanonical";
 import {
+  assertStableIntentRecoveryAccess,
+  legacyActorKeyFromSession,
+  requireStableActorKeyForNewIntent,
+  type NativePendingIntentSession,
+} from "@/lib/journal/clientSaveIntent/nativePendingIntentIdentity";
+import { isNativeStablePendingIntentEnabled } from "@/lib/journal/clientSaveIntent/nativeStablePendingIntentGate";
+import {
+  findRecoverableIntentForSession,
+  listRecoverableIntentsForSession,
+} from "@/lib/journal/clientSaveIntent/nativePendingIntentRecovery";
+import {
   createClientSaveOperationId,
   normalizeClientActorKey,
 } from "@/lib/journal/clientSaveIntent/saveOperationId";
@@ -178,12 +189,19 @@ const continuationFlights = new Map<string, Promise<JournalCreateSaveResult>>();
 /** Process-local: at most one exact POST replay per operation per JS lifetime. */
 const foregroundExactReplayOnce = new Set<string>();
 
-function sessionPayloadKey(actorKey: string, saveOperationId: string): string {
-  return `${actorKey}:${saveOperationId}`;
+function sessionPayloadKey(scopeKey: string, saveOperationId: string): string {
+  return `${scopeKey}:${saveOperationId}`;
 }
 
-function claimForegroundExactReplay(actorKey: string, saveOperationId: string): boolean {
-  const key = sessionPayloadKey(actorKey, saveOperationId);
+function recoveryScopeKey(
+  intent: ClientSaveOperationIntent,
+  sessionLegacyActorKey: string,
+): string {
+  return intent.stableActorKey ?? sessionLegacyActorKey;
+}
+
+function claimForegroundExactReplay(scopeKey: string, saveOperationId: string): boolean {
+  const key = sessionPayloadKey(scopeKey, saveOperationId);
   if (foregroundExactReplayOnce.has(key)) return false;
   foregroundExactReplayOnce.add(key);
   return true;
@@ -435,6 +453,7 @@ async function replayExactStoredPayload(input: {
 export async function runJournalCreateSave(
   input: {
     viewerEmail: string;
+    firebaseUid?: string | null;
     payload: JournalCreatePayload;
     draftRef?: string | null;
     afterServerCompleted?: (entryId: string) => Promise<void>;
@@ -442,7 +461,11 @@ export async function runJournalCreateSave(
   deps: JournalCreateSaveOrchestratorDeps = productionDeps,
 ): Promise<JournalCreateSaveResult> {
   const effectiveDeps = resolveDeps(input.viewerEmail, deps);
-  const actorKey = normalizeClientActorKey(input.viewerEmail);
+  const session: NativePendingIntentSession = {
+    viewerEmail: input.viewerEmail,
+    firebaseUid: input.firebaseUid,
+  };
+  const actorKey = legacyActorKeyFromSession(session);
   if (actorKey && isSaveIntentActivityBlockedForActor(actorKey)) {
     return { kind: "protocol_start_failed", reason: "account_delete_in_progress" };
   }
@@ -461,6 +484,11 @@ export async function runJournalCreateSave(
     return { kind: "legacy", response: await effectiveDeps.post(input.payload) };
   }
   if (!actorKey) return { kind: "protocol_start_failed", reason: "actor_unavailable" };
+
+  const stableActorKey = requireStableActorKeyForNewIntent(input.firebaseUid);
+  if (isNativeStablePendingIntentEnabled() && !stableActorKey) {
+    return { kind: "protocol_start_failed", reason: "stable_identity_unavailable" };
+  }
 
   const saveOperationId = createClientSaveOperationId();
   const persistPayload = {
@@ -482,6 +510,7 @@ export async function runJournalCreateSave(
     intentId: newIntentId(),
     saveOperationId,
     actorKey,
+    stableActorKey,
     draftRef: input.draftRef ?? null,
     requestFingerprint: canonical.requestFingerprint,
     status: "prepared",
@@ -533,21 +562,36 @@ export async function runJournalCreateSave(
 export async function recoverJournalCreateSaves(
   input: {
     viewerEmail: string;
+    firebaseUid?: string | null;
     afterServerCompleted?: (entryId: string) => Promise<void>;
   },
   deps: JournalCreateSaveOrchestratorDeps = productionDeps,
 ): Promise<JournalCreateSaveResult[]> {
   const effectiveDeps = resolveDeps(input.viewerEmail, deps);
   const bootstrap = await effectiveDeps.bootstrap();
-  const actorKey = normalizeClientActorKey(input.viewerEmail);
+  const session: NativePendingIntentSession = {
+    viewerEmail: input.viewerEmail,
+    firebaseUid: input.firebaseUid,
+  };
+  const actorKey = legacyActorKeyFromSession(session);
   if (bootstrap.status !== "ready" || !actorKey) return [];
   if (isSaveIntentActivityBlockedForActor(actorKey)) return [];
   if (await resumeAccountDeleteSaveIntentCleanup(actorKey, bootstrap.store)) return [];
   await retryCompletedPayloadCleanup(bootstrap.store, actorKey);
   const recovered: JournalCreateSaveResult[] = [];
   const replayedThisCycle = new Set<string>();
-  for (let intent of await bootstrap.store.listRecoverableByActor(actorKey)) {
-    if (intent.actorKey !== actorKey) {
+  for (let intent of await listRecoverableIntentsForSession(bootstrap.store, session)) {
+    const stableAccess = assertStableIntentRecoveryAccess(intent, session);
+    if (!stableAccess.ok) {
+      recovered.push({
+        kind: "recovery_required",
+        recoveryState: "recovery_required",
+        intent,
+        reason: stableAccess.reason,
+      });
+      continue;
+    }
+    if (!intent.stableActorKey && intent.actorKey !== actorKey) {
       recovered.push({
         kind: "recovery_required",
         recoveryState: "recovery_required",
@@ -690,7 +734,7 @@ export async function recoverJournalCreateSaves(
       recovered.push({ kind: "pending", recoveryState: "pending", intent });
       continue;
     }
-    if (!claimForegroundExactReplay(actorKey, intent.saveOperationId)) {
+    if (!claimForegroundExactReplay(recoveryScopeKey(intent, actorKey), intent.saveOperationId)) {
       recovered.push({ kind: "pending", recoveryState: "pending", intent });
       continue;
     }
@@ -708,13 +752,33 @@ export async function recoverJournalCreateSaves(
 }
 
 export async function continueCurrentSessionJournalCreateSaveRecovery(
-  input: { viewerEmail: string; saveOperationId: string; afterServerCompleted?: (entryId: string) => Promise<void> },
+  input: {
+    viewerEmail: string;
+    firebaseUid?: string | null;
+    saveOperationId: string;
+    afterServerCompleted?: (entryId: string) => Promise<void>;
+  },
   deps?: JournalCreateSaveOrchestratorDeps,
 ): Promise<JournalCreateSaveResult> {
   const actorKey = normalizeClientActorKey(input.viewerEmail);
   if (!actorKey) return { kind: "protocol_start_failed", reason: "current_payload_unavailable" };
   if (isSaveIntentActivityBlockedForActor(actorKey)) {
     return { kind: "protocol_start_failed", reason: "account_delete_in_progress" };
+  }
+  const bootstrap = await (deps ?? productionDeps).bootstrap();
+  if (bootstrap.status === "ready") {
+    const located = await findRecoverableIntentForSession(bootstrap.store, {
+      viewerEmail: input.viewerEmail,
+      firebaseUid: input.firebaseUid,
+    }, input.saveOperationId);
+    if (located.kind === "stable_auth_mismatch" || located.kind === "stable_identity_unavailable") {
+      return {
+        kind: "recovery_required",
+        recoveryState: "recovery_required",
+        intent: located.intent,
+        reason: located.kind,
+      };
+    }
   }
   const key = sessionPayloadKey(actorKey, input.saveOperationId);
   const active = continuationFlights.get(key);
@@ -753,6 +817,7 @@ export function runForegroundJournalCreateRecovery(
 export async function continueJournalCreateSaveRecovery(
   input: {
     viewerEmail: string;
+    firebaseUid?: string | null;
     saveOperationId: string;
     payload?: JournalCreatePayload;
     afterServerCompleted?: (entryId: string) => Promise<void>;
@@ -760,7 +825,11 @@ export async function continueJournalCreateSaveRecovery(
   deps: JournalCreateSaveOrchestratorDeps = productionDeps,
 ): Promise<JournalCreateSaveResult> {
   const effectiveDeps = resolveDeps(input.viewerEmail, deps);
-  const actorKey = normalizeClientActorKey(input.viewerEmail);
+  const session: NativePendingIntentSession = {
+    viewerEmail: input.viewerEmail,
+    firebaseUid: input.firebaseUid,
+  };
+  const actorKey = legacyActorKeyFromSession(session);
   if (actorKey && isSaveIntentActivityBlockedForActor(actorKey)) {
     return { kind: "protocol_start_failed", reason: "account_delete_in_progress" };
   }
@@ -768,10 +837,23 @@ export async function continueJournalCreateSaveRecovery(
   if (bootstrap.status !== "ready" || !actorKey) {
     return { kind: "protocol_start_failed", reason: "recovery_not_admitted" };
   }
-  const intent = await bootstrap.store.findByActorAndSaveOperationId(actorKey, input.saveOperationId);
-  if (!intent || intent.actorKey !== actorKey) {
+  const located = await findRecoverableIntentForSession(
+    bootstrap.store,
+    session,
+    input.saveOperationId,
+  );
+  if (located.kind === "not_found") {
     return { kind: "protocol_start_failed", reason: "intent_not_found" };
   }
+  if (located.kind === "stable_auth_mismatch" || located.kind === "stable_identity_unavailable") {
+    return {
+      kind: "recovery_required",
+      recoveryState: "recovery_required",
+      intent: located.intent,
+      reason: located.kind,
+    };
+  }
+  const intent = located.intent;
   if (intent.status === "completed" && intent.serverEntryId) {
     return {
       kind: "completed",
@@ -790,7 +872,11 @@ export async function continueJournalCreateSaveRecovery(
     };
   }
   const results = await recoverJournalCreateSaves(
-    { viewerEmail: input.viewerEmail, afterServerCompleted: input.afterServerCompleted },
+    {
+      viewerEmail: input.viewerEmail,
+      firebaseUid: input.firebaseUid,
+      afterServerCompleted: input.afterServerCompleted,
+    },
     {
       ...effectiveDeps,
       bootstrap: async () => ({

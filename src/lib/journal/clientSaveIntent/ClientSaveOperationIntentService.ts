@@ -59,6 +59,7 @@ export async function prepareClientSaveOperationIntent(
     intentId: newIntentId(),
     saveOperationId,
     actorKey,
+    stableActorKey: null,
     draftRef: input.draftRef ?? null,
     requestFingerprint,
     status: "prepared",

@@ -123,6 +123,7 @@ export async function persistAi7DeviceRecoveryTestOperation(
     intentId: newIntentId(),
     saveOperationId,
     actorKey: AI7_DEVICE_RECOVERY_TEST_ACTOR,
+    stableActorKey: null,
     draftRef: AI7_TEST_DRAFT_REF,
     requestFingerprint: canonical.requestFingerprint,
     status: "prepared",

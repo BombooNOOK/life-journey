@@ -25,6 +25,7 @@ CREATE TABLE IF NOT EXISTS client_save_operation_intent (
   intent_id TEXT PRIMARY KEY NOT NULL,
   save_operation_id TEXT NOT NULL UNIQUE,
   actor_key TEXT NOT NULL,
+  stable_actor_key TEXT,
   draft_ref TEXT,
   request_fingerprint TEXT NOT NULL,
   status TEXT NOT NULL,
@@ -58,6 +59,7 @@ const REQUIRED_COLUMNS = [
   "intent_id",
   "save_operation_id",
   "actor_key",
+  "stable_actor_key",
   "draft_ref",
   "request_fingerprint",
   "status",
@@ -128,11 +130,21 @@ export async function ensureClientSaveIntentSchema(
   if (version === 1) {
     await db.execute(CREATE_TOMBSTONE_SQL);
     await db.execute(CREATE_PAYLOAD_SQL);
-    await db.execute(`PRAGMA user_version = ${CLIENT_SAVE_OPERATION_INTENT_SCHEMA_VERSION}`);
+    await db.execute("PRAGMA user_version = 3");
   } else if (version === 2) {
     await db.execute(CREATE_PAYLOAD_SQL);
+    await db.execute("PRAGMA user_version = 3");
+  }
+  const versionAfterPayload =
+    version === 1 || version === 2
+      ? 3
+      : version;
+  if (versionAfterPayload === 3) {
+    await db.execute(
+      "ALTER TABLE client_save_operation_intent ADD COLUMN stable_actor_key TEXT",
+    );
     await db.execute(`PRAGMA user_version = ${CLIENT_SAVE_OPERATION_INTENT_SCHEMA_VERSION}`);
-  } else if (version !== CLIENT_SAVE_OPERATION_INTENT_SCHEMA_VERSION) {
+  } else if (versionAfterPayload !== CLIENT_SAVE_OPERATION_INTENT_SCHEMA_VERSION) {
     throw new Error("intent_schema_version_unsupported");
   }
   const columns = await db.query("PRAGMA table_info(client_save_operation_intent)");
@@ -200,6 +212,7 @@ function mapRow(row: Record<string, unknown>): ClientSaveOperationIntent {
     intentId: String(row.intent_id),
     saveOperationId: String(row.save_operation_id),
     actorKey: String(row.actor_key),
+    stableActorKey: row.stable_actor_key == null ? null : String(row.stable_actor_key),
     draftRef: row.draft_ref == null ? null : String(row.draft_ref),
     requestFingerprint: String(row.request_fingerprint),
     status: String(row.status) as ClientSaveOperationIntent["status"],
@@ -255,14 +268,15 @@ async function insertIntentRow(
 ): Promise<void> {
   await db.run(
     `INSERT INTO client_save_operation_intent (
-      intent_id, save_operation_id, actor_key, draft_ref, request_fingerprint,
+      intent_id, save_operation_id, actor_key, stable_actor_key, draft_ref, request_fingerprint,
       status, server_entry_id, failure_code, created_at, updated_at,
       last_attempt_at, completed_at
-    ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)`,
+    ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)`,
     [
       intent.intentId,
       intent.saveOperationId,
       intent.actorKey,
+      intent.stableActorKey,
       intent.draftRef,
       intent.requestFingerprint,
       intent.status,
@@ -355,11 +369,30 @@ export function createClientSaveDurableStoreFromSql(
       return session.withDb(async (db) => {
         const result = await db.query(
           `SELECT * FROM client_save_operation_intent
-           WHERE actor_key = ? AND status IN ('prepared','awaiting_result','server_completed','recovery_required')
+           WHERE actor_key = ? AND stable_actor_key IS NULL
+             AND status IN ('prepared','awaiting_result','server_completed','recovery_required')
            ORDER BY created_at ASC`,
           [actorKey],
         );
         return (result.values ?? []).map((row) => mapRow(row));
+      });
+    },
+    async listRecoverableByStableActorKey(stableActorKey) {
+      return session.withDb(async (db) => {
+        const result = await db.query(
+          `SELECT * FROM client_save_operation_intent
+           WHERE stable_actor_key = ?
+             AND status IN ('prepared','awaiting_result','server_completed','recovery_required')
+           ORDER BY created_at ASC`,
+          [stableActorKey],
+        );
+        return (result.values ?? []).map((row) => mapRow(row));
+      });
+    },
+    async findByStableActorAndSaveOperationId(stableActorKey, saveOperationId) {
+      return session.withDb(async (db) => {
+        const row = await findIntent(db, saveOperationId);
+        return row?.stableActorKey === stableActorKey ? row : null;
       });
     },
     async deleteByActor(actorKey) {

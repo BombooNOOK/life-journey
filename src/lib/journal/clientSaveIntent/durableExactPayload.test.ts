@@ -35,6 +35,7 @@ function preparedIntent(
     intentId: "intent_ai71_test",
     saveOperationId,
     actorKey: "operator@ljd.invalid",
+    stableActorKey: null,
     draftRef: null,
     requestFingerprint,
     status: "prepared",

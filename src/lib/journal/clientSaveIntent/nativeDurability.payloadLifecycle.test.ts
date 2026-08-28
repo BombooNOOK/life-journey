@@ -63,6 +63,7 @@ function preparedIntent(
     intentId: `intent_${saveOperationId.slice(-12)}`,
     saveOperationId,
     actorKey: ACTOR,
+    stableActorKey: null,
     draftRef: null,
     requestFingerprint,
     status,
@@ -187,6 +188,7 @@ describe("AI-7.3 payload lifecycle cleanup", () => {
     const intent = await persistAwaiting(store, op);
     const blocked = await store.deleteExactPayloadBySaveOperationId({
       actorKey: ACTOR,
+    stableActorKey: null,
       saveOperationId: intent.saveOperationId,
     });
     expect(blocked).toMatchObject({ kind: "blocked", reason: "intent_not_completed" });
@@ -200,6 +202,7 @@ describe("AI-7.3 payload lifecycle cleanup", () => {
     expect(intent.status).toBe("awaiting_result");
     const blocked = await store.deleteExactPayloadBySaveOperationId({
       actorKey: ACTOR,
+    stableActorKey: null,
       saveOperationId: op,
     });
     expect(blocked.kind).toBe("blocked");
@@ -217,6 +220,7 @@ describe("AI-7.3 payload lifecycle cleanup", () => {
     });
     const blocked = await store.deleteExactPayloadBySaveOperationId({
       actorKey: ACTOR,
+    stableActorKey: null,
       saveOperationId: op,
     });
     expect(blocked).toMatchObject({ kind: "blocked", reason: "intent_not_completed" });
@@ -236,6 +240,7 @@ describe("AI-7.3 payload lifecycle cleanup", () => {
     });
     const blocked = await store.deleteExactPayloadBySaveOperationId({
       actorKey: ACTOR,
+    stableActorKey: null,
       saveOperationId: op,
     });
     expect(blocked).toMatchObject({ kind: "blocked", reason: "intent_not_completed" });
@@ -257,6 +262,7 @@ describe("AI-7.3 payload lifecycle cleanup", () => {
     });
     const deleted = await store.deleteExactPayloadBySaveOperationId({
       actorKey: ACTOR,
+    stableActorKey: null,
       saveOperationId: op,
     });
     expect(deleted.kind).toBe("deleted");

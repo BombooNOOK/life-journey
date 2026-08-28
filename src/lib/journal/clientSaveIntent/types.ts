@@ -12,7 +12,7 @@
 
 export const CLIENT_SAVE_OPERATION_INTENT_DB_NAME =
   "ljd_client_save_operation_intent" as const;
-export const CLIENT_SAVE_OPERATION_INTENT_SCHEMA_VERSION = 3 as const;
+export const CLIENT_SAVE_OPERATION_INTENT_SCHEMA_VERSION = 4 as const;
 export const CLIENT_SAVE_EXACT_PAYLOAD_VERSION = 1 as const;
 
 /**
@@ -48,6 +48,11 @@ export type ClientSaveOperationIntent = {
   saveOperationId: string;
   /** Client-local ownership snapshot only. Server derives actorKey from cookie. */
   actorKey: string;
+  /**
+   * Durable stable identity for native pending intents (AI-X6.6A).
+   * Canonical form: firebase:<UID>. NULL on legacy rows.
+   */
+  stableActorKey: string | null;
   /** Stable reference to a separately stored draft; never the draft payload. */
   draftRef: string | null;
   requestFingerprint: string;
@@ -73,6 +78,13 @@ export type ClientSaveOperationIntentStore = {
   >;
   update(intent: ClientSaveOperationIntent): Promise<ClientSaveOperationIntent>;
   listRecoverableByActor(actorKey: string): Promise<ClientSaveOperationIntent[]>;
+  listRecoverableByStableActorKey(
+    stableActorKey: string,
+  ): Promise<ClientSaveOperationIntent[]>;
+  findByStableActorAndSaveOperationId(
+    stableActorKey: string,
+    saveOperationId: string,
+  ): Promise<ClientSaveOperationIntent | null>;
   deleteByActor(actorKey: string): Promise<number>;
   getDeletionTombstone(actorKey: string): Promise<{ actorKey: string; createdAt: string; updatedAt: string } | null>;
   writeDeletionTombstone(actorKey: string, now: string): Promise<void>;

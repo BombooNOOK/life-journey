@@ -82,12 +82,29 @@ export function createMemoryClientSaveOperationIntentStore(
         .filter(
           (row) =>
             row.actorKey === actorKey &&
+            row.stableActorKey == null &&
             (row.status === "prepared" ||
               row.status === "awaiting_result" ||
               row.status === "server_completed" ||
               row.status === "recovery_required"),
         )
         .map((row) => ({ ...row }));
+    },
+    async listRecoverableByStableActorKey(stableActorKey) {
+      return [...rows.values()]
+        .filter(
+          (row) =>
+            row.stableActorKey === stableActorKey &&
+            (row.status === "prepared" ||
+              row.status === "awaiting_result" ||
+              row.status === "server_completed" ||
+              row.status === "recovery_required"),
+        )
+        .map((row) => ({ ...row }));
+    },
+    async findByStableActorAndSaveOperationId(stableActorKey, saveOperationId) {
+      const row = rows.get(saveOperationId);
+      return row?.stableActorKey === stableActorKey ? { ...row } : null;
     },
     async deleteByActor(actorKey) {
       let count = 0;
