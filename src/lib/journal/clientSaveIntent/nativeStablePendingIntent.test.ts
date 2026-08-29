@@ -10,7 +10,11 @@ import {
   type JournalCreateSaveOrchestratorDeps,
 } from "@/lib/journal/clientSaveIntent/JournalCreateSaveOrchestrator";
 import { createMemoryClientSaveOperationIntentStore } from "@/lib/journal/clientSaveIntent/memoryStore";
-import { NATIVE_STABLE_PENDING_INTENT_FLAG } from "@/lib/journal/clientSaveIntent/nativeStablePendingIntentGate";
+import {
+  NATIVE_STABLE_PENDING_INTENT_CLIENT_FLAG,
+  NATIVE_STABLE_PENDING_INTENT_FLAG,
+  isNativeStablePendingIntentEnabled,
+} from "@/lib/journal/clientSaveIntent/nativeStablePendingIntentGate";
 import {
   ensureClientSaveIntentSchema,
   CREATE_INTENT_SQL,
@@ -67,6 +71,21 @@ afterEach(() => {
 });
 
 describe("AI-X6.6A native stable pending intent", () => {
+  it("client-visible NEXT_PUBLIC_ flag enables the gate (X6.6B device path)", () => {
+    vi.unstubAllEnvs();
+    expect(isNativeStablePendingIntentEnabled({})).toBe(false);
+    expect(
+      isNativeStablePendingIntentEnabled({
+        [NATIVE_STABLE_PENDING_INTENT_CLIENT_FLAG]: "YES",
+      }),
+    ).toBe(true);
+    expect(
+      isNativeStablePendingIntentEnabled({
+        [NATIVE_STABLE_PENDING_INTENT_FLAG]: "YES",
+      }),
+    ).toBe(true);
+  });
+
   it("A: flag OFF keeps legacy actorKey parity without Firebase UID", async () => {
     withStableFlag(false);
     const { post, deps: d } = deps();
