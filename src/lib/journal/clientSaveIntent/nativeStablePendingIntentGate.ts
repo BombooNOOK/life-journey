@@ -27,13 +27,22 @@ function readStablePendingIntentFlagValue(
   return (env[NATIVE_STABLE_PENDING_INTENT_FLAG] ?? "").trim();
 }
 
-export function isNativeStablePendingIntentEnabled(
-  env: NodeJS.ProcessEnv | Record<string, string | undefined> = {
+/**
+ * Next.js only inlines NEXT_PUBLIC_* via static property access
+ * (`process.env.NEXT_PUBLIC_…`), never `process.env[name]` / full `process.env`.
+ */
+function clientVisibleStableFlagEnv(): Record<string, string | undefined> {
+  return {
     [NATIVE_STABLE_PENDING_INTENT_CLIENT_FLAG]:
-      process.env[NATIVE_STABLE_PENDING_INTENT_CLIENT_FLAG],
-    [NATIVE_STABLE_PENDING_INTENT_FLAG]: process.env[NATIVE_STABLE_PENDING_INTENT_FLAG],
-  },
+      process.env.NEXT_PUBLIC_LJD_NATIVE_STABLE_PENDING_INTENT_ENABLED,
+    [NATIVE_STABLE_PENDING_INTENT_FLAG]:
+      process.env.LJD_NATIVE_STABLE_PENDING_INTENT_ENABLED,
+  };
+}
+
+export function isNativeStablePendingIntentEnabled(
+  env?: NodeJS.ProcessEnv | Record<string, string | undefined>,
 ): boolean {
-  const v = readStablePendingIntentFlagValue(env);
+  const v = readStablePendingIntentFlagValue(env ?? clientVisibleStableFlagEnv());
   return v === "YES" || v === "1";
 }

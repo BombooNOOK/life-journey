@@ -151,14 +151,27 @@ export async function runX66bCreatePendingAutorun(input: {
     },
   });
 
-  const saveResult = await runJournalCreateSave(
-    {
-      ...orchestratorSession,
-      payload: validationPayload(profileId),
-      draftRef: X66B_VALIDATION_DRAFT_REF,
-    },
-    deps,
-  );
+  let saveResult: JournalCreateSaveResult;
+  try {
+    saveResult = await runJournalCreateSave(
+      {
+        ...orchestratorSession,
+        payload: validationPayload(profileId),
+        draftRef: X66B_VALIDATION_DRAFT_REF,
+      },
+      deps,
+    );
+  } catch (err) {
+    const note = err instanceof Error ? err.message : String(err);
+    evidence = appendEvidencePhase(evidence, {
+      stage: "FAILED",
+      authAlias,
+      note: `orchestrator_threw:${note}`,
+      persistBeforePostOk: evidence.persistBeforePostOk,
+    });
+    if (input.persistEvidence !== false) saveEvidenceToStorage(evidence);
+    return { state: "FAILED", evidence, authAlias };
+  }
 
   if (saveResult.kind === "pending" || saveResult.kind === "processing") {
     const intent = saveResult.intent;

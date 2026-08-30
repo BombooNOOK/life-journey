@@ -34,7 +34,12 @@ export function resolveSessionStableActorKey(
  */
 export function requireStableActorKeyForNewIntent(
   firebaseUid: string | null | undefined,
-  env: NodeJS.ProcessEnv | Record<string, string | undefined> = process.env,
+  /**
+   * Optional env override for tests. Omit on the client — passing `process.env`
+   * makes Next fail to inline NEXT_PUBLIC_* (dynamic lookup → gate looks OFF
+   * while `isNativeStablePendingIntentEnabled()` with no args looks ON).
+   */
+  env?: NodeJS.ProcessEnv | Record<string, string | undefined>,
 ): string | null {
   if (!isNativeStablePendingIntentEnabled(env)) return null;
   return resolveSessionStableActorKey(firebaseUid);

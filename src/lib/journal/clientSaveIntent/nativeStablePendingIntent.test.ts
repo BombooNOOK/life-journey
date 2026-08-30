@@ -42,8 +42,11 @@ const EMAIL_X = "shared@example.com";
 function withStableFlag(enabled: boolean) {
   if (enabled) {
     vi.stubEnv(NATIVE_STABLE_PENDING_INTENT_FLAG, "YES");
+    vi.stubEnv(NATIVE_STABLE_PENDING_INTENT_CLIENT_FLAG, "YES");
   } else {
-    vi.unstubAllEnvs();
+    // Explicit OFF — do not rely on process.env (dev .env.local may set YES).
+    vi.stubEnv(NATIVE_STABLE_PENDING_INTENT_FLAG, "");
+    vi.stubEnv(NATIVE_STABLE_PENDING_INTENT_CLIENT_FLAG, "");
   }
 }
 

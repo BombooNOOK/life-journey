@@ -5,7 +5,6 @@
  */
 
 import {
-  X66B_DEVICE_VALIDATION_AUTORUN_FLAG,
   X66B_DEVICE_VALIDATION_AUTORUN_FLAG_VALUE,
 } from "@/lib/journal/clientSaveIntent/x66bDeviceValidation/constants";
 
@@ -25,9 +24,10 @@ export function evaluateX66bDeviceValidationGate(
   input: X66bDeviceValidationGateInput = {},
 ): X66bDeviceValidationGateResult {
   const nodeEnv = (input.nodeEnv ?? process.env.NODE_ENV ?? "").trim();
+  // Next.js only inlines NEXT_PUBLIC_* via static property access (not process.env[name]).
   const flag = (
     input.flag ??
-    process.env[X66B_DEVICE_VALIDATION_AUTORUN_FLAG] ??
+    process.env.NEXT_PUBLIC_LJD_X6_DEVICE_VALIDATION_AUTORUN ??
     ""
   ).trim();
   const nodeEnvOk = nodeEnv !== "production";

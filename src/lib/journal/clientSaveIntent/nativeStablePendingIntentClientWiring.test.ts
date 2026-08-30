@@ -14,7 +14,10 @@ import {
   type JournalCreateSaveOrchestratorDeps,
 } from "@/lib/journal/clientSaveIntent/JournalCreateSaveOrchestrator";
 import { createMemoryClientSaveOperationIntentStore } from "@/lib/journal/clientSaveIntent/memoryStore";
-import { NATIVE_STABLE_PENDING_INTENT_FLAG } from "@/lib/journal/clientSaveIntent/nativeStablePendingIntentGate";
+import {
+  NATIVE_STABLE_PENDING_INTENT_CLIENT_FLAG,
+  NATIVE_STABLE_PENDING_INTENT_FLAG,
+} from "@/lib/journal/clientSaveIntent/nativeStablePendingIntentGate";
 
 const payload: JournalCreatePayload = {
   content: "wiring body",
@@ -84,7 +87,9 @@ describe("AI-X6.6A2 client wiring into orchestrator", () => {
   });
 
   it("flag OFF: save works without requiring stable UID", async () => {
-    vi.unstubAllEnvs();
+    // Explicit OFF — local .env.local may set NEXT_PUBLIC_*=YES for device validation.
+    vi.stubEnv(NATIVE_STABLE_PENDING_INTENT_FLAG, "");
+    vi.stubEnv(NATIVE_STABLE_PENDING_INTENT_CLIENT_FLAG, "");
     const orchestratorSession = buildClientSaveIntentOrchestratorSession(
       resolveClientSaveIntentAuthSession({
         user: mockUser("person@example.com", "UID-A"),

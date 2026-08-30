@@ -144,6 +144,11 @@ export function createX66bInstrumentedDeps(input: {
         : "post_begin_no_interrupt",
     });
     if (input.interruptAfterPersist) {
+      // Never interrupt a legacy POST that skipped durable persist — that leaves
+      // CREATE_PENDING hung with an uncaught throw and no PENDING_DURABLE row.
+      if (durableAtMs == null) {
+        throw new Error("x66b_interrupt_without_durable_persist");
+      }
       throw new Error(X66B_CONTROLLED_INTERRUPT_ERROR);
     }
     return run();
@@ -151,7 +156,17 @@ export function createX66bInstrumentedDeps(input: {
 
   return {
     bootstrap: wrapBootstrap,
-    capability: base.capability,
+    // Dev autorun must exercise durable persist→interrupt. A missing local
+    // rollout row would otherwise take legacy POST and leave CREATE_PENDING hung.
+    capability: async () => {
+      const real = await base.capability();
+      if (real.kind === "enabled") return real;
+      input.onEvent({
+        stage: "CREATE_PENDING",
+        note: `capability_forced_enabled_was_${real.kind}`,
+      });
+      return { kind: "enabled" };
+    },
     post: (payload) => maybeInterrupt(() => base.post(payload), payload),
     postExactJson: (requestJson) =>
       maybeInterrupt(
