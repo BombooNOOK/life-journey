@@ -35,14 +35,18 @@ function mockUser(email: string, uid: string) {
   return { email, uid } as import("firebase/auth").User;
 }
 
-function createDeps(postImpl?: () => Promise<Response>) {
+function createDeps(
+  postImpl?: () => Promise<Response>,
+  options?: { stableActorAdmission?: boolean },
+) {
   const store = createMemoryClientSaveOperationIntentStore();
   const post =
     postImpl ??
     vi.fn(async () => new Response(JSON.stringify({ entry: { id: "entry_1" } }), { status: 200 }));
+  const stableActorAdmission = options?.stableActorAdmission ?? true;
   const deps: JournalCreateSaveOrchestratorDeps = {
     bootstrap: async () => ({ status: "ready", store }),
-    capability: async () => ({ kind: "enabled" }),
+    capability: async () => ({ kind: "enabled", stableActorAdmission }),
     post,
     lookup: async () => new Response(JSON.stringify({ state: "not_found" }), { status: 200 }),
   };

@@ -59,6 +59,7 @@ describe("4B-4AI-1 capability + lookup route contracts", () => {
       lookupSupported: true,
       foregroundRecoverySupported: true,
       automaticBackgroundRetry: false,
+      stableActorAdmission: false,
     });
     expect(findRollout).toHaveBeenCalledWith({
       where: { actorKey: "person@example.com" },

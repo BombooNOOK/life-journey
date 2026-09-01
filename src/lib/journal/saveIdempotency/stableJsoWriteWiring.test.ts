@@ -170,7 +170,10 @@ describe("AI-X6.3 stable JSO write wiring", () => {
     findRollout.mockResolvedValue({ enabled: true, protocolVersion: 1 });
 
     const res = await capability.GET();
-    expect(await res.json()).toMatchObject({ idempotentSaveEnabled: true });
+    expect(await res.json()).toMatchObject({
+      idempotentSaveEnabled: true,
+      stableActorAdmission: true,
+    });
     expect(findRollout).toHaveBeenCalledWith({
       where: { actorKey: "firebase:UID-A" },
       select: { enabled: true, protocolVersion: true },
@@ -186,7 +189,10 @@ describe("AI-X6.3 stable JSO write wiring", () => {
     });
 
     const res = await capability.GET();
-    expect(await res.json()).toMatchObject({ idempotentSaveEnabled: false });
+    expect(await res.json()).toMatchObject({
+      idempotentSaveEnabled: false,
+      stableActorAdmission: false,
+    });
     expect(findRollout).not.toHaveBeenCalled();
   });
 

@@ -8,6 +8,7 @@ import {
   runJournalCreateSave,
   type JournalCreatePayload,
   type JournalCreateSaveOrchestratorDeps,
+  type SaveCapabilityAdmission,
 } from "@/lib/journal/clientSaveIntent/JournalCreateSaveOrchestrator";
 import { createMemoryClientSaveOperationIntentStore } from "@/lib/journal/clientSaveIntent/memoryStore";
 import {
@@ -50,17 +51,22 @@ function withStableFlag(enabled: boolean) {
   }
 }
 
-function deps(overrides: Partial<JournalCreateSaveOrchestratorDeps> = {}) {
+function deps(
+  overrides: Partial<JournalCreateSaveOrchestratorDeps> = {},
+  options?: { stableActorAdmission?: boolean },
+) {
   const store = createMemoryClientSaveOperationIntentStore();
   const post = vi.fn(async () =>
     new Response(JSON.stringify({ entry: { id: "entry_1" } }), { status: 200 }),
   );
+  const stableActorAdmission = options?.stableActorAdmission ?? true;
   return {
     store,
     post,
     deps: {
       bootstrap: async () => ({ status: "ready" as const, store }),
-      capability: async () => ({ kind: "enabled" as const }),
+      capability: async () =>
+        ({ kind: "enabled" as const, stableActorAdmission }) satisfies SaveCapabilityAdmission,
       post,
       lookup: async () => new Response(JSON.stringify({ state: "not_found" }), { status: 200 }),
       ...overrides,
@@ -243,7 +249,7 @@ describe("AI-X6.6A native stable pending intent", () => {
       { viewerEmail: EMAIL_A, firebaseUid: UID_A, payload },
       {
         bootstrap: async () => ({ status: "ready", store }),
-        capability: async () => ({ kind: "enabled" }),
+        capability: async () => ({ kind: "enabled", stableActorAdmission: true }),
         post: async () => new Response(JSON.stringify({ entry: { id: "e1" } }), { status: 200 }),
         lookup: async () => new Response(JSON.stringify({ state: "processing" }), { status: 200 }),
       },
@@ -317,7 +323,7 @@ describe("AI-X6.6A native stable pending intent", () => {
       { viewerEmail: EMAIL_A, firebaseUid: UID_A, payload },
       {
         bootstrap: async () => ({ status: "ready", store: wrapped }),
-        capability: async () => ({ kind: "enabled" }),
+        capability: async () => ({ kind: "enabled", stableActorAdmission: true }),
         post,
         lookup: async () => new Response(JSON.stringify({ state: "not_found" }), { status: 200 }),
       },

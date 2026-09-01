@@ -59,6 +59,7 @@ export async function GET() {
       resolveSaveCapability({
         globalEnabled: true,
         rollout,
+        writeActorMode: writeActor.mode === "stable" ? "stable" : "legacy",
       }),
       NO_STORE,
     );

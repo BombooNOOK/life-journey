@@ -29,7 +29,7 @@ function createTestDeps(postImpl?: () => Promise<Response>): JournalCreateSaveOr
     vi.fn(async () => new Response(JSON.stringify({ entry: { id: "entry_1" } }), { status: 200 }));
   return {
     bootstrap: async () => ({ status: "ready", store }),
-    capability: async () => ({ kind: "enabled" }),
+    capability: async () => ({ kind: "enabled", stableActorAdmission: true }),
     post,
     postExactJson: async () => post(),
     lookup: async () => new Response(JSON.stringify({ state: "not_found" }), { status: 200 }),
@@ -191,7 +191,7 @@ describe("X6.6B0 autorun controller", () => {
     let postCalls = 0;
     const deps: JournalCreateSaveOrchestratorDeps = {
       bootstrap: async () => ({ status: "ready", store }),
-      capability: async () => ({ kind: "enabled" }),
+      capability: async () => ({ kind: "enabled", stableActorAdmission: true }),
       post: async () => {
         postCalls += 1;
         return new Response(JSON.stringify({ entry: { id: "entry_ok" } }), { status: 200 });

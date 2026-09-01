@@ -17,7 +17,17 @@ export type SaveCapabilityResponse = {
   lookupSupported: boolean;
   foregroundRecoverySupported: boolean;
   automaticBackgroundRetry: false;
+  /**
+   * AI-X6.8A3: actor-specific stable native pending admission.
+   * true only when idempotent admission is enabled AND the resolved write
+   * actor is canonical firebase:<UID> (stable-write authority ON + bound identity).
+   * Legacy email rollout rows never produce stable admission.
+   */
+  stableActorAdmission: boolean;
 };
+
+/** Resolved write-actor mode for capability (server-side only). */
+export type SaveCapabilityWriteActorMode = "legacy" | "stable";
 
 export type RolloutRow = {
   enabled: boolean;
@@ -31,23 +41,42 @@ export function disabledSaveCapability(): SaveCapabilityResponse {
     lookupSupported: false,
     foregroundRecoverySupported: false,
     automaticBackgroundRetry: false,
+    stableActorAdmission: false,
   };
+}
+
+/**
+ * Stable native pending is admitted only when idempotent protocol is enabled
+ * for a canonical firebase write actor (never from legacy email rollout alone).
+ */
+export function resolveStableActorAdmission(input: {
+  idempotentSaveEnabled: boolean;
+  writeActorMode: SaveCapabilityWriteActorMode;
+}): boolean {
+  return input.idempotentSaveEnabled && input.writeActorMode === "stable";
 }
 
 export function resolveSaveCapability(input: {
   globalEnabled: boolean;
   rollout: RolloutRow | null;
+  writeActorMode?: SaveCapabilityWriteActorMode;
 }): SaveCapabilityResponse {
   const enabled =
     input.globalEnabled &&
     input.rollout?.enabled === true &&
     input.rollout.protocolVersion === JOURNAL_SAVE_IDEMPOTENCY_PROTOCOL_VERSION;
+  const writeActorMode = input.writeActorMode ?? "legacy";
+  const stableActorAdmission = resolveStableActorAdmission({
+    idempotentSaveEnabled: enabled,
+    writeActorMode,
+  });
   return {
     protocolVersion: JOURNAL_SAVE_IDEMPOTENCY_PROTOCOL_VERSION,
     idempotentSaveEnabled: enabled,
     lookupSupported: enabled,
     foregroundRecoverySupported: enabled,
     automaticBackgroundRetry: false,
+    stableActorAdmission,
   };
 }
 

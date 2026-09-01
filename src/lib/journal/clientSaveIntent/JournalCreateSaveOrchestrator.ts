@@ -43,9 +43,37 @@ export type JournalCreatePayload = {
   [key: string]: unknown;
 };
 
-type Capability =
-  | { kind: "enabled" }
+export type SaveCapabilityAdmission =
+  | { kind: "enabled"; stableActorAdmission?: boolean }
   | { kind: "disabled" | "unavailable" | "unknown_protocol" };
+
+/** @deprecated internal alias */
+type Capability = SaveCapabilityAdmission;
+
+/**
+ * Parse save-capability JSON. OLD clients ignore unknown fields; NEW clients
+ * consume stableActorAdmission for actor-specific stable pending gating.
+ */
+export function parseSaveCapabilityAdmission(
+  data: Record<string, unknown>,
+): SaveCapabilityAdmission {
+  if (data.protocolVersion !== 1) return { kind: "unknown_protocol" };
+  if (data.idempotentSaveEnabled !== true) return { kind: "disabled" };
+  return {
+    kind: "enabled",
+    stableActorAdmission: data.stableActorAdmission === true,
+  };
+}
+
+/** Global native master kill-switch AND actor-specific capability admission. */
+export function shouldRequireStableActorKeyForPending(input: {
+  nativeMasterEnabled: boolean;
+  capability: SaveCapabilityAdmission;
+}): boolean {
+  if (!input.nativeMasterEnabled) return false;
+  if (input.capability.kind !== "enabled") return false;
+  return input.capability.stableActorAdmission;
+}
 
 /** Compact recovery presentation for callers. User-facing copy stays minimal. */
 export type JournalCreateRecoveryState =
@@ -145,8 +173,7 @@ async function serverCapability(): Promise<Capability> {
     const response = await fetch("/api/journal/save-capability", { credentials: "same-origin" });
     if (!response.ok) return { kind: "unavailable" };
     const data = (await response.json()) as Record<string, unknown>;
-    if (data.protocolVersion !== 1) return { kind: "unknown_protocol" };
-    return data.idempotentSaveEnabled === true ? { kind: "enabled" } : { kind: "disabled" };
+    return parseSaveCapabilityAdmission(data);
   } catch {
     return { kind: "unavailable" };
   }
@@ -485,8 +512,14 @@ export async function runJournalCreateSave(
   }
   if (!actorKey) return { kind: "protocol_start_failed", reason: "actor_unavailable" };
 
-  const stableActorKey = requireStableActorKeyForNewIntent(input.firebaseUid);
-  if (isNativeStablePendingIntentEnabled() && !stableActorKey) {
+  const wantsStablePending = shouldRequireStableActorKeyForPending({
+    nativeMasterEnabled: isNativeStablePendingIntentEnabled(),
+    capability,
+  });
+  const stableActorKey = wantsStablePending
+    ? requireStableActorKeyForNewIntent(input.firebaseUid)
+    : null;
+  if (wantsStablePending && !stableActorKey) {
     return { kind: "protocol_start_failed", reason: "stable_identity_unavailable" };
   }
 

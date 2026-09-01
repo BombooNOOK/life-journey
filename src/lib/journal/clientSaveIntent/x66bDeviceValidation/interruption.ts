@@ -5,9 +5,10 @@
  * Does not change orchestrator ordering — only wraps store.persist and post*.
  */
 
-import type {
-  JournalCreatePayload,
-  JournalCreateSaveOrchestratorDeps,
+import {
+  parseSaveCapabilityAdmission,
+  type JournalCreatePayload,
+  type JournalCreateSaveOrchestratorDeps,
 } from "@/lib/journal/clientSaveIntent/JournalCreateSaveOrchestrator";
 import { initializeSaveIntentStore } from "@/lib/journal/clientSaveIntent/NativeSaveIntentBootstrap";
 import type {
@@ -34,18 +35,14 @@ function isDurableStore(
   );
 }
 
-async function defaultCapability(): Promise<
-  | { kind: "enabled" }
-  | { kind: "disabled" | "unavailable" | "unknown_protocol" }
-> {
+async function defaultCapability() {
   try {
     const response = await fetch("/api/journal/save-capability", { credentials: "same-origin" });
-    if (!response.ok) return { kind: "unavailable" };
+    if (!response.ok) return { kind: "unavailable" as const };
     const data = (await response.json()) as Record<string, unknown>;
-    if (data.protocolVersion !== 1) return { kind: "unknown_protocol" };
-    return data.idempotentSaveEnabled === true ? { kind: "enabled" } : { kind: "disabled" };
+    return parseSaveCapabilityAdmission(data);
   } catch {
-    return { kind: "unavailable" };
+    return { kind: "unavailable" as const };
   }
 }
 
