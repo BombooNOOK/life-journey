@@ -24,6 +24,24 @@ describe("4B-4AI-1 capability admission", () => {
     expect(capability.lookupSupported).toBe(expected);
     expect(capability.foregroundRecoverySupported).toBe(expected);
     expect(capability.automaticBackgroundRetry).toBe(false);
+    expect(capability.stableActorAdmission).toBe(false);
+  });
+
+  it("stableActorAdmission requires stable write actor mode", () => {
+    expect(
+      resolveSaveCapability({
+        globalEnabled: true,
+        rollout: { enabled: true, protocolVersion: 1 },
+        writeActorMode: "stable",
+      }).stableActorAdmission,
+    ).toBe(true);
+    expect(
+      resolveSaveCapability({
+        globalEnabled: true,
+        rollout: { enabled: true, protocolVersion: 1 },
+        writeActorMode: "legacy",
+      }).stableActorAdmission,
+    ).toBe(false);
   });
 });
 

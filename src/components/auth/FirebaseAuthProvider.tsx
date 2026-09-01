@@ -9,7 +9,13 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { onAuthStateChanged, signOut, type Auth, type User } from "firebase/auth";
+import {
+  onAuthStateChanged,
+  onIdTokenChanged,
+  signOut,
+  type Auth,
+  type User,
+} from "firebase/auth";
 
 import {
   clearGoogleOAuthRedirectFlow,
@@ -19,8 +25,18 @@ import {
   syncLjAuthClientCookies,
   takeOAuthReturnTo,
 } from "@/lib/auth/clientCookies";
+import { getVerifiedAuthSessionSyncController } from "@/lib/auth/syncVerifiedAuthSession";
+import { isVerifiedAuthSessionClientSyncAllowed } from "@/lib/auth/verifiedAuthSessionClientGate";
 import { getFirebaseAuth, waitForFirebaseAuthPersistence } from "@/lib/firebase/client";
 import { consumeRedirectResultOnce } from "@/lib/firebase/redirectResult";
+import {
+  clearLocalE2eClientSession,
+  getLocalE2eClientSession,
+  isLocalE2eClientRuntimeEnabled,
+  resolveFirebaseAuthEffectiveUser,
+  restoreLocalE2eClientSessionCookies,
+  subscribeLocalE2eClientSession,
+} from "@/lib/localE2eHarness/clientSession";
 
 type FirebaseAuthContextValue = {
   user: User | null;
@@ -48,6 +64,14 @@ const OAUTH_CURRENT_USER_WAIT_MS = 20000;
 
 async function syncAuthCookiesOnServer(user: User | null) {
   try {
+    // Local E2E bridge owns the cookie actor while active (local `next dev` only).
+    if (
+      isLocalE2eClientRuntimeEnabled() &&
+      !user?.email &&
+      getLocalE2eClientSession()
+    ) {
+      return;
+    }
     if (!user?.email) {
       await fetch("/api/auth/session", { method: "DELETE" });
       return;
@@ -65,13 +89,64 @@ async function syncAuthCookiesOnServer(user: User | null) {
 
 export function FirebaseAuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
+  const [localE2eEmail, setLocalE2eEmail] = useState<string | null>(
+    () => getLocalE2eClientSession()?.email ?? null,
+  );
   const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    return subscribeLocalE2eClientSession((session) => {
+      setLocalE2eEmail(session?.email ?? null);
+    });
+  }, []);
+
+  /**
+   * AI-8.1b: parallel verified session sync (lj_session).
+   * Separate from onAuthStateChanged legacy cookie path.
+   * Default OFF via NEXT_PUBLIC_LJD_VERIFIED_AUTH_SESSION_ENABLED.
+   */
+  useEffect(() => {
+    if (!isVerifiedAuthSessionClientSyncAllowed()) {
+      return;
+    }
+
+    let cancelled = false;
+    let unsubscribeToken: (() => void) | undefined;
+    const controller = getVerifiedAuthSessionSyncController();
+
+    try {
+      const auth = getFirebaseAuth({ deferPersistence: true });
+      unsubscribeToken = onIdTokenChanged(auth, (next) => {
+        if (cancelled) return;
+        // Local E2E harness has no real Firebase ID token — skip verified sync.
+        if (isLocalE2eClientRuntimeEnabled() && getLocalE2eClientSession()) {
+          return;
+        }
+        void controller.handleAuthUser(next);
+      });
+    } catch {
+      // Auth init failure must not break legacy provider.
+    }
+
+    return () => {
+      cancelled = true;
+      unsubscribeToken?.();
+    };
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
     let unsubscribe: (() => void) | undefined;
 
     const run = async () => {
+      // Restore fixed local-E2E actor before Firebase null can clear cookies
+      // on full-page navigations (Companion save → calendar).
+      // No-op under production/preview builds (client runtime guard).
+      if (isLocalE2eClientRuntimeEnabled() && getLocalE2eClientSession()) {
+        await restoreLocalE2eClientSessionCookies();
+        if (cancelled) return;
+      }
+
       let auth: Auth | null = null;
       try {
         auth = getFirebaseAuth({ deferPersistence: true });
@@ -189,6 +264,12 @@ export function FirebaseAuthProvider({ children }: { children: ReactNode }) {
         unsubscribe = onAuthStateChanged(auth, (next) => {
           if (cancelled) return;
           setUser(next);
+          // Local E2E bridge owns cookies/session while active; do not let
+          // Firebase null state clear the fixed harness actor (local next dev only).
+          if (isLocalE2eClientRuntimeEnabled() && getLocalE2eClientSession()) {
+            setLoading(false);
+            return;
+          }
           if (isFirstAuthCallback) {
             isFirstAuthCallback = false;
             if (next) {
@@ -204,7 +285,9 @@ export function FirebaseAuthProvider({ children }: { children: ReactNode }) {
       } catch {
         if (!cancelled) {
           setUser(null);
-          syncAuthCookies(null);
+          if (!(isLocalE2eClientRuntimeEnabled() && getLocalE2eClientSession())) {
+            syncAuthCookies(null);
+          }
           setLoading(false);
         }
       }
@@ -219,15 +302,70 @@ export function FirebaseAuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const signOutUser = useCallback(async () => {
+    if (isLocalE2eClientRuntimeEnabled() && getLocalE2eClientSession()) {
+      await clearLocalE2eClientSession();
+      syncAuthCookies(null);
+      setLocalE2eEmail(null);
+      return;
+    }
     const auth = getFirebaseAuth();
     await signOut(auth);
     syncAuthCookies(null);
     await syncAuthCookiesOnServer(null);
+    // Parallel verified clear — must not block or undo legacy logout.
+    // onIdTokenChanged(null) also clears; this is a best-effort complement.
+    if (isVerifiedAuthSessionClientSyncAllowed()) {
+      void getVerifiedAuthSessionSyncController()
+        .clearAfterLegacySignOut()
+        .catch(() => {
+          /* state becomes failed inside controller; do not throw into legacy logout */
+        });
+    }
   }, []);
 
+  const effectiveUser = useMemo((): User | null => {
+    return resolveFirebaseAuthEffectiveUser({
+      firebaseUser: user,
+      localE2eEmail,
+      buildLocalE2eUser: (email) =>
+        ({
+          email,
+          uid: `local-e2e:${email}`,
+          emailVerified: true,
+          isAnonymous: false,
+          metadata: {},
+          providerData: [],
+          refreshToken: "",
+          tenantId: null,
+          displayName: null,
+          phoneNumber: null,
+          photoURL: null,
+          providerId: "local-e2e",
+          delete: async () => {
+            throw new Error("local_e2e_user_immutable");
+          },
+          getIdToken: async () => {
+            throw new Error("local_e2e_no_id_token");
+          },
+          getIdTokenResult: async () => {
+            throw new Error("local_e2e_no_id_token");
+          },
+          reload: async () => undefined,
+          toJSON: () => ({ email, uid: `local-e2e:${email}` }),
+        }) as User,
+    });
+  }, [localE2eEmail, user]);
+
+  const localE2eActive =
+    isLocalE2eClientRuntimeEnabled() && Boolean(localE2eEmail?.trim());
+
   const value = useMemo(
-    () => ({ user, loading, signOutUser }),
-    [user, loading, signOutUser],
+    () => ({
+      user: effectiveUser,
+      loading: localE2eActive ? false : loading,
+      signOutUser,
+    }),
+    [effectiveUser, loading, localE2eActive, signOutUser],
   );
 
   return (

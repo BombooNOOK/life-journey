@@ -55,6 +55,12 @@ import {
   journalCalendarAfterCompanionSavePath,
   journalNewEntryPath,
 } from "@/lib/journal/journalNav";
+import { runJournalCreateSave } from "@/lib/journal/clientSaveIntent/JournalCreateSaveOrchestrator";
+import {
+  buildClientSaveIntentOrchestratorSession,
+  resolveClientSaveIntentAuthSession,
+} from "@/lib/journal/clientSaveIntent/clientSaveIntentAuthSession";
+import { useForegroundJournalCreateRecovery } from "@/lib/journal/clientSaveIntent/useForegroundJournalCreateRecovery";
 import { LOG_HOUSE_BACK_LINK } from "@/lib/journal/logHouseLabels";
 import {
   activityOptions,
@@ -123,6 +129,21 @@ export function CompanionWritingPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { user, loading: authLoading } = useFirebaseAuth();
+  const saveIntentAuthSession = useMemo(
+    () => resolveClientSaveIntentAuthSession({ user, authLoading }),
+    [user, authLoading],
+  );
+  const saveIntentOrchestratorSession = useMemo(
+    () => buildClientSaveIntentOrchestratorSession(saveIntentAuthSession),
+    [saveIntentAuthSession],
+  );
+  const [foregroundRecoveryRevision, setForegroundRecoveryRevision] = useState(0);
+  const foregroundRecovery = useForegroundJournalCreateRecovery({
+    viewerEmail: saveIntentAuthSession.viewerEmail,
+    firebaseUid: saveIntentAuthSession.firebaseUid,
+    authLoading: saveIntentAuthSession.authLoading,
+    revision: foregroundRecoveryRevision,
+  });
   const { entitlement, loading: entitlementLoading } = useEntitlement();
   const profileId = (searchParams.get("profile") ?? "").trim();
   const dateFromQuery = searchParams.get("date");
@@ -343,11 +364,13 @@ export function CompanionWritingPage() {
     setError(null);
     setSaving(true);
     try {
-      const res = await fetch("/api/journal", {
-        method: "POST",
-        credentials: "same-origin",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
+      if (!saveIntentOrchestratorSession) {
+        setError("記録を確認できませんでした。ページを再読み込みしてください。");
+        return;
+      }
+      const result = await runJournalCreateSave({
+        ...saveIntentOrchestratorSession,
+        payload: {
           content,
           mood,
           activity,
@@ -357,8 +380,10 @@ export function CompanionWritingPage() {
           entryDate,
           profileId: effectiveProfileId,
           effectiveProfileId,
-        }),
+          includeInBook: true,
+        },
       });
+      const res = result.kind === "legacy" ? result.response : null;
 
       let data: {
         entry?: { id: string };
@@ -367,7 +392,7 @@ export function CompanionWritingPage() {
         donguriBalance?: number | null;
       };
       try {
-        data = (await res.json()) as {
+        data = (res ? await res.json() : result.kind === "completed" ? result.data : {}) as {
           entry?: { id: string };
           error?: string;
           code?: string;
@@ -376,7 +401,21 @@ export function CompanionWritingPage() {
       } catch {
         throw new Error("サーバーからの応答を読み取れませんでした。");
       }
-      if (!res.ok) {
+      if (result.kind !== "legacy" && result.kind !== "completed") {
+        if (result.kind === "failed_final" && result.code === "ACORN_INSUFFICIENT") {
+          setPreferDraftMode(true);
+          setSaveDialog("shortage");
+          setSaving(false);
+          return;
+        }
+        if (result.kind === "processing" || result.kind === "pending") setForegroundRecoveryRevision((value) => value + 1);
+        throw new Error(
+          result.kind === "processing" || result.kind === "pending"
+            ? "保存処理中です。しばらくしてから確認してください。"
+            : "保存結果を安全に確認できませんでした。",
+        );
+      }
+      if (res && !res.ok) {
         if (data.code === "ACORN_INSUFFICIENT") {
           setPreferDraftMode(true);
           setSaveDialog("shortage");
@@ -424,6 +463,7 @@ export function CompanionWritingPage() {
     questionSet,
     resolveCompanionTypeForSave,
     tagInput,
+    saveIntentOrchestratorSession,
   ]);
 
   const saveServerDraft = useCallback(async () => {
@@ -707,6 +747,20 @@ export function CompanionWritingPage() {
 
       {step === "write" && questionSet ? (
         <section className={companionWritingWizardStepClass}>
+          {foregroundRecovery.status === "checking" || foregroundRecovery.status === "processing" || foregroundRecovery.status === "pending" ? (
+            <p className="rounded-md bg-amber-50 px-3 py-2 text-sm text-amber-900">保存状況を確認しています。</p>
+          ) : foregroundRecovery.status === "completed" ? (
+            <p className="rounded-md bg-emerald-50 px-3 py-2 text-sm text-emerald-900">以前の保存は完了しています。</p>
+          ) : foregroundRecovery.status === "continuation_available" ? (
+            <div className="rounded-md bg-amber-50 px-3 py-2 text-sm text-amber-900">
+              <p>前回の保存が途中で止まっていました。内容を確認して、保存を続けることができます。</p>
+              <button type="button" className="mt-2 rounded bg-amber-700 px-3 py-1 text-white" onClick={() => void foregroundRecovery.continueSave()}>保存を続ける</button>
+            </div>
+          ) : foregroundRecovery.status === "recovery_required" ? (
+            <p className="rounded-md bg-amber-50 px-3 py-2 text-sm text-amber-900">以前の保存状況を確認できませんでした。内容を確認してから、もう一度保存してください。</p>
+          ) : foregroundRecovery.status === "failed_final" ? (
+            <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-800">以前の保存を完了できませんでした。内容を確認してください。</p>
+          ) : null}
           {error ? (
             <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-800" role="alert">
               {error}

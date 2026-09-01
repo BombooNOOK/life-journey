@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { Prisma } from "@prisma/client";
 
-import { getViewerEmailFromCookie, normalizeEmail } from "@/lib/auth/viewer";
+import { getViewerEmailFromCookie } from "@/lib/auth/viewer";
 import { loadEntitlementContext } from "@/lib/entitlement/accountSettingsForEntitlement";
 import {
   canCreateJournalEntry,
@@ -51,6 +51,10 @@ import {
   buildProductionJournalSaveFingerprint,
   photoIdentityFromPatch,
 } from "@/lib/journal/saveIdempotency/productionRequestFingerprint";
+import {
+  resolveJournalSaveWriteActorKey,
+  stableJsoWriteRejectHttp,
+} from "@/lib/journal/saveIdempotency/resolveJournalSaveWriteActorKey";
 import { runIdempotentProductionJournalSave } from "@/lib/journal/saveIdempotency/runIdempotentProductionJournalSave";
 import { parseSaveOperationIdFromBody } from "@/lib/journal/saveIdempotency/saveOperationId";
 import {
@@ -523,9 +527,19 @@ export async function POST(req: Request) {
       );
     }
     if (opId.ok) {
+      // AI-X6.8B0.6: POST admission uses the same write-actor key as capability
+      // and JSO writes (legacy email when stable-write OFF; firebase when ON).
+      const writeActor = await resolveJournalSaveWriteActorKey(viewerEmail);
+      if (writeActor.mode === "stable_rejected") {
+        const reject = stableJsoWriteRejectHttp(writeActor.reason);
+        return NextResponse.json(reject.body, {
+          status: reject.status,
+          ...JSON_NO_STORE,
+        });
+      }
       const eligible = await resolveJournalSaveIdempotencyRolloutEligibility({
         globalEnabled: true,
-        actorKey: normalizeEmail(viewerEmail),
+        actorKey: writeActor.actorKey,
         loadRollout: (actorKey) =>
           prisma.journalSaveIdempotencyRollout.findUnique({
             where: { actorKey },

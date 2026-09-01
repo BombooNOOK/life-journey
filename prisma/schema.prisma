@@ -13,14 +13,14 @@ model Order {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  lastName       String
-  firstName      String
-  lastNameKana   String
-  firstNameKana  String
-  lastNameRoman  String
-  firstNameRoman String
-  fullNameDisplay     String
-  fullNameKanaDisplay String
+  lastName             String
+  firstName            String
+  lastNameKana         String
+  firstNameKana        String
+  lastNameRoman        String
+  firstNameRoman       String
+  fullNameDisplay      String
+  fullNameKanaDisplay  String
   fullNameRomanDisplay String
 
   birthDate  String /// YYYY-MM-DD
@@ -34,21 +34,21 @@ model Order {
   email      String
   profileId  String @default("")
 
-  numerologyJson String
-  stonesJson     String
+  numerologyJson  String
+  stonesJson      String
   /// フォーム「今いちばん関心のあること」（石候補の同順位内の優先のみ）
   stoneFocusTheme String @default("特に決まっていない")
 
-  reportPdfPath  String?
+  reportPdfPath      String?
   /// 鑑定フルPDF（プレビュー画質）を Vercel Blob に保存したときの URL。`focus=all`・`bodyTune=normal` のみ。
-  pdfPreviewBlobUrl   String?
+  pdfPreviewBlobUrl  String?
   /// `pdfPreviewBlobUrl` がどの注文内容に対応するか（SHA256）。内容変更時は再生成して上書き。
-  pdfPreviewCacheKey  String?
+  pdfPreviewCacheKey String?
   /// 鑑定フルPDF（製本・高画質）の Blob URL。条件は pdfPreview と同じ。
-  pdfPrintBlobUrl     String?
-  pdfPrintCacheKey    String?
-  pdfDownloadCount Int @default(0)
-  pdfDownloadLimit Int @default(2)
+  pdfPrintBlobUrl    String?
+  pdfPrintCacheKey   String?
+  pdfDownloadCount   Int     @default(0)
+  pdfDownloadLimit   Int     @default(2)
 
   /// 氏名・生年月日の救済修正を何回使ったか（0 のときのみ修正可能）
   identityCorrectionCount Int @default(0)
@@ -69,25 +69,25 @@ model JournalEntry {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  email         String
-  profileId     String @default("")
-  content       String
-  mood          String @default("calm")
-  activity      String @default("record_anyway")
-  companionType String @default("owl")
-  designTheme   String @default("simple")
+  email                String
+  profileId            String  @default("")
+  content              String
+  mood                 String  @default("calm")
+  activity             String  @default("record_anyway")
+  companionType        String  @default("owl")
+  designTheme          String  @default("simple")
   /// 今日の記録欄の文字サイズ: relaxed | standard | generous | compact
-  contentFontMode String @default("standard")
+  contentFontMode      String  @default("standard")
   /// 旧方式: base64 data URL（移行期間のみ。新規は Blob のみ）
-  photoDataUrl  String?
+  photoDataUrl         String?
   /// 日記写真専用 Private Vercel Blob
-  photoBlobUrl       String?
-  photoBlobPathname  String?
-  photoMimeType      String?
-  photoSizeBytes     Int?
+  photoBlobUrl         String?
+  photoBlobPathname    String?
+  photoMimeType        String?
+  photoSizeBytes       Int?
   photoStorageProvider String?
-  generatedComment String?
-  includeInBook Boolean @default(true)
+  generatedComment     String?
+  includeInBook        Boolean @default(true)
 
   @@index([email, profileId])
 }
@@ -139,11 +139,11 @@ model JournalDraft {
   /// 日本暦日 YYYY-MM-DD
   dateKey   String
 
-  content String @default("")
-  mood    String @default("calm")
-  activity String @default("record_anyway")
-  companionType String @default("owl")
-  designTheme String @default("simple")
+  content         String @default("")
+  mood            String @default("calm")
+  activity        String @default("record_anyway")
+  companionType   String @default("owl")
+  designTheme     String @default("simple")
   contentFontMode String @default("standard")
 
   photoBlobUrl      String?
@@ -169,10 +169,10 @@ model DiaryBook {
   email     String
   profileId String
 
-  title      String
-  startDate  String /// YYYY-MM-DD（記録日の下限・含む）
-  endDate    String /// YYYY-MM-DD（記録日の上限・含む）
-  coverTheme String @default("casual") /// 正規化後: cover_mori_standard | cover_komorebi | cover_mori_irodori
+  title        String
+  startDate    String /// YYYY-MM-DD（記録日の下限・含む）
+  endDate      String /// YYYY-MM-DD（記録日の上限・含む）
+  coverTheme   String @default("casual") /// 正規化後: cover_mori_standard | cover_komorebi | cover_mori_irodori
   /// 本文ページのかたち（ashiatoPageTemplates の ID）
   pageTemplate String @default("suuji_ashiato_irodori")
 
@@ -190,14 +190,14 @@ model DiaryBookshelfBook {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  email String
+  email     String
   profileId String @default("")
-  year  Int
+  year      Int
 
   displayTitle     String?
-  coverTheme       String @default("simple")
-  periodStartMonth Int    @default(1)
-  periodEndMonth   Int    @default(12)
+  coverTheme       String  @default("simple")
+  periodStartMonth Int     @default(1)
+  periodEndMonth   Int     @default(12)
 
   @@unique([email, profileId, year])
   @@index([email, profileId])
@@ -209,15 +209,15 @@ model AccountSettings {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  email        String @unique
-  isAdmin      Boolean @default(false)
+  email                    String  @unique
+  isAdmin                  Boolean @default(false)
   /// モニター利用者（無料・最上位プラン相当のプロフィール上限）
-  isMonitor    Boolean @default(false)
-  profileLimit Int     @default(1)
+  isMonitor                Boolean @default(false)
+  profileLimit             Int     @default(1)
   /// 鑑定書PDFの無料ダウンロード上限（鑑定1件あたり）。新規鑑定作成時と管理者変更時に Order に反映する。
-  pdfDownloadLimitPerOrder Int @default(2)
+  pdfDownloadLimitPerOrder Int     @default(2)
   /// 製本用（高画質）鑑定書PDFのダウンロード可否（プレビュー版は全員）
-  subscriberPdfAccess Boolean @default(false)
+  subscriberPdfAccess      Boolean @default(false)
 
   /// Stripe Billing（月額プラン）
   stripeCustomerId     String? @unique
@@ -232,13 +232,21 @@ model AccountSettings {
   readingFontSize String @default("normal")
 
   /// 森の住民番号（問い合わせ・注文照合用。メール変更後も不変）
-  forestResidentNumber   String?   @unique
-  forestResidentIssuedAt DateTime?
+  forestResidentNumber      String?   @unique
+  forestResidentIssuedAt    DateTime?
   /// 住民票のおなまえ（プロフィール名とは別。最大10文字はアプリ側で検証）
   forestResidentDisplayName String?
 
   /// 管理者一覧用の会員番号（登録順 1, 2, 3…。表示は 00001 形式）
   memberNumber Int? @unique
+
+  /// Stable ownership anchor (AI-X6.5A). Nullable during transition.
+  /// One AccountIdentity → at most one AccountSettings (UNIQUE; NULL allowed for legacy).
+  /// Email column remains unique for compatibility / contact metadata — not durable ownership.
+  /// FK Restrict: identity must not be deleted while settings still reference it
+  /// (product purge before identity removal — see account delete order design).
+  identityId String?          @unique
+  identity   AccountIdentity? @relation(fields: [identityId], references: [id], onDelete: Restrict)
 }
 
 /// 鑑定書製本版（BASE単発）の申込予定・製本進捗（決済前は pending）
@@ -441,7 +449,7 @@ model GardenPlant {
   /// 将来の色違い・種違い用（MVP は "default"）
   seedType String @default("default")
 
-  waterCount    Int     @default(0)
+  waterCount    Int       @default(0)
   /// 最後に水やりした日本時間の暦日 YYYY-MM-DD
   lastWateredOn String?
   completedAt   DateTime?
@@ -465,11 +473,11 @@ model GardenDisplayFlower {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  email     String
-  profileId String
+  email       String
+  profileId   String
   /// 1 | 2 | 3
-  slotIndex Int
-  seedType  String @default("default")
+  slotIndex   Int
+  seedType    String   @default("default")
   flowerColor String?
   displayedAt DateTime @default(now())
 
@@ -491,9 +499,9 @@ model LogHouseMailboxNotice {
   title   String
   message String
 
-  actionLabel String?
-  actionRoute String?
-  relatedOrderId String?
+  actionLabel     String?
+  actionRoute     String?
+  relatedOrderId  String?
   /// どんぐり台帳との関連（LogHouseDonguriLedgerEntry.id）
   relatedLedgerId String?
 
@@ -557,10 +565,10 @@ model LogHouseDonguriLedgerEntry {
   profileId String
 
   /// 付与は正、消費は負。端末動画ムービー初回無料は 0 を記録する
-  amount Int
+  amount      Int
   /// daily_delivery | admin_grant | birthday_gift | diary_save | book_create | reward_ad | acorn_purchase | subscription_delivery | adjustment | mori_log_device_movie_first_free | mori_log_device_movie_create
-  reason String
-  title  String
+  reason      String
+  title       String
   description String?
 
   /// daily_delivery の重複防止用（日本暦日 YYYY-MM-DD）。diary_save は entry:{journalId}
@@ -568,7 +576,7 @@ model LogHouseDonguriLedgerEntry {
 
   relatedNoticeId String?
   /// diary_save 時の JournalEntry.id
-  relatedDiaryId String?
+  relatedDiaryId  String?
 
   /// 端末動画ムービー等の二重消費防止。例: mori-log-device-movie:{email}:{profileId}:{mediaId}
   idempotencyKey String?
@@ -581,4 +589,58 @@ model LogHouseDonguriLedgerEntry {
   @@index([email, profileId, createdAt])
   @@index([email, createdAt])
   @@index([relatedDiaryId])
+}
+
+/// Stable Firebase UID identity anchor (AI-8.2).
+/// Firebase UID is the person/account identity. Auth email is mutable/reusable and
+/// does NOT authorize historical email-keyed actor rows by itself.
+/// Derived stable actor key: firebase:<UID> via buildFirebaseActorKey (not stored here).
+/// Additive foundation only — no product FKs, no login bootstrap, no JSO/rollout authority.
+/// Gate X6 / email-change remains OPEN; email reuse stays unsafe until product tables
+/// are identity-scoped in a later phase.
+model AccountIdentity {
+  id          String   @id @default(cuid())
+  firebaseUid String   @unique
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  emails            AccountIdentityEmail[]
+  legacyActorClaims AccountIdentityLegacyActorClaim[]
+  /// Optional 1:1 product account row (AI-X6.5A). Null until bound/backfilled.
+  accountSettings   AccountSettings?
+}
+
+/// Authentication/contact email lifecycle for an AccountIdentity.
+/// status: primary | retired (String; no Prisma enum — matches project style).
+/// emailNormalized is NOT globally unique (UID-A may retire old@ while UID-B uses it as primary).
+/// Do NOT use @@unique([identityId, status]) — multiple retired rows must be allowed.
+/// One primary per identity is enforced by a PostgreSQL partial unique index in migration SQL.
+/// Future email-change TX (not AI-8.2): retire old primary → insert new primary, atomically.
+model AccountIdentityEmail {
+  id              String    @id @default(cuid())
+  identityId      String
+  emailNormalized String
+  /// primary | retired
+  status          String
+  boundAt         DateTime  @default(now())
+  retiredAt       DateTime?
+
+  identity AccountIdentity @relation(fields: [identityId], references: [id], onDelete: Cascade)
+
+  @@index([identityId, status])
+}
+
+/// Explicit ownership of a historical normalized-email actorKey (e.g. JournalSaveOperation).
+/// Claim row existence = authorization. No status column; email change leaves the claim;
+/// full account delete deletes the row only after identity-scoped purge (future phase).
+/// No automatic verified-login bootstrap in AI-8.2.
+model AccountIdentityLegacyActorClaim {
+  id         String   @id @default(cuid())
+  identityId String
+  actorKey   String   @unique
+  claimedAt  DateTime @default(now())
+
+  identity AccountIdentity @relation(fields: [identityId], references: [id], onDelete: Cascade)
+
+  @@index([identityId])
 }

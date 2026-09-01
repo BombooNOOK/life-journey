@@ -5,12 +5,17 @@
 
 export {
   BACKUP_INCLUSION_POLICY,
+  ensurePathExcludedFromBackup,
   ensurePathIncludedInBackup,
+  shouldExcludeFromBackup,
   shouldForceBackupInclusion,
 } from "@/lib/local-first/security/backupInclusion";
 export {
   configurePluginEncryptionSecret,
+  isPluginEncryptionSecretStored,
   openNamedEncryptedDatabase,
+  pluginRejectsDifferentEncryptionSecret,
+  PluginSecretConfigurationError,
 } from "@/lib/local-first/security/encryptedDatabase";
 export {
   applyCompleteFileProtection,

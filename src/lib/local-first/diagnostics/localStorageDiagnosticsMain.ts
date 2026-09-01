@@ -12,8 +12,18 @@ import {
 } from "@/lib/local-first/journal/mediaStore";
 import { JournalRepository } from "@/lib/local-first/journal/repository";
 import {
+  getSaveIntentStoreBootstrapDiagnosticStage,
+  initializeNativeClientSaveOperationIntentStore,
+  initializeSaveIntentStore,
+  prepareClientSaveOperationIntent,
+} from "@/lib/journal/clientSaveIntent";
+import type { ClientSaveOperationIntent } from "@/lib/journal/clientSaveIntent";
+import { CLIENT_SAVE_OPERATION_INTENT_DB_NAME } from "@/lib/journal/clientSaveIntent/types";
+import {
   inspectPluginDbKeyAccessibility,
+  isPluginEncryptionSecretStored,
   listSqliteArtifactsReadOnly,
+  pluginRejectsDifferentEncryptionSecret,
   readAvailableBytesOrNull,
   resolveLjdApplicationSupportDir,
   safeErrorMessage,
@@ -38,6 +48,120 @@ function escapeHtml(value: string): string {
     .replaceAll("<", "&lt;")
     .replaceAll(">", "&gt;")
     .replaceAll('"', "&quot;");
+}
+
+function inMemoryDifferentSecretCandidate(): string {
+  const bytes = new Uint8Array(32);
+  crypto.getRandomValues(bytes);
+  return Array.from(bytes, (byte) => byte.toString(16).padStart(2, "0")).join("");
+}
+
+const AI2_RESTART_ACTOR = "ai2-restart@ljd.invalid";
+const AI2_LIFECYCLE_ACTOR = "ai2-lifecycle@ljd.invalid";
+const AI2_DELETE_ACTOR = "ai2-delete@ljd.invalid";
+const AI2_OTHER_ACTOR = "ai2-other@ljd.invalid";
+
+async function prepareProbeIntent(
+  store: Awaited<ReturnType<typeof initializeSaveIntentStore>> & { status: "ready" },
+  viewerEmail: string,
+  saveOperationId: string,
+): Promise<ClientSaveOperationIntent> {
+  const prepared = await prepareClientSaveOperationIntent(store.store, {
+    viewerEmail,
+    saveOperationId,
+    requestFingerprint: "0".repeat(64),
+    draftRef: "diagnostic_metadata_only",
+  });
+  return prepared.intent;
+}
+
+async function runSecureSaveIntentProbe(
+  bootstrap: Awaited<ReturnType<typeof initializeSaveIntentStore>> & { status: "ready" },
+): Promise<Record<string, boolean>> {
+  const store = bootstrap.store;
+  const restartIntent = await prepareProbeIntent(
+    bootstrap,
+    AI2_RESTART_ACTOR,
+    "ai2_restart_intent_0000000001",
+  );
+  const lifecycle = await prepareProbeIntent(
+    bootstrap,
+    AI2_LIFECYCLE_ACTOR,
+    "ai2_lifecycle_intent_00000001",
+  );
+  let completed = lifecycle;
+  if (completed.status === "prepared") {
+    completed = await store.update({ ...completed, status: "awaiting_result" });
+    completed = await store.update({
+      ...completed,
+      status: "server_completed",
+      serverEntryId: "diagnostic_entry",
+    });
+    completed = await store.update({ ...completed, status: "completed" });
+  }
+  let terminalRewindRejected = false;
+  try {
+    await store.update({ ...completed, status: "awaiting_result" });
+  } catch {
+    terminalRewindRejected = true;
+  }
+  let recoveryFailed = await prepareProbeIntent(
+    bootstrap,
+    AI2_LIFECYCLE_ACTOR,
+    "ai2_failed_intent_000000000001",
+  );
+  if (recoveryFailed.status === "prepared") {
+    recoveryFailed = await store.update({ ...recoveryFailed, status: "recovery_required" });
+    recoveryFailed = await store.update({ ...recoveryFailed, status: "failed_final" });
+  }
+
+  await prepareProbeIntent(bootstrap, AI2_DELETE_ACTOR, "ai2_delete_intent_00000000001");
+  await prepareProbeIntent(bootstrap, AI2_OTHER_ACTOR, "ai2_other_intent_000000000001");
+  const deleted = await store.deleteByActor(AI2_DELETE_ACTOR);
+  const otherRetained =
+    (await store.findByActorAndSaveOperationId(
+      AI2_OTHER_ACTOR,
+      "ai2_other_intent_000000000001",
+    )) != null;
+  await store.deleteByActor(AI2_OTHER_ACTOR);
+
+  return {
+    restartIntentPrepared:
+      restartIntent.status === "prepared" &&
+      (await store.findByActorAndSaveOperationId(
+        AI2_RESTART_ACTOR,
+        "ai2_restart_intent_0000000001",
+      )) != null,
+    lifecycleCompleted: completed.status === "completed",
+    recoveryAndFailedFinal: recoveryFailed.status === "failed_final",
+    terminalRewindRejected,
+    pendingByActor:
+      (await store.listRecoverableByActor(AI2_RESTART_ACTOR)).some(
+        (intent) => intent.saveOperationId === "ai2_restart_intent_0000000001",
+      ),
+    actorIsolation:
+      (await store.findByActorAndSaveOperationId(
+        AI2_OTHER_ACTOR,
+        "ai2_restart_intent_0000000001",
+      )) == null,
+    deleteByActor: deleted === 1 && otherRetained,
+  };
+}
+
+async function inspectSecureIntentFileAttributes(): Promise<{
+  exists: boolean;
+  backupExcluded: boolean | string;
+  fileProtection: string;
+}> {
+  const location = await resolveLjdApplicationSupportDir();
+  const attrs = await inspectFileProtection(
+    `${location.ljdApplicationSupportDir}/${CLIENT_SAVE_OPERATION_INTENT_DB_NAME}SQLite.db`,
+  );
+  return {
+    exists: attrs.exists,
+    backupExcluded: attrs.isExcludedFromBackup,
+    fileProtection: attrs.fileProtection,
+  };
 }
 
 async function renderEntries(): Promise<void> {
@@ -88,6 +212,46 @@ async function boot(): Promise<void> {
 
   if (!Capacitor.isNativePlatform()) {
     setStatus("ネイティブ専用です。", true);
+    return;
+  }
+
+  const secretWasStored = await isPluginEncryptionSecretStored();
+  let keylessOpenRejected: boolean | null = null;
+  if (!secretWasStored) {
+    try {
+      await initializeNativeClientSaveOperationIntentStore();
+      keylessOpenRejected = false;
+    } catch {
+      keylessOpenRejected = true;
+    }
+  }
+  const intentBootstrap = await initializeSaveIntentStore();
+  const intentProbe =
+    intentBootstrap.status === "ready" ? await runSecureSaveIntentProbe(intentBootstrap) : null;
+  const wrongSecretRejected =
+    intentBootstrap.status === "ready"
+      ? await pluginRejectsDifferentEncryptionSecret(inMemoryDifferentSecretCandidate())
+      : null;
+  const intentFileAttributes =
+    intentBootstrap.status === "ready" ? await inspectSecureIntentFileAttributes() : null;
+  $("security-report").textContent = JSON.stringify(
+    {
+      developerOnly: true,
+      secureSaveIntentBootstrap: {
+        status: intentBootstrap.status,
+        diagnosticStage: getSaveIntentStoreBootstrapDiagnosticStage(),
+        secretWasStored,
+        keylessOpenRejected,
+        wrongSecretRejected,
+      },
+      nativeSaveIntentProbe: intentProbe,
+      secureIntentFileAttributes: intentFileAttributes,
+    },
+    null,
+    2,
+  );
+  if (intentBootstrap.status !== "ready") {
+    setStatus(`Secure Save Intent bootstrap unavailable: ${intentBootstrap.status}`, true);
     return;
   }
 
@@ -163,7 +327,7 @@ async function boot(): Promise<void> {
   try {
     await openLocalJournalDatabase();
     await renderEntries();
-    setStatus("Diagnostics準備完了（SQLite foundation）。");
+    setStatus("Diagnostics準備完了（SQLite foundation + secure Save Intent store）。");
   } catch (err) {
     setStatus(`初期化失敗: ${String(err)}`, true);
   }

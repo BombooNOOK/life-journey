@@ -3,7 +3,10 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const getViewerEmailFromCookie = vi.fn();
 const isJournalSaveIdempotencyEnabled = vi.fn();
 const findRollout = vi.fn();
-const findOperation = vi.fn();
+const findManyOperations = vi.fn();
+const resolveJournalSaveWriteActorKey = vi.fn();
+const resolveJournalSaveRecoveryAuthority = vi.fn();
+const observeJournalIdentityShadow = vi.fn();
 
 vi.mock("@/lib/auth/viewer", () => ({
   getViewerEmailFromCookie,
@@ -12,10 +15,27 @@ vi.mock("@/lib/auth/viewer", () => ({
 vi.mock("@/lib/journal/saveIdempotency/journalSaveIdempotencyGate", () => ({
   isJournalSaveIdempotencyEnabled,
 }));
+vi.mock("@/lib/auth/observeJournalIdentityShadow", () => ({
+  observeJournalIdentityShadow,
+}));
+vi.mock("@/lib/journal/saveIdempotency/resolveJournalSaveWriteActorKey", () => ({
+  resolveJournalSaveWriteActorKey,
+  stableJsoWriteRejectHttp: (reason: string) => ({
+    status: reason === "verified_session_required" ? 401 : 409,
+    body: {
+      error: "安定したアカウント識別子を確認できませんでした。",
+      code: "STABLE_IDENTITY_REQUIRED",
+      state: reason,
+    },
+  }),
+}));
+vi.mock("@/lib/journal/saveIdempotency/resolveJournalSaveRecoveryAuthority", () => ({
+  resolveJournalSaveRecoveryAuthority,
+}));
 vi.mock("@/lib/db", () => ({
   prisma: {
     journalSaveIdempotencyRollout: { findUnique: findRollout },
-    journalSaveOperation: { findUnique: findOperation },
+    journalSaveOperation: { findMany: findManyOperations },
   },
 }));
 
@@ -25,6 +45,14 @@ const lookup = await import("@/app/api/journal/save-operations/[saveOperationId]
 describe("4B-4AI-1 capability + lookup route contracts", () => {
   beforeEach(() => {
     vi.resetAllMocks();
+    resolveJournalSaveWriteActorKey.mockResolvedValue({
+      mode: "legacy",
+      actorKey: "person@example.com",
+    });
+    resolveJournalSaveRecoveryAuthority.mockResolvedValue({
+      mode: "legacy",
+      actorKeys: ["owner@ljd.invalid"],
+    });
   });
 
   it("uses cookie identity only and fails capability closed", async () => {
@@ -38,6 +66,7 @@ describe("4B-4AI-1 capability + lookup route contracts", () => {
     expect(await (await capability.GET()).json()).toMatchObject({
       idempotentSaveEnabled: false,
       lookupSupported: false,
+      stableActorAdmission: false,
     });
     expect(findRollout).not.toHaveBeenCalled();
 
@@ -46,6 +75,7 @@ describe("4B-4AI-1 capability + lookup route contracts", () => {
     expect(await (await capability.GET()).json()).toMatchObject({
       idempotentSaveEnabled: false,
       foregroundRecoverySupported: false,
+      stableActorAdmission: false,
     });
   });
 
@@ -59,9 +89,30 @@ describe("4B-4AI-1 capability + lookup route contracts", () => {
       lookupSupported: true,
       foregroundRecoverySupported: true,
       automaticBackgroundRetry: false,
+      stableActorAdmission: false,
     });
     expect(findRollout).toHaveBeenCalledWith({
       where: { actorKey: "person@example.com" },
+      select: { enabled: true, protocolVersion: true },
+    });
+  });
+
+  it("stableActorAdmission true only for stable write actor with enabled rollout", async () => {
+    getViewerEmailFromCookie.mockResolvedValue("Person@Example.com");
+    isJournalSaveIdempotencyEnabled.mockReturnValue(true);
+    resolveJournalSaveWriteActorKey.mockResolvedValue({
+      mode: "stable",
+      actorKey: "firebase:uid-canary",
+      firebaseUid: "uid-canary",
+      identityId: "identity-1",
+    });
+    findRollout.mockResolvedValue({ enabled: true, protocolVersion: 1 });
+    expect(await (await capability.GET()).json()).toMatchObject({
+      idempotentSaveEnabled: true,
+      stableActorAdmission: true,
+    });
+    expect(findRollout).toHaveBeenCalledWith({
+      where: { actorKey: "firebase:uid-canary" },
       select: { enabled: true, protocolVersion: true },
     });
   });
@@ -81,9 +132,9 @@ describe("4B-4AI-1 capability + lookup route contracts", () => {
       { params: Promise.resolve({ saveOperationId: "bad" }) },
     );
     expect(invalid.status).toBe(400);
-    expect(findOperation).not.toHaveBeenCalled();
+    expect(findManyOperations).not.toHaveBeenCalled();
 
-    findOperation.mockResolvedValue(null);
+    findManyOperations.mockResolvedValue([]);
     const response = await lookup.GET(
       new Request(
         `https://ljd.invalid/api/journal/save-operations/01HXSAVEOPERATIONID00000001?requestFingerprint=${"a".repeat(64)}`,
@@ -91,12 +142,10 @@ describe("4B-4AI-1 capability + lookup route contracts", () => {
       { params: Promise.resolve({ saveOperationId: "01HXSAVEOPERATIONID00000001" }) },
     );
     expect(await response.json()).toEqual({ protocolVersion: 1, state: "not_found" });
-    expect(findOperation).toHaveBeenCalledWith({
+    expect(findManyOperations).toHaveBeenCalledWith({
       where: {
-        actorKey_saveOperationId: {
-          actorKey: "owner@ljd.invalid",
-          saveOperationId: "01HXSAVEOPERATIONID00000001",
-        },
+        saveOperationId: "01HXSAVEOPERATIONID00000001",
+        actorKey: { in: ["owner@ljd.invalid"] },
       },
       select: {
         status: true,
@@ -104,17 +153,20 @@ describe("4B-4AI-1 capability + lookup route contracts", () => {
         requestFingerprint: true,
         resultCode: true,
       },
+      take: 2,
     });
   });
 
   it("allows owner recovery after rollout/global OFF because lookup is not new admission", async () => {
     getViewerEmailFromCookie.mockResolvedValue("owner@ljd.invalid");
-    findOperation.mockResolvedValue({
-      status: "completed",
-      journalEntryId: "entry_1",
-      requestFingerprint: "a".repeat(64),
-      resultCode: "OK",
-    });
+    findManyOperations.mockResolvedValue([
+      {
+        status: "completed",
+        journalEntryId: "entry_1",
+        requestFingerprint: "a".repeat(64),
+        resultCode: "OK",
+      },
+    ]);
     const response = await lookup.GET(
       new Request(
         `https://ljd.invalid/api/journal/save-operations/01HXSAVEOPERATIONID00000001?requestFingerprint=${"a".repeat(64)}`,

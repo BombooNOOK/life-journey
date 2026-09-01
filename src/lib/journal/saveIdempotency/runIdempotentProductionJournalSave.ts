@@ -4,6 +4,7 @@
 
 import { NextResponse } from "next/server";
 
+import { observeJournalIdentityShadow } from "@/lib/auth/observeJournalIdentityShadow";
 import { normalizeEmail } from "@/lib/auth/viewer";
 import { prisma } from "@/lib/db";
 import { guardianColorNameForEntryDate } from "@/lib/journal/guardianColorForEntryDate";
@@ -21,6 +22,11 @@ import {
   entrySelect,
   type ProductionJournalSavePortContext,
 } from "@/lib/journal/saveIdempotency/productionJournalSavePorts";
+import { assessStableJsoFlagCombination } from "@/lib/journal/saveIdempotency/assessStableJsoFlagCombination";
+import {
+  resolveJournalSaveWriteActorKey,
+  stableJsoWriteRejectHttp,
+} from "@/lib/journal/saveIdempotency/resolveJournalSaveWriteActorKey";
 import { sumDonguriBalance } from "@/lib/loghouse/donguriLedger";
 import { findKanteiOrderForProfile } from "@/lib/profile/orderPerProfile";
 import type { ExecuteJournalSaveOperationOutcome } from "@/lib/journal/saveIdempotency/types";
@@ -114,7 +120,40 @@ export function mapIdempotencyOutcomeToStatus(
 export async function runIdempotentProductionJournalSave(
   input: IdempotentJournalSaveHttpInput,
 ): Promise<NextResponse> {
-  const actorKey = normalizeEmail(input.viewerEmail);
+  // Cookie-email remains the shadow comparison baseline (AI-X6.2).
+  const legacyCookieActorKey = normalizeEmail(input.viewerEmail);
+  try {
+    await observeJournalIdentityShadow({
+      route: "journal.save",
+      legacyCookieActorKey,
+      saveOperationId: input.saveOperationId,
+    });
+  } catch {
+    // Observe must never affect save authority (defense in depth).
+  }
+
+  // AI-X6.3: NEW JSO writes use firebase:<UID> only when stable-write flag ON.
+  // FLAG OFF → legacy email actorKey. No silent email fallback when flag ON.
+  const writeActor = await resolveJournalSaveWriteActorKey(input.viewerEmail);
+  if (writeActor.mode === "stable_rejected") {
+    const reject = stableJsoWriteRejectHttp(writeActor.reason);
+    return NextResponse.json(reject.body, {
+      status: reject.status,
+      ...JSON_NO_STORE,
+    });
+  }
+  if (writeActor.mode === "stable") {
+    // AI-X6.4: report unsafe write-ON/recovery-OFF; do not force recovery ON.
+    const combo = assessStableJsoFlagCombination();
+    if (combo.status === "unsafe") {
+      console.warn(
+        "[ljd-stable-jso]",
+        JSON.stringify({ status: "unsafe", reason: combo.reason }),
+      );
+    }
+  }
+  const actorKey = writeActor.actorKey;
+
   const store = createPrismaJournalSaveOperationStore(prisma);
   const ports = createProductionJournalSavePorts(input.portContext);
 

@@ -6,7 +6,15 @@ function secureSuffix(): string {
   return window.location.protocol === "https:" ? "; Secure" : "";
 }
 
-/** ミドルウェア用 `lj_logged_in` / `lj_user_email`（HTTPS では Secure） */
+/**
+ * Legacy / non-authoritative client cookies for middleware + display.
+ *
+ * AI-8.1a: `lj_logged_in` / `lj_user_email` remain for existing login UX, but
+ * MUST NOT be treated as verified identity. Future verified APIs use HttpOnly
+ * `lj_session` (Firebase session cookie) via getVerifiedViewerSession() only.
+ *
+ * HTTPS では Secure。HttpOnly ではない（document.cookie 書き込みのため）。
+ */
 export function syncLjAuthClientCookies(user: { email: string | null } | null): void {
   if (typeof document === "undefined") return;
   const s = secureSuffix();

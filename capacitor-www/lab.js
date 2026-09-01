@@ -10,10 +10,10 @@
       __defProp(target, name, { get: all[name], enumerable: true });
   };
 
-  // node_modules/@capacitor/core/dist/index.js
+  // ../life-journey-release-server-idempotency-off-prep/node_modules/@capacitor/core/dist/index.js
   var ExceptionCode, CapacitorException, getPlatformId, createCapacitor, initCapacitorGlobal, Capacitor, registerPlugin, WebPlugin, encode, decode, CapacitorCookiesPluginWeb, CapacitorCookies, readBlobAsBase64, normalizeHttpHeaders, buildUrlParams, buildRequestInit, CapacitorHttpPluginWeb, CapacitorHttp, SystemBarsStyle, SystemBarType, SystemBarsPluginWeb, SystemBars;
   var init_dist = __esm({
-    "node_modules/@capacitor/core/dist/index.js"() {
+    "../life-journey-release-server-idempotency-off-prep/node_modules/@capacitor/core/dist/index.js"() {
       (function(ExceptionCode2) {
         ExceptionCode2["Unimplemented"] = "UNIMPLEMENTED";
         ExceptionCode2["Unavailable"] = "UNAVAILABLE";
@@ -519,14 +519,14 @@
     }
   });
 
-  // node_modules/@capacitor-community/sqlite/dist/esm/web.js
+  // ../life-journey-release-server-idempotency-off-prep/node_modules/@capacitor-community/sqlite/dist/esm/web.js
   var web_exports = {};
   __export(web_exports, {
     CapacitorSQLiteWeb: () => CapacitorSQLiteWeb
   });
   var CapacitorSQLiteWeb;
   var init_web = __esm({
-    "node_modules/@capacitor-community/sqlite/dist/esm/web.js"() {
+    "../life-journey-release-server-idempotency-off-prep/node_modules/@capacitor-community/sqlite/dist/esm/web.js"() {
       init_dist();
       CapacitorSQLiteWeb = class extends WebPlugin {
         constructor() {
@@ -997,10 +997,10 @@
     }
   });
 
-  // node_modules/@capacitor/filesystem/dist/esm/definitions.js
+  // ../life-journey-release-server-idempotency-off-prep/node_modules/@capacitor/filesystem/dist/esm/definitions.js
   var Directory, Encoding;
   var init_definitions = __esm({
-    "node_modules/@capacitor/filesystem/dist/esm/definitions.js"() {
+    "../life-journey-release-server-idempotency-off-prep/node_modules/@capacitor/filesystem/dist/esm/definitions.js"() {
       (function(Directory2) {
         Directory2["Documents"] = "DOCUMENTS";
         Directory2["Data"] = "DATA";
@@ -1020,7 +1020,7 @@
     }
   });
 
-  // node_modules/@capacitor/filesystem/dist/esm/web.js
+  // ../life-journey-release-server-idempotency-off-prep/node_modules/@capacitor/filesystem/dist/esm/web.js
   var web_exports2 = {};
   __export(web_exports2, {
     FilesystemWeb: () => FilesystemWeb
@@ -1046,7 +1046,7 @@
   }
   var FilesystemWeb;
   var init_web2 = __esm({
-    "node_modules/@capacitor/filesystem/dist/esm/web.js"() {
+    "../life-journey-release-server-idempotency-off-prep/node_modules/@capacitor/filesystem/dist/esm/web.js"() {
       init_dist();
       init_definitions();
       FilesystemWeb = class _FilesystemWeb extends WebPlugin {
@@ -1593,14 +1593,14 @@
     }
   });
 
-  // plugins/ljd-local-security/dist/esm/web.js
+  // ../life-journey-release-server-idempotency-off-prep/plugins/ljd-local-security/dist/esm/web.js
   var web_exports3 = {};
   __export(web_exports3, {
     LjdLocalSecurityWeb: () => LjdLocalSecurityWeb
   });
   var LjdLocalSecurityWeb;
   var init_web3 = __esm({
-    "plugins/ljd-local-security/dist/esm/web.js"() {
+    "../life-journey-release-server-idempotency-off-prep/plugins/ljd-local-security/dist/esm/web.js"() {
       "use strict";
       init_dist();
       LjdLocalSecurityWeb = class extends WebPlugin {
@@ -1635,10 +1635,10 @@
   // src/lib/local-first/journal/database.ts
   init_dist();
 
-  // node_modules/@capacitor-community/sqlite/dist/esm/index.js
+  // ../life-journey-release-server-idempotency-off-prep/node_modules/@capacitor-community/sqlite/dist/esm/index.js
   init_dist();
 
-  // node_modules/@capacitor-community/sqlite/dist/esm/definitions.js
+  // ../life-journey-release-server-idempotency-off-prep/node_modules/@capacitor-community/sqlite/dist/esm/definitions.js
   var SQLiteConnection = class {
     constructor(sqlite) {
       this.sqlite = sqlite;
@@ -2463,7 +2463,7 @@
     }
   };
 
-  // node_modules/@capacitor-community/sqlite/dist/esm/index.js
+  // ../life-journey-release-server-idempotency-off-prep/node_modules/@capacitor-community/sqlite/dist/esm/index.js
   var CapacitorSQLite = registerPlugin("CapacitorSQLite", {
     web: () => Promise.resolve().then(() => (init_web(), web_exports)).then((m) => new m.CapacitorSQLiteWeb()),
     electron: () => window.CapacitorCustomPlatform.plugins.CapacitorSQLite
@@ -2587,10 +2587,10 @@ CREATE INDEX IF NOT EXISTS idx_local_media_journal
   // src/lib/local-first/journal/mediaStore.ts
   init_dist();
 
-  // node_modules/@capacitor/filesystem/dist/esm/index.js
+  // ../life-journey-release-server-idempotency-off-prep/node_modules/@capacitor/filesystem/dist/esm/index.js
   init_dist();
 
-  // node_modules/@capacitor/synapse/dist/synapse.mjs
+  // ../life-journey-release-server-idempotency-off-prep/node_modules/@capacitor/synapse/dist/synapse.mjs
   function s(t) {
     t.CapacitorUtils.Synapse = new Proxy(
       {},
@@ -2637,7 +2637,7 @@ CREATE INDEX IF NOT EXISTS idx_local_media_journal
     typeof window > "u" || (window.CapacitorUtils = window.CapacitorUtils || {}, window.Capacitor !== void 0 && !t ? s(window) : window.cordova !== void 0 && u(window));
   }
 
-  // node_modules/@capacitor/filesystem/dist/esm/index.js
+  // ../life-journey-release-server-idempotency-off-prep/node_modules/@capacitor/filesystem/dist/esm/index.js
   init_definitions();
   var Filesystem = registerPlugin("Filesystem", {
     web: () => Promise.resolve().then(() => (init_web2(), web_exports2)).then((m) => new m.FilesystemWeb())
@@ -2839,10 +2839,1052 @@ CREATE INDEX IF NOT EXISTS idx_local_media_journal
     }
   };
 
+  // src/lib/journal/clientSaveIntent/saveOperationId.ts
+  var MIN_LENGTH = 16;
+  var MAX_LENGTH = 64;
+  var PATTERN = /^[0-9A-Za-z_-]+$/;
+  function normalizeClientActorKey(viewerEmail) {
+    return viewerEmail.trim().toLowerCase();
+  }
+  function isValidClientSaveOperationId(value) {
+    return value.length >= MIN_LENGTH && value.length <= MAX_LENGTH && PATTERN.test(value);
+  }
+  function createClientSaveOperationId(random = crypto) {
+    const bytes = new Uint8Array(24);
+    random.getRandomValues(bytes);
+    const base64 = btoa(String.fromCharCode(...bytes)).replaceAll("+", "-").replaceAll("/", "_").replaceAll("=", "");
+    const id = `jso_${base64}`;
+    if (!isValidClientSaveOperationId(id)) {
+      throw new Error("generated_save_operation_id_invalid");
+    }
+    return id;
+  }
+
+  // src/lib/journal/clientSaveIntent/ClientSaveOperationIntentService.ts
+  function nowIso() {
+    return (/* @__PURE__ */ new Date()).toISOString();
+  }
+  function newIntentId() {
+    const bytes = new Uint8Array(16);
+    crypto.getRandomValues(bytes);
+    return `intent_${Array.from(bytes, (byte) => byte.toString(16).padStart(2, "0")).join("")}`;
+  }
+  async function prepareClientSaveOperationIntent(store, input) {
+    const actorKey = normalizeClientActorKey(input.viewerEmail);
+    const requestFingerprint = input.requestFingerprint.trim();
+    const saveOperationId = (input.saveOperationId ?? createClientSaveOperationId()).trim();
+    if (!actorKey) throw new Error("viewer_email_required");
+    if (!requestFingerprint) throw new Error("request_fingerprint_required");
+    if (!isValidClientSaveOperationId(saveOperationId)) {
+      throw new Error("save_operation_id_invalid");
+    }
+    const now = input.now ?? nowIso();
+    const candidate = {
+      intentId: newIntentId(),
+      saveOperationId,
+      actorKey,
+      draftRef: input.draftRef ?? null,
+      requestFingerprint,
+      status: "prepared",
+      serverEntryId: null,
+      failureCode: null,
+      createdAt: now,
+      updatedAt: now,
+      lastAttemptAt: null,
+      completedAt: null
+    };
+    const insert = await store.tryInsert(candidate);
+    if (insert.created) return { kind: "created", intent: insert.intent };
+    if (insert.intent.actorKey !== actorKey || insert.intent.requestFingerprint !== requestFingerprint) {
+      return { kind: "conflict", intent: insert.intent };
+    }
+    return { kind: "existing", intent: insert.intent };
+  }
+
+  // src/lib/journal/clientSaveIntent/lifecycle.ts
+  var ALLOWED_TRANSITIONS = {
+    prepared: [
+      "prepared",
+      "awaiting_result",
+      "server_completed",
+      "completed",
+      "recovery_required",
+      "failed_final"
+    ],
+    awaiting_result: [
+      "awaiting_result",
+      "server_completed",
+      "completed",
+      "recovery_required",
+      "failed_final"
+    ],
+    server_completed: ["server_completed", "completed"],
+    completed: ["completed"],
+    // A recovery-required intent can still learn that the server finished the
+    // operation, so it must be able to move forward without a new attempt.
+    recovery_required: [
+      "recovery_required",
+      "awaiting_result",
+      "server_completed",
+      "failed_final"
+    ],
+    failed_final: ["failed_final"]
+  };
+  function isClientSaveOperationIntentTransitionAllowed(from, to) {
+    return ALLOWED_TRANSITIONS[from].includes(to);
+  }
+  function assertClientSaveOperationIntentTransition(from, to) {
+    if (!isClientSaveOperationIntentTransitionAllowed(from, to)) {
+      throw new Error(`intent_transition_invalid:${from}->${to}`);
+    }
+  }
+
+  // src/lib/journal/clientSaveIntent/types.ts
+  var CLIENT_SAVE_OPERATION_INTENT_DB_NAME = "ljd_client_save_operation_intent";
+  var CLIENT_SAVE_OPERATION_INTENT_SCHEMA_VERSION = 3;
+  var CLIENT_SAVE_EXACT_PAYLOAD_VERSION = 1;
+
+  // src/lib/journal/contentFontMode.ts
+  var CONTENT_FONT_MODES = ["relaxed", "standard", "generous", "compact"];
+  var DEFAULT_CONTENT_FONT_MODE = "standard";
+  function isContentFontMode(value) {
+    return CONTENT_FONT_MODES.includes(value);
+  }
+
+  // src/lib/journal/meta.ts
+  var companionTypes = [
+    "owl",
+    "hedgehog",
+    "squirrel",
+    "sloth",
+    "frog"
+  ];
+  function isCompanionType(value) {
+    return companionTypes.includes(value);
+  }
+  var diaryDesignOptions = [
+    { id: "simple_plain", label: "\u30B7\u30F3\u30D7\u30EB\u7CFB\uFF08\u7F6B\u7DDA\u306A\u3057\uFF09" }
+  ];
+  var diaryDesignIds = diaryDesignOptions.map((d) => d.id);
+  function normalizeDiaryDesignTheme(value) {
+    const t = value.trim();
+    if (t === "simple_plain") return "simple_plain";
+    if (t === "simple" || t === "cute" || t === "cute_plain") return "simple_plain";
+    return "simple_plain";
+  }
+  function isAllowedDiaryDesignThemeRaw(raw) {
+    const t = raw.trim();
+    return t === "" || t === "simple_plain" || t === "simple" || t === "cute" || t === "cute_plain";
+  }
+  var moodOptions = [
+    { id: "happy", label: "\u3046\u308C\u3057\u3044", emoji: "\u{1F60A}" },
+    { id: "calm", label: "\u304A\u3060\u3084\u304B", emoji: "\u{1F642}" },
+    { id: "normal", label: "\u3075\u3064\u3046", emoji: "\u{1F60C}" },
+    { id: "tired", label: "\u3064\u304B\u308C\u305F", emoji: "\u{1F62E}\u200D\u{1F4A8}" },
+    { id: "moody", label: "\u3082\u3084\u3082\u3084", emoji: "\u{1F614}" }
+  ];
+  var moodOptionIds = moodOptions.map((m) => m.id);
+  var activityOptions = [
+    { id: "work_study", label: "\u4ED5\u4E8B\u30FB\u52C9\u5F37\u3092\u304C\u3093\u3070\u3063\u305F" },
+    { id: "family_friends", label: "\u5BB6\u65CF\u30FB\u53CB\u4EBA\u3068\u904E\u3054\u3057\u305F" },
+    { id: "new_challenge", label: "\u65B0\u3057\u3044\u3053\u3068\u3092\u3057\u305F" },
+    { id: "rest", label: "\u3086\u3063\u304F\u308A\u4F11\u3093\u3060" },
+    { id: "organize", label: "\u6574\u7406\u30FB\u7247\u3065\u3051\u3092\u3057\u305F" },
+    { id: "enjoyed", label: "\u597D\u304D\u306A\u3053\u3068\u3092\u697D\u3057\u3093\u3060" },
+    { id: "outing", label: "\u79FB\u52D5\u30FB\u304A\u3067\u304B\u3051\u3092\u3057\u305F" },
+    { id: "health_care", label: "\u4F53\u8ABF\u3092\u6574\u3048\u305F" },
+    { id: "very_happy", label: "\u3068\u3066\u3082\u5B09\u3057\u3044\u3053\u3068\u304C\u3042\u3063\u305F" },
+    { id: "emotional_wave", label: "\u5FC3\u304C\u3056\u308F\u3064\u3044\u305F" },
+    { id: "hard_day", label: "\u3057\u3093\u3069\u304B\u3063\u305F" },
+    { id: "sad", label: "\u60B2\u3057\u3044\u6C17\u6301\u3061\u304C\u3042\u3063\u305F" },
+    { id: "anxious", label: "\u4E0D\u5B89\u304C\u5F37\u304B\u3063\u305F" },
+    { id: "irritated", label: "\u30A4\u30E9\u30A4\u30E9\u3057\u305F" },
+    { id: "lost_confidence", label: "\u81EA\u4FE1\u3092\u306A\u304F\u3057\u305F" },
+    { id: "no_energy", label: "\u4F55\u3082\u3057\u305F\u304F\u306A\u3044\u65E5\u3060\u3063\u305F" },
+    { id: "down", label: "\u3046\u307E\u304F\u3044\u304B\u305A\u843D\u3061\u8FBC\u3093\u3060" },
+    { id: "record_anyway", label: "\u7279\u5225\u306A\u3053\u3068\u306F\u306A\u3044\u3051\u308C\u3069\u3001\u8A18\u9332\u3057\u305F\u3044" }
+  ];
+  var activityOptionIds = activityOptions.map((a) => a.id);
+  function isMoodId(value) {
+    return moodOptionIds.includes(value);
+  }
+  function isActivityId(value) {
+    return activityOptionIds.includes(value);
+  }
+
+  // scripts/ai7-local-assets-node-crypto-shim.js
+  var K = new Uint32Array([
+    1116352408,
+    1899447441,
+    3049323471,
+    3921009573,
+    961987163,
+    1508970993,
+    2453635748,
+    2870763221,
+    3624381080,
+    310598401,
+    607225278,
+    1426881987,
+    1925078388,
+    2162078206,
+    2614888103,
+    3248222580,
+    3835390401,
+    4022224774,
+    264347078,
+    604807628,
+    770255983,
+    1249150122,
+    1555081692,
+    1996064986,
+    2554220882,
+    2821834349,
+    2952996808,
+    3210313671,
+    3336571891,
+    3584528711,
+    113926993,
+    338241895,
+    666307205,
+    773529912,
+    1294757372,
+    1396182291,
+    1695183700,
+    1986661051,
+    2177026350,
+    2456956037,
+    2730485921,
+    2820302411,
+    3259730800,
+    3345764771,
+    3516065817,
+    3600352804,
+    4094571909,
+    275423344,
+    430227734,
+    506948616,
+    659060556,
+    883997877,
+    958139571,
+    1322822218,
+    1537002063,
+    1747873779,
+    1955562222,
+    2024104815,
+    2227730452,
+    2361852424,
+    2428436474,
+    2756734187,
+    3204031479,
+    3329325298
+  ]);
+  function rotr(value, bits) {
+    return value >>> bits | value << 32 - bits;
+  }
+  function sha256Bytes(message) {
+    const bitLen = message.length * 8;
+    const paddedLen = message.length + 9 + 63 >> 6 << 6;
+    const padded = new Uint8Array(paddedLen);
+    padded.set(message);
+    padded[message.length] = 128;
+    const view = new DataView(padded.buffer);
+    view.setUint32(paddedLen - 4, bitLen >>> 0, false);
+    let h0 = 1779033703;
+    let h1 = 3144134277;
+    let h2 = 1013904242;
+    let h3 = 2773480762;
+    let h4 = 1359893119;
+    let h5 = 2600822924;
+    let h6 = 528734635;
+    let h7 = 1541459225;
+    const w = new Uint32Array(64);
+    for (let offset = 0; offset < paddedLen; offset += 64) {
+      for (let i = 0; i < 16; i += 1) {
+        w[i] = view.getUint32(offset + i * 4, false);
+      }
+      for (let i = 16; i < 64; i += 1) {
+        const s0 = rotr(w[i - 15], 7) ^ rotr(w[i - 15], 18) ^ w[i - 15] >>> 3;
+        const s1 = rotr(w[i - 2], 17) ^ rotr(w[i - 2], 19) ^ w[i - 2] >>> 10;
+        w[i] = w[i - 16] + s0 + w[i - 7] + s1 >>> 0;
+      }
+      let a = h0;
+      let b = h1;
+      let c = h2;
+      let d = h3;
+      let e = h4;
+      let f2 = h5;
+      let g = h6;
+      let h = h7;
+      for (let i = 0; i < 64; i += 1) {
+        const S1 = rotr(e, 6) ^ rotr(e, 11) ^ rotr(e, 25);
+        const ch = e & f2 ^ ~e & g;
+        const temp1 = h + S1 + ch + K[i] + w[i] >>> 0;
+        const S0 = rotr(a, 2) ^ rotr(a, 13) ^ rotr(a, 22);
+        const maj = a & b ^ a & c ^ b & c;
+        const temp2 = S0 + maj >>> 0;
+        h = g;
+        g = f2;
+        f2 = e;
+        e = d + temp1 >>> 0;
+        d = c;
+        c = b;
+        b = a;
+        a = temp1 + temp2 >>> 0;
+      }
+      h0 = h0 + a >>> 0;
+      h1 = h1 + b >>> 0;
+      h2 = h2 + c >>> 0;
+      h3 = h3 + d >>> 0;
+      h4 = h4 + e >>> 0;
+      h5 = h5 + f2 >>> 0;
+      h6 = h6 + g >>> 0;
+      h7 = h7 + h >>> 0;
+    }
+    const out = new Uint8Array(32);
+    const outView = new DataView(out.buffer);
+    outView.setUint32(0, h0, false);
+    outView.setUint32(4, h1, false);
+    outView.setUint32(8, h2, false);
+    outView.setUint32(12, h3, false);
+    outView.setUint32(16, h4, false);
+    outView.setUint32(20, h5, false);
+    outView.setUint32(24, h6, false);
+    outView.setUint32(28, h7, false);
+    return out;
+  }
+  function toBytes(data, encoding) {
+    if (typeof data === "string") {
+      if (encoding && encoding !== "utf8" && encoding !== "utf-8") {
+        throw new Error(`unsupported hash encoding: ${encoding}`);
+      }
+      return new TextEncoder().encode(data);
+    }
+    if (data instanceof Uint8Array) return data;
+    if (ArrayBuffer.isView(data)) {
+      return new Uint8Array(data.buffer, data.byteOffset, data.byteLength);
+    }
+    throw new Error("unsupported hash input");
+  }
+  function bytesToHex(bytes) {
+    return Array.from(bytes, (byte) => byte.toString(16).padStart(2, "0")).join("");
+  }
+  function createHash(algorithm) {
+    const alg = String(algorithm).toLowerCase();
+    if (alg !== "sha256") {
+      throw new Error(`local-assets crypto shim supports sha256 only: ${algorithm}`);
+    }
+    const chunks = [];
+    return {
+      update(data, encoding) {
+        chunks.push(toBytes(data, encoding));
+        return this;
+      },
+      digest(encoding) {
+        let total = 0;
+        for (const chunk of chunks) total += chunk.length;
+        const message = new Uint8Array(total);
+        let offset = 0;
+        for (const chunk of chunks) {
+          message.set(chunk, offset);
+          offset += chunk.length;
+        }
+        const digest = sha256Bytes(message);
+        if (encoding === "hex" || encoding === void 0) return bytesToHex(digest);
+        if (encoding === "bytes") return digest;
+        throw new Error(`unsupported digest encoding: ${encoding}`);
+      }
+    };
+  }
+
+  // src/lib/journal/saveIdempotency/requestFingerprint.ts
+  function buildJournalSaveRequestFingerprint(input) {
+    const contentHash = input.contentHash.trim().toLowerCase();
+    const entryDate = input.entryDate.trim();
+    const photoIdentity = input.photoIdentity.trim() || "none";
+    return `v1|${contentHash}|${entryDate}|${photoIdentity}`;
+  }
+
+  // src/lib/journal/saveIdempotency/productionRequestFingerprint.ts
+  function sha256Hex(text) {
+    return createHash("sha256").update(text, "utf8").digest("hex");
+  }
+  function photoIdentityFromPatch(input) {
+    if (input.kind === "remove") return "remove";
+    if (input.kind === "set" && input.dataUrl) {
+      return `photo:${sha256Hex(input.dataUrl)}`;
+    }
+    return "none";
+  }
+  function buildProductionJournalSaveFingerprint(input) {
+    const contentHash = sha256Hex(input.content);
+    const base = buildJournalSaveRequestFingerprint({
+      contentHash,
+      entryDate: input.entryDate,
+      photoIdentity: input.photoIdentity
+    });
+    const meta = [
+      `profile:${input.profileId.trim()}`,
+      `mood:${input.mood}`,
+      `activity:${input.activity}`,
+      `companion:${input.companionType}`,
+      `theme:${input.designTheme}`,
+      `font:${input.contentFontMode}`,
+      `book:${input.includeInBook ? "1" : "0"}`
+    ].join("|");
+    return `${base}|${meta}`;
+  }
+
+  // src/lib/journal/clientSaveIntent/exactPayloadCanonical.ts
+  var JOURNAL_PHOTO_DATA_URL_MAX_CHARS = 2e6;
+  var JOURNAL_CONTENT_MAX_CHARS = 2e3;
+  var REQUEST_JSON_MAX_BYTES = 21e5;
+  var FORBIDDEN_REQUEST_KEYS = [
+    "email",
+    "viewerEmail",
+    "actorKey",
+    "cookie",
+    "cookies",
+    "token",
+    "authorization",
+    "secret",
+    "password",
+    "passphrase"
+  ];
+  function asRecord(value) {
+    if (typeof value !== "object" || value === null || Array.isArray(value)) return null;
+    return value;
+  }
+  function parseEntryDate(raw) {
+    const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(raw.trim());
+    if (!m) return null;
+    const y = Number(m[1]);
+    const mon = Number(m[2]);
+    const d = Number(m[3]);
+    const probe = new Date(Date.UTC(y, mon - 1, d, 12, 0, 0));
+    if (probe.getUTCFullYear() !== y || probe.getUTCMonth() !== mon - 1 || probe.getUTCDate() !== d) {
+      return null;
+    }
+    return `${m[1]}-${m[2]}-${m[3]}`;
+  }
+  function utf8ByteLength(text) {
+    return new TextEncoder().encode(text).length;
+  }
+  function stringifyCanonicalJournalSaveRequest(request) {
+    const ordered = {
+      saveOperationId: request.saveOperationId,
+      content: request.content,
+      entryDate: request.entryDate,
+      profileId: request.profileId,
+      mood: request.mood,
+      activity: request.activity,
+      companionType: request.companionType,
+      designTheme: request.designTheme,
+      contentFontMode: request.contentFontMode,
+      includeInBook: request.includeInBook
+    };
+    if (typeof request.photoDataUrl === "string") {
+      ordered.photoDataUrl = request.photoDataUrl;
+    }
+    if (request.photoRemoved === true) {
+      ordered.photoRemoved = true;
+    }
+    return JSON.stringify(ordered);
+  }
+  function fingerprintCanonicalJournalSaveRequest(request) {
+    const photoIdentity = request.photoRemoved ? photoIdentityFromPatch({ kind: "remove" }) : request.photoDataUrl ? photoIdentityFromPatch({ kind: "set", dataUrl: request.photoDataUrl }) : photoIdentityFromPatch({ kind: "unchanged" });
+    return buildProductionJournalSaveFingerprint({
+      content: request.content,
+      entryDate: request.entryDate,
+      profileId: request.profileId,
+      mood: request.mood,
+      activity: request.activity,
+      companionType: request.companionType,
+      designTheme: request.designTheme,
+      contentFontMode: request.contentFontMode,
+      includeInBook: request.includeInBook,
+      photoIdentity
+    });
+  }
+  function canonicalizeExactJournalSavePayload(input) {
+    const body = asRecord(input.payload);
+    if (!body) {
+      return { ok: false, code: "content_invalid" };
+    }
+    for (const key of FORBIDDEN_REQUEST_KEYS) {
+      if (Object.prototype.hasOwnProperty.call(body, key)) {
+        return { ok: false, code: "forbidden_key" };
+      }
+    }
+    const saveOperationId = input.saveOperationId.trim();
+    if (!isValidClientSaveOperationId(saveOperationId)) {
+      return { ok: false, code: "save_operation_id_invalid" };
+    }
+    const content = typeof body.content === "string" ? body.content.trim() : "";
+    if (!content || content.length > JOURNAL_CONTENT_MAX_CHARS) {
+      return { ok: false, code: "content_invalid" };
+    }
+    const entryDate = parseEntryDate(
+      typeof body.entryDate === "string" ? body.entryDate : ""
+    );
+    if (!entryDate) return { ok: false, code: "entry_date_invalid" };
+    const profileId = typeof body.profileId === "string" ? body.profileId.trim() : typeof body.effectiveProfileId === "string" ? body.effectiveProfileId.trim() : "";
+    if (!profileId) return { ok: false, code: "profile_id_required" };
+    const moodRaw = typeof body.mood === "string" && body.mood.trim() ? body.mood.trim() : "calm";
+    if (!isMoodId(moodRaw)) return { ok: false, code: "mood_invalid" };
+    const activityRaw = typeof body.activity === "string" && body.activity.trim() ? body.activity.trim() : "record_anyway";
+    if (!isActivityId(activityRaw)) return { ok: false, code: "activity_invalid" };
+    const companionRaw = typeof body.companionType === "string" && body.companionType.trim() ? body.companionType.trim() : "owl";
+    if (!isCompanionType(companionRaw)) {
+      return { ok: false, code: "companion_invalid" };
+    }
+    const themeRaw = typeof body.designTheme === "string" ? body.designTheme : "simple";
+    if (!isAllowedDiaryDesignThemeRaw(themeRaw)) {
+      return { ok: false, code: "design_theme_invalid" };
+    }
+    const designTheme = normalizeDiaryDesignTheme(themeRaw.trim() || "simple");
+    let contentFontMode = DEFAULT_CONTENT_FONT_MODE;
+    if ("contentFontMode" in body && body.contentFontMode != null && body.contentFontMode !== "") {
+      if (typeof body.contentFontMode !== "string" || !isContentFontMode(body.contentFontMode.trim())) {
+        return { ok: false, code: "content_font_mode_invalid" };
+      }
+      contentFontMode = body.contentFontMode.trim();
+    }
+    const includeInBook = typeof body.includeInBook === "boolean" ? body.includeInBook : true;
+    const hasPhotoDataUrl = Object.prototype.hasOwnProperty.call(body, "photoDataUrl");
+    const photoRemoved = body.photoRemoved === true;
+    if (photoRemoved && hasPhotoDataUrl) {
+      return { ok: false, code: "photo_ambiguous" };
+    }
+    const request = {
+      saveOperationId,
+      content,
+      entryDate,
+      profileId,
+      mood: moodRaw,
+      activity: activityRaw,
+      companionType: companionRaw,
+      designTheme,
+      contentFontMode,
+      includeInBook
+    };
+    if (photoRemoved) {
+      request.photoRemoved = true;
+    } else if (hasPhotoDataUrl) {
+      const raw = String(body.photoDataUrl ?? "").trim();
+      if (!raw) return { ok: false, code: "photo_ambiguous" };
+      if (raw.length > JOURNAL_PHOTO_DATA_URL_MAX_CHARS) {
+        return { ok: false, code: "photo_too_large" };
+      }
+      request.photoDataUrl = raw;
+    }
+    const requestJson = stringifyCanonicalJournalSaveRequest(request);
+    const requestByteLength = utf8ByteLength(requestJson);
+    if (requestByteLength > REQUEST_JSON_MAX_BYTES) {
+      return { ok: false, code: "payload_too_large" };
+    }
+    return {
+      ok: true,
+      request,
+      requestJson,
+      requestFingerprint: fingerprintCanonicalJournalSaveRequest(request),
+      requestByteLength
+    };
+  }
+  function parseStoredRequestJson(requestJson) {
+    try {
+      const parsed = JSON.parse(requestJson);
+      const recanon = canonicalizeExactJournalSavePayload({
+        saveOperationId: typeof parsed?.saveOperationId === "string" ? parsed.saveOperationId : "",
+        payload: parsed
+      });
+      if (!recanon.ok) return null;
+      if (recanon.requestJson !== requestJson) return null;
+      return recanon.request;
+    } catch {
+      return null;
+    }
+  }
+
+  // src/lib/journal/clientSaveIntent/durableExactPayload.ts
+  async function applyPersistPreparedIntentWithExactPayload(tx, input) {
+    if (input.payload === null || typeof input.payload !== "object" || Array.isArray(input.payload)) {
+      return { kind: "rejected", code: "content_invalid" };
+    }
+    const canonical = canonicalizeExactJournalSavePayload({
+      saveOperationId: input.intent.saveOperationId,
+      payload: {
+        ...input.payload,
+        saveOperationId: input.intent.saveOperationId
+      }
+    });
+    if (!canonical.ok) return { kind: "rejected", code: canonical.code };
+    if (input.intent.requestFingerprint !== canonical.requestFingerprint) {
+      return { kind: "rejected", code: "fingerprint_mismatch" };
+    }
+    const existingIntent = await tx.findIntent(input.intent.saveOperationId);
+    const existingPayload = existingIntent ? await tx.findPayload(input.intent.saveOperationId) : null;
+    if (existingIntent && !existingPayload) {
+      return { kind: "intent_without_payload", intent: existingIntent };
+    }
+    if (existingIntent && existingPayload) {
+      if (existingPayload.requestJson === canonical.requestJson && existingPayload.requestFingerprint === canonical.requestFingerprint && existingIntent.requestFingerprint === canonical.requestFingerprint) {
+        return {
+          kind: "already_exists",
+          intent: existingIntent,
+          payload: existingPayload
+        };
+      }
+      return { kind: "payload_conflict", intent: existingIntent };
+    }
+    const payloadRow = {
+      saveOperationId: input.intent.saveOperationId,
+      payloadVersion: CLIENT_SAVE_EXACT_PAYLOAD_VERSION,
+      requestJson: canonical.requestJson,
+      requestFingerprint: canonical.requestFingerprint,
+      requestByteLength: canonical.requestByteLength,
+      createdAt: input.intent.createdAt
+    };
+    await tx.insertIntent(input.intent);
+    await tx.insertPayload(payloadRow);
+    return { kind: "created", intent: input.intent, payload: payloadRow };
+  }
+  function verifyLoadedExactPayload(record, intentFingerprint) {
+    const request = parseStoredRequestJson(record.requestJson);
+    if (!request) return { kind: "corrupt" };
+    const recomputed = fingerprintCanonicalJournalSaveRequest(request);
+    if (recomputed !== record.requestFingerprint || intentFingerprint !== void 0 && intentFingerprint !== recomputed) {
+      return { kind: "fingerprint_mismatch", payload: record };
+    }
+    return { kind: "ok", payload: record, request };
+  }
+  async function applyDeleteExactPayloadIfCompleted(tx, input) {
+    const intent = await tx.findIntent(input.saveOperationId);
+    if (!intent) {
+      return { kind: "blocked", reason: "intent_missing", saveOperationId: input.saveOperationId };
+    }
+    if (intent.actorKey !== input.actorKey) {
+      return {
+        kind: "blocked",
+        reason: "actor_mismatch",
+        saveOperationId: input.saveOperationId,
+        status: intent.status
+      };
+    }
+    if (intent.status !== "completed" || !intent.serverEntryId) {
+      return {
+        kind: "blocked",
+        reason: "intent_not_completed",
+        saveOperationId: input.saveOperationId,
+        status: intent.status
+      };
+    }
+    const payload = await tx.findPayload(input.saveOperationId);
+    if (!payload) {
+      return { kind: "already_absent", saveOperationId: input.saveOperationId };
+    }
+    await tx.deletePayload(input.saveOperationId);
+    return { kind: "deleted", saveOperationId: input.saveOperationId };
+  }
+
+  // src/lib/journal/clientSaveIntent/NativeClientSaveOperationIntentStore.ts
+  init_dist();
+
+  // src/lib/journal/clientSaveIntent/clientSaveIntentSqlStore.ts
+  var CREATE_INTENT_SQL = `
+CREATE TABLE IF NOT EXISTS client_save_operation_intent (
+  intent_id TEXT PRIMARY KEY NOT NULL,
+  save_operation_id TEXT NOT NULL UNIQUE,
+  actor_key TEXT NOT NULL,
+  draft_ref TEXT,
+  request_fingerprint TEXT NOT NULL,
+  status TEXT NOT NULL,
+  server_entry_id TEXT,
+  failure_code TEXT,
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL,
+  last_attempt_at TEXT,
+  completed_at TEXT
+);`;
+  var CREATE_TOMBSTONE_SQL = `
+CREATE TABLE IF NOT EXISTS client_save_operation_deletion_tombstone (
+  actor_key TEXT PRIMARY KEY NOT NULL,
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL
+);`;
+  var CREATE_PAYLOAD_SQL = `
+CREATE TABLE IF NOT EXISTS client_save_operation_payload (
+  save_operation_id TEXT PRIMARY KEY NOT NULL,
+  payload_version INTEGER NOT NULL,
+  request_json TEXT NOT NULL,
+  request_fingerprint TEXT NOT NULL,
+  request_byte_length INTEGER NOT NULL,
+  created_at TEXT NOT NULL,
+  FOREIGN KEY (save_operation_id) REFERENCES client_save_operation_intent(save_operation_id)
+);`;
+  var REQUIRED_COLUMNS = [
+    "intent_id",
+    "save_operation_id",
+    "actor_key",
+    "draft_ref",
+    "request_fingerprint",
+    "status",
+    "server_entry_id",
+    "failure_code",
+    "created_at",
+    "updated_at",
+    "last_attempt_at",
+    "completed_at"
+  ];
+  var REQUIRED_PAYLOAD_COLUMNS = [
+    "save_operation_id",
+    "payload_version",
+    "request_json",
+    "request_fingerprint",
+    "request_byte_length",
+    "created_at"
+  ];
+  async function ensureClientSaveIntentSchema(db2) {
+    const versionResult = await db2.query("PRAGMA user_version");
+    const version = Number(versionResult.values?.[0]?.user_version ?? -1);
+    if (version === 0) {
+      const existing = await db2.query(
+        "SELECT name FROM sqlite_master WHERE type = 'table' AND name = ? LIMIT 1",
+        ["client_save_operation_intent"]
+      );
+      if (existing.values?.length) {
+        throw new Error("intent_schema_partial_or_unversioned");
+      }
+      await db2.execute(CREATE_INTENT_SQL);
+      await db2.execute(CREATE_TOMBSTONE_SQL);
+      await db2.execute(CREATE_PAYLOAD_SQL);
+      await db2.execute(`PRAGMA user_version = ${CLIENT_SAVE_OPERATION_INTENT_SCHEMA_VERSION}`);
+      return;
+    }
+    if (version === 1) {
+      await db2.execute(CREATE_TOMBSTONE_SQL);
+      await db2.execute(CREATE_PAYLOAD_SQL);
+      await db2.execute(`PRAGMA user_version = ${CLIENT_SAVE_OPERATION_INTENT_SCHEMA_VERSION}`);
+    } else if (version === 2) {
+      await db2.execute(CREATE_PAYLOAD_SQL);
+      await db2.execute(`PRAGMA user_version = ${CLIENT_SAVE_OPERATION_INTENT_SCHEMA_VERSION}`);
+    } else if (version !== CLIENT_SAVE_OPERATION_INTENT_SCHEMA_VERSION) {
+      throw new Error("intent_schema_version_unsupported");
+    }
+    const columns = await db2.query("PRAGMA table_info(client_save_operation_intent)");
+    const names = new Set(
+      (columns.values ?? []).map((column) => String(column.name))
+    );
+    if (REQUIRED_COLUMNS.some((column) => !names.has(column))) {
+      throw new Error("intent_schema_columns_invalid");
+    }
+    const payloadColumns = await db2.query("PRAGMA table_info(client_save_operation_payload)");
+    const payloadNames = new Set(
+      (payloadColumns.values ?? []).map(
+        (column) => String(column.name)
+      )
+    );
+    if (REQUIRED_PAYLOAD_COLUMNS.some((column) => !payloadNames.has(column))) {
+      throw new Error("intent_schema_columns_invalid");
+    }
+  }
+  async function withTransaction(db2, fn) {
+    if (db2.nativeTransaction) {
+      await db2.nativeTransaction.begin();
+      const tx = {
+        query: (sql, params) => db2.query(sql, params),
+        run: (sql, params) => db2.nativeTransaction.run(sql, params),
+        execute: () => {
+          throw new Error("execute_not_allowed_inside_native_transaction");
+        },
+        nativeTransaction: db2.nativeTransaction
+      };
+      try {
+        const result = await fn(tx);
+        await db2.nativeTransaction.commit();
+        return result;
+      } catch (error) {
+        try {
+          await db2.nativeTransaction.rollback();
+        } catch {
+        }
+        throw error;
+      }
+    }
+    await db2.execute("BEGIN");
+    try {
+      const result = await fn(db2);
+      await db2.execute("COMMIT");
+      return result;
+    } catch (error) {
+      try {
+        await db2.execute("ROLLBACK");
+      } catch {
+      }
+      throw error;
+    }
+  }
+  function mapRow(row) {
+    return {
+      intentId: String(row.intent_id),
+      saveOperationId: String(row.save_operation_id),
+      actorKey: String(row.actor_key),
+      draftRef: row.draft_ref == null ? null : String(row.draft_ref),
+      requestFingerprint: String(row.request_fingerprint),
+      status: String(row.status),
+      serverEntryId: row.server_entry_id == null ? null : String(row.server_entry_id),
+      failureCode: row.failure_code == null ? null : String(row.failure_code),
+      createdAt: String(row.created_at),
+      updatedAt: String(row.updated_at),
+      lastAttemptAt: row.last_attempt_at == null ? null : String(row.last_attempt_at),
+      completedAt: row.completed_at == null ? null : String(row.completed_at)
+    };
+  }
+  function mapPayloadRow(row) {
+    return {
+      saveOperationId: String(row.save_operation_id),
+      payloadVersion: 1,
+      requestJson: String(row.request_json),
+      requestFingerprint: String(row.request_fingerprint),
+      requestByteLength: Number(row.request_byte_length),
+      createdAt: String(row.created_at)
+    };
+  }
+  async function findIntent(db2, saveOperationId) {
+    const result = await db2.query(
+      "SELECT * FROM client_save_operation_intent WHERE save_operation_id = ? LIMIT 1",
+      [saveOperationId]
+    );
+    const row = result.values?.[0];
+    return row ? mapRow(row) : null;
+  }
+  async function findPayload(db2, saveOperationId) {
+    const result = await db2.query(
+      "SELECT * FROM client_save_operation_payload WHERE save_operation_id = ? LIMIT 1",
+      [saveOperationId]
+    );
+    const row = result.values?.[0];
+    return row ? mapPayloadRow(row) : null;
+  }
+  async function insertIntentRow(db2, intent) {
+    await db2.run(
+      `INSERT INTO client_save_operation_intent (
+      intent_id, save_operation_id, actor_key, draft_ref, request_fingerprint,
+      status, server_entry_id, failure_code, created_at, updated_at,
+      last_attempt_at, completed_at
+    ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)`,
+      [
+        intent.intentId,
+        intent.saveOperationId,
+        intent.actorKey,
+        intent.draftRef,
+        intent.requestFingerprint,
+        intent.status,
+        intent.serverEntryId,
+        intent.failureCode,
+        intent.createdAt,
+        intent.updatedAt,
+        intent.lastAttemptAt,
+        intent.completedAt
+      ]
+    );
+  }
+  async function insertPayloadRow(db2, row) {
+    await db2.run(
+      `INSERT INTO client_save_operation_payload (
+      save_operation_id, payload_version, request_json, request_fingerprint,
+      request_byte_length, created_at
+    ) VALUES (?,?,?,?,?,?)`,
+      [
+        row.saveOperationId,
+        row.payloadVersion,
+        row.requestJson,
+        row.requestFingerprint,
+        row.requestByteLength,
+        row.createdAt
+      ]
+    );
+  }
+  async function deletePayloadRow(db2, saveOperationId) {
+    await db2.run("DELETE FROM client_save_operation_payload WHERE save_operation_id = ?", [
+      saveOperationId
+    ]);
+  }
+  function createClientSaveDurableStoreFromSql(session) {
+    const store = {
+      async findByActorAndSaveOperationId(actorKey, saveOperationId) {
+        return session.withDb(async (db2) => {
+          const row = await findIntent(db2, saveOperationId);
+          return row?.actorKey === actorKey ? row : null;
+        });
+      },
+      async tryInsert(intent) {
+        return session.withDb(async (db2) => {
+          const existing = await findIntent(db2, intent.saveOperationId);
+          if (existing) return { created: false, intent: existing };
+          await insertIntentRow(db2, intent);
+          return { created: true, intent };
+        });
+      },
+      async update(intent) {
+        return session.withDb(async (db2) => {
+          const existing = await findIntent(db2, intent.saveOperationId);
+          if (!existing || existing.actorKey !== intent.actorKey) throw new Error("intent_missing");
+          assertClientSaveOperationIntentTransition(existing.status, intent.status);
+          await db2.run(
+            `UPDATE client_save_operation_intent SET
+            draft_ref=?, request_fingerprint=?, status=?, server_entry_id=?,
+            failure_code=?, updated_at=?, last_attempt_at=?, completed_at=?
+           WHERE save_operation_id=? AND actor_key=?`,
+            [
+              intent.draftRef,
+              intent.requestFingerprint,
+              intent.status,
+              intent.serverEntryId,
+              intent.failureCode,
+              intent.updatedAt,
+              intent.lastAttemptAt,
+              intent.completedAt,
+              intent.saveOperationId,
+              intent.actorKey
+            ]
+          );
+          const updated = await findIntent(db2, intent.saveOperationId);
+          if (!updated || updated.actorKey !== intent.actorKey) throw new Error("intent_missing");
+          return updated;
+        });
+      },
+      async listRecoverableByActor(actorKey) {
+        return session.withDb(async (db2) => {
+          const result = await db2.query(
+            `SELECT * FROM client_save_operation_intent
+           WHERE actor_key = ? AND status IN ('prepared','awaiting_result','server_completed','recovery_required')
+           ORDER BY created_at ASC`,
+            [actorKey]
+          );
+          return (result.values ?? []).map((row) => mapRow(row));
+        });
+      },
+      async deleteByActor(actorKey) {
+        return session.withDb(async (db2) => {
+          return withTransaction(db2, async (tx) => {
+            await tx.run(
+              `DELETE FROM client_save_operation_payload
+             WHERE save_operation_id IN (
+               SELECT save_operation_id FROM client_save_operation_intent WHERE actor_key = ?
+             )`,
+              [actorKey]
+            );
+            const result = await tx.run(
+              "DELETE FROM client_save_operation_intent WHERE actor_key = ?",
+              [actorKey]
+            );
+            return result.changes?.changes ?? 0;
+          });
+        });
+      },
+      async getDeletionTombstone(actorKey) {
+        return session.withDb(async (db2) => {
+          const result = await db2.query(
+            "SELECT actor_key, created_at, updated_at FROM client_save_operation_deletion_tombstone WHERE actor_key = ? LIMIT 1",
+            [actorKey]
+          );
+          const row = result.values?.[0];
+          return row ? {
+            actorKey: String(row.actor_key),
+            createdAt: String(row.created_at),
+            updatedAt: String(row.updated_at)
+          } : null;
+        });
+      },
+      async writeDeletionTombstone(actorKey, now) {
+        await session.withDb(async (db2) => {
+          await db2.run(
+            `INSERT INTO client_save_operation_deletion_tombstone (actor_key, created_at, updated_at)
+           VALUES (?, ?, ?)
+           ON CONFLICT(actor_key) DO UPDATE SET updated_at=excluded.updated_at`,
+            [actorKey, now, now]
+          );
+        });
+      },
+      async clearDeletionTombstone(actorKey) {
+        await session.withDb(async (db2) => {
+          await db2.run("DELETE FROM client_save_operation_deletion_tombstone WHERE actor_key = ?", [
+            actorKey
+          ]);
+        });
+      },
+      async persistPreparedIntentWithExactPayload(input) {
+        return session.withDb(async (db2) => {
+          return withTransaction(
+            db2,
+            async (tx) => applyPersistPreparedIntentWithExactPayload(
+              {
+                findIntent: (id) => findIntent(tx, id),
+                insertIntent: (intent) => insertIntentRow(tx, intent),
+                findPayload: (id) => findPayload(tx, id),
+                insertPayload: (row) => insertPayloadRow(tx, row)
+              },
+              input
+            )
+          );
+        });
+      },
+      async loadExactPayloadBySaveOperationId(saveOperationId) {
+        return session.withDb(async (db2) => {
+          const payload = await findPayload(db2, saveOperationId);
+          if (!payload) return { kind: "missing" };
+          const intent = await findIntent(db2, saveOperationId);
+          return verifyLoadedExactPayload(payload, intent?.requestFingerprint);
+        });
+      },
+      async deleteExactPayloadBySaveOperationId(input) {
+        return session.withDb(async (db2) => {
+          return withTransaction(
+            db2,
+            async (tx) => applyDeleteExactPayloadIfCompleted(
+              {
+                findIntent: (id) => findIntent(tx, id),
+                findPayload: (id) => findPayload(tx, id),
+                deletePayload: (id) => deletePayloadRow(tx, id)
+              },
+              input
+            )
+          );
+        });
+      },
+      async cleanupCompletedExactPayloadsForActor(actorKey) {
+        const ids = await session.withDb(async (db2) => {
+          const result = await db2.query(
+            `SELECT p.save_operation_id AS save_operation_id
+           FROM client_save_operation_payload p
+           INNER JOIN client_save_operation_intent i
+             ON i.save_operation_id = p.save_operation_id
+           WHERE i.actor_key = ? AND i.status = 'completed' AND i.server_entry_id IS NOT NULL`,
+            [actorKey]
+          );
+          return (result.values ?? []).map((row) => String(row.save_operation_id));
+        });
+        let deleted = 0;
+        const results = [];
+        for (const saveOperationId of ids) {
+          const result = await store.deleteExactPayloadBySaveOperationId({
+            actorKey,
+            saveOperationId
+          });
+          results.push(result);
+          if (result.kind === "deleted") deleted += 1;
+        }
+        return { attempted: ids.length, deleted, results };
+      }
+    };
+    return store;
+  }
+
   // src/lib/local-first/security/backupInclusion.ts
   init_dist();
 
-  // plugins/ljd-local-security/dist/esm/index.js
+  // ../life-journey-release-server-idempotency-off-prep/plugins/ljd-local-security/dist/esm/index.js
   init_dist();
   var LjdLocalSecurity = registerPlugin("LjdLocalSecurity", {
     web: () => Promise.resolve().then(() => (init_web3(), web_exports3)).then((m) => new m.LjdLocalSecurityWeb())
@@ -2856,9 +3898,11 @@ CREATE INDEX IF NOT EXISTS idx_local_media_journal
       this.code = code;
     }
   };
+  var LJD_FILE_PROTECTION_CANDIDATE = "NSFileProtectionComplete";
   var LJD_PLUGIN_KEYCHAIN_SERVICE = "unlockSecret";
   var LJD_PLUGIN_KEYCHAIN_ACCOUNT = "ljd_CapacitorSQLitePlugin";
   var LJD_PLUGIN_KEYCHAIN_ACCESSIBILITY_MEASURED = "kSecAttrAccessibleWhenUnlocked";
+  var LJD_SQLITE_ENCRYPTION_MODE = "secret";
 
   // src/lib/local-first/security/noSecretLog.ts
   var SECRET_KEY = /passphrase|password|secret|encryptionkey|encryption_secret|unlocksecret/i;
@@ -2905,11 +3949,162 @@ CREATE INDEX IF NOT EXISTS idx_local_media_journal
     return new LocalFirstSecurityError(code, message);
   }
 
+  // src/lib/local-first/security/backupInclusion.ts
+  async function ensurePathExcludedFromBackup(path) {
+    if (!Capacitor.isNativePlatform()) {
+      throw new LocalFirstSecurityError(
+        "native_only",
+        "backup exclusion helper is native-only"
+      );
+    }
+    if (!path) {
+      throw new LocalFirstSecurityError("path_required", "path required");
+    }
+    try {
+      const current = await LjdLocalSecurity.inspectPath({ path });
+      if (!shouldExcludeFromBackup(current.isExcludedFromBackup)) {
+        return current;
+      }
+      return await LjdLocalSecurity.setExcludedFromBackup({
+        path,
+        excluded: true
+      });
+    } catch (error) {
+      throw mapSecurityError(error);
+    }
+  }
+  function shouldExcludeFromBackup(current) {
+    return current !== true;
+  }
+
   // src/lib/local-first/security/encryptedDatabase.ts
   init_dist();
+  var PluginSecretConfigurationError = class extends Error {
+    constructor(reason) {
+      super(`plugin_secret_configuration_${reason}`);
+      this.name = "PluginSecretConfigurationError";
+      this.reason = reason;
+    }
+  };
+  function classifyPluginSecretConfigurationFailure(error) {
+    const message = error instanceof Error ? error.message : String(error);
+    if (/not implemented|unimplemented|method.*not.*found/i.test(message)) {
+      return "api_unavailable";
+    }
+    if (/no encryption set/i.test(message)) return "encryption_not_configured";
+    if (/no database folder|getdatabasesurl|database location/i.test(message)) {
+      return "database_location_unavailable";
+    }
+    if (/keychain|secitem|security service|errsec/i.test(message)) {
+      return "keychain_write_failed";
+    }
+    return "unknown";
+  }
+  function assertNotProductionJournal(name) {
+    if (name === LOCAL_JOURNAL_DB_NAME) {
+      throw new LocalFirstSecurityError(
+        "journal_encryption_forbidden",
+        "ljd_local_journal must not be opened encrypted in 4B-3E; plaintext\u2192encrypted migration is a later phase"
+      );
+    }
+  }
+  async function configurePluginEncryptionSecret(passphrase) {
+    if (!Capacitor.isNativePlatform()) {
+      throw new LocalFirstSecurityError(
+        "native_only",
+        "encryption secret configure is native-only"
+      );
+    }
+    if (!passphrase) {
+      throw new LocalFirstSecurityError("unknown", "passphrase required");
+    }
+    try {
+      await CapacitorSQLite.setEncryptionSecret({ passphrase });
+    } catch (error) {
+      throw new PluginSecretConfigurationError(classifyPluginSecretConfigurationFailure(error));
+    }
+  }
+  async function isPluginEncryptionSecretStored() {
+    if (!Capacitor.isNativePlatform()) {
+      throw new LocalFirstSecurityError(
+        "native_only",
+        "encryption secret inspection is native-only"
+      );
+    }
+    try {
+      return (await CapacitorSQLite.isSecretStored()).result === true;
+    } catch (error) {
+      throw mapSecurityError(error);
+    }
+  }
+  async function pluginRejectsDifferentEncryptionSecret(candidate) {
+    if (!Capacitor.isNativePlatform()) {
+      throw new LocalFirstSecurityError(
+        "native_only",
+        "encryption secret comparison is native-only"
+      );
+    }
+    if (!candidate) {
+      throw new LocalFirstSecurityError("unknown", "candidate required");
+    }
+    try {
+      return (await CapacitorSQLite.checkEncryptionSecret({ passphrase: candidate })).result !== true;
+    } catch (error) {
+      throw mapSecurityError(error);
+    }
+  }
+  async function openNamedEncryptedDatabase(name, version = 1) {
+    assertNotProductionJournal(name);
+    if (!Capacitor.isNativePlatform()) {
+      throw new LocalFirstSecurityError(
+        "native_only",
+        "encrypted DB open is native-only"
+      );
+    }
+    try {
+      const sqlite = new SQLiteConnection(CapacitorSQLite);
+      try {
+        await sqlite.checkConnectionsConsistency();
+      } catch {
+      }
+      if ((await sqlite.isConnection(name, false)).result) {
+        await sqlite.closeConnection(name, false);
+      }
+      const db2 = await sqlite.createConnection(
+        name,
+        true,
+        LJD_SQLITE_ENCRYPTION_MODE,
+        version,
+        false
+      );
+      await db2.open();
+      return db2;
+    } catch (error) {
+      throw mapSecurityError(error);
+    }
+  }
 
   // src/lib/local-first/security/fileProtection.ts
   init_dist();
+  function isCompleteProtection(label) {
+    return label === LJD_FILE_PROTECTION_CANDIDATE;
+  }
+  async function applyCompleteFileProtection(path) {
+    if (!Capacitor.isNativePlatform()) {
+      throw new LocalFirstSecurityError(
+        "native_only",
+        "file protection helper is native-only"
+      );
+    }
+    if (!path) {
+      throw new LocalFirstSecurityError("path_required", "path required");
+    }
+    try {
+      return await LjdLocalSecurity.setCompleteProtection({ path });
+    } catch (error) {
+      throw mapSecurityError(error);
+    }
+  }
   async function inspectFileProtection(path) {
     if (!Capacitor.isNativePlatform()) {
       throw new LocalFirstSecurityError(
@@ -3054,6 +4249,178 @@ CREATE INDEX IF NOT EXISTS idx_local_media_journal
     }
   }
 
+  // src/lib/journal/clientSaveIntent/NativeClientSaveOperationIntentStore.ts
+  function assertNative2() {
+    if (!Capacitor.isNativePlatform()) {
+      throw new LocalFirstSecurityError(
+        "native_only",
+        "client save intent storage has no browser fallback"
+      );
+    }
+  }
+  function adaptNativeConnection(db2) {
+    return {
+      query: (sql, params) => db2.query(sql, params),
+      run: (sql, params) => db2.run(sql, params),
+      execute: (statements) => db2.execute(statements),
+      nativeTransaction: {
+        begin: async () => {
+          await db2.beginTransaction();
+        },
+        commit: async () => {
+          await db2.commitTransaction();
+        },
+        rollback: async () => {
+          await db2.rollbackTransaction();
+        },
+        run: async (sql, params = []) => {
+          const result = await db2.run(sql, params, false);
+          return { changes: { changes: Number(result.changes?.changes ?? 0) } };
+        }
+      }
+    };
+  }
+  async function withNativeEncryptedDb(fn) {
+    const native = await openNamedEncryptedDatabase(
+      CLIENT_SAVE_OPERATION_INTENT_DB_NAME,
+      CLIENT_SAVE_OPERATION_INTENT_SCHEMA_VERSION
+    );
+    try {
+      const db2 = adaptNativeConnection(native);
+      await ensureClientSaveIntentSchema(db2);
+      await db2.execute("PRAGMA foreign_keys = ON");
+      return await fn(db2);
+    } finally {
+      await native.close();
+    }
+  }
+  async function initializeNativeClientSaveOperationIntentStore() {
+    assertNative2();
+    await withNativeEncryptedDb(async () => void 0);
+  }
+  function createNativeClientSaveOperationIntentStore() {
+    assertNative2();
+    return createClientSaveDurableStoreFromSql({
+      withDb: withNativeEncryptedDb
+    });
+  }
+
+  // src/lib/journal/clientSaveIntent/NativeSaveIntentBootstrap.ts
+  init_dist();
+  function generateEphemeralBootstrapSecret() {
+    const bytes = new Uint8Array(32);
+    crypto.getRandomValues(bytes);
+    return Array.from(bytes, (byte) => byte.toString(16).padStart(2, "0")).join("");
+  }
+  function nativeDatabasePath(databasesDir) {
+    return `${databasesDir.replace(/\/$/, "")}/${CLIENT_SAVE_OPERATION_INTENT_DB_NAME}SQLite.db`;
+  }
+  var productionDependencies = {
+    isNativePlatform: () => Capacitor.isNativePlatform(),
+    isPluginSecretStored: isPluginEncryptionSecretStored,
+    inspectKeychain: inspectPluginDbKeyAccessibility,
+    configureSecret: configurePluginEncryptionSecret,
+    initializeDatabase: initializeNativeClientSaveOperationIntentStore,
+    createStore: createNativeClientSaveOperationIntentStore,
+    resolveApplicationSupport: resolveLjdApplicationSupportDir,
+    excludeFromBackup: ensurePathExcludedFromBackup,
+    applyCompleteProtection: applyCompleteFileProtection,
+    inspectProtection: inspectFileProtection,
+    isCompleteProtection,
+    generateSecret: generateEphemeralBootstrapSecret
+  };
+  async function initializeWithDependencies(deps) {
+    if (!deps.isNativePlatform()) {
+      return { result: { status: "unsupported_platform" }, diagnosticStage: "platform" };
+    }
+    let secretStored;
+    try {
+      secretStored = await deps.isPluginSecretStored();
+    } catch {
+      return {
+        result: { status: "secure_store_unavailable" },
+        diagnosticStage: "plugin_secret_read_initial"
+      };
+    }
+    if (!secretStored) {
+      try {
+        await deps.configureSecret(deps.generateSecret());
+        secretStored = await deps.isPluginSecretStored();
+      } catch (error) {
+        return {
+          result: { status: "secure_store_unavailable" },
+          diagnosticStage: error instanceof PluginSecretConfigurationError ? `plugin_secret_create_${error.reason}` : "plugin_secret_create_unknown"
+        };
+      }
+    }
+    if (!secretStored) {
+      return {
+        result: { status: "secure_store_unavailable" },
+        diagnosticStage: "plugin_secret_read_after_create"
+      };
+    }
+    try {
+      const keychain = await deps.inspectKeychain();
+      if (!keychain.found || !keychain.matchesWhenUnlocked) {
+        return {
+          result: { status: "secure_store_unavailable" },
+          diagnosticStage: "keychain_accessibility"
+        };
+      }
+    } catch {
+      return {
+        result: { status: "secure_store_unavailable" },
+        diagnosticStage: "keychain_accessibility"
+      };
+    }
+    try {
+      await deps.initializeDatabase();
+    } catch (error) {
+      return {
+        result: {
+          status: /intent_schema_(?:partial_or_unversioned|version_unsupported|columns_invalid)/.test(
+            error instanceof Error ? error.message : ""
+          ) ? "schema_error" : "database_unavailable"
+        },
+        diagnosticStage: "database_open"
+      };
+    }
+    try {
+      const databasePath = nativeDatabasePath(
+        (await deps.resolveApplicationSupport()).ljdApplicationSupportDir
+      );
+      const backup = await deps.excludeFromBackup(databasePath);
+      const protectedPath = await deps.applyCompleteProtection(databasePath);
+      const inspected = await deps.inspectProtection(databasePath);
+      if (backup.isExcludedFromBackup !== true || protectedPath.fileProtection !== "NSFileProtectionComplete" || !deps.isCompleteProtection(inspected.fileProtection)) {
+        return { result: { status: "database_unavailable" }, diagnosticStage: "storage_attributes" };
+      }
+    } catch {
+      return { result: { status: "database_unavailable" }, diagnosticStage: "storage_attributes" };
+    }
+    try {
+      return { result: { status: "ready", store: deps.createStore() }, diagnosticStage: "ready" };
+    } catch {
+      return { result: { status: "database_unavailable" }, diagnosticStage: "database_open" };
+    }
+  }
+  var initialization = null;
+  var readiness = { status: "unsupported_platform" };
+  var diagnosticStage = "not_started";
+  async function initializeSaveIntentStore() {
+    if (!initialization) {
+      initialization = initializeWithDependencies(productionDependencies).then((attempt) => {
+        diagnosticStage = attempt.diagnosticStage;
+        readiness = { status: attempt.result.status };
+        return attempt.result;
+      });
+    }
+    return initialization;
+  }
+  function getSaveIntentStoreBootstrapDiagnosticStage() {
+    return diagnosticStage;
+  }
+
   // src/lib/local-first/diagnostics/localStorageDiagnosticsMain.ts
   function $(id) {
     const el = document.getElementById(id);
@@ -3067,6 +4434,98 @@ CREATE INDEX IF NOT EXISTS idx_local_media_journal
   }
   function escapeHtml(value) {
     return value.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;");
+  }
+  function inMemoryDifferentSecretCandidate() {
+    const bytes = new Uint8Array(32);
+    crypto.getRandomValues(bytes);
+    return Array.from(bytes, (byte) => byte.toString(16).padStart(2, "0")).join("");
+  }
+  var AI2_RESTART_ACTOR = "ai2-restart@ljd.invalid";
+  var AI2_LIFECYCLE_ACTOR = "ai2-lifecycle@ljd.invalid";
+  var AI2_DELETE_ACTOR = "ai2-delete@ljd.invalid";
+  var AI2_OTHER_ACTOR = "ai2-other@ljd.invalid";
+  async function prepareProbeIntent(store, viewerEmail, saveOperationId) {
+    const prepared = await prepareClientSaveOperationIntent(store.store, {
+      viewerEmail,
+      saveOperationId,
+      requestFingerprint: "0".repeat(64),
+      draftRef: "diagnostic_metadata_only"
+    });
+    return prepared.intent;
+  }
+  async function runSecureSaveIntentProbe(bootstrap) {
+    const store = bootstrap.store;
+    const restartIntent = await prepareProbeIntent(
+      bootstrap,
+      AI2_RESTART_ACTOR,
+      "ai2_restart_intent_0000000001"
+    );
+    const lifecycle = await prepareProbeIntent(
+      bootstrap,
+      AI2_LIFECYCLE_ACTOR,
+      "ai2_lifecycle_intent_00000001"
+    );
+    let completed = lifecycle;
+    if (completed.status === "prepared") {
+      completed = await store.update({ ...completed, status: "awaiting_result" });
+      completed = await store.update({
+        ...completed,
+        status: "server_completed",
+        serverEntryId: "diagnostic_entry"
+      });
+      completed = await store.update({ ...completed, status: "completed" });
+    }
+    let terminalRewindRejected = false;
+    try {
+      await store.update({ ...completed, status: "awaiting_result" });
+    } catch {
+      terminalRewindRejected = true;
+    }
+    let recoveryFailed = await prepareProbeIntent(
+      bootstrap,
+      AI2_LIFECYCLE_ACTOR,
+      "ai2_failed_intent_000000000001"
+    );
+    if (recoveryFailed.status === "prepared") {
+      recoveryFailed = await store.update({ ...recoveryFailed, status: "recovery_required" });
+      recoveryFailed = await store.update({ ...recoveryFailed, status: "failed_final" });
+    }
+    await prepareProbeIntent(bootstrap, AI2_DELETE_ACTOR, "ai2_delete_intent_00000000001");
+    await prepareProbeIntent(bootstrap, AI2_OTHER_ACTOR, "ai2_other_intent_000000000001");
+    const deleted = await store.deleteByActor(AI2_DELETE_ACTOR);
+    const otherRetained = await store.findByActorAndSaveOperationId(
+      AI2_OTHER_ACTOR,
+      "ai2_other_intent_000000000001"
+    ) != null;
+    await store.deleteByActor(AI2_OTHER_ACTOR);
+    return {
+      restartIntentPrepared: restartIntent.status === "prepared" && await store.findByActorAndSaveOperationId(
+        AI2_RESTART_ACTOR,
+        "ai2_restart_intent_0000000001"
+      ) != null,
+      lifecycleCompleted: completed.status === "completed",
+      recoveryAndFailedFinal: recoveryFailed.status === "failed_final",
+      terminalRewindRejected,
+      pendingByActor: (await store.listRecoverableByActor(AI2_RESTART_ACTOR)).some(
+        (intent) => intent.saveOperationId === "ai2_restart_intent_0000000001"
+      ),
+      actorIsolation: await store.findByActorAndSaveOperationId(
+        AI2_OTHER_ACTOR,
+        "ai2_restart_intent_0000000001"
+      ) == null,
+      deleteByActor: deleted === 1 && otherRetained
+    };
+  }
+  async function inspectSecureIntentFileAttributes() {
+    const location = await resolveLjdApplicationSupportDir();
+    const attrs = await inspectFileProtection(
+      `${location.ljdApplicationSupportDir}/${CLIENT_SAVE_OPERATION_INTENT_DB_NAME}SQLite.db`
+    );
+    return {
+      exists: attrs.exists,
+      backupExcluded: attrs.isExcludedFromBackup,
+      fileProtection: attrs.fileProtection
+    };
   }
   async function renderEntries() {
     const listEl = $("list");
@@ -3111,6 +4570,40 @@ CREATE INDEX IF NOT EXISTS idx_local_media_journal
     )} diagnostics=local-storage remoteShell=false`;
     if (!Capacitor.isNativePlatform()) {
       setStatus("\u30CD\u30A4\u30C6\u30A3\u30D6\u5C02\u7528\u3067\u3059\u3002", true);
+      return;
+    }
+    const secretWasStored = await isPluginEncryptionSecretStored();
+    let keylessOpenRejected = null;
+    if (!secretWasStored) {
+      try {
+        await initializeNativeClientSaveOperationIntentStore();
+        keylessOpenRejected = false;
+      } catch {
+        keylessOpenRejected = true;
+      }
+    }
+    const intentBootstrap = await initializeSaveIntentStore();
+    const intentProbe = intentBootstrap.status === "ready" ? await runSecureSaveIntentProbe(intentBootstrap) : null;
+    const wrongSecretRejected = intentBootstrap.status === "ready" ? await pluginRejectsDifferentEncryptionSecret(inMemoryDifferentSecretCandidate()) : null;
+    const intentFileAttributes = intentBootstrap.status === "ready" ? await inspectSecureIntentFileAttributes() : null;
+    $("security-report").textContent = JSON.stringify(
+      {
+        developerOnly: true,
+        secureSaveIntentBootstrap: {
+          status: intentBootstrap.status,
+          diagnosticStage: getSaveIntentStoreBootstrapDiagnosticStage(),
+          secretWasStored,
+          keylessOpenRejected,
+          wrongSecretRejected
+        },
+        nativeSaveIntentProbe: intentProbe,
+        secureIntentFileAttributes: intentFileAttributes
+      },
+      null,
+      2
+    );
+    if (intentBootstrap.status !== "ready") {
+      setStatus(`Secure Save Intent bootstrap unavailable: ${intentBootstrap.status}`, true);
       return;
     }
     $("btn-load").addEventListener("click", () => {
@@ -3180,7 +4673,7 @@ CREATE INDEX IF NOT EXISTS idx_local_media_journal
     try {
       await openLocalJournalDatabase();
       await renderEntries();
-      setStatus("Diagnostics\u6E96\u5099\u5B8C\u4E86\uFF08SQLite foundation\uFF09\u3002");
+      setStatus("Diagnostics\u6E96\u5099\u5B8C\u4E86\uFF08SQLite foundation + secure Save Intent store\uFF09\u3002");
     } catch (err) {
       setStatus(`\u521D\u671F\u5316\u5931\u6557: ${String(err)}`, true);
     }

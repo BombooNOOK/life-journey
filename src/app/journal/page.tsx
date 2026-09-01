@@ -54,6 +54,12 @@ import {
   journalPreviewPath,
   resolveJournalEntryMonthKey,
 } from "@/lib/journal/journalNav";
+import { runJournalCreateSave } from "@/lib/journal/clientSaveIntent/JournalCreateSaveOrchestrator";
+import {
+  buildClientSaveIntentOrchestratorSession,
+  resolveClientSaveIntentAuthSession,
+} from "@/lib/journal/clientSaveIntent/clientSaveIntentAuthSession";
+import { useForegroundJournalCreateRecovery } from "@/lib/journal/clientSaveIntent/useForegroundJournalCreateRecovery";
 import {
   CONTENT_FONT_MODE_LABELS_JA,
   CONTENT_FONT_MODES,
@@ -219,6 +225,21 @@ function JournalPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { user, loading: authLoading } = useFirebaseAuth();
+  const saveIntentAuthSession = useMemo(
+    () => resolveClientSaveIntentAuthSession({ user, authLoading }),
+    [user, authLoading],
+  );
+  const saveIntentOrchestratorSession = useMemo(
+    () => buildClientSaveIntentOrchestratorSession(saveIntentAuthSession),
+    [saveIntentAuthSession],
+  );
+  const [foregroundRecoveryRevision, setForegroundRecoveryRevision] = useState(0);
+  const foregroundRecovery = useForegroundJournalCreateRecovery({
+    viewerEmail: saveIntentAuthSession.viewerEmail,
+    firebaseUid: saveIntentAuthSession.firebaseUid,
+    authLoading: saveIntentAuthSession.authLoading,
+    revision: foregroundRecoveryRevision,
+  });
   const { entitlement, loading: entitlementLoading } = useEntitlement();
   const editingId = searchParams.get("edit");
   const canWriteJournal =
@@ -279,6 +300,18 @@ function JournalPageContent() {
   });
   const effectiveProfileId = profileState.effectiveProfileId || profileId;
   const [error, setError] = useState<string | null>(null);
+  // Ambiguous-save error text must not linger once recovery has a definite result.
+  useEffect(() => {
+    if (
+      foregroundRecovery.status === "completed" ||
+      foregroundRecovery.status === "pending" ||
+      foregroundRecovery.status === "continuation_available" ||
+      foregroundRecovery.status === "recovery_required" ||
+      foregroundRecovery.status === "failed_final"
+    ) {
+      setError(null);
+    }
+  }, [foregroundRecovery.status]);
   const [numerologyDebug, setNumerologyDebug] = useState<JournalNumerologyDebug | null>(null);
   const [owlRegenLoading, setOwlRegenLoading] = useState(false);
   const [navigatingToPreview, setNavigatingToPreview] = useState(false);
@@ -868,30 +901,71 @@ function JournalPageContent() {
         return {};
       })();
 
-      const res = await fetch(endpoint, {
-        method: editingId ? "PATCH" : "POST",
-        credentials: "same-origin",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          content: mergedContent,
-          mood,
-          activity,
-          companionType,
-          designTheme,
-          contentFontMode,
-          ...photoPayload,
-          entryDate,
-          effectiveProfileId,
-        }),
-      });
-      const data = (await res.json()) as {
+      const requestPayload = {
+        content: mergedContent,
+        mood,
+        activity,
+        companionType,
+        designTheme,
+        contentFontMode,
+        ...photoPayload,
+        entryDate,
+        profileId: effectiveProfileId,
+        effectiveProfileId,
+        includeInBook: true,
+      };
+      const orchestrated = isNewEntrySave
+        ? saveIntentOrchestratorSession
+          ? await runJournalCreateSave({
+              ...saveIntentOrchestratorSession,
+              payload: requestPayload,
+              afterServerCompleted: async () => localDraft.clearDraftAfterSuccessfulSave(),
+            })
+          : { kind: "protocol_start_failed" as const, reason: "recovery_not_admitted" }
+        : null;
+      const res =
+        orchestrated?.kind === "legacy"
+          ? orchestrated.response
+          : !isNewEntrySave
+            ? await fetch(endpoint, {
+                method: "PATCH",
+                credentials: "same-origin",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(requestPayload),
+              })
+            : null;
+      const data = (res ? await res.json() : orchestrated?.kind === "completed" ? orchestrated.data : {}) as {
         error?: string;
         code?: string;
         entry?: { id?: string };
         guardianColorName?: string | null;
         donguriBalance?: number | null;
       };
-      if (!res.ok) {
+      if (orchestrated && orchestrated.kind !== "legacy" && orchestrated.kind !== "completed") {
+        // The story overlay must never outlive an unresolved save, or the
+        // recovery banner stays hidden behind it.
+        if (isNewEntrySave) {
+          setSaveTransition(null);
+          saveTransitionStartedAtRef.current = null;
+          saveTransitionAnimalShownAtRef.current = null;
+        }
+        if (orchestrated.kind === "failed_final" && orchestrated.code === "ACORN_INSUFFICIENT") {
+          setAcornBalance((prev) => prev !== null && prev < DONGURI_DIARY_SAVE_COST ? prev : DONGURI_DIARY_SAVE_COST - 1);
+          setPreferDraftMode(true);
+          setError("どんぐりが足りません。下書きとして残すか、どんぐりをためてから森に残してください。");
+        } else {
+          setError(
+            orchestrated.kind === "processing" || orchestrated.kind === "pending"
+              ? "保存処理中です。しばらくしてから確認してください。"
+              : "保存結果を安全に確認できませんでした。",
+          );
+          if (orchestrated.kind === "processing" || orchestrated.kind === "pending") {
+            setForegroundRecoveryRevision((value) => value + 1);
+          }
+        }
+        return;
+      }
+      if (res && !res.ok) {
         if (isNewEntrySave) {
           setSaveTransition(null);
           saveTransitionStartedAtRef.current = null;
@@ -1787,6 +1861,20 @@ function JournalPageContent() {
 
       {draftNotice ? (
         <p className="rounded-md bg-emerald-50 px-3 py-2 text-sm text-emerald-900">{draftNotice}</p>
+      ) : null}
+      {foregroundRecovery.status === "checking" || foregroundRecovery.status === "processing" || foregroundRecovery.status === "pending" ? (
+        <p className="rounded-md bg-amber-50 px-3 py-2 text-sm text-amber-900">保存状況を確認しています。</p>
+      ) : foregroundRecovery.status === "completed" ? (
+        <p className="rounded-md bg-emerald-50 px-3 py-2 text-sm text-emerald-900">以前の保存は完了しています。</p>
+      ) : foregroundRecovery.status === "continuation_available" ? (
+        <div className="rounded-md bg-amber-50 px-3 py-2 text-sm text-amber-900">
+          <p>前回の保存が途中で止まっていました。内容を確認して、保存を続けることができます。</p>
+          <button type="button" className="mt-2 rounded bg-amber-700 px-3 py-1 text-white" onClick={() => void foregroundRecovery.continueSave()}>保存を続ける</button>
+        </div>
+      ) : foregroundRecovery.status === "recovery_required" ? (
+        <p className="rounded-md bg-amber-50 px-3 py-2 text-sm text-amber-900">以前の保存状況を確認できませんでした。内容を確認してから、もう一度保存してください。</p>
+      ) : foregroundRecovery.status === "failed_final" ? (
+        <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-800">以前の保存を完了できませんでした。内容を確認してください。</p>
       ) : null}
       {error ? <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-800">{error}</p> : null}
 

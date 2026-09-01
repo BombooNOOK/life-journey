@@ -262,6 +262,8 @@ export async function deleteUserAccount(params: {
           const deletedGardenPlants = await tx.gardenPlant.deleteMany({ where: scope });
           const deletedProfiles = await tx.profile.deleteMany({ where: scope });
           const deletedSupportInquiries = await tx.supportInquiry.deleteMany({ where: scope });
+          // AccountSettings must be purged before AccountIdentity (FK Restrict on
+          // identityId — AI-X6.5A). Identity/claim cleanup remains a later gate.
           await tx.accountSettings.deleteMany({ where: scope });
 
           return {

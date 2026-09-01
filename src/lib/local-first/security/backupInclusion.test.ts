@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   BACKUP_INCLUSION_POLICY,
+  shouldExcludeFromBackup,
   shouldForceBackupInclusion,
 } from "@/lib/local-first/security/backupInclusion";
 
@@ -18,5 +19,12 @@ describe("backup inclusion policy", () => {
     expect(shouldForceBackupInclusion(false)).toBe(false);
     expect(shouldForceBackupInclusion("unset")).toBe(false);
     expect(shouldForceBackupInclusion("api_unavailable")).toBe(false);
+  });
+
+  it("requires explicit backup exclusion for intent-only metadata", () => {
+    expect(shouldExcludeFromBackup(true)).toBe(false);
+    expect(shouldExcludeFromBackup(false)).toBe(true);
+    expect(shouldExcludeFromBackup("unset")).toBe(true);
+    expect(shouldExcludeFromBackup("api_unavailable")).toBe(true);
   });
 });

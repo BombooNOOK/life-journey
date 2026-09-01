@@ -3,8 +3,7 @@
  * Non-PII: hashes / enums / ids only — never raw body or photo bytes in JSO.
  */
 
-import { createHash } from "node:crypto";
-
+import { sha256HexSync } from "@/lib/crypto/sha256HexSync";
 import { buildJournalSaveRequestFingerprint } from "@/lib/journal/saveIdempotency/requestFingerprint";
 
 export type ProductionJournalSaveFingerprintInput = {
@@ -22,7 +21,7 @@ export type ProductionJournalSaveFingerprintInput = {
 };
 
 export function sha256Hex(text: string): string {
-  return createHash("sha256").update(text, "utf8").digest("hex");
+  return sha256HexSync(text);
 }
 
 export function photoIdentityFromPatch(input: {
