@@ -15,7 +15,7 @@ import { createCipheriv, createDecipheriv, randomBytes, scryptSync } from "node:
 import { mkdtemp, readFile, rm, unlink, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { DatabaseSync } from "node:sqlite";
+import { DatabaseSync, type SQLInputValue } from "node:sqlite";
 
 import {
   createClientSaveDurableStoreFromSql,
@@ -24,6 +24,10 @@ import {
   type ClientSaveIntentSqlSession,
 } from "@/lib/journal/clientSaveIntent/clientSaveIntentSqlStore";
 import type { ClientSaveDurableStore } from "@/lib/journal/clientSaveIntent/types";
+
+function asSqlParams(params: unknown[]): SQLInputValue[] {
+  return params as SQLInputValue[];
+}
 
 const MAGIC = Buffer.from("LJDCS1");
 const SALT_LENGTH = 16;
@@ -71,14 +75,16 @@ function adaptNodeSqlite(db: DatabaseSync): ClientSaveIntentSqlConnection {
   return {
     async query(sql, params = []) {
       const statement = db.prepare(sql);
+      const bound = asSqlParams(params);
       const rows = (
-        params.length > 0 ? statement.all(...params) : statement.all()
+        bound.length > 0 ? statement.all(...bound) : statement.all()
       ) as Record<string, unknown>[];
       return { values: rows };
     },
     async run(sql, params = []) {
       const statement = db.prepare(sql);
-      const info = params.length > 0 ? statement.run(...params) : statement.run();
+      const bound = asSqlParams(params);
+      const info = bound.length > 0 ? statement.run(...bound) : statement.run();
       return { changes: { changes: Number(info.changes ?? 0) } };
     },
     async execute(statements) {

@@ -41,7 +41,10 @@ function assertNative(): void {
 function adaptNativeConnection(db: SQLiteDBConnection): ClientSaveIntentSqlConnection {
   return {
     query: (sql, params) => db.query(sql, params),
-    run: (sql, params) => db.run(sql, params),
+    run: async (sql, params = []) => {
+      const result = await db.run(sql, params);
+      return { changes: { changes: Number(result.changes?.changes ?? 0) } };
+    },
     execute: (statements) => db.execute(statements),
     nativeTransaction: {
       begin: async () => {

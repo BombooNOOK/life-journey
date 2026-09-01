@@ -20,6 +20,7 @@ export {
   isAi7DeviceRecoveryTestActor,
   persistAi7DeviceRecoveryTestOperation,
   recoverAi7DeviceRecoveryTestOperations,
+  type Ai7InspectSnapshot,
 } from "@/lib/journal/clientSaveIntent/ai7DeviceRecoveryHarness/controller";
 export {
   AI7_TEST_PHOTO_DATA_URL,

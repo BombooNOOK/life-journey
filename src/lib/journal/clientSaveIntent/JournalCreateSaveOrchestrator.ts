@@ -72,7 +72,7 @@ export function shouldRequireStableActorKeyForPending(input: {
 }): boolean {
   if (!input.nativeMasterEnabled) return false;
   if (input.capability.kind !== "enabled") return false;
-  return input.capability.stableActorAdmission;
+  return input.capability.stableActorAdmission === true;
 }
 
 /** Compact recovery presentation for callers. User-facing copy stays minimal. */
@@ -503,13 +503,14 @@ export async function runJournalCreateSave(
     }
   }
   const capability = await effectiveDeps.capability();
-  const eligible =
-    bootstrap.status === "ready" &&
-    isDurableStore(bootstrap.store) &&
-    capability.kind === "enabled";
-  if (!eligible) {
+  if (
+    bootstrap.status !== "ready" ||
+    !isDurableStore(bootstrap.store) ||
+    capability.kind !== "enabled"
+  ) {
     return { kind: "legacy", response: await effectiveDeps.post(input.payload) };
   }
+  const durableStore = bootstrap.store;
   if (!actorKey) return { kind: "protocol_start_failed", reason: "actor_unavailable" };
 
   const wantsStablePending = shouldRequireStableActorKeyForPending({
@@ -557,7 +558,7 @@ export async function runJournalCreateSave(
 
   let persisted;
   try {
-    persisted = await bootstrap.store.persistPreparedIntentWithExactPayload({
+    persisted = await durableStore.persistPreparedIntentWithExactPayload({
       intent: preparedIntent,
       payload: persistPayload,
     });
@@ -571,13 +572,13 @@ export async function runJournalCreateSave(
   const requestJson = persisted.payload.requestJson;
   let intent = persisted.intent;
   try {
-    intent = await update(bootstrap.store, intent, {
+    intent = await update(durableStore, intent, {
       status: "awaiting_result",
       lastAttemptAt: new Date().toISOString(),
     });
     const response = await postStoredRequestJson(effectiveDeps, requestJson);
     return applyPostedProtocolResponse({
-      store: bootstrap.store,
+      store: durableStore,
       intent,
       response,
       afterServerCompleted: input.afterServerCompleted,

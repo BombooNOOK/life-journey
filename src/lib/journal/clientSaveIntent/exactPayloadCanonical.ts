@@ -216,10 +216,14 @@ export function canonicalizeExactJournalSavePayload(input: {
 
   let contentFontMode = DEFAULT_CONTENT_FONT_MODE;
   if ("contentFontMode" in body && body.contentFontMode != null && body.contentFontMode !== "") {
-    if (typeof body.contentFontMode !== "string" || !isContentFontMode(body.contentFontMode.trim())) {
+    if (typeof body.contentFontMode !== "string") {
       return { ok: false, code: "content_font_mode_invalid" };
     }
-    contentFontMode = body.contentFontMode.trim();
+    const trimmedFontMode = body.contentFontMode.trim();
+    if (!isContentFontMode(trimmedFontMode)) {
+      return { ok: false, code: "content_font_mode_invalid" };
+    }
+    contentFontMode = trimmedFontMode;
   }
 
   const includeInBook =
