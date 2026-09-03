@@ -67,7 +67,7 @@ export async function PUT(req: Request) {
       ownership,
       contactEmail: viewerEmail,
     });
-    if (authz.state !== "AUTHORIZED") {
+    if (authz.state !== "AUTHORIZED" || !("mode" in authz)) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
     }
     if (authz.mode === "identity" && authz.settingsId) {
