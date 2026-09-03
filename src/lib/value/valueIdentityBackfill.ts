@@ -23,7 +23,7 @@ export type ValueBackfillClass =
   | "UNBOUND"
   | "AMBIGUOUS";
 
-export type ValueBackfillResolution = P0BackfillResolution & {
+export type ValueBackfillResolution = Omit<P0BackfillResolution, "evidence"> & {
   evidence:
     | P0BackfillResolution["evidence"]
     | "identity_owned_profile";

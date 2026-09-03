@@ -15,7 +15,7 @@ export type DiaryBackfillEvidence = ValueBackfillEvidence & {
   diaryBookIdentityById: ReadonlyMap<string, string>;
 };
 
-export type DiaryBackfillResolution = ValueBackfillResolution & {
+export type DiaryBackfillResolution = Omit<ValueBackfillResolution, "evidence"> & {
   evidence:
     | ValueBackfillResolution["evidence"]
     | "identity_owned_diary_book";
