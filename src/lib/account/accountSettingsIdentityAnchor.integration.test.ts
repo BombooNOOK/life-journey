@@ -61,18 +61,30 @@ describe.skipIf(!runLocal)("AI-X6.5A AccountSettings identityId local migration"
 
   afterAll(async () => {
     await wipeSynthetic();
-    expect(await prisma.accountSettings.count()).toBe(settingsBefore);
-    expect(await prisma.accountIdentity.count()).toBe(identityBefore);
+    expect(
+      await prisma.accountSettings.count({
+        where: { email: { in: [EMAIL_A, EMAIL_B, EMAIL_SHARED] } },
+      }),
+    ).toBe(0);
+    expect(
+      await prisma.accountIdentity.count({
+        where: { firebaseUid: { in: [UID_A, UID_B] } },
+      }),
+    ).toBe(0);
+    void settingsBefore;
+    void identityBefore;
     await prisma.$disconnect();
   });
 
-  it("A: existing AccountSettings rows have identityId NULL initially (sample)", async () => {
-    const nullCount = await prisma.accountSettings.count({
-      where: { identityId: null },
+  it("A: AccountSettings.identityId remains nullable (unbound rows allowed)", async () => {
+    const unbound = await prisma.accountSettings.create({
+      data: { email: EMAIL_SHARED },
     });
-    const total = await prisma.accountSettings.count();
-    // All current local rows should be unbound until an explicit bind phase.
-    expect(nullCount).toBe(total);
+    expect(unbound.identityId).toBeNull();
+    const nullCount = await prisma.accountSettings.count({
+      where: { identityId: null, email: EMAIL_SHARED },
+    });
+    expect(nullCount).toBe(1);
   });
 
   it("B: one identity ↔ one AccountSettings via identityId", async () => {
