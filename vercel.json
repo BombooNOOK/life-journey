@@ -8,5 +8,10 @@
     "src/app/api/journal/backup/route.ts": {
       "maxDuration": 300
     }
+  },
+  "git": {
+    "deploymentEnabled": {
+      "preview/x67-identity-safety": false
+    }
   }
 }
