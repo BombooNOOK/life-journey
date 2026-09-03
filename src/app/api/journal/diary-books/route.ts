@@ -12,6 +12,12 @@ import {
 import { resolveDiaryBookProfileId } from "@/lib/journal/diaryBookProfile";
 import { refreshDiaryBookContent } from "@/lib/journal/diaryBookSnapshot";
 import { listDiaryBooksForViewer } from "@/lib/journal/listDiaryBooks";
+import {
+  assertProfileBelongsToIdentity,
+  diaryCreateIdentityFields,
+  shouldUseDiaryIdentityMutation,
+} from "@/lib/diary/diaryIdentityAuthority";
+import { resolveValueIdentityOwnership } from "@/lib/value/valueIdentityOwnership";
 
 const JSON_NO_STORE = {
   headers: {
@@ -123,6 +129,25 @@ export async function POST(req: Request) {
     );
   }
 
+  let identityFields: { identityId?: string } = {};
+  if (shouldUseDiaryIdentityMutation()) {
+    const ownership = await resolveValueIdentityOwnership();
+    const profileAuth = await assertProfileBelongsToIdentity({
+      ownership,
+      profileId: profileResult.profileId,
+    });
+    if (profileAuth.state !== "AUTHORIZED") {
+      return NextResponse.json(
+        {
+          error: "プロフィールへの権限がありません。",
+          code: "IDENTITY_PROFILE_DENIED",
+        },
+        { status: 403, ...JSON_NO_STORE },
+      );
+    }
+    identityFields = diaryCreateIdentityFields({ ownership });
+  }
+
   const row = await prisma.diaryBook.create({
     data: {
       email: viewerEmail,
@@ -134,6 +159,7 @@ export async function POST(req: Request) {
       pageTemplate: parsed.data.pageTemplate,
       tagFilter: parsed.data.tagFilter,
       tagFilterMode: parsed.data.tagFilterMode,
+      ...identityFields,
     },
   });
 

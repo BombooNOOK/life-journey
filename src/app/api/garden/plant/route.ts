@@ -5,7 +5,20 @@ import {
   loadGardenStateForProfile,
   waterGardenPlantForProfile,
 } from "@/lib/garden/gardenPlant";
-import { listProfilesAndActiveProfileId } from "@/lib/profile/activeProfile";
+import { listProfilesAndActiveProfileId, profileByIdForViewer } from "@/lib/profile/activeProfile";
+import { isP0IdentityReadAuthorityEnabled } from "@/lib/account/p0IdentityReadAuthorityGate";
+import { assertProfileBelongsToIdentity } from "@/lib/diary/diaryIdentityAuthority";
+import { resolveValueIdentityOwnership } from "@/lib/value/valueIdentityOwnership";
+
+async function authorizeGardenProfile(email: string, profileId: string): Promise<boolean> {
+  if (!isP0IdentityReadAuthorityEnabled()) {
+    const p = await profileByIdForViewer(profileId, email);
+    return Boolean(p);
+  }
+  const ownership = await resolveValueIdentityOwnership();
+  const authz = await assertProfileBelongsToIdentity({ ownership, profileId });
+  return authz.state === "AUTHORIZED";
+}
 
 export async function GET() {
   const email = await getViewerEmailFromCookie();
@@ -17,6 +30,9 @@ export async function GET() {
     const { activeProfileId, profiles } = await listProfilesAndActiveProfileId(email);
     if (!activeProfileId || profiles.length === 0) {
       return NextResponse.json({ error: "プロフィールがありません。" }, { status: 400 });
+    }
+    if (!(await authorizeGardenProfile(email, activeProfileId))) {
+      return NextResponse.json({ error: "プロフィールへの権限がありません。" }, { status: 403 });
     }
 
     const state = await loadGardenStateForProfile({
@@ -40,6 +56,9 @@ export async function POST() {
     const { activeProfileId, profiles } = await listProfilesAndActiveProfileId(email);
     if (!activeProfileId || profiles.length === 0) {
       return NextResponse.json({ error: "プロフィールがありません。" }, { status: 400 });
+    }
+    if (!(await authorizeGardenProfile(email, activeProfileId))) {
+      return NextResponse.json({ error: "プロフィールへの権限がありません。" }, { status: 403 });
     }
 
     const result = await waterGardenPlantForProfile({

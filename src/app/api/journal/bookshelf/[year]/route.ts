@@ -7,6 +7,16 @@ import { assertFullAccessForApi } from "@/lib/entitlement/requireFullAccess";
 import { clampMonthOrder } from "@/lib/journal/bookshelfPeriod";
 import { isDiaryCoverStyleRawAllowed, normalizeDiaryCoverStyle } from "@/lib/journal/coverAssets";
 import { resolveActiveProfileId } from "@/lib/profile/activeProfile";
+import {
+  assertProfileBelongsToIdentity,
+  authorizeDiaryBookshelfAccess,
+  diaryCreateIdentityFields,
+  diaryIdentityOrExplicitEmailWhere,
+  shouldUseDiaryIdentityMutation,
+  shouldUseDiaryIdentityRead,
+} from "@/lib/diary/diaryIdentityAuthority";
+import { resolveP0IdentityReadAccess } from "@/lib/account/p0IdentityReadContract";
+import { resolveValueIdentityOwnership } from "@/lib/value/valueIdentityOwnership";
 
 type RouteParams = { params: Promise<{ year: string }> };
 
@@ -14,42 +24,6 @@ function parseYearParam(raw: string): number | null {
   const y = Number(raw);
   if (!Number.isFinite(y) || y < 1970 || y > 2100) return null;
   return y;
-}
-
-function getDiaryBookshelfBookDelegate() {
-  return (prisma as unknown as {
-    diaryBookshelfBook?: {
-      findFirst: (args: { where: { email: string; profileId: string; year: number } }) => Promise<{
-        displayTitle: string | null;
-        coverTheme: string;
-        periodStartMonth: number;
-        periodEndMonth: number;
-      } | null>;
-      upsert: (args: {
-        where: { email_profileId_year: { email: string; profileId: string; year: number } };
-        create: {
-          email: string;
-          profileId: string;
-          year: number;
-          displayTitle: string | null;
-          coverTheme: string;
-          periodStartMonth: number;
-          periodEndMonth: number;
-        };
-        update: {
-          displayTitle: string | null;
-          coverTheme: string;
-          periodStartMonth: number;
-          periodEndMonth: number;
-        };
-      }) => Promise<{
-        displayTitle: string | null;
-        coverTheme: string;
-        periodStartMonth: number;
-        periodEndMonth: number;
-      }>;
-    };
-  }).diaryBookshelfBook;
 }
 
 export async function GET(_: Request, { params }: RouteParams) {
@@ -65,15 +39,43 @@ export async function GET(_: Request, { params }: RouteParams) {
     return NextResponse.json({ error: "年の指定が不正です。", code: "BAD_YEAR" }, { status: 400 });
   }
 
-  const delegate = getDiaryBookshelfBookDelegate();
-  if (!delegate) {
-    return NextResponse.json({
-      settings: null,
-      code: "OK",
+  let row: {
+    displayTitle: string | null;
+    coverTheme: string;
+    periodStartMonth: number;
+    periodEndMonth: number;
+  } | null = null;
+
+  if (shouldUseDiaryIdentityRead()) {
+    const ownership = await resolveValueIdentityOwnership();
+    const access = await resolveP0IdentityReadAccess(ownership);
+    if (access.ok) {
+      const where = diaryIdentityOrExplicitEmailWhere({
+        identityId: access.identityId,
+        explicitHistoricalEmails: access.explicitHistoricalEmails,
+        profileId: activeProfileId,
+      });
+      row = await prisma.diaryBookshelfBook.findFirst({
+        where: { ...where, year },
+        select: {
+          displayTitle: true,
+          coverTheme: true,
+          periodStartMonth: true,
+          periodEndMonth: true,
+        },
+      });
+    }
+  } else {
+    row = await prisma.diaryBookshelfBook.findFirst({
+      where: { email: viewerEmail, profileId: activeProfileId, year },
+      select: {
+        displayTitle: true,
+        coverTheme: true,
+        periodStartMonth: true,
+        periodEndMonth: true,
+      },
     });
   }
-
-  const row = await delegate.findFirst({ where: { email: viewerEmail, profileId: activeProfileId, year } });
 
   return NextResponse.json({
     settings: row
@@ -136,44 +138,120 @@ export async function PATCH(req: Request, { params }: RouteParams) {
   const coverTheme = normalizeDiaryCoverStyle(rawCover.trim() || "casual");
   const { start: periodStartMonth, end: periodEndMonth } = clampMonthOrder(rawStart, rawEnd);
 
-  const delegate = getDiaryBookshelfBookDelegate();
-  if (!delegate) {
-    return NextResponse.json(
-      {
-        error:
-          "サーバー設定の反映待ちです。`npm run db:sync` 実行後に開発サーバーを再起動して再度お試しください。",
-        code: "DB_SCHEMA_OUTDATED",
-      },
-      { status: 503 },
-    );
-  }
+  const updateData = {
+    displayTitle,
+    coverTheme,
+    periodStartMonth,
+    periodEndMonth,
+  };
 
-  let saved;
+  let saved: {
+    displayTitle: string | null;
+    coverTheme: string;
+    periodStartMonth: number;
+    periodEndMonth: number;
+  };
+
   try {
-    saved = await delegate.upsert({
-      where: {
-        email_profileId_year: {
+    if (shouldUseDiaryIdentityMutation()) {
+      const ownership = await resolveValueIdentityOwnership();
+      const profileAuth = await assertProfileBelongsToIdentity({
+        ownership,
+        profileId: activeProfileId,
+      });
+      if (profileAuth.state !== "AUTHORIZED") {
+        return NextResponse.json(
+          { error: "プロフィールへの権限がありません。", code: "IDENTITY_PROFILE_DENIED" },
+          { status: 403 },
+        );
+      }
+      const identityFields = diaryCreateIdentityFields({ ownership });
+      const access = await resolveP0IdentityReadAccess(ownership);
+      if (!access.ok) {
+        return NextResponse.json(
+          { error: "本人確認が完了していません。", code: "IDENTITY_UNBOUND" },
+          { status: 403 },
+        );
+      }
+
+      const existing = await prisma.diaryBookshelfBook.findFirst({
+        where: {
+          ...diaryIdentityOrExplicitEmailWhere({
+            identityId: access.identityId,
+            explicitHistoricalEmails: access.explicitHistoricalEmails,
+            profileId: activeProfileId,
+          }),
+          year,
+        },
+      });
+
+      if (existing) {
+        const authz = await authorizeDiaryBookshelfAccess({
+          ownership,
+          shelfId: existing.id,
+        });
+        if (authz.state !== "AUTHORIZED") {
+          return NextResponse.json(
+            { error: "この本棚設定にはアクセスできません。", code: "NOT_OWNED" },
+            { status: 403 },
+          );
+        }
+        saved = await prisma.diaryBookshelfBook.update({
+          where: { id: existing.id },
+          data: {
+            ...updateData,
+            ...(identityFields.identityId && !existing.identityId
+              ? { identityId: identityFields.identityId }
+              : {}),
+          },
+          select: {
+            displayTitle: true,
+            coverTheme: true,
+            periodStartMonth: true,
+            periodEndMonth: true,
+          },
+        });
+      } else {
+        saved = await prisma.diaryBookshelfBook.create({
+          data: {
+            email: viewerEmail,
+            profileId: activeProfileId,
+            year,
+            ...updateData,
+            ...identityFields,
+          },
+          select: {
+            displayTitle: true,
+            coverTheme: true,
+            periodStartMonth: true,
+            periodEndMonth: true,
+          },
+        });
+      }
+    } else {
+      saved = await prisma.diaryBookshelfBook.upsert({
+        where: {
+          email_profileId_year: {
+            email: viewerEmail,
+            profileId: activeProfileId,
+            year,
+          },
+        },
+        create: {
           email: viewerEmail,
           profileId: activeProfileId,
           year,
+          ...updateData,
         },
-      },
-      create: {
-        email: viewerEmail,
-        profileId: activeProfileId,
-        year,
-        displayTitle,
-        coverTheme,
-        periodStartMonth,
-        periodEndMonth,
-      },
-      update: {
-        displayTitle,
-        coverTheme,
-        periodStartMonth,
-        periodEndMonth,
-      },
-    });
+        update: updateData,
+        select: {
+          displayTitle: true,
+          coverTheme: true,
+          periodStartMonth: true,
+          periodEndMonth: true,
+        },
+      });
+    }
   } catch {
     return NextResponse.json(
       {

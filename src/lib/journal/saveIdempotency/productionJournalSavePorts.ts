@@ -6,6 +6,7 @@
 
 import { Prisma } from "@prisma/client";
 
+import { resolveP0JournalCreateIdentityFields } from "@/lib/account/p0IdentityWriteFields";
 import { prisma } from "@/lib/db";
 import type { JournalSaveSideEffectPorts } from "@/lib/journal/saveIdempotency/types";
 import { collectTemplateIdsFromReadingText } from "@/lib/diary-reading/generateDiaryReading";
@@ -90,6 +91,12 @@ export function createProductionJournalSavePorts(
         photoStorageProvider: null,
       };
       try {
+        const identityFields = await resolveP0JournalCreateIdentityFields({
+          profileId: ctx.profileId,
+        });
+        if ("forbidden" in identityFields) {
+          throw new Error("p0_journal_create_forbidden_profile");
+        }
         const entry = await prisma.journalEntry.create({
           data: {
             email: ctx.viewerEmail,
@@ -104,12 +111,19 @@ export function createProductionJournalSavePorts(
             ...emptyPhoto,
             generatedComment,
             includeInBook: ctx.includeInBook,
+            ...identityFields,
           },
           select: { id: true },
         });
         return { journalEntryId: entry.id };
       } catch (error) {
         if (!isDesignThemeValidationError(error)) throw error;
+        const identityFields = await resolveP0JournalCreateIdentityFields({
+          profileId: ctx.profileId,
+        });
+        if ("forbidden" in identityFields) {
+          throw new Error("p0_journal_create_forbidden_profile");
+        }
         const entry = await prisma.journalEntry.create({
           data: {
             email: ctx.viewerEmail,
@@ -123,6 +137,7 @@ export function createProductionJournalSavePorts(
             ...emptyPhoto,
             generatedComment,
             includeInBook: ctx.includeInBook,
+            ...identityFields,
           },
           select: { id: true },
         });

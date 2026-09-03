@@ -16,6 +16,11 @@ import {
 import { diaryBookTagScopeFromRow } from "@/lib/journal/diaryBookTagFilter";
 import { loadDiaryBookPeriodEditEligibility } from "@/lib/journal/diaryBookPeriodEdit";
 import { countDiaryBookSnapshotEntries } from "@/lib/journal/diaryBookSnapshot";
+import {
+  authorizeDiaryBookAccess,
+  shouldUseDiaryIdentityRead,
+} from "@/lib/diary/diaryIdentityAuthority";
+import { resolveValueIdentityOwnership } from "@/lib/value/valueIdentityOwnership";
 
 const JSON_NO_STORE = {
   headers: {
@@ -43,9 +48,26 @@ export async function GET(_: Request, { params }: RouteParams) {
     );
   }
 
-  const row = await prisma.diaryBook.findFirst({
-    where: { id: trimmedId, email: viewerEmail },
-  });
+  let row;
+  if (shouldUseDiaryIdentityRead()) {
+    const ownership = await resolveValueIdentityOwnership();
+    const authz = await authorizeDiaryBookAccess({
+      ownership,
+      bookId: trimmedId,
+      bindOnAuthorize: false,
+    });
+    if (authz.state !== "AUTHORIZED") {
+      return NextResponse.json(
+        { error: "あしあとブックが見つかりません。", code: "NOT_FOUND" },
+        { status: 404, ...JSON_NO_STORE },
+      );
+    }
+    row = await prisma.diaryBook.findUnique({ where: { id: trimmedId } });
+  } else {
+    row = await prisma.diaryBook.findFirst({
+      where: { id: trimmedId, email: viewerEmail },
+    });
+  }
 
   if (!row) {
     return NextResponse.json(

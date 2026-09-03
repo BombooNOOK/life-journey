@@ -1,5 +1,6 @@
 import { normalizeEmail } from "@/lib/auth/viewer";
 import { prisma } from "@/lib/db";
+import { supportCreateIdentityFields } from "@/lib/lifecycle/identitySupportAuthority";
 import {
   isSupportInquiryCategory,
   SUPPORT_INQUIRY_MESSAGE_MAX_LENGTH,
@@ -56,6 +57,8 @@ export async function createSupportInquiry(
     return validated;
   }
 
+  const identityFields = await supportCreateIdentityFields();
+
   const row = await prisma.$transaction(async (tx) => {
     const inquiry = await tx.supportInquiry.create({
       data: {
@@ -66,6 +69,7 @@ export async function createSupportInquiry(
         message: validated.message,
         status: "pending",
         replyChannel: "chat",
+        ...identityFields,
       },
       select: { id: true },
     });

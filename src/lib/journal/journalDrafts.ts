@@ -1,5 +1,17 @@
 import { normalizeEmail } from "@/lib/auth/viewer";
 import { prisma } from "@/lib/db";
+import {
+  authorizeJournalDraftMutation,
+  diaryCreateIdentityFields,
+  diaryIdentityOrExplicitEmailWhere,
+  shouldUseDiaryIdentityMutation,
+  shouldUseDiaryIdentityRead,
+} from "@/lib/diary/diaryIdentityAuthority";
+import {
+  loadExplicitHistoricalEmails,
+  resolveP0IdentityReadAccess,
+} from "@/lib/account/p0IdentityReadContract";
+import { resolveValueIdentityOwnership } from "@/lib/value/valueIdentityOwnership";
 import { deleteJournalEntryPhotoBlobBestEffort } from "@/lib/journal/journalEntryPhotoBlob";
 import {
   journalEntryHasStoredPhoto,
@@ -91,8 +103,24 @@ export async function getJournalDraft(params: {
   const email = normalizeEmail(params.email);
   const profileId = params.profileId.trim();
   const dateKey = params.dateKey.trim();
-  if (!email || !profileId || !/^\d{4}-\d{2}-\d{2}$/.test(dateKey)) return null;
+  if (!profileId || !/^\d{4}-\d{2}-\d{2}$/.test(dateKey)) return null;
 
+  if (shouldUseDiaryIdentityRead()) {
+    const ownership = await resolveValueIdentityOwnership();
+    const access = await resolveP0IdentityReadAccess(ownership);
+    if (!access.ok) return null;
+    const where = diaryIdentityOrExplicitEmailWhere({
+      identityId: access.identityId,
+      explicitHistoricalEmails: access.explicitHistoricalEmails,
+      profileId,
+    });
+    const row = await prisma.journalDraft.findFirst({
+      where: { ...where, dateKey },
+    });
+    return row ? toView(row) : null;
+  }
+
+  if (!email) return null;
   const row = await prisma.journalDraft.findUnique({
     where: {
       email_profileId_dateKey: { email, profileId, dateKey },
@@ -111,9 +139,38 @@ export async function listJournalDraftDateKeysInMonth(params: {
   const email = normalizeEmail(params.email);
   const profileId = params.profileId.trim();
   const monthKey = params.monthKey.trim();
-  if (!email || !profileId || !/^\d{4}-\d{2}$/.test(monthKey)) return [];
+  if (!profileId || !/^\d{4}-\d{2}$/.test(monthKey)) return [];
 
   const prefix = `${monthKey}-`;
+
+  if (shouldUseDiaryIdentityRead()) {
+    const ownership = await resolveValueIdentityOwnership();
+    const access = await resolveP0IdentityReadAccess(ownership);
+    if (!access.ok) return [];
+    const where = diaryIdentityOrExplicitEmailWhere({
+      identityId: access.identityId,
+      explicitHistoricalEmails: access.explicitHistoricalEmails,
+      profileId,
+    });
+    const rows = await prisma.journalDraft.findMany({
+      where: {
+        ...where,
+        dateKey: { startsWith: prefix },
+      },
+      select: { dateKey: true, content: true, photoBlobUrl: true, photoDataUrl: true },
+    });
+    return rows
+      .filter(
+        (row) =>
+          row.content.trim().length > 0 ||
+          Boolean(row.photoBlobUrl?.trim()) ||
+          Boolean(row.photoDataUrl?.trim()),
+      )
+      .map((row) => row.dateKey)
+      .sort();
+  }
+
+  if (!email) return [];
   const rows = await prisma.journalDraft.findMany({
     where: {
       email,
@@ -154,7 +211,7 @@ export async function upsertJournalDraft(
   const email = normalizeEmail(input.email);
   const profileId = input.profileId.trim();
   const dateKey = input.dateKey.trim();
-  if (!email || !profileId) throw new Error("email / profileId が必要です");
+  if (!profileId) throw new Error("email / profileId が必要です");
   if (!/^\d{4}-\d{2}-\d{2}$/.test(dateKey)) throw new Error("日付が不正です");
 
   const baseData = {
@@ -167,11 +224,60 @@ export async function upsertJournalDraft(
     writingMode: input.writingMode?.trim() || "alone",
   };
 
-  const existing = await prisma.journalDraft.findUnique({
-    where: {
-      email_profileId_dateKey: { email, profileId, dateKey },
-    },
-  });
+  let identityFields: { identityId?: string } = {};
+  let existing =
+    email
+      ? await prisma.journalDraft.findUnique({
+          where: {
+            email_profileId_dateKey: { email, profileId, dateKey },
+          },
+        })
+      : null;
+
+  if (shouldUseDiaryIdentityMutation()) {
+    const ownership = await resolveValueIdentityOwnership();
+    if (ownership.state !== "BOUND" || !ownership.identityId) {
+      throw new Error(`diary_draft_denied:${ownership.state}`);
+    }
+    identityFields = diaryCreateIdentityFields({ ownership });
+
+    // Prefer identity-scoped lookup so EMAIL-A→EMAIL-B does not create a second draft.
+    const byIdentity = await prisma.journalDraft.findFirst({
+      where: {
+        identityId: ownership.identityId,
+        profileId,
+        dateKey,
+      },
+    });
+    if (byIdentity) {
+      existing = byIdentity;
+    } else if (!existing) {
+      // Mixed legacy: null identityId + explicit historical email
+      const explicit = await loadExplicitHistoricalEmails(ownership.identityId);
+      if (explicit.length > 0) {
+        existing = await prisma.journalDraft.findFirst({
+          where: {
+            identityId: null,
+            email: { in: explicit },
+            profileId,
+            dateKey,
+          },
+        });
+      }
+    }
+
+    if (existing) {
+      const authz = await authorizeJournalDraftMutation({
+        ownership,
+        draftId: existing.id,
+      });
+      if (authz.state !== "AUTHORIZED") {
+        throw new Error(`diary_draft_denied:${authz.state}`);
+      }
+    }
+  } else if (!email) {
+    throw new Error("email / profileId が必要です");
+  }
 
   const draftId = existing?.id ?? `draft_${profileId}_${dateKey}`;
   const photoPatch = input.photoPatch ?? { kind: "unchanged" as const };
@@ -202,16 +308,24 @@ export async function upsertJournalDraft(
   const row = existing
     ? await prisma.journalDraft.update({
         where: { id: existing.id },
-        data: { ...baseData, ...photoData },
+        data: {
+          ...baseData,
+          ...photoData,
+          // Keep historical email on existing row (no product email remap).
+          ...(identityFields.identityId && !existing.identityId
+            ? { identityId: identityFields.identityId }
+            : {}),
+        },
       })
     : await prisma.journalDraft.create({
         data: {
           id: draftId,
-          email,
+          email: email || input.email,
           profileId,
           dateKey,
           ...baseData,
           ...photoData,
+          ...identityFields,
         },
       });
 
@@ -228,18 +342,72 @@ export async function deleteJournalDraft(params: {
   const email = normalizeEmail(params.email);
   const profileId = params.profileId.trim();
   const dateKey = params.dateKey.trim();
-  if (!email || !profileId || !dateKey) return false;
+  if (!profileId || !dateKey) return false;
 
-  const existing = await prisma.journalDraft.findUnique({
-    where: {
-      email_profileId_dateKey: { email, profileId, dateKey },
-    },
-    select: {
-      id: true,
-      photoBlobPathname: true,
-      photoBlobUrl: true,
-    },
-  });
+  let existing:
+    | {
+        id: string;
+        photoBlobPathname: string | null;
+        photoBlobUrl: string | null;
+      }
+    | null = null;
+
+  if (shouldUseDiaryIdentityMutation()) {
+    const ownership = await resolveValueIdentityOwnership();
+    if (ownership.state !== "BOUND" || !ownership.identityId) return false;
+    const byIdentity = await prisma.journalDraft.findFirst({
+      where: { identityId: ownership.identityId, profileId, dateKey },
+      select: {
+        id: true,
+        photoBlobPathname: true,
+        photoBlobUrl: true,
+      },
+    });
+    if (byIdentity) {
+      const authz = await authorizeJournalDraftMutation({
+        ownership,
+        draftId: byIdentity.id,
+      });
+      if (authz.state !== "AUTHORIZED") return false;
+      existing = byIdentity;
+    } else {
+      const explicit = await loadExplicitHistoricalEmails(ownership.identityId);
+      if (explicit.length === 0) return false;
+      const legacy = await prisma.journalDraft.findFirst({
+        where: {
+          identityId: null,
+          email: { in: explicit },
+          profileId,
+          dateKey,
+        },
+        select: {
+          id: true,
+          photoBlobPathname: true,
+          photoBlobUrl: true,
+        },
+      });
+      if (!legacy) return false;
+      const authz = await authorizeJournalDraftMutation({
+        ownership,
+        draftId: legacy.id,
+      });
+      if (authz.state !== "AUTHORIZED") return false;
+      existing = legacy;
+    }
+  } else {
+    if (!email) return false;
+    existing = await prisma.journalDraft.findUnique({
+      where: {
+        email_profileId_dateKey: { email, profileId, dateKey },
+      },
+      select: {
+        id: true,
+        photoBlobPathname: true,
+        photoBlobUrl: true,
+      },
+    });
+  }
+
   if (!existing) return false;
 
   try {

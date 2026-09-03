@@ -1,6 +1,12 @@
 import { normalizeEmail } from "@/lib/auth/viewer";
 import { prisma } from "@/lib/db";
 import { journalProfileIdsForQuery } from "@/lib/profile/activeProfile";
+import {
+  findKanteiOrderForIdentity,
+  listKanteiOrdersForIdentity,
+  shouldUseOrderIdentityRead,
+} from "@/lib/value/orderIdentityAuthority";
+import { resolveValueIdentityOwnership } from "@/lib/value/valueIdentityOwnership";
 
 const KANTEI_ORDER_CORE_SELECT = {
   id: true,
@@ -50,6 +56,14 @@ export async function findKanteiOrderForProfile(params: {
   birthDate: string;
   numerologyJson: string | null;
 } | null> {
+  if (shouldUseOrderIdentityRead()) {
+    const ownership = await resolveValueIdentityOwnership();
+    return findKanteiOrderForIdentity({
+      ownership,
+      profileId: params.profileId,
+    });
+  }
+
   const email = normalizeEmail(params.viewerEmail);
   if (!email) return null;
 
@@ -81,6 +95,15 @@ export async function listKanteiOrdersForProfile(params: {
   profileId: string;
   take?: number;
 }) {
+  if (shouldUseOrderIdentityRead()) {
+    const ownership = await resolveValueIdentityOwnership();
+    return listKanteiOrdersForIdentity({
+      ownership,
+      profileId: params.profileId,
+      take: params.take,
+    });
+  }
+
   const email = normalizeEmail(params.viewerEmail);
   if (!email) return [];
 

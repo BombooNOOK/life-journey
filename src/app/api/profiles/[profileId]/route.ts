@@ -1,6 +1,11 @@
 import { NextResponse } from "next/server";
 
 import { isAdminEmail } from "@/lib/admin/access";
+import {
+  authorizeProfileMutation,
+} from "@/lib/account/p0IdentityMutationAuthority";
+import { isP0IdentityMutationAuthorityEnabled } from "@/lib/account/p0IdentityMutationAuthorityGate";
+import { resolveP0IdentityOwnership } from "@/lib/account/p0IdentityOwnership";
 import { getViewerEmailFromCookie } from "@/lib/auth/viewer";
 import { prisma } from "@/lib/db";
 import { assertFullAccessForApi } from "@/lib/entitlement/requireFullAccess";
@@ -31,12 +36,28 @@ export async function PATCH(req: Request, { params }: Params) {
 
   const { profileId: profileIdRaw } = await params;
   const profileId = parseProfileIdFromRouteParam(profileIdRaw);
-  const existing = await profileByIdForViewer(profileId, viewerEmail);
-  if (!existing) {
-    return NextResponse.json(
-      { error: "指定の記録枠へアクセスできません", code: "FORBIDDEN_PROFILE" },
-      { status: 403 },
-    );
+
+  if (isP0IdentityMutationAuthorityEnabled()) {
+    const ownership = await resolveP0IdentityOwnership();
+    const authz = await authorizeProfileMutation({
+      ownership,
+      profileId,
+      bindOnAuthorize: true,
+    });
+    if (authz.state !== "AUTHORIZED") {
+      return NextResponse.json(
+        { error: "指定の記録枠へアクセスできません", code: "FORBIDDEN_PROFILE" },
+        { status: 403 },
+      );
+    }
+  } else {
+    const existing = await profileByIdForViewer(profileId, viewerEmail);
+    if (!existing) {
+      return NextResponse.json(
+        { error: "指定の記録枠へアクセスできません", code: "FORBIDDEN_PROFILE" },
+        { status: 403 },
+      );
+    }
   }
 
   let json: unknown;

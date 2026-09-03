@@ -13,6 +13,11 @@ import type { CustomerFormValues } from "@/lib/order/types";
 import { profileByIdForViewer, resolveActiveProfileId, listProfilesAndActiveProfileId } from "@/lib/profile/activeProfile";
 import { findExistingOrderForProfile } from "@/lib/profile/orderPerProfile";
 import { isHiraganaOnly } from "@/lib/validation/hiragana";
+import {
+  orderCreateIdentityFields,
+  shouldUseOrderIdentityMutation,
+} from "@/lib/value/orderIdentityAuthority";
+import { resolveValueIdentityOwnership } from "@/lib/value/valueIdentityOwnership";
 
 import { describeSaveError, tryNormalizeCreateBody } from "./postHelpers";
 
@@ -175,6 +180,21 @@ export async function POST(req: Request) {
   const accountCap = await fetchAccountPdfDownloadLimitOrNull(viewerEmail);
   const pdfDownloadLimitForOrder = accountCap ?? 2;
 
+  let identityFields: { identityId?: string } = {};
+  if (shouldUseOrderIdentityMutation()) {
+    const ownership = await resolveValueIdentityOwnership();
+    if (ownership.state !== "BOUND" || !ownership.identityId) {
+      return NextResponse.json(
+        {
+          error: "本人確認が完了していないため鑑定書を作成できません。",
+          code: "IDENTITY_UNBOUND",
+        },
+        { status: 403 },
+      );
+    }
+    identityFields = orderCreateIdentityFields({ ownership });
+  }
+
   try {
     const order = await prisma.order.create({
       data: {
@@ -201,6 +221,7 @@ export async function POST(req: Request) {
         stoneFocusTheme: payload.stoneFocusTheme,
         pdfDownloadLimit: pdfDownloadLimitForOrder,
         status: "completed",
+        ...identityFields,
       },
     });
     try {

@@ -1,6 +1,17 @@
 import { NextResponse } from "next/server";
 import { Prisma } from "@prisma/client";
 
+import { authorizeJournalEntryUnderAuthority } from "@/lib/account/p0IdentityReadAuthority";
+import { isP0IdentityReadAuthorityEnabled } from "@/lib/account/p0IdentityReadAuthorityGate";
+import {
+  buildP0OwnedRowWhere,
+  resolveP0IdentityReadAccess,
+} from "@/lib/account/p0IdentityReadContract";
+import {
+  authorizeJournalEntryMutation,
+} from "@/lib/account/p0IdentityMutationAuthority";
+import { isP0IdentityMutationAuthorityEnabled } from "@/lib/account/p0IdentityMutationAuthorityGate";
+import { resolveP0IdentityOwnership } from "@/lib/account/p0IdentityOwnership";
 import { getViewerEmailFromCookie } from "@/lib/auth/viewer";
 import { assertFullAccessForApi } from "@/lib/entitlement/requireFullAccess";
 import { prisma } from "@/lib/db";
@@ -113,17 +124,48 @@ export async function GET(req: Request, { params }: Params) {
   }
 
   const { id } = await params;
+
+  // AI-X6.7B4: when identity read-authority ON, deny cross-identity direct object access.
+  if (isP0IdentityReadAuthorityEnabled()) {
+    const allowed = await authorizeJournalEntryUnderAuthority({
+      viewerEmail,
+      entryId: id,
+    });
+    if (!allowed) {
+      return NextResponse.json(
+        { error: "対象の記録が見つかりません。", code: "NOT_FOUND" },
+        { status: 404, ...JSON_NO_STORE },
+      );
+    }
+  }
+
+  const entryWhere = await (async () => {
+    if (!isP0IdentityReadAuthorityEnabled()) {
+      return { id, email: viewerEmail };
+    }
+    const ownership = await resolveP0IdentityOwnership();
+    const access = await resolveP0IdentityReadAccess(ownership);
+    if (!access.ok) return { id, email: "__p0_identity_unavailable__" };
+    return {
+      id,
+      ...buildP0OwnedRowWhere({
+        identityId: access.identityId,
+        explicitHistoricalEmails: access.explicitHistoricalEmails,
+      }),
+    };
+  })();
+
   // eslint-disable-next-line @typescript-eslint/no-explicit-any -- select shape varies with designTheme fallback
   let row: any = null;
   try {
     row = await prisma.journalEntry.findFirst({
-      where: { id, email: viewerEmail },
+      where: entryWhere,
       select: entrySelectWithPhoto,
     });
   } catch (error) {
     if (!isDesignThemeValidationError(error)) throw error;
     row = await prisma.journalEntry.findFirst({
-      where: { id, email: viewerEmail },
+      where: entryWhere,
       select: entrySelectWithPhotoFallback,
     });
   }
@@ -216,25 +258,77 @@ export async function PATCH(req: Request, { params }: Params) {
   if (denied) return denied;
 
   const { id } = await params;
-  const exists = await prisma.journalEntry.findFirst({
-    where: { id, email: viewerEmail },
-    select: {
-      id: true,
-      profileId: true,
-      includeInBook: true,
-      createdAt: true,
-      mood: true,
-      activity: true,
-      companionType: true,
-      generatedComment: true,
-      photoDataUrl: true,
-      photoBlobUrl: true,
-      photoBlobPathname: true,
-      photoMimeType: true,
-      photoSizeBytes: true,
-      photoStorageProvider: true,
-    },
-  });
+
+  let exists: {
+    id: string;
+    profileId: string;
+    includeInBook: boolean;
+    createdAt: Date;
+    mood: string;
+    activity: string;
+    companionType: string;
+    generatedComment: string | null;
+    photoDataUrl: string | null;
+    photoBlobUrl: string | null;
+    photoBlobPathname: string | null;
+    photoMimeType: string | null;
+    photoSizeBytes: number | null;
+    photoStorageProvider: string | null;
+  } | null = null;
+
+  if (isP0IdentityMutationAuthorityEnabled()) {
+    const ownership = await resolveP0IdentityOwnership();
+    const authz = await authorizeJournalEntryMutation({
+      ownership,
+      entryId: id,
+      bindOnAuthorize: true,
+    });
+    if (authz.state !== "AUTHORIZED") {
+      return NextResponse.json(
+        { error: "対象の記録が見つかりません。", code: "NOT_FOUND" },
+        { status: 404 },
+      );
+    }
+    exists = await prisma.journalEntry.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        profileId: true,
+        includeInBook: true,
+        createdAt: true,
+        mood: true,
+        activity: true,
+        companionType: true,
+        generatedComment: true,
+        photoDataUrl: true,
+        photoBlobUrl: true,
+        photoBlobPathname: true,
+        photoMimeType: true,
+        photoSizeBytes: true,
+        photoStorageProvider: true,
+      },
+    });
+  } else {
+    exists = await prisma.journalEntry.findFirst({
+      where: { id, email: viewerEmail },
+      select: {
+        id: true,
+        profileId: true,
+        includeInBook: true,
+        createdAt: true,
+        mood: true,
+        activity: true,
+        companionType: true,
+        generatedComment: true,
+        photoDataUrl: true,
+        photoBlobUrl: true,
+        photoBlobPathname: true,
+        photoMimeType: true,
+        photoSizeBytes: true,
+        photoStorageProvider: true,
+      },
+    });
+  }
   if (!exists) {
     return NextResponse.json({ error: "対象の記録が見つかりません。", code: "NOT_FOUND" }, { status: 404 });
   }
@@ -448,14 +542,44 @@ export async function DELETE(_: Request, { params }: Params) {
   }
 
   const { id } = await params;
-  const exists = await prisma.journalEntry.findFirst({
-    where: { id, email: viewerEmail },
-    select: {
-      id: true,
-      photoBlobPathname: true,
-      photoBlobUrl: true,
-    },
-  });
+
+  let exists: {
+    id: string;
+    photoBlobPathname: string | null;
+    photoBlobUrl: string | null;
+  } | null = null;
+
+  if (isP0IdentityMutationAuthorityEnabled()) {
+    const ownership = await resolveP0IdentityOwnership();
+    const authz = await authorizeJournalEntryMutation({
+      ownership,
+      entryId: id,
+      bindOnAuthorize: true,
+    });
+    if (authz.state !== "AUTHORIZED") {
+      return NextResponse.json(
+        { error: "対象の記録が見つかりません。", code: "NOT_FOUND" },
+        { status: 404 },
+      );
+    }
+    exists = await prisma.journalEntry.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        photoBlobPathname: true,
+        photoBlobUrl: true,
+      },
+    });
+  } else {
+    exists = await prisma.journalEntry.findFirst({
+      where: { id, email: viewerEmail },
+      select: {
+        id: true,
+        photoBlobPathname: true,
+        photoBlobUrl: true,
+      },
+    });
+  }
   if (!exists) {
     return NextResponse.json({ error: "対象の記録が見つかりません。", code: "NOT_FOUND" }, { status: 404 });
   }

@@ -1,6 +1,10 @@
 import { normalizeEmail } from "@/lib/auth/viewer";
 import { prisma } from "@/lib/db";
 import type { SubscriptionPlanId } from "@/lib/stripe/plans";
+import {
+  shouldUseStripeIdentitySyncAuthority,
+  syncAccountSettingsFromStripeUnderValueAuthority,
+} from "@/lib/value/stripeIdentitySyncSafety";
 
 export type SyncAccountSettingsFromStripeParams = {
   email: string;
@@ -15,6 +19,12 @@ export type SyncAccountSettingsFromStripeParams = {
 export async function syncAccountSettingsFromStripe(
   params: SyncAccountSettingsFromStripeParams,
 ): Promise<void> {
+  if (shouldUseStripeIdentitySyncAuthority()) {
+    // Identity mode: never create/grant ownership by email alone. No live Stripe calls here.
+    await syncAccountSettingsFromStripeUnderValueAuthority(params);
+    return;
+  }
+
   const email = normalizeEmail(params.email);
   if (!email) return;
 

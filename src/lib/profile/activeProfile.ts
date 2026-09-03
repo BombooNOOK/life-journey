@@ -3,6 +3,11 @@ import { createHash } from "node:crypto";
 
 import { Prisma } from "@prisma/client";
 
+import {
+  listViewerProfilesUnderAuthority,
+  profileByIdUnderAuthority,
+} from "@/lib/account/p0IdentityReadAuthority";
+import { resolveP0ProfileCreateIdentityFields } from "@/lib/account/p0IdentityWriteFields";
 import { normalizeEmail } from "@/lib/auth/viewer";
 import { prisma } from "@/lib/db";
 
@@ -18,12 +23,7 @@ export async function listViewerProfiles(viewerEmail: string): Promise<ViewerPro
   const email = normalizeEmail(viewerEmail);
   if (!email) return [];
   await ensureDefaultProfile(email);
-  const rows = await prisma.profile.findMany({
-    where: { email, isArchived: false },
-    orderBy: { createdAt: "asc" },
-    select: { id: true, nickname: true },
-  });
-  return rows;
+  return listViewerProfilesUnderAuthority(email);
 }
 
 /** `listViewerProfiles` と `resolveActiveProfileId` を同時に呼ぶと Prisma が二重に走るため、マイページ等ではこちらを使う */
@@ -33,11 +33,7 @@ export async function listProfilesAndActiveProfileId(
   const email = normalizeEmail(viewerEmail);
   if (!email) return { profiles: [], activeProfileId: LEGACY_PROFILE_ID };
   await ensureDefaultProfile(email);
-  const profiles = await prisma.profile.findMany({
-    where: { email, isArchived: false },
-    orderBy: { createdAt: "asc" },
-    select: { id: true, nickname: true },
-  });
+  const profiles = await listViewerProfilesUnderAuthority(email);
   if (profiles.length === 0) {
     return { profiles: [], activeProfileId: LEGACY_PROFILE_ID };
   }
@@ -63,13 +59,7 @@ export async function resolveActiveProfileId(viewerEmail: string): Promise<strin
 }
 
 export async function profileByIdForViewer(profileId: string, viewerEmail: string): Promise<ViewerProfile | null> {
-  const email = normalizeEmail(viewerEmail);
-  if (!email) return null;
-  const profile = await prisma.profile.findFirst({
-    where: { id: profileId, email, isArchived: false },
-    select: { id: true, nickname: true },
-  });
-  return profile;
+  return profileByIdUnderAuthority(profileId, viewerEmail);
 }
 
 export function defaultProfileIdForEmail(email: string): string {
@@ -92,11 +82,13 @@ async function ensureDefaultProfile(email: string): Promise<void> {
   });
   if (count > 0) return;
   try {
+    const identityFields = await resolveP0ProfileCreateIdentityFields();
     await prisma.profile.create({
       data: {
         id: defaultProfileIdForEmail(email),
         email,
         nickname: "メイン",
+        ...identityFields,
       },
     });
   } catch (e) {

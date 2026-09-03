@@ -8,6 +8,12 @@ import { prisma } from "@/lib/db";
 import { journalEntryInBookshelfPeriod } from "@/lib/journal/bookshelfPeriod";
 import { buildDiaryBindingCode } from "@/lib/order/diaryBindingCode";
 import { getBookPlan, type BookPlanId } from "@/lib/order/bookBindingPlan";
+import {
+  assertProfileBelongsToIdentity,
+  diaryCreateIdentityFields,
+  shouldUseDiaryIdentityMutation,
+} from "@/lib/diary/diaryIdentityAuthority";
+import { resolveValueIdentityOwnership } from "@/lib/value/valueIdentityOwnership";
 
 const CODE_ASSIGN_MAX_ATTEMPTS = 8;
 
@@ -233,6 +239,19 @@ export async function createOrReusePendingDiaryBookBindingRequest(
 
   const issuedAt = new Date();
 
+  let identityFields: { identityId?: string } = {};
+  if (shouldUseDiaryIdentityMutation()) {
+    const ownership = await resolveValueIdentityOwnership();
+    const profileAuth = await assertProfileBelongsToIdentity({
+      ownership,
+      profileId: input.profileId,
+    });
+    if (profileAuth.state !== "AUTHORIZED") {
+      return { ok: false as const, error: "プロフィールへの権限がありません。" };
+    }
+    identityFields = diaryCreateIdentityFields({ ownership });
+  }
+
   for (let attempt = 0; attempt < CODE_ASSIGN_MAX_ATTEMPTS; attempt++) {
     const diaryBindingCode = buildDiaryBindingCode(issuedAt);
     try {
@@ -248,6 +267,7 @@ export async function createOrReusePendingDiaryBookBindingRequest(
           displayTitle: snapshot.displayTitle,
           periodStartMonth: snapshot.periodStartMonth,
           periodEndMonth: snapshot.periodEndMonth,
+          ...identityFields,
         },
       });
 

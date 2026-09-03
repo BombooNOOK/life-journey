@@ -1,6 +1,19 @@
 import { NextResponse } from "next/server";
 import { Prisma } from "@prisma/client";
 
+import { observeP0ProductReadShadow } from "@/lib/account/p0IdentityProductReadShadow";
+import { isP0IdentityReadAuthorityEnabled } from "@/lib/account/p0IdentityReadAuthorityGate";
+import { isP0IdentityReadShadowEnabled } from "@/lib/account/p0IdentityReadShadowGate";
+import {
+  buildP0OwnedRowWhere,
+  resolveP0IdentityReadAccess,
+} from "@/lib/account/p0IdentityReadContract";
+import {
+  authorizeJournalCreateUnderProfile,
+} from "@/lib/account/p0IdentityMutationAuthority";
+import { isP0IdentityMutationAuthorityEnabled } from "@/lib/account/p0IdentityMutationAuthorityGate";
+import { resolveP0IdentityOwnership } from "@/lib/account/p0IdentityOwnership";
+import { resolveP0JournalCreateIdentityFields } from "@/lib/account/p0IdentityWriteFields";
 import { getViewerEmailFromCookie } from "@/lib/auth/viewer";
 import { loadEntitlementContext } from "@/lib/entitlement/accountSettingsForEntitlement";
 import {
@@ -226,11 +239,33 @@ export async function GET(req: Request) {
       includeInBook: true,
     } as const;
 
-    const whereClause = {
-      email: viewerEmail,
-      ...profileWhere,
-      ...(rangeFilter ? { createdAt: { gte: rangeFilter.from, lt: rangeFilter.to } } : {}),
-    };
+    const whereClause = await (async () => {
+      if (!isP0IdentityReadAuthorityEnabled()) {
+        return {
+          email: viewerEmail,
+          ...profileWhere,
+          ...(rangeFilter ? { createdAt: { gte: rangeFilter.from, lt: rangeFilter.to } } : {}),
+        };
+      }
+      const ownership = await resolveP0IdentityOwnership();
+      const access = await resolveP0IdentityReadAccess(ownership);
+      if (!access.ok) {
+        // Fail closed: empty result set (no email fallback).
+        return { id: "__p0_identity_unavailable__" };
+      }
+      return {
+        AND: [
+          buildP0OwnedRowWhere({
+            identityId: access.identityId,
+            explicitHistoricalEmails: access.explicitHistoricalEmails,
+          }),
+          profileWhere,
+          ...(rangeFilter
+            ? [{ createdAt: { gte: rangeFilter.from, lt: rangeFilter.to } }]
+            : []),
+        ],
+      };
+    })();
 
     const entrySelect = includePhotoBodyInResponse ? fullSelect : calendarSelect;
     const entrySelectFallback = includePhotoBodyInResponse
@@ -265,6 +300,23 @@ export async function GET(req: Request) {
         take: takeLimit,
         select: entrySelectFallback,
       })) as JournalRow[];
+    }
+
+    // AI-X6.7B3: diagnostic read-shadow only (default OFF). Does not change response.
+    if (isP0IdentityReadShadowEnabled()) {
+      void (async () => {
+        try {
+          const ownership = await resolveP0IdentityOwnership();
+          await observeP0ProductReadShadow({
+            surface: "JournalEntry",
+            ownership,
+            oldIds: rows.map((r) => r.id),
+            db: prisma,
+          });
+        } catch {
+          // Shadow must never affect user-visible reads.
+        }
+      })();
     }
 
     if (hasSearch) {
@@ -416,9 +468,26 @@ export async function POST(req: Request) {
   const activeProfileId = await resolveActiveProfileId(viewerEmail);
   const profileId = rawProfileId.trim() || activeProfileId;
   if (profileId) {
-    const p = await profileByIdForViewer(profileId, viewerEmail);
-    if (!p) {
-      return NextResponse.json({ error: "指定プロフィールは利用できません。", code: "FORBIDDEN_PROFILE" }, { status: 403 });
+    if (isP0IdentityMutationAuthorityEnabled()) {
+      const ownership = await resolveP0IdentityOwnership();
+      const authz = await authorizeJournalCreateUnderProfile({
+        ownership,
+        profileId,
+      });
+      if (authz.state !== "AUTHORIZED") {
+        return NextResponse.json(
+          { error: "指定プロフィールは利用できません。", code: "FORBIDDEN_PROFILE" },
+          { status: 403 },
+        );
+      }
+    } else {
+      const p = await profileByIdForViewer(profileId, viewerEmail);
+      if (!p) {
+        return NextResponse.json(
+          { error: "指定プロフィールは利用できません。", code: "FORBIDDEN_PROFILE" },
+          { status: 403 },
+        );
+      }
     }
   }
   const content = rawContent.trim();
@@ -695,6 +764,13 @@ export async function POST(req: Request) {
         }
       | null = null;
     try {
+      const identityFields = await resolveP0JournalCreateIdentityFields({ profileId });
+      if ("forbidden" in identityFields) {
+        return NextResponse.json(
+          { error: "指定プロフィールは利用できません。", code: "FORBIDDEN_PROFILE" },
+          { status: 403 },
+        );
+      }
       entry = await prisma.journalEntry.create({
         data: {
           email: viewerEmail,
@@ -709,6 +785,7 @@ export async function POST(req: Request) {
           ...emptyPhoto,
           generatedComment,
           includeInBook,
+          ...identityFields,
         },
         select: {
           id: true,
@@ -731,6 +808,13 @@ export async function POST(req: Request) {
       });
     } catch (error) {
       if (!isDesignThemeValidationError(error)) throw error;
+      const identityFields = await resolveP0JournalCreateIdentityFields({ profileId });
+      if ("forbidden" in identityFields) {
+        return NextResponse.json(
+          { error: "指定プロフィールは利用できません。", code: "FORBIDDEN_PROFILE" },
+          { status: 403 },
+        );
+      }
       entry = await prisma.journalEntry.create({
         data: {
           email: viewerEmail,
@@ -744,6 +828,7 @@ export async function POST(req: Request) {
           ...emptyPhoto,
           generatedComment,
           includeInBook,
+          ...identityFields,
         },
         select: {
           id: true,

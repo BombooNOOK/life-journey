@@ -40,6 +40,9 @@ import {
 } from "@/lib/order/kanteiCode";
 import type { OrderPayload } from "@/lib/order/types";
 import { orderPayloadFromOrderRow } from "@/lib/order/serialize";
+import { authorizeOrderIdUnderValueAuthority } from "@/lib/value/orderIdentityAuthority";
+import { shouldUseOrderIdentityRead } from "@/lib/value/orderIdentityAuthority";
+import { resolveValueIdentityOwnership } from "@/lib/value/valueIdentityOwnership";
 
 async function renderFullReportWithChapterPdfInserts(
   order: OrderPayload,
@@ -185,12 +188,30 @@ export async function GET(req: Request, { params }: RouteParams) {
     );
   }
   const viewerIsAdmin = await isAdminEmail(viewerEmail);
-  if (!viewerIsAdmin && normalizeEmail(row.email) !== viewerEmail) {
-    console.log("[pdf-api] 早期終了 403 メール不一致", { orderId: id });
-    return NextResponse.json(
-      { error: "この注文にはアクセスできません" },
-      { status: 403, headers: { ...PDF_API_CACHE_HEADERS } },
-    );
+  if (!viewerIsAdmin) {
+    if (shouldUseOrderIdentityRead()) {
+      const ownership = await resolveValueIdentityOwnership();
+      const authz = await authorizeOrderIdUnderValueAuthority({
+        orderId: id,
+        ownership,
+      });
+      if (!authz.ok) {
+        console.log("[pdf-api] 早期終了 403 identity ownership", {
+          orderId: id,
+          state: authz.state,
+        });
+        return NextResponse.json(
+          { error: "この注文にはアクセスできません" },
+          { status: 403, headers: { ...PDF_API_CACHE_HEADERS } },
+        );
+      }
+    } else if (normalizeEmail(row.email) !== viewerEmail) {
+      console.log("[pdf-api] 早期終了 403 メール不一致", { orderId: id });
+      return NextResponse.json(
+        { error: "この注文にはアクセスできません" },
+        { status: 403, headers: { ...PDF_API_CACHE_HEADERS } },
+      );
+    }
   }
 
   const kanteiCode = await resolveOrderKanteiCodeSafe(row.id, "pdf-api");

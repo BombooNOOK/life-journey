@@ -5,6 +5,12 @@ import {
   isStaleUnpaidPending,
 } from "@/lib/commerce/diaryBookBindingPendingLifecycle";
 import { DIARY_BOOK_BINDING_STATUS_LABELS } from "@/lib/commerce/diaryBookBindingStatus";
+import {
+  authorizeDiaryBookAccess,
+  shouldUseDiaryIdentityMutation,
+  shouldUseDiaryIdentityRead,
+} from "@/lib/diary/diaryIdentityAuthority";
+import { resolveValueIdentityOwnership } from "@/lib/value/valueIdentityOwnership";
 
 export type DiaryBookBindingBlockRow = {
   id: string;
@@ -81,10 +87,30 @@ export async function loadDiaryBookDeleteEligibility(params: {
   | { ok: false; code: "NOT_FOUND"; message: string }
 > {
   const trimmedId = params.bookId.trim();
-  const book = await prisma.diaryBook.findFirst({
-    where: { id: trimmedId, email: params.viewerEmail },
-    select: { id: true, title: true, profileId: true },
-  });
+
+  let book: { id: string; title: string; profileId: string } | null = null;
+
+  if (shouldUseDiaryIdentityRead() || shouldUseDiaryIdentityMutation()) {
+    const ownership = await resolveValueIdentityOwnership();
+    const authz = await authorizeDiaryBookAccess({
+      ownership,
+      bookId: trimmedId,
+      bindOnAuthorize: shouldUseDiaryIdentityMutation(),
+    });
+    if (authz.state !== "AUTHORIZED") {
+      return { ok: false, code: "NOT_FOUND", message: "あしあとブックが見つかりません。" };
+    }
+    book = await prisma.diaryBook.findUnique({
+      where: { id: trimmedId },
+      select: { id: true, title: true, profileId: true },
+    });
+  } else {
+    book = await prisma.diaryBook.findFirst({
+      where: { id: trimmedId, email: params.viewerEmail },
+      select: { id: true, title: true, profileId: true },
+    });
+  }
+
   if (!book) {
     return { ok: false, code: "NOT_FOUND", message: "あしあとブックが見つかりません。" };
   }
@@ -92,7 +118,9 @@ export async function loadDiaryBookDeleteEligibility(params: {
   await expireStaleUnpaidPendingForScope({ diaryBookId: book.id });
 
   const bindings = await prisma.diaryBookBindingRequest.findMany({
-    where: { diaryBookId: book.id, email: params.viewerEmail },
+    where: shouldUseDiaryIdentityRead()
+      ? { diaryBookId: book.id }
+      : { diaryBookId: book.id, email: params.viewerEmail },
     select: {
       id: true,
       status: true,

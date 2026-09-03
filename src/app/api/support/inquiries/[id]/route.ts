@@ -9,6 +9,8 @@ import {
   type SupportInquiryCategory,
   type SupportInquiryStatus,
 } from "@/lib/support/supportInquiryTypes";
+import { isIdentitySupportAuthorityEnabled } from "@/lib/lifecycle/lifecycleIdentityGates";
+import { authorizeSupportInquiryAccess } from "@/lib/lifecycle/identitySupportAuthority";
 
 const JSON_NO_STORE = {
   headers: {
@@ -64,9 +66,22 @@ export async function GET(_req: Request, context: RouteContext) {
     );
   }
 
-  const email = normalizeEmail(viewerEmail);
-  if (inquiry.email !== email) {
-    return NextResponse.json({ error: "閲覧権限がありません。", code: "FORBIDDEN" }, { status: 403, ...JSON_NO_STORE });
+  if (isIdentitySupportAuthorityEnabled()) {
+    const authz = await authorizeSupportInquiryAccess({ inquiryId: inquiry.id });
+    if (!authz.ok) {
+      return NextResponse.json(
+        { error: "閲覧権限がありません。", code: "FORBIDDEN" },
+        { status: 403, ...JSON_NO_STORE },
+      );
+    }
+  } else {
+    const email = normalizeEmail(viewerEmail);
+    if (inquiry.email !== email) {
+      return NextResponse.json(
+        { error: "閲覧権限がありません。", code: "FORBIDDEN" },
+        { status: 403, ...JSON_NO_STORE },
+      );
+    }
   }
 
   if (inquiry.replyChannel === "email") {

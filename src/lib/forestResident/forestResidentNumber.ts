@@ -1,5 +1,6 @@
 import { Prisma } from "@prisma/client";
 
+import { resolveP0AccountSettingsCreateIdentityFields } from "@/lib/account/p0IdentityWriteFields";
 import { prisma } from "@/lib/db";
 import { ensureWelcomeAcornGift } from "@/lib/loghouse/donguriLedger";
 import {
@@ -143,6 +144,7 @@ export async function ensureForestResidentForEmail(email: string): Promise<Fores
         return card;
       }
 
+      const identityFields = await resolveP0AccountSettingsCreateIdentityFields();
       const created = await prisma.accountSettings.create({
         data: {
           email: normalized,
@@ -153,6 +155,7 @@ export async function ensureForestResidentForEmail(email: string): Promise<Fores
           isMonitor: false,
           subscriberPdfAccess: false,
           pdfDownloadLimitPerOrder: 2,
+          ...identityFields,
         },
         select: {
           forestResidentNumber: true,

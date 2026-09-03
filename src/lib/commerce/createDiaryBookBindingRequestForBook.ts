@@ -14,6 +14,13 @@ import {
 import { listJournalEntriesForDiaryBookRow } from "@/lib/journal/listDiaryBookEntries";
 import { buildDiaryBindingCode } from "@/lib/order/diaryBindingCode";
 import { getBookPlan, type BookPlanId } from "@/lib/order/bookBindingPlan";
+import {
+  authorizeDiaryBookAccess,
+  diaryCreateIdentityFields,
+  shouldUseDiaryIdentityMutation,
+  shouldUseDiaryIdentityRead,
+} from "@/lib/diary/diaryIdentityAuthority";
+import { resolveValueIdentityOwnership } from "@/lib/value/valueIdentityOwnership";
 
 const CODE_ASSIGN_MAX_ATTEMPTS = 8;
 
@@ -75,9 +82,23 @@ function snapshotDiffersFromRow(
 export async function loadDiaryBookBindingSnapshotForBook(
   input: DiaryBookBindingForBookInput,
 ): Promise<DiaryBookBindingBookSnapshot | { error: string }> {
-  const row = await prisma.diaryBook.findFirst({
-    where: { id: input.bookId.trim(), email: input.viewerEmail },
-  });
+  let row;
+  if (shouldUseDiaryIdentityRead() || shouldUseDiaryIdentityMutation()) {
+    const ownership = await resolveValueIdentityOwnership();
+    const authz = await authorizeDiaryBookAccess({
+      ownership,
+      bookId: input.bookId.trim(),
+      bindOnAuthorize: false,
+    });
+    if (authz.state !== "AUTHORIZED") {
+      return { error: "あしあとブックが見つかりません。" };
+    }
+    row = await prisma.diaryBook.findUnique({ where: { id: input.bookId.trim() } });
+  } else {
+    row = await prisma.diaryBook.findFirst({
+      where: { id: input.bookId.trim(), email: input.viewerEmail },
+    });
+  }
   if (!row) {
     return { error: "あしあとブックが見つかりません。" };
   }
@@ -238,6 +259,12 @@ export async function createOrReusePendingDiaryBookBindingForBook(
   const issuedAt = new Date();
   const yearFromStart = parseInt(snapshot.startDate.slice(0, 4), 10);
 
+  let identityFields: { identityId?: string } = {};
+  if (shouldUseDiaryIdentityMutation()) {
+    const ownership = await resolveValueIdentityOwnership();
+    identityFields = diaryCreateIdentityFields({ ownership });
+  }
+
   for (let attempt = 0; attempt < CODE_ASSIGN_MAX_ATTEMPTS; attempt++) {
     const diaryBindingCode = buildDiaryBindingCode(issuedAt);
     try {
@@ -255,6 +282,7 @@ export async function createOrReusePendingDiaryBookBindingForBook(
           startDate: snapshot.startDate,
           endDate: snapshot.endDate,
           baseShopUrl: snapshot.baseShopUrl,
+          ...identityFields,
         },
       });
 

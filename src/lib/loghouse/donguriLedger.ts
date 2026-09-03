@@ -7,6 +7,14 @@ import {
   japanCalendarYearFromDate,
 } from "@/lib/loghouse/birthdayAcornGift";
 import {
+  authorizeDonguriSpendUnderValueAuthority,
+  donguriCreateIdentityFields,
+  shouldUseDonguriIdentityMutation,
+  shouldUseDonguriIdentityRead,
+  sumDonguriBalanceUnderValueAuthority,
+} from "@/lib/value/donguriIdentityAuthority";
+import { resolveValueIdentityOwnership } from "@/lib/value/valueIdentityOwnership";
+import {
   DONGURI_ADMIN_ADJUSTMENT_TITLE,
   DONGURI_ADMIN_ADJUSTMENT_USER_TITLE,
   DONGURI_BIRTHDAY_GIFT_AMOUNT,
@@ -79,9 +87,16 @@ export async function sumDonguriBalance(params: {
   email: string;
   profileId: string;
 }): Promise<number> {
-  const email = normalizeEmail(params.email);
   const profileId = params.profileId.trim();
-  if (!email || !profileId) return 0;
+  if (!profileId) return 0;
+
+  if (shouldUseDonguriIdentityRead()) {
+    const result = await sumDonguriBalanceUnderValueAuthority({ profileId });
+    return result.ok ? result.balance : 0;
+  }
+
+  const email = normalizeEmail(params.email);
+  if (!email) return 0;
 
   const agg = await prisma.logHouseDonguriLedgerEntry.aggregate({
     where: { email, profileId },
@@ -106,14 +121,29 @@ export async function listDonguriLedgerEntries(params: {
   profileId?: string | null;
   take?: number;
 }): Promise<DonguriLedgerEntryView[]> {
+  const profileId = params.profileId?.trim() || null;
+  const take = params.take ?? 80;
+
+  if (shouldUseDonguriIdentityRead()) {
+    const ownership = await resolveValueIdentityOwnership();
+    if (ownership.state !== "BOUND" || !ownership.identityId) return [];
+    const rows = await prisma.logHouseDonguriLedgerEntry.findMany({
+      where: profileId
+        ? { identityId: ownership.identityId, profileId }
+        : { identityId: ownership.identityId },
+      orderBy: { createdAt: "desc" },
+      take,
+    });
+    return rows.map(toView);
+  }
+
   const email = normalizeEmail(params.email);
   if (!email) return [];
-  const profileId = params.profileId?.trim() || null;
 
   const rows = await prisma.logHouseDonguriLedgerEntry.findMany({
     where: profileId ? { email, profileId } : { email },
     orderBy: { createdAt: "desc" },
-    take: params.take ?? 80,
+    take,
   });
   return rows.map(toView);
 }
@@ -125,24 +155,43 @@ export async function getDonguriChoView(params: {
 }): Promise<DonguriChoView> {
   const email = normalizeEmail(params.email);
   const profileId = params.profileId.trim();
-  if (!email || !profileId) {
+  if (!profileId) {
+    return { balance: 0, todayDelivery: null, recent: [] };
+  }
+  if (!shouldUseDonguriIdentityRead() && !email) {
     return { balance: 0, todayDelivery: null, recent: [] };
   }
 
   const now = params.now ?? new Date();
   const todayKey = calendarDayKeyInJapanFromDate(now);
 
-  const [balance, recent, todayRow] = await Promise.all([
-    sumDonguriBalance({ email, profileId }),
-    listDonguriLedgerEntries({ email, profileId, take: 20 }),
-    prisma.logHouseDonguriLedgerEntry.findFirst({
-      where: {
-        email,
+  let todayWhere:
+    | { email: string; profileId: string; reason: string; dateKey: string }
+    | { identityId: string; profileId: string; reason: string; dateKey: string }
+    | null = email
+    ? { email, profileId, reason: "daily_delivery", dateKey: todayKey }
+    : null;
+
+  if (shouldUseDonguriIdentityRead()) {
+    const ownership = await resolveValueIdentityOwnership();
+    if (ownership.state === "BOUND" && ownership.identityId) {
+      todayWhere = {
+        identityId: ownership.identityId,
         profileId,
         reason: "daily_delivery",
         dateKey: todayKey,
-      },
-    }),
+      };
+    } else {
+      todayWhere = null;
+    }
+  }
+
+  const [balance, recent, todayRow] = await Promise.all([
+    sumDonguriBalance({ email: email || params.email, profileId }),
+    listDonguriLedgerEntries({ email: email || params.email, profileId, take: 20 }),
+    todayWhere
+      ? prisma.logHouseDonguriLedgerEntry.findFirst({ where: todayWhere })
+      : Promise.resolve(null),
   ]);
 
   return {
@@ -188,6 +237,24 @@ export async function appendDonguriLedgerEntry(
     throw new Error("amount は 0 以外の整数が必要です");
   }
 
+  let identityFields: { identityId?: string } = {};
+  if (shouldUseDonguriIdentityMutation()) {
+    // User-initiated path: authorize by identity. Admin createdBy bypasses
+    // user spend auth but still dual-writes identity when BOUND (not from email alone).
+    if ((input.createdBy ?? "system") === "user") {
+      const spend = await authorizeDonguriSpendUnderValueAuthority({ profileId });
+      if (!spend.ok) {
+        throw new Error(`donguri_spend_denied:${spend.state}`);
+      }
+      identityFields = spend.writeIdentityId
+        ? { identityId: spend.writeIdentityId }
+        : {};
+    } else {
+      const ownership = await resolveValueIdentityOwnership();
+      identityFields = donguriCreateIdentityFields({ ownership });
+    }
+  }
+
   const row = await prisma.logHouseDonguriLedgerEntry.create({
     data: {
       email,
@@ -200,6 +267,7 @@ export async function appendDonguriLedgerEntry(
       createdBy: input.createdBy ?? "system",
       relatedNoticeId: input.relatedNoticeId ?? null,
       relatedDiaryId: input.relatedDiaryId ?? null,
+      ...identityFields,
     },
   });
   return toView(row);
@@ -220,12 +288,34 @@ export async function ensureDailyAcornDelivery(params: {
     return { delivered: false, balance: 0 };
   }
 
+  let identityFields: { identityId?: string } = {};
+  if (shouldUseDonguriIdentityMutation()) {
+    const ownership = await resolveValueIdentityOwnership();
+    if (ownership.state !== "BOUND" || !ownership.identityId) {
+      return { delivered: false, balance: 0 };
+    }
+    identityFields = donguriCreateIdentityFields({ ownership });
+  }
+
   const now = params.now ?? new Date();
   const dateKey = calendarDayKeyInJapanFromDate(now);
 
   try {
+    const existingWhere = shouldUseDonguriIdentityRead() && identityFields.identityId
+      ? {
+          identityId: identityFields.identityId,
+          profileId,
+          reason: "daily_delivery" as const,
+          dateKey,
+        }
+      : {
+          email,
+          profileId,
+          reason: "daily_delivery" as const,
+          dateKey,
+        };
     const existing = await prisma.logHouseDonguriLedgerEntry.findFirst({
-      where: { email, profileId, reason: "daily_delivery", dateKey },
+      where: existingWhere,
       select: { id: true },
     });
     if (existing) {
@@ -243,6 +333,7 @@ export async function ensureDailyAcornDelivery(params: {
           description: DONGURI_DAILY_DELIVERY_DESCRIPTION,
           dateKey,
           createdBy: "system",
+          ...identityFields,
         },
       });
 
@@ -549,6 +640,19 @@ export async function chargeDiarySaveAcorns(params: {
       balance: 0,
       entry: null,
     };
+  }
+
+  if (shouldUseDonguriIdentityMutation()) {
+    const spend = await authorizeDonguriSpendUnderValueAuthority({ profileId });
+    if (!spend.ok) {
+      return {
+        charged: false,
+        alreadyCharged: false,
+        insufficient: false,
+        balance: 0,
+        entry: null,
+      };
+    }
   }
 
   const dateKey = diarySaveLedgerDateKey(journalEntryId);

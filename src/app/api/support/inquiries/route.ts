@@ -11,6 +11,9 @@ import {
   type SupportInquiryCategory,
   type SupportInquiryStatus,
 } from "@/lib/support/supportInquiryTypes";
+import { isIdentitySupportAuthorityEnabled } from "@/lib/lifecycle/lifecycleIdentityGates";
+import { listSupportInquiryIdsForSubject } from "@/lib/lifecycle/identitySupportAuthority";
+import { resolveLifecycleSubject } from "@/lib/lifecycle/lifecycleSubject";
 
 const JSON_NO_STORE = {
   headers: {
@@ -27,20 +30,50 @@ export async function GET() {
     );
   }
 
-  const email = normalizeEmail(viewerEmail);
-  const rows = await prisma.supportInquiry.findMany({
-    where: { email, replyChannel: "chat" },
-    orderBy: { updatedAt: "desc" },
-    take: 50,
-    select: {
-      id: true,
-      createdAt: true,
-      updatedAt: true,
-      category: true,
-      message: true,
-      status: true,
-    },
-  });
+  let rows: Array<{
+    id: string;
+    createdAt: Date;
+    updatedAt: Date;
+    category: string;
+    message: string;
+    status: string;
+  }>;
+
+  if (isIdentitySupportAuthorityEnabled()) {
+    const subject = await resolveLifecycleSubject();
+    if (subject.state !== "BOUND") {
+      return NextResponse.json({ code: "OK", inquiries: [] }, { ...JSON_NO_STORE });
+    }
+    const ids = await listSupportInquiryIdsForSubject(subject);
+    rows = await prisma.supportInquiry.findMany({
+      where: { id: { in: ids }, replyChannel: "chat" },
+      orderBy: { updatedAt: "desc" },
+      take: 50,
+      select: {
+        id: true,
+        createdAt: true,
+        updatedAt: true,
+        category: true,
+        message: true,
+        status: true,
+      },
+    });
+  } else {
+    const email = normalizeEmail(viewerEmail);
+    rows = await prisma.supportInquiry.findMany({
+      where: { email, replyChannel: "chat" },
+      orderBy: { updatedAt: "desc" },
+      take: 50,
+      select: {
+        id: true,
+        createdAt: true,
+        updatedAt: true,
+        category: true,
+        message: true,
+        status: true,
+      },
+    });
+  }
 
   return NextResponse.json(
     {
@@ -107,10 +140,15 @@ export async function POST(req: Request) {
     const status =
       result.code === "AUTH_REQUIRED"
         ? 401
-        : result.code === "INVALID_CATEGORY" || result.code === "EMPTY_MESSAGE" || result.code === "MESSAGE_TOO_LONG"
+        : result.code === "INVALID_CATEGORY" ||
+            result.code === "EMPTY_MESSAGE" ||
+            result.code === "MESSAGE_TOO_LONG"
           ? 400
           : 500;
-    return NextResponse.json({ error: result.error, code: result.code }, { status, ...JSON_NO_STORE });
+    return NextResponse.json(
+      { error: result.error, code: result.code },
+      { status, ...JSON_NO_STORE },
+    );
   }
 
   return NextResponse.json(

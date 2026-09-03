@@ -4,6 +4,8 @@ import { normalizeEmail, getViewerEmailFromCookie } from "@/lib/auth/viewer";
 import { prisma } from "@/lib/db";
 import { addSupportInquiryMessage } from "@/lib/support/addSupportInquiryMessage";
 import { serializeSupportInquiryMessage } from "@/lib/support/serializeSupportInquiryMessage";
+import { isIdentitySupportAuthorityEnabled } from "@/lib/lifecycle/lifecycleIdentityGates";
+import { authorizeSupportInquiryAccess } from "@/lib/lifecycle/identitySupportAuthority";
 
 const JSON_NO_STORE = {
   headers: {
@@ -56,9 +58,22 @@ export async function POST(req: Request, context: RouteContext) {
     );
   }
 
-  const email = normalizeEmail(viewerEmail);
-  if (inquiry.email !== email) {
-    return NextResponse.json({ error: "送信権限がありません。", code: "FORBIDDEN" }, { status: 403, ...JSON_NO_STORE });
+  if (isIdentitySupportAuthorityEnabled()) {
+    const authz = await authorizeSupportInquiryAccess({ inquiryId: inquiry.id });
+    if (!authz.ok) {
+      return NextResponse.json(
+        { error: "送信権限がありません。", code: "FORBIDDEN" },
+        { status: 403, ...JSON_NO_STORE },
+      );
+    }
+  } else {
+    const email = normalizeEmail(viewerEmail);
+    if (inquiry.email !== email) {
+      return NextResponse.json(
+        { error: "送信権限がありません。", code: "FORBIDDEN" },
+        { status: 403, ...JSON_NO_STORE },
+      );
+    }
   }
 
   if (inquiry.replyChannel === "email") {

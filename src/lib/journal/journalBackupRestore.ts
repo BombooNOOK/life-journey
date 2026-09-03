@@ -224,6 +224,25 @@ export async function planJournalBackupRestore(params: {
     throw new JournalBackupRestoreError("viewerEmail が空です。", "EMAIL_MISSING");
   }
 
+  const { isIdentityRestoreAuthorityEnabled } = await import(
+    "@/lib/lifecycle/lifecycleIdentityGates"
+  );
+  if (isIdentityRestoreAuthorityEnabled()) {
+    const { authorizeIdentityRestore } = await import(
+      "@/lib/lifecycle/identityRestoreAuthority"
+    );
+    const authz = await authorizeIdentityRestore({
+      viewerEmail: email,
+      document: params.extracted.document,
+    });
+    if (!authz.ok) {
+      throw new JournalBackupRestoreError(
+        `復元権限がありません（${authz.reason}）。`,
+        "IDENTITY_RESTORE_DENIED",
+      );
+    }
+  }
+
   const validation = validateJournalBackupDocument(
     params.extracted.document,
     params.extracted.zipEntryNames,
@@ -308,10 +327,37 @@ export async function restoreJournalBackupToNewProfile(params: {
 
   try {
     stage = "profile";
+    let identityFields: { identityId?: string } = {};
+    const { isIdentityRestoreAuthorityEnabled } = await import(
+      "@/lib/lifecycle/lifecycleIdentityGates"
+    );
+    if (isIdentityRestoreAuthorityEnabled()) {
+      const { authorizeIdentityRestore } = await import(
+        "@/lib/lifecycle/identityRestoreAuthority"
+      );
+      const authz = await authorizeIdentityRestore({
+        viewerEmail: plan.viewerEmail,
+        document: params.extracted.document,
+      });
+      if (!authz.ok) {
+        throw new JournalBackupRestoreFailure(
+          `復元権限がありません（${authz.reason}）。`,
+          "IDENTITY_RESTORE_DENIED",
+          "profile",
+          true,
+          false,
+        );
+      }
+      if (authz.writeIdentityId) {
+        identityFields = { identityId: authz.writeIdentityId };
+      }
+    }
+
     const profile = await prisma.profile.create({
       data: {
         email: plan.viewerEmail,
         nickname: plan.restoreProfileNickname,
+        ...identityFields,
       },
       select: { id: true, nickname: true },
     });
@@ -334,6 +380,7 @@ export async function restoreJournalBackupToNewProfile(params: {
           includeInBook: backupEntry.includeInBook,
           createdAt: new Date(backupEntry.createdAt),
           updatedAt: new Date(backupEntry.updatedAt),
+          ...identityFields,
         },
         select: { id: true },
       });

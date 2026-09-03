@@ -360,7 +360,14 @@ export async function startJournalBackupZipStream(params: {
   profileId: string;
   profileNickname: string;
 }): Promise<{ stream: Readable; filename: string; photoCount: number }> {
-  const built = await buildJournalBackupData(params);
+  const { buildJournalBackupDataUnderAuthority } = await import(
+    "@/lib/lifecycle/identityExportAuthority"
+  );
+  const under = await buildJournalBackupDataUnderAuthority(params);
+  if (!under.ok) {
+    throw new Error(`backup_export_denied:${under.state}`);
+  }
+  const built = "legacy" in under && under.legacy ? under.built : under.built;
   const archive = new ZipArchive({ zlib: { level: 0 } });
   const stream = new PassThrough();
 
