@@ -61,7 +61,15 @@ model Order {
   /// 鑑定書の表示用コード（PDFファイル名など）。形式: LJK-YYYYMMDD-XXXX
   kanteiCode String? @unique
 
+  /// Durable person ownership (AI-X6.7B7B). Nullable during hybrid transition.
+  /// email remains historical purchaser/contact/receipt metadata — never remapped on email change.
+  /// FK Restrict: purge/rebind orders before identity deletion.
+  identityId String?
+  identity   AccountIdentity? @relation(fields: [identityId], references: [id], onDelete: Restrict)
+
   @@index([email, profileId])
+  @@index([identityId, profileId])
+  @@index([identityId, createdAt])
 }
 
 model JournalEntry {
@@ -89,7 +97,17 @@ model JournalEntry {
   generatedComment     String?
   includeInBook        Boolean @default(true)
 
+  /// Durable person ownership (AI-X6.7B2 P0). Nullable during hybrid transition.
+  /// Direct FK to AccountIdentity — not inherited only via Profile — because
+  /// profileId is a soft string (no Prisma FK) and profiles may be archived/deleted.
+  /// email remains compatibility/contact metadata; never sole historical authority.
+  /// FK Restrict: purge product rows before identity deletion.
+  identityId String?
+  identity   AccountIdentity? @relation(fields: [identityId], references: [id], onDelete: Restrict)
+
   @@index([email, profileId])
+  @@index([identityId, profileId])
+  @@index([identityId, updatedAt])
 }
 
 /// Server Journal save-operation idempotency (official schema; 4B-4U).
@@ -156,8 +174,16 @@ model JournalDraft {
   /// alone | with_appraiser
   writingMode String @default("alone")
 
+  /// Durable person ownership (AI-X6.7B7A). Nullable during hybrid transition.
+  /// email remains compatibility metadata; profileId/dateKey remain context/uniqueness dims.
+  /// FK Restrict: purge/rebind drafts before identity deletion.
+  identityId String?
+  identity   AccountIdentity? @relation(fields: [identityId], references: [id], onDelete: Restrict)
+
   @@unique([email, profileId, dateKey])
   @@index([email, profileId])
+  @@index([identityId, profileId, dateKey])
+  @@index([identityId, profileId])
 }
 
 /// アプリ内日記ブック（ユーザーが明示的に生成）
@@ -181,7 +207,14 @@ model DiaryBook {
   /// "AND" | "OR"（tagFilter が空のときは無視）
   tagFilterMode String @default("AND")
 
+  /// Durable person ownership (AI-X6.7B7A). First-class durable collection.
+  /// profileId remains context only; email remains compatibility metadata.
+  identityId String?
+  identity   AccountIdentity? @relation(fields: [identityId], references: [id], onDelete: Restrict)
+
   @@index([email, profileId, createdAt])
+  @@index([identityId, profileId, createdAt])
+  @@index([identityId])
 }
 
 /// 本棚の「年別日記」ごとの表示名・表紙・製本期間（その西暦年内の月レンジ）
@@ -199,8 +232,15 @@ model DiaryBookshelfBook {
   periodStartMonth Int     @default(1)
   periodEndMonth   Int     @default(12)
 
+  /// Durable person ownership (AI-X6.7B7A). Year bookshelf settings are first-class.
+  /// Not inherited via DiaryBook FK (soft/email year key). Direct identityId required.
+  identityId String?
+  identity   AccountIdentity? @relation(fields: [identityId], references: [id], onDelete: Restrict)
+
   @@unique([email, profileId, year])
   @@index([email, profileId])
+  @@index([identityId, profileId, year])
+  @@index([identityId, profileId])
 }
 
 /// ユーザー単位の運用設定（管理者判定・プロフィール上限など）
@@ -309,11 +349,19 @@ model DiaryBookBindingRequest {
   cancelReason String?
   expiredAt    DateTime?
 
+  /// Durable person ownership (AI-X6.7B7A). Direct identityId required:
+  /// diaryBookId is optional soft string; year-shelf bindings have no DiaryBook parent.
+  /// baseOrderNumber/baseBuyerName remain payment receipt metadata (unchanged).
+  identityId String?
+  identity   AccountIdentity? @relation(fields: [identityId], references: [id], onDelete: Restrict)
+
   @@index([status, createdAt])
   @@index([email, profileId, year])
   @@index([email, profileId, diaryBookId])
   @@index([diaryBookId])
   @@index([diaryBindingCode])
+  @@index([identityId, profileId])
+  @@index([identityId, diaryBookId])
 }
 
 /// マイページからの運営お問い合わせ（プロフィール削除依頼など）
@@ -334,11 +382,17 @@ model SupportInquiry {
   /// "chat" = ログイン後のスレッド返信 / "email" = 未ログインのメール返信
   replyChannel String @default("chat")
 
+  /// Durable person ownership (AI-X6.7B7D). Historical contact email retained.
+  /// User access must not use current email alone.
+  identityId String?
+  identity   AccountIdentity? @relation(fields: [identityId], references: [id], onDelete: Restrict)
+
   messages SupportInquiryMessage[]
 
   @@index([status, createdAt])
   @@index([email, createdAt])
   @@index([category, createdAt])
+  @@index([identityId, createdAt])
 }
 
 /// お問い合わせスレッド内のメッセージ（ユーザー / 運営）
@@ -434,7 +488,15 @@ model Profile {
   nickname   String
   isArchived Boolean @default(false)
 
+  /// Durable person ownership (AI-X6.7B2 P0). Nullable during hybrid transition.
+  /// NOT unique: one AccountIdentity may own multiple Profiles (profileLimit ≥ 1).
+  /// email remains compatibility key during transition; never sole historical authority.
+  /// FK Restrict: purge/rebind profiles before identity deletion.
+  identityId String?
+  identity   AccountIdentity? @relation(fields: [identityId], references: [id], onDelete: Restrict)
+
   @@index([email, isArchived])
+  @@index([identityId, isArchived])
 }
 
 /// お庭の植木鉢（プロフィールごとに中央1鉢・MVPは1種）
@@ -584,11 +646,20 @@ model LogHouseDonguriLedgerEntry {
   /// system | admin | user
   createdBy String @default("system")
 
+  /// Durable person ownership (AI-X6.7B7B). Nullable during hybrid transition.
+  /// Balance is ledger-derived (SUM amount); do not denormalize stored balance.
+  /// email remains compatibility/audit; profileId remains product context.
+  /// FK Restrict: purge/rebind ledger rows before identity deletion.
+  identityId String?
+  identity   AccountIdentity? @relation(fields: [identityId], references: [id], onDelete: Restrict)
+
   @@unique([email, profileId, reason, dateKey])
   @@unique([idempotencyKey])
   @@index([email, profileId, createdAt])
   @@index([email, createdAt])
   @@index([relatedDiaryId])
+  @@index([identityId, profileId])
+  @@index([identityId, createdAt])
 }
 
 /// Stable Firebase UID identity anchor (AI-8.2).
@@ -604,10 +675,23 @@ model AccountIdentity {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  emails            AccountIdentityEmail[]
-  legacyActorClaims AccountIdentityLegacyActorClaim[]
+  emails                   AccountIdentityEmail[]
+  legacyActorClaims        AccountIdentityLegacyActorClaim[]
   /// Optional 1:1 product account row (AI-X6.5A). Null until bound/backfilled.
-  accountSettings   AccountSettings?
+  accountSettings          AccountSettings?
+  /// P0 product ownership (AI-X6.7B2). One identity → many profiles / journal entries.
+  profiles                 Profile[]
+  journalEntries           JournalEntry[]
+  /// P1A value/commerce ownership (AI-X6.7B7B).
+  orders                   Order[]
+  donguriLedgerEntries     LogHouseDonguriLedgerEntry[]
+  /// P1A diary-history ownership (AI-X6.7B7A).
+  journalDrafts            JournalDraft[]
+  diaryBooks               DiaryBook[]
+  diaryBookshelfBooks      DiaryBookshelfBook[]
+  diaryBookBindingRequests DiaryBookBindingRequest[]
+  /// P1A lifecycle support ownership (AI-X6.7B7D).
+  supportInquiries         SupportInquiry[]
 }
 
 /// Authentication/contact email lifecycle for an AccountIdentity.
