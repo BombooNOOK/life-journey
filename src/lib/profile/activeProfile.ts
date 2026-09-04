@@ -4,6 +4,11 @@ import { createHash } from "node:crypto";
 import { Prisma } from "@prisma/client";
 
 import {
+  resolveP0IdentityOwnership,
+  type P0OwnershipResolution,
+  type P0OwnershipResolverDeps,
+} from "@/lib/account/p0IdentityOwnership";
+import {
   listViewerProfilesUnderAuthority,
   profileByIdUnderAuthority,
 } from "@/lib/account/p0IdentityReadAuthority";
@@ -19,6 +24,35 @@ export type ViewerProfile = {
   nickname: string;
 };
 
+export type EnsureDefaultProfileDeps = P0OwnershipResolverDeps & {
+  db?: typeof prisma;
+  /**
+   * Optional ownership override for tests.
+   * Production callers omit this — ownership comes from verified UID → AccountIdentity.
+   */
+  resolveOwnership?: () => Promise<P0OwnershipResolution>;
+};
+
+/**
+ * AI-X6.7C1.5A2-I3 — Identity-first skip rule for default Profile bootstrap.
+ *
+ * When the verified session is BOUND to an AccountIdentity that already owns
+ * one or more non-archived Profiles, do NOT create a new Profile merely because
+ * Profile.email differs from the current session email.
+ *
+ * Current email alone never selects or invents ownership.
+ */
+export function shouldSkipEmailBootstrapForIdentityOwnedProfiles(input: {
+  ownership: P0OwnershipResolution;
+  identityOwnedNonArchivedCount: number;
+}): boolean {
+  return (
+    input.ownership.state === "BOUND" &&
+    Boolean(input.ownership.identityId) &&
+    input.identityOwnedNonArchivedCount > 0
+  );
+}
+
 export async function listViewerProfiles(viewerEmail: string): Promise<ViewerProfile[]> {
   const email = normalizeEmail(viewerEmail);
   if (!email) return [];
@@ -26,7 +60,13 @@ export async function listViewerProfiles(viewerEmail: string): Promise<ViewerPro
   return listViewerProfilesUnderAuthority(email);
 }
 
-/** `listViewerProfiles` と `resolveActiveProfileId` を同時に呼ぶと Prisma が二重に走るため、マイページ等ではこちらを使う */
+/**
+ * `listViewerProfiles` と `resolveActiveProfileId` を同時に呼ぶと Prisma が二重に走るため、マイページ等ではこちらを使う.
+ *
+ * Multiple-profile selection rule (unchanged):
+ * - Prefer `lj_profile_id` cookie when it matches a listed non-archived profile
+ * - Else first profile by existing list order (`createdAt` asc under authority helpers)
+ */
 export async function listProfilesAndActiveProfileId(
   viewerEmail: string,
 ): Promise<{ profiles: ViewerProfile[]; activeProfileId: string }> {
@@ -76,14 +116,51 @@ export function journalProfileIdsForQuery(profileId: string, viewerEmail: string
   return [profileId];
 }
 
-async function ensureDefaultProfile(email: string): Promise<void> {
-  const count = await prisma.profile.count({
+/**
+ * Ensure a default Profile exists for the viewer — identity-safe (I3).
+ *
+ * Order:
+ * 1. Resolve verified UID → AccountIdentity ownership (when available)
+ * 2. If BOUND and any non-archived Profile has that identityId → return (no create)
+ * 3. Else legacy: if any non-archived Profile matches session email → return
+ * 4. Else create default Profile for session email (may attach identityId via dual-write)
+ *
+ * Does NOT update Profile.email. Does NOT claim foreign/null-identity rows.
+ * Does NOT create LegacyActorClaim.
+ */
+export async function ensureDefaultProfile(
+  email: string,
+  deps: EnsureDefaultProfileDeps = {},
+): Promise<void> {
+  const db = deps.db ?? prisma;
+  const resolveOwnership =
+    deps.resolveOwnership ??
+    (() => resolveP0IdentityOwnership(deps));
+
+  const ownership = await resolveOwnership();
+  if (ownership.state === "BOUND" && ownership.identityId) {
+    const identityOwnedCount = await db.profile.count({
+      where: { identityId: ownership.identityId, isArchived: false },
+    });
+    if (
+      shouldSkipEmailBootstrapForIdentityOwnedProfiles({
+        ownership,
+        identityOwnedNonArchivedCount: identityOwnedCount,
+      })
+    ) {
+      return;
+    }
+    // BOUND but no identity-owned Profile: fall through to legacy email path.
+    // Do NOT auto-claim NULL-identity historical rows by email alone.
+  }
+
+  const count = await db.profile.count({
     where: { email, isArchived: false },
   });
   if (count > 0) return;
   try {
-    const identityFields = await resolveP0ProfileCreateIdentityFields();
-    await prisma.profile.create({
+    const identityFields = await resolveP0ProfileCreateIdentityFields(deps);
+    await db.profile.create({
       data: {
         id: defaultProfileIdForEmail(email),
         email,

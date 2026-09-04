@@ -192,3 +192,21 @@ export function donguriCreateIdentityFields(input: {
   });
   return id ? { identityId: id } : {};
 }
+
+/**
+ * AI-X6.7C1.5A2-I3.5 — Ownership metadata for Donguri INSERT.
+ *
+ * When the verified viewer is proven BOUND, return `{ identityId }` for the
+ * create payload. Independent of P1 dual-write / mutation authority gates.
+ *
+ * Does NOT authorize awards. Does NOT infer identity from email alone.
+ * UNBOUND / AMBIGUOUS / MISMATCH → empty (legacy NULL identityId allowed).
+ */
+export function donguriBoundOwnershipMetadataFields(input: {
+  ownership: P0OwnershipResolution;
+}): { identityId?: string } {
+  if (input.ownership.state === "BOUND" && input.ownership.identityId) {
+    return { identityId: input.ownership.identityId };
+  }
+  return {};
+}

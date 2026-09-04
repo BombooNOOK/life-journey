@@ -696,10 +696,13 @@ model AccountIdentity {
 
 /// Authentication/contact email lifecycle for an AccountIdentity.
 /// status: primary | retired (String; no Prisma enum — matches project style).
-/// emailNormalized is NOT globally unique (UID-A may retire old@ while UID-B uses it as primary).
 /// Do NOT use @@unique([identityId, status]) — multiple retired rows must be allowed.
 /// One primary per identity is enforced by a PostgreSQL partial unique index in migration SQL.
-/// Future email-change TX (not AI-8.2): retire old primary → insert new primary, atomically.
+/// One CURRENT primary per emailNormalized globally is enforced by a PostgreSQL
+/// partial unique index in migration SQL (AccountIdentityEmail_one_primary_per_email).
+/// Prisma cannot declare that WHERE status='primary' filter accurately.
+/// One row per (identityId, emailNormalized) enables Model-1 reactivation (A→B→A).
+/// Future email-change TX: retire old primary → establish new primary, atomically.
 model AccountIdentityEmail {
   id              String    @id @default(cuid())
   identityId      String
@@ -711,6 +714,7 @@ model AccountIdentityEmail {
 
   identity AccountIdentity @relation(fields: [identityId], references: [id], onDelete: Cascade)
 
+  @@unique([identityId, emailNormalized], map: "AccountIdentityEmail_identity_email_key")
   @@index([identityId, status])
 }
 

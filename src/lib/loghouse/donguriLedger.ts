@@ -6,8 +6,10 @@ import {
   isAccountBirthdayInJapan,
   japanCalendarYearFromDate,
 } from "@/lib/loghouse/birthdayAcornGift";
+import type { P0OwnershipResolution, P0OwnershipResolverDeps } from "@/lib/account/p0IdentityOwnership";
 import {
   authorizeDonguriSpendUnderValueAuthority,
+  donguriBoundOwnershipMetadataFields,
   donguriCreateIdentityFields,
   shouldUseDonguriIdentityMutation,
   shouldUseDonguriIdentityRead,
@@ -273,14 +275,56 @@ export async function appendDonguriLedgerEntry(
   return toView(row);
 }
 
+export type DonguriAwardOwnershipDeps = P0OwnershipResolverDeps & {
+  /**
+   * Optional ownership override for tests.
+   * Production callers omit this — ownership comes from verified UID → AccountIdentity.
+   */
+  resolveOwnership?: () => Promise<P0OwnershipResolution>;
+};
+
+/**
+ * Resolve BOUND ownership metadata for Donguri award INSERT (I3.5).
+ *
+ * - P1 mutation authority ON: fail-closed when not BOUND (unchanged semantics).
+ * - Always: when BOUND, attach identityId at INSERT (even if dual-write/mutation OFF).
+ * - Never derives identityId from email alone.
+ */
+async function resolveDonguriAwardIdentityFields(
+  deps: DonguriAwardOwnershipDeps = {},
+): Promise<
+  | { ok: true; identityFields: { identityId?: string } }
+  | { ok: false; reason: "mutation_authority_not_bound" }
+> {
+  const resolveOwnership =
+    deps.resolveOwnership ??
+    (() => resolveValueIdentityOwnership(deps));
+  const ownership = await resolveOwnership();
+
+  if (shouldUseDonguriIdentityMutation()) {
+    if (ownership.state !== "BOUND" || !ownership.identityId) {
+      return { ok: false, reason: "mutation_authority_not_bound" };
+    }
+  }
+
+  // Metadata enrichment only when BOUND — does not enable P1 mutation authority.
+  return {
+    ok: true,
+    identityFields: donguriBoundOwnershipMetadataFields({ ownership }),
+  };
+}
+
 /**
  * ログハウス来訪時：1日1回だけどんぐり +1 とポストお手紙を届ける。
  * 既に配達済みなら何もしない。
+ *
+ * I3.5: when viewer is BOUND, writes identityId on the same INSERT (metadata only).
  */
 export async function ensureDailyAcornDelivery(params: {
   email: string;
   profileId: string;
   now?: Date;
+  ownershipDeps?: DonguriAwardOwnershipDeps;
 }): Promise<{ delivered: boolean; balance: number }> {
   const email = normalizeEmail(params.email);
   const profileId = params.profileId.trim();
@@ -288,14 +332,11 @@ export async function ensureDailyAcornDelivery(params: {
     return { delivered: false, balance: 0 };
   }
 
-  let identityFields: { identityId?: string } = {};
-  if (shouldUseDonguriIdentityMutation()) {
-    const ownership = await resolveValueIdentityOwnership();
-    if (ownership.state !== "BOUND" || !ownership.identityId) {
-      return { delivered: false, balance: 0 };
-    }
-    identityFields = donguriCreateIdentityFields({ ownership });
+  const resolved = await resolveDonguriAwardIdentityFields(params.ownershipDeps);
+  if (!resolved.ok) {
+    return { delivered: false, balance: 0 };
   }
+  const identityFields = resolved.identityFields;
 
   const now = params.now ?? new Date();
   const dateKey = calendarDayKeyInJapanFromDate(now);
@@ -728,10 +769,16 @@ export async function chargeDiarySaveAcorns(params: {
   }
 }
 
-/** 森の住民登録お祝い +50（アカウントにつき1回） */
+/**
+ * 森の住民登録お祝い +50（アカウントにつき1回）
+ *
+ * I3.5: when viewer is BOUND, writes identityId on the same INSERT (metadata only).
+ * Does not enable P1 mutation authority. Does not change one-time gift semantics.
+ */
 export async function ensureWelcomeAcornGift(params: {
   email: string;
   profileId: string;
+  ownershipDeps?: DonguriAwardOwnershipDeps;
 }): Promise<{ delivered: boolean }> {
   const email = normalizeEmail(params.email);
   const profileId = params.profileId.trim();
@@ -742,6 +789,14 @@ export async function ensureWelcomeAcornGift(params: {
     select: { id: true },
   });
   if (already) return { delivered: false };
+
+  // Welcome awards are not gated by P1 mutation authority (unchanged).
+  // Only enrich identityId when BOUND — never from email alone.
+  const resolveOwnership =
+    params.ownershipDeps?.resolveOwnership ??
+    (() => resolveValueIdentityOwnership(params.ownershipDeps ?? {}));
+  const ownership = await resolveOwnership();
+  const identityFields = donguriBoundOwnershipMetadataFields({ ownership });
 
   const dateKey = "welcome";
   try {
@@ -756,6 +811,7 @@ export async function ensureWelcomeAcornGift(params: {
           description: DONGURI_WELCOME_GIFT_DESCRIPTION,
           dateKey,
           createdBy: "system",
+          ...identityFields,
         },
       });
 
