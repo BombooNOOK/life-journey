@@ -17,8 +17,6 @@ import {
 } from "@/lib/entitlement/resolveUserEntitlement";
 import { countUnreadMailboxNotices } from "@/lib/loghouse/mailboxNotices";
 import {
-  ensureBirthdayAcornGift,
-  ensureDailyAcornDelivery,
   getDonguriChoView,
   type DonguriChoView,
 } from "@/lib/loghouse/donguriLedger";
@@ -30,6 +28,11 @@ import { resolveFirstVisitGuideState } from "@/lib/onboarding/firstVisitGuideSta
 
 export const dynamic = "force-dynamic";
 
+/**
+ * AI-X6.7C1.5A2-I3.6 — GET/render is read-only for Donguri awards.
+ * Daily/birthday delivery runs only via client-mounted POST
+ * `/api/loghouse/donguri/visit-awards` (see LogHouseVisitAwardsSync).
+ */
 export default async function OrdersListPage() {
   const viewerEmail = await getViewerEmailFromCookie();
   if (!viewerEmail) {
@@ -63,16 +66,6 @@ export default async function OrdersListPage() {
         profileId: profileData.activeProfileId,
       });
       const entitlementCtx = await loadEntitlementContext(viewerEmail);
-      if (profileData.activeProfileId) {
-        await ensureDailyAcornDelivery({
-          email: viewerEmail,
-          profileId: profileData.activeProfileId,
-        });
-        await ensureBirthdayAcornGift({
-          email: viewerEmail,
-          activeProfileId: profileData.activeProfileId,
-        });
-      }
       const unread =
         profileData.activeProfileId
           ? await countUnreadMailboxNotices({

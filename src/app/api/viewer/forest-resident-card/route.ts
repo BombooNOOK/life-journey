@@ -1,11 +1,20 @@
 import { NextResponse } from "next/server";
 
 import {
+  deliverWelcomeAcornGiftForEmail,
   ensureForestResidentForEmail,
   updateForestResidentDisplayName,
 } from "@/lib/forestResident/forestResidentNumber";
 import { getViewerEmailFromCookie } from "@/lib/auth/viewer";
 import { listProfilesAndActiveProfileId } from "@/lib/profile/activeProfile";
+
+/**
+ * Forest resident card.
+ *
+ * AI-X6.7C1.5A2-I3.6:
+ * - GET: read/provision card metadata only — does NOT award welcome_gift.
+ * - POST: provision + explicit welcome gift mutation (idempotent).
+ */
 
 async function loadResidentCardForViewer(email: string) {
   await listProfilesAndActiveProfileId(email);
@@ -35,6 +44,8 @@ export async function POST() {
 
   try {
     const card = await loadResidentCardForViewer(email);
+    // Explicit mutation path only — never from GET/render.
+    await deliverWelcomeAcornGiftForEmail(email);
     return NextResponse.json({ card });
   } catch (e) {
     console.error("[POST /api/viewer/forest-resident-card]", e);

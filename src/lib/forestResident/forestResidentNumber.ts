@@ -61,14 +61,21 @@ export function deriveForestResidentDisplayName(
   return FOREST_RESIDENT_DEFAULT_DISPLAY_NAME;
 }
 
-async function maybeDeliverWelcomeGift(email: string): Promise<void> {
+/**
+ * AI-X6.7C1.5A2-I3.6 — Welcome gift is NOT delivered from read/GET paths.
+ * Call only from authenticated mutation (e.g. POST /api/viewer/forest-resident-card).
+ */
+export async function deliverWelcomeAcornGiftForEmail(
+  email: string,
+  ownershipDeps?: Parameters<typeof ensureWelcomeAcornGift>[0]["ownershipDeps"],
+): Promise<void> {
   const profile = await prisma.profile.findFirst({
     where: { email, isArchived: false },
     orderBy: { createdAt: "asc" },
     select: { id: true },
   });
   if (!profile) return;
-  await ensureWelcomeAcornGift({ email, profileId: profile.id });
+  await ensureWelcomeAcornGift({ email, profileId: profile.id, ownershipDeps });
 }
 
 async function allocateNextForestResidentNumber(): Promise<string> {
@@ -105,14 +112,12 @@ export async function ensureForestResidentForEmail(email: string): Promise<Fores
   });
 
   if (existing?.forestResidentNumber && existing.forestResidentIssuedAt) {
-    const card = await loadForestResidentCardData(normalized, {
+    return loadForestResidentCardData(normalized, {
       forestResidentNumber: existing.forestResidentNumber,
       forestResidentIssuedAt: existing.forestResidentIssuedAt,
       forestResidentDisplayName: existing.forestResidentDisplayName,
       createdAt: existing.createdAt,
     });
-    await maybeDeliverWelcomeGift(normalized);
-    return card;
   }
 
   const issuedAt = new Date();
@@ -134,14 +139,12 @@ export async function ensureForestResidentForEmail(email: string): Promise<Fores
             createdAt: true,
           },
         });
-        const card = await loadForestResidentCardData(normalized, {
+        return loadForestResidentCardData(normalized, {
           forestResidentNumber: updated.forestResidentNumber!,
           forestResidentIssuedAt: updated.forestResidentIssuedAt!,
           forestResidentDisplayName: updated.forestResidentDisplayName,
           createdAt: updated.createdAt,
         });
-        await maybeDeliverWelcomeGift(normalized);
-        return card;
       }
 
       const identityFields = await resolveP0AccountSettingsCreateIdentityFields();
@@ -164,14 +167,12 @@ export async function ensureForestResidentForEmail(email: string): Promise<Fores
           createdAt: true,
         },
       });
-      const card = await loadForestResidentCardData(normalized, {
+      return loadForestResidentCardData(normalized, {
         forestResidentNumber: created.forestResidentNumber!,
         forestResidentIssuedAt: created.forestResidentIssuedAt!,
         forestResidentDisplayName: created.forestResidentDisplayName,
         createdAt: created.createdAt,
       });
-      await maybeDeliverWelcomeGift(normalized);
-      return card;
     } catch (e) {
       if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === "P2002") {
         const retry = await prisma.accountSettings.findUnique({
@@ -184,14 +185,12 @@ export async function ensureForestResidentForEmail(email: string): Promise<Fores
           },
         });
         if (retry?.forestResidentNumber && retry.forestResidentIssuedAt) {
-          const card = await loadForestResidentCardData(normalized, {
+          return loadForestResidentCardData(normalized, {
             forestResidentNumber: retry.forestResidentNumber,
             forestResidentIssuedAt: retry.forestResidentIssuedAt,
             forestResidentDisplayName: retry.forestResidentDisplayName,
             createdAt: retry.createdAt,
           });
-          await maybeDeliverWelcomeGift(normalized);
-          return card;
         }
         continue;
       }

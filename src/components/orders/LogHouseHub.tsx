@@ -11,6 +11,7 @@ import { MyPageGuideLink } from "@/components/guide/MyPageGuideLink";
 import { KanteiMissingBanner } from "@/components/orders/KanteiMissingBanner";
 import { LogHouseRoomManageSheet } from "@/components/orders/loghouse-room/LogHouseRoomManageSheet";
 import { LogHouseRoomMobile } from "@/components/orders/loghouse-room/LogHouseRoomMobile";
+import { LogHouseVisitAwardsSync } from "@/components/orders/LogHouseVisitAwardsSync";
 import { MyPageMainActions } from "@/components/orders/MyPageMainActions";
 import { MyPagePageHeader } from "@/components/orders/MyPagePageHeader";
 import { MyPageProfileList } from "@/components/orders/MyPageProfileList";
@@ -187,11 +188,13 @@ export function LogHouseHub({
   const mailboxUnreadCount = useReconcileMailboxUnread(mailboxUnreadCountProp);
 
   const activeProfile = profiles.find((p) => p.id === activeProfileId) ?? null;
+  const visitAwardsSync = <LogHouseVisitAwardsSync />;
 
   if (isMobile) {
     if (!activeProfile) {
       return (
         <div className="space-y-5 px-4 py-6 sm:space-y-6">
+          {visitAwardsSync}
           <MyPagePageHeader />
           {canShowAdminProfileSwitchUi({
             isAdmin: viewerIsAdmin,
@@ -207,6 +210,7 @@ export function LogHouseHub({
 
     return (
       <>
+        {visitAwardsSync}
         <LogHouseRoomMobile
           profileId={activeProfile.id}
           profiles={profiles}
@@ -238,6 +242,7 @@ export function LogHouseHub({
 
   return (
     <div className="space-y-5 sm:space-y-6">
+      {visitAwardsSync}
       <MyPagePageHeader />
 
       {canShowAdminProfileSwitchUi({
