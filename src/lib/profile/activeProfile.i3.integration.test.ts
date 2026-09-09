@@ -202,7 +202,8 @@ describe.skipIf(!runLocal)("AI-X6.7C1.5A2-I3 identity-safe profile bootstrap", (
     expect(claimed).toBeNull();
   });
 
-  it("T_LEGACY_UNBOUND_PROFILE_BOOTSTRAP_REGRESSION", async () => {
+  it("I3.7: verified_session_required fail-closes — no Profile INSERT", async () => {
+    const before = await prisma.profile.count({ where: { email: EMAIL_A } });
     await ensureDefaultProfile(EMAIL_A, {
       resolveOwnership: async () => ({
         state: "UNBOUND",
@@ -214,6 +215,21 @@ describe.skipIf(!runLocal)("AI-X6.7C1.5A2-I3 identity-safe profile bootstrap", (
         reason: "verified_session_required",
       }),
     });
+    expect(await prisma.profile.count({ where: { email: EMAIL_A } })).toBe(before);
+  });
+
+  it("T_LEGACY_UNBOUND_PROFILE_BOOTSTRAP_REGRESSION — identity_not_bound creates", async () => {
+    await ensureDefaultProfile(EMAIL_A, {
+      resolveOwnership: async () => ({
+        state: "UNBOUND",
+        identityId: null,
+        firebaseUid: UID_A,
+        evidenceSource: "NONE",
+        legacyActorKeys: [],
+        verifiedEmailMetadata: EMAIL_A,
+        reason: "identity_not_bound",
+      }),
+    });
     const rows = await prisma.profile.findMany({ where: { email: EMAIL_A } });
     expect(rows).toHaveLength(1);
     expect(rows[0]!.nickname).toBe("メイン");
@@ -221,7 +237,7 @@ describe.skipIf(!runLocal)("AI-X6.7C1.5A2-I3 identity-safe profile bootstrap", (
   });
 
   it("T_IDENTITY_FEATURE_OFF_REGRESSION — unbound ownership keeps email bootstrap", async () => {
-    // Gate off → resolveOwnership returns UNBOUND in real app; simulate here.
+    // Gate off / definitive unbound → identity_not_bound keeps email bootstrap.
     await ensureDefaultProfile(EMAIL_A, {
       resolveOwnership: async () => ({
         state: "UNBOUND",

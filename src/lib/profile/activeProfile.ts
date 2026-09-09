@@ -53,6 +53,26 @@ export function shouldSkipEmailBootstrapForIdentityOwnedProfiles(input: {
   );
 }
 
+/**
+ * AI-X6.7C1.5A2-I3.7 — Fail closed while verified UID session is temporarily
+ * unavailable (login race: email cookie may already be B, lj_session not yet).
+ *
+ * ownership.state === "UNBOUND" + reason === "verified_session_required"
+ * means identity authority is not available yet — NOT "new unbound person".
+ *
+ * Do NOT email-bootstrap / create legacy:md5(email) in this transient state.
+ * Preserve email bootstrap for definitive identity_not_bound (and other
+ * unbound reasons that are not this transient gap).
+ */
+export function shouldFailClosedEmailBootstrapForTransientUnverifiedSession(
+  ownership: P0OwnershipResolution,
+): boolean {
+  return (
+    ownership.state === "UNBOUND" &&
+    ownership.reason === "verified_session_required"
+  );
+}
+
 export async function listViewerProfiles(viewerEmail: string): Promise<ViewerProfile[]> {
   const email = normalizeEmail(viewerEmail);
   if (!email) return [];
@@ -117,16 +137,22 @@ export function journalProfileIdsForQuery(profileId: string, viewerEmail: string
 }
 
 /**
- * Ensure a default Profile exists for the viewer — identity-safe (I3).
+ * Ensure a default Profile exists for the viewer — identity-safe (I3 / I3.7).
  *
  * Order:
  * 1. Resolve verified UID → AccountIdentity ownership (when available)
- * 2. If BOUND and any non-archived Profile has that identityId → return (no create)
- * 3. Else legacy: if any non-archived Profile matches session email → return
- * 4. Else create default Profile for session email (may attach identityId via dual-write)
+ * 2. If UNBOUND because verified session is temporarily unavailable → return
+ *    without email bootstrap (I3.7 fail closed; no INSERT)
+ * 3. If BOUND and any non-archived Profile has that identityId → return (no create)
+ * 4. Else legacy: if any non-archived Profile matches session email → return
+ * 5. Else create default Profile for session email (may attach identityId via dual-write)
+ *    — includes definitive identity_not_bound
  *
  * Does NOT update Profile.email. Does NOT claim foreign/null-identity rows.
  * Does NOT create LegacyActorClaim.
+ *
+ * Fail-closed return: Promise<void> with no INSERT. Callers already tolerate
+ * temporary empty profile lists until a verified session is present.
  */
 export async function ensureDefaultProfile(
   email: string,
@@ -138,6 +164,9 @@ export async function ensureDefaultProfile(
     (() => resolveP0IdentityOwnership(deps));
 
   const ownership = await resolveOwnership();
+  if (shouldFailClosedEmailBootstrapForTransientUnverifiedSession(ownership)) {
+    return;
+  }
   if (ownership.state === "BOUND" && ownership.identityId) {
     const identityOwnedCount = await db.profile.count({
       where: { identityId: ownership.identityId, isArchived: false },

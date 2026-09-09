@@ -7,6 +7,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { P0OwnershipResolution } from "@/lib/account/p0IdentityOwnership";
 import {
   ensureDefaultProfile,
+  shouldFailClosedEmailBootstrapForTransientUnverifiedSession,
   shouldSkipEmailBootstrapForIdentityOwnedProfiles,
 } from "@/lib/profile/activeProfile";
 
@@ -63,7 +64,7 @@ describe("shouldSkipEmailBootstrapForIdentityOwnedProfiles", () => {
   it("does not skip when UNBOUND (legacy path)", () => {
     expect(
       shouldSkipEmailBootstrapForIdentityOwnedProfiles({
-        ownership: unbound(),
+        ownership: unbound("identity_not_bound"),
         identityOwnedNonArchivedCount: 5,
       }),
     ).toBe(false);
@@ -96,12 +97,26 @@ describe("ensureDefaultProfile identity-first", () => {
     expect(profile.create).not.toHaveBeenCalled();
   });
 
-  it("T_LEGACY_UNBOUND: creates by email when no session identity", async () => {
+  it("I3.7: verified_session_required fail-closes with zero INSERT", async () => {
+    expect(
+      shouldFailClosedEmailBootstrapForTransientUnverifiedSession(
+        unbound("verified_session_required"),
+      ),
+    ).toBe(true);
+    await ensureDefaultProfile("new@ljd.invalid", {
+      db,
+      resolveOwnership: async () => unbound("verified_session_required"),
+    });
+    expect(profile.count).not.toHaveBeenCalled();
+    expect(profile.create).not.toHaveBeenCalled();
+  });
+
+  it("T_LEGACY_UNBOUND: creates by email when identity_not_bound", async () => {
     profile.count.mockResolvedValueOnce(0);
     profile.create.mockResolvedValueOnce({ id: "legacy:x" });
     await ensureDefaultProfile("new@ljd.invalid", {
       db,
-      resolveOwnership: async () => unbound(),
+      resolveOwnership: async () => unbound("identity_not_bound"),
     });
     expect(profile.create).toHaveBeenCalledTimes(1);
     expect(profile.create.mock.calls[0]![0].data.email).toBe("new@ljd.invalid");
