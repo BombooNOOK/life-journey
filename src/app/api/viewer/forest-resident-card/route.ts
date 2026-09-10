@@ -29,6 +29,12 @@ export async function GET() {
 
   try {
     const card = await loadResidentCardForViewer(email);
+    if (!card) {
+      return NextResponse.json(
+        { error: "Verified session required", code: "verified_session_required" },
+        { status: 503 },
+      );
+    }
     return NextResponse.json({ card });
   } catch (e) {
     console.error("[GET /api/viewer/forest-resident-card]", e);
@@ -44,6 +50,12 @@ export async function POST() {
 
   try {
     const card = await loadResidentCardForViewer(email);
+    if (!card) {
+      return NextResponse.json(
+        { error: "Verified session required", code: "verified_session_required" },
+        { status: 503 },
+      );
+    }
     // Explicit mutation path only — never from GET/render.
     await deliverWelcomeAcornGiftForEmail(email);
     return NextResponse.json({ card });

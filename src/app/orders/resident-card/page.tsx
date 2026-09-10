@@ -31,7 +31,10 @@ export default async function LogHouseResidentCardPage() {
   if (fetchError || !residentCard) {
     return (
       <LogHouseLoadErrorPanel
-        detail={fetchError ?? "住民票を取得できませんでした。"}
+        detail={
+          fetchError ??
+          "住民票を表示するには、もう一度ログインしてから開き直してください。"
+        }
       />
     );
   }

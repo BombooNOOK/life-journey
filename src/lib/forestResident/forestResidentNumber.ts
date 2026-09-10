@@ -1,6 +1,10 @@
 import { Prisma } from "@prisma/client";
 
-import { resolveP0AccountSettingsCreateIdentityFields } from "@/lib/account/p0IdentityWriteFields";
+import {
+  resolveP0IdentityOwnership,
+  type P0OwnershipResolution,
+  type P0OwnershipResolverDeps,
+} from "@/lib/account/p0IdentityOwnership";
 import { prisma } from "@/lib/db";
 import { ensureWelcomeAcornGift } from "@/lib/loghouse/donguriLedger";
 import {
@@ -78,8 +82,37 @@ export async function deliverWelcomeAcornGiftForEmail(
   await ensureWelcomeAcornGift({ email, profileId: profile.id, ownershipDeps });
 }
 
-async function allocateNextForestResidentNumber(): Promise<string> {
-  const latest = await prisma.accountSettings.findFirst({
+type AccountSettingsResidentRow = {
+  id: string;
+  email: string;
+  identityId: string | null;
+  forestResidentNumber: string | null;
+  forestResidentIssuedAt: Date | null;
+  forestResidentDisplayName: string | null;
+  createdAt: Date;
+};
+
+const RESIDENT_ROW_SELECT = {
+  id: true,
+  email: true,
+  identityId: true,
+  forestResidentNumber: true,
+  forestResidentIssuedAt: true,
+  forestResidentDisplayName: true,
+  createdAt: true,
+} as const;
+
+export type EnsureForestResidentDeps = P0OwnershipResolverDeps & {
+  db?: typeof prisma;
+  resolveOwnership?: () => Promise<P0OwnershipResolution>;
+  /** Test seam — production uses allocateNextForestResidentNumber. */
+  allocateResidentNumber?: () => Promise<string>;
+};
+
+async function allocateNextForestResidentNumber(
+  db: typeof prisma = prisma,
+): Promise<string> {
+  const latest = await db.accountSettings.findFirst({
     where: { forestResidentNumber: { startsWith: RESIDENT_NUMBER_PREFIX } },
     orderBy: { forestResidentNumber: "desc" },
     select: { forestResidentNumber: true },
@@ -96,61 +129,131 @@ async function allocateNextForestResidentNumber(): Promise<string> {
   return formatForestResidentNumber(next);
 }
 
-/** メールに紐づく住民番号を発行（既存ならそのまま返す） */
-export async function ensureForestResidentForEmail(email: string): Promise<ForestResidentCardData> {
+function isIssuedResidentRow(
+  row: Pick<AccountSettingsResidentRow, "forestResidentNumber" | "forestResidentIssuedAt">,
+): boolean {
+  return Boolean(row.forestResidentNumber && row.forestResidentIssuedAt);
+}
+
+/**
+ * AI-X6.7C1.5A2-I3.8 / I3.8H — Fail closed while verified UID session is
+ * temporarily unavailable. Do not read or bootstrap AccountSettings / FRN
+ * from email alone.
+ */
+export function shouldFailClosedForestResidentForTransientUnverifiedSession(
+  ownership: P0OwnershipResolution,
+): boolean {
+  return (
+    ownership.state === "UNBOUND" &&
+    ownership.reason === "verified_session_required"
+  );
+}
+
+/**
+ * Ensure forest resident card for the viewer — identity-safe (I3.8 / I3.8H).
+ *
+ * Order:
+ * 1. Resolve verified UID → AccountIdentity ownership
+ * 2. AMBIGUOUS / MISMATCH → fail closed (null; no create / no FRN)
+ * 3. UNBOUND verified_session_required → strict fail closed (null);
+ *    no email lookup, no existing-row return, no create, no FRN alloc
+ * 4. BOUND → AccountSettings by identityId wins (even if Profile/settings
+ *    legacy email differs from session email). Never create EMAIL-B row or
+ *    auto-claim null-identity email-B rows.
+ * 5. identity_not_bound → legacy email bootstrap (unchanged)
+ *
+ * Returns null when identity authority is unavailable. Callers must tolerate
+ * temporary null.
+ */
+export async function ensureForestResidentForEmail(
+  email: string,
+  deps: EnsureForestResidentDeps = {},
+): Promise<ForestResidentCardData | null> {
   const normalized = email.trim().toLowerCase();
   if (!normalized) throw new Error("email required");
 
-  const existing = await prisma.accountSettings.findUnique({
-    where: { email: normalized },
-    select: {
-      forestResidentNumber: true,
-      forestResidentIssuedAt: true,
-      forestResidentDisplayName: true,
-      createdAt: true,
-    },
-  });
+  const db = deps.db ?? prisma;
+  const resolveOwnership =
+    deps.resolveOwnership ?? (() => resolveP0IdentityOwnership(deps));
+  const allocate =
+    deps.allocateResidentNumber ?? (() => allocateNextForestResidentNumber(db));
 
-  if (existing?.forestResidentNumber && existing.forestResidentIssuedAt) {
-    return loadForestResidentCardData(normalized, {
-      forestResidentNumber: existing.forestResidentNumber,
-      forestResidentIssuedAt: existing.forestResidentIssuedAt,
-      forestResidentDisplayName: existing.forestResidentDisplayName,
-      createdAt: existing.createdAt,
+  const ownership = await resolveOwnership();
+
+  if (ownership.state === "AMBIGUOUS" || ownership.state === "MISMATCH") {
+    return null;
+  }
+
+  // I3.8H: without verified UID, email alone must not authorize AccountSettings/FRN.
+  if (shouldFailClosedForestResidentForTransientUnverifiedSession(ownership)) {
+    return null;
+  }
+
+  if (ownership.state === "BOUND" && ownership.identityId) {
+    const byIdentity = await db.accountSettings.findFirst({
+      where: { identityId: ownership.identityId },
+      select: RESIDENT_ROW_SELECT,
+    });
+    if (byIdentity && isIssuedResidentRow(byIdentity)) {
+      return loadForestResidentCardData(db, byIdentity.email, byIdentity, {
+        identityId: ownership.identityId,
+      });
+    }
+    // BOUND but missing issued card: create/update with identityId — never
+    // claim null-identity rows that merely share the current session email.
+    return issueForestResidentForBoundIdentity({
+      db,
+      allocate,
+      ownershipIdentityId: ownership.identityId,
+      contactEmail: normalized,
+      existingByIdentity: byIdentity,
     });
   }
 
+  // True unbound (identity_not_bound) and other non-transient UNBOUND: email bootstrap.
+  if (ownership.state !== "UNBOUND") {
+    return null;
+  }
+
+  return issueForestResidentForEmailLegacy({
+    db,
+    allocate,
+    email: normalized,
+  });
+}
+
+async function issueForestResidentForBoundIdentity(input: {
+  db: typeof prisma;
+  allocate: () => Promise<string>;
+  ownershipIdentityId: string;
+  contactEmail: string;
+  existingByIdentity: AccountSettingsResidentRow | null;
+}): Promise<ForestResidentCardData | null> {
+  const { db, allocate, ownershipIdentityId, contactEmail, existingByIdentity } =
+    input;
   const issuedAt = new Date();
 
   for (let attempt = 0; attempt < ASSIGN_MAX_ATTEMPTS; attempt++) {
-    const forestResidentNumber = await allocateNextForestResidentNumber();
+    const forestResidentNumber = await allocate();
     try {
-      if (existing) {
-        await prisma.accountSettings.update({
-          where: { email: normalized },
+      if (existingByIdentity) {
+        await db.accountSettings.update({
+          where: { id: existingByIdentity.id },
           data: { forestResidentNumber, forestResidentIssuedAt: issuedAt },
         });
-        const updated = await prisma.accountSettings.findUniqueOrThrow({
-          where: { email: normalized },
-          select: {
-            forestResidentNumber: true,
-            forestResidentIssuedAt: true,
-            forestResidentDisplayName: true,
-            createdAt: true,
-          },
+        const updated = await db.accountSettings.findUniqueOrThrow({
+          where: { id: existingByIdentity.id },
+          select: RESIDENT_ROW_SELECT,
         });
-        return loadForestResidentCardData(normalized, {
-          forestResidentNumber: updated.forestResidentNumber!,
-          forestResidentIssuedAt: updated.forestResidentIssuedAt!,
-          forestResidentDisplayName: updated.forestResidentDisplayName,
-          createdAt: updated.createdAt,
+        return loadForestResidentCardData(db, updated.email, updated, {
+          identityId: ownershipIdentityId,
         });
       }
 
-      const identityFields = await resolveP0AccountSettingsCreateIdentityFields();
-      const created = await prisma.accountSettings.create({
+      const created = await db.accountSettings.create({
         data: {
-          email: normalized,
+          email: contactEmail,
+          identityId: ownershipIdentityId,
           forestResidentNumber,
           forestResidentIssuedAt: issuedAt,
           profileLimit: 1,
@@ -158,38 +261,106 @@ export async function ensureForestResidentForEmail(email: string): Promise<Fores
           isMonitor: false,
           subscriberPdfAccess: false,
           pdfDownloadLimitPerOrder: 2,
-          ...identityFields,
         },
-        select: {
-          forestResidentNumber: true,
-          forestResidentIssuedAt: true,
-          forestResidentDisplayName: true,
-          createdAt: true,
-        },
+        select: RESIDENT_ROW_SELECT,
       });
-      return loadForestResidentCardData(normalized, {
-        forestResidentNumber: created.forestResidentNumber!,
-        forestResidentIssuedAt: created.forestResidentIssuedAt!,
-        forestResidentDisplayName: created.forestResidentDisplayName,
-        createdAt: created.createdAt,
+      return loadForestResidentCardData(db, created.email, created, {
+        identityId: ownershipIdentityId,
       });
     } catch (e) {
       if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === "P2002") {
-        const retry = await prisma.accountSettings.findUnique({
-          where: { email: normalized },
-          select: {
-            forestResidentNumber: true,
-            forestResidentIssuedAt: true,
-            forestResidentDisplayName: true,
-            createdAt: true,
-          },
+        const retryByIdentity = await db.accountSettings.findFirst({
+          where: { identityId: ownershipIdentityId },
+          select: RESIDENT_ROW_SELECT,
         });
-        if (retry?.forestResidentNumber && retry.forestResidentIssuedAt) {
-          return loadForestResidentCardData(normalized, {
-            forestResidentNumber: retry.forestResidentNumber,
-            forestResidentIssuedAt: retry.forestResidentIssuedAt,
-            forestResidentDisplayName: retry.forestResidentDisplayName,
-            createdAt: retry.createdAt,
+        if (retryByIdentity && isIssuedResidentRow(retryByIdentity)) {
+          return loadForestResidentCardData(db, retryByIdentity.email, retryByIdentity, {
+            identityId: ownershipIdentityId,
+          });
+        }
+        // Email (or FRN) collision: never auto-claim a row owned by another
+        // identity or a null-identity orphan that merely shares the email.
+        const byEmail = await db.accountSettings.findUnique({
+          where: { email: contactEmail },
+          select: RESIDENT_ROW_SELECT,
+        });
+        if (
+          byEmail &&
+          byEmail.identityId !== ownershipIdentityId
+        ) {
+          return null;
+        }
+        continue;
+      }
+      throw e;
+    }
+  }
+
+  throw new Error("forest resident number assign failed");
+}
+
+async function issueForestResidentForEmailLegacy(input: {
+  db: typeof prisma;
+  allocate: () => Promise<string>;
+  email: string;
+}): Promise<ForestResidentCardData> {
+  const { db, allocate, email } = input;
+  const existing = await db.accountSettings.findUnique({
+    where: { email },
+    select: RESIDENT_ROW_SELECT,
+  });
+
+  if (existing && isIssuedResidentRow(existing)) {
+    return loadForestResidentCardData(db, existing.email, existing, {
+      identityId: existing.identityId,
+    });
+  }
+
+  const issuedAt = new Date();
+
+  for (let attempt = 0; attempt < ASSIGN_MAX_ATTEMPTS; attempt++) {
+    const forestResidentNumber = await allocate();
+    try {
+      if (existing) {
+        await db.accountSettings.update({
+          where: { email },
+          data: { forestResidentNumber, forestResidentIssuedAt: issuedAt },
+        });
+        const updated = await db.accountSettings.findUniqueOrThrow({
+          where: { email },
+          select: RESIDENT_ROW_SELECT,
+        });
+        return loadForestResidentCardData(db, updated.email, updated, {
+          identityId: updated.identityId,
+        });
+      }
+
+      // True unbound bootstrap: identityId remains null (no invent).
+      const created = await db.accountSettings.create({
+        data: {
+          email,
+          forestResidentNumber,
+          forestResidentIssuedAt: issuedAt,
+          profileLimit: 1,
+          isAdmin: false,
+          isMonitor: false,
+          subscriberPdfAccess: false,
+          pdfDownloadLimitPerOrder: 2,
+        },
+        select: RESIDENT_ROW_SELECT,
+      });
+      return loadForestResidentCardData(db, created.email, created, {
+        identityId: created.identityId,
+      });
+    } catch (e) {
+      if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === "P2002") {
+        const retry = await db.accountSettings.findUnique({
+          where: { email },
+          select: RESIDENT_ROW_SELECT,
+        });
+        if (retry && isIssuedResidentRow(retry)) {
+          return loadForestResidentCardData(db, retry.email, retry, {
+            identityId: retry.identityId,
           });
         }
         continue;
@@ -202,22 +373,30 @@ export async function ensureForestResidentForEmail(email: string): Promise<Fores
 }
 
 async function loadForestResidentCardData(
-  email: string,
+  db: typeof prisma,
+  contactEmail: string,
   row: {
-    forestResidentNumber: string;
-    forestResidentIssuedAt: Date;
+    forestResidentNumber: string | null;
+    forestResidentIssuedAt: Date | null;
     forestResidentDisplayName: string | null;
     createdAt: Date;
   },
+  opts: { identityId?: string | null } = {},
 ): Promise<ForestResidentCardData> {
-  const profile = await prisma.profile.findFirst({
-    where: { email, isArchived: false },
-    orderBy: { createdAt: "asc" },
-    select: { nickname: true },
-  });
+  const profile = opts.identityId
+    ? await db.profile.findFirst({
+        where: { identityId: opts.identityId, isArchived: false },
+        orderBy: { createdAt: "asc" },
+        select: { nickname: true },
+      })
+    : await db.profile.findFirst({
+        where: { email: contactEmail, isArchived: false },
+        orderBy: { createdAt: "asc" },
+        select: { nickname: true },
+      });
 
   return {
-    residentNumber: row.forestResidentNumber,
+    residentNumber: row.forestResidentNumber!,
     displayName: deriveForestResidentDisplayName(
       profile?.nickname ?? null,
       row.forestResidentDisplayName,
@@ -225,7 +404,7 @@ async function loadForestResidentCardData(
     registeredAtLabel: formatForestResidentRegisteredLabel(row.createdAt),
     faceIcon: "rabbit",
     badge: "green",
-    issuedAt: row.forestResidentIssuedAt.toISOString(),
+    issuedAt: row.forestResidentIssuedAt!.toISOString(),
   };
 }
 
@@ -242,12 +421,7 @@ export async function updateForestResidentDisplayName(
 
   const account = await prisma.accountSettings.findUnique({
     where: { email: normalized },
-    select: {
-      forestResidentNumber: true,
-      forestResidentIssuedAt: true,
-      forestResidentDisplayName: true,
-      createdAt: true,
-    },
+    select: RESIDENT_ROW_SELECT,
   });
 
   if (!account?.forestResidentNumber || !account.forestResidentIssuedAt) {
@@ -259,10 +433,13 @@ export async function updateForestResidentDisplayName(
     data: { forestResidentDisplayName: parsed.value },
   });
 
-  return loadForestResidentCardData(normalized, {
-    forestResidentNumber: account.forestResidentNumber,
-    forestResidentIssuedAt: account.forestResidentIssuedAt,
-    forestResidentDisplayName: parsed.value,
-    createdAt: account.createdAt,
-  });
+  return loadForestResidentCardData(
+    prisma,
+    account.email,
+    {
+      ...account,
+      forestResidentDisplayName: parsed.value,
+    },
+    { identityId: account.identityId },
+  );
 }

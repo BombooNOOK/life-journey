@@ -370,8 +370,30 @@ describe.skipIf(!runLocal)("AI-X6.7C1.5A2-I3.6 Donguri write-on-read local DB", 
     const { ensureForestResidentForEmail } = await import(
       "@/lib/forestResident/forestResidentNumber"
     );
-    await ensureForestResidentForEmail(EMAIL_A);
-    await ensureForestResidentForEmail(EMAIL_A);
+    // I3.8: ownership is required; use identity_not_bound so email bootstrap
+    // returns the already-issued row without cookies()/session.
+    await ensureForestResidentForEmail(EMAIL_A, {
+      resolveOwnership: async () => ({
+        state: "UNBOUND",
+        identityId: null,
+        firebaseUid: UID_A,
+        evidenceSource: "NONE",
+        legacyActorKeys: [],
+        verifiedEmailMetadata: EMAIL_A,
+        reason: "identity_not_bound",
+      }),
+    });
+    await ensureForestResidentForEmail(EMAIL_A, {
+      resolveOwnership: async () => ({
+        state: "UNBOUND",
+        identityId: null,
+        firebaseUid: UID_A,
+        evidenceSource: "NONE",
+        legacyActorKeys: [],
+        verifiedEmailMetadata: EMAIL_A,
+        reason: "identity_not_bound",
+      }),
+    });
     expect(
       await prisma.logHouseDonguriLedgerEntry.count({
         where: { email: EMAIL_A, reason: "welcome_gift" },
