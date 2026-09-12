@@ -13,6 +13,7 @@ import {
   profileByIdUnderAuthority,
 } from "@/lib/account/p0IdentityReadAuthority";
 import { resolveP0ProfileCreateIdentityFields } from "@/lib/account/p0IdentityWriteFields";
+import { isVerifiedAuthSessionEnabled } from "@/lib/auth/verifiedAuthSessionGate";
 import { normalizeEmail } from "@/lib/auth/viewer";
 import { prisma } from "@/lib/db";
 
@@ -31,6 +32,11 @@ export type EnsureDefaultProfileDeps = P0OwnershipResolverDeps & {
    * Production callers omit this — ownership comes from verified UID → AccountIdentity.
    */
   resolveOwnership?: () => Promise<P0OwnershipResolution>;
+  /**
+   * Test seam for AI-X6-I3.9. Production uses isVerifiedAuthSessionEnabled().
+   * When OFF, ensureDefaultProfile uses legacy email bootstrap only (no lj_session).
+   */
+  isVerifiedAuthEnabled?: () => boolean;
 };
 
 /**
@@ -137,9 +143,12 @@ export function journalProfileIdsForQuery(profileId: string, viewerEmail: string
 }
 
 /**
- * Ensure a default Profile exists for the viewer — identity-safe (I3 / I3.7).
+ * Ensure a default Profile exists for the viewer.
  *
- * Order:
+ * AI-X6-I3.9 — Mode A (verified-auth OFF):
+ *   Exact pre-I3.7 legacy email bootstrap. No lj_session / ownership resolve.
+ *
+ * Mode B (verified-auth ON) — identity-safe (I3 / I3.7):
  * 1. Resolve verified UID → AccountIdentity ownership (when available)
  * 2. If UNBOUND because verified session is temporarily unavailable → return
  *    without email bootstrap (I3.7 fail closed; no INSERT)
@@ -151,14 +160,41 @@ export function journalProfileIdsForQuery(profileId: string, viewerEmail: string
  * Does NOT update Profile.email. Does NOT claim foreign/null-identity rows.
  * Does NOT create LegacyActorClaim.
  *
- * Fail-closed return: Promise<void> with no INSERT. Callers already tolerate
- * temporary empty profile lists until a verified session is present.
+ * Fail-closed return (Mode B only): Promise<void> with no INSERT. Callers already
+ * tolerate temporary empty profile lists until a verified session is present.
  */
 export async function ensureDefaultProfile(
   email: string,
   deps: EnsureDefaultProfileDeps = {},
 ): Promise<void> {
   const db = deps.db ?? prisma;
+  const verifiedAuthEnabled =
+    deps.isVerifiedAuthEnabled ?? (() => isVerifiedAuthSessionEnabled());
+
+  // Mode A — verified-auth OFF: legacy email-authoritative bootstrap only.
+  if (!verifiedAuthEnabled()) {
+    const count = await db.profile.count({
+      where: { email, isArchived: false },
+    });
+    if (count > 0) return;
+    try {
+      await db.profile.create({
+        data: {
+          id: defaultProfileIdForEmail(email),
+          email,
+          nickname: "メイン",
+        },
+      });
+    } catch (e) {
+      if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === "P2002") {
+        return;
+      }
+      throw e;
+    }
+    return;
+  }
+
+  // Mode B — verified-auth ON: I3 / I3.7 identity-safe path.
   const resolveOwnership =
     deps.resolveOwnership ??
     (() => resolveP0IdentityOwnership(deps));

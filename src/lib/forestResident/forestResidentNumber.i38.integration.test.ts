@@ -11,6 +11,7 @@
 
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
+import { VERIFIED_AUTH_SESSION_FLAG } from "@/lib/auth/verifiedAuthSessionGate";
 import { prisma } from "@/lib/db";
 import { auditDatabaseUrlForNonprodIdempotency } from "@/lib/journal/saveIdempotency/assertLocalDisposableDatabaseUrl";
 import { ensureForestResidentForEmail } from "@/lib/forestResident/forestResidentNumber";
@@ -60,6 +61,8 @@ describe.skipIf(!runLocal)("AI-X6.7C1.5A2-I3.8 forest resident identity-first", 
   });
 
   beforeEach(async () => {
+    // Mode B — I3.8 identity-safe path under verified-auth ON.
+    process.env[VERIFIED_AUTH_SESSION_FLAG] = "YES";
     await wipe();
   });
 

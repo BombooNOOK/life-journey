@@ -12,6 +12,7 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { P0_IDENTITY_READ_AUTHORITY_FLAG } from "@/lib/account/p0IdentityReadAuthorityGate";
+import { VERIFIED_AUTH_SESSION_FLAG } from "@/lib/auth/verifiedAuthSessionGate";
 import { prisma } from "@/lib/db";
 import { auditDatabaseUrlForNonprodIdempotency } from "@/lib/journal/saveIdempotency/assertLocalDisposableDatabaseUrl";
 import {
@@ -92,6 +93,8 @@ describe.skipIf(!runLocal)("AI-X6.7C1.5A2-I3.7 transition-gap profile safety", (
 
   beforeEach(async () => {
     vi.unstubAllEnvs();
+    // Mode B — I3.7 fail-closed under verified-auth ON.
+    process.env[VERIFIED_AUTH_SESSION_FLAG] = "YES";
     await wipe();
   });
 

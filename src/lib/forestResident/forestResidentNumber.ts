@@ -5,6 +5,7 @@ import {
   type P0OwnershipResolution,
   type P0OwnershipResolverDeps,
 } from "@/lib/account/p0IdentityOwnership";
+import { isVerifiedAuthSessionEnabled } from "@/lib/auth/verifiedAuthSessionGate";
 import { prisma } from "@/lib/db";
 import { ensureWelcomeAcornGift } from "@/lib/loghouse/donguriLedger";
 import {
@@ -107,6 +108,11 @@ export type EnsureForestResidentDeps = P0OwnershipResolverDeps & {
   resolveOwnership?: () => Promise<P0OwnershipResolution>;
   /** Test seam — production uses allocateNextForestResidentNumber. */
   allocateResidentNumber?: () => Promise<string>;
+  /**
+   * Test seam for AI-X6-I3.9. Production uses isVerifiedAuthSessionEnabled().
+   * When OFF, ensureForestResidentForEmail uses legacy email path only (no lj_session).
+   */
+  isVerifiedAuthEnabled?: () => boolean;
 };
 
 async function allocateNextForestResidentNumber(
@@ -150,9 +156,13 @@ export function shouldFailClosedForestResidentForTransientUnverifiedSession(
 }
 
 /**
- * Ensure forest resident card for the viewer — identity-safe (I3.8 / I3.8H).
+ * Ensure forest resident card for the viewer.
  *
- * Order:
+ * AI-X6-I3.9 — Mode A (verified-auth OFF):
+ *   Exact pre-I3.8 legacy email-authoritative path (no lj_session / ownership).
+ *   I3.6 still applies: no welcome-gift write from this read path.
+ *
+ * Mode B (verified-auth ON) — identity-safe (I3.8 / I3.8H):
  * 1. Resolve verified UID → AccountIdentity ownership
  * 2. AMBIGUOUS / MISMATCH → fail closed (null; no create / no FRN)
  * 3. UNBOUND verified_session_required → strict fail closed (null);
@@ -162,8 +172,8 @@ export function shouldFailClosedForestResidentForTransientUnverifiedSession(
  *    auto-claim null-identity email-B rows.
  * 5. identity_not_bound → legacy email bootstrap (unchanged)
  *
- * Returns null when identity authority is unavailable. Callers must tolerate
- * temporary null.
+ * Returns null when identity authority is unavailable (Mode B). Callers must
+ * tolerate temporary null.
  */
 export async function ensureForestResidentForEmail(
   email: string,
@@ -173,10 +183,23 @@ export async function ensureForestResidentForEmail(
   if (!normalized) throw new Error("email required");
 
   const db = deps.db ?? prisma;
-  const resolveOwnership =
-    deps.resolveOwnership ?? (() => resolveP0IdentityOwnership(deps));
   const allocate =
     deps.allocateResidentNumber ?? (() => allocateNextForestResidentNumber(db));
+  const verifiedAuthEnabled =
+    deps.isVerifiedAuthEnabled ?? (() => isVerifiedAuthSessionEnabled());
+
+  // Mode A — verified-auth OFF: legacy email-authoritative path only.
+  if (!verifiedAuthEnabled()) {
+    return issueForestResidentForEmailLegacy({
+      db,
+      allocate,
+      email: normalized,
+    });
+  }
+
+  // Mode B — verified-auth ON: I3.8 / I3.8H identity-safe path.
+  const resolveOwnership =
+    deps.resolveOwnership ?? (() => resolveP0IdentityOwnership(deps));
 
   const ownership = await resolveOwnership();
 

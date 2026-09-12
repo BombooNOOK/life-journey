@@ -2,13 +2,22 @@
  * AI-X6.7C1.5A2-I3.8 — AccountSettings identity-first forest resident (unit).
  */
 
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, afterEach, describe, expect, it, vi } from "vitest";
 
 import type { P0OwnershipResolution } from "@/lib/account/p0IdentityOwnership";
+import { VERIFIED_AUTH_SESSION_FLAG } from "@/lib/auth/verifiedAuthSessionGate";
 import {
   ensureForestResidentForEmail,
   shouldFailClosedForestResidentForTransientUnverifiedSession,
 } from "@/lib/forestResident/forestResidentNumber";
+
+beforeEach(() => {
+  // Mode B — I3.8 identity-safe path under verified-auth ON.
+  process.env[VERIFIED_AUTH_SESSION_FLAG] = "YES";
+});
+afterEach(() => {
+  delete process.env[VERIFIED_AUTH_SESSION_FLAG];
+});
 
 function bound(
   identityId: string,

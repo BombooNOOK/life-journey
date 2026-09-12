@@ -2,9 +2,10 @@
  * AI-X6.7C1.5A2-I3.7 — transition-gap Profile bootstrap fail-closed (unit).
  */
 
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, afterEach, describe, expect, it, vi } from "vitest";
 
 import type { P0OwnershipResolution } from "@/lib/account/p0IdentityOwnership";
+import { VERIFIED_AUTH_SESSION_FLAG } from "@/lib/auth/verifiedAuthSessionGate";
 import {
   ensureDefaultProfile,
   shouldFailClosedEmailBootstrapForTransientUnverifiedSession,
@@ -13,6 +14,14 @@ import {
 vi.mock("@/lib/account/p0IdentityWriteFields", () => ({
   resolveP0ProfileCreateIdentityFields: vi.fn(async () => ({})),
 }));
+
+beforeEach(() => {
+  // Mode B — I3.7 fail-closed under verified-auth ON.
+  process.env[VERIFIED_AUTH_SESSION_FLAG] = "YES";
+});
+afterEach(() => {
+  delete process.env[VERIFIED_AUTH_SESSION_FLAG];
+});
 
 function bound(
   identityId: string,
