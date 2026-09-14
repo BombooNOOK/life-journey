@@ -9,6 +9,7 @@ import { redirect } from "next/navigation";
 import { getViewerEmailFromCookie, normalizeEmail } from "@/lib/auth/viewer";
 import { isAdminEmail } from "@/lib/admin/access";
 import { prisma } from "@/lib/db";
+import { traceAdminRawAccountSettingsWrite } from "@/lib/observability/accountSettingsWriteTrace";
 
 function clampPdfDownloadLimitPerOrder(raw: string | undefined): number {
   const n = Number.parseInt(String(raw ?? "").trim(), 10);
@@ -104,6 +105,14 @@ async function upsertAccountSettingsProfilePostgresRaw(
   profileLimit: number,
 ): Promise<{ id: string }> {
   const newId = randomUUID();
+  traceAdminRawAccountSettingsWrite({
+    operation: "raw_insert",
+    reason: "admin_upsert_profile_limit",
+    selectorType: "email",
+    selectorValue: email,
+    targetEmail: email,
+    changedFields: ["profileLimit", "updatedAt(auto)"],
+  });
   const rows = await prisma.$queryRaw<Array<{ id: string }>>`
     INSERT INTO "AccountSettings" ("id", "createdAt", "updatedAt", "email", "isAdmin", "profileLimit")
     VALUES (${newId}, NOW(), NOW(), ${email}, false, ${profileLimit})
@@ -123,6 +132,14 @@ async function upsertAccountSettingsAdminRolePostgresRaw(
   isAdmin: boolean,
 ): Promise<{ id: string }> {
   const newId = randomUUID();
+  traceAdminRawAccountSettingsWrite({
+    operation: "raw_insert",
+    reason: "admin_upsert_is_admin",
+    selectorType: "email",
+    selectorValue: email,
+    targetEmail: email,
+    changedFields: ["isAdmin", "updatedAt(auto)"],
+  });
   const rows = await prisma.$queryRaw<Array<{ id: string }>>`
     INSERT INTO "AccountSettings" ("id", "createdAt", "updatedAt", "email", "isAdmin", "profileLimit")
     VALUES (${newId}, NOW(), NOW(), ${email}, ${isAdmin}, 1)
@@ -144,6 +161,14 @@ async function upsertAccountSettingsPdfLimitPostgresRaw(
 ): Promise<{ id: string }> {
   const canonicalEmail = normalizeEmail(email);
   const newId = randomUUID();
+  traceAdminRawAccountSettingsWrite({
+    operation: "raw_insert",
+    reason: "admin_upsert_pdf_limit_row",
+    selectorType: "email",
+    selectorValue: canonicalEmail,
+    targetEmail: canonicalEmail,
+    changedFields: ["updatedAt(auto)"],
+  });
   const rows = await prisma.$queryRaw<Array<{ id: string }>>`
     INSERT INTO "AccountSettings" ("id", "createdAt", "updatedAt", "email", "isAdmin", "profileLimit")
     VALUES (${newId}, NOW(), NOW(), ${canonicalEmail}, false, 1)
@@ -154,6 +179,15 @@ async function upsertAccountSettingsPdfLimitPostgresRaw(
   const id = rows[0]?.id;
   if (!id) throw new Error("upsertAccountSettingsPdfLimitPostgresRaw: no id returned");
   try {
+    traceAdminRawAccountSettingsWrite({
+      operation: "raw_update",
+      reason: "admin_upsert_pdf_limit",
+      selectorType: "normalized_email_dup",
+      selectorValue: canonicalEmail,
+      targetEmail: canonicalEmail,
+      targetId: id,
+      changedFields: ["pdfDownloadLimitPerOrder"],
+    });
     await prisma.$executeRaw`
       UPDATE "AccountSettings"
       SET "pdfDownloadLimitPerOrder" = ${pdfDownloadLimitPerOrder}
@@ -170,6 +204,14 @@ async function upsertSubscriberAccessPostgresRaw(
   subscriberPdfAccess: boolean,
 ): Promise<{ id: string }> {
   const newId = randomUUID();
+  traceAdminRawAccountSettingsWrite({
+    operation: "raw_insert",
+    reason: "admin_upsert_subscriber_access_row",
+    selectorType: "email",
+    selectorValue: email,
+    targetEmail: email,
+    changedFields: ["updatedAt(auto)"],
+  });
   const rows = await prisma.$queryRaw<Array<{ id: string }>>`
     INSERT INTO "AccountSettings" ("id", "createdAt", "updatedAt", "email", "isAdmin", "profileLimit")
     VALUES (${newId}, NOW(), NOW(), ${email}, false, 1)
@@ -180,6 +222,15 @@ async function upsertSubscriberAccessPostgresRaw(
   const id = rows[0]?.id;
   if (!id) throw new Error("upsertSubscriberAccessPostgresRaw: no id returned");
   try {
+    traceAdminRawAccountSettingsWrite({
+      operation: "raw_update",
+      reason: "admin_upsert_subscriber_pdf_access",
+      selectorType: "id",
+      selectorValue: id,
+      targetId: id,
+      targetEmail: email,
+      changedFields: ["subscriberPdfAccess"],
+    });
     await prisma.$executeRaw`
       UPDATE "AccountSettings"
       SET "subscriberPdfAccess" = ${subscriberPdfAccess}
@@ -213,6 +264,14 @@ async function syncDuplicateAccountRowsForNormalizedEmail(
     if (isPostgresDb()) {
       if (data.profileLimit !== undefined) {
         await run(async () => {
+          traceAdminRawAccountSettingsWrite({
+            operation: "raw_update",
+            reason: "admin_sync_duplicate_profile_limit",
+            selectorType: "normalized_email_dup",
+            selectorValue: normalizedEmail,
+            targetEmail: normalizedEmail,
+            changedFields: ["profileLimit"],
+          });
           await prisma.$executeRaw`
             UPDATE "AccountSettings"
             SET "profileLimit" = ${data.profileLimit}
@@ -223,6 +282,14 @@ async function syncDuplicateAccountRowsForNormalizedEmail(
       }
       if (data.isAdmin !== undefined) {
         await run(async () => {
+          traceAdminRawAccountSettingsWrite({
+            operation: "raw_update",
+            reason: "admin_sync_duplicate_is_admin",
+            selectorType: "normalized_email_dup",
+            selectorValue: normalizedEmail,
+            targetEmail: normalizedEmail,
+            changedFields: ["isAdmin"],
+          });
           await prisma.$executeRaw`
             UPDATE "AccountSettings"
             SET "isAdmin" = ${data.isAdmin}
@@ -233,6 +300,14 @@ async function syncDuplicateAccountRowsForNormalizedEmail(
       }
       if (data.isMonitor !== undefined) {
         await run(async () => {
+          traceAdminRawAccountSettingsWrite({
+            operation: "raw_update",
+            reason: "admin_sync_duplicate_is_monitor",
+            selectorType: "normalized_email_dup",
+            selectorValue: normalizedEmail,
+            targetEmail: normalizedEmail,
+            changedFields: ["isMonitor"],
+          });
           await prisma.$executeRaw`
             UPDATE "AccountSettings"
             SET "isMonitor" = ${data.isMonitor}
@@ -243,6 +318,14 @@ async function syncDuplicateAccountRowsForNormalizedEmail(
       }
       if (data.pdfDownloadLimitPerOrder !== undefined) {
         await run(async () => {
+          traceAdminRawAccountSettingsWrite({
+            operation: "raw_update",
+            reason: "admin_sync_duplicate_pdf_limit",
+            selectorType: "normalized_email_dup",
+            selectorValue: normalizedEmail,
+            targetEmail: normalizedEmail,
+            changedFields: ["pdfDownloadLimitPerOrder"],
+          });
           await prisma.$executeRaw`
             UPDATE "AccountSettings"
             SET "pdfDownloadLimitPerOrder" = ${data.pdfDownloadLimitPerOrder}
@@ -253,6 +336,14 @@ async function syncDuplicateAccountRowsForNormalizedEmail(
       }
       if (data.subscriberPdfAccess !== undefined) {
         await run(async () => {
+          traceAdminRawAccountSettingsWrite({
+            operation: "raw_update",
+            reason: "admin_sync_duplicate_subscriber_pdf_access",
+            selectorType: "normalized_email_dup",
+            selectorValue: normalizedEmail,
+            targetEmail: normalizedEmail,
+            changedFields: ["subscriberPdfAccess"],
+          });
           await prisma.$executeRaw`
             UPDATE "AccountSettings"
             SET "subscriberPdfAccess" = ${data.subscriberPdfAccess}
