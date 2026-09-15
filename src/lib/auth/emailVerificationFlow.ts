@@ -69,7 +69,7 @@ export function mapEmailVerificationError(e: unknown): string {
   const raw = `${code} ${message}`.toLowerCase();
 
   if (raw.includes("too-many-requests")) {
-    return "送信回数が上限に達しました。しばらく待ってから再試行してください。";
+    return "現在、確認メールの送信回数制限がかかっています。しばらく時間をあけてから『確認メールを再送』を押してください。";
   }
   if (raw.includes("network-request-failed") || raw.includes("network")) {
     return "通信に失敗しました。接続を確認してからもう一度お試しください。";

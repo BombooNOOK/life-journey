@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { useFirebaseAuth } from "@/components/auth/FirebaseAuthProvider";
 import { mobileReadable } from "@/lib/auth/mobileReadableStyles";
 import { FOREST_LEAVE_LABEL } from "@/lib/auth/forestSessionCopy";
+import { resolveEmailVerificationPendingUi } from "@/lib/auth/emailVerificationPendingUi";
 import { LOG_HOUSE_GO_LABEL } from "@/lib/journal/logHouseLabels";
 import {
   FIRST_VISIT_RESIDENT_REGISTRATION_COMPLETE_BODY,
@@ -131,47 +132,72 @@ export function EmailVerificationPendingPanel({
   onResend,
 }: EmailVerificationPendingPanelProps) {
   const busy = phase === "sending" || phase === "checking";
+  const ui = resolveEmailVerificationPendingUi({ phase, errorMessage });
+  const checkPrimary = ui.primaryAction === "check";
 
   return (
     <div className="mx-auto max-w-md space-y-5 rounded-xl border border-amber-200/80 bg-white p-6 shadow-sm sm:p-8">
       <div className="space-y-3">
-        <h1 className={mobileReadable.pageTitle}>メール確認が必要です</h1>
-        <p className={mobileReadable.body}>
-          確認メールを送信しました。メール内のリンクを開いたあと、この画面で「確認済みかチェック」を押してください。
-        </p>
-        <p className={mobileReadable.helper}>
-          届かない場合は迷惑メールフォルダもご確認ください。案内メール（welcome）とは別の確認メールです。
-        </p>
-        {phase === "sending" ? (
-          <p className={mobileReadable.helper}>確認メールを送信しています…</p>
+        <h1 className={mobileReadable.pageTitle}>{ui.heading}</h1>
+        {ui.steps ? (
+          <ol className={`${mobileReadable.body} list-decimal space-y-1 pl-5`}>
+            {ui.steps.map((step) => (
+              <li key={step}>{step}</li>
+            ))}
+          </ol>
         ) : null}
-        {phase === "checking" ? (
-          <p className={mobileReadable.helper}>確認状態を調べています…</p>
+        {ui.welcomeDistinction ? (
+          <p className={mobileReadable.helper}>{ui.welcomeDistinction}</p>
         ) : null}
-        {phase === "error" && errorMessage ? (
+        {ui.spamHint ? <p className={mobileReadable.helper}>{ui.spamHint}</p> : null}
+        {ui.statusLine ? <p className={mobileReadable.helper}>{ui.statusLine}</p> : null}
+        {ui.alertMessage ? (
           <p className={`${mobileReadable.helper} text-red-700`} role="alert">
-            {errorMessage}
+            {ui.alertMessage}
           </p>
         ) : null}
       </div>
 
       <div className="space-y-3">
-        <button
-          type="button"
-          className={mobileReadable.buttonPrimary}
-          disabled={busy}
-          onClick={onCheck}
-        >
-          確認済みかチェック
-        </button>
-        <button
-          type="button"
-          className={mobileReadable.buttonSecondary}
-          disabled={busy || resendDisabled}
-          onClick={onResend}
-        >
-          確認メールを再送
-        </button>
+        {checkPrimary ? (
+          <>
+            <button
+              type="button"
+              className={mobileReadable.buttonPrimary}
+              disabled={busy}
+              onClick={onCheck}
+            >
+              確認済みかチェック
+            </button>
+            <button
+              type="button"
+              className={mobileReadable.buttonSecondary}
+              disabled={busy || resendDisabled}
+              onClick={onResend}
+            >
+              確認メールを再送
+            </button>
+          </>
+        ) : (
+          <>
+            <button
+              type="button"
+              className={mobileReadable.buttonPrimary}
+              disabled={busy || resendDisabled}
+              onClick={onResend}
+            >
+              確認メールを再送
+            </button>
+            <button
+              type="button"
+              className={mobileReadable.buttonSecondary}
+              disabled={busy}
+              onClick={onCheck}
+            >
+              確認済みかチェック
+            </button>
+          </>
+        )}
       </div>
     </div>
   );

@@ -120,7 +120,7 @@ describe("emailVerificationFlow", () => {
     expect(result.ok).toBe(false);
     if (result.ok) return;
     expect(result.message).not.toMatch(/secret@example\.com|token=abc|Quota exceeded/i);
-    expect(result.message).toContain("上限");
+    expect(result.message).toContain("回数制限");
 
     const mapped = mapEmailVerificationError({
       code: "auth/network-request-failed",
