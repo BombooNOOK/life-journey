@@ -17,6 +17,7 @@ import {
 import { useFirebaseAuth } from "@/components/auth/FirebaseAuthProvider";
 import {
   AlreadyLoggedInPanel,
+  EmailVerificationPendingPanel,
   RegistrationCompletePanel,
 } from "@/components/auth/AuthSessionPanels";
 import { InlineHelpButton } from "@/components/ui/InlineHelpButton";
@@ -31,8 +32,14 @@ import {
   firstVisitResidentRegistrationSupplementClass,
   firstVisitResidentRegistrationTitleClass,
 } from "@/components/guide/first-visit/firstVisitResidentRegistrationStyles";
+import {
+  createEmailVerificationController,
+  EMAIL_VERIFICATION_PENDING_SESSION_KEY,
+  EMAIL_VERIFICATION_RESEND_COOLDOWN_MS,
+} from "@/lib/auth/emailVerificationFlow";
 import { mobileReadable } from "@/lib/auth/mobileReadableStyles";
 import { getPasswordResetSentNotice } from "@/lib/auth/passwordResetCopy";
+import { sendLjEmailVerification } from "@/lib/auth/sendEmailVerificationSafe";
 import { sendLjPasswordResetEmail } from "@/lib/auth/sendPasswordResetEmailSafe";
 import {
   clearGoogleOAuthRedirectFlow,
@@ -237,6 +244,14 @@ export function LoginClient({
   const [registrationComplete, setRegistrationComplete] = useState<{
     welcomeEmailSent: boolean;
   } | null>(null);
+  const [emailVerificationPending, setEmailVerificationPending] = useState<{
+    welcomeEmailSent: boolean;
+    isFirstVisit: boolean;
+    phase: "sending" | "sent" | "checking" | "error";
+    errorMessage: string | null;
+  } | null>(null);
+  const [resendAvailableAtMs, setResendAvailableAtMs] = useState(0);
+  const [resendTick, setResendTick] = useState(0);
   /** iOS/Android の Google ポップアップ成功後にフルページ遷移する直前だけ表示 */
   const [fullPagePostLoginPending, setFullPagePostLoginPending] = useState(false);
   /** Google リダイレクトで `/login` に戻った最初から全画面案内（`dynamic` の ssr:false とセット） */
@@ -250,6 +265,11 @@ export function LoginClient({
   const googleSignInLock = useRef(false);
   const oauthReturnNavLock = useRef(false);
   const registerNavLock = useRef(false);
+  const emailVerificationControllerRef = useRef(
+    createEmailVerificationController({
+      sendVerification: (u) => sendLjEmailVerification(u as import("firebase/auth").User),
+    }),
+  );
   const emailInputRef = useRef<HTMLInputElement>(null);
   const feedbackRef = useRef<HTMLDivElement>(null);
   const resetSectionRef = useRef<HTMLDivElement>(null);
@@ -592,11 +612,8 @@ export function LoginClient({
       if (mode === "register") {
         cred = await createUserWithEmailAndPassword(a, email, password);
         const isFirstVisitRegister = isFirstVisitRegisterFlow || isFirstVisitEmbedded;
-        if (isFirstVisitRegister) {
-          registerNavLock.current = true;
-          beginFirstVisitRegisterHandoff();
-          flushSync(() => setFullPagePostLoginPending(true));
-        }
+        // Legacy email session remains (existing product bootstrap). Verified auth /
+        // Identity Binding stay blocked until Firebase emailVerified=true.
         syncLjAuthClientCookies({ email: cred.user.email ?? null });
         await fetch("/api/auth/session", {
           method: "POST",
@@ -617,6 +634,9 @@ export function LoginClient({
               const welcomeData = (await welcomeRes.json()) as { sent?: boolean };
               if (welcomeData.sent === true) {
                 setFirstVisitWelcomeEmailSentFlag(true);
+                setEmailVerificationPending((prev) =>
+                  prev ? { ...prev, welcomeEmailSent: true } : prev,
+                );
               }
             })
             .catch(() => {});
@@ -633,14 +653,36 @@ export function LoginClient({
               welcomeEmailSent = welcomeData.sent === true;
             }
           } catch {
-            /* 登録完了画面はメール送信成否に関わらず表示 */
+            /* welcome は verification とは別。成否に関わらず確認待ちへ */
           }
         }
-        if (isFirstVisitRegister) {
-          await navigateAfterFirstVisitRegister(welcomeEmailSent);
-          return;
+
+        setEmailVerificationPending({
+          welcomeEmailSent,
+          isFirstVisit: isFirstVisitRegister,
+          phase: "sending",
+          errorMessage: null,
+        });
+        if (typeof window !== "undefined") {
+          sessionStorage.setItem(EMAIL_VERIFICATION_PENDING_SESSION_KEY, "1");
         }
-        setRegistrationComplete({ welcomeEmailSent });
+        const sendResult = await emailVerificationControllerRef.current.send(cred.user);
+        if (sendResult.ok) {
+          setResendAvailableAtMs(Date.now() + EMAIL_VERIFICATION_RESEND_COOLDOWN_MS);
+          setEmailVerificationPending({
+            welcomeEmailSent,
+            isFirstVisit: isFirstVisitRegister,
+            phase: "sent",
+            errorMessage: null,
+          });
+        } else {
+          setEmailVerificationPending({
+            welcomeEmailSent,
+            isFirstVisit: isFirstVisitRegister,
+            phase: "error",
+            errorMessage: sendResult.message,
+          });
+        }
         return;
       }
       cred = await signInWithEmailAndPassword(a, email, password);
@@ -722,9 +764,152 @@ export function LoginClient({
     }
   };
 
+  useEffect(() => {
+    if (emailVerificationPending || registrationComplete || authLoading) return;
+    if (typeof window === "undefined") return;
+    if (sessionStorage.getItem(EMAIL_VERIFICATION_PENDING_SESSION_KEY) !== "1") return;
+    if (!user || user.emailVerified) {
+      if (user?.emailVerified) {
+        sessionStorage.removeItem(EMAIL_VERIFICATION_PENDING_SESSION_KEY);
+      }
+      return;
+    }
+    // Only restore pending UI for the signup-verification handoff flag.
+    setEmailVerificationPending({
+      welcomeEmailSent: false,
+      isFirstVisit: isFirstVisitRegisterFlow || isFirstVisitEmbedded,
+      phase: "sent",
+      errorMessage: null,
+    });
+  }, [
+    authLoading,
+    emailVerificationPending,
+    isFirstVisitEmbedded,
+    isFirstVisitRegisterFlow,
+    registrationComplete,
+    user,
+  ]);
+
+  useEffect(() => {
+    if (!emailVerificationPending) return;
+    if (Date.now() >= resendAvailableAtMs) return;
+    const id = window.setInterval(() => setResendTick((n) => n + 1), 1000);
+    return () => window.clearInterval(id);
+  }, [emailVerificationPending, resendAvailableAtMs]);
+
+  const completeEmailVerificationPending = useCallback(
+    async (welcomeEmailSent: boolean, isFirstVisit: boolean) => {
+      if (typeof window !== "undefined") {
+        sessionStorage.removeItem(EMAIL_VERIFICATION_PENDING_SESSION_KEY);
+      }
+      setEmailVerificationPending(null);
+      if (isFirstVisit) {
+        await navigateAfterFirstVisitRegister(welcomeEmailSent);
+        return;
+      }
+      setRegistrationComplete({ welcomeEmailSent });
+    },
+    [navigateAfterFirstVisitRegister],
+  );
+
+  const handleEmailVerificationCheck = useCallback(async () => {
+    if (!emailVerificationPending) return;
+    const current = auth()?.currentUser ?? user;
+    if (!current) {
+      setEmailVerificationPending({
+        ...emailVerificationPending,
+        phase: "error",
+        errorMessage: "セッションの有効期限が切れました。ログインし直してください。",
+      });
+      return;
+    }
+    setEmailVerificationPending({
+      ...emailVerificationPending,
+      phase: "checking",
+      errorMessage: null,
+    });
+    const result = await emailVerificationControllerRef.current.check(current);
+    if (result.status === "verified") {
+      await completeEmailVerificationPending(
+        emailVerificationPending.welcomeEmailSent,
+        emailVerificationPending.isFirstVisit,
+      );
+      return;
+    }
+    if (result.status === "pending") {
+      setEmailVerificationPending({
+        ...emailVerificationPending,
+        phase: "sent",
+        errorMessage: null,
+      });
+      setNotice(
+        "まだ確認が完了していません。メール内のリンクを開いてから、もう一度チェックしてください。",
+      );
+      return;
+    }
+    setEmailVerificationPending({
+      ...emailVerificationPending,
+      phase: "error",
+      errorMessage: result.message,
+    });
+  }, [completeEmailVerificationPending, emailVerificationPending, user]);
+
+  const handleEmailVerificationResend = useCallback(async () => {
+    if (!emailVerificationPending) return;
+    const current = auth()?.currentUser ?? user;
+    if (!current) {
+      setEmailVerificationPending({
+        ...emailVerificationPending,
+        phase: "error",
+        errorMessage: "セッションの有効期限が切れました。ログインし直してください。",
+      });
+      return;
+    }
+    setEmailVerificationPending({
+      ...emailVerificationPending,
+      phase: "sending",
+      errorMessage: null,
+    });
+    const sendResult = await emailVerificationControllerRef.current.send(current);
+    if (sendResult.ok) {
+      setResendAvailableAtMs(Date.now() + EMAIL_VERIFICATION_RESEND_COOLDOWN_MS);
+      setEmailVerificationPending({
+        ...emailVerificationPending,
+        phase: "sent",
+        errorMessage: null,
+      });
+      setNotice(null);
+      return;
+    }
+    setEmailVerificationPending({
+      ...emailVerificationPending,
+      phase: "error",
+      errorMessage: sendResult.message,
+    });
+  }, [emailVerificationPending, user]);
+
   const showFullTransitionOverlay =
     !isFirstVisitRegisterFlow &&
+    !emailVerificationPending &&
     (fullPagePostLoginPending || oauthReturnHandoffUi || (authLoading && Boolean(user)));
+
+  if (emailVerificationPending) {
+    void resendTick;
+    const resendDisabled = Date.now() < resendAvailableAtMs;
+    return (
+      <EmailVerificationPendingPanel
+        phase={emailVerificationPending.phase}
+        errorMessage={emailVerificationPending.errorMessage}
+        resendDisabled={resendDisabled}
+        onCheck={() => {
+          void handleEmailVerificationCheck();
+        }}
+        onResend={() => {
+          void handleEmailVerificationResend();
+        }}
+      />
+    );
+  }
 
   if (showFullTransitionOverlay) {
     return <PostLoginTransitionOverlay variant="oauth-return" />;

@@ -67,6 +67,21 @@ describe("ensureVerifiedAccountIdentity (unit)", () => {
     expect(result).toEqual({ state: "verified_session_required" });
   });
 
+  it("blocks Identity Binding when emailVerified is explicitly false", async () => {
+    const result = await ensureVerifiedAccountIdentity({
+      isVerifiedAuthEnabled: () => true,
+      isBindingEnabled: () => true,
+      getSession: async () => ({
+        uid: "u1",
+        email: "a@example.com",
+        emailVerified: false,
+      }),
+      db: db as never,
+    });
+    expect(result).toEqual({ state: "verified_session_required" });
+    expect(findUnique).not.toHaveBeenCalled();
+  });
+
   it("creates identity + primary in first bind path", async () => {
     findUnique.mockResolvedValue(null);
     $transaction.mockImplementation(async (fn: (tx: unknown) => Promise<unknown>) => {

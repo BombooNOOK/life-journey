@@ -25,6 +25,7 @@ import {
   syncLjAuthClientCookies,
   takeOAuthReturnTo,
 } from "@/lib/auth/clientCookies";
+import { shouldSkipVerifiedAuthCompletion } from "@/lib/auth/emailVerificationFlow";
 import { getVerifiedAuthSessionSyncController } from "@/lib/auth/syncVerifiedAuthSession";
 import { isVerifiedAuthSessionClientSyncAllowed } from "@/lib/auth/verifiedAuthSessionClientGate";
 import { getFirebaseAuth, waitForFirebaseAuthPersistence } from "@/lib/firebase/client";
@@ -120,6 +121,11 @@ export function FirebaseAuthProvider({ children }: { children: ReactNode }) {
         if (cancelled) return;
         // Local E2E harness has no real Firebase ID token — skip verified sync.
         if (isLocalE2eClientRuntimeEnabled() && getLocalE2eClientSession()) {
+          return;
+        }
+        // Unverified email/password users must not enter verified-session sync.
+        // Google / federated providers are unchanged.
+        if (next && shouldSkipVerifiedAuthCompletion(next)) {
           return;
         }
         void controller.handleAuthUser(next);

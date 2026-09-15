@@ -102,7 +102,7 @@ export function RegistrationCompletePanel({
         ) : null}
         {welcomeEmailSent ? (
           <p className={mobileReadable.helper}>
-            ご登録のメールアドレスに確認メールをお送りしました。届かない場合は、迷惑メールフォルダもご確認ください。
+            ご登録のメールアドレスに案内メールをお送りしました。届かない場合は、迷惑メールフォルダもご確認ください。
           </p>
         ) : null}
       </div>
@@ -110,6 +110,69 @@ export function RegistrationCompletePanel({
       <button type="button" className={mobileReadable.buttonPrimary} onClick={onGoMyPage}>
         {isFirstVisit ? FIRST_VISIT_RESIDENT_REGISTRATION_COMPLETE_BUTTON : LOG_HOUSE_GO_LABEL}
       </button>
+    </div>
+  );
+}
+
+type EmailVerificationPendingPanelProps = {
+  phase: "sending" | "sent" | "checking" | "error";
+  errorMessage?: string | null;
+  resendDisabled: boolean;
+  onCheck: () => void;
+  onResend: () => void;
+};
+
+/** メール/パスワード新規登録後：Firebase emailVerified 待ち */
+export function EmailVerificationPendingPanel({
+  phase,
+  errorMessage,
+  resendDisabled,
+  onCheck,
+  onResend,
+}: EmailVerificationPendingPanelProps) {
+  const busy = phase === "sending" || phase === "checking";
+
+  return (
+    <div className="mx-auto max-w-md space-y-5 rounded-xl border border-amber-200/80 bg-white p-6 shadow-sm sm:p-8">
+      <div className="space-y-3">
+        <h1 className={mobileReadable.pageTitle}>メール確認が必要です</h1>
+        <p className={mobileReadable.body}>
+          確認メールを送信しました。メール内のリンクを開いたあと、この画面で「確認済みかチェック」を押してください。
+        </p>
+        <p className={mobileReadable.helper}>
+          届かない場合は迷惑メールフォルダもご確認ください。案内メール（welcome）とは別の確認メールです。
+        </p>
+        {phase === "sending" ? (
+          <p className={mobileReadable.helper}>確認メールを送信しています…</p>
+        ) : null}
+        {phase === "checking" ? (
+          <p className={mobileReadable.helper}>確認状態を調べています…</p>
+        ) : null}
+        {phase === "error" && errorMessage ? (
+          <p className={`${mobileReadable.helper} text-red-700`} role="alert">
+            {errorMessage}
+          </p>
+        ) : null}
+      </div>
+
+      <div className="space-y-3">
+        <button
+          type="button"
+          className={mobileReadable.buttonPrimary}
+          disabled={busy}
+          onClick={onCheck}
+        >
+          確認済みかチェック
+        </button>
+        <button
+          type="button"
+          className={mobileReadable.buttonSecondary}
+          disabled={busy || resendDisabled}
+          onClick={onResend}
+        >
+          確認メールを再送
+        </button>
+      </div>
     </div>
   );
 }

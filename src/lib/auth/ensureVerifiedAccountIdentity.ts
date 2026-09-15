@@ -114,6 +114,11 @@ export async function ensureVerifiedAccountIdentity(
   if (!session?.uid) {
     return { state: "verified_session_required" };
   }
+  // Firebase emailVerified=false must not create/observe Identity Binding.
+  // Undefined/missing keeps prior behavior (e.g. older fixtures).
+  if (session.emailVerified === false) {
+    return { state: "verified_session_required" };
+  }
   const verifiedEmail = normalizeEmail(session.email);
   if (!verifiedEmail) {
     return { state: "verified_session_required" };
